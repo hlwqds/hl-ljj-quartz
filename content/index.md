@@ -7,8 +7,11 @@ layout: list
 
 ---
 
-##  최근 笔记 (Recent Notes)
+## 🧭 快速导航
 
-<div class="recent-notes">
-  <!-- 这里会自动由 Quartz 的组件渲染，或者我们稍后在 layout 中配置 -->
-</div>
+- 🏷️ [**所有标签 (All Tags)**](/tags) - 按技术关键词查找
+- 📂 [**所有文件夹 (All Folders)**](/content) - 按目录结构浏览
+
+---
+
+## 🕒 最近更新 (Recent Notes)
