@@ -17,7 +17,7 @@ const config: QuartzConfig = {
     },
     locale: "en-US",
     // 动态判断环境，优先使用环境变量中的域名，回退到 github.io
-    baseUrl: process.env.CF_PAGES_URL?.replace("https://", "") || "hlwqds.github.io/quartz",
+    baseUrl: process.env.CF_PAGES_URL?.replace("https://", "") || "hlwqds.github.io/hl-ljj-quartz",
     ignorePatterns: ["private", "templates", ".obsidian"],
 
     defaultDateType: "modified",
