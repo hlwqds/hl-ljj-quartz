@@ -71,6 +71,7 @@ const config: QuartzConfig = {
         enableInHtmlEmbed: true, 
         enableChecklists: true, 
         enableSmartLists: true,
+        enableStrongParagraphs: true
       }),
       Plugin.GitHubFlavoredMarkdown(),
       Plugin.TableOfContents(),
