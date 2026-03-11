@@ -26,7 +26,8 @@ import ConditionalRender from "./ConditionalRender"
 
 import NavLinks from "./NavLinks"
 import TagCloud from "./TagCloud"
-import SidebarToggle from "./SidebarToggle"
+import TagCloud from "./TagCloud"
+import Avatar from "./Avatar"
 
 export {
   ArticleTitle,
@@ -56,4 +57,6 @@ export {
   ConditionalRender,
   NavLinks,
   TagCloud,
+  Avatar,
 }
+
