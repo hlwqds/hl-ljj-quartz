@@ -5,7 +5,6 @@ pin: true
 tags: [trace, linux]
 ---
 
-
 # linux系统trace
 
 ## perfetto in linux

@@ -26,11 +26,27 @@ const TagCloud: QuartzComponent = ({ displayClass, allFiles, fileData }: QuartzC
         {sortedTags.map(([tag, count]) => {
           const linkDest = resolveRelative(fileData.slug!, `tags/${tag}` as SimpleSlug)
           return (
-            <li key={tag} style={{ marginBottom: "0.5rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <li
+              key={tag}
+              style={{
+                marginBottom: "0.5rem",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
               <a href={linkDest} className="internal tag-link" style={{ textDecoration: "none" }}>
                 #{tag}
               </a>
-              <span style={{ fontSize: "0.8rem", color: "var(--gray)", backgroundColor: "var(--lightgray)", padding: "0.1rem 0.4rem", borderRadius: "4px" }}>
+              <span
+                style={{
+                  fontSize: "0.8rem",
+                  color: "var(--gray)",
+                  backgroundColor: "var(--lightgray)",
+                  padding: "0.1rem 0.4rem",
+                  borderRadius: "4px",
+                }}
+              >
                 {count}
               </span>
             </li>

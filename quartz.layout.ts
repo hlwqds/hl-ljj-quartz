@@ -19,13 +19,13 @@ export const sharedPageComponents: SharedLayout = {
     // 2. 评论区（排除主页）
     Component.ConditionalRender({
       component: Component.Comments({
-        provider: 'giscus',
+        provider: "giscus",
         options: {
-          repo: 'hlwqds/hlwqds.github.io',
-          repoId: 'R_kgDOPSIMYQ',
-          category: 'General',
-          categoryId: 'DIC_kwDOPSIMYc4CzTWw',
-        }
+          repo: "hlwqds/hlwqds.github.io",
+          repoId: "R_kgDOPSIMYQ",
+          category: "General",
+          categoryId: "DIC_kwDOPSIMYc4CzTWw",
+        },
       }),
       condition: (page) => page.fileData.slug !== "index",
     }),
@@ -88,8 +88,5 @@ export const defaultListPageLayout: PageLayout = {
     }),
     Component.Explorer(),
   ],
-  right: [
-    Component.Graph(),
-    Component.TagCloud(),
-  ],
+  right: [Component.Graph(), Component.TagCloud()],
 }

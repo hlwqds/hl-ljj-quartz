@@ -5,7 +5,6 @@ pin: true
 tags: [tools, virtual]
 ---
 
-
 # 虚拟机v2ray配置
 
 ## 方法
@@ -20,6 +19,7 @@ ipconfig
 ```
 
 在bashrc中配置
+
 ```bash
 # ~/.bashrc
 # add for proxy
@@ -51,7 +51,6 @@ proxy
 ```bash
 unproxy
 ```
-
 
 ## wsl设置
 

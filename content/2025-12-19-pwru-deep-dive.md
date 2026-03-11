@@ -5,7 +5,6 @@ pin: true
 tags: [linux, network, ebpf, troubleshooting, pwru, cilium, packet-trace, kernel, debug]
 ---
 
-
 # pwru 详解：基于 eBPF 的 Linux 网络丢包追踪神器
 
 在复杂的 Linux 网络环境中（尤其是 Kubernetes, Docker, Cilium 场景），丢包排查往往是运维人员的噩梦。当常规的 `tcpdump`、`ping`、`iptables-save` 无法解释数据包为何消失时，你需要一把“手术刀”来剖析内核的网络协议栈。
@@ -18,8 +17,10 @@ tags: [linux, network, ebpf, troubleshooting, pwru, cilium, packet-trace, kernel
 它的核心功能简单而强大：**追踪一个数据包在 Linux 内核中经过的每一个函数。**
 
 ### 解决的痛点
+
 以往我们想知道包是在 `iptables` 被丢弃的，还是在 `tc` 被限速的，还是在 `route` 被黑洞的，往往只能靠猜或逐一检查配置。
 而 `pwru` 能直接告诉你：
+
 > "这个包进入了 `ip_rcv`，经过了 `ipt_do_table`，最后在 `ip_forward` 中因为路由查找失败调用了 `kfree_skb`。"
 
 ## 2. 工作原理
@@ -45,20 +46,24 @@ sudo mv pwru /usr/local/bin/
 ## 4. 实战用法
 
 ### 4.1 基础追踪 (Ping 测试)
+
 假设你想知道 ping 包在内核里走了哪些路。
 
 **终端 1 (运行 pwru)**:
+
 ```bash
 # 过滤 ICMP 协议
 sudo pwru --filter-proto icmp
 ```
 
 **终端 2 (发包)**:
+
 ```bash
 ping 1.1.1.1
 ```
 
 **输出结果**:
+
 ```text
 SKB               CPU  PROCESS     FUNC
 0xffff8881a2b3c4d 1    ping        ip_send_skb
@@ -69,6 +74,7 @@ SKB               CPU  PROCESS     FUNC
 ```
 
 ### 4.2 追踪特定端口 (Web 服务不通)
+
 如果 80 端口不通，想看包丢在哪。
 
 ```bash
@@ -76,12 +82,15 @@ sudo pwru --dst-port 80
 ```
 
 ### 4.3 追踪特定 5 元组
+
 支持类似 tcpdump 的过滤语法：
+
 ```bash
 sudo pwru 'dst host 1.1.1.1 and dst port 80'
 ```
 
 ### 4.4 开启堆栈打印 (核心功能)
+
 仅仅看到包经过了哪些函数还不够，有时候我们需要知道**是谁调用了这个函数**。加上 `--output-stack` 参数。
 
 ```bash
@@ -89,12 +98,14 @@ sudo pwru --dst-port 80 --output-stack
 ```
 
 如果包被丢弃，你会看到类似这样的堆栈：
+
 ```text
 kfree_skb
 nf_hook_slow
 ip_forward
 ...
 ```
+
 这能帮你快速定位是防火墙（nf_hook）还是路由转发（ip_forward）出的问题。
 
 ## 5. 什么时候使用 pwru？
@@ -108,12 +119,15 @@ ip_forward
 ## 7. 常见报错与解决
 
 ### 报错：Failed to retrieve available ftrace functions
+
 ```text
 Failed to retrieve available ftrace functions (is /sys/kernel/debug/tracing mounted?): no such file or directory
 ```
+
 这是因为 Linux 的 `debugfs` 没有挂载，导致 `pwru` 无法读取内核函数列表。
 
 **解决方法**:
+
 1.  **挂载 debugfs**:
     ```bash
     sudo mount -t debugfs debugfs /sys/kernel/debug
@@ -126,7 +140,7 @@ Failed to retrieve available ftrace functions (is /sys/kernel/debug/tracing moun
 
 ### 7.2 Arch Linux 用户专属：路径兼容性修复
 
-**现象**: 
+**现象**:
 在 Arch Linux（或较新内核）上，tracefs 通常挂载在 `/sys/kernel/tracing`，而旧版 `pwru` 硬编码去寻找 `/sys/kernel/debug/tracing`。
 由于 `/sys/kernel/debug` 不允许创建软链接，简单的 `ln -s` 会失败。
 

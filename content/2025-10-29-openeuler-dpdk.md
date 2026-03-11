@@ -5,13 +5,11 @@ pin: true
 tags: [dpdk, net]
 ---
 
-
 引用: https://blog.csdn.net/weixin_46261560/article/details/134922513
 
 # openeuler dpdk配置
 
 ## 依赖
-
 
 ## 非root用户运行
 

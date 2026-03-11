@@ -5,7 +5,6 @@ pin: true
 tags: [security, network, ebpf, tcptop, vpn, monitoring, linux, kernel]
 ---
 
-
 # 穿透 VPN 的迷雾：为什么 eBPF 是监控真实进程流量的唯一选择
 
 在现代开发环境中，我们经常会使用 VPN、WireGuard 或系统级代理进行工作。但这给系统监控带来了一个巨大的麻烦：**流量归属错误**。
@@ -15,12 +14,14 @@ tags: [security, network, ebpf, tcptop, vpn, monitoring, linux, kernel]
 ## 1. 传统工具的局限：被“遮蔽”的真相
 
 传统的网络监控工具（如 `ss`, `netstat`, `bandwhich`, `nethogs`）大多依赖以下两种方式获取信息：
+
 1.  **读取 `/proc/net/` 状态表**：查看当前活动的 Socket 及其所有者。
 2.  **用户态抓包 (libpcap)**：在网卡层拦截流量并尝试匹配进程。
 
 **在 VPN 场景下的表现**：
-*   **应用层代理**：浏览器请求 -> 发往本地代理端口。工具显示：流量来自代理软件。
-*   **虚拟网卡 (TUN/TAP)**：所有流量被路由到虚拟网卡，由 VPN 进程加密后发出。工具显示：网卡流量全部属于 VPN 进程（如 `openvpn`, `wireguard`）。
+
+- **应用层代理**：浏览器请求 -> 发往本地代理端口。工具显示：流量来自代理软件。
+- **虚拟网卡 (TUN/TAP)**：所有流量被路由到虚拟网卡，由 VPN 进程加密后发出。工具显示：网卡流量全部属于 VPN 进程（如 `openvpn`, `wireguard`）。
 
 ## 2. eBPF 的降维打击：从内核源头追踪
 
@@ -29,11 +30,13 @@ tags: [security, network, ebpf, tcptop, vpn, monitoring, linux, kernel]
 ### 核心机制：执行上下文 (Process Context)
 
 当一个应用程序（如 `curl`）发送数据时，流程如下：
+
 1.  用户态调用 `send()`。
 2.  内核切换到内核态，执行 `tcp_sendmsg` 等函数。
 3.  **关键点**：此时 CPU 依然处于 `curl` 进程的上下文中。
 
 `tcptop` 在内核中挂载了 eBPF 程序，当 `tcp_sendmsg` 被触发时，它直接读取当前任务结构体：
+
 ```c
 // eBPF 代码片段
 struct task_struct *task = (struct task_struct *)bpf_get_current_task();
@@ -47,9 +50,9 @@ bpf_get_current_comm(&data.name, sizeof(data.name));
 
 假设你正在使用 VPN 下载大型文件：
 
-| 工具类型 | 看到的结果 | 结论 |
-| :--- | :--- | :--- |
-| **传统工具 (nethogs)** | `wireguard-go: 50MB/s` | 误导：以为是 VPN 在耗资源 |
+| 工具类型               | 看到的结果                              | 结论                             |
+| :--------------------- | :-------------------------------------- | :------------------------------- |
+| **传统工具 (nethogs)** | `wireguard-go: 50MB/s`                  | 误导：以为是 VPN 在耗资源        |
 | **eBPF 工具 (tcptop)** | `chrome: 48MB/s`, `wireguard-go: 2MB/s` | **真实**：一眼看出是浏览器在下载 |
 
 ## 4. 为什么这很重要？

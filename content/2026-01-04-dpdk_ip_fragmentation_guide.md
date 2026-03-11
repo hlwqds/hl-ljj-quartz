@@ -6,6 +6,7 @@ tags: [dpdk, ip-fragmentation, mbuf, networking]
 ---
 
 > [!abstract] DPDK 高性能开发系列文章
+>
 > - [[2025-12-16-dpdk-open-euler-setup|环境搭建]]
 > - [[2026-01-05-dpdk_portable_lab_guide|移动实验环境]]
 > - [[2025-12-09-dpdk-mem|内存管理汇总]]
@@ -23,8 +24,6 @@ tags: [dpdk, ip-fragmentation, mbuf, networking]
 > - [[2026-01-04-dpdk_flow_filtering_verification|流过滤验证]]
 > - [[2026-01-05-l2fwd_keepalive_analysis|Keepalive 监控]]
 
-
-
 # DPDK `ip_fragmentation` 深度指南：内存池机制与虚拟化验证
 
 本文档详细介绍了 DPDK 中 IP 分片的实现原理，特别是 `direct_pool` 与 `indirect_pool` 的协作机制，并提供了基于虚拟网卡的验证方案。
@@ -35,13 +34,13 @@ tags: [dpdk, ip-fragmentation, mbuf, networking]
 
 在 `ip_fragmentation` 示例中，定义了两个关键内存池，其区别如下：
 
-| 特性 | `socket_direct_pool` (直接内存池) | `socket_indirect_pool` (间接内存池) |
-| :--- | :--- | :--- |
-| **Mbuf 类型** | Direct Mbuf | Indirect Mbuf |
-| **数据区** | 自带独立的数据缓冲区 (Data Buffer) | **不带数据缓冲区** |
-| **数据来源** | 存储完整包或第一个分片的头部+数据 | 通过指针**引用**原始 Direct Mbuf 的数据区 |
-| **用途** | 接收数据包、存储第一个分片 | 存储后续分片，实现**零拷贝 (Zero-Copy)** |
-| **内存开销** | 较大 (Mbuf头 + Data Buffer) | 极小 (仅 Mbuf 结构体) |
+| 特性          | `socket_direct_pool` (直接内存池)  | `socket_indirect_pool` (间接内存池)       |
+| :------------ | :--------------------------------- | :---------------------------------------- |
+| **Mbuf 类型** | Direct Mbuf                        | Indirect Mbuf                             |
+| **数据区**    | 自带独立的数据缓冲区 (Data Buffer) | **不带数据缓冲区**                        |
+| **数据来源**  | 存储完整包或第一个分片的头部+数据  | 通过指针**引用**原始 Direct Mbuf 的数据区 |
+| **用途**      | 接收数据包、存储第一个分片         | 存储后续分片，实现**零拷贝 (Zero-Copy)**  |
+| **内存开销**  | 较大 (Mbuf头 + Data Buffer)        | 极小 (仅 Mbuf 结构体)                     |
 
 ---
 
@@ -100,6 +99,7 @@ tags: [dpdk, ip-fragmentation, mbuf, networking]
 ## 3. 虚拟网卡验证方案 (`net_tap`)
 
 ### 3.1 环境准备
+
 使用 `net_tap` 创建两个虚拟端口，分别作为输入和输出。
 
 ```bash
@@ -111,6 +111,7 @@ sudo ./build/examples/dpdk-ip_fragmentation -l 1 -n 4 \
 ```
 
 ### 3.2 流量生成脚本 (`send_huge_pkt.py`)
+
 构造超过 1500 字节的包发送至 `dtap0`：
 
 ```python
@@ -119,7 +120,7 @@ import socket, struct
 # DstIP 需匹配 LPM 表路由 (例如 100.20.0.1 -> Port 1)
 def create_large_pkt():
     eth = struct.pack('!6s6sH', b'\x02\x00\x00\x00\x00\x00', b'\x02\x00\x00\x00\x00\x01', 0x0800)
-    iph = struct.pack('!BBHHHBBH4s4s', 0x45, 0, 2020, 12345, 0, 64, 17, 0, 
+    iph = struct.pack('!BBHHHBBH4s4s', 0x45, 0, 2020, 12345, 0, 64, 17, 0,
                       socket.inet_aton('100.10.0.1'), socket.inet_aton('100.20.0.1'))
     return eth + iph + b'A' * 2000
 
@@ -130,15 +131,18 @@ s.send(create_large_pkt())
 ```
 
 ### 3.3 验证结果
+
 在 `dtap1` 上使用 `tcpdump` 观察：
+
 ```bash
 sudo tcpdump -n -i dtap1 ip -v
 ```
+
 **预期现象**：看到两个分片包，第一个长度约 1500 (Flags [+])，第二个包含剩余数据 (Flags [none])。
 
 ---
 
 ## 4. 总结
-*   `indirect_pool` 是 DPDK 分片性能卓越的核心原因，它通过 mbuf 链表式引用避免了内存的大规模拷贝。
-*   分片过程中，原始大包的引用计数会增加，直到所有分片发送完毕后才会真正释放。
 
+- `indirect_pool` 是 DPDK 分片性能卓越的核心原因，它通过 mbuf 链表式引用避免了内存的大规模拷贝。
+- 分片过程中，原始大包的引用计数会增加，直到所有分片发送完毕后才会真正释放。

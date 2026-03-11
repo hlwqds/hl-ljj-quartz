@@ -6,6 +6,7 @@ tags: [suricata]
 ---
 
 > [!abstract] Suricata 引擎研究系列文章
+>
 > - [[2025-11-27-suricata-flow-state|Flow 状态机分析]]
 > - [[2025-11-27-suricata-proto-detect-done|协议检测标记位]]
 > - [[2025-11-27-suricata-ip-reputation|IP 信誉机制]]
@@ -17,8 +18,6 @@ tags: [suricata]
 > - [[2025-12-02-suricata-flowworker-to-applayerparserparse|调用链全景图]]
 > - [[2025-12-03-suricata-get-app-protocol|端口协议检测]]
 > - [[2026-02-09-suricata-advanced-acl-auditing|高级 ACL 审计]]
-
-
 
 # FLOW_TS_APP_UPDATE_NEXT标志详解
 
@@ -37,6 +36,7 @@ tags: [suricata]
 ```
 
 这些标志分别对应流的双向通信方向：
+
 - **TS (To-Server)**：从客户端到服务器的方向
 - **TC (To-Client)**：从服务器到客户端的方向
 
@@ -83,7 +83,7 @@ static void PacketAppUpdate2FlowFlags(Packet *p)
         case UPDATE_DIR_NONE: // 无更新（伪数据包）
             SCLogDebug("pcap_cnt %" PRIu64 ", UPDATE_DIR_NONE", p->pcap_cnt);
             break;
-            
+
         case UPDATE_DIR_PACKET: // 当前数据包
             if (PKT_IS_TOSERVER(p)) {
                 p->flow->flags |= FLOW_TS_APP_UPDATED;
@@ -93,27 +93,27 @@ static void PacketAppUpdate2FlowFlags(Packet *p)
                 SCLogDebug("pcap_cnt %" PRIu64 ", FLOW_TC_APP_UPDATED set", p->pcap_cnt);
             }
             break;
-            
+
         case UPDATE_DIR_BOTH: // 双向更新
             if (PKT_IS_TOSERVER(p)) {
                 p->flow->flags |= FLOW_TS_APP_UPDATED | FLOW_TC_APP_UPDATE_NEXT;
-                SCLogDebug("pcap_cnt %" PRIu64 ", FLOW_TS_APP_UPDATED|FLOW_TC_APP_UPDATE_NEXT set", 
+                SCLogDebug("pcap_cnt %" PRIu64 ", FLOW_TS_APP_UPDATED|FLOW_TC_APP_UPDATE_NEXT set",
                         p->pcap_cnt);
             } else {
                 p->flow->flags |= FLOW_TC_APP_UPDATED | FLOW_TS_APP_UPDATE_NEXT;
-                SCLogDebug("pcap_cnt %" PRIu64 ", FLOW_TC_APP_UPDATED|FLOW_TS_APP_UPDATE_NEXT set", 
+                SCLogDebug("pcap_cnt %" PRIu64 ", FLOW_TC_APP_UPDATED|FLOW_TS_APP_UPDATE_NEXT set",
                         p->pcap_cnt);
             }
             /* fall through */
-            
+
         case UPDATE_DIR_OPPOSING: // 相反方向
             if (PKT_IS_TOSERVER(p)) {
                 p->flow->flags |= FLOW_TC_APP_UPDATED | FLOW_TS_APP_UPDATE_NEXT;
-                SCLogDebug("pcap_cnt %" PRIu64 ", FLOW_TC_APP_UPDATED|FLOW_TS_APP_UPDATE_NEXT set", 
+                SCLogDebug("pcap_cnt %" PRIu64 ", FLOW_TC_APP_UPDATED|FLOW_TS_APP_UPDATE_NEXT set",
                         p->pcap_cnt);
             } else {
                 p->flow->flags |= FLOW_TS_APP_UPDATED | FLOW_TC_APP_UPDATE_NEXT;
-                SCLogDebug("pcap_cnt %" PRIu64 ", FLOW_TS_APP_UPDATED|FLOW_TS_APP_UPDATE_NEXT set", 
+                SCLogDebug("pcap_cnt %" PRIu64 ", FLOW_TS_APP_UPDATED|FLOW_TS_APP_UPDATE_NEXT set",
                         p->pcap_cnt);
             }
             break;
@@ -132,7 +132,7 @@ SCLogDebug("packet %" PRIu64
         p->pcap_cnt, PKT_IS_TOSERVER(p) ? "toserver" : "toclient",
         BOOL2STR((p->flow->flags & FLOW_TS_APP_UPDATE_NEXT) != 0),
         BOOL2STR((p->flow->flags & FLOW_TC_APP_UPDATE_NEXT) != 0));
-        
+
 /* see if need to consider flags set by prev packets */
 if (PKT_IS_TOSERVER(p) && (p->flow->flags & FLOW_TS_APP_UPDATE_NEXT)) {
     p->flow->flags |= FLOW_TS_APP_UPDATED;
@@ -206,7 +206,7 @@ if (PKT_IS_TOSERVER(p) && (p->flow->flags & FLOW_TS_APP_UPDATE_NEXT)) {
 void SomeAppLayerProtocolProcess(Packet *p, Flow *f) {
     // 处理当前数据包
     int ret = ProcessCurrentPacket(p, f);
-    
+
     if (ret == APP_LAYER_STATE_CHANGED) {
         // 设置双向更新标志
         if (PKT_IS_TOSERVER(p)) {
@@ -234,6 +234,7 @@ if (!PKT_IS_PSEUDOPKT(p) && p->app_update_direction == 0 &&
 ```
 
 这确保了：
+
 1. 只有在应用层状态正确时才进行检测
 2. 避免因状态不一致导致的误报或漏报
 3. 保持检测结果的准确性
@@ -251,6 +252,7 @@ if (p->flow->flags & FLOW_ACTION_DROP) {
 ```
 
 这确保了：
+
 1. 标志不会无限期存在
 2. 在流状态变化时正确重置
 3. 避免标志泄漏导致的问题
@@ -266,8 +268,9 @@ if (p->flow->flags & FLOW_ACTION_DROP) {
 
 这个机制是Suricata处理复杂应用层协议的关键部分，特别是在需要处理乱序数据包或状态转换的场景中，确保系统对网络流的理解和处理保持准确和高效。
 
-通过`FLOW_TS_APP_UPDATE_NEXT`标志，Suricata能够在保证正确性的同时，优化性能，这对于高性能网络入侵检测系统至关重要。
----
+## 通过`FLOW_TS_APP_UPDATE_NEXT`标志，Suricata能够在保证正确性的同时，优化性能，这对于高性能网络入侵检测系统至关重要。
+
 ## 外部参考
+
 - [Suricata 源代码 (GitHub)](https://github.com/OISF/suricata)
 - [Suricata 官方用户指南](https://docs.suricata.io/)

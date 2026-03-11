@@ -66,8 +66,8 @@ const config: QuartzConfig = {
         },
         keepBackground: false,
       }),
-      Plugin.ObsidianFlavoredMarkdown({ 
-        enableInHtmlEmbed: true, 
+      Plugin.ObsidianFlavoredMarkdown({
+        enableInHtmlEmbed: true,
       }),
       Plugin.GitHubFlavoredMarkdown(),
       Plugin.TableOfContents(),
@@ -84,8 +84,7 @@ const config: QuartzConfig = {
       Plugin.TagPage(),
       Plugin.ContentIndex({
         enableSiteMap: true,
-        enableRSS: true,
-        rssFullHtml: true,
+        enableRSS: false, // 彻底关闭 RSS，消除 index.xml
       }),
       Plugin.Assets(),
       Plugin.Static(),

@@ -6,6 +6,7 @@ tags: [suricata]
 ---
 
 > [!abstract] Suricata 引擎研究系列文章
+>
 > - [[2025-11-27-suricata-flow-state|Flow 状态机分析]]
 > - [[2025-11-27-suricata-proto-detect-done|协议检测标记位]]
 > - [[2025-11-27-suricata-ip-reputation|IP 信誉机制]]
@@ -18,16 +19,14 @@ tags: [suricata]
 > - [[2025-12-03-suricata-get-app-protocol|端口协议检测]]
 > - [[2026-02-09-suricata-advanced-acl-auditing|高级 ACL 审计]]
 
-
-
 # Suricata Midstream Flow Direction Correction Analysis
 
 在 Suricata 中，针对 midstream（流的中途截获）流量方向判断错误的更正，**并没有物理修改 Flow 结构体中的 `sp` 和 `dp` 字段**。相反，它是通过设置一个标志位来进行**逻辑上的更正**。
 
 ## 结论
 
-*   **物理存储**：`Flow` 结构体中的 `sp` (Source Port) 和 `dp` (Destination Port) 始终保持流初始化时的值，不会被交换。
-*   **逻辑更正**：通过设置 `FLOW_DIR_REVERSED` 标志位来标记流的方向需要被视为反转。
+- **物理存储**：`Flow` 结构体中的 `sp` (Source Port) 和 `dp` (Destination Port) 始终保持流初始化时的值，不会被交换。
+- **逻辑更正**：通过设置 `FLOW_DIR_REVERSED` 标志位来标记流的方向需要被视为反转。
 
 ## 详细实现机制
 
@@ -35,8 +34,8 @@ tags: [suricata]
 
 当 Suricata 发现流的方向判断错误时，会调用 `FlowSwap` 函数。
 
-*   **文件路径**: `suricata/src/flow.c`
-*   **行为**: 它不交换 `sp` 和 `dp`，而是设置 `FLOW_DIR_REVERSED` 标志，并交换流内部的统计计数器和协议掩码。
+- **文件路径**: `suricata/src/flow.c`
+- **行为**: 它不交换 `sp` 和 `dp`，而是设置 `FLOW_DIR_REVERSED` 标志，并交换流内部的统计计数器和协议掩码。
 
 ```c
 // suricata/src/flow.c
@@ -61,8 +60,8 @@ void FlowSwap(Flow *f)
 
 通常是在应用层协议检测阶段发现方向错误的。主要位于 `TCPProtoDetect`（TCP）或 `AppLayerHandleUdp`（UDP）。
 
-*   **文件路径**: `suricata/src/app-layer.c`
-*   **行为**: 当检测到协议特征与当前方向不符，且符合 midstream 条件时，触发翻转。
+- **文件路径**: `suricata/src/app-layer.c`
+- **行为**: 当检测到协议特征与当前方向不符，且符合 midstream 条件时，触发翻转。
 
 ```c
 // suricata/src/app-layer.c
@@ -73,17 +72,17 @@ int TCPProtoDetect(ThreadVars *tv, DecodeThreadVars *dtv, Flow *f, TcpSession *s
     if (reverse_flow &&
             ((ssn->flags & (STREAMTCP_FLAG_MIDSTREAM | STREAMTCP_FLAG_MIDSTREAM_SYNACK)) ==
                     STREAMTCP_FLAG_MIDSTREAM)) {
-        
+
         // 只有当另一方向还未检测出协议时才翻转
         if (*alproto_otherdir == ALPROTO_UNKNOWN) {
             SCLogDebug("reversing flow after proto detect told us so");
-            
+
             // 交换 Packet 的方向标志
             PacketSwap(p);
-            
+
             // 核心：调用 FlowSwap 标记流方向反转
             FlowSwap(f);
-            
+
             // ...
         }
     }
@@ -97,13 +96,13 @@ int TCPProtoDetect(ThreadVars *tv, DecodeThreadVars *dtv, Flow *f, TcpSession *s
 
 #### A. 判断包方向 (`FlowGetPacketDirection`)
 
-*   **文件路径**: `suricata/src/flow.c`
-*   **逻辑**: 会检查标志位，如果置位，则返回相反的方向（`TOSERVER` 变 `TOCLIENT`）。
+- **文件路径**: `suricata/src/flow.c`
+- **逻辑**: 会检查标志位，如果置位，则返回相反的方向（`TOSERVER` 变 `TOCLIENT`）。
 
 #### B. 输出日志 (`CreateEveHeaderFromFlow`)
 
-*   **文件路径**: `suricata/src/output-json-flow.c`
-*   **逻辑**: 在生成 EVE JSON 日志时，会根据标志位决定是否交换显示的 IP 和端口。
+- **文件路径**: `suricata/src/output-json-flow.c`
+- **逻辑**: 在生成 EVE JSON 日志时，会根据标志位决定是否交换显示的 IP 和端口。
 
 ```c
 // suricata/src/output-json-flow.c
@@ -125,7 +124,10 @@ static SCJsonBuilder *CreateEveHeaderFromFlow(const Flow *f)
     // ...
 }
 ```
+
 ---
+
 ## 外部参考
+
 - [Suricata 源代码 (GitHub)](https://github.com/OISF/suricata)
 - [Suricata 官方用户指南](https://docs.suricata.io/)

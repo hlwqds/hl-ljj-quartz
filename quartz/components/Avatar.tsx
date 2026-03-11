@@ -6,9 +6,9 @@ const Avatar: QuartzComponent = ({ fileData, displayClass }: QuartzComponentProp
   return (
     <div className={`avatar-container ${displayClass ?? ""}`}>
       <a href={homePath}>
-        <img 
-          src={resolveRelative(fileData.slug!, "static/avatar.jpg" as SimpleSlug)} 
-          alt="Avatar" 
+        <img
+          src={resolveRelative(fileData.slug!, "static/avatar.jpg" as SimpleSlug)}
+          alt="Avatar"
           className="avatar-image"
         />
       </a>

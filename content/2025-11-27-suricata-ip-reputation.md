@@ -6,6 +6,7 @@ tags: [suricata, ip_reputation]
 ---
 
 > [!abstract] Suricata 引擎研究系列文章
+>
 > - [[2025-11-27-suricata-flow-state|Flow 状态机分析]]
 > - [[2025-11-27-suricata-proto-detect-done|协议检测标记位]]
 > - [[2025-11-27-suricata-ip-reputation|IP 信誉机制]]
@@ -17,8 +18,6 @@ tags: [suricata, ip_reputation]
 > - [[2025-12-02-suricata-flowworker-to-applayerparserparse|调用链全景图]]
 > - [[2025-12-03-suricata-get-app-protocol|端口协议检测]]
 > - [[2026-02-09-suricata-advanced-acl-auditing|高级 ACL 审计]]
-
-
 
 # Suricata功能详解：从IP信誉到中央日志平台
 
@@ -74,6 +73,7 @@ graph TD
 首先，您需要一个包含“坏”IP地址的文本文件。每个IP地址或CIDR网段占一行。
 
 例如，一个名为 `black.list` 的文件内容如下：
+
 ```
 # 示例恶意IP地址列表
 192.0.2.1
@@ -86,6 +86,7 @@ graph TD
 接下来，在主配置文件 `suricata.yaml` 中告诉Suricata加载这个IP列表。
 
 找到 `reputation:` 部分，并添加您的文件名：
+
 ```yaml
 # suricata.yaml
 
@@ -97,7 +98,9 @@ reputation:
   files:
     - black.list
 ```
+
 **说明**:
+
 - `enabled: yes` 开启了IP信誉功能。
 - `files:` 列表下指定了要加载的 `black.list` 文件。
 
@@ -108,7 +111,9 @@ reputation:
 ```
 alert ip any any -> any any (msg:"IPREP: Detected traffic from/to blacklisted IP"; iprep:any,any,>,0; classtype:bad-unknown; sid:1000001; rev:1;)
 ```
+
 **规则解释**:
+
 - `iprep:any,any,>,0`: 如果数据包的源IP或目的IP（第一个`any`）存在于任何已加载的信誉列表（第二个`any`）中，则条件匹配。
 
 #### 步骤 4: 启动并验证
@@ -126,12 +131,14 @@ Suricata生态系统中的工具及其输出格式支持与其他机器进行丰
 在生产环境中，手动维护IP列表效率低下。官方工具 `suricata-update` 可用于自动从互联网上的威胁情报源下载和更新规则及IP信誉列表。
 
 **交互图示:**
+
 ```mermaid
 graph TD
     A["Threat Intel Provider"] -- "New Rules & IPs" --> B("suricata-update Tool")
     B -- "Download & Process" --> C["Your Suricata Server"]
     C -- "Load的情报" --> C
 ```
+
 通过 `suricata-update` 工具，您可以轻松订阅并启用公开的黑名单源，实现威胁情报的自动化管理。
 
 ### 2. 与中央日志服务器交互
@@ -139,6 +146,7 @@ graph TD
 Suricata可以将告警和事件以结构化的 `EVE JSON` 格式输出。这种格式非常适合被其他机器（如SIEM平台、日志管理系统）收集和分析。
 
 **交互图示:**
+
 ```mermaid
 graph TD
     subgraph "Suricata Sensors"
@@ -165,6 +173,7 @@ graph TD
 您可以把每一台Suricata想象成一个在街上巡逻的警察。“推送”日志，就等于要求每个警察都必须把发现的所有情况实时汇报给指挥中心。
 
 ### 核心优势
+
 1.  **全局视野 (Centralized Visibility)**: 在一个屏幕上监控所有网络安全事件，无需登录单台机器。
 2.  **关联分析 (Correlation Analysis)**: 识别跨越多个节点的大规模、有组织的攻击活动，还原完整攻击链。
 3.  **长期存储与安全审计 (Long-Term Storage & Forensics)**: 实现日志的长期保存，满足安全审计和事件回溯的需求。
@@ -180,11 +189,13 @@ graph TD
 ### 主流实现方案: The Elastic Stack (ELK)
 
 这是一套开源组合，包括：
+
 - **Elasticsearch**: 存储和索引日志数据的核心。
 - **Kibana**: 用于数据查询、可视化和仪表盘制作的Web界面。
 - **Filebeat**: 安装在Suricata服务器上的轻量级代理，负责读取并推送日志。
 
 #### 架构示例图
+
 ```mermaid
 graph TD
     subgraph "Your Suricata Server"
@@ -202,15 +213,20 @@ graph TD
 ```
 
 ### 其他流行方案
+
 1.  **Wazuh (强烈推荐)**: 一个基于Elastic Stack构建的、开箱即用的开源安全平台（SIEM & XDR）。它已经预置了Suricata的集成规则、解码器和仪表盘，是快速搭建专业安全监控系统的最佳选择。
 2.  **Splunk**: 功能强大的商业日志分析平台，业界领导者之一，但价格昂贵。
 3.  **Graylog**: 另一个流行的开源日志管理平台，是ELK和Splunk的有力竞争者。
 
 ### 建议
+
 - **快速入门**: 选择 **Wazuh**，它省去了大量配置和集成的麻烦。
 - **高度定制化**: 选择 **Elastic Stack (ELK)**，灵活性最高。
 - **预算充足的企业**: 可以考虑 **Splunk**。
+
 ---
+
 ## 外部参考
+
 - [Suricata 源代码 (GitHub)](https://github.com/OISF/suricata)
 - [Suricata 官方用户指南](https://docs.suricata.io/)

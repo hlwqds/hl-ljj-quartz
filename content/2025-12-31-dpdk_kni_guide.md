@@ -6,6 +6,7 @@ tags: [dpdk, kni, networking]
 ---
 
 > [!abstract] DPDK 高性能开发系列文章
+>
 > - [[2025-12-16-dpdk-open-euler-setup|环境搭建]]
 > - [[2026-01-05-dpdk_portable_lab_guide|移动实验环境]]
 > - [[2025-12-09-dpdk-mem|内存管理汇总]]
@@ -23,8 +24,6 @@ tags: [dpdk, kni, networking]
 > - [[2026-01-04-dpdk_flow_filtering_verification|流过滤验证]]
 > - [[2026-01-05-l2fwd_keepalive_analysis|Keepalive 监控]]
 
-
-
 # DPDK KNI (Kernel NIC Interface) 深度指南
 
 ## 1. KNI 是什么？
@@ -34,8 +33,9 @@ KNI (Kernel NIC Interface) 是 DPDK 提供的一种特殊的接口机制，旨�
 ## 2. 为什么需要 KNI？
 
 当 DPDK 应用程序接管一个物理网卡时，该网卡将从 Linux 内核的网络设备列表中“消失”。这意味着：
-*   **网络功能受限**：标准的 Linux 网络工具和服务（如 `ping`, `ssh`, `iperf`, `dhclient`, `route` 等）将无法通过该网卡进行操作。
-*   **管理不便**：无法为该网卡配置 IP 地址、路由规则或进行链路状态监控。
+
+- **网络功能受限**：标准的 Linux 网络工具和服务（如 `ping`, `ssh`, `iperf`, `dhclient`, `route` 等）将无法通过该网卡进行操作。
+- **管理不便**：无法为该网卡配置 IP 地址、路由规则或进行链路状态监控。
 
 KNI 的出现就是为了弥补这一鸿沟，让 DPDK 应用程序在提供高性能数据面转发的同时，也能与 Linux 内核的强大网络功能和管理工具协同工作。
 
@@ -46,15 +46,15 @@ KNI 的实现涉及 DPDK 应用程序（用户态）和 `rte_kni` 内核模块�
 ### 3.1. 数据路径
 
 1.  **从 DPDK 到内核**：
-    *   DPDK 应用程序识别出需要由内核处理的数据包（例如 ARP 请求、ICMP 包、SSH 流量等）。
-    *   DPDK 应用程序调用 `rte_kni_tx_burst()` 或类似 API，将这些数据包发送到 KNI 接口。
-    *   `rte_kni` 内核模块接收到这些包，并将其注入到 Linux 内核的网络协议栈中。
-    *   内核像收到普通网卡包一样处理这些流量。
+    - DPDK 应用程序识别出需要由内核处理的数据包（例如 ARP 请求、ICMP 包、SSH 流量等）。
+    - DPDK 应用程序调用 `rte_kni_tx_burst()` 或类似 API，将这些数据包发送到 KNI 接口。
+    - `rte_kni` 内核模块接收到这些包，并将其注入到 Linux 内核的网络协议栈中。
+    - 内核像收到普通网卡包一样处理这些流量。
 
 2.  **从内核到 DPDK**：
-    *   Linux 内核决定通过 KNI 接口发送数据包（例如 `ping` 从 KNI 接口发出）。
-    *   `rte_kni` 内核模块从内核接收这些包。
-    *   DPDK 应用程序通过调用 `rte_kni_rx_burst()` 或类似 API 从 KNI 接口接收这些包，并像处理物理网卡包一样对待它们。
+    - Linux 内核决定通过 KNI 接口发送数据包（例如 `ping` 从 KNI 接口发出）。
+    - `rte_kni` 内核模块从内核接收这些包。
+    - DPDK 应用程序通过调用 `rte_kni_rx_burst()` 或类似 API 从 KNI 接口接收这些包，并像处理物理网卡包一样对待它们。
 
 ### 3.2. 控制路径
 
@@ -68,21 +68,21 @@ KNI 的实现涉及 DPDK 应用程序（用户态）和 `rte_kni` 内核模块�
 
 ## 4. KNI 的典型使用场景
 
-*   **混合模式转发**：
-    *   DPDK 应用程序负责高性能数据包转发（例如所有数据流量）。
-    *   Linux 内核处理低速的控制面流量（例如 ARP、ICMP、SSH 远程管理、路由协议如 OSPF/BGP、DHCP、DNS 解析）。
-    *   **案例**：构建一个 DPDK 路由器，核心转发逻辑在用户态，而路由表的学习和维护、管理界面则依赖 Linux 内核。
+- **混合模式转发**：
+  - DPDK 应用程序负责高性能数据包转发（例如所有数据流量）。
+  - Linux 内核处理低速的控制面流量（例如 ARP、ICMP、SSH 远程管理、路由协议如 OSPF/BGP、DHCP、DNS 解析）。
+  - **案例**：构建一个 DPDK 路由器，核心转发逻辑在用户态，而路由表的学习和维护、管理界面则依赖 Linux 内核。
 
-*   **调试与监控**：
-    *   允许在内核态使用 `tcpdump` 等工具对 KNI 接口进行抓包，监控 DPDK 应用程序处理前后的数据流。
-    *   通过 `ping` 或其他标准工具测试 DPDK 应用程序管理的 IP 地址的可达性。
+- **调试与监控**：
+  - 允许在内核态使用 `tcpdump` 等工具对 KNI 接口进行抓包，监控 DPDK 应用程序处理前后的数据流。
+  - 通过 `ping` 或其他标准工具测试 DPDK 应用程序管理的 IP 地址的可达性。
 
-*   **与传统网络服务集成**：使 DPDK 应用程序能够与 `iptables`、NAT、防火墙等 Linux 内核功能协同工作，而无需重新实现这些功能。
+- **与传统网络服务集成**：使 DPDK 应用程序能够与 `iptables`、NAT、防火墙等 Linux 内核功能协同工作，而无需重新实现这些功能。
 
 ## 5. KNI 的性能考量
 
-*   **性能损失**：`KNI` 的主要缺点是**性能开销**。数据包在 DPDK 用户态和内核态之间传递时，涉及至少两次上下文切换和内存拷贝。
-*   **适用场景**：因此，`KNI` 适合处理**低速率、控制面**的流量（如几万到几十万 PPS），不适合 DPDK 追求极致性能的高速数据面核心路径。
+- **性能损失**：`KNI` 的主要缺点是**性能开销**。数据包在 DPDK 用户态和内核态之间传递时，涉及至少两次上下文切换和内存拷贝。
+- **适用场景**：因此，`KNI` 适合处理**低速率、控制面**的流量（如几万到几十万 PPS），不适合 DPDK 追求极致性能的高速数据面核心路径。
 
 ## 6. KNI 如何创建与使用？
 
@@ -114,7 +114,7 @@ sudo insmod /path/to/your/dpdk/build/kernel/linux/kni/rte_kni.ko kthread_mode=mu
 #include <rte_kni.h>
 
 // 定义 KNI 接口的最大数量
-#define MAX_KNI_INTERFACES 8 
+#define MAX_KNI_INTERFACES 8
 
 // 在 main 函数中
 int main(int argc, char *argv[]) {
@@ -153,10 +153,10 @@ struct rte_kni* create_kni_interface(uint16_t port_id, struct rte_mempool *pktmb
 
     // 2. 填写 KNI 接口的基本配置
     // name: KNI 接口在 Linux 系统中显示的名字 (如 vEth0, kni0)。必须唯一。
-    snprintf(conf.name, RTE_KNI_NAMESIZE, "vEth%d", port_id); 
+    snprintf(conf.name, RTE_KNI_NAMESIZE, "vEth%d", port_id);
     conf.group_id = port_id;       // 可选：用于分组 KNI 接口
     conf.mbuf_size = 2048;         // KNI 接口内部使用的 mbuf 大小
-    
+
     // 绑定到哪个 CPU 核心处理 KNI 内核线程，如果 kthread_mode=multiple 则有效
     // 推荐分配独立的核，避免与数据面核心冲突
     conf.core_id = rte_lcore_id(); // 示例：绑定到当前 lcore
@@ -229,7 +229,7 @@ static int kni_config_mac_address(uint16_t port_id, struct rte_ether_addr *mac_a
 // 在主 lcore 的数据处理循环中
 while (!force_quit) {
     // 1. 处理 KNI 控制请求 (非常重要，否则 ifconfig 命令不会生效)
-    rte_kni_handle_request(kni); 
+    rte_kni_handle_request(kni);
 
     // 2. 从 KNI 接收来自内核的包 (例如内核 ping 或发出的数据)
     //    这些包需要被 DPDK 应用转发到物理网卡
@@ -260,5 +260,7 @@ while (!force_quit) {
 DPDK 官方源码中提供了一个完整的 KNI 示例应用程序，位于 `examples/kni/`。
 
 强烈建议您查阅 `examples/kni/main.c` 文件。它实现了上述所有步骤，并展示了如何优雅地集成 KNI 功能。通过编译和运行这个示例，您可以更好地理解 KNI 的实际工作方式。
+
+```
 
 ```

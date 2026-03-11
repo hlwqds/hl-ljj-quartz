@@ -5,7 +5,6 @@ pin: true
 tags: [kernel]
 ---
 
-
 # 编译内核
 
 ## 内核代码下载

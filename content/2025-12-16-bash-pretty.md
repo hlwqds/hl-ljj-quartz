@@ -6,7 +6,6 @@ description: bash美化
 tags: [bash, pretty]
 ---
 
-
 # bash美化
 
 ## starship
@@ -199,6 +198,7 @@ vimcmd_replace_one_symbol = '[](bold fg:color_purple)'
 vimcmd_replace_symbol = '[](bold fg:color_purple)'
 vimcmd_visual_symbol = '[](bold fg:color_yellow)'
 ```
+
 ```bash
 # Enable Starship prompt
 if command -v starship > /dev/null; then

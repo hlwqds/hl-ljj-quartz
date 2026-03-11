@@ -5,8 +5,6 @@ pin: true
 tags: [blog, chirpy]
 ---
 
-
-
 # 如何在 Chirpy 主题中开启评论功能
 
 Chirpy 主题内置了多种评论系统的支持，其中 **Giscus** 是目前最推荐的方案（免费、无广告、基于 GitHub Discussions）。
@@ -17,9 +15,9 @@ Chirpy 主题内置了多种评论系统的支持，其中 **Giscus** 是目前�
 
 1.  确保你的博客仓库是 **Public（公开）** 的。
 2.  在你的博客仓库中开启 **Discussions** 功能：
-    *   进入仓库的 `Settings` -> `General`。
-    *   向下滚动找到 `Features` 区域。
-    *   勾选 `Discussions`。
+    - 进入仓库的 `Settings` -> `General`。
+    - 向下滚动找到 `Features` 区域。
+    - 勾选 `Discussions`。
 
 ## 第二步：获取 Giscus 配置参数
 
@@ -49,20 +47,21 @@ comments:
 
   # 2. 填写 Giscus 配置
   giscus:
-    repo: hlwqds/hlwqds.github.io   # 你的 用户名/仓库名
-    repo_id: R_kgDxxxxxxx           # 填入从 giscus.app 获取的 data-repo-id
-    category: General               # 分类名称
-    category_id: DIC_kwDxxxxxxx     # 填入从 giscus.app 获取的 data-category-id
-    mapping: pathname               # 映射方式
+    repo: hlwqds/hlwqds.github.io # 你的 用户名/仓库名
+    repo_id: R_kgDxxxxxxx # 填入从 giscus.app 获取的 data-repo-id
+    category: General # 分类名称
+    category_id: DIC_kwDxxxxxxx # 填入从 giscus.app 获取的 data-category-id
+    mapping: pathname # 映射方式
     strict: 0
     reactions_enabled: 1
-    input_position: bottom          # 输入框位置
-    lang: zh-CN                     # 语言设置
+    input_position: bottom # 输入框位置
+    lang: zh-CN # 语言设置
 ```
 
 ## 第四步：验证与部署
 
 1.  **推送到 GitHub**：
+
     ```bash
     git add _config.yml
     git commit -m "Enable Giscus comments"

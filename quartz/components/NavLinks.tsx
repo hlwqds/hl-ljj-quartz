@@ -5,7 +5,7 @@ import { resolveRelative, SimpleSlug } from "../util/path"
 const NavLinks: QuartzComponent = ({ displayClass, fileData }: QuartzComponentProps) => {
   const homePath = resolveRelative(fileData.slug!, "index" as SimpleSlug)
   const tagsPath = resolveRelative(fileData.slug!, "tags" as SimpleSlug)
-  
+
   return (
     <div className={classNames(displayClass, "nav-links")}>
       <ul style={{ listStyle: "none", padding: 0, margin: "1rem 0" }}>

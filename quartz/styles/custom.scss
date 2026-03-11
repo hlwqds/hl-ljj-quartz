@@ -26,10 +26,39 @@
       }
       .section-details {
         flex-grow: 1;
-        a { font-size: 1.1rem; font-weight: 600; color: var(--darkgray); text-decoration: none; line-height: 1.4; margin-bottom: 0.5rem; display: block; }
-        .meta { font-size: 0.8rem; color: var(--gray); margin-bottom: 0.75rem; }
+        a {
+          font-size: 1.1rem;
+          font-weight: 600;
+          color: var(--darkgray);
+          text-decoration: none;
+          line-height: 1.4;
+          margin-bottom: 0.5rem;
+          display: block;
+        }
+        .meta {
+          font-size: 0.8rem;
+          color: var(--gray);
+          margin-bottom: 0.75rem;
+        }
       }
-      .tags { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 1rem; a { background-color: var(--lightgray); color: var(--darkgray); padding: 0.1rem 0.5rem; border-radius: 4px; font-size: 0.7rem; text-decoration: none; &:hover { background-color: var(--secondary); color: var(--light); } } }
+      .tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        margin-top: 1rem;
+        a {
+          background-color: var(--lightgray);
+          color: var(--darkgray);
+          padding: 0.1rem 0.5rem;
+          border-radius: 4px;
+          font-size: 0.7rem;
+          text-decoration: none;
+          &:hover {
+            background-color: var(--secondary);
+            color: var(--light);
+          }
+        }
+      }
     }
   }
 }
@@ -81,7 +110,8 @@
 }
 
 // 4. Excalidraw & 图像美化
-img[src$=".svg"], .excalidraw-svg {
+img[src$=".svg"],
+.excalidraw-svg {
   background-color: #ffffff; // 给 SVG 强制背景色
   padding: 1rem;
   border-radius: 8px;
@@ -89,7 +119,7 @@ img[src$=".svg"], .excalidraw-svg {
   margin: 1rem 0;
   display: block;
   max-width: 100%;
-  
+
   // 在浅色模式下保持自然
   [managed-theme="light"] & {
     background-color: transparent;

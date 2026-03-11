@@ -5,7 +5,6 @@ pin: true
 tags: [ebpf, performance, kprobe, kprobe_multi]
 ---
 
-
 # kprobe_multi：eBPF 批量追踪的高效利器
 
 在 `fentry` 和标准 `kprobe` 之外，Linux 5.18 引入了一个名为 `kprobe_multi` 的新特性。它解决了在大规模追踪场景下（如 `pwru` 或系统级 profiler）面临的一个关键瓶颈：**挂载耗时**。
@@ -18,8 +17,9 @@ tags: [ebpf, performance, kprobe, kprobe_multi]
 2.  **fentry**：为 1000 个函数创建 1000 个 BPF Trampoline（蹦床）。
 
 **痛点**：
-*   **挂载速度慢**：逐个挂载涉及大量的系统调用和内核对象分配。对于数千个探针，启动时间可能长达几秒甚至更久。
-*   **资源消耗**：fentry 虽然运行时极快，但每个被追踪函数需要独立的 Trampoline 内存页。大规模使用时会显著增加内核内存占用。
+
+- **挂载速度慢**：逐个挂载涉及大量的系统调用和内核对象分配。对于数千个探针，启动时间可能长达几秒甚至更久。
+- **资源消耗**：fentry 虽然运行时极快，但每个被追踪函数需要独立的 Trampoline 内存页。大规模使用时会显著增加内核内存占用。
 
 ## 2. 工作原理
 
@@ -32,14 +32,17 @@ tags: [ebpf, performance, kprobe, kprobe_multi]
 ## 3. 性能特征
 
 ### 挂载性能 (Attach Performance)
+
 这是 `kprobe_multi` 的杀手锏。
-*   **kprobe/fentry**：线性增长。挂载 10,000 个函数可能需要 10+ 秒。
-*   **kprobe_multi**：极快。挂载 10,000 个函数通常在毫秒级完成。
+
+- **kprobe/fentry**：线性增长。挂载 10,000 个函数可能需要 10+ 秒。
+- **kprobe_multi**：极快。挂载 10,000 个函数通常在毫秒级完成。
 
 ### 运行时开销 (Runtime Overhead)
-*   **fentry**：最快（直接调用）。
-*   **kprobe_multi**：中等。它利用了 `ftrace` 的 `save_regs` 机制，比基于 `int3` 异常的标准 `kprobe` 快很多，但略慢于 `fentry`。
-*   **kprobe (legacy)**：最慢（异常处理）。
+
+- **fentry**：最快（直接调用）。
+- **kprobe_multi**：中等。它利用了 `ftrace` 的 `save_regs` 机制，比基于 `int3` 异常的标准 `kprobe` 快很多，但略慢于 `fentry`。
+- **kprobe (legacy)**：最慢（异常处理）。
 
 ## 4. 代码示例 (libbpf)
 
@@ -57,10 +60,10 @@ SEC("kprobe.multi/tcp_*")
 int BPF_PROG(trace_tcp_functions)
 {
     unsigned long ip = bpf_get_func_ip(ctx);
-    
+
     // 你的逻辑...
     // bpf_printk("Function at %lx called\n", ip);
-    
+
     return 0;
 }
 ```
@@ -81,11 +84,11 @@ link = bpf_program__attach_kprobe_multi_opts(prog, NULL, &opts);
 
 `kprobe_multi` 填补了高性能追踪领域的一块拼图：
 
-| 特性 | kprobe (Legacy) | fentry | kprobe_multi |
-| :--- | :--- | :--- | :--- |
-| **适用场景** | 少量、特定位置追踪 | 高频、单一/少量函数追踪 | **批量、通配符、全系统追踪** |
-| **挂载速度** | 慢 | 慢 | **极快** |
-| **运行时开销** | 高 | **极低** | 中低 |
-| **内核版本** | 任意 | 5.5+ | 5.18+ |
+| 特性           | kprobe (Legacy)    | fentry                  | kprobe_multi                 |
+| :------------- | :----------------- | :---------------------- | :--------------------------- |
+| **适用场景**   | 少量、特定位置追踪 | 高频、单一/少量函数追踪 | **批量、通配符、全系统追踪** |
+| **挂载速度**   | 慢                 | 慢                      | **极快**                     |
+| **运行时开销** | 高                 | **极低**                | 中低                         |
+| **内核版本**   | 任意               | 5.5+                    | 5.18+                        |
 
 对于像 `pwru` 这样需要 "Trace the world" 的工具，`kprobe_multi` 是平衡启动速度和运行性能的最佳选择。

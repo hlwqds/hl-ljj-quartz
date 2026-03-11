@@ -5,7 +5,6 @@ pin: true
 tags: [tcp]
 ---
 
-
 # TCP紧急数据的实际使用场景
 
 ## 概述
@@ -19,7 +18,9 @@ TCP紧急数据是TCP协议中的一个特殊功能，通过设置URG标志位�
 这是TCP紧急数据最经典的使用场景，特别是在Telnet和rlogin等早期远程登录协议中：
 
 #### Telnet协议中的"Interrupt Process"命令
+
 Telnet使用紧急数据来发送紧急命令，如：
+
 - IP (Interrupt Process) - 中断远程进程
 - AO (Abort Output) - 中断输出
 - AYT (Are You There) - 检查连接是否活跃
@@ -34,6 +35,7 @@ send_urgent_data(socket, telnet_command, urgent_ptr);
 ```
 
 #### 实际应用示例
+
 在早期的远程终端环境中，当服务器正在向客户端发送大量数据时，用户可能希望立即中断这个过程。使用TCP紧急数据，即使输出缓冲区已满，中断命令也能被优先处理。
 
 ### 2. FTP (File Transfer Protocol)
@@ -166,8 +168,8 @@ RFC 6093("On the Implementation of TCP Urgent Mechanism")明确建议：
 stream:
   reassembly:
     urgent:
-      policy: oob              # 推荐使用OOB策略
-      oob-limit-policy: drop   # 超过限制时丢弃数据包
+      policy: oob # 推荐使用OOB策略
+      oob-limit-policy: drop # 超过限制时丢弃数据包
 ```
 
 ### 监控规则
@@ -185,6 +187,7 @@ alert tcp any any -> any any (msg:"SURICATA STREAM urgent OOB limit reached"; st
 虽然TCP紧急数据在历史上确实有实际的使用场景，特别是在早期的远程登录和文件传输协议中，但由于实现不一致、安全问题和更好的替代方案，它在现代网络应用中已经很少见。
 
 然而，对于网络入侵检测系统如Suricata来说，正确处理紧急数据仍然很重要，因为：
+
 1. 某些遗留系统可能仍在使用
 2. 攻击者可能利用紧急数据进行规避或攻击
 3. 某些特殊环境（如工业控制系统）可能仍在使用
@@ -192,6 +195,7 @@ alert tcp any any -> any any (msg:"SURICATA STREAM urgent OOB limit reached"; st
 因此，Suricata提供了全面的紧急数据处理策略，以确保在这些情况下也能保持准确检测和安全防护。
 
 对于网络安全工程师来说，理解TCP紧急数据的使用场景有助于：
+
 - 识别异常的紧急数据使用模式
 - 配置适当的检测规则
 - 理解潜在的安全威胁
