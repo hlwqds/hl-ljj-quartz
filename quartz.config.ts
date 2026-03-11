@@ -10,14 +10,16 @@ const config: QuartzConfig = {
   configuration: {
     pageTitle: "hlwqds的知识库",
     pageTitleSuffix: "",
-    enableSPA: true, // 重新开启 SPA 路由进行测试
+    enableSPA: true,
     enablePopovers: true,
     analytics: {
       provider: "plausible",
     },
     locale: "en-US",
-    baseUrl: "hlwqds.github.io/quartz",
+    // 动态判断环境，优先使用环境变量中的域名，回退到 github.io
+    baseUrl: process.env.CF_PAGES_URL?.replace("https://", "") || "hlwqds.github.io/quartz",
     ignorePatterns: ["private", "templates", ".obsidian"],
+
     defaultDateType: "modified",
     theme: {
       fontOrigin: "googleFonts",
