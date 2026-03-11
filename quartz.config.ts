@@ -10,7 +10,7 @@ const config: QuartzConfig = {
   configuration: {
     pageTitle: "hlwqds的知识库",
     pageTitleSuffix: "",
-    enableSPA: false, // 禁用 SPA 路由以提高子路径稳定性
+    enableSPA: true, // 重新开启 SPA 路由进行测试
     enablePopovers: true,
     analytics: {
       provider: "plausible",
