@@ -1,8 +1,7 @@
 ---
 title: DeepFlow 策略下发与实现机制深度解析
 date: 2026-03-08 11:00:00
-categories: [observability, network]
-tags: [deepflow, policy, ebpf, wasm]
+tags: [deepflow, policy, ebpf, wasm, observability, network]
 ---
 
 ## 1. 策略架构：中央集权与分布式执行
