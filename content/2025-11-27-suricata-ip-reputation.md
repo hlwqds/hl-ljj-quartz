@@ -26,31 +26,31 @@ Suricata的IP信誉功能是一种机制，用于根据IP地址的已知“声�
 
 ```mermaid
 graph TD
-    subgraph "步骤 1: 准备IP信誉列表"
-        A[IP黑名单文件<br/>(black.list)]
-        A -- "包含恶意IP, e.g., 192.0.2.1" --> B
+    subgraph "Step 1: Prepare IP List"
+        A["IP Blacklist File"]
+        A -- "Add malicious IPs" --> B
     end
 
-    subgraph "步骤 2: 配置Suricata"
-        B[suricata.yaml]
-        B -- "reputation-files:<br/>  - black.list" --> C
+    subgraph "Step 2: Configure Suricata"
+        B["suricata.yaml"]
+        B -- "Set reputation-files" --> C
     end
 
-    subgraph "步骤 3: 编写规则"
-        C[规则文件<br/>(local.rules)]
-        C -- "iprep:any,any,>,0;" --> D
+    subgraph "Step 3: Write Rules"
+        C["Rule File"]
+        C -- "Use iprep keyword" --> D
     end
 
-    subgraph "步骤 4: 检测与告警"
-        E[网络流量<br/>(来自 192.0.2.1)]
-        F[Suricata引擎]
-        G[告警日志<br/>(eve.json/fast.log)]
+    subgraph "Step 4: Detect and Alert"
+        E["Network Traffic"]
+        F["Suricata Engine"]
+        G["Alert Logs"]
         E --> F
-        D -- "应用规则" --> F
-        F -- "匹配成功" --> G
+        D -- "Apply Rules" --> F
+        F -- "Match Found" --> G
     end
 
-    A -- "加载列表" --> F
+    A -- "Load List" --> F
 ```
 
 ### 详细部署步骤
@@ -114,13 +114,9 @@ Suricata生态系统中的工具及其输出格式支持与其他机器进行丰
 **交互图示:**
 ```mermaid
 graph TD
-    A[威胁情报提供商<br/>(例如 Emerging Threats, OISF)]
-    B(suricata-update 工具)
-    C[您的Suricata服务器]
-
-    A -- "1. 定期提供最新的<br/>规则和IP黑名单" --> B
-    B -- "2. 下载并处理<br/>(可设置每天自动执行)" --> C
-    C -- "3. 加载最新的情报<br/>进行网络检测" --> C
+    A["Threat Intel Provider"] -- "New Rules & IPs" --> B("suricata-update Tool")
+    B -- "Download & Process" --> C["Your Suricata Server"]
+    C -- "Load的情报" --> C
 ```
 通过 `suricata-update` 工具，您可以轻松订阅并启用公开的黑名单源，实现威胁情报的自动化管理。
 
@@ -131,19 +127,19 @@ Suricata可以将告警和事件以结构化的 `EVE JSON` 格式输出。这种
 **交互图示:**
 ```mermaid
 graph TD
-    subgraph "Suricata 传感器 (多台)"
-        A[Sensor 1]
-        B[Sensor 2]
-        C[Sensor 3]
+    subgraph "Suricata Sensors"
+        S1["Sensor 1"]
+        S2["Sensor 2"]
+        S3["Sensor 3"]
     end
 
-    subgraph "中央日志/分析平台"
-        D{SIEM / Elasticsearch}
+    subgraph "Central Platform"
+        D{"SIEM / Elasticsearch"}
     end
 
-    A -- "发送EVE JSON日志" --> D
-    B -- "发送EVE JSON日志" --> D
-    C -- "发送EVE JSON日志" --> D
+    S1 -- "Send JSON Logs" --> D
+    S2 -- "Send JSON Logs" --> D
+    S3 -- "Send JSON Logs" --> D
 ```
 
 ---
@@ -177,18 +173,18 @@ graph TD
 #### 架构示例图
 ```mermaid
 graph TD
-    subgraph "您的Suricata服务器"
-        A[Suricata引擎] --"生成告警"--> B(eve.json 文件)
-        C[Filebeat] --"读取并推送"--> B
+    subgraph "Your Suricata Server"
+        A["Suricata Engine"] -- "Generate Alerts" --> B("eve.json file")
+        C["Filebeat"] -- "Read and Push" --> B
     end
 
-    subgraph "中央日志平台 (Elastic Stack)"
-        D[Elasticsearch<br/>(存储与索引)]
-        E[Kibana<br/>(可视化与分析)]
+    subgraph "Central Platform (ELK)"
+        D["Elasticsearch"]
+        E["Kibana"]
     end
 
-    C --"将JSON日志<br/>发送到"--> D
-    E --"查询数据<br/>用于展示"--> D
+    C -- "Push Logs" --> D
+    E -- "Query Data" --> D
 ```
 
 ### 其他流行方案

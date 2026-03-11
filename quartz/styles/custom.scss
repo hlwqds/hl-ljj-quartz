@@ -51,3 +51,21 @@
     grid-template-columns: 1fr;
   }
 }
+
+// 4. Excalidraw & 图像美化
+img[src$=".svg"], .excalidraw-svg {
+  background-color: #ffffff; // 给 SVG 强制背景色
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--lightgray);
+  margin: 1rem 0;
+  display: block;
+  max-width: 100%;
+  
+  // 在浅色模式下保持自然
+  [managed-theme="light"] & {
+    background-color: transparent;
+    border: none;
+    padding: 0;
+  }
+}
