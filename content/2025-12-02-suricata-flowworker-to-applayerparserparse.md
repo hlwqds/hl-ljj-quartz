@@ -5,6 +5,20 @@ pin: true
 tags: [suricata]
 ---
 
+> [!abstract] Suricata 引擎研究系列文章
+> - [[2025-11-27-suricata-flow-state|Flow 状态机分析]]
+> - [[2025-11-27-suricata-proto-detect-done|协议检测标记位]]
+> - [[2025-11-27-suricata-ip-reputation|IP 信誉机制]]
+> - [[2025-11-27-suricata-prehook-detect|PreFlowHook 挂载点]]
+> - [[2025-11-27-suricata-midstream-flow-reverse|Midstream 方向更正]]
+> - [[2025-11-27-suricata-disable-detect-fileflags|文件处理禁用逻辑]]
+> - [[2025-11-27-suricata-FLOW_TS_APP_UPDATE_NEXT|App 更新标志]]
+> - [[2025-12-02-suricata-flow-storage|Flow 存储 API]]
+> - [[2025-12-02-suricata-flowworker-to-applayerparserparse|调用链全景图]]
+> - [[2025-12-03-suricata-get-app-protocol|端口协议检测]]
+> - [[2026-02-09-suricata-advanced-acl-auditing|高级 ACL 审计]]
+
+
 
 # Suricata 调用流程详解：从 FlowWorker 到 AppLayerParserParse
 
@@ -118,3 +132,7 @@ graph TD
 *   **逻辑**：
     *   它最终调用具体协议插件提供的解析函数（例如 `HTTPParserParse` 或 `TLSParserParse`）。
     *   解析器会消费数据，更新内部状态机（如 HTTP State Machine），提取事务信息（Transaction），并可能触发应用层事件（App Layer Events）。
+---
+## 外部参考
+- [Suricata 源代码 (GitHub)](https://github.com/OISF/suricata)
+- [Suricata 官方用户指南](https://docs.suricata.io/)

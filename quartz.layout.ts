@@ -12,6 +12,7 @@ export const sharedPageComponents: SharedLayout = {
         title: "🕒 最近更新",
         limit: 10,
         showTags: true,
+        filter: (f) => f.slug !== "index", // 核心修改：排除主页
       }),
       condition: (page) => page.fileData.slug === "index",
     }),

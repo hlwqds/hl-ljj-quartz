@@ -6,6 +6,27 @@ description: dpdk RTE_ETH_TX_OFFLOAD_MBUF_FAST_FREE详解
 tags: [dpdk, perf]
 ---
 
+> [!abstract] DPDK 高性能开发系列文章
+> - [[2025-12-16-dpdk-open-euler-setup|环境搭建]]
+> - [[2026-01-05-dpdk_portable_lab_guide|移动实验环境]]
+> - [[2025-12-09-dpdk-mem|内存管理汇总]]
+> - [[2025-12-16-dpdk-adjust-nb-rx-tx-desc|描述符调整]]
+> - [[2025-12-16-dpdk-tx-offload-mbuf-fast-free|MBUF 快速释放]]
+> - [[2025-12-31-dpdk_callbacks_guide|Callbacks 深度指南]]
+> - [[2025-12-31-dpdk_mbuf_dynfield_register_guide|动态字段注册]]
+> - [[2025-12-31-dpdk_kni_guide|KNI 深度指南]]
+> - [[2025-12-31-dpdk_virtual_devices_guide|虚拟网卡指南]]
+> - [[2026-01-04-dpdk_ip_fragmentation_guide|IP 分片]]
+> - [[2026-01-04-ip_reassembly_analysis|IP 重组]]
+> - [[2026-01-04-ipv4_multicast_guide|IPv4 组播]]
+> - [[2026-01-04-软件流水线技术详解|软件流水线优化]]
+> - [[2026-01-04-dpdk_flow_template_guide|Template API]]
+> - [[2026-01-04-dpdk_flow_filtering_verification|流过滤验证]]
+> - [[2026-01-05-l2fwd_keepalive_analysis|Keepalive 监控]]
+
+
+
+
 
 # `dev_info.tx_offload_capa` 和 `RTE_ETH_TX_OFFLOAD_MBUF_FAST_FREE`
 
@@ -215,3 +236,7 @@ if (is_cloned_packet) {
 
 *   如果使用 `rte_pktmbuf_clone()`，那么多个“克隆”的 mbuf 会共享底层的缓冲区，它们的 `refcnt` 会大于 1。在这种情况下，如果开启了 `RTE_ETH_TX_OFFLOAD_MBUF_FAST_FREE`，就会导致内存管理问题，因为驱动程序不会正确地处理 `refcnt > 1` 的情况。
 *   因此，在实现 1:1 流量镜像时，你需要根据性能要求和 `FAST_FREE` 的开关状态，选择深拷贝（`rte_pktmbuf_copy()`）或者关闭 `FAST_FREE`，或使用多队列策略来处理这些克隆的 mbuf。
+---
+## 外部参考
+- [DPDK 官方文档](https://doc.dpdk.org/)
+- [Intel 网卡开发者指南](https://www.intel.com/)

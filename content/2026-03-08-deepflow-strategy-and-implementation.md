@@ -4,6 +4,12 @@ date: 2026-03-08 11:00:00
 tags: [observability, network, deepflow, policy, ebpf, wasm]
 ---
 
+> [!abstract] DeepFlow 深度分析系列文章
+> - [[2026-03-08-deepflow-detailed-analysis-report|架构分析报告]]
+> - [[2026-03-08-deepflow-strategy-and-implementation|策略下发机制]]
+> - [[2026-03-08-deepflow-traffic-capture-technology|流量采集技术]]
+
+
 
 # DeepFlow 策略下发与实现机制深度解析
 
@@ -81,3 +87,7 @@ DeepFlow 的告警遵循 **“Agent 实时标记，Server 异步判定”** 的�
 ---
 *报告生成时间: 2026-03-08*
 *由 Gemini CLI 分析生成*
+---
+## 外部参考
+- [DeepFlow 官方文档](https://deepflow.io/docs/zh/)
+- [eBPF 概念指南](https://ebpf.io/)

@@ -5,6 +5,20 @@ pin: true
 tags: [suricata]
 ---
 
+> [!abstract] Suricata 引擎研究系列文章
+> - [[2025-11-27-suricata-flow-state|Flow 状态机分析]]
+> - [[2025-11-27-suricata-proto-detect-done|协议检测标记位]]
+> - [[2025-11-27-suricata-ip-reputation|IP 信誉机制]]
+> - [[2025-11-27-suricata-prehook-detect|PreFlowHook 挂载点]]
+> - [[2025-11-27-suricata-midstream-flow-reverse|Midstream 方向更正]]
+> - [[2025-11-27-suricata-disable-detect-fileflags|文件处理禁用逻辑]]
+> - [[2025-11-27-suricata-FLOW_TS_APP_UPDATE_NEXT|App 更新标志]]
+> - [[2025-12-02-suricata-flow-storage|Flow 存储 API]]
+> - [[2025-12-02-suricata-flowworker-to-applayerparserparse|调用链全景图]]
+> - [[2025-12-03-suricata-get-app-protocol|端口协议检测]]
+> - [[2026-02-09-suricata-advanced-acl-auditing|高级 ACL 审计]]
+
+
 
 # FLOW_TS_APP_UPDATE_NEXT标志详解
 
@@ -253,3 +267,7 @@ if (p->flow->flags & FLOW_ACTION_DROP) {
 这个机制是Suricata处理复杂应用层协议的关键部分，特别是在需要处理乱序数据包或状态转换的场景中，确保系统对网络流的理解和处理保持准确和高效。
 
 通过`FLOW_TS_APP_UPDATE_NEXT`标志，Suricata能够在保证正确性的同时，优化性能，这对于高性能网络入侵检测系统至关重要。
+---
+## 外部参考
+- [Suricata 源代码 (GitHub)](https://github.com/OISF/suricata)
+- [Suricata 官方用户指南](https://docs.suricata.io/)

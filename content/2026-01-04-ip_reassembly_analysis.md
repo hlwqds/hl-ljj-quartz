@@ -5,6 +5,27 @@ pin: true
 tags: [dpdk, network, ip-reassembly, fragment, tap]
 ---
 
+> [!abstract] DPDK 高性能开发系列文章
+> - [[2025-12-16-dpdk-open-euler-setup|环境搭建]]
+> - [[2026-01-05-dpdk_portable_lab_guide|移动实验环境]]
+> - [[2025-12-09-dpdk-mem|内存管理汇总]]
+> - [[2025-12-16-dpdk-adjust-nb-rx-tx-desc|描述符调整]]
+> - [[2025-12-16-dpdk-tx-offload-mbuf-fast-free|MBUF 快速释放]]
+> - [[2025-12-31-dpdk_callbacks_guide|Callbacks 深度指南]]
+> - [[2025-12-31-dpdk_mbuf_dynfield_register_guide|动态字段注册]]
+> - [[2025-12-31-dpdk_kni_guide|KNI 深度指南]]
+> - [[2025-12-31-dpdk_virtual_devices_guide|虚拟网卡指南]]
+> - [[2026-01-04-dpdk_ip_fragmentation_guide|IP 分片]]
+> - [[2026-01-04-ip_reassembly_analysis|IP 重组]]
+> - [[2026-01-04-ipv4_multicast_guide|IPv4 组播]]
+> - [[2026-01-04-软件流水线技术详解|软件流水线优化]]
+> - [[2026-01-04-dpdk_flow_template_guide|Template API]]
+> - [[2026-01-04-dpdk_flow_filtering_verification|流过滤验证]]
+> - [[2026-01-05-l2fwd_keepalive_analysis|Keepalive 监控]]
+
+
+
+
 
 # DPDK IP Reassembly 示例分析与测试指南
 
@@ -178,3 +199,7 @@ ping -s 3000 -c 1 100.20.1.1
 3.  **设计哲学**
     *   **批处理**：减少对内存池 Ring 的频繁操作锁竞争。
     *   **缓存友好**：避免在重组运算密集期频繁切换上下文去操作内存分配器，提高 CPU Cache 命中率。
+---
+## 外部参考
+- [DPDK 官方文档](https://doc.dpdk.org/)
+- [Intel 网卡开发者指南](https://www.intel.com/)

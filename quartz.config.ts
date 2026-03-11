@@ -29,26 +29,26 @@ const config: QuartzConfig = {
       },
       colors: {
         lightMode: {
-          light: "#eff1f5", // Catppuccin Latte Base
-          lightgray: "#e6e9ef",
-          gray: "#bcc0cc",
-          darkgray: "#4c4f69",
-          dark: "#1e66f5",
-          secondary: "#1e66f5", // Catppuccin Blue
-          tertiary: "#40a02b", // Catppuccin Green
-          highlight: "rgba(143, 159, 169, 0.15)",
-          textHighlight: "#df8e1e88",
+          light: "#f0f2f6", // Tokyo Night Light Base
+          lightgray: "#e1e4e8",
+          gray: "#9699a3",
+          darkgray: "#343b58",
+          dark: "#1a1b26",
+          secondary: "#3d59a1", // Tokyo Night Blue
+          tertiary: "#9ece6a", // Tokyo Night Green
+          highlight: "rgba(122, 162, 247, 0.15)",
+          textHighlight: "#e0af6888",
         },
         darkMode: {
-          light: "#1e1e2e", // Catppuccin Mocha Base
-          lightgray: "#313244",
-          gray: "#6c7086",
-          darkgray: "#cdd6f4",
-          dark: "#89b4fa",
-          secondary: "#89b4fa", // Catppuccin Blue
-          tertiary: "#a6e3a1", // Catppuccin Green
-          highlight: "rgba(143, 159, 169, 0.15)",
-          textHighlight: "#f9e2af88",
+          light: "#1a1b26", // Tokyo Night Night Background
+          lightgray: "#24283b",
+          gray: "#565f89",
+          darkgray: "#cfc9c2",
+          dark: "#a9b1d6",
+          secondary: "#7aa2f7", // Tokyo Night Blue
+          tertiary: "#bb9af7", // Tokyo Night Purple
+          highlight: "rgba(122, 162, 247, 0.15)",
+          textHighlight: "#e0af6888",
         },
       },
     },

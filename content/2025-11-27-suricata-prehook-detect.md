@@ -5,6 +5,20 @@ pin: true
 tags: [suricata]
 ---
 
+> [!abstract] Suricata 引擎研究系列文章
+> - [[2025-11-27-suricata-flow-state|Flow 状态机分析]]
+> - [[2025-11-27-suricata-proto-detect-done|协议检测标记位]]
+> - [[2025-11-27-suricata-ip-reputation|IP 信誉机制]]
+> - [[2025-11-27-suricata-prehook-detect|PreFlowHook 挂载点]]
+> - [[2025-11-27-suricata-midstream-flow-reverse|Midstream 方向更正]]
+> - [[2025-11-27-suricata-disable-detect-fileflags|文件处理禁用逻辑]]
+> - [[2025-11-27-suricata-FLOW_TS_APP_UPDATE_NEXT|App 更新标志]]
+> - [[2025-12-02-suricata-flow-storage|Flow 存储 API]]
+> - [[2025-12-02-suricata-flowworker-to-applayerparserparse|调用链全景图]]
+> - [[2025-12-03-suricata-get-app-protocol|端口协议检测]]
+> - [[2026-02-09-suricata-advanced-acl-auditing|高级 ACL 审计]]
+
+
 
 # Suricata PreFlowHook 配置与原理说明
 
@@ -88,3 +102,7 @@ graph TD
 1.  **配置**：在规则协议后加上 `:pre_flow` 后缀（如 `tcp:pre_flow`）。
 2.  **命中**：解码完成但尚未进入流表的数据包。
 3.  **优势**：这是 Suricata 中处理性能最高的阶段之一。如果你想用 Suricata 做高性能的防火墙（黑名单/白名单），在这个阶段进行 `drop` 是最高效的，因为它完全跳过了昂贵的流重组和应用层解析开销。
+---
+## 外部参考
+- [Suricata 源代码 (GitHub)](https://github.com/OISF/suricata)
+- [Suricata 官方用户指南](https://docs.suricata.io/)

@@ -5,6 +5,27 @@ pin: true
 tags: [dpdk, callbacks, networking]
 ---
 
+> [!abstract] DPDK 高性能开发系列文章
+> - [[2025-12-16-dpdk-open-euler-setup|环境搭建]]
+> - [[2026-01-05-dpdk_portable_lab_guide|移动实验环境]]
+> - [[2025-12-09-dpdk-mem|内存管理汇总]]
+> - [[2025-12-16-dpdk-adjust-nb-rx-tx-desc|描述符调整]]
+> - [[2025-12-16-dpdk-tx-offload-mbuf-fast-free|MBUF 快速释放]]
+> - [[2025-12-31-dpdk_callbacks_guide|Callbacks 深度指南]]
+> - [[2025-12-31-dpdk_mbuf_dynfield_register_guide|动态字段注册]]
+> - [[2025-12-31-dpdk_kni_guide|KNI 深度指南]]
+> - [[2025-12-31-dpdk_virtual_devices_guide|虚拟网卡指南]]
+> - [[2026-01-04-dpdk_ip_fragmentation_guide|IP 分片]]
+> - [[2026-01-04-ip_reassembly_analysis|IP 重组]]
+> - [[2026-01-04-ipv4_multicast_guide|IPv4 组播]]
+> - [[2026-01-04-软件流水线技术详解|软件流水线优化]]
+> - [[2026-01-04-dpdk_flow_template_guide|Template API]]
+> - [[2026-01-04-dpdk_flow_filtering_verification|流过滤验证]]
+> - [[2026-01-05-l2fwd_keepalive_analysis|Keepalive 监控]]
+
+
+
+
 
 # DPDK Callbacks (回调函数) 深度指南
 
@@ -82,3 +103,7 @@ DPDK 主要提供两种类型的回调：
 | **典型用途** | 核心业务逻辑 (如路由查找、报文解析、协议栈处理) | 统计、调试、PDUMP (抓包)、校验和、时间戳、加密/解密、数据过滤 |
 
 因此，Callback 机制是 DPDK 提供的一种强大的扩展点，它使得 DPDK 应用程序在追求极致性能的同时，也能兼顾代码的模块化和功能的可扩展性。
+---
+## 外部参考
+- [DPDK 官方文档](https://doc.dpdk.org/)
+- [Intel 网卡开发者指南](https://www.intel.com/)

@@ -5,6 +5,20 @@ pin: true
 tags: [suricata]
 ---
 
+> [!abstract] Suricata 引擎研究系列文章
+> - [[2025-11-27-suricata-flow-state|Flow 状态机分析]]
+> - [[2025-11-27-suricata-proto-detect-done|协议检测标记位]]
+> - [[2025-11-27-suricata-ip-reputation|IP 信誉机制]]
+> - [[2025-11-27-suricata-prehook-detect|PreFlowHook 挂载点]]
+> - [[2025-11-27-suricata-midstream-flow-reverse|Midstream 方向更正]]
+> - [[2025-11-27-suricata-disable-detect-fileflags|文件处理禁用逻辑]]
+> - [[2025-11-27-suricata-FLOW_TS_APP_UPDATE_NEXT|App 更新标志]]
+> - [[2025-12-02-suricata-flow-storage|Flow 存储 API]]
+> - [[2025-12-02-suricata-flowworker-to-applayerparserparse|调用链全景图]]
+> - [[2025-12-03-suricata-get-app-protocol|端口协议检测]]
+> - [[2026-02-09-suricata-advanced-acl-auditing|高级 ACL 审计]]
+
+
 
 # Suricata Flow状态机详细分析
 
@@ -472,3 +486,7 @@ Suricata的Flow状态机是整个系统处理网络流的核心机制，它：
 FlowUpdateState函数是这个状态机的核心，它不仅更新状态，还负责相关的副作用，如更新超时策略和通知流管理器重新检查对应的哈希桶。
 
 这种设计使得Suricata能够高效地管理网络流，根据流的不同阶段采取不同的处理策略，同时在性能和安全性之间取得平衡。
+---
+## 外部参考
+- [Suricata 源代码 (GitHub)](https://github.com/OISF/suricata)
+- [Suricata 官方用户指南](https://docs.suricata.io/)

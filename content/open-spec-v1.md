@@ -77,5 +77,5 @@ AI 在撰写新文档时，必须检索现有仓库并进行“强制缝合”�
 ---
 ## 外部参考与资源
 - [Cilium pwru 项目](https://github.com/cilium/pwru) - 网络分析参考
-- [Catppuccin 配色指南](https://catppuccin.com/) - 视觉标准引用
+- [Tokyo Night 配色指南](https://github.com/folke/tokyonight.nvim) - 视觉标准引用
 - [eCapture 项目](https://ecapture.cc/) - TLS 解密技术参考

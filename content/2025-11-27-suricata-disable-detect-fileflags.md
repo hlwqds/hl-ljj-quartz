@@ -5,6 +5,20 @@ pin: true
 tags: [suricata]
 ---
 
+> [!abstract] Suricata 引擎研究系列文章
+> - [[2025-11-27-suricata-flow-state|Flow 状态机分析]]
+> - [[2025-11-27-suricata-proto-detect-done|协议检测标记位]]
+> - [[2025-11-27-suricata-ip-reputation|IP 信誉机制]]
+> - [[2025-11-27-suricata-prehook-detect|PreFlowHook 挂载点]]
+> - [[2025-11-27-suricata-midstream-flow-reverse|Midstream 方向更正]]
+> - [[2025-11-27-suricata-disable-detect-fileflags|文件处理禁用逻辑]]
+> - [[2025-11-27-suricata-FLOW_TS_APP_UPDATE_NEXT|App 更新标志]]
+> - [[2025-12-02-suricata-flow-storage|Flow 存储 API]]
+> - [[2025-12-02-suricata-flowworker-to-applayerparserparse|调用链全景图]]
+> - [[2025-12-03-suricata-get-app-protocol|端口协议检测]]
+> - [[2026-02-09-suricata-advanced-acl-auditing|高级 ACL 审计]]
+
+
 
 # Suricata DisableDetectFlowFileFlags 分析
 
@@ -76,3 +90,7 @@ if (det_ctx == NULL && ...) {
 `DisableDetectFlowFileFlags` 体现了两者之间的优化互动：
 *   如果系统缺少“消费者”（检测引擎未启用，`det_ctx == NULL`），系统会提前通知“生产者”（解析器）。
 *   解析器收到通知（通过 Flow 上的标志位）后，就会跳过昂贵的文件提取和哈希计算操作，从而节省资源。
+---
+## 外部参考
+- [Suricata 源代码 (GitHub)](https://github.com/OISF/suricata)
+- [Suricata 官方用户指南](https://docs.suricata.io/)
