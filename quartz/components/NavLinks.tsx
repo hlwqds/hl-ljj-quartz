@@ -1,11 +1,10 @@
 import { QuartzComponent, QuartzComponentConstructor, QuartzComponentProps } from "./types"
-import { i18n } from "../i18n"
 import { classNames } from "../util/lang"
-import { resolveRelative } from "../util/path"
+import { resolveRelative, SimpleSlug } from "../util/path"
 
 const NavLinks: QuartzComponent = ({ displayClass, fileData }: QuartzComponentProps) => {
-  const homePath = resolveRelative(fileData.slug!, "index")
-  const tagsPath = resolveRelative(fileData.slug!, "tags")
+  const homePath = resolveRelative(fileData.slug!, "index" as SimpleSlug)
+  const tagsPath = resolveRelative(fileData.slug!, "tags" as SimpleSlug)
   
   return (
     <div className={classNames(displayClass, "nav-links")}>

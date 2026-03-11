@@ -1,7 +1,6 @@
 import { QuartzComponent, QuartzComponentConstructor, QuartzComponentProps } from "./types"
-import { i18n } from "../i18n"
 import { classNames } from "../util/lang"
-import { resolveRelative } from "../util/path"
+import { resolveRelative, SimpleSlug } from "../util/path"
 
 const TagCloud: QuartzComponent = ({ displayClass, allFiles, fileData }: QuartzComponentProps) => {
   // 1. 统计全站标签频率
@@ -25,7 +24,7 @@ const TagCloud: QuartzComponent = ({ displayClass, allFiles, fileData }: QuartzC
       <h3>🏷️ 标签排行</h3>
       <ul style={{ listStyle: "none", padding: 0 }}>
         {sortedTags.map(([tag, count]) => {
-          const linkDest = resolveRelative(fileData.slug!, `tags/${tag}`)
+          const linkDest = resolveRelative(fileData.slug!, `tags/${tag}` as SimpleSlug)
           return (
             <li key={tag} style={{ marginBottom: "0.5rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <a href={linkDest} className="internal tag-link" style={{ textDecoration: "none" }}>

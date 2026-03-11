@@ -26,9 +26,7 @@ import ConditionalRender from "./ConditionalRender"
 
 import NavLinks from "./NavLinks"
 import TagCloud from "./TagCloud"
-import TagCloud from "./TagCloud"
 import Avatar from "./Avatar"
-import Mermaid from "./Mermaid"
 
 export {
   ArticleTitle,
@@ -60,4 +58,3 @@ export {
   TagCloud,
   Avatar,
 }
-
