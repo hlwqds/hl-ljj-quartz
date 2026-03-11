@@ -8,7 +8,7 @@ import * as Plugin from "./quartz/plugins"
  */
 const config: QuartzConfig = {
   configuration: {
-    pageTitle: "hlwqsd的知识库",
+    pageTitle: "hlwqds的知识库",
     pageTitleSuffix: "",
     enableSPA: true,
     enablePopovers: true,
@@ -29,26 +29,26 @@ const config: QuartzConfig = {
       },
       colors: {
         lightMode: {
-          light: "#faf8f8",
-          lightgray: "#e5e5e5",
-          gray: "#b8b8b8",
-          darkgray: "#4e4e4e",
-          dark: "#2b2b2b",
-          secondary: "#284b63",
-          tertiary: "#84a59d",
+          light: "#eff1f5", // Catppuccin Latte Base
+          lightgray: "#e6e9ef",
+          gray: "#bcc0cc",
+          darkgray: "#4c4f69",
+          dark: "#1e66f5",
+          secondary: "#1e66f5", // Catppuccin Blue
+          tertiary: "#40a02b", // Catppuccin Green
           highlight: "rgba(143, 159, 169, 0.15)",
-          textHighlight: "#fff23688",
+          textHighlight: "#df8e1e88",
         },
         darkMode: {
-          light: "#161618",
-          lightgray: "#393639",
-          gray: "#646464",
-          darkgray: "#d4d4d4",
-          dark: "#ebebec",
-          secondary: "#7b97aa",
-          tertiary: "#84a59d",
+          light: "#1e1e2e", // Catppuccin Mocha Base
+          lightgray: "#313244",
+          gray: "#6c7086",
+          darkgray: "#cdd6f4",
+          dark: "#89b4fa",
+          secondary: "#89b4fa", // Catppuccin Blue
+          tertiary: "#a6e3a1", // Catppuccin Green
           highlight: "rgba(143, 159, 169, 0.15)",
-          textHighlight: "#b3aa0288",
+          textHighlight: "#f9e2af88",
         },
       },
     },
@@ -59,10 +59,11 @@ const config: QuartzConfig = {
       Plugin.CreatedModifiedDate({
         priority: ["frontmatter", "git", "filesystem"],
       }),
+      // Plugin.Citations(), // 暂时关闭，直到您有 .bib 文件需求
       Plugin.SyntaxHighlighting({
         theme: {
-          light: "github-light",
-          dark: "github-dark",
+          light: "one-dark-pro", // 升级为更清晰的主题
+          dark: "one-dark-pro",
         },
         keepBackground: false,
       }),
@@ -88,7 +89,6 @@ const config: QuartzConfig = {
       Plugin.Static(),
       Plugin.Favicon(),
       Plugin.NotFoundPage(),
-      // Comment out CustomOgImages to speed up build time
       Plugin.CustomOgImages(),
     ],
   },

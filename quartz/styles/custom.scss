@@ -1,3 +1,53 @@
 @use "./base.scss";
 
-// put your custom CSS here!
+// 1. 最近更新卡片式布局 (Chirpy Style)
+.recent-notes {
+  margin-top: 2rem;
+  ul {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+    li {
+      background-color: var(--light);
+      border: 1px solid var(--lightgray);
+      border-radius: 12px;
+      padding: 1.25rem;
+      transition: all 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      &:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        border-color: var(--secondary);
+      }
+      .section-details {
+        flex-grow: 1;
+        a { font-size: 1.1rem; font-weight: 600; color: var(--darkgray); text-decoration: none; line-height: 1.4; margin-bottom: 0.5rem; display: block; }
+        .meta { font-size: 0.8rem; color: var(--gray); margin-bottom: 0.75rem; }
+      }
+      .tags { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 1rem; a { background-color: var(--lightgray); color: var(--darkgray); padding: 0.1rem 0.5rem; border-radius: 4px; font-size: 0.7rem; text-decoration: none; &:hover { background-color: var(--secondary); color: var(--light); } } }
+    }
+  }
+}
+
+// 2. 侧边栏导航美化
+.nav-links {
+  a {
+    transition: transform 0.2s ease;
+    &:hover {
+      transform: translateX(5px);
+      color: var(--secondary) !important;
+    }
+  }
+}
+
+// 3. 响应式微调
+@media (max-width: 600px) {
+  .recent-notes ul {
+    grid-template-columns: 1fr;
+  }
+}

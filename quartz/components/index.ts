@@ -24,6 +24,10 @@ import Comments from "./Comments"
 import Flex from "./Flex"
 import ConditionalRender from "./ConditionalRender"
 
+import NavLinks from "./NavLinks"
+import TagCloud from "./TagCloud"
+import SidebarToggle from "./SidebarToggle"
+
 export {
   ArticleTitle,
   Content,
@@ -50,4 +54,6 @@ export {
   Comments,
   Flex,
   ConditionalRender,
+  NavLinks,
+  TagCloud,
 }
