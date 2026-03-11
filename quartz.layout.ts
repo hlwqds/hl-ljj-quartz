@@ -6,6 +6,16 @@ export const sharedPageComponents: SharedLayout = {
   head: Component.Head(),
   header: [],
   afterBody: [
+    // 1. 在主页展示卡片式“最近更新”，放在正文下方
+    Component.ConditionalRender({
+      component: Component.RecentNotes({
+        title: "🕒 最近更新",
+        limit: 10,
+        showTags: true,
+      }),
+      condition: (page) => page.fileData.slug === "index",
+    }),
+    // 2. 评论区（排除主页）
     Component.ConditionalRender({
       component: Component.Comments({
         provider: 'giscus',
@@ -34,14 +44,6 @@ export const defaultContentPageLayout: PageLayout = {
     Component.ArticleTitle(),
     Component.ContentMeta(),
     Component.TagList(),
-    Component.ConditionalRender({
-      component: Component.RecentNotes({
-        title: "最近更新",
-        limit: 10,
-        showTags: true,
-      }),
-      condition: (page) => page.fileData.slug === "index",
-    }),
   ],
   left: [
     Component.PageTitle(),
