@@ -45,7 +45,35 @@
   }
 }
 
-// 3. 响应式微调
+// 4. 侧边栏头像样式 (强制圆形)
+.avatar-container {
+  display: flex !important;
+  justify-content: flex-start !important;
+  margin-bottom: 0.5rem !important;
+  margin-top: 1rem !important;
+}
+
+.avatar-image {
+  width: 70px !important;
+  height: 70px !important;
+  min-width: 70px !important;
+  min-height: 70px !important;
+  border-radius: 50% !important;
+  object-fit: cover !important;
+  object-position: top !important;
+  border: 2px solid var(--lightgray) !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+  display: block !important;
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: scale(1.05);
+    border-color: var(--secondary) !important;
+  }
+}
+
+// 5. 响应式微调
+
 @media (max-width: 600px) {
   .recent-notes ul {
     grid-template-columns: 1fr;
