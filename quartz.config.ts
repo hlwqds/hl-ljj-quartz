@@ -89,6 +89,8 @@ const config: QuartzConfig = {
       Plugin.ContentIndex({
         enableSiteMap: true,
         enableRSS: true,
+        rssFullHtml: true,
+        rssRoot: "rss.xml", // 核心修改：将 index.xml 改为 rss.xml
       }),
       Plugin.Assets(),
       Plugin.Static(),
