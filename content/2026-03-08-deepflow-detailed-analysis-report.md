@@ -2,10 +2,8 @@
 title: DeepFlow 深度架构分析与部署模式报告
 date: 2026-03-08 10:00:00
 categories: [observability, network]
-tag: [deepflow, ebpf, kubernetes, architecture]
+tags: [deepflow, ebpf, kubernetes, architecture]
 ---
-
-# DeepFlow 深度架构分析与部署模式报告
 
 ## 1. 总体架构概览 (Overall Architecture)
 

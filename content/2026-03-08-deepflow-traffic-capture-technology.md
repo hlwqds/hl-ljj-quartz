@@ -2,10 +2,8 @@
 title: DeepFlow 流量采集双引擎技术深度解析
 date: 2026-03-08 12:00:00
 categories: [observability, network]
-tag: [deepflow, ebpf, af_packet, traffic-capture]
+tags: [deepflow, ebpf, af_packet, traffic-capture]
 ---
-
-# DeepFlow 流量采集双引擎技术深度解析
 
 ## 1. 核心技术对比：eBPF vs. AF_PACKET
 
