@@ -61,6 +61,7 @@ const config: QuartzConfig = {
       Plugin.CreatedModifiedDate({
         priority: ["frontmatter", "git", "filesystem"],
       }),
+      Plugin.ExcalidrawResolution(),
       Plugin.SyntaxHighlighting({
         theme: {
           light: "one-dark-pro",
