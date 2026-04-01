@@ -1,3 +1,5 @@
+import { handleExcalidrawThemeChange } from "./util"
+
 const userPref = window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark"
 const currentTheme = localStorage.getItem("theme") ?? userPref
 document.documentElement.setAttribute("saved-theme", currentTheme)
@@ -9,7 +11,15 @@ const emitThemeChangeEvent = (theme: "light" | "dark") => {
   document.dispatchEvent(event)
 }
 
+document.addEventListener("themechange", (e) => {
+  handleExcalidrawThemeChange(e.detail.theme)
+})
+
 document.addEventListener("nav", () => {
+  // 页面初次加载或切换页面时，根据当前主题设置图片
+  const theme = document.documentElement.getAttribute("saved-theme") as "light" | "dark"
+  handleExcalidrawThemeChange(theme)
+
   const switchTheme = () => {
     const newTheme =
       document.documentElement.getAttribute("saved-theme") === "dark" ? "light" : "dark"

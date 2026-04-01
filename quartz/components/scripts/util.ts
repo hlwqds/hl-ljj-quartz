@@ -44,3 +44,16 @@ export async function fetchCanonical(url: URL): Promise<Response> {
   const [_, redirect] = text.match(canonicalRegex) ?? []
   return redirect ? fetch(`${new URL(redirect, url)}`) : res
 }
+
+/**
+ * 处理 Excalidraw 的亮暗模式切换
+ */
+export function handleExcalidrawThemeChange(theme: "light" | "dark") {
+  const diagrams = document.querySelectorAll<HTMLImageElement>(".excalidraw-diagram")
+  diagrams.forEach((img) => {
+    const baseUrl = img.dataset.basename
+    if (baseUrl) {
+      img.src = `${baseUrl}.${theme}.svg`
+    }
+  })
+}
