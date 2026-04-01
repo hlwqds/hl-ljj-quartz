@@ -21,10 +21,10 @@ export const sharedPageComponents: SharedLayout = {
       component: Component.Comments({
         provider: "giscus",
         options: {
-          repo: "hlwqds/hlwqds.github.io",
-          repoId: "R_kgDOPSIMYQ",
+          repo: "hlwqds/hl-ljj-quartz",
+          repoId: "R_kgDORjynqw",
           category: "General",
-          categoryId: "DIC_kwDOPSIMYc4CzTWw",
+          categoryId: "DIC_kwDORjynq84C5vw2",
         },
       }),
       condition: (page) => page.fileData.slug !== "index",
