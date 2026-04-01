@@ -53,8 +53,8 @@ AI 应充分利用以下增强语法提升可读性：
 
 - **禁止数字点前缀**：严禁在连线描述（Edge Labels）中使用“数字+点”的格式（如 `-- "1. Auth" -->`）。即使使用了引号，渲染引擎仍会将其误判为 Markdown 有序列表导致解析崩溃。
 - **推荐替代方案**：
-    - 使用纯文字（如 `-- "Authenticate" -->`）。
-    - 使用不带点的数字（如 `-- "1 Auth" -->`）。
+  - 使用纯文字（如 `-- "Authenticate" -->`）。
+  - 使用不带点的数字（如 `-- "1 Auth" -->`）。
 - **布局建议**：优先使用 `graph LR` (横向布局) 以提升移动端和侧边栏共存时的阅读体验。
 - **颜色注入**：避免在代码块中使用 `style` 标签手动注入颜色，应依赖 **Tokyo Night** 主题的全局 CSS 进行统一渲染。
 
@@ -65,17 +65,18 @@ AI 应充分利用以下增强语法提升可读性：
 AI 在撰写新文档时，必须检索现有仓库并进行“强制缝合”引用。
 
 **核心系列引用对照表：**
-- **软件定义安全边界 (SDP) 系列**：
-    - [[2026-03-11-sdp-zero-trust-overview|1. 概论与范式转移]]
-    - [[2026-03-11-sdp-cloud-infrastructure-security|2. 基础设施隔离]]
-    - [[2026-03-11-sdp-kernel-path-deep-dive|3. 内核路径深究]]
-    - [[2026-03-11-sdp-application-identity-mtls|4. 应用身份与加密]]
-    - [[2026-03-11-sdp-advanced-threat-defense|5. 纵深防御进阶]]
-- **DeepFlow 深度分析系列**：
 
+- **软件定义安全边界 (SDP) 系列**：
+  - [[2026-03-11-sdp-zero-trust-overview|1. 概论与范式转移]]
+  - [[2026-03-11-sdp-cloud-infrastructure-security|2. 基础设施隔离]]
+  - [[2026-03-11-sdp-kernel-path-deep-dive|3. 内核路径深究]]
+  - [[2026-03-11-sdp-application-identity-mtls|4. 应用身份与加密]]
+  - [[2026-03-11-sdp-advanced-threat-defense|5. 纵深防御进阶]]
+- **DeepFlow 深度分析系列**：
   - [[2026-03-08-deepflow-detailed-analysis-report|架构分析报告]]
   - [[2026-03-08-deepflow-strategy-and-implementation|策略下发机制]]
   - [[2026-03-08-deepflow-traffic-capture-technology|流量采集技术]]
+
 - **DPDK 高性能开发系列**：
   - [[2025-12-31-dpdk_callbacks_guide|Callbacks 深度指南]]
   - [[2025-12-16-dpdk-tx-offload-mbuf-fast-free|MBUF 快速释放]]
@@ -98,8 +99,8 @@ AI 在撰写正文时，必须将仓库内现有的知识点作为“逻辑论�
 
 - **强制嵌入**：禁止仅在文末罗列相关文章。当正文提到某一技术概念（如 eBPF, XDP, mTLS）时，必须通过 Wikilinks 引用对应的深度分析文章。
 - **示例**：
-    - *错误做法*：在 SDP 文章中仅提到“我们需要高性能拦截”。
-    - *正确做法*：在 SDP 文章中写到“利用 **[[2025-12-16-dpdk-tx-offload-mbuf-fast-free|DPDK 高性能转发]]** 配合 **[[2026-03-08-deepflow-detailed-analysis-report|DeepFlow eBPF 采集技术]]** 可以在宿主机层面实现无损拦截。”
+  - _错误做法_：在 SDP 文章中仅提到“我们需要高性能拦截”。
+  - _正确做法_：在 SDP 文章中写到“利用 **[[2025-12-16-dpdk-tx-offload-mbuf-fast-free|DPDK 高性能转发]]** 配合 **[[2026-03-08-deepflow-detailed-analysis-report|DeepFlow eBPF 采集技术]]** 可以在宿主机层面实现无损拦截。”
 - **引用完整性**：引用时必须保留原有的日期前缀（如 `[[2025-12-31-dpdk_callbacks_guide]]`），以确保 Quartz 路由正确。
 
 ## 4. AI 协作协议 (AI Interaction Protocol)

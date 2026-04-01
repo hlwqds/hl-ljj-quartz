@@ -6,6 +6,7 @@ tags: [observability, network, deepflow, ebpf, af_packet, traffic-capture]
 
 > [!abstract] DeepFlow 深度分析系列文章
 >
+> - [[2026-03-12-deepflow-cloud-hybrid-security-detection|云融合安全检测]]
 > - [[2026-03-08-deepflow-detailed-analysis-report|架构分析报告]]
 > - [[2026-03-08-deepflow-strategy-and-implementation|策略下发机制]]
 > - [[2026-03-08-deepflow-traffic-capture-technology|流量采集技术]]

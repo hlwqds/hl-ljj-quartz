@@ -1,0 +1,920 @@
+{
+  "type": "excalidraw",
+  "version": 2,
+  "source": "https://deepflow.io",
+  "elements": [
+    {
+      "id": "title",
+      "type": "text",
+      "x": 300,
+      "y": 20,
+      "text": "DeepFlow Traffic Collection - Kernel Technologies",
+      "fontSize": 24,
+      "fontFamily": 1
+    },
+    {
+      "id": "kernel_box",
+      "type": "rectangle",
+      "x": 50,
+      "y": 700,
+      "width": 900,
+      "height": 450,
+      "strokeColor": "#333",
+      "fillColor": "#fff5f5"
+    },
+    {
+      "id": "kernel_label",
+      "type": "text",
+      "x": 60,
+      "y": 705,
+      "text": "Linux Kernel (eBPF)",
+      "fontSize": 14,
+      "fontFamily": 1
+    },
+    {
+      "id": "user_box",
+      "type": "rectangle",
+      "x": 50,
+      "y": 80,
+      "width": 900,
+      "height": 600,
+      "strokeColor": "#333",
+      "fillColor": "#fafafa"
+    },
+    {
+      "id": "user_label",
+      "type": "text",
+      "x": 60,
+      "y": 85,
+      "text": "User Space (Rust)",
+      "fontSize": 14,
+      "fontFamily": 1
+    },
+    {
+      "id": "app_box",
+      "type": "rectangle",
+      "x": 50,
+      "y": 1170,
+      "width": 900,
+      "height": 180,
+      "strokeColor": "#333",
+      "fillColor": "#f0fff0"
+    },
+    {
+      "id": "app_label",
+      "type": "text",
+      "x": 60,
+      "y": 1175,
+      "text": "Application Layer",
+      "fontSize": 14,
+      "fontFamily": 1
+    },
+    {
+      "id": "kprobe_box",
+      "type": "rectangle",
+      "x": 70,
+      "y": 720,
+      "width": 200,
+      "height": 200,
+      "strokeColor": "#1976d2",
+      "fillColor": "#e3f2fd"
+    },
+    {
+      "id": "kprobe_title",
+      "type": "text",
+      "x": 80,
+      "y": 725,
+      "text": "Kprobes",
+      "fontSize": 12,
+      "fontFamily": 1
+    },
+    {
+      "id": "kprobe_list",
+      "type": "text",
+      "x": 80,
+      "y": 750,
+      "text": "ksys_write/read\n__sys_sendto/recvfrom\n__sys_sendmsg/recvmsg\n__sys_connect\nsys_writev/readv\n__close_fd",
+      "fontSize": 9,
+      "fontFamily": 3
+    },
+    {
+      "id": "tracepoint_box",
+      "type": "rectangle",
+      "x": 290,
+      "y": 720,
+      "width": 200,
+      "height": 200,
+      "strokeColor": "#7b1fa2",
+      "fillColor": "#f3e5f5"
+    },
+    {
+      "id": "tracepoint_title",
+      "type": "text",
+      "x": 300,
+      "y": 725,
+      "text": "Tracepoints",
+      "fontSize": 12,
+      "fontFamily": 1
+    },
+    {
+      "id": "tracepoint_list",
+      "type": "text",
+      "x": 300,
+      "y": 750,
+      "text": "sys_enter_write/exit_read\nsys_enter_sendto/exit_recvfrom\nsys_enter_connect/exit_accept\nsched_process_exec/exit\nsys_enter_pread64/pwrite64",
+      "fontSize": 9,
+      "fontFamily": 3
+    },
+    {
+      "id": "uprobe_box",
+      "type": "rectangle",
+      "x": 510,
+      "y": 720,
+      "width": 220,
+      "height": 200,
+      "strokeColor": "#c62828",
+      "fillColor": "#ffebee"
+    },
+    {
+      "id": "uprobe_title",
+      "type": "text",
+      "x": 520,
+      "y": 725,
+      "text": "Uprobes (明文HTTP/gRPC)",
+      "fontSize": 12,
+      "fontFamily": 1
+    },
+    {
+      "id": "uprobe_list",
+      "type": "text",
+      "x": 520,
+      "y": 750,
+      "text": "Go HTTP2:\n  go_http2Server_processHeaders\n  go_http2Client_writeHeaders\n\nGo TLS:\n  go_tls_read/write_enter/exit\n\nOpenSSL:\n  SSL_read/write_enter/exit\n\ngRPC:\n  grpc_internal_transport_*",
+      "fontSize": 9,
+      "fontFamily": 3
+    },
+    {
+      "id": "kfunc_box",
+      "type": "rectangle",
+      "x": 750,
+      "y": 720,
+      "width": 180,
+      "height": 200,
+      "strokeColor": "#388e3c",
+      "fillColor": "#e8f5e9"
+    },
+    {
+      "id": "kfunc_title",
+      "type": "text",
+      "x": 760,
+      "y": 725,
+      "text": "Kfuncs (fentry/fexit)",
+      "fontSize": 12,
+      "fontFamily": 1
+    },
+    {
+      "id": "kfunc_list",
+      "type": "text",
+      "x": 760,
+      "y": 750,
+      "text": "ksys_write/read\n__sys_sendto/recvmsg\n__sys_socket/accept4\n__sys_connect\n(Kernel 5.2+)",
+      "fontSize": 9,
+      "fontFamily": 3
+    },
+    {
+      "id": "maps_box",
+      "type": "rectangle",
+      "x": 70,
+      "y": 940,
+      "width": 420,
+      "height": 190,
+      "strokeColor": "#f57c00",
+      "fillColor": "#fff3e0"
+    },
+    {
+      "id": "maps_title",
+      "type": "text",
+      "x": 80,
+      "y": 945,
+      "text": "eBPF Maps (数据共享)",
+      "fontSize": 12,
+      "fontFamily": 1
+    },
+    {
+      "id": "maps_list",
+      "type": "text",
+      "x": 80,
+      "y": 970,
+      "text": "socket_data          PERF_EVENT_ARRAY\n__socket_info_map   HASH (pid, fd)\n__trace_map          HASH (session)\n__active_write_args  HASH\n__active_read_args   HASH\nhttp2_tcp_seq_map    LRU_HASH\n__data_buf           PERCPU_ARRAY",
+      "fontSize": 9,
+      "fontFamily": 3
+    },
+    {
+      "id": "protocol_box",
+      "type": "rectangle",
+      "x": 510,
+      "y": 940,
+      "width": 420,
+      "height": 190,
+      "strokeColor": "#0097a7",
+      "fillColor": "#e0f7fa"
+    },
+    {
+      "id": "protocol_title",
+      "type": "text",
+      "x": 520,
+      "y": 945,
+      "text": "Protocol Inference (L7协议推断)",
+      "fontSize": 12,
+      "fontFamily": 1
+    },
+    {
+      "id": "protocol_list",
+      "type": "text",
+      "x": 520,
+      "y": 970,
+      "text": "HTTP1/HTTP2/gRPC\nMySQL/PostgreSQL\nRedis/Kafka/MQTT\nDNS/MongoDB\nDubbo/SOFA/BRPC\nTLS (via uprobe)\nAny L7 protocol",
+      "fontSize": 10,
+      "fontFamily": 3
+    },
+    {
+      "id": "dispatcher_box",
+      "type": "rectangle",
+      "x": 70,
+      "y": 100,
+      "width": 180,
+      "height": 100,
+      "strokeColor": "#1565c0",
+      "fillColor": "#e3f2fd"
+    },
+    {
+      "id": "dispatcher_title",
+      "type": "text",
+      "x": 80,
+      "y": 105,
+      "text": "ebpf_dispatcher (Rust)",
+      "fontSize": 11,
+      "fontFamily": 1
+    },
+    {
+      "id": "dispatcher_desc",
+      "type": "text",
+      "x": 80,
+      "y": 125,
+      "text": "接收perf buffer数据\n转换为MetaPacket",
+      "fontSize": 9,
+      "fontFamily": 3
+    },
+    {
+      "id": "flow_box",
+      "type": "rectangle",
+      "x": 270,
+      "y": 100,
+      "width": 150,
+      "height": 100,
+      "strokeColor": "#1565c0",
+      "fillColor": "#e3f2fd"
+    },
+    {
+      "id": "flow_title",
+      "type": "text",
+      "x": 280,
+      "y": 105,
+      "text": "flow_generator",
+      "fontSize": 11,
+      "fontFamily": 1
+    },
+    {
+      "id": "flow_desc",
+      "type": "text",
+      "x": 280,
+      "y": 125,
+      "text": "生成flow记录\n会话聚合\n统计信息",
+      "fontSize": 9,
+      "fontFamily": 3
+    },
+    {
+      "id": "l7parser_box",
+      "type": "rectangle",
+      "x": 440,
+      "y": 100,
+      "width": 150,
+      "height": 100,
+      "strokeColor": "#1565c0",
+      "fillColor": "#e3f2fd"
+    },
+    {
+      "id": "l7parser_title",
+      "type": "text",
+      "x": 450,
+      "y": 105,
+      "text": "L7Protocol Parser",
+      "fontSize": 11,
+      "fontFamily": 1
+    },
+    {
+      "id": "l7parser_desc",
+      "type": "text",
+      "x": 450,
+      "y": 125,
+      "text": "HTTP/gRPC解析\n加密流量解析\n应用日志",
+      "fontSize": 9,
+      "fontFamily": 3
+    },
+    {
+      "id": "sender_box",
+      "type": "rectangle",
+      "x": 610,
+      "y": 100,
+      "width": 150,
+      "height": 100,
+      "strokeColor": "#1565c0",
+      "fillColor": "#e3f2fd"
+    },
+    {
+      "id": "sender_title",
+      "type": "text",
+      "x": 620,
+      "y": 105,
+      "text": "Sender/SCollector",
+      "fontSize": 11,
+      "fontFamily": 1
+    },
+    {
+      "id": "sender_desc",
+      "type": "text",
+      "x": 620,
+      "y": 125,
+      "text": "发送到Ingester\n数据压缩\n重传处理",
+      "fontSize": 9,
+      "fontFamily": 3
+    },
+    {
+      "id": "ingester_box",
+      "type": "rectangle",
+      "x": 610,
+      "y": 220,
+      "width": 150,
+      "height": 80,
+      "strokeColor": "#6a1b9a",
+      "fillColor": "#f3e5f5"
+    },
+    {
+      "id": "ingester_title",
+      "type": "text",
+      "x": 620,
+      "y": 225,
+      "text": "Server Ingester",
+      "fontSize": 11,
+      "fontFamily": 1
+    },
+    {
+      "id": "ingester_desc",
+      "type": "text",
+      "x": 620,
+      "y": 245,
+      "text": "数据入库\n查询处理",
+      "fontSize": 9,
+      "fontFamily": 3
+    },
+    {
+      "id": "agent_box",
+      "type": "rectangle",
+      "x": 70,
+      "y": 220,
+      "width": 520,
+      "height": 280,
+      "strokeColor": "#1565c0",
+      "fillColor": "#ffffff"
+    },
+    {
+      "id": "agent_title",
+      "type": "text",
+      "x": 80,
+      "y": 225,
+      "text": "DeepFlow Agent (C User Space)",
+      "fontSize": 12,
+      "fontFamily": 1
+    },
+    {
+      "id": "tracer_box",
+      "type": "rectangle",
+      "x": 80,
+      "y": 250,
+      "width": 100,
+      "height": 60,
+      "strokeColor": "#1565c0",
+      "fillColor": "#bbdefb"
+    },
+    {
+      "id": "tracer_text",
+      "type": "text",
+      "x": 90,
+      "y": 265,
+      "text": "tracer.c\n探针管理",
+      "fontSize": 9,
+      "fontFamily": 3
+    },
+    {
+      "id": "socket_c_box",
+      "type": "rectangle",
+      "x": 200,
+      "y": 250,
+      "width": 100,
+      "height": 60,
+      "strokeColor": "#1565c0",
+      "fillColor": "#bbdefb"
+    },
+    {
+      "id": "socket_c_text",
+      "type": "text",
+      "x": 210,
+      "y": 265,
+      "text": "socket.c\n套接字追踪",
+      "fontSize": 9,
+      "fontFamily": 3
+    },
+    {
+      "id": "probe_c_box",
+      "type": "rectangle",
+      "x": 320,
+      "y": 250,
+      "width": 100,
+      "height": 60,
+      "strokeColor": "#1565c0",
+      "fillColor": "#bbdefb"
+    },
+    {
+      "id": "probe_c_text",
+      "type": "text",
+      "x": 330,
+      "y": 265,
+      "text": "probe.c\n探针挂载",
+      "fontSize": 9,
+      "fontFamily": 3
+    },
+    {
+      "id": "load_box",
+      "type": "rectangle",
+      "x": 440,
+      "y": 250,
+      "width": 100,
+      "height": 60,
+      "strokeColor": "#1565c0",
+      "fillColor": "#bbdefb"
+    },
+    {
+      "id": "load_text",
+      "type": "text",
+      "x": 450,
+      "y": 265,
+      "text": "load.c\neBPF加载",
+      "fontSize": 9,
+      "fontFamily": 3
+    },
+    {
+      "id": "go_tracer_box",
+      "type": "rectangle",
+      "x": 80,
+      "y": 330,
+      "width": 100,
+      "height": 60,
+      "strokeColor": "#c62828",
+      "fillColor": "#ffcdd2"
+    },
+    {
+      "id": "go_tracer_text",
+      "type": "text",
+      "x": 90,
+      "y": 345,
+      "text": "go_tracer.c\nGo二进制分析",
+      "fontSize": 9,
+      "fontFamily": 3
+    },
+    {
+      "id": "ssl_tracer_box",
+      "type": "rectangle",
+      "x": 200,
+      "y": 330,
+      "width": 100,
+      "height": 60,
+      "strokeColor": "#c62828",
+      "fillColor": "#ffcdd2"
+    },
+    {
+      "id": "ssl_tracer_text",
+      "type": "text",
+      "x": 210,
+      "y": 345,
+      "text": "ssl_tracer.c\nOpenSSL分析",
+      "fontSize": 9,
+      "fontFamily": 3
+    },
+    {
+      "id": "ctrl_box",
+      "type": "rectangle",
+      "x": 320,
+      "y": 330,
+      "width": 100,
+      "height": 60,
+      "strokeColor": "#1565c0",
+      "fillColor": "#bbdefb"
+    },
+    {
+      "id": "ctrl_text",
+      "type": "text",
+      "x": 330,
+      "y": 345,
+      "text": "ctrl.c\n控制接口",
+      "fontSize": 9,
+      "fontFamily": 3
+    },
+    {
+      "id": "xdp_box",
+      "type": "rectangle",
+      "x": 780,
+      "y": 400,
+      "width": 150,
+      "height": 100,
+      "strokeColor": "#0097a7",
+      "fillColor": "#b2ebf2"
+    },
+    {
+      "id": "xdp_title",
+      "type": "text",
+      "x": 790,
+      "y": 405,
+      "text": "XDP/AF_XDP",
+      "fontSize": 11,
+      "fontFamily": 1
+    },
+    {
+      "id": "xdp_desc",
+      "type": "text",
+      "x": 790,
+      "y": 425,
+      "text": "高速包处理\n零拷贝 (DPDK)\n网络包过滤",
+      "fontSize": 9,
+      "fontFamily": 3
+    },
+    {
+      "id": "go_app_box",
+      "type": "rectangle",
+      "x": 100,
+      "y": 1190,
+      "width": 200,
+      "height": 140,
+      "strokeColor": "#2e7d32",
+      "fillColor": "#e8f5e9"
+    },
+    {
+      "id": "go_app_title",
+      "type": "text",
+      "x": 110,
+      "y": 1195,
+      "text": "Go Application",
+      "fontSize": 11,
+      "fontFamily": 1
+    },
+    {
+      "id": "go_app_desc",
+      "type": "text",
+      "x": 110,
+      "y": 1215,
+      "text": "HTTP2/gRPC服务\nDubbo/SOFA\nGo TLS加密流量",
+      "fontSize": 9,
+      "fontFamily": 3
+    },
+    {
+      "id": "native_app_box",
+      "type": "rectangle",
+      "x": 320,
+      "y": 1190,
+      "width": 200,
+      "height": 140,
+      "strokeColor": "#1565c0",
+      "fillColor": "#e3f2fd"
+    },
+    {
+      "id": "native_app_title",
+      "type": "text",
+      "x": 330,
+      "y": 1195,
+      "text": "Native App (C/C++)",
+      "fontSize": 11,
+      "fontFamily": 1
+    },
+    {
+      "id": "native_app_desc",
+      "type": "text",
+      "x": 330,
+      "y": 1215,
+      "text": "OpenSSL应用\n系统级服务\n数据库客户端",
+      "fontSize": 9,
+      "fontFamily": 3
+    },
+    {
+      "id": "kernel_net_box",
+      "type": "rectangle",
+      "x": 540,
+      "y": 1190,
+      "width": 200,
+      "height": 140,
+      "strokeColor": "#f57c00",
+      "fillColor": "#fff3e0"
+    },
+    {
+      "id": "kernel_net_title",
+      "type": "text",
+      "x": 550,
+      "y": 1195,
+      "text": "Kernel Network Stack",
+      "fontSize": 11,
+      "fontFamily": 1
+    },
+    {
+      "id": "kernel_net_desc",
+      "type": "text",
+      "x": 550,
+      "y": 1215,
+      "text": "TCP/UDP协议栈\nSocket接口\n文件描述符",
+      "fontSize": 9,
+      "fontFamily": 3
+    },
+    {
+      "id": "perf_conn",
+      "type": "arrow",
+      "x": 470,
+      "y": 900,
+      "points": [{"x": 0, "y": 0}, {"x": 0, "y": -770}],
+      "strokeColor": "#c62828",
+      "strokeWidth": 3
+    },
+    {
+      "id": "perf_label",
+      "type": "text",
+      "x": 490,
+      "y": 500,
+      "text": "bpf_perf_event_output()\nperf ring buffer",
+      "fontSize": 10,
+      "fontFamily": 1,
+      "color": "#c62828"
+    },
+    {
+      "id": "kprobe_socket",
+      "type": "arrow",
+      "x": 170,
+      "y": 920,
+      "points": [{"x": 0, "y": 0}, {"x": 0, "y": -620}],
+      "strokeColor": "#1976d2",
+      "strokeWidth": 2
+    },
+    {
+      "id": "tp_socket",
+      "type": "arrow",
+      "x": 390,
+      "y": 920,
+      "points": [{"x": 0, "y": 0}, {"x": -110, "y": -620}],
+      "strokeColor": "#7b1fa2",
+      "strokeWidth": 2
+    },
+    {
+      "id": "uprobe_go",
+      "type": "arrow",
+      "x": 620,
+      "y": 920,
+      "points": [{"x": 0, "y": 0}, {"x": -120, "y": 250}],
+      "strokeColor": "#c62828",
+      "strokeWidth": 2
+    },
+    {
+      "id": "uprobe_go_label",
+      "type": "text",
+      "x": 630,
+      "y": 1050,
+      "text": "uprobe\n挂载",
+      "fontSize": 9,
+      "fontFamily": 3,
+      "color": "#c62828"
+    },
+    {
+      "id": "go_kernel",
+      "type": "arrow",
+      "x": 200,
+      "y": 1330,
+      "points": [{"x": 0, "y": 0}, {"x": 240, "y": 0}],
+      "strokeColor": "#2e7d32",
+      "strokeWidth": 2
+    },
+    {
+      "id": "native_openssl",
+      "type": "arrow",
+      "x": 420,
+      "y": 1260,
+      "points": [{"x": 0, "y": 0}, {"x": 60, "y": -320}],
+      "strokeColor": "#c62828",
+      "strokeWidth": 2
+    },
+    {
+      "id": "to_ingester",
+      "type": "arrow",
+      "x": 685,
+      "y": 180,
+      "points": [{"x": 0, "y": 0}, {"x": 0, "y": 40}],
+      "strokeColor": "#6a1b9a",
+      "strokeWidth": 2
+    },
+    {
+      "id": "data_flow1",
+      "type": "arrow",
+      "x": 250,
+      "y": 150,
+      "points": [{"x": 0, "y": 0}, {"x": 20, "y": 0}],
+      "strokeColor": "#333",
+      "strokeWidth": 2
+    },
+    {
+      "id": "data_flow2",
+      "type": "arrow",
+      "x": 420,
+      "y": 150,
+      "points": [{"x": 0, "y": 0}, {"x": 20, "y": 0}],
+      "strokeColor": "#333",
+      "strokeWidth": 2
+    },
+    {
+      "id": "data_flow3",
+      "type": "arrow",
+      "x": 590,
+      "y": 150,
+      "points": [{"x": 0, "y": 0}, {"x": 20, "y": 0}],
+      "strokeColor": "#333",
+      "strokeWidth": 2
+    },
+    {
+      "id": "legend_box",
+      "type": "rectangle",
+      "x": 780,
+      "y": 80,
+      "width": 160,
+      "height": 250,
+      "strokeColor": "#333",
+      "fillColor": "#fafafa"
+    },
+    {
+      "id": "legend_title",
+      "type": "text",
+      "x": 790,
+      "y": 85,
+      "text": "图例 (Legend)",
+      "fontSize": 11,
+      "fontFamily": 1
+    },
+    {
+      "id": "legend_kprobe",
+      "type": "rectangle",
+      "x": 790,
+      "y": 105,
+      "width": 20,
+      "height": 20,
+      "strokeColor": "#1976d2",
+      "fillColor": "#e3f2fd"
+    },
+    {
+      "id": "legend_kprobe_text",
+      "type": "text",
+      "x": 815,
+      "y": 110,
+      "text": "Kprobe (内核 syscall)",
+      "fontSize": 9,
+      "fontFamily": 3
+    },
+    {
+      "id": "legend_tracepoint",
+      "type": "rectangle",
+      "x": 790,
+      "y": 135,
+      "width": 20,
+      "height": 20,
+      "strokeColor": "#7b1fa2",
+      "fillColor": "#f3e5f5"
+    },
+    {
+      "id": "legend_tracepoint_text",
+      "type": "text",
+      "x": 815,
+      "y": 140,
+      "text": "Tracepoint (内核事件)",
+      "fontSize": 9,
+      "fontFamily": 3
+    },
+    {
+      "id": "legend_uprobe",
+      "type": "rectangle",
+      "x": 790,
+      "y": 165,
+      "width": 20,
+      "height": 20,
+      "strokeColor": "#c62828",
+      "fillColor": "#ffebee"
+    },
+    {
+      "id": "legend_uprobe_text",
+      "type": "text",
+      "x": 815,
+      "y": 170,
+      "text": "Uprobe (用户态 明文)",
+      "fontSize": 9,
+      "fontFamily": 3
+    },
+    {
+      "id": "legend_kfunc",
+      "type": "rectangle",
+      "x": 790,
+      "y": 195,
+      "width": 20,
+      "height": 20,
+      "strokeColor": "#388e3c",
+      "fillColor": "#e8f5e9"
+    },
+    {
+      "id": "legend_kfunc_text",
+      "type": "text",
+      "x": 815,
+      "y": 200,
+      "text": "Kfunc (fentry/fexit)",
+      "fontSize": 9,
+      "fontFamily": 3
+    },
+    {
+      "id": "legend_xdp",
+      "type": "rectangle",
+      "x": 790,
+      "y": 225,
+      "width": 20,
+      "height": 20,
+      "strokeColor": "#0097a7",
+      "fillColor": "#b2ebf2"
+    },
+    {
+      "id": "legend_xdp_text",
+      "type": "text",
+      "x": 815,
+      "y": 230,
+      "text": "XDP (高速包处理)",
+      "fontSize": 9,
+      "fontFamily": 3
+    },
+    {
+      "id": "legend_perf",
+      "type": "arrow",
+      "x": 790,
+      "y": 260,
+      "points": [{"x": 0, "y": 0}, {"x": 30, "y": 0}],
+      "strokeColor": "#c62828",
+      "strokeWidth": 3
+    },
+    {
+      "id": "legend_perf_text",
+      "type": "text",
+      "x": 825,
+      "y": 255,
+      "text": "perf ring buffer",
+      "fontSize": 9,
+      "fontFamily": 3
+    },
+    {
+      "id": "uprobe_detail_box",
+      "type": "rectangle",
+      "x": 70,
+      "y": 520,
+      "width": 420,
+      "height": 160,
+      "strokeColor": "#c62828",
+      "fillColor": "#ffffff"
+    },
+    {
+      "id": "uprobe_detail_title",
+      "type": "text",
+      "x": 80,
+      "y": 525,
+      "text": "Uprobe 明文抓取流程 (Go HTTP2/gRPC 为例)",
+      "fontSize": 11,
+      "fontFamily": 1,
+      "color": "#c62828"
+    },
+    {
+      "id": "uprobe_detail_steps",
+      "type": "text",
+      "x": 80,
+      "y": 550,
+      "text": "1. go_tracer.c 扫描 /proc 查找 Go 二进制\n2. 解析 ELF 提取符号偏移 (Go版本, 函数偏移)\n3. 通过 BTF 或结构体解析获取成员偏移\n4. 挂载 uprobes 到 HTTP2/gRPC 函数:\n   - go_http2Server_processHeaders (请求)\n   - go_http2Server_writeHeaders (响应)\n   - grpc_internal_transport_* (gRPC)\n5. bpf_perf_event_output() 发送数据到用户空间",
+      "fontSize": 9,
+      "fontFamily": 3
+    }
+  ],
+  "appState": {
+    "theme": "light",
+    "viewBackgroundColor": "#ffffff"
+  }
+}
