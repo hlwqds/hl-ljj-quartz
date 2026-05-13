@@ -1,8 +1,8 @@
 ---
-title: libbpf-rs: Rust 生态的 eBPF 开发库
+title: "libbpf-rs: Rust 生态的 eBPF 开发库"
 date: 2026-04-25 10:00:00
 tags: [network, github, ebpf, rust, tooling]
-description: libbpf-rs 是 libbpf 官方维护的 Rust 绑定，提供类型安全的 eBPF 程序开发和轻量级运行时。
+description: "libbpf-rs 是 libbpf 官方维护的 Rust 绑定，提供类型安全的 eBPF 程序开发和轻量级运行时。"
 ---
 
 # libbpf-rs: Rust 生态的 eBPF 开发库

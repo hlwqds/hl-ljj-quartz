@@ -1,5 +1,5 @@
 ---
-title: Microsoft Retina: 基于 eBPF 的 Kubernetes 网络可观测性工具
+title: "Microsoft Retina: 基于 eBPF 的 Kubernetes 网络可观测性工具"
 date: 2026-04-26 10:00:00
 tags: [network, github, ebpf, kubernetes, observability]
 description: Microsoft Retina 是微软开源的基于 eBPF 的 Kubernetes 分布式网络可观测性工具，提供低开销的流量监控、安全分析和故障排查能力。
