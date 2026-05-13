@@ -723,7 +723,7 @@ graph LR
     end
 
     subgraph L2["第二层：用户态周期巡检"]
-        D[运行时指标采集<br/>bpftool / syscall]
+        D[运行时指标采集<br>bpftool / syscall]
         E[Map 健康度扫描]
         F[Ringbuf 丢弃检测]
     end
@@ -854,7 +854,7 @@ graph TD
 
         B --> E[每程序运行时统计]
         C --> F[全局程序列表]
-        D --> G[/metrics endpoint]
+        D --> G["/metrics endpoint"]
 
         G --> H[Prometheus]
         H --> I[Grafana Dashboard]

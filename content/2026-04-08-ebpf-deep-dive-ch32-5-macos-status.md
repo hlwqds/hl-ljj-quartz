@@ -218,13 +218,13 @@ graph LR
 graph TB
     subgraph "macOS 本地"
         Write[VS Code 编写 BPF 代码] --> Local[bpftime 本地验证]
-        Local --> VML[macOS Virtualization FW<br/>轻量 Linux VM]
+        Local --> VML[macOS Virtualization FW<br>轻量 Linux VM]
         VML --> Kernel_Test[内核态 BPF 验证]
     end
 
     subgraph "CI/CD"
         Kernel_Test --> Push[Git Push]
-        Push --> CI[GitHub Actions<br/>Linux Runner]
+        Push --> CI[GitHub Actions<br>Linux Runner]
         CI --> Test[自动化测试]
     end
 

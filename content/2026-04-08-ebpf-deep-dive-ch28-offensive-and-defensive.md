@@ -89,13 +89,13 @@ eBPF Rootkit 的核心优势在于：**它使用的是内核原生提供的合�
 
 ```mermaid
 graph LR
-    A[初始入侵<br/>获取 root 权限] --> B[编译恶意<br/>.o 字节码]
-    B --> C[通过 bpf 系统调用<br/>加载到内核]
+    A[初始入侵<br>获取 root 权限] --> B[编译恶意<br>.o 字节码]
+    B --> C[通过 bpf 系统调用<br>加载到内核]
     C --> D{验证器检查}
-    D -->|通过| E[恶意程序<br/>附加到 hook 点]
+    D -->|通过| E[恶意程序<br>附加到 hook 点]
     D -->|拒绝| F[攻击失败]
-    E --> G[建立 C2 通道<br/>隐藏进程/文件/网络]
-    G --> H[持久化驻留<br/>等待指令执行]
+    E --> G[建立 C2 通道<br>隐藏进程/文件/网络]
+    G --> H[持久化驻留<br>等待指令执行]
 ```
 
 ---
@@ -156,9 +156,9 @@ int BPF_PROG(hide_file_getdents64, struct pt_regs *regs)
 ```mermaid
 graph TD
     subgraph "进程隐藏的挂钩点"
-        A[filldir64<br/>目录读取回调] -->|隐藏 /proc/PID| B[目标进程<br/>从 ps/top 中消失]
-        C[do_task_stat<br/>读取 /proc/PID/stat] -->|伪造退出状态| D[工具认为进程已死]
-        E[pidfd_open<br/>按 PID 打开] -->|返回 ENOENT| F[无法引用目标 PID]
+        A[filldir64<br>目录读取回调] -->|隐藏 /proc/PID| B[目标进程<br>从 ps/top 中消失]
+        C[do_task_stat<br>读取 /proc/PID/stat] -->|伪造退出状态| D[工具认为进程已死]
+        E[pidfd_open<br>按 PID 打开] -->|返回 ENOENT| F[无法引用目标 PID]
     end
 ```
 
@@ -323,12 +323,12 @@ else:
 
 ```mermaid
 graph LR
-    A[开发者编写<br/>eBPF .c 源码] --> B[编译为 .o<br/>字节码]
-    B --> C[使用私钥签名<br/>bpf sign -k priv.key]
+    A[开发者编写<br>eBPF .c 源码] --> B[编译为 .o<br>字节码]
+    B --> C[使用私钥签名<br>bpf sign -k priv.key]
     C --> D[部署到生产环境]
-    D --> E[内核加载时验证签名<br/>bpf verify -s cert.pem]
+    D --> E[内核加载时验证签名<br>bpf verify -s cert.pem]
     E -->|签名匹配| F[程序正常运行]
-    E -->|签名不匹配或缺失| G[加载被拒绝<br/>内核记录审计事件]
+    E -->|签名不匹配或缺失| G[加载被拒绝<br>内核记录审计事件]
 ```
 
 ### 3.3 LSM BPF 准入控制
@@ -364,7 +364,7 @@ graph TD
         D[网络连接状态 + XDP] --> D1[发现隐藏 socket]
         E[PID namespace] --> E1[发现隐藏进程]
     end
-    A1 --> F[综合分析引擎<br/>关联告警]
+    A1 --> F[综合分析引擎<br>关联告警]
     B1 --> F; C1 --> F; D1 --> F; E1 --> F
 ```
 
@@ -386,7 +386,7 @@ graph TB
         C[供应链] --> C1[恶意 BPF 库]
         C --> C2[CI/CD 流水线污染]
         C --> C3[CO-RE BTF 劫持]
-        D[权限提升] --> D1[CAP_BPF 滥用<br/>容器逃逸]
+        D[权限提升] --> D1[CAP_BPF 滥用<br>容器逃逸]
         D --> D2[嵌套 BPF 调用提权链]
     end
 ```
@@ -436,16 +436,16 @@ graph TB
 ```mermaid
 graph TB
     subgraph "第一层：预防"
-        A1[最小权限原则<br/>限制 CAP_BPF] --> A2[BPF 签名验证]
-        A2 --> A3[Seccomp 过滤<br/>容器隔离]
+        A1[最小权限原则<br>限制 CAP_BPF] --> A2[BPF 签名验证]
+        A2 --> A3[Seccomp 过滤<br>容器隔离]
     end
     subgraph "第二层：检测"
-        B1[字节码审计<br/>BPF Iterator] --> B2[行为基线<br/>异常检测]
-        B2 --> B3[完整性校验<br/>内核数据结构]
+        B1[字节码审计<br>BPF Iterator] --> B2[行为基线<br>异常检测]
+        B2 --> B3[完整性校验<br>内核数据结构]
     end
     subgraph "第三层：响应"
-        C1[自动卸载异常程序] --> C2[事件取证<br/>Ring Buffer 日志]
-        C2 --> C3[隔离修复<br/>cgroup 冻结]
+        C1[自动卸载异常程序] --> C2[事件取证<br>Ring Buffer 日志]
+        C2 --> C3[隔离修复<br>cgroup 冻结]
     end
     A3 --> B1; B3 --> C1
 ```
@@ -480,10 +480,10 @@ sysctl -w net.core.bpf_jit_enable=0
 
 ```mermaid
 graph TD
-    A[发现异常<br/>审计告警/行为异常] --> B[隔离受影响系统]
-    B --> C[采集 BPF 程序快照<br/>bpftool prog dump xlated]
+    A[发现异常<br>审计告警/行为异常] --> B[隔离受影响系统]
+    B --> C[采集 BPF 程序快照<br>bpftool prog dump xlated]
     C --> D[导出字节码 + Map 内容]
-    D --> E[逆向分析<br/>反编译 + 行为理解]
+    D --> E[逆向分析<br>反编译 + 行为理解]
     E --> F[确定攻击链]
     F --> G[清除恶意程序 + 加固防御]
 ```

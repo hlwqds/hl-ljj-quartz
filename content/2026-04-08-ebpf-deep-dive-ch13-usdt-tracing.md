@@ -373,7 +373,7 @@ sequenceDiagram
 
     App->>Lib: 1. 发现 .note.stapsdt 段
     Lib->>Kernel: 2. bpf_program__attach_usdt()
-    Kernel->>Kernel: 3. 解析探针元数据<br/>(offset, args)
+    Kernel->>Kernel: 3. 解析探针元数据<br>(offset, args)
     Kernel->>Kernel: 4. 替换 nop → int3
     Kernel->>Kernel: 5. 注册 BPF 回调
 
@@ -382,7 +382,7 @@ sequenceDiagram
     App->>Kernel: 6. 执行到 int3 指令
     Kernel->>BPF: 7. 调用 eBPF 回调
     BPF->>BPF: 8. bpf_usdt_arg() 读取参数
-    BPF->>BPF: 9. 执行业务逻辑<br/>(打印/统计/上报)
+    BPF->>BPF: 9. 执行业务逻辑<br>(打印/统计/上报)
     Kernel->>App: 10. 恢复执行
 
     Lib->>Kernel: 11. bpf_link__destroy()
@@ -615,11 +615,11 @@ graph TB
     end
 
     subgraph "Level 1: 编译了 USDT，但无追踪器附加"
-        L1["执行 nop 指令<br/>+ 信号量检查 (if enabled)"] --> L1R["开销：1-2 个 CPU 周期<br/>≈ 0.3-0.5 纳秒"]
+        L1["执行 nop 指令<br>+ 信号量检查 (if enabled)"] --> L1R["开销：1-2 个 CPU 周期<br>≈ 0.3-0.5 纳秒"]
     end
 
     subgraph "Level 2: 追踪器已附加"
-        L2["执行 int3 → 内核陷入<br/>→ eBPF 回调 → 恢复"] --> L2R["开销：~1-5 微秒<br/>取决于回调逻辑复杂度"]
+        L2["执行 int3 → 内核陷入<br>→ eBPF 回调 → 恢复"] --> L2R["开销：~1-5 微秒<br>取决于回调逻辑复杂度"]
     end
 
     L0 -.->|需要重编译| L1

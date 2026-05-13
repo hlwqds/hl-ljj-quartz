@@ -79,13 +79,13 @@ Map 是内核中一段被 BPF 子系统管理的特殊内存区域，具有以�
 ```mermaid
 graph LR
     subgraph "用户态"
-        App["用户态应用<br/>(bpftool / Go / Python)"]
+        App["用户态应用<br>(bpftool / Go / Python)"]
         Lib["libbpf"]
     end
 
     subgraph "内核态"
         Prog["eBPF 程序"]
-        Map["BPF Map<br/>(共享内存)"]
+        Map["BPF Map<br>(共享内存)"]
     end
 
     App -->|bpf_map_lookup_elem| Lib
@@ -108,25 +108,25 @@ graph TD
     Map --> Buf["事件缓冲"]
     Map --> Special["特殊用途"]
 
-    KV --> Hash["HASH<br/>哈希表"]
-    KV --> Array["ARRAY<br/>数组"]
-    KV --> LRU["LRU_HASH/LRU_PERCPU_HASH<br/>最近最少使用"]
-    KV --> Bloom["BLOOM_FILTER<br/>布隆过滤器"]
+    KV --> Hash["HASH<br>哈希表"]
+    KV --> Array["ARRAY<br>数组"]
+    KV --> LRU["LRU_HASH/LRU_PERCPU_HASH<br>最近最少使用"]
+    KV --> Bloom["BLOOM_FILTER<br>布隆过滤器"]
 
-    Queue --> Stack["STACK<br/>栈"]
-    Queue --> PQ["QUEUE<br/>队列"]
+    Queue --> Stack["STACK<br>栈"]
+    Queue --> PQ["QUEUE<br>队列"]
 
-    Buf --> RingBuf["RINGBUF<br/>环形缓冲区"]
-    Buf --> PerfArr["PERF_EVENT_ARRAY<br/>性能事件数组"]
+    Buf --> RingBuf["RINGBUF<br>环形缓冲区"]
+    Buf --> PerfArr["PERF_EVENT_ARRAY<br>性能事件数组"]
 
-    Special --> ProgArr["PROG_ARRAY<br/>程序数组"]
-    Special --> CgrpArr["CGROUP_ARRAY<br/>控制组数组"]
-    Special --> DevMap["DEVMAP/DEVMAP_HASH<br/>设备重定向"]
-    Special --> SockMap["SOCKMAP/SOCKHASH<br/>Socket 映射"]
-    Special --> XSK["XSKMAP/XSKMAP_PROG<br/>AF_XDP Socket"]
-    Special --> SpinLock["SPIN_LOCK<br/>自旋锁"]
-    Special --> RBTree["RB_TREE<br/>红黑树"]
-    Special --> CgrpStorage["CGROUP_STORAGE<br/>控制组存储"]
+    Special --> ProgArr["PROG_ARRAY<br>程序数组"]
+    Special --> CgrpArr["CGROUP_ARRAY<br>控制组数组"]
+    Special --> DevMap["DEVMAP/DEVMAP_HASH<br>设备重定向"]
+    Special --> SockMap["SOCKMAP/SOCKHASH<br>Socket 映射"]
+    Special --> XSK["XSKMAP/XSKMAP_PROG<br>AF_XDP Socket"]
+    Special --> SpinLock["SPIN_LOCK<br>自旋锁"]
+    Special --> RBTree["RB_TREE<br>红黑树"]
+    Special --> CgrpStorage["CGROUP_STORAGE<br>控制组存储"]
 ```
 
 ### 2.2 核心类型对比
@@ -361,12 +361,12 @@ graph TB
         P1["CPU 0: 独立 Buffer"] --> P1U["用户态 perf_reader"]
         P2["CPU 1: 独立 Buffer"] --> P2U["用户态 perf_reader"]
         P3["CPU 2: 独立 Buffer"] --> P3U["用户态 perf_reader"]
-        Note1["每个 CPU 独立 Buffer<br/>内存利用率低<br/>自定义 header 复杂"]
+        Note1["每个 CPU 独立 Buffer<br>内存利用率低<br>自定义 header 复杂"]
     end
 
     subgraph "Ring Buffer (新方案)"
-        R["共享 Ring Buffer<br/>(多核复用)"] --> RU["用户态 ringbuf_reader"]
-        Note2["单 Buffer 多核共享<br/>内存利用率高<br/>Reserve-Submit 模式"]
+        R["共享 Ring Buffer<br>(多核复用)"] --> RU["用户态 ringbuf_reader"]
+        Note2["单 Buffer 多核共享<br>内存利用率高<br>Reserve-Submit 模式"]
     end
 ```
 
@@ -537,14 +537,14 @@ graph TD
     end
 
     subgraph "用户态"
-        U["用户态程序<br/>(Go/Python/C)"]
+        U["用户态程序<br>(Go/Python/C)"]
     end
 
-    P -->|"写入数据<br/>(bpf_map_update_elem)"| M
-    P -->|"发送事件<br/>(bpf_ringbuf_submit)"| M
-    U -->|"读取数据<br/>(bpf_map_lookup_elem)"| M
-    U -->|"轮询事件<br/>(ring_buffer__poll)"| M
-    U -->|"查询统计<br/>(bpf_map_lookup_and_delete)"| M
+    P -->|"写入数据<br>(bpf_map_update_elem)"| M
+    P -->|"发送事件<br>(bpf_ringbuf_submit)"| M
+    U -->|"读取数据<br>(bpf_map_lookup_elem)"| M
+    U -->|"轮询事件<br>(ring_buffer__poll)"| M
+    U -->|"查询统计<br>(bpf_map_lookup_and_delete)"| M
 ```
 
 ### 7.2 四种通信模式
@@ -584,7 +584,7 @@ stateDiagram-v2
     Created --> Destroyed: close(fd) + 无程序引用
     Destroyed --> [*]: 内核回收内存
 
-    note right of Pinned: 持久化到文件系统<br/>程序退出后仍保留
+    note right of Pinned: 持久化到文件系统<br>程序退出后仍保留
     note right of Active: 内核自动管理引用计数
 ```
 

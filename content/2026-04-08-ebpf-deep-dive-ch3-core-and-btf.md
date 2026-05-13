@@ -158,21 +158,42 @@ bpftool btf dump file /sys/kernel/btf/vmlinux | grep -A 50 "STRUCT task_struct"
 
 ### 2.4 BTF 的内部编码
 
-BTF 使用类型 ID 引用来避免重复。每个类型在 Type Section 中有一个唯一的整数 ID：
+每个类型在 Type Section 中有一个唯一的递增整数 ID（type_id），从 0 开始。BTF 定义了多种类型 kind：INT、PTR、ARRAY、STRUCT、UNION、ENUM、FWD、TYPEDEF、VOLATILE、CONST、RESTRICT、FUNC、FUNC_PROTO 等。
 
-```c
-// BTF Type Section 中的编码
-// ID 0: void
-// ID 1: int
-// ID 2: int (*fn)(int, int)  // 函数指针
-// ID 3: struct task_struct {
-//     member: comm -> ID 4 (const char[16])
-//     member: pid  -> ID 5 (pid_t)
-//     member: ...
-// }
+先看两条最基础的记录（`bpftool btf dump` 输出）：
+
+```text
+[1] INT 'long unsigned int' size=8 bits_offset=0 nr_bits=64 encoding=(none)
+[2] CONST '(anon)' type_id=1
 ```
 
-这种引用设计大幅减少了冗余——一个 `struct task_struct` 有几百个字段，如果每个 `int` 都重新定义，BTF 会膨胀数倍。使用 ID 引用后，每个基础类型只定义一次。
+逐字段解读：
+
+| 字段 | [1] INT | [2] CONST | 含义 |
+| :--- | :--- | :--- | :--- |
+| `[N]` | `[1]` | `[2]` | type_id，递增整数，全局唯一 |
+| kind | `INT` | `CONST` | 类型种类：基础整数 / const 修饰符 |
+| name | `'long unsigned int'` | `'(anon)'` | 类型名，修饰符类无名字 |
+| size | `8` | — | 占 8 字节（仅 INT/STRUCT 等有意义的类型） |
+| nr_bits | `64` | — | 64 位（8 × 8） |
+| encoding | `(none)` | — | 编码方式：SIGNED / CHAR / BOOL / none |
+| type_id | — | `1` | 指向被修饰的基础类型 → [1] long unsigned int |
+
+[2] 合起来就是 `const long unsigned int`。CONST 不重新定义完整的类型信息，只记录一个 `type_id=1` 的引用。内核中几百个 `const unsigned long` 字段都指向同一条记录——这就是 ID 引用的去重效果。
+
+再举几个 kind 的例子：
+
+```text
+[3] PTR '(anon)' type_id=1          // pointer → long unsigned int *
+[4] STRUCT 'task_struct' size=2912   // 结构体，2912 字节
+    'pid' type_id=5 offset=944       //   成员 pid，类型 ID=5，偏移 944
+    'comm' type_id=6 offset=2120     //   成员 comm，类型 ID=6，偏移 2120
+[5] TYPEDEF 'pid_t' type_id=1        // typedef → long unsigned int
+[6] ARRAY '(anon)' type_id=7         // 数组
+    index_type_id=1 nr_elems=16      //   long unsigned int[16]
+```
+
+type_id 的核心价值不仅是去重，更是 **CO-RE 重定位的基础**。重定位记录中存储 `type_id + field_name`，libbpf 据此在目标内核 BTF 中定位同一个结构体的同一个字段，获取真实偏移量后修正字节码。
 
 ---
 
@@ -191,7 +212,7 @@ sequenceDiagram
     Dev->>Dev: 编写 C 代码 (使用 vmlinux.h)
     Dev->>Clang: clang -target bpf -g -O2
     Clang->>Clang: 生成 eBPF 字节码 + BTF 重定位记录
-    Note over Clang: CO-RE 记录: "访问 task->comm<br/>BTF type_id=1024, member_off=556"
+    Note over Clang: CO-RE 记录: "访问 task->comm<br>BTF type_id=1024, member_off=556"
 
     Note over Lib, Kern: 阶段 2: 加载时
     Lib->>Kern: 读取 /sys/kernel/btf/vmlinux
@@ -451,6 +472,236 @@ if (bpf_helper_func_id_exists("bpf_new_helper")) {
     // 6.1+ 特性
     struct node *n = bpf_obj_new(typeof(*n));
 #endif
+```
+
+### 6.4 字段名被 rename：手动结构体兼容
+
+#### 6.4.1 问题场景
+
+CO-RE 按 `type_id + field_name` 定位字段，内核将某个字段 rename 后，BTF 中旧名字消失了，CO-RE 无法完成重定位：
+
+```text
+// 场景：内核将 struct net 的某个字段 rename
+// 旧版本 (kernel 5.x)
+struct net {
+    ...
+    struct in_device __rcu *ipv4;      // 名字: ipv4
+    ...
+};
+
+// 新版本 (kernel 6.x)  // 内核开发者把它改成了:
+struct net {
+    ...
+    struct in_device __rcu *dev;       // 名字: dev（语义相同）
+    ...
+};
+
+// CO-RE 按 "net.ipv4" 找 → BTF 里没有这个名字 → 重定位失败 ❌
+```
+
+这类 rename 在内核开发中**并非罕见**：
+- `struct task_struct.comm` 历史上叫过 `tcomm`
+- `struct sock.sk_sndmsg_*` 在某个版本被重组
+- `struct net_device` 的字段在 5.12+ 的网络命名空间重构中被大量 rename
+
+字段被 rename 后，`bpf_core_field_exists()` 也返回 false（按名字查找，找不到就认为不存在），即使偏移量完全没变。
+
+#### 6.4.2 解决方案：手动写旧版本结构体
+
+思路是**为旧内核维护一份手动结构体定义**，用 `__attribute__((preserve_access_index))` 标记，让 eBPF 验证器按偏移量访问：
+
+```c
+// ============================================================
+// compat_structs.h — 手动维护的旧版本结构体兼容层
+// ============================================================
+
+/* task_struct 的兼容版本（kernel 5.10 之前）
+ * 当内核将 "pneigh" rename 为 "pneigh_entry" 时使用
+ * 只写你关心的字段，偏移量通过pahole或bpftool确认 */
+struct task_struct_compat {
+    unsigned long state;
+    int prio;
+    int static_prio;
+    int normal_prio;
+    /* 线程组 ID（tgid）和进程 ID（pid）历史上在不同偏移 */
+    /* 这里手写确保与旧内核一致 */
+    __u32 pid;
+    __u32 tgid;
+    /* comm 字段在 5.10 之前偏移量固定为 2120 */
+    char comm[16];
+    /* pneigh / pneigh_entry 字段（视内核版本而定） */
+    void    *pneigh_entry;   /* 旧内核: 5.10 之前叫 pneigh */
+} __attribute__((preserve_access_index));
+
+/* struct net 的兼容版本（kernel 5.x vs 6.x 字段名差异） */
+struct net_compat {
+    /* 通用头部长度 */
+    unsigned long data_len;
+    unsigned int flags;
+    /* ipv4 vs dev：手动兼容 */
+    void *inet_dev;          /* 5.x: ipv4  6.x: dev */
+    /* 命名空间指针 */
+    void *netns;
+} __attribute__((preserve_access_index));
+
+/* struct sock 的兼容版本（处理 sk_sndmsg_* 字段 rename） */
+struct sock_compat {
+    __u16 sk_family;
+    __u16 sk_type;
+    __u32 sk_flags;
+    /* sk_sndbuf 在某版本被拆成 sk_sndbuf 和 sk_wmem_queued */
+    __u32 sk_sndbuf;         /* 通用发送缓冲区大小 */
+} __attribute__((preserve_access_index));
+```
+
+#### 6.4.3 使用方式
+
+```c
+// ============================================================
+// trace_pneigh.c — 使用兼容结构体的 eBPF 程序
+// ============================================================
+#include <vmlinux.h>                    // 新内核：用自动生成的
+#include "compat_structs.h"             // 旧内核：用手动维护的
+#include <bpf/bpf_helpers.h>
+
+struct {
+    __uint(type, BPF_MAP_TYPE_HASH);
+    __uint(max_entries, 10240);
+    __type(key, __u32);          // PID
+    __type(value, __u64);        // timestamp
+} events SEC(".maps");
+
+/* 通过pahole获取目标内核的真实偏移量（下面以task_struct为例）
+ * $ pahole -C task_struct /boot/vmlinuz-$(uname -r)
+ * （或者用 bpftool btf dump 查 BTF，然后对照历史版本） */
+
+/* ============================================================
+ * 兼容策略 1：运行时按字段名检测
+ * ============================================================ */
+SEC("tracepoint/net/netif_receive_skb")
+int on_netif_rx(struct trace_event_raw_netif_rx *ctx)
+{
+    struct net *net = (struct net *)ctx->skb->dev->nd_net.net;
+
+    /* 策略：优先用 CO-RE 访问 ipv4（kernel 6.x），
+     * 如果找不到，再用手动结构体访问 inet_dev（旧内核 5.x） */
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0)
+    /* 新内核：字段名叫 "dev"，直接用 CO-RE */
+    struct in_device *indev = BPF_CORE_READ(net, dev);
+#else
+    /* 旧内核：字段名叫 "ipv4"，或已被 rename → 用手动结构体 */
+    struct net_compat *net_compat = (struct net_compat *)net;
+    struct in_device *indev = (struct in_device *)net_compat->inet_dev;
+#endif
+
+    if (!indev)
+        return 0;
+
+    /* ... 后续处理 ... */
+    return 0;
+}
+
+/* ============================================================
+ * 兼容策略 2：始终使用手动结构体（不需要版本检测）
+ * 适用于字段偏移量稳定、但名字在各版本不一致的情况
+ * ============================================================ */
+SEC("tracepoint/sched/sched_switch")
+int on_sched_switch(struct trace_event_raw_sched_switch *ctx)
+{
+    __u64 id = bpf_get_current_pid_tgid();
+    __u32 pid = id >> 32;
+    __u64 ts = bpf_涛_获取纳秒();
+
+    /* task_struct 在所有内核版本中偏移量稳定（即使字段名变），
+     * 所以可以用同一个手动结构体访问 */
+    struct task_struct_compat *task_compat =
+        (struct task_struct_compat *)ctx->prev_task;
+
+    /* 通过手动结构体的固定偏移读取（验证器按偏移访问，不按名字） */
+    __u32 tgid = BPF_CORE_READ(task_compat, tgid);
+    __u32 prev_pid = BPF_CORE_READ(task_compat, pid);
+
+    bpf_map_update_elem(&events, &prev_pid, &ts, BPF_ANY);
+    return 0;
+}
+
+/* ============================================================
+ * 兼容策略 3：结合字段存在性检查 + 手动结构体降级
+ * 最完整的写法
+ * ============================================================ */
+SEC("tracepoint/net/net_dev_xmit")
+int on_net_dev_xmit(struct trace_event_raw_net_dev_xmit *ctx)
+{
+    void *ptr = (void *)ctx->skb;
+
+    __u32 pid = 0;
+    if (bpf_core_field_exists(ptr, "skb->sk)) {
+        /* 用 CO-RE（字段名一致的内核版本） */
+        struct sock *sk = BPF_CORE_READ(ptr, sk);
+        pid = BPF_CORE_READ(sk, sk_pid);
+    } else {
+        /* 字段被 rename → 用手动结构体
+         * 注意：这种情况下指针本身偏移也可能变，
+         * 手动结构体里的字段定义需要与目标内核严格对应 */
+        struct skb_compat *skb_c = (struct skb_compat *)ptr;
+        pid = BPF_CORE_READ(skb_c, sk_pid);
+    }
+
+    bpf_printk("pid=%d\n", pid);
+    return 0;
+}
+```
+
+#### 6.4.4 手动结构体的维护
+
+手动结构体的核心是**固定偏移量**，所以维护的关键是确认目标内核的真实偏移：
+
+```bash
+# 方法 1：pahole 工具直接查看
+pahole -C task_struct /boot/vmlinuz-$(uname -r)
+# 输出：
+# struct task_struct {
+#     ...
+#     int                      prio;                 /*   120     4 */
+#     int                      static_prio;         /*   124     4 */
+#     int                      normal_prio;         /*   128     4 */
+#     __u32                    pid;                  /*   944     4 */
+#     __u32                    tgid;                 /*   948     4 */
+#     ...
+#     char                     comm[16];             /*  2120    16 */
+#     ...
+# };
+
+# 方法 2：bpftool + 内核源码交叉验证
+bpftool btf dump file /sys/kernel/btf/vmlinux format c | grep -A 200 "struct task_struct "
+
+# 方法 3：从内核源码确认字段名变更历史
+git log --oneline --all -- 'net/core/net_namespace.c' | grep -i rename
+# 或者查 changelog:
+# https://www.kernel.org/doc/html/latest/networking/net_namespace.html
+```
+
+手动结构体维护的**最佳实践**：
+
+| 原则 | 说明 |
+|------|------|
+| **只写关心的字段** | 不需要完整定义，只有关心的字段有偏移即可 |
+| **注释版本范围** | 明确标注目录结构体适用于哪个内核版本区间 |
+| **版本条件编译** | 用 `#if LINUX_VERSION_CODE` 或 `bpf_core_field_exists` 分支 |
+| **提交到版本控制** | compat 结构体随项目走，不要每次现场手写 |
+| **优先 BTF 验证** | 加载时用 `bpftool prog load` 带 `--verbose` 确认偏移是否正确 |
+
+#### 6.4.5 何时用这个方法
+
+```
+能用 CO-RE 自动处理  ←→  字段存在，名字没变
+        ↓
+用手动结构体兜底    ←→  字段存在，但名字变了（rename）
+        ↓
+用 BTFGen 生成 BTF  ←→  字段本身不存在（老内核无此字段）
+        ↓
+条件编译 + 回退    ←→  Helper 不存在 / 功能完全不可用
 ```
 
 ---

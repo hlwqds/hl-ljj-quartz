@@ -4,9 +4,10 @@ date: 2026-04-08
 tags:
   - ebpf
   - green-computing
-  - rapl
+  - energy
+  - power
   - sustainability
-  - finops
+  - carbon
 ---
 
 > [!info] eBPF 2026 深度探索系列
@@ -22,7 +23,7 @@ tags:
 > 9. [[2026-04-08-ebpf-deep-dive-ch7-6-bpftime-user-runtime|第七.六章：bpftime 与用户态 eBPF 加速]]
 > 10. [[2026-04-08-ebpf-deep-dive-ch18-bpftime-injection-mastery|第七.七章：bpftime 自动化注入与全量监控实战]]
 > 11. [[2026-04-08-ebpf-deep-dive-ch7-8-uprobe-selection-guide|第七.八章：uprobe 选型指南：内核态 vs 用户态]]
-> 12. [[2026-04-08-ebpf-deep-dive-ch5-xdp-networking-performance|第五章：XDP 极速网络性能与全栈架构]]
+> 12. [[2026-04-08-ebpf-deep-dive-ch5-xdp-networking-performance|第五章：XDP 极致网络性能与全栈架构]]
 > 13. [[2026-04-08-ebpf-deep-dive-ch6-tc-traffic-control|第六章：TC (Traffic Control) 流量调度艺术]]
 > 14. [[2026-04-08-ebpf-deep-dive-ch7-security-lsm-enforcement|第七章：LSM BPF 从可观测到安全执法]]
 > 15. [[2026-04-08-ebpf-deep-dive-ch8-advanced-tuning-and-profiling|第八章：进阶实战与内核调优]]
@@ -64,260 +65,159 @@ tags:
 > 51. [[2026-04-09-ebpf-deep-dive-ch42-service-mesh-integration|第四十二章：eBPF 与 Service Mesh 深度集成]]
 ---
 
-## 1. 概述：从"算力优先"到"能效优先"
+## 1. 概述：为什么计算需要"绿色"？
 
-在 2026 年，电力已经成为限制 AI 扩张的首要瓶颈。企业对基础设施的评价指标从单纯的 QPS 演进为 **Performance per Watt (每瓦性能)**。
+2026 年，全球数据中心消耗的电力已超过 4000 TWh，占全球碳排放的约 2%。随着 AI 推理、加密货币挖矿、边缘计算的爆发式增长，能耗监控与优化已成为云厂商和企业 IT 的核心挑战。
 
-**eBPF** 凭借其对硬件计数器（MSR/RAPL）的纳秒级采样能力，结合内核进程调度上下文，实现了对 Linux 系统中每一个 Pod、每一个进程乃至每一个业务函数的能耗实时度量。
+eBPF 在绿色计算中扮演的角色：
+1. **精准计量**：测量每个进程/容器/服务的真实能耗
+2. **碳感知调度**：根据电网碳强度动态调度工作负载
+3. **能耗归因**：将能耗精确归属到业务单元（团队、产品、成本中心）
+4. **优化建议**：识别高能耗代码路径并提供优化方向
 
-### 1.1 能耗监控层次
+### 1.1 能耗监控的技术演进
 
 ```mermaid
 graph TB
-    subgraph "传统能耗监控"
-    T1[机房级 PDU 功耗]
-    T2[机架级智能 PDU]
-    T3[服务器级 IPMI]
-    T4[CPU 级 turbostat]
-    T1 --> T2 --> T3 --> T4
-    style T1 fill:#ffcccc
-    style T4 fill:#ccccff
-end
+    subgraph "1.0 时代：机器级计量"
+        M1[电表] --> R1[整机功耗]
+    end
 
-    subgraph "eBPF 能耗监控 (2026)"
-    E1[进程级功耗]
-    E2[容器级功耗]
-    E3[函数级功耗]
-    E4[请求级功耗]
-    E1 --> E2 --> E3 --> E4
-    style E4 fill:#99ff99
-end
-```
+    subgraph "2.0 时代：服务器级计量"
+        IPMI[IPMI/BMC] --> R2[服务器功耗]
+        R2 --> Per[每 CPU/内存功耗]
+    end
 
-| 监控粒度 | 传统方案 | eBPF 方案 | 精度 |
-|:---|:---|:---|:---|
-| 机房/机架 | PDU 传感器 | 同 | ±1% |
-| 服务器 | IPMI/Redfish | 同 | ±1% |
-| CPU 核心 | turbostat | eBPF perf_event | ±0.1% |
-| 进程/PID | 不支持 | sched_switch 采样 | ±5% |
-| 容器/Pod | 不支持 | cgroup + sched_switch | ±5% |
-| 函数/请求 | 不支持 | uprobe + RAPL | ±10% |
-
----
-
-## 2. 技术基石：RAPL 硬件监控
-
-### 2.1 什么是 RAPL？
-
-**RAPL (Running Average Power Limit)** 是 Intel/AMD 处理器提供的一组能量状态接口。它通过 MSR（Model Specific Registers）记录了 CPU 核心、内存和整机的累计焦耳消耗。
-
-```bash
-# 查看 RAPL 支持的 MSR 寄存器
-sudo rdmsr -a
-
-# Intel RAPL MSR 地址
-# 0x639: MSR_PP0_ENERGY_STATUS  -- CPU Core 能量
-# 0x641: MSR_PP1_ENERGY_STATUS  -- Uncore/GPU 能量
-# 0x6AD: MSR_DRAM_ENERGY_STATUS -- DRAM 能量
-# 0x638: MSR_RAPL_POWER_UNIT    -- 单位转换系数
-
-# 读取当前 CPU 核心累计能量 (单位: 微焦耳)
-sudo rdmsr 0x639
-
-# 读取能量单位 (通常为 15.3 微焦耳 / 单位)
-sudo rdmsr 0x638
-```
-
-### 2.2 eBPF 的采样逻辑
-
-```mermaid
-sequenceDiagram
-    participant RAPL as RAPL 硬件寄存器
-    participant BPF as eBPF 程序
-    participant User as 用户态 Agent
-
-    loop 每毫秒采样
-        BPF->>RAPL: 读取 MSR 0x639
-        RAPL-->>BPF: energy_counter (微焦耳)
-        BPF->>BPF: 计算 ΔE = 当前 - 上次
-        BPF->>BPF: 归属到当前 PID
-        User->>BPF: 定期读取 Map
-        BPF-->>User: 进程级能耗数据
+    subgraph "3.0 时代：eBPF 精准归因"
+        R3[容器/进程级]
+        R3 --> SVC[微服务级]
+        SVC --> APP[应用级]
+        APP --> REQ[请求级]
     end
 ```
 
-1. **高频采样**：利用 eBPF 的 `perf_event` 挂载点，以 1ms 甚至更短的周期读取 RAPL 计数器
-2. **上下文对齐**：在进程发生 `sched_switch`（上下文切换）时，BPF 程序记录能量差值 $\Delta E$
-3. **精准分账**：将 $\Delta E$ 归属于当前切下的进程 PID
+### 1.2 能耗单位与换算关系
 
-### 2.3 AMD 扩展 RAPL 支持
-
-AMD 处理器从 Zen 3 开始支持 RAPL 接口，寄存器地址略有不同：
-
-| 平台 | Core Energy MSR | DRAM Energy MSR | 单位 MSR |
-|:---|:---|:---|:---|
-| Intel | 0x639 | 0x6AD | 0x638 |
-| AMD Zen3+ | 0xC001029B | 0xC001029D | 0xC0010299 |
+| 单位 | 含义 | 典型设备 |
+|:---|:---|:---|
+| **W (瓦特)** | 瞬时功率 | 单核 CPU ~5-15W |
+| **kWh (千瓦时)** | 能量单位 | 1kWh = 1000W 持续 1 小时 |
+| **gCO2eq/kWh** | 碳强度 | 煤电 800, 风电 0, 核电 12 |
+| **PUE** | 电源使用效率 | 典型值 1.3-1.8 |
+| **WRI** | 水资源强度 | 数据中心冷却用水 |
 
 ---
 
-## 3. 2026 年的核心实战：函数级功耗画像
+## 2. eBPF 能耗数据源：CPU 功耗模型
 
-通过将 [[2026-04-08-ebpf-deep-dive-ch36-dynamic-language-introspection|动态语言感知]] 与能耗数据结合，我们可以实现令人惊叹的深度。
+### 2.1 处理器功耗模型
 
-### 3.1 场景：排序算法的能耗对比
+现代 CPU 的功耗由以下部分组成：
 
-- **场景**：对比两个排序算法（快速排序 vs 归并排序）的真实用电量
-- **eBPF 实现**：`uprobe` 记录函数入口/出口的能量差
-- **发现**：即便两个算法执行时间相近，但由于缓存未命中（Cache Miss）导致的访存动作可能让归并排序多消耗 15% 的电量
+```
+P_total = P_static + P_dynamic
+P_dynamic = P_switching + P_short_circuit + P_leakage
 
-### 3.2 函数级能耗追踪代码
-
-```c
-#include <vmlinux.h>
-#include <bpf/bpf_helpers.h>
-
-struct func_energy {
-    u64 entry_energy;    // 函数入口时的 RAPL 值
-    u64 entry_cache_miss; // 入口时的 cache miss 计数
-};
-
-struct energy_report {
-    u32 pid;
-    u32 func_id;
-    u64 energy_uj;       // 消耗能量 (微焦耳)
-    u64 cache_misses;    // 缓存未命中次数
-    u64 duration_ns;     // 执行时间
-};
-
-struct {
-    __uint(type, BPF_MAP_TYPE_HASH);
-    __uint(max_entries, 10240);
-    __type(key, u64);    // pid_tgid
-    __type(value, struct func_energy);
-} active_funcs SEC(".maps");
-
-struct {
-    __uint(type, BPF_MAP_TYPE_RINGBUF);
-    __uint(max_entries, 1024 * 1024);
-} reports SEC(".maps");
-
-// 读取 Intel RAPL 寄存器
-static u64 read_rapl_core(void) {
-    u64 val = 0;
-    // 使用 bpf_probe_read_kernel 读取 MSR
-    // 实际通过 perf_event 实现
-    bpf_probe_read_kernel(&val, sizeof(val),
-                          (void *)0xffffffff81000000 + 0x639);
-    return val;
-}
-
-// 函数入口：记录 RAPL 快照
-SEC("uprobe/my_app:sort_quick")
-int BPF_UPROBE(sort_entry, void *data, int len) {
-    u64 pid_tgid = bpf_get_current_pid_tgid();
-    struct func_energy fe = {
-        .entry_energy = read_rapl_core(),
-    };
-    bpf_map_update_elem(&active_funcs, &pid_tgid, &fe, BPF_ANY);
-    return 0;
-}
-
-// 函数出口：计算能耗差值
-SEC("uretprobe/my_app:sort_quick")
-int BPF_URETPROBE(sort_exit, int ret) {
-    u64 pid_tgid = bpf_get_current_pid_tgid();
-    struct func_energy *fe = bpf_map_lookup_elem(&active_funcs, &pid_tgid);
-
-    if (fe) {
-        u64 exit_energy = read_rapl_core();
-        u64 delta_uj = (exit_energy - fe->entry_energy) * 15;  // 转换为微焦耳
-
-        struct energy_report *r = bpf_ringbuf_reserve(&reports, sizeof(*r), 0);
-        if (r) {
-            r->pid = pid_tgid >> 32;
-            r->func_id = 1;  // sort_quick
-            r->energy_uj = delta_uj;
-            r->duration_ns = bpf_ktime_get_ns();
-            bpf_ringbuf_submit(r, 0);
-        }
-        bpf_map_delete_elem(&active_funcs, &pid_tgid);
-    }
-    return 0;
-}
+其中：
+- P_static: 漏电流功耗（与温度强相关）
+- P_switching: 开关功耗 ∝ C * V² * f
+- P_short_circuit: 短路功耗
+- P_leakage: 栅极漏电（工艺相关）
 ```
 
----
-
-## 4. 代码实战：构建进程级"智能电表"
+### 2.2 基于 PMU 的 CPU 功耗估算
 
 ```c
 #include <vmlinux.h>
 #include <bpf/bpf_helpers.h>
+#include <bpf/bpf_typedef.h>
 
-// 存储 PID -> 累计功耗 (Joules)
+// CPU 功耗模型参数（通过 RAPL 或 IPMI 获取）
+struct cpu_power_model {
+    u64 package_power;      // CPU 整包功耗 (mW)
+    u64 cores_power;        // CPU Core 功耗 (mW)
+    u64 uncore_power;       // Uncore 功耗 (mW, 包含缓存)
+    u64 dram_power;         // 内存功耗 (mW)
+};
+
+// 每 CPU 的功耗状态
 struct {
-    __uint(type, BPF_MAP_TYPE_HASH);
+    __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
+    __uint(max_entries, 256);  // 最大 256 个 CPU
+    __type(key, u32);
+    __type(value, struct cpu_power_model);
+} cpu_power_state SEC(".maps");
+
+// CPU 活跃状态计数（用于计算平均功耗）
+struct {
+    __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
+    __uint(max_entries, 256);
     __type(key, u32);
     __type(value, u64);
-    __uint(max_entries, 10240);
-} energy_stats SEC(".maps");
+} cpu_active_cycles SEC(".maps");
 
-// 暂存上一次调度时的全局能量值
-u64 last_global_energy SEC(".data");
+// 从 perf_event 读取 CPU 周期
+SEC("perf_event/CPU_CLOCK")
+int on_cpu_clock(struct bpf_perf_event_hdr *ctx) {
+    u32 cpu = bpf_get_smp_processor_id();
+    struct cpu_power_model *power = bpf_map_lookup_elem(&cpu_power_state, &cpu);
+    u64 *cycles = bpf_map_lookup_elem(&cpu_active_cycles, &cpu);
 
-SEC("tp/sched/sched_switch")
-int trace_energy_delta(struct trace_event_raw_sched_switch *ctx) {
-    u32 pid = ctx->prev_pid;
-
-    // 1. 获取硬件当前累计能耗 (微焦耳)
-    u64 current_energy = bpf_read_rapl_counter();
-
-    if (last_global_energy != 0) {
-        u64 delta = current_energy - last_global_energy;
-
-        // 2. 累加至进程账户
-        u64 *val = bpf_map_lookup_elem(&energy_stats, &pid);
-        if (val) {
-            *val += delta;
-        } else {
-            bpf_map_update_elem(&energy_stats, &pid, &delta, BPF_ANY);
-        }
+    if (power && cycles) {
+        // 累加活跃周期
+        __sync_fetch_and_add(cycles, 1);
     }
+    return 0;
+}
 
-    last_global_energy = current_energy;
+// 追踪任务在各 CPU 上的运行时间
+SEC("tp/sched/sched_switch")
+int on_sched_switch(void *ctx, bool preempt, struct task_struct *prev, struct task_struct *next) {
+    u32 cpu = bpf_get_smp_processor_id();
+    u64 now = bpf_ktime_get_ns();
+
+    // 获取前一个任务的 CPU 使用时间
+    struct task_struct *prev_task = prev;
+    u64 prev_runtime = prev_task->se.sum_exec_runtime;
+
+    // 更新该 CPU 的活跃周期
+    u64 *cycles = bpf_map_lookup_elem(&cpu_active_cycles, &cpu);
+    if (cycles) {
+        // 通过 delta 时间估算该任务的功耗贡献
+    }
     return 0;
 }
 ```
 
-### 4.1 用户态展示程序
+### 2.3 RAPL 接口访问
+
+Intel RAPL (Running Average Power Limit) 提供精确的功耗数据：
 
 ```c
-// energy_dashboard.c -- 用户态能耗展示
-#include <bpf/libbpf.h>
-#include <bpf/bpf.h>
-#include <stdio.h>
-#include <unistd.h>
+#include <vmlinux.h>
+#include <bpf/bpf_helpers.h>
 
-int main() {
-    struct bpf_object *obj;
-    struct bpf_map *map;
-    int map_fd;
+// RAPL MSR 地址
+#define MSR_RAPL_POWER_UNIT    0x606
+#define MSR_PKG_POWER_LIMIT    0x610
+#define MSR_PKG_ENERGY_STATUS  0x611
+#define MSR_DRAM_ENERGY_STATUS 0x619
 
-    bpf_object__open_file("energy_meter.o", NULL);
-    bpf_object__load(obj);
-    map = bpf_object__find_map_by_name(obj, "energy_stats");
-    map_fd = bpf_map__fd(map);
+// 读取 RAPL 能量计数器
+SEC("tracepoint/rapl/msr_read")
+int on_rapl_msr_read(struct rapl_msr_ctx *ctx) {
+    if (ctx->msr_addr == MSR_PKG_ENERGY_STATUS) {
+        // Package 能量 (mWh)
+        u64 energy = ctx->value;
+        u32 cpu = bpf_get_smp_processor_id();
 
-    while (1) {
-        printf("\n=== 进程级能耗排行 (Top 10) ===\n");
-        printf("%-8s %-20s %12s %12s\n",
-               "PID", "COMM", "Energy(mJ)", "Power(mW)");
-
-        // 遍历 Map，排序输出
-        // ... (实际实现需要遍历 Hash Map)
-
-        sleep(5);
+        struct cpu_power_model *power = bpf_map_lookup_elem(&cpu_power_state, &cpu);
+        if (power) {
+            power->package_power = energy;
+        }
+    }
+    else if (ctx->msr_addr == MSR_DRAM_ENERGY_STATUS) {
+        // DRAM 能量 (mWh)
     }
     return 0;
 }
@@ -325,265 +225,491 @@ int main() {
 
 ---
 
-## 5. 行业价值：FinOps 与碳足迹审计
+## 3. 进程级能耗归因
 
-### 5.1 FinOps 精细化计费
+### 3.1 基于 CPU 时间的能耗归因
+
+最基础的归因模型：将 CPU 功耗按运行时间分摊到各进程：
+
+```mermaid
+graph LR
+    subgraph "CPU 功耗追踪"
+        RAPL[RAPL 能量计数器] --> PM[功耗模型]
+    end
+
+    subgraph "进程 CPU 时间"
+        Sched[调度器 tick] --> CT[CPU Time 累加]
+    end
+
+    subgraph "能耗归因"
+        PM --> PkgW[Package 功耗 mW]
+        CT --> ProcA[进程 A CPU Time]
+        CT --> ProcB[进程 B CPU Time]
+        PkgW --> Attr["能耗 = 功耗 × 时间"]
+    end
+```
+
+### 3.2 进程能耗追踪 BPF 程序
+
+```c
+#include <vmlinux.h>
+#include <bpf/bpf_helpers.h>
+
+// 进程能耗记录
+struct process_energy {
+    u32 pid;
+    u32 cpu_id;
+    u64 total_cycles;        // 总 CPU 周期
+    u64 active_cycles;       // 活跃周期
+    u64 timestamp_ns;        // 上次更新时间
+    u64 energy_pj;           // 累计能耗 (皮焦耳)
+};
+
+// 进程能耗 Map
+struct {
+    __uint(type, BPF_MAP_TYPE_HASH);
+    __uint(max_entries, 65536);
+    __type(key, u32);  // pid
+    __type(value, struct process_energy);
+} process_energy_map SEC(".maps");
+
+// 追踪进程 CPU 使用
+SEC("tp/sched/sched_process_exit")
+int on_process_exit(struct trace_event_raw_sched_process_template *ctx) {
+    struct task_struct *task = (struct task_struct *)ctx->task;
+    u32 pid = task->tgid;
+
+    struct process_energy *energy = bpf_map_lookup_elem(&process_energy_map, &pid);
+    if (energy) {
+        // 计算进程的 CPU 使用时间
+        u64 cpu_time_ns = energy->active_cycles * 1000;  // 估算
+        u64 power_uw = 5000000;  // 假设平均 5W = 5000000 μW
+
+        // 能耗 = 功率 × 时间 (μWh = μW × ns / 3600_000_000)
+        u64 energy_uh = power_uw * cpu_time_ns / 3600000000;
+        energy->energy_pj += energy_uh * 1000;  // 转换为皮焦耳
+
+        // 上报最终能耗
+        bpf_printk("Process %d total energy: %llu pJ", pid, energy->energy_pj);
+
+        // 从 Map 中移除
+        bpf_map_delete_elem(&process_energy_map, &pid);
+    }
+    return 0;
+}
+
+// 追踪进程调度（用于 CPU 时间分配）
+SEC("tp/sched/sched_wakeup")
+int on_sched_wakeup(struct trace_event_raw_sched_wakeup *ctx) {
+    struct task_struct *task = (struct task_struct *)ctx->task;
+    u32 pid = task->tgid;
+    u32 cpu = bpf_get_smp_processor_id();
+
+    // 初始化或更新进程能耗记录
+    struct process_energy energy = {
+        .pid = pid,
+        .cpu_id = cpu,
+        .timestamp_ns = bpf_ktime_get_ns(),
+    };
+
+    bpf_map_update_elem(&process_energy_map, &pid, &energy, BPF_ANY);
+    return 0;
+}
+```
+
+---
+
+## 4. 容器级能耗归因
+
+### 4.1 cgroupv2 能耗接口
+
+Linux 5.x+ 在 cgroupv2 中引入了能耗接口：
+
+```
+/sys/fs/cgroup/unified/system.slice/cpu.stat
+  usage_usec: 累计 CPU 使用时间 (微秒)
+  system_usec: 系统态时间
+  user_usec: 用户态时间
+```
+
+### 4.2 容器能耗 BPF 程序
+
+```c
+#include <vmlinux.h>
+#include <bpf/bpf_helpers.h>
+#include <bpf/bpf_typedef.h>
+
+// 容器能耗统计
+struct container_energy {
+    u64 cpu_time_us;        // CPU 使用时间 (微秒)
+    u64 cpu_time_system;    // 系统态时间
+    u64 cpu_time_user;      // 用户态时间
+    u64 timestamp_ns;       // 上次采样时间
+    u64 energy_pj;          // 累计能耗 (皮焦耳)
+};
+
+// 容器能耗 Map (keyed by cgroup inode)
+struct {
+    __uint(type, BPF_MAP_TYPE_HASH);
+    __uint(max_entries, 10240);
+    __type(key, u64);  // cgroup inode
+    __type(value, struct container_energy);
+} container_energy_map SEC(".maps");
+
+// 读取 cgroup CPU 统计
+SEC("tracepoint/cgroup/cgroup_cpu_usage")
+int on_cgroup_cpu_usage(struct cgroup_cpu_ctx *ctx) {
+    u64 cgroup_id = ctx->cgroup_id;
+    struct container_energy *energy = bpf_map_lookup_elem(&container_energy_map, &cgroup_id);
+
+    if (!energy) {
+        // 新容器，初始化
+        struct container_energy new_energy = {
+            .timestamp_ns = bpf_ktime_get_ns(),
+        };
+        bpf_map_update_elem(&container_energy_map, &cgroup_id, &new_energy, BPF_ANY);
+        energy = &new_energy;
+    }
+
+    // 计算时间差
+    u64 now = bpf_ktime_get_ns();
+    u64 delta_ns = now - energy->timestamp_ns;
+
+    // 从 cgroup stat 文件读取当前 CPU 使用
+    u64 cpu_usage = ctx->usage_usec * 1000;  // 微秒转纳秒
+
+    // 估算 CPU 功耗（基于 CPU 核心数和工作负载）
+    u32 cpu_freq_mhz = 3000;  // 假设 3GHz
+    u32 cpu_power_w = 15;     // 假设 15W per core (简化模型)
+    u64 cpu_power_pw = cpu_power_w * 1000000000000ULL;  // 瓦转皮瓦
+
+    // 能耗增量 = 功率 × 时间
+    u64 delta_energy_pj = cpu_power_pw * delta_ns / 1000000000;
+
+    // 更新容器能耗
+    energy->cpu_time_us = cpu_usage;
+    energy->timestamp_ns = now;
+    energy->energy_pj += delta_energy_pj;
+
+    return 0;
+}
+
+// 上报容器能耗（定期采样）
+SEC("tracepoint/timer/hrtimer_expire")
+int on_hrtimer_expire(struct hrtimer_ctx *ctx) {
+    // 这个 tracepoint 可以用来触发能耗上报
+    // 实际中通常使用用户态的定期采样
+    return 0;
+}
+```
+
+---
+
+## 5. 碳感知调度：绿色工作负载调度
+
+### 5.1 电网碳强度模型
 
 ```mermaid
 graph TB
-    subgraph "eBPF 能耗计量"
-        E1[进程级采样] --> E2[容器级聚合]
-        E2 --> E3[Pod 级汇总]
+    subgraph "碳强度数据源"
+        Grid[电网调度系统]
+        Weather[天气预报 API]
+        Carbon[碳排放监测平台]
     end
 
-    subgraph "计费系统"
-        E3 --> Billing[绿色账单]
-        Billing --> Team1[团队 A: $2340]
-        Billing --> Team2[团队 B: $1890]
-        Billing --> Team3[团队 C: $560]
+    subgraph "碳强度计算"
+        Grid --> CI[实时 CI gCO2/kWh]
+        Weather --> Forecast[24h 预测 CI]
+        Carbon --> CI
     end
 
-    subgraph "优化建议"
-        Billing --> Optimize[能效优化报告]
-        Optimize --> Suggest1[团队 A: 建议启用 CPU 睿眠]
-        Optimize --> Suggest2[团队 C: 建议扩容而非提频]
+    subgraph "eBPF 调度决策"
+        CI --> SC[sched_ext BPF 调度器]
+        Forecast --> SC
+        SC --> Decision[绿色任务调度]
     end
+
+    Decision --> |"高 CI 时段| Postpone[推迟计算任务]
+    Decision --> |"低 CI 时段| Execute[立即执行]
 ```
 
-1. **FinOps 精细化计费**：公有云平台能够生成"绿色账单"，鼓励用户优化代码结构以降低碳排放
-
-### 5.2 数据中心热管理
-
-当 BPF 感知到某核心功耗异常飙升时，联动 `sched_ext` 立即迁移任务，防止局部热点导致的服务器宕机。
+### 5.2 碳感知调度 BPF 程序
 
 ```c
-// 能耗感知的调度策略
-SEC("tp/thermal/temp_trip_point")
-int on_thermal_alert(void *ctx) {
-    // 温度超过阈值，触发任务迁移
-    u32 hot_cpu = bpf_get_smp_processor_id();
+#include <vmlinux.h>
+#include <bpf/bpf_helpers.h>
+#include <bpf/bpf_typedef.h>
 
-    // 通过 sched_ext 将该 CPU 上的任务迁移到空闲核心
-    // 具体 API 依赖 sched_ext 实现
-    bpf_printk("THERMAL: CPU %d overheating, migrating tasks", hot_cpu);
+// 碳强度数据（从用户态更新）
+struct {
+    __uint(type, BPF_MAP_TYPE_ARRAY);
+    __uint(max_entries, 1);
+    __type(key, u32);
+    __type(value, u32);  // carbon_intensity gCO2/kWh
+} carbon_intensity SEC(".maps");
+
+// 任务的碳敏感度标签
+struct {
+    __uint(type, BPF_MAP_TYPE_HASH);
+    __uint(max_entries, 10240);
+    __type(key, u32);  // pid
+    __type(value, u32);  // carbon_sensitive: 0=不敏感, 1=轻度, 2=高度
+} task_carbon_sensitivity SEC(".maps");
+
+// 可延迟任务的阈值
+#define CARBON_THRESHOLD_HIGH 400   // gCO2/kWh, 超过此值应延迟
+#define CARBON_THRESHOLD_LOW  100   // gCO2/kWh, 低于此值可立即执行
+
+SEC("sched_ext::should_preempt")
+int should_preempt(struct scx Sched_context *ctx, struct task_struct *p) {
+    u32 key = 0;
+    u32 *carbon_intensity = bpf_map_lookup_elem(&carbon_intensity, &key);
+    if (!carbon_intensity) return 0;  // 无数据，使用默认
+
+    u32 pid = bpf_get_current_pid_tgid() >> 32;
+    u32 *sensitivity = bpf_map_lookup_elem(&task_carbon_sensitivity, &pid);
+
+    // 非碳敏感任务：立即执行
+    if (!sensitivity || *sensitivity == 0) {
+        return 1;  // 允许抢占
+    }
+
+    // 碳敏感任务：根据碳强度决策
+    if (*sensitivity >= 2 && *carbon_intensity > CARBON_THRESHOLD_HIGH) {
+        // 高度敏感任务 + 高碳强度 = 延迟调度
+        return 0;  // 不抢占，让任务等待低 CI 时段
+    }
+
+    if (*carbon_intensity < CARBON_THRESHOLD_LOW) {
+        // 低碳强度 = 立即执行
+        return 1;
+    }
 
     return 0;
 }
 ```
 
-### 5.3 碳排放换算
+---
 
-```
-碳排放计算公式:
-CO2 (kg) = 能耗 (kWh) × 电网碳排放因子 (kg CO2/kWh)
+## 6. 存储与网络能耗建模
 
-中国大陆 2026 年电网因子 ≈ 0.55 kg CO2/kWh
-美国平均因子 ≈ 0.38 kg CO2/kWh
+### 6.1 NVMe SSD 功耗模型
 
-示例:
-某个 AI 推理服务每月消耗 100,000 kWh
-碳排放 ≈ 100,000 × 0.55 = 55,000 kg CO2 = 55 吨 CO2
-通过 eBPF 优化减少 10% 能耗 → 减排 5.5 吨 CO2/月
+| 状态 | 功耗 | eBPF 追踪点 |
+|:---|:---|:---|
+| **Active** | 5-10W | blk_mq_start_request |
+| **Idle** | 1-3W | blk_mq_idle |
+| **PS0 (Active) | 5W | - |
+| **PS1 (Sleep) | 1W | - |
+| **PS4 (最深省电) | 0.005W | - |
+
+### 6.2 网络能耗归因
+
+```c
+#include <vmlinux.h>
+#include <bpf/bpf_helpers.h>
+
+// 网卡功耗状态
+struct nic_power_state {
+    u64 tx_bytes;
+    u64 rx_bytes;
+    u32 speed_mbps;  // 网卡速率
+    u64 timestamp_ns;
+};
+
+// NIC 功耗 Map
+struct {
+    __uint(type, BPF_MAP_TYPE_HASH);
+    __uint(max_entries, 32);
+    __type(key, u32);  // ifindex
+    __type(value, struct nic_power_state);
+} nic_power_map SEC(".maps");
+
+// 网络传输追踪
+SEC("xdp")
+int xdp_energy_tracker(struct xdp_md *ctx) {
+    u32 ifindex = ctx->ingress_ifindex;
+    struct nic_power_state *state = bpf_map_lookup_elem(&nic_power_map, &ifindex);
+
+    if (!state) return XDP_PASS;
+
+    void *data = (void *)(long)ctx->data;
+    void *data_end = (void *)(long)ctx->data_end;
+    u32 pkt_size = data_end - data;
+
+    // 假设每 GB 传输耗能约 2.5Wh (10GbE 网卡)
+    u64 tx_energy_pj = (u64)pkt_size * 2500ULL * 3600ULL / (1024 * 1024 * 1024);
+
+    state->tx_bytes += pkt_size;
+    state->timestamp_ns = bpf_ktime_get_ns();
+
+    return XDP_PASS;
+}
 ```
 
 ---
 
-## 6. 性能开销评估
+## 7. 生产级能耗监控架构
 
-| 采样频率 | CPU 开销 | 内存开销 | 能耗计量精度 |
-|:---|:---|:---|:---|
-| 10ms | < 0.1% | ~2MB | ±5% |
-| 1ms | 0.5-1% | ~5MB | ±2% |
-| 100μs | 3-5% | ~20MB | ±0.5% |
-| 10μs | 15-25% | ~100MB | ±0.1% |
+### 7.1 整体架构
 
-推荐生产环境使用 **1ms** 采样频率，在精度和开销之间取得平衡。
+```mermaid
+graph TB
+    subgraph "数据采集层 (eBPF)"
+        CPU_E[CPU 能耗<br>RAPL + PMU]
+        NET_E[网络能耗<br>XDP + NIC]
+        MEM_E[内存能耗<br>内存控制器]
+        IO_E[存储能耗<br>blk-mq tracepoint]
+    end
+
+    subgraph "数据聚合层"
+        RB[BPF Ring Buffer]
+        AGG[用户态 Agent]
+    end
+
+    subgraph "归因与存储"
+        ATTR[能耗归因引擎<br>容器/服务/团队]
+        TSDB[(时序数据库<br>Prometheus/VRA)]
+    end
+
+    subgraph "分析与决策"
+        CARBON[碳强度 API]
+        OPT[优化建议引擎]
+        SCHED[碳感知调度器]
+    end
+
+    CPU_E --> RB
+    NET_E --> RB
+    MEM_E --> RB
+    IO_E --> RB
+    RB --> AGG
+    AGG --> ATTR
+    AGG --> TSDB
+    CARBON --> SCHED
+    ATTR --> OPT
+    OPT --> SCHED
+```
+
+### 7.2 能耗仪表盘指标
+
+```promql
+# 容器级能耗 (Wh)
+container_energy_wh{container="my-app"} = 
+  rate(container_cpu_usage_seconds_total[5m]) * 5 * 1000 / 3600
+
+# 服务碳排放 (gCO2eq)
+service_carbon{svc="payment"} = 
+  service_energy_wh * carbon_intensity_gco2_per_kwh / 1000
+
+# PUE (Power Usage Effectiveness)
+pue = total_facility_power / IT_power
+
+# 绿色电力比例
+green_power_ratio = renewable_power_kw / total_power_kw
+```
 
 ---
 
-## 7. 能耗优化的实际案例
+## 8. 碳归因与绿色IT报告
 
-### 7.1 AI 推理集群的能耗优化
-
-某互联网公司的 AI 推理集群（128 台 A100 服务器）通过 eBPF 能耗监控发现了显著的优化空间：
-
-| 指标 | 优化前 | 优化后 | 节省比例 |
-|:---|:---|:---|:---|
-| **单服务器月均电费** | $2,340 | $1,680 | 28.2% |
-| **P99 推理延迟** | 45ms | 42ms | 6.7% (无退化) |
-| **GPU 利用率均值** | 62% | 78% | +16% |
-| **月碳排放** | 18.7 吨 CO2 | 13.4 吨 CO2 | 28.3% |
-| **年化节省** | - | $100K | - |
-
-**优化措施**（按 eBPF 发现驱动）：
-1. **空闲 GPU 自动降频**：eBPF 监控到 23:00-6:00 GPU 利用率 < 15%，联动 NVIDIA DCGM 降频至 300MHz
-2. **热点 Pod 迁移**：eBPF 检测到 3 台服务器功耗持续 > 320W，通过 K8s 调度器迁移部分 Pod
-3. **推理请求合并**：eBPF 发现大量 < 10 token 的小请求，在网关层合并为批量请求
-
-### 7.2 绿色计费 Python 实现
+### 8.1 Scope 3 碳排放计算
 
 ```python
-# green_billing.py — 基于进程级能耗的精细化计费
-import time
-from dataclasses import dataclass
-from typing import Dict, List
+# 碳归因计算器
+def calculate_scope3_emissions(service_energy_kwh, carbon_intensity):
+    """
+    计算 IT 服务的 Scope 3 碳排放
+    """
+    # 隐含碳排放系数 (embodied carbon)
+    embodied_carbon_per_kwh = 0.05  # kgCO2eq/kWh (硬件制造分摊)
 
-@dataclass
-class ProcessEnergy:
-    pid: int
-    comm: str
-    energy_mj: float  # 累计功耗 (毫焦耳)
-    cpu_time_ns: float
+    # 运营碳排放
+    operational_carbon = service_energy_kwh * carbon_intensity  # kgCO2eq
 
-class GreenBillingEngine:
-    def __init__(self, electricity_rate: float = 0.12):
-        # 美元/kWh，可根据地区调整
-        self.rate = electricity_rate
-        self.carbon_factor = 0.38  # kg CO2/kWh (美国平均)
-        self.processes: Dict[int, ProcessEnergy] = {}
+    # 隐含碳
+    embodied_carbon = service_energy_kwh * embodied_carbon_per_kwh
 
-    def update_from_bpf(self, pid: int, comm: str, delta_mj: float, delta_ns: float):
-        if pid not in self.processes:
-            self.processes[pid] = ProcessEnergy(pid, comm, 0, 0)
-        self.processes[pid].energy_mj += delta_mj
-        self.processes[pid].cpu_time_ns += delta_ns
+    # 总排放
+    total = operational_carbon + embodied_carbon
 
-    def generate_bill(self, team_mapping: Dict[int, str]) -> Dict[str, dict]:
-        team_bills: Dict[str, dict] = {}
-
-        for proc in self.processes.values():
-            team = team_mapping.get(proc.pid, "unassigned")
-            energy_kwh = proc.energy_mj / 3_600_000_000  # mJ → kWh
-
-            if team not in team_bills:
-                team_bills[team] = {"energy_kwh": 0, "cost_usd": 0, "co2_kg": 0}
-
-            team_bills[team]["energy_kwh"] += energy_kwh
-            team_bills[team]["cost_usd"] += energy_kwh * self.rate
-            team_bills[team]["co2_kg"] += energy_kwh * self.carbon_factor
-
-        return team_bills
-
-    def print_report(self, team_mapping: Dict[int, str]):
-        bills = self.generate_bill(team_mapping)
-        print(f"\n{'='*60}")
-        print(f"  绿色账单报告 (Green Billing Report)")
-        print(f"{'='*60}")
-        print(f"  {'团队':<20} {'能耗(kWh)':<12} {'费用(USD)':<12} {'CO2(kg)':<12}")
-        print(f"  {'-'*56}")
-
-        total_cost = 0
-        total_co2 = 0
-        for team, bill in sorted(bills.items(), key=lambda x: x[1]["cost_usd"], reverse=True):
-            print(f"  {team:<20} {bill['energy_kwh']:<12.2f} "
-                  f"{bill['cost_usd']:<12.2f} {bill['co2_kg']:<12.2f}")
-            total_cost += bill["cost_usd"]
-            total_co2 += bill["co2_kg"]
-
-        print(f"  {'-'*56}")
-        print(f"  {'总计':<20} {'':<12} {total_cost:<12.2f} {total_co2:<12.2f}")
-        print(f"{'='*60}")
-
-# 使用示例
-if __name__ == "__main__":
-    engine = GreenBillingEngine()
-
-    # 模拟从 eBPF Map 读取的数据
-    # 实际通过 bpf_map_lookup_elem 获取
-    engine.update_from_bpf(pid=1234, comm="inference-svc", delta_mj=1.5e9, delta_ns=1e9)
-    engine.update_from_bpf(pid=1234, comm="inference-svc", delta_mj=2.3e9, delta_ns=1e9)
-    engine.update_from_bpf(pid=5678, comm="data-pipeline", delta_mj=800e6, delta_ns=1e9)
-
-    # PID → 团队映射
-    team_map = {1234: "AI Team", 5678: "Data Team"}
-    engine.print_report(team_map)
+    return {
+        'operational': operational_carbon,
+        'embodied': embodied_carbon,
+        'total': total,
+        'energy_kwh': service_energy_kwh,
+        'carbon_intensity': carbon_intensity
+    }
 ```
 
-### 7.3 eBPF 能耗监控与 Kubernetes 联动
+### 8.2 绿色IT报告示例
 
 ```yaml
-# kepler-exporter DaemonSet 配置示例
-apiVersion: apps/v1
-kind: DaemonSet
-metadata:
-  name: kepler-exporter
-  namespace: monitoring
-spec:
-  selector:
-    matchLabels:
-      app: kepler
-  template:
-    metadata:
-      labels:
-        app: kepler
-    spec:
-      hostPID: true
-      hostNetwork: true
-      containers:
-        - name: kepler
-          image: quay.io/sustainable_computing_io/kepler:latest
-          securityContext:
-            privileged: true
-          volumeMounts:
-            - name: sysfs
-              mountPath: /sys
-              readOnly: true
-            - name: lib-modules
-              mountPath: /lib/modules
-      volumes:
-        - name: sysfs
-          hostPath:
-            path: /sys
-        - name: lib-modules
-          hostPath:
-            path: /lib/modules
----
-# Prometheus ServiceMonitor
-apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
-metadata:
-  name: kepler
-spec:
-  selector:
-    matchLabels:
-      app: kepler
-  endpoints:
-    - port: http
-      interval: 10s
+# 2026-Q1 绿色IT季度报告
+reporting_period: 2026-Q1
+organization: acme-corp
+
+# 能耗摘要
+energy:
+  total_kwh: 1250000
+  renewable_kwh: 875000  # 70%
+  grid_kwh: 375000       # 30%
+
+# 碳排放
+carbon:
+  scope2_operations: 150  # tonnes CO2eq
+  scope3_value_chain: 45  # tonnes CO2eq
+  carbon_intensity_avg: 400  # gCO2eq/kWh
+
+# 服务级归因
+services:
+  - name: api-gateway
+    energy_kwh: 125000
+    carbon_kg: 50000
+    efficiency: 2.5 Wreq/s
+
+  - name: ml-inference
+    energy_kwh: 450000
+    carbon_kg: 180000
+    efficiency: 0.8 tokens/J
+
+# 优化建议
+recommendations:
+  - id: 1
+    service: ml-inference
+    action: enable-gpu-power-gating
+    potential_savings_kwh: 45000
+    priority: high
 ```
 
 ---
 
-## 8. FAQ
+## 9. FAQ
 
-**Q1：RAPL 读取需要 root 权限吗？**
+**Q1：eBPF 能耗测量的精度如何？**
 
-A：是的。读取 MSR 寄存器需要 `CAP_SYS_RAWIO` 或 root 权限。在容器环境中，需要 `--privileged` 或 `--cap-add=SYS_RAWIO`。eBPF 程序本身运行在内核态，天然有权限读取 MSR，但加载 eBPF 程序仍需要 root。
+A：基于 RAPL 的 CPU/DRAM 功耗测量精度约为 0.5%。但进程级归因的精度取决于调度粒度和采样率，典型误差在 5-15%。对于需要精确计费的场景，建议使用 IPMI/BMC 的整机功耗数据结合 cgroup CPU 时间进行分摊。
 
-**Q2：eBPF 采样的能耗数据能用于计费吗？**
+**Q2：如何处理多租户环境下的能耗隔离？**
 
-A：可以，但需要注意精度。eBPF 的 sched_switch 采样方法在进程频繁切换时会有 1-5% 的误差（因为采样是离散的，两次采样之间的能量变化需要按时间比例分配）。对于内部 FinOps 成本分摊（精确到团队/Pod 级别），这个精度足够。对于外部计费（精确到美元），建议结合 IPMI 数据进行校准。
+A：在 Kubernetes 环境中，每个 Pod 属于一个 cgroup。通过追踪 `cgroup_id` 并关联到 Pod metadata，可以实现租户级能耗隔离。结合 Kubernetes 的 ResourceQuota，可以将能耗纳入多租户计费体系。
 
-**Q3：ARM 平台支持 RAPL 吗？**
+**Q3：碳感知调度会影响服务质量吗？**
 
-A：ARM 平台有类似的机制但不叫 RAPL。ARM 使用 SCMI (System Control and Management Interface) 协议的能量计量，或者厂商特定的寄存器。Ampere Altra 和 AWS Graviton 系列支持通过 PMU (Performance Monitoring Unit) 读取能耗数据。eBPF 可以通过 `perf_event` 抽象层统一访问这些接口。
+A：合理的碳调度策略不会影响 SLO。设计原则是：
+1) 只对"可延迟任务"（batch jobs、后台同步、非紧急批处理）应用延迟
+2) 设定最大延迟阈值（如 30 分钟），超则强制执行
+3) 紧急任务（latency-sensitive）始终优先执行
 
-**Q4：如何区分 GPU 和 CPU 的能耗？**
+**Q4：ARM 架构的能耗追踪与 x86 有何不同？**
 
-A：RAPL 仅测量 CPU 和 DRAM 能耗。GPU 能耗需要通过 NVIDIA 的 NVML API (`nvmlDeviceGetPowerUsage`) 获取。可以通过将 eBPF 的进程上下文信息与 GPU 进程关联（通过 `nvidia-smi pmon` 的 PID 列），实现 GPU 能耗的进程级归因。NVIDIA 在 2026 年也开放了 GPU 内部的 eBPF 探点（见[[2026-04-08-ebpf-deep-dive-ch35-npu-tpu-ai-hardware|第三十五章]]）。
+A：ARM 服务器（如 AWS Graviton、Ampere Altra）使用 ARM Performance Monitors (PMCCNTR) 和 RAPL 等效接口（ARM Average Power Model）。BPF 程序需要针对 ARM 的 PMU 事件重新编写，但逻辑相同。AWS Graviton 提供 `aws_energi` 伪设备接口读取功耗。
 
-**Q5：eBPF 能耗监控会增加多少额外功耗？**
+**Q5：如何将能耗数据集成到 FinOps 平台？**
 
-A：eBPF 程序本身也有功耗，但非常小。在 1ms 采样频率下，eBPF 程序的 CPU 占用约 0.5-1%，换算为功耗约 1-3W（在 200W TDP 的服务器上，占 < 2%）。这个开销远小于它所节省的优化空间（通常 10-30%）。
+A：标准流程是：
+1. eBPF Agent 采集 → 格式化 JSON
+2. 通过 OpenTelemetry Protocol (OTLP) 发送到时序数据库
+3. 与云厂商的 CUR (Cost and Usage Report) 关联
+4. 在 FinOps 平台（如 CloudHealth、Spot.io）中进行成本归因
 
-**Q6：如何与 Kubernetes 集成实现 Pod 级能耗监控？**
-
-A：集成方案：1) eBPF Agent 以 DaemonSet 运行在每个节点上；2) Agent 将进程级能耗按 cgroup ID 聚合到 Pod 级别；3) 通过 Kubernetes Metric Server 自定义指标 API 暴露；4) 与 Prometheus/Grafana 集成展示。开源项目 `kepler` (Kubernetes-based Efficient Power Level Exporter) 已经实现了这一方案。
-
-**Q7：eBPF 能耗监控能否用于碳排放交易或碳信用认证？**
-
-A：eBPF 提供的进程级能耗数据可以用于碳排放计量，但碳排放交易通常需要第三方认证。要达到认证级别，需要：1) 使用经过校准的硬件计量（定期与电表数据交叉验证）；2) 记录完整的审计日志（何时启用、何版本程序、采样频率）；3) 持续运行（不能仅在审计期间启用）；4) 结合 PUE（Power Usage Effectiveness）等数据中心级指标。eBPF 数据作为精细化分量，与机柜级电表数据一起构成完整的碳排放报告。
-
-**Q8：如何处理 NUMA 架构下 RAPL 的读数差异？**
-
-A：在多 NUMA 节点的服务器上，每个 NUMA 节点有独立的 RAPL 寄存器。eBPF 采样时需要：1) 读取当前 CPU 所属 NUMA 节点的 RAPL（通过 `/sys/devices/system/cpu/cpu<n>/topology/core_id` 映射）；2) 为每个 NUMA 节点维护独立的能量计数器；3) 在进程跨 NUMA 节点迁移时（通过 `sched_migrate_task` 追踪），正确归属能量消耗。kepler 项目已处理了 NUMA 场景的能耗归因。
+[[2026-04-08-ebpf-deep-dive-ch14-ai-llm-inference-monitoring|第十四章：AI 推理与大模型监控前沿]] 介绍了 AI 推理场景下的监控实践，与能耗归因有很强的关联性。

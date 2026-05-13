@@ -410,7 +410,7 @@ graph TB
             AppC[Application C]
         end
 
-        XDP1[XDP / TC eBPF] --> ZT1[ztunnel<br/>Rust + WASM Plugins]
+        XDP1[XDP / TC eBPF] --> ZT1[ztunnel<br>Rust + WASM Plugins]
         ZT1 --> XDP1
     end
 

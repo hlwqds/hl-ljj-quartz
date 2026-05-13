@@ -114,16 +114,16 @@ graph LR
 ```mermaid
 graph TB
     subgraph "海 — 全局覆盖层"
-        CRI["CRI Runtime Hook<br/>(containerd/CRI-O)"]
-        Daemon["bpftime-daemon<br/>(内核态监听)"]
+        CRI["CRI Runtime Hook<br>(containerd/CRI-O)"]
+        Daemon["bpftime-daemon<br>(内核态监听)"]
     end
     subgraph "陆 — 进程级注入"
-        PTRACE["PTRACE 注入器<br/>(存量进程)"]
-        LDPRE["LD_PRELOAD<br/>(增量进程)"]
+        PTRACE["PTRACE 注入器<br>(存量进程)"]
+        LDPRE["LD_PRELOAD<br>(增量进程)"]
     end
     subgraph "空 — 用户态加速"
-        URT["libbpftime.so<br/>(用户态 eBPF VM)"]
-        JIT["JIT 编译器<br/>(本地机器码)"]
+        URT["libbpftime.so<br>(用户态 eBPF VM)"]
+        JIT["JIT 编译器<br>(本地机器码)"]
     end
     CRI --> LDPRE
     Daemon --> PTRACE
@@ -237,7 +237,7 @@ ENV LD_PRELOAD=/usr/lib/libbpftime.so
 ```mermaid
 graph TD
     subgraph "内核态"
-        Kernel[Linux 内核] -- "execve 事件" --> TP[tracepoint<br/>sys_enter_execve]
+        Kernel[Linux 内核] -- "execve 事件" --> TP[tracepoint<br>sys_enter_execve]
         TP -- "ringbuf" --> RingBuf[共享环形缓冲区]
     end
     subgraph "用户态"
@@ -498,12 +498,12 @@ graph TD
         API[Admission Controller]
     end
     subgraph "bpftime-webhook"
-        WH[Webhook Server<br/>Go 实现]
-        Filter{检查注解<br/>bpftime.io/inject}
+        WH[Webhook Server<br>Go 实现]
+        Filter{检查注解<br>bpftime.io/inject}
     end
     subgraph "Pod 生命周期"
         Create[Pod Create 请求]
-        Mutated[注入 LD_PRELOAD<br/>+ initContainer]
+        Mutated[注入 LD_PRELOAD<br>+ initContainer]
         Run[运行时自动加载 libbpftime.so]
     end
     Create --> API

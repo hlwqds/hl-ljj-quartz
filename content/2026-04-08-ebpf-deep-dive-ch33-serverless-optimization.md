@@ -119,7 +119,7 @@ graph LR
     end
 
     subgraph "eBPF 方式 (redirect_peer)"
-        F2[函数容器] --> |"bpf_redirect_peer<br/>直接跳转"| Host2[宿主机]
+        F2[函数容器] --> |"bpf_redirect_peer<br>直接跳转"| Host2[宿主机]
         Host2 --> |"XDP 转发"| Internet2[外部网络]
     end
 ```

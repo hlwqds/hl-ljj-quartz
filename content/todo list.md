@@ -1,7 +1,9 @@
 - [ ] 远程控制claude agent或者kitty
 - [ ] claude code + kitty面板 
 - [ ] 基于 eBPF 的 AI 代码修改全流程观测系统设计
+- [ ] 基于 eBPF tracepoint 实现透明热升级 daemon：用 tracepoint/syscalls/sys_enter_bpf 监控所有 bpf() 调用，自动发现集群内 eBPF 程序拓扑，结合 bpffs watch 和 bpf_link_update 原子替换，实现无侵入的程序热升级和 map 状态迁移。核心设计点：map schema 描述与版本 diff、迁移策略（热迁移 vs 优雅停机）、回滚机制、特殊 map 类型（per-CPU、ringbuf）处理
 - [ ] caracal或者suricata的性能测试专项
+- [ ] 后量子算法在ipsec tls1.3 ssh协议中能拿到哪些信息
 - [x] quartz支持excalidraw
 - [x] deploy脚本将consul token清空了
 - [x] esig也需要生成ruels到caracal对应的rules目录，我们漏掉了

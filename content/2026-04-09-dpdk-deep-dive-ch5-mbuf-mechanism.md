@@ -69,76 +69,59 @@ struct sk_buff {
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
 │  ┌─────────────────────────────────────────────────────────────────────┐   │
-│  │                     Primary Structure (64 bytes)                   │   │
+│  │                     Primary Structure (128 bytes, 含缓存行填充)      │   │
 │  │                                                                      │   │
 │  │  struct rte_mempool *pool;     // 8B  指向所属 mempool              │   │
 │  │  void *buf_addr;                // 8B  数据缓冲区虚拟地址            │   │
-│  │  uint64_t buf_iova;            // 8B  数据缓冲区 IOVA 地址          │   │
-│  │  uint32_t buf_len;             // 4B  缓冲区总长度 (通常 2176)      │   │
-│  │                                                                       │   │
-│  │  /* Packet meta数据 */                                               │   │
+│  │  rte_iova_t buf_iova;          // 8B  数据缓冲区 IOVA 地址          │   │
+│  │  uint16_t buf_len;             // 2B  缓冲区总长度 (通常 2176)      │   │
 │  │  uint16_t data_off;            // 2B  数据在缓冲区中的偏移         │   │
 │  │  uint16_t refcnt;              // 2B  引用计数 (clones/multi-seg)   │   │
 │  │  uint16_t nb_segs;            // 2B  分段数量 (multi-segment)      │   │
+│  │                                                                       │   │
+│  │  uint64_t ol_flags;            // 8B  Offload 标志位                │   │
+│  │  uint16_t pkt_len;             // 2B  完整包长度 (所有 segment 之和) │   │
+│  │  uint16_t data_len;            // 2B  本 segment 数据长度           │   │
 │  │  uint16_t port;               // 2B  来源端口                      │   │
+│  │  uint16_t vlan_tci;           // 2B  VLAN tag                     │   │
+│  │  uint64_t timestamp;           // 8B  包时间戳 (DPDK 19.11+ 为 dynfield) │
 │  │                                                                       │   │
-│  │  /* 4B 填充 (unused) */                                              │   │
-│  │                                                                       │   │
-│  │  /* Timestamp */                                                    │   │
-│  │  uint64_t timestamp;           // 8B  包时间戳 (可配置)             │   │
-│  │                                                                       │   │
-│  │  /* Segment descriptor */                                           │   │
 │  │  union {                                                             │   │
-│  │      uint32_t pkt_len;          //   完整包长度                      │   │
-│  │      uint32_t shched_len;      //   用于图形化调度                  │   │
+│  │      uint32_t sched_len;      //   调度器使用                       │   │
+│  │      uint32_t usr;            //   用户自定义                       │   │
 │  │  };                                                                  │   │
-│  │  uint16_t vlan_tci;            // 2B  VLAN tag                     │   │
-│  │  uint16_t vlan_tci_outer;      // 2B  Outer VLAN tag                │   │
 │  │                                                                       │   │
-│  │  /* Offload flags */                                                │   │
-│  │  union rte_vlan_macip_f酒;    // 4B  VLAN + L3/L4 offset           │   │
+│  │  uint16_t vlan_tci_outer;      // 2B  Outer VLAN tag (QinQ)         │   │
 │  │                                                                       │   │
-│  │  uint32_t ol_flags;            // 4B  Offload 标志位                │   │
+│  │  /* 协议头部长度 (位域编码在 64bit tx_offload 中) */                 │   │
+│  │  uint64_t tx_offload;           // 8B  TX offload 元数据            │   │
+│  │    ├─ l2_len (7 bits)          //   L2 头部长度                     │   │
+│  │    ├─ l3_len (9 bits)          //   L3 头部长度                     │   │
+│  │    ├─ l4_len (7 bits)          //   L4 头部长度                     │   │
+│  │    └─ tso_segsz (16 bits)      //   TSO segment size                │   │
 │  │                                                                       │   │
-│  │  /* DynamIC fields */                                              │   │
-│  │  struct rte_mbuf_dyn_field dump1;  // 8B  动态字段 1                │   │
-│  │  struct rte_mbuf_dyn_field dump2;  // 8B  动态字段 2                │   │
+│  │  /* 指针 */                                                          │   │
+│  │  struct rte_mbuf *next;        // 8B  下一个 segment (链表)         │   │
+│  │  struct rte_mbuf *priv;        // 8B  私有数据指针                  │   │
 │  │                                                                       │   │
-│  │  /* Segment data pointer */                                         │   │
-│  │  char *l2_len;                  //  L2 头部长度指针                  │   │
-│  │  char *l3_len;                 //  L3 头部长度指针                  │   │
-│  │  char *l4_len;                 //  L4 头部长度指针                  │   │
-│  │  char *tso_segsz;              //  TSO segment size                 │   │
+│  │  /* Dynfield 区域 (预留给动态注册的字段) */                          │   │
+│  │  uint8_t dynfield[0];         // 动态字段数组                      │   │
 │  │                                                                       │   │
 │  └─────────────────────────────────────────────────────────────────────┘   │
 │                                                                             │
 │  ┌─────────────────────────────────────────────────────────────────────┐   │
-│  │                     DynamIC Data (用户自定义)                        │   │
+│  │                     Data Buffer (buf_addr 指向的内存)                 │   │
 │  │                                                                      │   │
-│  │  buf_addr + data_off 指向这里                                        │   │
-│  │                                                                       │   │
 │  │  ┌───────────────────────────────────────────────────────────────┐   │   │
 │  │  │  RTE_PKTMBUF_HEADROOM (128 bytes)                             │   │   │
-│  │  │  (headroom for encapsulation)                                 │   │   │
+│  │  │  (用于 prepend 协议头部，VXLAN 封装等)                        │   │   │
 │  │  ├───────────────────────────────────────────────────────────────┤   │   │
-│  │  │                                                               │   │   │
 │  │  │                    Packet Data                                │   │   │
-│  │  │                    (Variable length, e.g. 2048 bytes)         │   │   │
-│  │  │                                                               │   │   │
-│  │  │                                                               │   │   │
+│  │  │                    (data_len 字节)                             │   │   │
 │  │  ├───────────────────────────────────────────────────────────────┤   │   │
-│  │  │  RTE_PKTMBUF_TAILROOM (optional)                             │   │   │
-│  │  │  (tailroom, may not exist)                                   │   │   │
+│  │  │  Tailroom: buf_len - data_off - data_len                     │   │   │
+│  │  │  (用于 append 数据)                                           │   │   │
 │  │  └───────────────────────────────────────────────────────────────┘   │   │
-│  │                                                                       │   │
-│  └─────────────────────────────────────────────────────────────────────┘   │
-│                                                                             │
-│  ┌─────────────────────────────────────────────────────────────────────┐   │
-│  │                     DynamIC Private Data (optional)                   │   │
-│  │                                                                      │   │
-│  │  priv_size > 0 时存在，用于应用程序私有数据                          │   │
-│  │  例如：flow director 规则、封装协议信息                              │   │
-│  │                                                                       │   │
 │  └─────────────────────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -152,19 +135,23 @@ struct sk_buff {
 struct rte_mempool *pool;
 
 // 数据缓冲区地址
-void *buf_addr;           // 虚拟地址
-uint64_t buf_iova;        // IOVA 地址（DMA 用）
-uint32_t buf_len;         // 缓冲区总大小（通常 2176B）
-uint16_t data_off;        // 数据起始偏移
+void *buf_addr;               // 虚拟地址
+rte_iova_t buf_iova;           // IOVA 地址（DMA 用）
+uint16_t buf_len;              // 缓冲区总大小（通常 2176B）
+uint16_t data_off;             // 数据起始偏移
 
 // 示例：获取数据指针
-static inline char *
-rte_pktmbuf_mtod(struct rte_mbuf *m, type)
-{
-    return (type)(rte_pktmbuf_read(m, 0, m->data_len, NULL));
-}
+// rte_pktmbuf_mtod 是一个宏，不是函数
+#define rte_pktmbuf_mtod(m, type) ((type)((char *)(m)->buf_addr + (m)->data_off))
 
-// 安全读取（处理 multi-segment）
+// 使用：获取以太网头指针
+struct rte_ether_hdr *eth = rte_pktmbuf_mtod(m, struct rte_ether_hdr *);
+
+// 带偏移的版本
+#define rte_pktmbuf_mtod_offset(m, type, offset) \
+    ((type)((char *)(m)->buf_addr + (m)->data_off + (offset)))
+
+// 安全读取（处理 multi-segment 跨段）
 static inline void *
 rte_pktmbuf_read(const struct rte_mbuf *m, uint32_t off,
                  uint32_t len, void *buf)
@@ -172,7 +159,8 @@ rte_pktmbuf_read(const struct rte_mbuf *m, uint32_t off,
     if (off + len <= rte_pktmbuf_data_len(m)) {
         return rte_pktmbuf_mtod_offset(m, void *, off);
     }
-    // 处理跨 segment 的情况...
+    // 处理跨 segment 的情况：逐段拷贝到 buf
+    // ...
 }
 ```
 
@@ -187,18 +175,23 @@ uint16_t refcnt;
 uint16_t nb_segs;
 
 // multi-segment mbuf 示例
-// 例如：一个 VLAN + IP + TCP + Payload 的大包
+// Jumbo frame 被拆分到多个 mbuf segment 中
+// 每个 segment 的数据区通常为 2KB
 //
-//     mbuf[0] (head)     mbuf[1]           mbuf[2]
-//    ┌──────────┐       ┌──────────┐       ┌──────────┐
-//    │ VLAN hdr │       │ IP hdr   │       │ TCP hdr  │ → mbuf[3]
-//    │ (14B)    │       │ (20B)    │       │ (20B)    │
-//    ├──────────┤       ├──────────┤       ├──────────┤
-//    │          │       │          │       │          │
-//    │          │──────►│          │──────►│ Payload  │ → ... → mbuf[n]
-//    │          │       │          │       │          │
-//    └──────────┘       └──────────┘       └──────────┘
-//    next = mbuf[1]    next = mbuf[2]    next = NULL
+//     mbuf[0] (head)         mbuf[1]              mbuf[2]
+//    ┌──────────────┐       ┌──────────────┐      ┌──────────────┐
+//    │ [ETH+IP+TCP] │       │  Payload     │      │  Payload     │
+//    │  headers     │       │  (2048B)     │      │  (剩余)      │
+//    │  (54B)       │       │              │      │              │
+//    │  + payload   │──────►│              │─────►│              │
+//    │  (1994B)     │       │              │      │              │
+//    └──────────────┘       └──────────────┘      └──────────────┘
+//    next = mbuf[1]        next = mbuf[2]        next = NULL
+//
+//    mbuf[0]: data_len=2048,  pkt_len=6000
+//    mbuf[1]: data_len=2048
+//    mbuf[2]: data_len=1904
+//    nb_segs = 3, pkt_len = 2048 + 2048 + 1904 = 6000
 ```
 
 #### 2.2.3 包描述字段
@@ -222,10 +215,12 @@ uint64_t timestamp;
 
 ol_flags 是 mbuf 最复杂的字段之一，定义了数据包的硬件卸载能力：
 
+> [!note] 以下使用 `PKT_TX_*` / `PKT_RX_*` 旧命名（兼容性宏）。DPDK 20+ 推荐使用 `RTE_MBUF_F_TX_*` / `RTE_MBUF_F_RX_*` 新命名。
+
 ```c
 // lib/mbuf/rte_mbuf_core.h
 
-// ============== Packet Type (3 bits) ==============
+// ============== Packet Type ==============
 #define PKT_TX_IPV4          (1ULL <<  3)   // IPv4 packet
 #define PKT_TX_IPV6          (1ULL <<  4)   // IPv6 packet
 #define PKT_TX_VLAN          (1ULL <<  5)   // VLAN tag present
@@ -332,91 +327,94 @@ graph LR
 // lib/mbuf/rte_mbuf_dyn.h
 
 // 动态字段描述
-struct rte_mbuf_dyn {
-    const char *name;           // 字段名称
+struct rte_mbuf_dynfield {
+    const char *name;           // 字段名称（全局唯一）
     size_t size;                // 字段大小（通常 8）
     size_t align;               // 对齐要求
-    uint64_t flags;             // 标志
-    void *opaque;               // 用户不透明数据
+    int offset;                 // 注册成功后由 DPDK 填入偏移量
 };
 
 // 注册动态字段（库或应用初始化时调用）
-int
-rte_mbuf_dyn_register(struct rte_mbuf_dyn *dyn)
-{
-    // 查找第一个空闲的 dynfield 槽位
-    int idx = find_free_dynfield();
-    if (idx < 0) return -ENOSPC;
-    
-    // 存储到全局注册表
-    rte_mbuf_dyn_table[idx] = *dyn;
-    
-    return idx;
+// 返回 offset，后续通过 offset 访问字段
+// 如果名称已注册或空间不足返回负值
+int rte_mbuf_dynfield_register(const struct rte_mbuf_dynfield *params);
+
+// 使用示例：
+static const struct rte_mbuf_dynfield my_field_desc = {
+    .name = "my_app_counter",
+    .size = sizeof(uint64_t),
+    .align = __alignof__(uint64_t),
+};
+
+int my_field_offset = rte_mbuf_dynfield_register(&my_field_desc);
+if (my_field_offset < 0) {
+    // 注册失败：名称冲突或空间不足
 }
 
-// 全局注册表（最多 64 个 dynfield）
-static struct rte_mbuf_dyn rte_mbuf_dyn_table[RTE_MBUF_DYN_MAX];
-static int rte_mbuf_dyn_count = 0;
+// 后续通过 offset 读写：
+*(uint64_t *)((char *)m + my_field_offset) = value;
 ```
 
 ### 3.3 常用 Dynfield
 
 ```c
-// ============== DPDK 内置 dynfield ==============
+// ============== DPDK 内置 dynfield（已预注册） ==============
 
-// 1. RSS hash (接收时自动填充)
-#define RTE_MBUF_DYNFRAG_HASH_FLD      0
-struct rte_mbuf_dyn rss_dynfield = {
-    .name = "rss_hash",
-    .size = sizeof(uint64_t),
-    .align = __alignof__(uint64_t),
-};
+// 内置 dynfield 通过名称查找获取 offset：
+// 1. RSS hash（接收时由 PMD 自动填充）
+int rss_hash_offset = rte_mbuf_dynfield_lookup("rte_flow_dynf.rss_hash", NULL);
 
-// 2. Timestamp (接收时自动填充)
-#define RTE_MBUF_DYNFRAG_TIMESTAMP_FLD  1
-struct rte_mbuf_dyn timestamp_dynfield = {
-    .name = "timestamp",
-    .size = sizeof(uint64_t),
-    .align = __alignof__(uint64_t),
-};
+// 2. Timestamp（接收时由 PMD 自动填充）
+int timestamp_offset = rte_mbuf_dynfield_lookup("rte_net_ptp_dynfield_timestamp", NULL);
 
-// 3. Flow ID (rte_flow 标记)
-#define RTE_MBUF_DYNFRAG_FLOW_ID_FLD  2
-struct rte_mbuf_dyn flowid_dynfield = {
-    .name = "flow_id",
-    .size = sizeof(uint32_t),
-    .align = __alignof__(uint32_t),
-};
+// 3. Flow mark（rte_flow 标记）
+// 注意：flow mark 直接存储在 mbuf->hash.fdir.hi 中，不是 dynfield
 ```
 
 ### 3.4 使用 Dynfield
 
 ```c
-// ============== 获取 dynfield 偏移 ==============
-int rss_hash_offset = rte_mbuf_dynfield_offset(RTE_MBUF_DYNFRAG_HASH_FLD);
-int timestamp_offset = rte_mbuf_dynfield_offset(RTE_MBUF_DYNFRAG_TIMESTAMP_FLD);
+// ============== 注册自定义 dynfield ==============
+static const struct rte_mbuf_dynfield app_counter_desc = {
+    .name = "app_counter",
+    .size = sizeof(uint32_t),
+    .align = __alignof__(uint32_t),
+};
+
+int offset = rte_mbuf_dynfield_register(&app_counter_desc);
+if (offset < 0)
+    rte_exit(EXIT_FAILURE, "dynfield register failed\n");
 
 // ============== 读取/写入 ==============
 
-// 读取 RSS hash
-static inline uint64_t
-rte_mbuf_dyn_hash_value(const struct rte_mbuf *m)
-{
-    return *(uint64_t *)((char *)m + rss_hash_offset);
-}
-
-// 写入 RSS hash
+// 写入
 static inline void
-rte_mbuf_dyn_hash_value_set(struct rte_mbuf *m, uint64_t val)
+app_counter_set(struct rte_mbuf *m, uint32_t val)
 {
-    *(uint64_t *)((char *)m + rss_hash_offset) = val;
+    *(uint32_t *)((char *)m + offset) = val;
 }
 
-// 读取 timestamp
-static inline uint64_t
-rte_mbuf_dyn_timestamp_value(const struct rte_mbuf *m)
+// 读取
+static inline uint32_t
+app_counter_get(const struct rte_mbuf *m)
 {
-    return *(uint64_t *)((char *)m + timestamp_offset);
+    return *(uint32_t *)((char *)m + offset);
+}
+
+// ============== 内置 dynfield 读取 ==============
+
+// RSS hash（使用 DPDK 提供的 lookup）
+int rss_off = rte_mbuf_dynfield_lookup("rte_flow_dynf.rss_hash", NULL);
+if (rss_off >= 0) {
+    uint32_t rss = *(uint32_t *)((char *)m + rss_off);
+    printf("RSS hash: %u\n", rss);
+}
+
+// Timestamp
+int ts_off = rte_mbuf_dynfield_lookup("rte_net_ptp_dynfield_timestamp", NULL);
+if (ts_off >= 0) {
+    uint64_t ts = *(uint64_t *)((char *)m + ts_off);
+    printf("Timestamp: %"PRIu64"\n", ts);
 }
 ```
 
@@ -426,20 +424,34 @@ rte_mbuf_dyn_timestamp_value(const struct rte_mbuf *m)
 
 ### 4.1 Dynflag 概念
 
-与 dynfield 类似，dynflag 允许动态分配 ol_flags 中的未定义位：
+与 dynfield 类似，dynflag 允许动态分配 ol_flags 中的未定义位。dynfield 存一个值（"优先级是 3"），dynflag 存一个布尔状态（"需要丢弃"）。
+
+```
+dynflag vs dynfield vs 固定 ol_flag
+
+  固定 ol_flag：每个包都用的标志（IPV4、UDP_CKSUM 等）
+                零开销，直接位运算
+
+  dynflag：     应用自定义的布尔标签
+                只占 1 bit，ol_flags 本来就在 cache line 里
+                读取无额外 cache miss
+
+  dynfield：    应用自定义的数值字段
+                需要额外内存空间，读取有 pointer arithmetic
+                适合存非布尔值（uint32_t 计数器、uint64_t 时间戳）
+```
 
 ```c
 // lib/mbuf/rte_mbuf_dyn.h
 
 // 动态标志描述
 struct rte_mbuf_dynflag {
-    const char *name;           // 标志名称
-    uint64_t mask;              // 位掩码
-    void *opaque;               // 用户数据
+    const char *name;           // 标志名称（全局唯一）
+    int bitnum;                 // 注册成功后由 DPDK 分配的 bit 位置
 };
 
-// 全局 dynflag 表
-static struct rte_mbuf_dynflag rte_mbuf_dynflag_table[RTE_MBUF_DYNFLAG_MAX];
+// 注册动态标志
+int rte_mbuf_dynflag_register(const struct rte_mbuf_dynflag *params);
 ```
 
 ### 4.2 注册和使用
@@ -447,24 +459,93 @@ static struct rte_mbuf_dynflag rte_mbuf_dynflag_table[RTE_MBUF_DYNFLAG_MAX];
 ```c
 // ============== 注册自定义 flag ==============
 
-// App A 需要一个 "colored packet" 标志
-static struct rte_mbuf_dynflag app_color_flag = {
-    .name = "app.colored_packet",
-    .mask = 1ULL << 63,  // 使用最高位
+static const struct rte_mbuf_dynflag app_color_flag = {
+    .name = "app_colored_packet",
+    // bitnum 由 DPDK 在注册时自动分配
 };
 
 int app_color_flag_bit = rte_mbuf_dynflag_register(&app_color_flag);
 
 // ============== 使用 ==============
 
-// 发送时设置
-if (is_colored)
-    mbuf->ol_flags |= (1ULL << app_color_flag_bit);
+// 设置
+mbuf->ol_flags |= (1ULL << app_color_flag_bit);
 
-// 接收时检查
+// 检查
 if (mbuf->ol_flags & (1ULL << app_color_flag_bit)) {
-    // 这是一个 colored packet
+    // 标志置位
 }
+```
+
+### 4.3 实际应用场景
+
+**场景 1：流量染色（QoS 丢弃）**
+
+```c
+static const struct rte_mbuf_dynflag red_flag = {
+    .name = "qos_red",
+};
+int red_bit = rte_mbuf_dynflag_register(&red_flag);
+
+// 收包时根据 meter 染色
+if (rte_meter_trtcm_color_blind_check(meter, length, time) == RTE_METER_RED) {
+    m->ol_flags |= (1ULL << red_bit);
+}
+
+// 转发时优先丢弃红色包
+if (m->ol_flags & (1ULL << red_bit)) {
+    rte_pktmbuf_free(m);
+    continue;
+}
+```
+
+**场景 2：多阶段 pipeline 状态传递**
+
+```
+  lcore 0 (ACL)  ──flag──▶  lcore 1 (NAT)  ──flag──▶  lcore 2 (Route)
+
+  每个阶段完成后设置对应的 dynflag，
+  下游 lcore 检查前序阶段是否已完成
+```
+
+```c
+int stage_acl_bit   = rte_mbuf_dynflag_register(&(struct rte_mbuf_dynflag){ .name = "stage_acl" });
+int stage_nat_bit   = rte_mbuf_dynflag_register(&(struct rte_mbuf_dynflag){ .name = "stage_nat" });
+int stage_route_bit = rte_mbuf_dynflag_register(&(struct rte_mbuf_dynflag){ .name = "stage_route" });
+
+// lcore 0
+if (apply_acl(m) == PASS)
+    m->ol_flags |= (1ULL << stage_acl_bit);
+
+// lcore 1
+if (m->ol_flags & (1ULL << stage_acl_bit)) {
+    apply_nat(m);
+    m->ol_flags |= (1ULL << stage_nat_bit);
+}
+
+// lcore 2（最终发送前检查）
+uint64_t required = (1ULL << stage_acl_bit)
+                   | (1ULL << stage_nat_bit)
+                   | (1ULL << stage_route_bit);
+if ((m->ol_flags & required) != required) {
+    // 某个阶段未完成，走 slow path 或丢弃
+}
+```
+
+### 4.4 ol_flags 空间演进
+
+ol_flags 只有 64 bit，builtin 标志持续增长，DPDK 通过将低频 builtin 迁移为 dynflag 来维持平衡：
+
+```
+DPDK 17.xx：  timestamp、rss 等都是固定字段，mbuf 结构膨胀
+DPDK 19.11：  timestamp 迁移为 dynfield，省出 8 字节
+DPDK 20.11：  更多不常用 flag 迁移为 dynflag
+DPDK 21.11+：  持续瘦身
+
+核心策略：
+  高频标志（IPV4、CKSUM、TSO）→ 保留在 ol_flags 固定位置
+  低频标志（IPsec、Security 等）→ 迁移为 dynflag
+  用户自定义                         → dynflag
 ```
 
 ---
@@ -480,7 +561,7 @@ struct rte_mbuf *m = rte_pktmbuf_alloc(mbuf_pool);
 // 内部流程
 // 1. 从 per-lcore cache 获取（如果缓存有）
 // 2. 如果缓存空，从 ring 批量补充
-// 3. 初始化 mbuf 字段
+// 3. 初始化 mbuf 字段（rte_pktmbuf_reset）
 m->pool = mbuf_pool;
 m->buf_addr = ...;
 m->data_off = RTE_PKTMBUF_HEADROOM;
@@ -488,9 +569,16 @@ m->pkt_len = 0;
 m->ol_flags = 0;
 m->refcnt = 1;
 
-// 方式 2：rte_pktmbuf_raw_alloc（20.11+，更快）
-struct rte_mbuf *m = rte_pktmbuf_raw_alloc(mbuf_pool);
-rte_pktmbuf_reset(m);
+// 方式 2：直接从 mempool 获取（跳过 mbuf 字段初始化）
+// 适用于后续会完整覆写所有字段的场景
+struct rte_mbuf *m;
+rte_mempool_get(mbuf_pool, (void **)&m);
+// 注意：此时 m 的字段是未初始化状态，必须手动设置
+rte_pktmbuf_reset(m);  // 如果需要标准初始化，手动调用
+
+// 方式 3：批量分配（推荐，减少 per-lcore cache 竞争）
+struct rte_mbuf *pkts[32];
+rte_pktmbuf_alloc_bulk(mbuf_pool, pkts, 32);
 ```
 
 ### 5.2 填充数据
@@ -505,9 +593,17 @@ char *p = rte_pktmbuf_prepend(m, size);  // 在头部插入
 memcpy(p, header, size);
 
 // 示例：构造一个 UDP 包
-struct rte_ether_hdr *eth = rte_pktmbuf_prepend(m, sizeof(*eth));
-struct rte_ipv4_hdr *ip = rte_pktmbuf_prepend(m, sizeof(*ip));
+// prepend 在数据前面插入空间，所以要从内层到外层依次 prepend
+// 正确顺序：先 append payload，再 prepend UDP → IP → Ethernet
+
+// 1. 先放 payload
+char *payload = rte_pktmbuf_append(m, payload_len);
+memcpy(payload, data, payload_len);
+
+// 2. 从内到外 prepend 各层头部
 struct rte_udp_hdr *udp = rte_pktmbuf_prepend(m, sizeof(*udp));
+struct rte_ipv4_hdr *ip = rte_pktmbuf_prepend(m, sizeof(*ip));
+struct rte_ether_hdr *eth = rte_pktmbuf_prepend(m, sizeof(*eth));
 
 // 填充 Ethernet
 eth->ether_type = rte_cpu_to_be_16(RTE_ETHER_TYPE_IPV4);
@@ -521,10 +617,6 @@ ip->dst_addr = dst_ip;
 udp->src_port = rte_cpu_to_be_16(src_port);
 udp->dst_port = rte_cpu_to_be_16(dst_port);
 udp->dgram_len = rte_cpu_to_be_16(sizeof(*udp) + payload_len);
-
-// 填充 payload
-char *payload = rte_pktmbuf_append(m, payload_len);
-memcpy(payload, data, payload_len);
 ```
 
 ### 5.3 多段 mbuf
@@ -535,40 +627,31 @@ struct rte_mbuf *m = rte_pktmbuf_alloc(mbuf_pool);
 struct rte_mbuf *m2 = rte_pktmbuf_alloc(mbuf_pool);
 struct rte_mbuf *m3 = rte_pktmbuf_alloc(mbuf_pool);
 
-// 连接分段
+// 连接分段（只能追加到链表尾部）
 rte_pktmbuf_chain(m, m2);
 rte_pktmbuf_chain(m, m3);
 
 // 现在 m->nb_segs = 3
 // m->pkt_len = m->data_len + m2->data_len + m3->data_len
-
-// 注意：只能从 head segment 追加
-// 如果需要从中间 segment 追加，使用 rte_pktmbuf_frag_add_at
 ```
 
 ### 5.4 Clone 和 Reference Counting
 
 ```c
-// Clone：一个 mbuf 指向相同的数据缓冲区
-struct rte_mbuf *clone = rte_pktmbuf_clone(m, mbuf_pool);
-// clone 和 m 共享数据缓冲区
-// refcnt = 2，两者都不能修改数据
+// Clone：创建一个间接 mbuf，共享原始 mbuf 的数据缓冲区
+struct rte_mbuf *clone = rte_pktmbuf_clone(m, clone_pool);
+// clone 是一个 indirect mbuf（无自有数据区）
+// clone->buf_addr 指向 m 的数据区
+// m 的 refcnt = 2，两者都不能修改共享数据
 
 // 增加引用计数
 rte_pktmbuf_refcnt_update(m, 1);
 
-// 减少引用计数（当 refcnt 降到 0 时才能释放数据）
+// 减少引用计数（当 refcnt 降到 0 时才释放数据缓冲区）
 uint16_t new_cnt = rte_pktmbuf_refcnt_update(m, -1);
 if (new_cnt == 0) {
-    // 最后一个引用，可以安全释放
+    // 最后一个引用，数据缓冲区将被归还到 mempool
 }
-
-// 独立复制（copy-on-write）
-struct rte_pktmbuf_cp_hdr {
-    struct rte_mbuf *original;
-    // ... 保存原始数据
-};
-// 应用可以修改 clone 而不影响 original
 ```
 
 ### 5.5 释放（归还 mempool）
@@ -585,22 +668,8 @@ for (int i = 0; i < count; i++) {
     rte_pktmbuf_free(pkts[i]);
 }
 
-// 或者批量释放（更快）
-rte_mbuf_raw_free_bulk(pkts, count);
-
-// 检查释放是否成功
-int rte_mbuf_raw_free_bulk(struct rte_mbuf **mbufs, uint16_t count)
-{
-    for (int i = 0; i < count; i++) {
-        if (rte_mbuf_refcnt_read(mbufs[i]) != 1) {
-            // 不是唯一引用，不能释放
-            return -EINVAL;
-        }
-    }
-    // 所有检查通过，批量归还到 ring
-    rte_ring_mp_enqueue_bulk(mbuf_pool->ring, (void **)mbufs, count);
-    return 0;
-}
+// 或者批量释放（更快，DPDK 21.11+）
+rte_pktmbuf_free_bulk(pkts, count);
 ```
 
 ---
@@ -627,22 +696,22 @@ int rte_mbuf_raw_free_bulk(struct rte_mbuf **mbufs, uint16_t count)
 │           PMD Driver                   │
 │                                       │
 │ 1. 检查 ol_flags                      │
-│ 2. 计算 L4 checksum (如果需要)        │
-│    - 读取 m->l4_len                   │
-│    - 在 payload 中计算 checksum      │
-│    - 写入 UDP header 的 cksum 字段   │
-│ 3. 计算 L3 checksum (如果需要)       │
-│ 4. 添加 VLAN tags (如果 PKT_TX_VLAN) │
+│ 2. 准备 DMA 描述符                    │
+│    - 设置 checksum offload 标志位    │
+│    - 告诉 NIC 从哪个偏移开始计算     │
+│ 3. 准备 VLAN insertion 描述符         │
 └───────────────────────────────────────┘
     │
-    │ DMA 描述符准备
+    │ DMA 描述符提交到网卡
     ▼
 ┌───────────────────────────────────────┐
 │           NIC Hardware                 │
 │                                       │
 │ - DMA 读取 mbuf 数据                   │
-│ - 硬件追加 Ethernet header (可选)     │
-│ - 硬件计算并填充 final checksums      │
+│ - 硬件计算 IP checksum (L3)           │
+│ - 硬件计算 UDP/TCP checksum (L4)      │
+│ - 硬件插入 VLAN tag (如果配置)        │
+│ - 硬件 TSO 分片 (如果配置)            │
 │ - 发送帧                              │
 └───────────────────────────────────────┘
 ```
@@ -738,7 +807,7 @@ rte_eth_dev_info_get(port, &dev_info);
 // 设置 TSO segment size
 if (dev_info.tx_offload_capa & DEV_TX_OFFLOAD_TCP_TSO) {
     uint16_t tso_mss = 1460;  // MSS (Max Segment Size)
-    rte_eth_dev_set_mtu(port, tso_mss + sizeof(ip) + sizeof(tcp));
+    rte_eth_dev_set_mtu(port, tso_mss + sizeof(struct rte_ipv4_hdr) + sizeof(struct rte_tcp_hdr));
 }
 
 // 发送超大包（自动分片）
@@ -757,39 +826,35 @@ uint16_t nb_segs = rte_eth_tx_burst(port, queue, &m, 1);
 ### 7.1 打印 mbuf 内容
 
 ```c
-// DPDK 提供 rte_pktmbuf_dump
-void
-rte_pktmbuf_dump(FILE *f, const struct rte_mbuf *m, uint32_t max_len)
-{
-    fprintf(f, "mbuf: %p, iova: 0x%" PRIx64 ", buf_len: %u\n",
-            m, m->buf_iova, m->buf_len);
-    fprintf(f, "  data_off: %u, data_len: %u, pkt_len: %u\n",
-            m->data_off, rte_pktmbuf_data_len(m), m->pkt_len);
-    fprintf(f, "  nb_segs: %u, refcnt: %u, port: %u\n",
-            m->nb_segs, m->refcnt, m->port);
-    fprintf(f, "  ol_flags: 0x%" PRIx64 "\n", m->ol_flags);
-    
-    // dump 数据内容
-    fprintf(f, "  data: ");
-    for (uint32_t i = 0; i < max_len && i < rte_pktmbuf_data_len(m); i++) {
-        fprintf(f, "%02x ", rte_pktmbuf_read_byte(m, 0, i));
-    }
-    fprintf(f, "\n");
-}
+// DPDK 提供 rte_pktmbuf_dump（直接调用即可）
+rte_pktmbuf_dump(stdout, m, 64);  // 打印 mbuf 信息 + 前 64 字节数据
 
-// 使用示例
-rte_pktmbuf_dump(stdout, m, 64);
+// 手动打印关键字段
+printf("mbuf: %p, pool: %s\n", m, m->pool->name);
+printf("  buf_addr=%p, buf_iova=0x%"PRIx64", buf_len=%u\n",
+       m->buf_addr, m->buf_iova, m->buf_len);
+printf("  data_off=%u, data_len=%u, pkt_len=%u\n",
+       m->data_off, m->data_len, m->pkt_len);
+printf("  nb_segs=%u, refcnt=%u, port=%u\n",
+       m->nb_segs, rte_mbuf_refcnt_read(m), m->port);
+printf("  ol_flags=0x%"PRIx64"\n", m->ol_flags);
+
+// 打印数据内容（十六进制）
+uint8_t *data = rte_pktmbuf_mtod(m, uint8_t *);
+for (uint32_t i = 0; i < 64 && i < m->data_len; i++)
+    printf("%02x ", data[i]);
+printf("\n");
 ```
 
 ### 7.2 常见错误
 
 | 错误 | 原因 | 解决 |
 |------|------|------|
-| `mbuf allocation failed` | mempool 耗尽 | 增加 pool size |
-| `mbuf is being accessed by another thread` | refcnt > 1 | clone 场景 |
-| `mbuf has no room for headroom` | data_off 已被用尽 | 使用 mbuf copy |
-| `packet length exceeds mbuf bufsize` | Jumbo frame | 使用更大的 pool |
-| `indirect mbuf should have refcnt 1` | clone 未正确处理 | 检查 refcnt |
+| `mbuf allocation failed` | mempool 耗尽 | 增加 pool size 或检查泄漏 |
+| `Assertion ... refcnt == 1 failed` | debug 模式下 refcnt > 1 时执行了 free/prepend | 检查 clone/refcnt 管理，必要时先 rte_pktmbuf_copy 深拷贝 |
+| `mbuf has no room for headroom` | data_off 被用尽，无法 prepend | 分配新 mbuf 或使用 rte_pktmbuf_copy |
+| `packet length exceeds mbuf bufsize` | 数据超过单 segment 容量 | 使用 multi-segment mbuf 或更大的 pool |
+| `cannot free mbuf` | refcnt > 1，最后一个引用未释放 | 确保每个 clone 都有对应的 free |
 
 ### 7.3 mbuf 完整性检查
 
@@ -806,9 +871,8 @@ validate_mbuf(struct rte_mbuf *m)
     if (rte_mbuf_refcnt_read(m) == 0)
         return -2;
     
-    // 检查数据长度
-    uint32_t data_len = rte_pktmbuf_data_len(m);
-    if (data_len > m->buf_len)
+    // 检查数据长度（data 不能超出缓冲区）
+    if (m->data_off + m->data_len > m->buf_len)
         return -3;
     
     // 检查 multi-segment
@@ -833,7 +897,7 @@ validate_mbuf(struct rte_mbuf *m)
 
 1. **mbuf 设计**：零拷贝、最小开销、批量操作、硬件卸载——DPDK 高性能的核心。
 
-2. **结构详解**：64 字节固定头部 + 动态数据缓冲区 + dynfield 扩展空间。
+2. **结构详解**：128 字节固定头部（含缓存行填充） + 动态数据缓冲区 + dynfield 扩展空间。
 
 3. **ol_flags**：定义数据包的硬件卸载能力——checksum、TSO、VLAN、RSS 等。
 

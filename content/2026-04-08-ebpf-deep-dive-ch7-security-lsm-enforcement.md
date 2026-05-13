@@ -98,13 +98,13 @@ Linux 内核的 LSM 框架采用"堆叠"模型 — 多个 LSM 模块可以同时
 
 ```mermaid
 graph TB
-    OP[内核操作请求<br/>如: execve, open, connect] --> MAC{LSM 框架<br/>security_* 函数}
+    OP[内核操作请求<br>如: execve, open, connect] --> MAC{LSM 框架<br>security_* 函数}
 
-    MAC --> AA[AppArmor<br/>DAC + MAC 策略]
-    MAC --> SE[SELinux<br/>Type Enforcement]
-    MAC --> SM[Smack<br/>简化 MAC]
-    MAC --> BP["LSM BPF<br/>可编程策略"]
-    MAC --> TM[TOMOYO Linux<br/>路径-based]
+    MAC --> AA[AppArmor<br>DAC + MAC 策略]
+    MAC --> SE[SELinux<br>Type Enforcement]
+    MAC --> SM[Smack<br>简化 MAC]
+    MAC --> BP["LSM BPF<br>可编程策略"]
+    MAC --> TM[TOMOYO Linux<br>路径-based]
 
     AA -->|ALLOW| DEC{综合决策}
     SE -->|DENY| DEC
@@ -113,7 +113,7 @@ graph TB
     TM -->|ALLOW| DEC
 
     DEC -->|全部 ALLOW| PASS[操作通过]
-    DEC -->|任一 DENY| BLOCK[操作被拒绝<br/>返回 errno]
+    DEC -->|任一 DENY| BLOCK[操作被拒绝<br>返回 errno]
 
     style BP fill:#e1f5fe,stroke:#0288d1
     style BLOCK fill:#ffcdd2
@@ -589,9 +589,9 @@ spec:
 ```mermaid
 graph TB
     subgraph "内核层"
-        KPROBE[kprobe/fentry<br/>行为监控] --> LOG[事件日志]
-        LSM_H[LSM BPF<br/>行为阻断] --> BLOCK[操作拒绝]
-        TRACE[Tracepoint<br/>系统调用追踪] --> LOG
+        KPROBE[kprobe/fentry<br>行为监控] --> LOG[事件日志]
+        LSM_H[LSM BPF<br>行为阻断] --> BLOCK[操作拒绝]
+        TRACE[Tracepoint<br>系统调用追踪] --> LOG
     end
 
     subgraph "用户态控制面"

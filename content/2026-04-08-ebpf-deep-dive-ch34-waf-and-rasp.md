@@ -313,19 +313,19 @@ int BPF_UPROBE(rasp_system, const char *command) {
 graph TB
     subgraph "XDP 层：物理级丢弃"
         P1[网卡接收报文] --> XDP{eBPF 判断}
-        XDP --> |"XDP_DROP"| D1[报文直接丢弃<br/>CPU 永不感知]
+        XDP --> |"XDP_DROP"| D1[报文直接丢弃<br>CPU 永不感知]
         XDP --> |"XDP_PASS"| Stack[进入协议栈]
     end
 
     subgraph "LSM 层：决策否决"
         Stack --> LSM_Hook{LSM Hook}
-        LSM_Hook --> |"return -EPERM"| D2[操作被拒绝<br/>内核跳过核心逻辑]
+        LSM_Hook --> |"return -EPERM"| D2[操作被拒绝<br>内核跳过核心逻辑]
         LSM_Hook --> |"return 0"| Core[执行核心操作]
     end
 
     subgraph "uprobe 层：函数短路"
         Core --> Uprobe{uprobe 拦截}
-        Uprobe --> |"bpf_override_return"| D3[函数被短路<br/>直接返回预设值]
+        Uprobe --> |"bpf_override_return"| D3[函数被短路<br>直接返回预设值]
         Uprobe --> |"放行"| Execute[函数正常执行]
     end
 

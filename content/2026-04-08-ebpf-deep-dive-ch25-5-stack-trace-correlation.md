@@ -66,7 +66,7 @@ tags:
 
 ## 1. 概述：全栈追踪的"魂"
 
-在 [第二十五章]([[2026-04-08-ebpf-deep-dive-ch25-full-stack-observability]]) 中，我们实现了 TraceID 与 TCP 报文的关联。但为了回答"为什么代码会产生这个请求"，我们必须更进一步：**捕获并关联请求发起瞬间的调用栈 (Call Stack)**。
+在 [第二十五章](2026-04-08-ebpf-deep-dive-ch25-full-stack-observability.md) 中，我们实现了 TraceID 与 TCP 报文的关联。但为了回答"为什么代码会产生这个请求"，我们必须更进一步：**捕获并关联请求发起瞬间的调用栈 (Call Stack)**。
 
 调用栈是连接"物理报文"与"程序员代码行"的最终纽带。
 
@@ -111,13 +111,13 @@ eBPF 提供了高性能的堆栈采集机制，能够同时捕获内核与用户
 
 ```mermaid
 flowchart TD
-    A["BPF 程序触发<br/>(kprobe/uprobe/tracepoint)"] --> B["bpf_get_stackid()"]
-    B --> C{"Stack Map 中<br/>是否已存在相同栈？"}
-    C -->|是| D["返回已有 StackID<br/>(去重，零拷贝)"]
-    C -->|否| E["拷贝栈帧到 Map<br/>分配新 StackID"]
+    A["BPF 程序触发<br>(kprobe/uprobe/tracepoint)"] --> B["bpf_get_stackid()"]
+    B --> C{"Stack Map 中<br>是否已存在相同栈？"}
+    C -->|是| D["返回已有 StackID<br>(去重，零拷贝)"]
+    C -->|否| E["拷贝栈帧到 Map<br>分配新 StackID"]
     E --> D
-    D --> F["StackID 写入<br/>业务关联 Map"]
-    F --> G["用户态读取 StackID<br/>异步符号化"]
+    D --> F["StackID 写入<br>业务关联 Map"]
+    F --> G["用户态读取 StackID<br>异步符号化"]
 ```
 
 这个设计的精妙之处在于：**相同调用路径只存储一次**。在一个高并发的 Web 服务器中，几千个请求可能只对应几十种不同的调用栈。去重后，内存占用从 O(事件数) 降为 O(唯一路径数)。
@@ -210,12 +210,12 @@ long bpf_get_stack(struct pt_regs *ctx, void *buf, u32 size, u64 flags);
 flowchart LR
     subgraph "内核态 (热路径)"
         A["BPF 程序触发"] --> B["bpf_get_stackid()"]
-        B --> C["Stack Map<br/>存储原始地址"]
+        B --> C["Stack Map<br>存储原始地址"]
     end
     subgraph "用户态 (冷路径)"
         C -->|poll/epoll| D["读取 StackID"]
-        D --> E["bpftool map dump<br/>获取地址序列"]
-        E --> F["libdw / addr2line<br/>符号化"]
+        D --> E["bpftool map dump<br>获取地址序列"]
+        E --> F["libdw / addr2line<br>符号化"]
         F --> G["函数名 + 源文件:行号"]
     end
 ```
@@ -713,17 +713,17 @@ echo "handleRequest;httpClient.post;socket.write 1" | \
 
 ```mermaid
 flowchart TD
-    A["监控告警<br/>TraceID 0xABC 延迟 2.3s"] --> B["查询 req_stats_map"]
-    B --> C["获取 StackID<br/>user=42 kernel=17"]
+    A["监控告警<br>TraceID 0xABC 延迟 2.3s"] --> B["查询 req_stats_map"]
+    B --> C["获取 StackID<br>user=42 kernel=17"]
     C --> D["异步符号化"]
     D --> E["用户栈解析"]
     D --> F["内核栈解析"]
-    E --> G["handleRequest():128<br/>httpClient.post():56<br/>socket.write():89"]
-    F --> H["sys_write() -> tcp_sendmsg()<br/>-> tcp_transmit_skb()<br/>-> ip_queue_xmit()"]
+    E --> G["handleRequest():128<br>httpClient.post():56<br>socket.write():89"]
+    F --> H["sys_write() -> tcp_sendmsg()<br>-> tcp_transmit_skb()<br>-> ip_queue_xmit()"]
     G --> I["根因定位"]
     H --> I
-    I --> J["tcp_transmit_skb() 中<br/>等待 TCP 窗口<br/>(对端处理慢)"]
-    J --> K["告警: 下游服务<br/>处理能力不足"]
+    I --> J["tcp_transmit_skb() 中<br>等待 TCP 窗口<br>(对端处理慢)"]
+    J --> K["告警: 下游服务<br>处理能力不足"]
 ```
 
 ### 7.2 典型场景分析

@@ -86,10 +86,10 @@ eBPF 项目同样遵循测试金字塔原则，但各层的含义与普通项目
 
 ```mermaid
 graph TD
-    A["🧪 单元测试<br/>BPF_PROG_RUN / bpftool gen<br/>验证逻辑正确性"]
-    B["🔗 集成测试<br/>Network Namespace / virtme<br/>验证加载与附加"]
-    C["🖥️ 系统测试<br/>多内核版本 VM 矩阵<br/>验证跨版本兼容性"]
-    D["📊 性能测试<br/>Benchmark / perf_events<br/>验证无性能回归"]
+    A["🧪 单元测试<br>BPF_PROG_RUN / bpftool gen<br>验证逻辑正确性"]
+    B["🔗 集成测试<br>Network Namespace / virtme<br>验证加载与附加"]
+    C["🖥️ 系统测试<br>多内核版本 VM 矩阵<br>验证跨版本兼容性"]
+    D["📊 性能测试<br>Benchmark / perf_events<br>验证无性能回归"]
     A --> B --> C --> D
     style A fill:#4CAF50,color:#fff
     style B fill:#2196F3,color:#fff

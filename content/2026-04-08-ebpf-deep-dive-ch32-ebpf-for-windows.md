@@ -96,10 +96,10 @@ timeline
 ```mermaid
 graph TB
     subgraph "用户态 (User Mode)"
-        App[用户态应用] --> |"bpf() syscall<br/>或 IOCTL"| API[ebpfapi.dll]
+        App[用户态应用] --> |"bpf() syscall<br>或 IOCTL"| API[ebpfapi.dll]
         API --> |"字节码"| Verifier_u[PREVAIL 验证器]
         Verifier_u --> |"验证通过"| JIT_u[JIT 编译器]
-        JIT_u --> |"x86-64 机器码"| Service[ebpfsvc.exe<br/>用户态服务]
+        JIT_u --> |"x86-64 机器码"| Service[ebpfsvc.exe<br>用户态服务]
     end
 
     subgraph "内核态 (Kernel Mode)"
@@ -114,7 +114,7 @@ graph TB
     end
 
     subgraph "Hook 点"
-        XDP_W[XDP (NDIS L2)] --> VM
+        XDP_W["XDP (NDIS L2)"] --> VM
         SOCK_W[Socket Filter] --> VM
         CG_W[CGROUP Hook] --> VM
     end

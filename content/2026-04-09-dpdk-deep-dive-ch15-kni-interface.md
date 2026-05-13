@@ -5,10 +5,16 @@ tags: [dpdk, series, kni, kernel, interface, ioctl, mbuf-sharing, zero-copy]
 description: "深入理解 DPDK KNI 机制——用户态与 Linux 内核网络栈的桥梁，共享 mbuf、ioctl 控制、FIFO 通信、以及零拷贝优化"
 ---
 
+> [!warning] 已废弃提示
+> **KNI 已在 DPDK 23.11 中被完全移除**（包括 `lib/kni/` 和 `kernel/linux/kni/`），不再存在于 DPDK 主线代码中。
+> 本章节保留作为历史参考，记录 KNI 的设计思路和架构。实际项目中应使用 **AF_XDP**（第十五章补充）或 **TAP** 作为替代方案。
+> 最后包含 KNI 的 DPDK 版本为 **22.11 LTS**。
+>
 > [!info] DPDK 深度探索系列
 > 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
 > 1-14. 前十四章已完成
-> 15. **第十五章：KNI (Kernel NIC Interface) 用户态与内核通信**
+> 15. **第十五章：KNI (Kernel NIC Interface) 用户态与内核通信**（已废弃，历史参考）
+> 15b. [[2026-04-09-dpdk-deep-dive-ch15b-af-xdp|第十五章补充：AF_XDP —— KNI 的现代替代]]
 
 ---
 
@@ -16,59 +22,91 @@ description: "深入理解 DPDK KNI 机制——用户态与 Linux 内核网络�
 
 ### 1.1 DPDK 的"内核隔离"问题
 
-DPDK 通过 kernel bypass 实现了极致性能，但也带来了一些问题：
+DPDK 通过 kernel bypass 实现了极致性能——网卡被 DPDK 独占后，数据包直接从 NIC DMA 到用户态大页，**完全绕过内核网络栈**。这带来了一个根本矛盾：
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                      DPDK 与内核网络栈的关系                                 │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│  纯 DPDK 应用：                                                             │
-│  ─────────────                                                             │
-│  ┌──────────────┐                                                          │
-│  │  DPDK App   │                                                          │
-│  └──────┬───────┘                                                          │
-│         │                                                                   │
-│         │  (内核网络栈完全绕过)                                              │
-│         ▼                                                                   │
-│    ┌─────────┐                                                             │
-│    │   NIC   │                                                             │
-│    └─────────┘                                                             │
-│                                                                             │
-│  问题：                                                                    │
-│  - 无法使用 iptables/routing 等内核功能                                     │
-│  - 无法与内核协议栈交互                                                     │
-│  - 某些控制平面流量需要内核处理                                             │
-│                                                                             │
-│  KNI 解决方案：                                                            │
-│  ───────────────                                                           │
-│  ┌──────────────┐        ┌──────────────┐                                 │
-│  │  DPDK App   │◄──────►│     KNI     │                                 │
-│  └──────┬───────┘        └──────┬───────┘                                 │
-│         │                       │                                           │
-│         │ 共享 mbuf/FIFO        │ 标准网络接口                              │
-│         ▼                       ▼                                           │
-│    ┌─────────┐            ┌─────────────┐                                   │
-│    │   NIC   │            │ Kernel Stack│                                   │
-│    └─────────┘            └─────────────┘                                   │
-│                                 │                                           │
-│                                 ▼                                           │
-│                            iptables                                        │
-│                            routing                                          │
-│                            sockets                                          │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
+> **网卡被 DPDK 独占了，但有些流量就是必须走内核才能处理。**
+
+用一个真实场景来说明。假设你有一台网关服务器，`eth0` 被 DPDK 接管用于转发数据平面流量。这台服务器同时需要：
+
+- **SSH 登录管理**：运维人员通过 eth0 SSH 进来排查问题
+- **BGP 路由协议**：和邻居路由器建立 BGP 会话，交换路由表
+- **iptables 防火墙**：对某些流量做 ACL 过滤
+
+没有 KNI 的时候，这些全部做不到：
+
+```mermaid
+flowchart TB
+    subgraph without_kni["没有 KNI：DPDK 独占网卡，内核网络栈'瞎了'"]
+        NIC["NIC (eth0)<br/>被 DPDK 独占"]
+        DPDK["DPDK App<br/>(转发/负载均衡)"]
+        KERNEL["Linux 内核网络栈<br/>────────────────<br/>iptables ✓<br/>routing ✓<br/>TCP/UDP socket ✓"]
+
+        NIC <-->|"数据包直接 DMA<br/>到用户态大页"| DPDK
+        NIC -.->|"❌ 断开<br/>内核收不到任何包"| KERNEL
+
+        style KERNEL fill:#ff6b6b22,stroke:#ff6b6b
+    end
 ```
 
-### 1.2 KNI 应用场景
+**关键点**：不是 DPDK 缺功能，而是**网卡这个物理资源被独占了**。DPDK 把网卡绑到自己的驱动上（`igb_uio` / `vfio-pci`），内核原来的网卡驱动就被替换掉了，内核根本看不到这张网卡收到的包。
 
-| 场景 | 说明 |
-|------|------|
-| **控制平面** | BGP/OSPF 路由协议需要内核网络栈 |
-| **管理流量** | SSH、SNMP 等管理平面流量 |
-| **iptables** | 防火墙规则（KNI 接口可被 iptables 匹配） |
-| **DHCP/DNS** | 需要内核协议栈处理的服务 |
-| **遗留系统** | 与需要内核接口的应用兼容 |
+### 1.2 KNI 解决什么？
+
+KNI 在 DPDK 和内核之间搭了一座桥：
+
+```mermaid
+flowchart TB
+    subgraph with_kni["有 KNI：DPDK 选流量给内核"]
+        NIC["NIC (eth0)"]
+        DPDK["DPDK App<br/>(数据平面)"]
+        KNI["KNI 虚拟网卡<br/>(veth_xxx)"]
+        KERNEL["Linux 内核网络栈<br/>────────────────<br/>iptables / routing / socket"]
+
+        NIC <-->|"DMA"| DPDK
+        DPDK <-->|"共享 mbuf + FIFO"| KNI
+        KNI <-->|"标准网络接口"| KERNEL
+
+        style KNI fill:#4ecdc422,stroke:#4ecdc4
+    end
+```
+
+核心思路：DPDK 在用户态决定哪些包需要给内核，通过 KNI 虚拟网卡把包"注入"到内核网络栈。对内核来说，KNI 就是一张普通网卡（`veth_xxx`），iptables、routing、socket 这些内核功能照常可用。
+
+### 1.3 典型流量分流场景
+
+```mermaid
+flowchart LR
+    NIC["NIC eth0<br/>收到所有流量"]
+    DPDK["DPDK App<br/>包分类引擎"]
+
+    NIC -->|"所有包"| DPDK
+
+    DPDK -->|"数据包<br/>(HTTP/gRPC/业务流量)"| FORWARD["转发引擎<br/>L2/L3/L4 处理"]
+    DPDK -->|"控制包<br/>(SSH/BGP/SNMP)"| KNI["KNI 虚拟网卡"]
+    DPDK -->|"管理包<br/>(DHCP/ARP)"| KNI2["KNI 虚拟网卡"]
+
+    KNI -->|"标准接口"| KERNEL["内核网络栈"]
+    KNI2 -->|"标准接口"| KERNEL
+
+    KERNEL --> IPTABLES["iptables"]
+    KERNEL --> ROUTING["FIB 路由表"]
+    KERNEL --> SOCKET["TCP/UDP Socket<br/>(sshd, bgpd, snmpd)"]
+
+    FORWARD -->|"转发"| NIC2["NIC eth0<br/>发送"]
+
+    style DPDK fill:#4ecdc422,stroke:#4ecdc4
+    style KNI fill:#ffd93d22,stroke:#ffd93d
+    style KNI2 fill:#ffd93d22,stroke:#ffd93d
+```
+
+| 场景 | 说明 | 为什么必须走内核 |
+|------|------|-----------------|
+| **SSH 管理** | 运维通过 eth0 SSH 登录 | sshd 是用户态程序，但依赖内核 TCP/IP 协议栈 |
+| **BGP/OSPF** | 与邻居路由器交换路由 | BGP/OSPF daemon（FRR/Bird）依赖内核 socket |
+| **iptables** | 防火墙/ACL 过滤 | iptables 是内核 netfilter 模块，必须内核处理 |
+| **ARP** | 地址解析 | ARP 协议由内核协议栈自动处理 |
+| **DHCP** | 获取 IP 地址 | DHCP client 依赖内核 socket |
+| **ICMP** | ping 排障 | ICMP 由内核协议栈处理 |
 
 ---
 
@@ -116,50 +154,91 @@ DPDK 通过 kernel bypass 实现了极致性能，但也带来了一些问题：
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 2.2 数据流
+### 2.2 数据流——一个容易搞混的方向问题
 
+> [!warning] 方向陷阱
+> KNI 的 `rx_q` / `tx_q` 是**从内核视角**命名的。但从 DPDK App 的视角来看，**方向完全反过来**。这是理解 KNI 数据流最容易出错的地方。
+
+先记住这个对应关系：
+
+| FIFO 名称       | 内核视角          | DPDK App 视角          | 包的流向            |
+| ------------- | ------------- | -------------------- | --------------- |
+| **`rx_q`**    | 内核**接收**包的队列  | DPDK **发送**包到内核      | DPDK App → 内核   |
+| **`tx_q`**    | 内核**发送**包的队列  | DPDK **接收**来自内核的包    | 内核 → DPDK App   |
+| **`alloc_q`** | 内核**申请** mbuf | DPDK **分配** mbuf 给内核 | 内核 → DPDK（请求方向） |
+| **`free_q`**  | 内核**释放** mbuf | DPDK **回收** mbuf     | 内核 → DPDK       |
+
+所以你说的没错——**KNI 的 `rx_q` 对 DPDK App 来说是发送路径**。
+
+```mermaid
+flowchart LR
+    subgraph dpdk_side["用户态：DPDK App 视角"]
+        DPDK["DPDK App<br/>包分类引擎"]
+        direction TB
+        DPDK_TX["DPDK App<br/>'发'到内核"] -->|"写入 rx_q"| RXQ["kni->rx_q"]
+        TXQ["kni->tx_q"] -->|"读取"| DPDK_RX["DPDK App<br/>'收'内核的包"]
+    end
+
+    subgraph kernel_side["内核态：KNI 模块视角"]
+        direction TB
+        RXQ2["kni->rx_q"] -->|"读取 → sk_buff"| KNI_RX["kni_net<br/>'收'包处理"]
+        KNI_TX["kni_net<br/>'发'包"] -->|"sk_buff → 写入"| TXQ2["kni->tx_q"]
+    end
+
+    DPDK_TX === RXQ
+    TXQ === TXQ2
+    RXQ === RXQ2
+    KNI_TX === KNI_TX
+
+    KNI_RX -->|"iptables<br/>routing<br/>socket"| STACK["内核网络栈"]
+    STACK --> KNI_TX
+
+    style RXQ fill:#ff6b6b22,stroke:#ff6b6b
+    style RXQ2 fill:#ff6b6b22,stroke:#ff6b6b
+    style TXQ fill:#4ecdc422,stroke:#4ecdc4
+    style TXQ2 fill:#4ecdc422,stroke:#4ecdc4
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                            KNI 数据流                                       │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│  接收方向 (NIC → 用户态)：                                                  │
-│  ─────────────────────────                                                  │
-│                                                                             │
-│  NIC ──► DPDK PMD ──► mbuf pool ──► KNI FIFO ──► 用户态 App                │
-│                                    (共享内存)                                │
-│                                                                             │
-│  ┌─────────────────────────────────────────────────────────────────────┐   │
-│  │                                                                     │   │
-│  │   1. NIC 接收包，放入 mbuf                                         │   │
-│  │   2. PMD 将 mbuf 放入 kni->rx_q (FIFO)                            │   │
-│  │   3. 通知内核有数据包到达                                          │   │
-│  │   4. 内核读取 kni->rx_q，转换为 sk_buff                           │   │
-│  │   5. 内核网络栈 处理（iptables, routing, sockets）                 │   │
-│  │   6. 如果需要转发，回传到 kni->tx_q                               │   │
-│  │   7. 用户态从 kni->tx_q 读取，回传给 DPDK App                     │   │
-│  │                                                                     │   │
-│  └─────────────────────────────────────────────────────────────────────┘   │
-│                                                                             │
-│  发送方向 (用户态 → NIC)：                                                  │
-│  ─────────────────────────                                                  │
-│                                                                             │
-│  用户态 App ──► KNI FIFO ──► 内核网络栈 ──► DPDK PMD ──► NIC               │
-│                                                                             │
-│  ┌─────────────────────────────────────────────────────────────────────┐   │
-│  │                                                                     │   │
-│  │   1. 用户态 App 发送 mbuf 到 kni->tx_q                            │   │
-│  │   2. 通知内核有数据包要发送                                         │   │
-│  │   3. 内核从 tx_q 读取，转换为 sk_buff                              │   │
-│  │   4. 内核网络栈 处理（iptables, routing）                          │   │
-│  │   5. 内核将 sk_buff 放入 kni->rx_q (回传)                         │   │
-│  │   6. 用户态从 kni->rx_q 读取                                       │   │
-│  │   7. 用户态调用 rte_eth_tx_burst() 发送                           │   │
-│  │                                                                     │   │
-│  └─────────────────────────────────────────────────────────────────────┘   │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
+
+用一句话概括：**KNI 的 rx_q 是 DPDK 的出口，tx_q 是 DPDK 的入口。**
+
+### 2.3 完整数据流（以 SSH 管理流量为例）
+
+下面用一个具体场景——运维 SSH 登录——把两个方向的完整流程串起来：
+
+```mermaid
+sequenceDiagram
+    participant NIC as NIC (eth0)
+    participant DPDK as DPDK App
+    participant RXQ as kni->rx_q<br/>（DPDK出口/内核入口）
+    participant TXQ as kni->tx_q<br/>（DPDK入口/内核出口）
+    participant KNI as kni_net 模块
+    participant Stack as 内核网络栈
+    participant SSHD as sshd
+
+    Note over NIC,SSHD: 场景：运维 SSH 登录网关
+
+    NIC->>DPDK: ① NIC 收到 SSH SYN 包<br/>DMA 到用户态大页
+    DPDK->>DPDK: ② DPDK 包分类<br/>识别为 SSH 管理流量
+
+    Note over DPDK,RXQ: 方向一：DPDK → 内核（"发送"路径）
+    DPDK->>RXQ: ③ rte_kni_tx_burst()<br/>把 mbuf 写入 rx_q
+    RXQ->>KNI: ④ 内核线程从 rx_q 读取
+    KNI->>KNI: ⑤ mbuf → sk_buff 转换
+    KNI->>Stack: ⑥ 注册为 KNI 虚拟网卡的收包
+    Stack->>SSHD: ⑦ 内核协议栈处理<br/>TCP 三次握手到达 sshd
+
+    Note over SSHD,DPDK: 方向二：内核 → DPDK（"接收"路径）
+    SSHD->>Stack: ⑧ sshd 回复 SSH response
+    Stack->>KNI: ⑨ 内核决定从 KNI 接口发出
+    KNI->>TXQ: ⑩ sk_buff → mbuf，写入 tx_q
+    TXQ->>DPDK: ⑪ DPDK 从 tx_q 读取 mbuf
+    DPDK->>NIC: ⑫ rte_eth_tx_burst()<br/>通过 NIC 发送出去
 ```
+
+关键理解：
+
+1. **步骤 ③ `rte_kni_tx_burst()`**：名字里有 `tx`，但它实际是把包**发往内核**（写入 `rx_q`）。这个 `tx` 是 KNI 库函数的命名，容易和 DPDK 的 `rte_eth_tx_burst()` 混淆——后者是发往 **NIC**。
+2. **步骤 ⑪ DPDK 从 `tx_q` 读取**：对 DPDK App 来说，这和从网卡 RX 收包的语义一样——都是"拿包进来处理"。`tx_q` 里的包是内核处理完后需要通过 DPDK 发到网上的。
 
 ---
 
@@ -180,11 +259,11 @@ struct rte_kni_conf {
     // 关联的物理端口
     uint16_t port_id;
 
-    // 控制消息队列
-    struct rte_kni_fifo *tx_q;       // 发送队列 (用户态 → 内核)
-    struct rte_kni_fifo *rx_q;      // 接收队列 (内核 → 用户态)
-    struct rte_kni_fifo *alloc_q;   // 分配请求队列
-    struct rte_kni_fifo *free_q;   // 释放请求队列
+    // 控制消息队列（名称从内核视角命名，DPDK App 视角方向相反！）
+    struct rte_kni_fifo *tx_q;       // 内核 TX：DPDK 从此读包（收到内核要发出的包）
+    struct rte_kni_fifo *rx_q;      // 内核 RX：DPDK 往此写包（把包发给内核）
+    struct rte_kni_fifo *alloc_q;   // 内核请求分配 mbuf
+    struct rte_kni_fifo *free_q;   // 内核释放 mbuf
 
     // 物理地址 (用于 mbuf 共享)
     uint64_t phys_addr;

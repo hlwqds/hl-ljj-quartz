@@ -92,13 +92,13 @@ tags:
 
 ```mermaid
 graph TD
-    A["用户态应用<br/>(fread/write/io_uring)"] --> B["libc / liburing"]
-    B --> C["VFS 层<br/>(虚拟文件系统)"]
-    C --> D["具体文件系统<br/>(ext4 / xfs / btrfs)"]
-    D --> E["块设备层<br/>(block layer)"]
-    E --> F["IO 调度器<br/>(mq-deadline / bfq / BPF)"]
-    F --> G["NVMe 驱动<br/>(pci/nvme)"]
-    G --> H["NVMe 硬件<br/>(SSD / SSD over Fabrics)"]
+    A["用户态应用<br>(fread/write/io_uring)"] --> B["libc / liburing"]
+    B --> C["VFS 层<br>(虚拟文件系统)"]
+    C --> D["具体文件系统<br>(ext4 / xfs / btrfs)"]
+    D --> E["块设备层<br>(block layer)"]
+    E --> F["IO 调度器<br>(mq-deadline / bfq / BPF)"]
+    F --> G["NVMe 驱动<br>(pci/nvme)"]
+    G --> H["NVMe 硬件<br>(SSD / SSD over Fabrics)"]
 
     style A fill:#e1f5fe
     style C fill:#fff3e0
@@ -107,10 +107,10 @@ graph TD
     style G fill:#f3e5f5
     style H fill:#e0f2f1
 
-    BPF1["eBPF: fentry/fexit<br/>VFS 追踪 & 旁路"] -.-> C
-    BPF2["eBPF: fuse-bpf<br/>用户态 FS 加速"] -.-> D
-    BPF3["eBPF: struct_ops<br/>自定义 IO 调度器"] -.-> F
-    BPF4["eBPF: iter<br/>块设备状态监控"] -.-> G
+    BPF1["eBPF: fentry/fexit<br>VFS 追踪 & 旁路"] -.-> C
+    BPF2["eBPF: fuse-bpf<br>用户态 FS 加速"] -.-> D
+    BPF3["eBPF: struct_ops<br>自定义 IO 调度器"] -.-> F
+    BPF4["eBPF: iter<br>块设备状态监控"] -.-> G
 ```
 
 ### 2.1 各挂载点的能力边界
@@ -333,7 +333,7 @@ sequenceDiagram
     Fuse-->>VFS: 直接返回
     VFS-->>App: 操作完成
 
-    Note over App,Daemon: 元数据操作被 BPF 旁路，<br/>仅在缓存未命中时回退到 Daemon
+    Note over App,Daemon: 元数据操作被 BPF 旁路，<br>仅在缓存未命中时回退到 Daemon
 ```
 
 #### 3.2.3 fuse-bpf 加速代码示例
@@ -670,9 +670,9 @@ int BPF_PROG(io_throttle_entry, struct request *rq)
 
 ```mermaid
 graph LR
-    NIC["RDMA 网卡<br/>100 Gbps"] -->|零拷贝| BPF["eBPF 程序<br/>数据路由"]
-    BPF -->|直接 LBA 映射| NVMe["NVMe SSD<br/>14 GB/s"]
-    BPF -->|旁路| FS["文件系统<br/>(仅元数据)"]
+    NIC["RDMA 网卡<br>100 Gbps"] -->|零拷贝| BPF["eBPF 程序<br>数据路由"]
+    BPF -->|直接 LBA 映射| NVMe["NVMe SSD<br>14 GB/s"]
+    BPF -->|旁路| FS["文件系统<br>(仅元数据)"]
 
     style BPF fill:#e8f5e9,stroke:#2e7d32,stroke-width:3px
 ```

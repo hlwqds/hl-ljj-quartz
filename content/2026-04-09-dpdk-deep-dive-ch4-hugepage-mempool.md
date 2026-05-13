@@ -137,8 +137,7 @@ df -h | grep huge
 
 # 查看已分配的大页文件
 ls -la /mnt/huge/
-# total 0
-# -rw-r--r-- 1 root root 2097152 Apr  9 10:00 2MB-0-1048576kB
+# -rw------- 1 root root 2097152 Apr  9 10:00 map_0
 ```
 
 ### 2.3 大页内存布局
@@ -147,18 +146,15 @@ ls -la /mnt/huge/
 ┌─────────────────────────────────────────────────────────────────┐
 │                   系统物理内存 (64GB)                            │
 │                                                                  │
-│  ┌──────────┐ ┌────────────────────────┐ ┌───────────────────┐   │
-│  │  DDR 0   │ │      DDR 0              │ │      DDR 1        │   │
-│  │  (32GB)  │ │  (continued)            │ │   (32GB)          │   │
-│  └──────────┘ └────────────────────────┘ └───────────────────┘   │
-│                                                                  │
-│  ┌───────────────────────────────────────────────────────────┐   │
-│  │              2MB HugePage Pool (Socket 0)                 │   │
-│  │  ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐            │   │
-│  │  │ HP 0 │ │ HP 1 │ │ HP 2 │ │ HP 3 │ │ HP 4 │  ...     │   │
-│  │  └──────┘ └──────┘ └──────┘ └──────┘ └──────┘            │   │
-│  │  每个 2MB，所有 HP 连续排列                                 │   │
-│  └───────────────────────────────────────────────────────────┘   │
+│  ┌────────────────────────────┐ ┌────────────────────────────┐   │
+│  │      Socket 0 (32GB)       │ │      Socket 1 (32GB)       │   │
+│  │                            │ │                            │   │
+│  │  ┌──────┐ ┌──────┐        │ │  ┌──────┐ ┌──────┐        │   │
+│  │  │ HP 0 │ │ HP 1 │  ...   │ │  │ HP 0 │ │ HP 1 │  ...   │   │
+│  │  │ 2MB  │ │ 2MB  │        │ │  │ 2MB  │ │ 2MB  │        │   │
+│  │  └──────┘ └──────┘        │ │  └──────┘ └──────┘        │   │
+│  │  HugeTLB Page Pool        │ │  HugeTLB Page Pool        │   │
+│  └────────────────────────────┘ └────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -171,24 +167,41 @@ ls -la /mnt/huge/
 ```
 rte_eal_memory_init()
     │
-    ├─► eal_dmi_config_init()       # 检测 IOMMU/DMI
-    │
-    ├─► eal_memalloc_init()         # 初始化内存分配器
+    ├─► rte_eal_memalloc_init()      # 初始化内存分配器
     │       │
     │       ├─► 尝试 1GB 大页 (Socket 0)
-    │       │
     │       ├─► 尝试 1GB 大页 (Socket 1)
-    │       │
     │       ├─► 尝试 2MB 大页 (Socket 0)
-    │       │
     │       └─► 尝试 2MB 大页 (Socket 1)
     │
-    └─► rte_eal_iova_mode_init()    # 设置 IOVA 模式
+    ├─► rte_eal_memseg_init()        # 初始化 memseg 列表
+    │
+    ├─► rte_memzone_init()           # 初始化 memzone 子系统
+    │
+    └─► rte_eal_iova_mode_init()     # 检测 IOVA 模式
 ```
 
 ### 3.2 memseg 和 memzone
 
 DPDK 使用两个核心数据结构管理内存：
+
+```
+memseg（物理内存段）           memzone（具名区域）         mempool（对象池）
+┌────────────────────┐       ┌────────────────────┐      ┌────────────────────┐
+│ HP 0: 2MB          │       │ "ring_ctrl"  4KB   │      │ mbuf #0           │
+│ HP 1: 2MB          │──────▶│ "mbuf_pool" 16MB  │─────▶│ mbuf #1           │
+│ HP 2: 2MB          │       │ "hash_table" 1MB  │      │ mbuf #2           │
+│ HP 3: 2MB          │       └────────────────────┘      │ mbuf #3           │
+│ ...                │                                   │ ...               │
+└────────────────────┘                                   └────────────────────┘
+ 跟踪物理内存页              从 memseg 中预留区域          从 memzone 分配固定大小对象
+```
+
+| 层次 | 职责 | 生命周期 |
+|------|------|---------|
+| memseg | 跟踪每个大页的物理/虚拟地址映射 | EAL 启动时创建，进程退出时释放 |
+| memzone | 按名称预留连续内存区域 | 创建后一直存在，直到显式释放 |
+| mempool | 从 memzone 分配固定大小的对象池 | 应用创建，应用释放 |
 
 #### memseg：物理内存段
 
@@ -197,14 +210,13 @@ DPDK 使用两个核心数据结构管理内存：
 
 struct rte_memseg {
     phys_addr_t phys_addr;      // 物理起始地址
-    uint64_t iova;              // IOVA 地址（见下）
+    rte_iova_t iova;            // IOVA 地址
     void *addr;                 // 虚拟起始地址
     size_t len;                 // 段长度
-    int socket_id;              // NUMA socket
-    uint32_t hugepage_sz;       // 大页 size (2MB or 1GB)
-    uint32_tflags;              // 标志位
-    int32_t users;              // 引用计数
-    char name[RTE_MEMZONE_NAMESIZE];  // 可选名称
+    uint64_t hugepage_sz;       // 大页 size (2MB or 1GB)
+    int32_t socket_id;          // NUMA socket
+    uint32_t nchannel;          // 通道数
+    uint32_t nrank;             // rank 数
 };
 
 // memseg 列表（每个 socket 独立管理）
@@ -255,8 +267,8 @@ IOVA (I/O Virtual Address) 是 DPDK 内存模型的核心概念：
 
 | 模式 | IOVA 含义 | 依赖 | 适用场景 |
 |------|-----------|------|---------|
-| **IOVA as PA** | IOVA = 物理地址 | VFIO+IOMMU 或 UIO | 直接分配 |
-| **IOVA as VA** | IOVA = 虚拟地址 | VFIO+IOMMU v2 | 虚拟化，推荐 |
+| **IOVA as PA** | IOVA = 物理地址 | UIO 或 VFIO no-IOMMU | 物理地址直接用于 DMA |
+| **IOVA as VA** | IOVA = 虚拟地址 | VFIO + IOMMU | 虚拟化场景，VA 与 IOVA 统一 |
 
 ```c
 // 检测 IOVA 模式
@@ -277,7 +289,9 @@ void *ptr = rte_malloc("packet", 1024, 0);
 ### 3.4 多 socket 内存分配
 
 ```c
-// 在指定 socket 上分配内存
+// rte_pktmbuf_pool_create 内部会调用 rte_mempool_create，
+// 并通过 rte_malloc_socket() 在指定 socket 上分配内存
+
 struct rte_mempool *
 rte_pktmbuf_pool_create(const char *name,
                         unsigned n,
@@ -286,17 +300,11 @@ rte_pktmbuf_pool_create(const char *name,
                         uint16_t data_room_size,
                         int socket_id)
 {
-    int sbuf;
-    
-    // 验证 socket_id 有效
-    if (socket_id >= RTE_MAX_NUMA_NODES)
-        socket_id = 0;
-    
-    // 分配在正确 socket 上
-    if (socket_id == rte_socket_id(0))
-        sbuf = rte_malloc_socket(...);
-    else
-        sbuf = rte_malloc_socket(...);
+    // 内部调用 rte_mempool_create，通过 socket_id 参数
+    // 让 rte_malloc_socket 在正确的 NUMA 节点上分配内存
+    return rte_mempool_create(name, n, elt_size, cache_size,
+                              priv_size, pktmbuf_init, NULL, NULL,
+                              socket_id, 0);
 }
 ```
 
@@ -347,25 +355,45 @@ graph TB
 
 ### 4.3 无锁 Ring
 
-DPDK 的 rte_ring 是一个高性能的无锁 FIFO，实现参考了 Linux kernel 的kfifo：
+DPDK 的 rte_ring 是一个高性能的无锁 FIFO，基于经典的 MPMC（多生产者多消费者）无锁队列算法，使用 head/tail 分离 + CAS 实现：
+
+```
+rte_ring 结构（size=8, mask=7）
+
+         0      1      2      3      4      5      6      7
+       ┌──────┬──────┬──────┬──────┬──────┬──────┬──────┬──────┐
+       │ obj  │ obj  │ obj  │ empty│ empty│ obj  │ obj  │ obj  │
+       └──────┴──────┴──────┴──────┴──────┴──────┴──────┴──────┘
+                  ↑                              ↑
+            cons.tail=3                      prod.tail=8
+
+  生产者：写入 ring[prod.tail & mask]，然后 prod.tail++
+  消费者：读取 ring[cons.tail & mask]，然后 cons.tail++
+
+  size 必须是 2 的幂 → 用 & mask 替代 % size，省去取模开销
+```
 
 ```c
-// lib/eal/common/eal_ring.h
+// lib/ring/rte_ring_core.h
 
 struct rte_ring {
     char name[RTE_RING_NAMESIZE];     // 名称
     uint32_t flags;                    // 标志
     uint32_t size;                     // ring 大小（必须是 2 的幂）
     uint32_t mask;                     // size - 1（用于 & mask 替代 %）
-    
-    // 读指针（生产端）
-    volatile uint32_t prod.tail;
-    volatile uint32_t prod.head;
-    
-    // 写指针（消费端）
-    volatile uint32_t cons.tail;
-    volatile uint32_t cons.head;
-    
+
+    // 生产端指针
+    struct rte_ring_prod {
+        volatile uint32_t tail;        // 消费者可读的最新位置
+        volatile uint32_t head;        // 生产者正在写入的位置
+    } prod;
+
+    // 消费端指针
+    struct rte_ring_cons {
+        volatile uint32_t tail;        // 生产者可读的最新位置
+        volatile uint32_t head;        // 消费者正在读取的位置
+    } cons;
+
     // 对象存储（每个 entry 是指针）
     void *ring[];  // 柔性数组
 };
@@ -374,7 +402,7 @@ struct rte_ring {
 struct rte_ring *r = rte_ring_create(
     "packet_ring",
     8192,          // 大小（2 的幂）
-    SOCKET0,       // socket
+    SOCKET_ID_ANY, // socket
     0              // flags
 );
 
@@ -386,106 +414,179 @@ rte_ring_mp_enqueue_bulk(struct rte_ring *r,
                           uint32_t *free_space)
 {
     uint32_t prod_head, prod_next;
-    uint32_t free;
-    
-    // 1. 获取当前 prod_head
+    uint32_t free_entries;
+
+    // 1. 读取 prod.head
     prod_head = r->prod.head;
-    
-    // 2. 计算新的 prod_head
-    prod_next = prod_head + n;
-    
-    // 3. 检查空间（cons.tail 提供信息）
-    free = (r->cons.tail > prod_head) ?
-           (r->mask + 1 - prod_head + r->cons.tail) :
-           (r->cons.tail - prod_head);
-    
-    if (n > free)
+
+    // 2. 计算可用空间
+    free_entries = r->size - (prod_head - r->cons.tail);
+    if (n > free_entries)
         return 0;
-    
-    // 4. CAS 更新 prod_head
-    if (rte_atomic32_cmpset(&r->prod.head, prod_head, prod_next)) {
-        // 成功，移动对象到 ring
-        for (uint32_t i = 0; i < n; i++)
-            r->ring[prod_head & r->mask + i] = obj_table[i];
-        
-        // 5. 更新 prod_tail（可见性保证）
-        rte_smp_wmb();  // 写屏障
-        r->prod.tail = prod_next;
-    }
-    
+
+    // 3. 计算 prod_next
+    prod_next = prod_head + n;
+
+    // 4. CAS 更新 prod.head（多生产者竞争）
+    if (!rte_atomic32_cmpset(&r->prod.head, prod_head, prod_next))
+        return 0;  // CAS 失败，其他生产者抢先了
+
+    // 5. CAS 成功，安全写入对象
+    for (uint32_t i = 0; i < n; i++)
+        r->ring[(prod_head + i) & r->mask] = obj_table[i];
+
+    // 6. 更新 prod.tail（写屏障保证对象先于 tail 可见）
+    rte_smp_wmb();
+    r->prod.tail = prod_next;
+
     return n;
 }
+```
+
+head/tail 分离的关键设计：
+
+```
+多生产者场景：
+
+  Producer A                    Producer B
+  ─────────                    ─────────
+  读取 prod.head = 10          读取 prod.head = 10
+  CAS: head 10 → 13            CAS: head 10 → 13 (失败！)
+  写入 ring[10,11,12]          重读 prod.head = 13
+  tail = 13                    CAS: head 13 → 16
+                                写入 ring[13,14,15]
+                                tail = 16
+
+  消费者看到 cons.tail 没动，知道 [10,15] 还在写入中，不会读取
+  只有 tail 更新后，消费者才能安全读取
 ```
 
 ### 4.4 Per-lcore 缓存
 
 mempool 为每个 lcore 提供本地缓存，减少对 ring 的竞争：
 
+```
+mempool 架构：三层缓存
+
+┌─────────────────────────────────────────────────────────────┐
+│                        rte_mempool                          │
+│                                                              │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
+│  │  lcore 0    │  │  lcore 1    │  │  lcore 2    │         │
+│  │  本地缓存    │  │  本地缓存    │  │  本地缓存    │         │
+│  │  [ptr,ptr,  │  │  [ptr,ptr,  │  │  [ptr,ptr,  │         │
+│  │   ptr,...]  │  │   ptr,...]  │  │   ptr,...]  │         │
+│  │  cache_size │  │  cache_size │  │  cache_size │         │
+│  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘         │
+│         │ 批量 refill/flush (32个)  │         │              │
+│         └──────────────┼───────────┘         │              │
+│                        ▼                     │              │
+│              ┌─────────────────┐              │              │
+│              │    rte_ring     │              │              │
+│              │  (共享无锁队列)  │◀─────────────┘              │
+│              └────────┬────────┘                             │
+│                       │                                     │
+│              ┌────────▼────────┐                             │
+│              │   对象池内存     │                             │
+│              │  (连续物理内存)  │                             │
+│              │  [obj][obj]...  │                             │
+│              └─────────────────┘                             │
+└─────────────────────────────────────────────────────────────┘
+
+alloc 路径：本地缓存 → 有对象直接返回（~10ns）
+            本地缓存空 → 从 ring 批量 refill（~50ns，摊薄到每个对象）
+```
+
 ```c
-// mempool 结构
+// mempool 结构（简化）
 struct rte_mempool {
     char name[RTE_MEMZONE_NAMESIZE];
-    struct rte_ring *ring_data;         // 底层 ring
-    void *pool_data;                    // 对象池内存
+    void *pool_data;                    // 对象池内存基地址
+    struct rte_ring *ring;              // 底层共享 ring
     uint32_t size;                      // 池中对象总数
     uint32_t cache_size;                // per-lcore 缓存大小
-    uint32_t private_size;              // 私有数据大小
-    
-    // Per-lcore 缓存（每个 lcore 独立的本地缓存）
-    struct rte_mempool_cache {
-        uint32_t len;                   // 缓存中对象数
-        void *objs[cache_size];         // 缓存对象指针
-    } __rte_cache_aligned;
-    
-    // 管理结构
-    uint32_t populated;                 // 已填充对象数
-    rte_mempool_populate_fn_t populate;  // 填充函数
+    uint32_t elt_size;                  // 单个对象大小
+    uint32_t header_size;               // 对象头部大小
+    unsigned flags;                     // 标志位
+    int socket_id;                      // NUMA socket
+
+    // 注意：per-lcore 缓存不嵌入在结构体中
+    // 而是通过 rte_mempool_cache *local_cache[RTE_MAX_LCORE] 独立存储
+    struct rte_mempool_cache *local_cache;
 };
+
+// per-lcore 缓存结构（独立于 mempool，per-lcore 实例）
+struct rte_mempool_cache {
+    uint32_t size;          // 缓存容量（= mempool 的 cache_size）
+    uint32_t len;           // 当前缓存中对象数
+    void *objs[];           // 柔性数组，缓存对象指针
+} __rte_cache_aligned;      // 独占缓存行，避免 false sharing
 ```
 
 ```c
 // 从 mempool 获取对象（优先从本地缓存）
-struct rte_mbuf *
+static inline struct rte_mbuf *
 rte_pktmbuf_alloc(struct rte_mempool *mp)
 {
-    struct rte_mempool_cache *cache;
     struct rte_mbuf *m;
-    
-    // 1. 获取当前 lcore 的本地缓存
-    cache = rte_mempool_get_cache(mp);
-    
-    // 2. 如果本地缓存有对象，直接返回
-    if (cache->len > 0) {
-        cache->len--;
-        m = cache->objs[cache->len];
-        return m;
-    }
-    
-    // 3. 本地缓存空了，从 ring 批量补充
-    // 批量获取 DEFAULT_CACHE_SIZE (32) 个对象
-    rte_mempool_generic_get(mp, DEFAULT_CACHE_SIZE, cache);
-    
-    // 4. 返回第一个对象
-    cache->len--;
-    m = cache->objs[cache->len];
-    
+
+    // rte_mempool_get 内部逻辑：
+    //   1. 获取当前 lcore 的本地缓存 (local_cache[lcore_id])
+    //   2. 缓存非空 → 直接弹出最后一个对象，~10ns
+    //   3. 缓存为空 → 从 ring 批量获取 cache_size 个对象
+    //                 然后从缓存中弹出，摊薄开销后 ~15ns/个
+    if (rte_mempool_get(mp, (void **)&m) < 0)
+        return NULL;  // pool 耗尽
+
+    // 初始化 mbuf 字段（设置 data_off、refcnt 等）
+    rte_pktmbuf_reset(m);
     return m;
+}
+
+// 归还 mbuf（优先放回本地缓存）
+static inline void
+rte_pktmbuf_free(struct rte_mbuf *m)
+{
+    // rte_mempool_put 内部逻辑：
+    //   1. 获取当前 lcore 的本地缓存
+    //   2. 缓存未满 → 放入缓存，~10ns
+    //   3. 缓存已满 → 批量 flush cache_size 个对象回 ring
+    rte_mempool_put(m->pool, m);
 }
 ```
 
 ### 4.5 缓存亲和性
 
+```
+正确：alloc 和 free 在同一个 lcore 上
+
+  lcore 0                    lcore 1
+  ───────                    ───────
+  alloc(m1) → cache[0]      alloc(m5) → cache[1]
+  alloc(m2) → cache[0]      alloc(m6) → cache[1]
+  free(m1)  → cache[0]      free(m5)  → cache[1]
+  free(m2)  → cache[0]      free(m6)  → cache[1]
+  永远不需要访问 ring         永远不需要访问 ring
+  ~10ns per alloc/free       ~10ns per alloc/free
+
+错误：跨 lcore alloc/free
+
+  lcore 0 alloc(m1)  ──free(m1)──▶  lcore 1
+  m1 归还到 lcore 1 的缓存，lcore 0 的缓存缺少对象
+  → 频繁触发 ring refill/flush，性能退化
+```
+
 ```c
-// 应用层：确保在正确的 lcore 上分配
+// 正确：在同一个 lcore 上 alloc + free
 int lcore_worker(void *arg) {
-    // 每个 lcore 有独立的 mempool 缓存
-    struct rte_mempool *mp = get_mempool_for_this_lcore();
-    
+    struct rte_mempool *mp = get_mempool();
+
     while (1) {
         struct rte_mbuf *m = rte_pktmbuf_alloc(mp);
-        // m 来自本地缓存，O(1) 操作，~10ns
+        // m 来自 lcore 本地缓存，~10ns
         process(m);
         rte_pktmbuf_free(m);
+        // m 归还到 lcore 本地缓存，~10ns
     }
 }
 ```
@@ -555,13 +656,11 @@ mbuf 结构大小：
 #define CACHE_SIZE 256
 
 struct rte_mempool *
-create_mbuf_pool(uint16_t port_id, uint16_t queue_id)
+create_mbuf_pool(uint16_t port_id)
 {
-    struct rte_mempool *mp;
     int socket_id = rte_eth_dev_socket_id(port_id);
-    
-    // 创建 mbuf pool
-    mp = rte_pktmbuf_pool_create(
+
+    struct rte_mempool *mp = rte_pktmbuf_pool_create(
         "mbuf_pool",                    // name
         NB_MBUF,                        // nb_mbuf (8192)
         CACHE_SIZE,                     // cache_size (256)
@@ -569,24 +668,19 @@ create_mbuf_pool(uint16_t port_id, uint16_t queue_id)
         MBUF_DATA_SIZE,                 // data_room_size (2176)
         socket_id                       // socket_id
     );
-    
+
     if (mp == NULL) {
         rte_exit(EXIT_FAILURE,
-                  "Cannot create mbuf pool: %s\n",
-                  rte_strerror(rte_errno));
+                 "Cannot create mbuf pool on socket %d: %s\n",
+                 socket_id, rte_strerror(rte_errno));
     }
-    
-    // 设置私有数据（用于携带自定义信息）
-    struct rte_mempool_priv_flags flags = 0;
-    
+
     // 检查 pool 统计
-    struct rte_mempool_info info;
-    rte_mempool_get_info(mp, &info);
-    printf("Mempool %s: size=%u, free=%lu, alloc=%u\n",
-           mp->name, info.size,
-           rte_mempool_free_count(mp),
+    printf("Mempool %s: size=%u, avail=%u, in_use=%u\n",
+           mp->name,
+           rte_mempool_avail_count(mp),
            rte_mempool_in_use_count(mp));
-    
+
     return mp;
 }
 ```
@@ -600,7 +694,7 @@ create_mbuf_pool(uint16_t port_id, uint16_t queue_id)
 struct {
     struct rte_mempool *pkt_pool;      // 普通数据包
     struct rte_mempool *ctrl_pool;     // 控制平面包（小）
-    struct rte_mempool * Jumbo_pool;    // Jumbo frame 池（9KB）
+    struct rte_mempool *jumbo_pool;    // Jumbo frame 池（9KB）
     struct rte_mempool *crypto_pool;    // 加密操作池
 } mempools;
 
@@ -608,14 +702,13 @@ struct {
 mempools.pkt_pool = rte_pktmbuf_pool_create(
     "pkt_pool", 16384, 256, 0, 2048, socket_id);
 
+// 控制平面包池：小数据区，节省内存
+mempools.ctrl_pool = rte_pktmbuf_pool_create(
+    "ctrl_pool", 1024, 64, 0, 256, socket_id);
+
 // Jumbo 帧池：9KB 数据区
-struct rte_mempool_conf conf = {
-    .mbuf_data_size = 9216 + RTE_PKTMBUF_HEADROOM,
-    .mbuf_pool_size = 2048,
-    .cache_size = 64
-};
 mempools.jumbo_pool = rte_pktmbuf_pool_create(
-    "jumbo_pool", 2048, 64, 0, 9216 + 128, socket_id);
+    "jumbo_pool", 2048, 64, 0, 9216 + RTE_PKTMBUF_HEADROOM, socket_id);
 ```
 
 ---
@@ -624,22 +717,46 @@ mempools.jumbo_pool = rte_pktmbuf_pool_create(
 
 ### 6.1 NUMA 感知分配
 
+```
+错误：所有 port 共享一个 pool
+
+  ┌── Socket 0 ──┐        ┌── Socket 1 ──┐
+  │ eth0         │        │ eth1         │
+  │              │        │              │
+  │              │        │   ───────┐   │
+  │              │        │          │   │
+  └──────────────┘        └──────────┼───┘
+                                     │ 跨 NUMA
+  ┌── Socket 0 ──┐                  │
+  │ shared_pool  │◀─────────────────┘
+  │ (所有 mbuf)  │
+  └──────────────┘
+  eth1 的 DMA 写 + lcore 读取都跨 QPI 互连
+
+正确：每个 socket 独立 pool
+
+  ┌── Socket 0 ──┐        ┌── Socket 1 ──┐
+  │ eth0         │        │ eth1         │
+  │   ↕ DMA      │        │   ↕ DMA      │
+  │ pool_0       │        │ pool_1       │
+  │ (本地内存)   │        │ (本地内存)   │
+  └──────────────┘        └──────────────┘
+  所有数据路径都在本地 NUMA 节点内完成
+```
+
 ```c
-// 错误示例：所有 port 使用同一个 pool
-mp = rte_pktmbuf_pool_create("shared_pool", 16384, ...);
-// 问题：socket 1 的 port 使用 socket 0 分配的内存，跨 NUMA 访问
+// 正确：每个 socket 独立 pool
+struct rte_mempool *mp_by_socket[RTE_MAX_NUMA_NODES] = {0};
 
-// 正确示例：每个 socket 独立 pool
-struct rte_mempool *mp_by_socket[RTE_MAX_NUMA_NODES];
-
+uint16_t port_id;
 RTE_ETH_FOREACH_DEV(port_id) {
     int socket_id = rte_eth_dev_socket_id(port_id);
-    
+
     if (mp_by_socket[socket_id] == NULL) {
         mp_by_socket[socket_id] = rte_pktmbuf_pool_create(
             "pool", 16384, 256, 0, 2048, socket_id);
     }
-    
+
     // 每个 port 使用本地 socket 的 pool
     setup_rx_queue(port_id, mp_by_socket[socket_id]);
 }
@@ -700,12 +817,12 @@ rte_mempool_put_bulk(mp, (void **)rx_pkts, nb_rx);
 
 ```bash
 # 使用 dpdk-procinfo 查看内存
-dpdk-procinfo -- --legacy-meminfo l2fwd
+dpdk-procinfo -- --show-mempool l2fwd
 
 # 或者在应用内打印
-rte_dump_memzone(NULL);   // 所有 memzone
-rte_dump_memseg(NULL);    // 所有 memseg
-rte_dump_ivmem(NULL);     // IOVA 映射
+rte_mempool_list_dump(stdout);        // 所有 mempool
+rte_memzone_dump(stdout);             // 所有 memzone
+rte_eal_dump_physmem_layout(stdout);  // 物理内存布局
 ```
 
 ### 7.2 常见内存错误

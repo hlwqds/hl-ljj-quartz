@@ -104,11 +104,11 @@ timeline
 ```mermaid
 graph TB
     subgraph "用户态"
-        Dev[开发者] --> |"bpftool prog load<br/>--offload-ifindex=ens2f0"| libbpf[libbpf]
+        Dev[开发者] --> |"bpftool prog load<br>--offload-ifindex=ens2f0"| libbpf[libbpf]
     end
 
     subgraph "内核驱动层"
-        libbpf --> |"bpf_prog_load<br/>offload标记"| Driver[网卡驱动]
+        libbpf --> |"bpf_prog_load<br>offload标记"| Driver[网卡驱动]
         Driver --> |"验证 + 重定位"| Verifier[内核验证器]
         Verifier --> |"字节码"| FW_Download[固件下载通道]
     end
@@ -396,9 +396,9 @@ bpftool prog show id 42
 
 ```mermaid
 graph TB
-    NIC[SmartNIC 硬件] --> |"L3/L4 过滤<br/>DDoS 防御<br/>基础路由"| HW[eBPF Offload]
+    NIC[SmartNIC 硬件] --> |"L3/L4 过滤<br>DDoS 防御<br>基础路由"| HW[eBPF Offload]
     HW --> |"允许的流量"| PCIe[PCIe 总线]
-    PCIe --> |"L7 解析<br/>业务逻辑"| Host[主机 XDP/TC]
+    PCIe --> |"L7 解析<br>业务逻辑"| Host[主机 XDP/TC]
     Host --> App[应用进程]
 
     style HW fill:#99ff99
@@ -421,7 +421,7 @@ graph TB
 ```mermaid
 graph TB
     subgraph "入口层 (SmartNIC)"
-        NIC1[SmartNIC 1] --> |"L3/L4 过滤<br/>丢弃 99% 流量"| LB[负载均衡器]
+        NIC1[SmartNIC 1] --> |"L3/L4 过滤<br>丢弃 99% 流量"| LB[负载均衡器]
         NIC2[SmartNIC 2] --> LB
         NIC3[SmartNIC 3] --> LB
         NIC4[SmartNIC 4] --> LB

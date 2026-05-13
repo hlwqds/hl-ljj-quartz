@@ -106,31 +106,31 @@ tags:
 ```mermaid
 graph TB
     subgraph "物理传感器层"
-        S1["温度传感器<br/>Modbus RTU"]
-        S2["压力变送器<br/>HART/4-20mA"]
-        S3["PLC 控制器<br/>Modbus TCP"]
-        S4["智能电表<br/>DL/T 645"]
-        S5["摄像头<br/>ONVIF/RTSP"]
+        S1["温度传感器<br>Modbus RTU"]
+        S2["压力变送器<br>HART/4-20mA"]
+        S3["PLC 控制器<br>Modbus TCP"]
+        S4["智能电表<br>DL/T 645"]
+        S5["摄像头<br>ONVIF/RTSP"]
     end
 
     subgraph "eBPF 数据面加速层"
-        XDP["XDP 程序<br/>L2-L4 过滤 & 计数"]
-        TC["TC BPF 程序<br/>L7 协议识别"]
-        MAP["BPF Maps<br/>共享状态缓存"]
+        XDP["XDP 程序<br>L2-L4 过滤 & 计数"]
+        TC["TC BPF 程序<br>L7 协议识别"]
+        MAP["BPF Maps<br>共享状态缓存"]
     end
 
     subgraph "协议解析与转换层"
-        MQTT["MQTT 桥接<br/>Topic 路由"]
-        MODBUS["Modbus 网关<br/>寄存器映射"]
-        OPCUA["OPC-UA 适配器<br/>信息模型"]
-        DATA["数据归一化<br/>时序对齐"]
+        MQTT["MQTT 桥接<br>Topic 路由"]
+        MODBUS["Modbus 网关<br>寄存器映射"]
+        OPCUA["OPC-UA 适配器<br>信息模型"]
+        DATA["数据归一化<br>时序对齐"]
     end
 
     subgraph "应用编排层"
         K8S["K3s 轻量容器编排"]
-        RULE["规则引擎<br/>CEP 复杂事件"]
-        ML["边缘推理<br/>异常检测"]
-        CLOUD["云边协同<br/>OTA 更新"]
+        RULE["规则引擎<br>CEP 复杂事件"]
+        ML["边缘推理<br>异常检测"]
+        CLOUD["云边协同<br>OTA 更新"]
     end
 
     S1 & S2 & S3 & S4 & S5 --> XDP
@@ -787,23 +787,23 @@ protocols:
 ```mermaid
 graph TB
     subgraph "焊接工位"
-        R1["焊接机器人 #1<br/>Modbus TCP @502"]
-        R2["焊接机器人 #2<br/>Modbus TCP @502"]
-        RN["焊接机器人 #N<br/>Modbus TCP @502"]
+        R1["焊接机器人 #1<br>Modbus TCP @502"]
+        R2["焊接机器人 #2<br>Modbus TCP @502"]
+        RN["焊接机器人 #N<br>Modbus TCP @502"]
     end
 
     subgraph "边缘网关 (ARM Cortex-A72)"
         XDP_IN["XDP: 报文捕获"]
-        TC_PARSE["TC BPF: Modbus 解析<br/>提取焊接参数"]
-        MAP_CACHE["BPF Map: 参数缓存<br/>(环形缓冲区)"]
-        LOCAL_ML["本地推理<br/>焊接质量预测"]
-        ALERT["异常报警<br/>即时阻断"]
+        TC_PARSE["TC BPF: Modbus 解析<br>提取焊接参数"]
+        MAP_CACHE["BPF Map: 参数缓存<br>(环形缓冲区)"]
+        LOCAL_ML["本地推理<br>焊接质量预测"]
+        ALERT["异常报警<br>即时阻断"]
     end
 
     subgraph "云端平台"
-        TSDB["时序数据库<br/>长期存储"]
+        TSDB["时序数据库<br>长期存储"]
         DASHBOARD["质量分析仪表盘"]
-        MODEL["模型训练<br/>质量预测迭代"]
+        MODEL["模型训练<br>质量预测迭代"]
     end
 
     R1 & R2 & RN --> XDP_IN
@@ -812,10 +812,10 @@ graph TB
     MAP_CACHE --> LOCAL_ML
     LOCAL_ML --> ALERT
     ALERT -.->|"异常: 阻断指令"| R1
-    MAP_CACHE -->|"批量上报<br/>每5秒一次"| TSDB
+    MAP_CACHE -->|"批量上报<br>每5秒一次"| TSDB
     TSDB --> DASHBOARD
     TSDB --> MODEL
-    MODEL -.->|"模型更新<br/>OTA"| LOCAL_ML
+    MODEL -.->|"模型更新<br>OTA"| LOCAL_ML
 ```
 
 关键性能指标：

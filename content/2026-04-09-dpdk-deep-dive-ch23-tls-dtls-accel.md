@@ -1,8 +1,8 @@
 ---
 title: "DPDK 深度探索 (二十三)：TLS/DTLS 加速与 Session 管理"
 date: 2026-04-09
-tags: [dpdk, series, tls, dtls, ssl, openssl, session, crypto, ipsec, tls-record, handshake]
-description: "深入理解 TLS/DTLS 协议与 DPDK 加速——记录层、握手流程、session 管理、TLS 卸载、Crypto 数据面与控制面分离"
+tags: [dpdk, series, tls, dtls, ssl, session, crypto, tls-record, handshake, security]
+description: "深入理解 TLS/DTLS 协议与 DPDK 加速——记录层、握手流程、session 管理、rte_security TLS Record 卸载、Crypto 数据面与控制面分离"
 ---
 
 > [!info] DPDK 深度探索系列
@@ -38,7 +38,7 @@ description: "深入理解 TLS/DTLS 协议与 DPDK 加速——记录层、握�
 │                                                                             │
 │  ┌─────────────────────┐    ┌─────────────────────┐                      │
 │  │      IPsec           │    │       TLS            │                      │
-│  │  (Network Layer)     │    │  (Application Layer)│                      │
+│  │  (Network Layer)     │    │  (Transport Layer)  │                      │
 │  ├─────────────────────┤    ├─────────────────────┤                      │
 │  │  保护整个 IP 包      │    │  保护应用数据        │                      │
 │  │  对应用透明          │    │  应用感知            │                      │
@@ -124,7 +124,7 @@ description: "深入理解 TLS/DTLS 协议与 DPDK 加速——记录层、握�
 │  - 显式序列号 + Cookie 机制                                                │
 │  - 处理包重排序、乱序、丢失                                                │
 │  - 添加握手超时和重传                                                      │
-│  - 典型应用: VoIP, VPN, WebRTC, DTLS-based IPsec                         │
+│  - 典型应用: VoIP、WebRTC、VPN-over-UDP                                   │
 │                                                                             │
 │  DTLS 额外机制:                                                           │
 │  ────────────────                                                         │
@@ -137,11 +137,12 @@ description: "深入理解 TLS/DTLS 协议与 DPDK 加速——记录层、握�
 │  │  2. 握手重传定时器                                                    │ │
 │  │     丢失包 ──► 超时 ──► 重传                                         │ │
 │  │                                                                      │ │
-│  │  3. 消息跳跃 (Message Hop)                                          │ │
-│  │     不连续的握手消息可以分片传输                                      │ │
+│  │  3. 消息分片与重组 (Message Fragmentation)                           │ │
+│  │     超大握手消息可以分片传输，接收端按偏移重组                        │ │
 │  │                                                                      │ │
-│  │  4. 序列号风暴抑制                                                    │ │
-│  │     每个 epoch 有独立的序列号空间                                      │ │
+│  │  4. Epoch 机制                                                       │ │
+│  │     每次 rekeying 切换 epoch，新旧 epoch 有独立序列号空间            │ │
+│  │     丢弃旧 epoch 的记录（除重传窗口内的包）                          │ │
 │  └─────────────────────────────────────────────────────────────────────┘ │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
@@ -153,35 +154,41 @@ description: "深入理解 TLS/DTLS 协议与 DPDK 加速——记录层、握�
 
 ### 2.1 TLS Record 格式
 
+DPDK 在 `lib/net/rte_tls.h` 和 `lib/net/rte_dtls.h` 中定义了记录层头结构：
+
 ```c
-// TLS Record 结构
-struct tls_record {
-    uint8_t type;              // Content Type
-    uint16_t version;          // TLS Version (0x0301=TLS1.0, 0x0303=TLS1.2, 0x0304=TLS1.3)
-    uint16_t length;           // Payload 长度 (最大 16384 = 2^14)
-    uint8_t payload[];        // 加密/明文数据
-};
+// DPDK: lib/net/rte_tls.h
+#define RTE_TLS_TYPE_CHANGE_CIPHER_SPEC  20
+#define RTE_TLS_TYPE_ALERT               21
+#define RTE_TLS_TYPE_HANDSHAKE           22
+#define RTE_TLS_TYPE_APPDATA             23
+#define RTE_TLS_TYPE_HEARTBEAT           24  // TLS 1.3
 
-// Content Types
-enum tls_content_type {
-    TLS_CHANGE_CIPHER_SPEC = 20,
-    TLS_ALERT = 21,
-    TLS_HANDSHAKE = 22,
-    TLS_APPLICATION_DATA = 23,
-    TLS_HEARTBEAT = 24,        // TLS 1.3
-};
+#define RTE_TLS_VERSION_1_2    0x0303
+#define RTE_TLS_VERSION_1_3    0x0304
 
-// TLS Versions
-enum {
-    TLS_1_0 = 0x0301,
-    TLS_1_1 = 0x0302,
-    TLS_1_2 = 0x0303,
-    TLS_1_3 = 0x0304,
-    DTLS_1_0 = 0xFEFF,
-    DTLS_1_2 = 0xFEFD,
-    DTLS_1_3 = 0x0304,  // DTLS 1.3 使用 TLS 1.3 版本号
-};
+struct rte_tls_hdr {
+    uint8_t type;           // Content Type (RTE_TLS_TYPE_*)
+    rte_be16_t version;     // TLS Version
+    rte_be16_t length;      // Payload length (最大 16384 = 2^14)
+} __rte_packed;             // 总计 5 字节
+
+// DPDK: lib/net/rte_dtls.h
+#define RTE_DTLS_VERSION_1_2    0xFEFD  // 1.2 的按位取反
+#define RTE_DTLS_VERSION_1_3    0xFEFC  // 1.3 的按位取反
+
+struct rte_dtls_hdr {
+    uint8_t type;           // Content Type (RTE_DTLS_TYPE_*)
+    rte_be16_t version;     // DTLS Version
+    uint16_t epoch;         // 计数器，每次 cipher state 变更时递增
+    uint48_t sequence_number; // 48-bit 显式序列号
+    rte_be16_t length;      // Payload length
+} __rte_packed;             // 总计 13 字节
 ```
+
+> [!note] TLS vs DTLS 记录头
+> TLS 记录头 5 字节，DTLS 记录头 13 字节。DTLS 多了 epoch (2B) 和 sequence_number (6B)，
+> 因为 UDP 没有可靠传输保证，需要显式序列号来处理乱序和重放。
 
 ### 2.2 TLS Record 加密流程
 
@@ -195,13 +202,15 @@ enum {
 │                                                                             │
 │  ┌──────────────────────────────────────────────────────────────────────┐ │
 │  │  Plaintext:  [Application Data]                                       │ │
-│  │  + Implicit IV (来自 traffic secret)                                 │ │
-│  │  + Sequence Number (64-bit, big-endian)                             │ │
+│  │  + write_IV (4 bytes implicit, 来自 key material 派生)               │ │
+│  │  + Sequence Number (64-bit, big-endian)                              │ │
+│  │  ─────────────────────────────────────────────────────────────────── │ │
+│  │  Nonce = write_IV[0..3] || seq_num[0..7]  (共 12 bytes)            │ │
 │  │  ─────────────────────────────────────────────────────────────────── │ │
 │  │  AAD (Additional Authenticated Data):                                │ │
-│  │  [TLSRecord.type] [TLSRecord.version] [TLSRecord.length]             │ │
+│  │  [type(1)] [version(2)] [length(2)]  = 5 bytes                      │ │
 │  │  ─────────────────────────────────────────────────────────────────── │ │
-│  │  Output:  [Nonce (12 bytes)] [Ciphertext] [Tag (16 bytes)]          │ │
+│  │  Output:  [Explicit IV (8 bytes)] [Ciphertext] [Tag (16 bytes)]      │ │
 │  └──────────────────────────────────────────────────────────────────────┘ │
 │                                                                             │
 │  TLS 1.3 AEAD:                                                            │
@@ -209,99 +218,42 @@ enum {
 │                                                                             │
 │  ┌──────────────────────────────────────────────────────────────────────┐ │
 │  │  Key: traffic secret 派生的对称密钥                                   │ │
-│  │  Nonce: explicit part (8 bytes) = seq_num ^ implicit_nonce           │ │
+│  │  Nonce: explicit part (8 bytes) = seq_num XOR implicit_nonce         │ │
 │  │  AAD: same as TLS 1.2                                                │ │
 │  │  Tag: 16 bytes                                                       │ │
+│  │  Record Layer 版本号固定为 0x0303 (TLS 1.2，兼容性)                   │ │
+│  │  Content Type 被移入加密内部 (inner plaintext 末尾)                   │ │
 │  └──────────────────────────────────────────────────────────────────────┘ │
 │                                                                             │
 │  TLS 1.2 CBC+HMAC:                                                        │
 │  ────────────────────                                                     │
 │                                                                             │
 │  ┌──────────────────────────────────────────────────────────────────────┐ │
-│  │  mac = HMAC(cipher_key, seq_num || type || version || length || pt) │ │
+│  │  mac = HMAC(mac_key, seq_num || type || version || length || pt)    │ │
 │  │  pad = PKCS7_padding                                                │ │
 │  │  plaintext = data || mac || pad                                     │ │
-│  │  ciphertext = IV || AES(CBC, cipher_key, plaintext)               │ │
+│  │  ciphertext = IV || AES-CBC(cipher_key, plaintext)                  │ │
 │  └──────────────────────────────────────────────────────────────────────┘ │
+│                                                                             │
+│  TLS 1.2 vs 1.3 记录层区别:                                               │
+│  ──────────────────────────                                               │
+│  ┌──────────────────────────┬──────────────────────────────────────────┐  │
+│  │  TLS 1.2                  │  TLS 1.3                                 │  │
+│  ├──────────────────────────┼──────────────────────────────────────────┤  │
+│  │  IV: 4B implicit +       │  Nonce: 12B, seq_num XOR                │  │
+│  │       8B explicit        │          implicit_nonce                   │  │
+│  │  支持 AEAD + CBC+HMAC    │  仅支持 AEAD                             │  │
+│  │  Content Type 在明文头   │  Content Type 在密文内部                  │  │
+│  │  版本号: 实际版本        │  版本号: 固定 0x0303                     │  │
+│  └──────────────────────────┴──────────────────────────────────────────┘  │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 2.3 TLS 记录层处理
-
-```c
-// TLS 记录层处理
-
-struct tls_record_header {
-    uint8_t type;
-    uint16_t version;
-    uint16_t length;
-};
-
-// 解析 TLS 记录
-static inline int
-tls_record_parse(const uint8_t *data, size_t len,
-                  struct tls_record_header *hdr,
-                  size_t *record_len)
-{
-    if (len < 5)
-        return -1;  // 太小
-
-    hdr->type = data[0];
-    hdr->version = (data[1] << 8) | data[2];
-    hdr->length = (data[3] << 8) | data[4];
-
-    *record_len = 5 + hdr->length;
-
-    if (len < *record_len)
-        return -1;  // 数据不完整
-
-    return 0;
-}
-
-// TLS 1.2 加密
-static int
-tls_record_encrypt(struct tls_context *ctx,
-                    uint8_t type,
-                    const uint8_t *plaintext, size_t pt_len,
-                    uint8_t *ciphertext, size_t *ct_len)
-{
-    // 序列号
-    uint64_t seq = ctx->tx_seq++;
-
-    if (ctx->cipher_type == TLS_AEAD_GCM) {
-        // AES-GCM 加密
-        uint8_t nonce[12];
-        memcpy(nonce, ctx->tx_iv, 4);  // implicit IV
-        encode_be64(nonce + 4, seq);   // explicit part
-
-        uint8_t aad[5] = {
-            type,
-            (ctx->version >> 8) & 0xFF,
-            ctx->version & 0xFF,
-            (pt_len >> 8) & 0xFF,
-            pt_len & 0xFF
-        };
-
-        // AEAD 加密
-        int ret = mbedtls_cipher_auth_encrypt(
-            &ctx->cipher_ctx,
-            nonce, 12,              // nonce
-            aad, 5,                 // AAD
-            plaintext, pt_len,      // input
-            ciphertext + 8, ct_len, // output (+8 for nonce)
-            ciphertext + pt_len + 8, 16); // tag
-
-        // 写入 nonce
-        memcpy(ciphertext, nonce, 8);
-        *ct_len = pt_len + 8 + 16;
-
-        return ret;
-    }
-
-    return -1;
-}
-```
+> [!important] TLS 1.2 vs 1.3 记录层关键区别
+> - TLS 1.2 的 IV 来自 key material 派生的 `write_IV`（不是 "traffic secret"——那是 TLS 1.3 的概念）
+> - TLS 1.3 将 Content Type 移入密文内部（作为 inner plaintext 末尾字节），外部 Content Type 固定为 23 (application_data)
+> - TLS 1.3 Record Layer 版本号固定写 `0x0303`（TLS 1.2），不再写实际版本号
 
 ---
 
@@ -335,25 +287,24 @@ tls_record_encrypt(struct tls_context *ctx,
 │    │                               │                                         │
 │    │◄─── ServerHelloDone ─────────│                                         │
 │    │                               │                                         │
+│    │  ┌─────────────────────────┐  │                                         │
+│    │  │ 双方计算 Pre-Master     │  │                                         │
+│    │  │ Secret → Master Secret  │  │                                         │
+│    │  │ → 派生所有 traffic keys │  │                                         │
+│    │  └─────────────────────────┘  │                                         │
+│    │                               │                                         │
 │    │──── ClientKeyExchange ───────►│  预主密钥 (RSA 加密 或 DH 客户端参数)   │
 │    │      (PremasterSecret)        │                                         │
 │    │                               │                                         │
-│    │  [双方计算 MasterSecret]      │                                         │
+│    │──── ChangeCipherSpec ───────►│  通知切换到新密钥加密                   │
+│    │──── [Encrypted] Finished ───►│  握手摘要验证 (用新密钥加密)            │
 │    │                               │                                         │
-│    │──── CertificateVerify ───────►│  (可选) 客户端证书验证签名              │
-│    │      (签名)                   │                                         │
+│    │◄─── ChangeCipherSpec ─────────│  通知切换到新密钥加密                   │
+│    │◄─── [Encrypted] Finished ─────│  握手摘要验证 (用新密钥加密)            │
 │    │                               │                                         │
-│    │──── ChangeCipherSpec ───────►│  通知开始加密                          │
-│    │──── Finished ────────────────►│  握手摘要验证                          │
-│    │      (加密的握手哈希)         │                                         │
-│    │                               │                                         │
-│    │◄─── ChangeCipherSpec ─────────│  通知开始加密                          │
-│    │◄─── Finished ───────────────│  握手摘要验证                          │
-│    │                               │                                         │
-│    │══════ Application Data ══════│  开始加密通信                          │
+│    │══════ Application Data ══════│  使用 traffic keys 加密通信              │
 │    │══════ (加密通道) ═════════════│                                         │
 │    │                               │                                         │
-│                                                                             │
 │  密码套件示例:                                                             │
 │  TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256                                    │
 │  TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384                                    │
@@ -371,43 +322,65 @@ tls_record_encrypt(struct tls_context *ctx,
 │                                                                             │
 │  Client                          Server                                      │
 │    │                               │                                         │
-│    │──── ClientHello ─────────────►│  支持的密码套件 + Key Share            │
-│    │      + supported_versions     │                                         │
-│    │      + key_share (PQC/DH)     │                                         │
-│    │      + supported_groups       │                                         │
+│    │──── ClientHello ─────────────►│  supported_versions + key_share       │
+│    │      + key_share (DH/PQC)     │  + supported_groups                   │
 │    │                               │                                         │
 │    │                         ┌─────┴─────┐                                  │
-│    │                         │ 选择密码套件│                                  │
-│    │                         │ 选择 DH 组 │                                  │
+│    │                         │ 计算 Early   │                               │
+│    │                         │ Secret      │                               │
 │    │                         └─────┬─────┘                                  │
 │    │                               │                                         │
-│    │◄── ServerHello ───────────────│  版本协商 + Key Share                  │
-│    │      + key_share              │  (Early Secret 派生的密钥)            │
-│    │      + supported_versions     │                                         │
-│    │                               │                                         │
-│    │◄── {EncryptedExtensions} ─────│  扩展加密 (非握手数据)                 │
+│    │◄── ServerHello ───────────────│  selected_version + key_share          │
+│    │      + key_share              │                                         │
+│    │                               │  ┌──────────────────────────────┐      │
+│    │                               │  │ 计算 Handshake Secret        │      │
+│    │                               │  │ 派生 server_handshake_traffic │      │
+│    │                               │  └──────────────────────────────┘      │
+│    │◄── {EncryptedExtensions} ─────│  (用 server_hs_traffic key 加密)      │
 │    │◄── {CertificateRequest} ──────│  (可选) 要求证书                       │
-│    │◄── {server Certificate} ──────│  证书                                  │
-│    │◄── {server CertificateVerify} │  签名                                  │
-│    │◄── {server Finished} ─────────│  握手摘要                             │
+│    │◄── {server Certificate} ──────│                                         │
+│    │◄── {server CertificateVerify} │                                         │
+│    │◄── {server Finished} ─────────│                                         │
 │    │                               │                                         │
-│    │  [双方计算 Handshake Secret]  │                                         │
-│    │  [双方计算 Traffic Secret 0]  │                                         │
+│    │  ┌─────────────────────────┐  │                                         │
+│    │  │ 计算 Master Secret      │  │                                         │
+│    │  │ 派生 client/server      │  │                                         │
+│    │  │ application_traffic_0   │  │                                         │
+│    │  └─────────────────────────┘  │                                         │
 │    │                               │                                         │
-│    │──── {Certificate} ────────────►│  客户端证书                           │
-│    │──── {CertificateVerify} ─────►│  签名                                  │
-│    │──── {Finished} ──────────────►│  握手摘要                             │
+│    │──── {Certificate} ────────────►│  (可选) 客户端证书                     │
+│    │──── {CertificateVerify} ─────►│                                         │
+│    │──── {Finished} ──────────────►│                                         │
 │    │                               │                                         │
-│    │  [双方计算 Traffic Secret 1]  │                                         │
+│    │  ┌─────────────────────────┐  │                                         │
+│    │  │ 派生 application        │  │                                         │
+│    │  │ traffic_secret_1 (N+1) │  │                                         │
+│    │  └─────────────────────────┘  │                                         │
 │    │                               │                                         │
-│    │══════ Application Data ══════│  使用 Traffic Secret 1 加密           │
+│    │══════ Application Data ══════│  使用 application_traffic_secret_N      │
 │    │══════ (加密通道) ═════════════│                                         │
 │    │                               │                                         │
+│  TLS 1.3 密钥派生链:                                                       │
+│  ───────────────────                                                       │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │  Early Secret (0-RTT 可选)                                          │   │
+│  │       │ HKDF-Extract + Derive-Secret                                │   │
+│  │       ▼                                                             │   │
+│  │  Handshake Secret  ← 在收到 ServerHello 后计算                      │   │
+│  │       │ HKDF-Extract + Derive-Secret                                │   │
+│  │       ├─► client/server_handshake_traffic_secret                    │   │
+│  │       ▼                                                             │   │
+│  │  Master Secret     ← 在收到 server Finished 后计算                  │   │
+│  │       │ HKDF-Extract + Derive-Secret                                │   │
+│  │       ├─► client/server_application_traffic_secret_0                │   │
+│  │       ├─► resumption_master_secret (用于后续恢复)                   │   │
+│  │       └─► exporter_master_secret                                    │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
 │                                                                             │
 │  TLS 1.3 改进:                                                             │
 │  - 1-RTT (之前 2-RTT)                                                    │
 │  - 0-RTT (Early Data, 但有重放风险)                                        │
-│  - 前向保密 (必须使用 ECHDE/PQC)                                           │
+│  - 前向保密 (必须使用 ECDHE/PQC)                                           │
 │  - 移除 CBC+HMAC (仅 AEAD)                                                │
 │  - 简化密码套件命名                                                        │
 │                                                                             │
@@ -417,12 +390,8 @@ tls_record_encrypt(struct tls_context *ctx,
 ### 3.3 握手消息结构
 
 ```c
-// TLS Handshake 消息头
-struct tls_handshake_hdr {
-    uint8_t msg_type;          // HandshakeType
-    uint24 length;             // 消息长度
-    uint8_t data[];            // 消息内容
-};
+// TLS Handshake 消息头 (概念结构，非 DPDK API)
+// 注意: length 是 3 字节 (uint24)，C 语言中没有原生 uint24 类型
 
 // Handshake Types
 enum {
@@ -437,34 +406,11 @@ enum {
     TLS_HANDSHAKE_FINISHED = 20,
 };
 
-// ClientHello 结构
-struct tls_client_hello {
-    uint16_t client_version;           // 客户端支持的最高版本
-    uint8_t random[32];               // 客户端随机数
-    uint8_t session_id_len;
-    uint8_t session_id[32];
-    uint16_t cipher_suites_len;
-    uint16_t cipher_suites[];         // 支持的密码套件列表
-    uint8_t compression_methods_len;
-    uint8_t compression_methods[];
-    // 扩展...
-};
-
-// Certificate 结构 (X.509)
-struct tls_certificate {
-    uint24 certs_length;
-    // 证书链 (ASN.1 DER 编码)
-    //   cert_length[3]
-    //   cert_data[cert_length]
-    //   cert_length[3]
-    //   cert_data[cert_length]
-    //   ...
-};
-
-// Finished 消息 (HMAC 握手摘要)
+// Finished 消息 (verify_data 长度取决于哈希算法)
+// SHA-256: 32 bytes → 截断为 12 bytes
+// SHA-384: 48 bytes → 截断为 12 bytes
 struct tls_finished {
-    uint8_t verify_data[12];  // TLS 1.2 SHA-256
-    // TLS 1.3: HKDF-Extract 后计算
+    uint8_t verify_data[12];
 };
 ```
 
@@ -483,7 +429,7 @@ struct tls_finished {
 │  ──────────────────────────                                                │
 │  ClientHello ──►                                                       │
 │                ◄── ServerHello + Certificate + ...                      │
-│                (2-RTT, ~150ms)                                            │
+│                (TLS 1.2: 2-RTT, TLS 1.3: 1-RTT)                          │
 │                                                                             │
 │  Session ID 复用:                                                         │
 │  ───────────────────                                                       │
@@ -500,13 +446,18 @@ struct tls_finished {
 │                ◄── ServerHello                                           │
 │                ◄── NewSessionTicket (加密的 session state)               │
 │                ◄── Finished                                               │
-│                (保存 ticket)                                               │
+│                (客户端保存 ticket)                                          │
 │                                                                             │
 │  后续握手:                                                                 │
 │  ClientHello(session_ticket=ticket) ──►                                   │
-│                                    ◄── [HelloRetryRequest] (如果需要)    │
 │                                    ◄── Finished                             │
-│                (0-RTT 或 1-RTT)                                           │
+│                (1-RTT, 无需发送证书)                                        │
+│                                                                             │
+│  0-RTT (TLS 1.3):                                                         │
+│  ─────────────────                                                         │
+│  ClientHello + EarlyData ──►  (使用之前保存的 PSK)                        │
+│                            ◄── ServerHello + Finished                     │
+│  (0-RTT，但服务端可能拒绝并回退到完整握手)                                 │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -514,7 +465,7 @@ struct tls_finished {
 ### 4.2 Session State 结构
 
 ```c
-// TLS Session 状态
+// TLS Session 状态 (概念结构，非 DPDK API)
 struct tls_session_state {
     // 协议版本
     uint16_t version;
@@ -522,8 +473,8 @@ struct tls_session_state {
     // 密码套件
     uint16_t cipher_suite;
 
-    // Master Secret (从预主密钥派生)
-    uint8_t master_secret[48];
+    // Master Secret
+    uint8_t master_secret[48];  // TLS 1.2: PRF 输出固定 48 字节
 
     // Client/Server Random
     uint8_t client_random[32];
@@ -538,8 +489,6 @@ struct tls_session_state {
     uint8_t server_write_key[32];
     uint8_t client_write_iv[12];
     uint8_t server_write_iv[12];
-    uint8_t client_write_mac_key[32];
-    uint8_t server_write_mac_key[32];
 
     // 序列号
     uint64_t client_seq;
@@ -548,188 +497,123 @@ struct tls_session_state {
     // 过期时间
     uint64_t expire_time;
 
-    // 扩展状态 (TLS 1.3)
+    // TLS 1.3 扩展状态 (均为 32 字节，HKDF 输出)
     uint8_t early_secret[32];
     uint8_t handshake_secret[32];
-    uint8_t master_secret_tls13[48];
-    uint8_t traffic_secret_client[32];
-    uint8_t traffic_secret_server[32];
+    uint8_t master_secret_tls13[32];    // TLS 1.3 master secret = 32 bytes
+    uint8_t resumption_master_secret[32];
 };
 
 // Session Ticket (加密的 session state)
+// 格式由 RFC 5077 / TLS 1.3 定义
 struct tls_session_ticket {
     uint8_t ticket_lifetime[4];     // 生命周期 (秒)
-    uint8_t ticket_age[4];         // ticket 年龄 (可选)
+    uint8_t ticket_age_add[4];     // 用于计算 obfuscated ticket age
     uint8_t ticket_nonce[32];     // 服务器提供的 nonce
     uint8_t ticket[];             // 加密的 session state
-    // 加密: AES-GCM(SHA-256(ticket_key), nonce, session_state)
-};
-
-// Session 存储 (内存或外部存储)
-struct tls_session_store {
-    struct rte_hash *session_by_id;    // session_id -> session_state
-    struct rte_hash *session_by_ticket; // ticket -> session_state
-
-    // LRU 缓存
-    struct tls_lru_cache *lru;
-
-    // 配置
-    size_t max_sessions;
-    size_t max_session_size;
+    // 加密方式: AES-GCM(ticket_key, nonce, session_state)
 };
 ```
 
-### 4.3 Session 管理 API
+> [!warning] TLS 1.2 vs 1.3 Master Secret 大小
+> - TLS 1.2: `master_secret` 固定 48 字节（PRF 输出）
+> - TLS 1.3: `master_secret` 32 字节（HKDF-Extract 输出）
+
+### 4.3 DPDK 环境下的 Session 管理
+
+DPDK 本身不提供 TLS Session 管理 API。应用需要自行实现 session 的
+创建、查找、恢复逻辑。典型做法是用 `rte_hash` 或 `rte_ring` 构建 session 缓存：
 
 ```c
-// DPDK TLS Session API
+// === 应用层 Session 管理 (非 DPDK 内置 API，仅供参考) ===
 
-// 创建 Session
-struct tls_session *
-tls_session_create(struct tls_context *ctx,
-                    const struct tls_session_config *config)
-{
-    struct tls_session *sess;
-
-    sess = rte_zmalloc(NULL, sizeof(*sess), RTE_CACHE_LINE_SIZE);
-    if (!sess)
-        return NULL;
-
-    sess->ctx = ctx;
-    sess->state = TLS_SESSION_STATE_INIT;
-
-    // 生成 session_id
-    rte_rand(sess->session_id, 32);
-    sess->session_id_len = 32;
-
-    // 创建 crypto session
-    sess->crypto_session = rte_cryptodev_sym_session_create(
-        ctx->crypto_dev_id, ctx->cipher_xform);
-
-    // 注册到 session 存储
-    tls_session_store_add(ctx->session_store, sess);
-
-    return sess;
+// Session 查找示例 — 使用 rte_hash
+// rte_hash_lookup_data 返回 key 的位置索引 (int32_t)，不是直接返回指针
+int32_t pos = rte_hash_lookup_data(hash, session_id, (void **)&sess);
+if (pos < 0) {
+    // session 不存在，需要完整握手
 }
 
-// Session Ticket 处理
-int
-tls_session_write_ticket(struct tls_session *sess,
-                          uint8_t *ticket, size_t *ticket_len)
-{
-    struct tls_session_ticket *st;
-    uint8_t *encrypted;
-    size_t plain_len, enc_len;
-
-    // 序列化 session state
-    plain_len = tls_session_state_serialize(sess, &plain);
-
-    // 生成 nonce
-    uint8_t nonce[12];
-    rte_rand(nonce, 12);
-
-    // 加密 session state
-    st = sess->ctx->ticket_cipher;
-    enc_len = tls_gcm_encrypt(st->key, nonce,
-                               plain, plain_len,
-                               encrypted);
-
-    // 构建 ticket
-    encode_be32(ticket, sess->expire_time);
-    encode_be32(ticket + 4, 0);  // ticket_age_estimate
-    memcpy(ticket + 8, nonce, 12);
-    memcpy(ticket + 20, encrypted, enc_len);
-
-    *ticket_len = 20 + enc_len;
-
-    return 0;
-}
-
-// Session Ticket 恢复
-struct tls_session *
-tls_session_from_ticket(struct tls_context *ctx,
-                         const uint8_t *ticket, size_t ticket_len)
-{
-    // 解析 ticket
-    uint32_t lifetime = decode_be32(ticket);
-    uint8_t *nonce = (uint8_t *)ticket + 8;
-    uint8_t *encrypted = (uint8_t *)ticket + 20;
-    size_t enc_len = ticket_len - 20;
-
-    // 检查过期
-    if (is_expired(lifetime))
-        return NULL;
-
-    // 解密 session state
-    uint8_t plain[1024];
-    size_t plain_len = tls_gcm_decrypt(ctx->ticket_cipher->key, nonce,
-                                       encrypted, enc_len, plain);
-
-    // 反序列化
-    struct tls_session *sess = tls_session_state_deserialize(plain);
-
-    // 更新序列号 (TLS 1.3)
-    sess->client_seq = 0;
-    sess->server_seq = 0;
-
-    // 重新派生 traffic keys
-    tls13_derive_keys(sess);
-
-    return sess;
-}
-
-// Session 查找
-struct tls_session *
-tls_session_lookup(struct tls_context *ctx,
-                    const uint8_t *session_id, uint8_t len)
-{
-    return rte_hash_lookup_data(ctx->session_store->session_by_id,
-                                 session_id);
-}
+// Session 缓存管理
+struct session_cache {
+    struct rte_hash *by_id;       // session_id → session_state
+    struct rte_ring *lru_ring;    // LRU 淘汰队列
+    size_t max_sessions;
+};
 ```
+
+> [!note] DPDK 不提供 TLS Session API
+> 与 IPsec SA（`rte_ipsec_sa`）不同，DPDK 没有内置的 TLS Session 管理。
+> 所有 TLS session 逻辑需要应用自行实现。DPDK 提供的只是：
+> - `rte_hash` / `rte_ring` 等通用数据结构用于构建 session 缓存
+> - `rte_cryptodev` 用于加速加密运算
+> - `rte_security` (部分硬件) 用于 TLS Record 卸载
 
 ---
 
 ## 5. TLS/DTLS 加速架构
 
-### 5.1 加速架构设计
+### 5.1 DPDK 提供的 TLS 加速能力
+
+> [!important] DPDK 没有内置 TLS/DTLS 协议栈
+> DPDK **不**提供完整的 TLS/DTLS 协议实现。DPDK 只提供三个层次的加速接口：
+> 1. **Cryptodev**：加密算法加速（AES-GCM、ChaCha20 等）
+> 2. **rte_security TLS Record**：TLS 记录层卸载（部分硬件支持）
+> 3. **OpenSSL PMD**：用 OpenSSL 做软件加密的 PMD 驱动
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                        TLS/DTLS 加速架构                                   │
+│                    DPDK TLS 加速三层架构                                    │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
+│  应用层 (用户实现):                                                        │
+│  ──────────────────                                                        │
 │  ┌──────────────────────────────────────────────────────────────────────┐ │
-│  │                     Application                                       │ │
-│  │  ┌────────────────┐  ┌────────────────┐  ┌────────────────┐          │ │
-│  │  │  HTTPS Server  │  │   TLS Proxy    │  │ DTLS VPN       │          │ │
-│  │  └───────┬────────┘  └───────┬────────┘  └───────┬────────┘          │ │
-│  └──────────┼───────────────────┼───────────────────┼───────────────────┘ │
-│             │                   │                   │                      │
-│  ┌──────────┼───────────────────┼───────────────────┼───────────────────┐ │
-│  │          ▼                   ▼                   ▼                    │ │
-│  │   ┌─────────────────────────────────────────────────────────────┐     │ │
-│  │   │              DPDK TLS/DTLS Stack                            │     │ │
-│  │   │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐    │     │ │
-│  │   │  │ Handshake│  │  Record  │  │ Session  │  │   X509   │    │     │ │
-│  │   │  │  Engine  │  │  Layer   │  │  Store   │  │   Cert   │    │     │ │
-│  │   │  └──────────┘  └──────────┘  └──────────┘  └──────────┘    │     │ │
-│  │   │                                                              │     │ │
-│  │   │  ┌──────────────────────────────────────────────────────┐   │     │ │
-│  │   │  │           Crypto Operations                          │   │     │ │
-│  │   │  │   AEAD (AES-GCM) │ CBC │ ChaCha20-Poly1305         │   │     │ │
-│  │   │  └──────────────────────────────────────────────────────┘   │     │ │
-│  │   │                                                              │     │ │
-│  │   └───────────────────────────────────────────────────────────────┘     │ │
-│  │                                  │                                       │ │
-│  └──────────────────────────────────┼───────────────────────────────────────┘ │
-│                                     ▼                                          │
-│  ┌────────────────────────────────────────────────────────────────────────┐ │
-│  │                     cryptodev / Crypto PMD                           │ │
-│  │  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐    │ │
-│  │  │  QAT   │  │AESNI-MB │  │OpenSSL │  │   DSW   │  │ ARMv8   │    │ │
-│  │  └─────────┘  └─────────┘  └─────────┘  └─────────┘  └─────────┘    │ │
-│  └────────────────────────────────────────────────────────────────────────┘ │
+│  │                    TLS 协议栈 (用户实现)                             │ │
+│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐            │ │
+│  │  │ Handshake│  │  Record  │  │ Session  │  │   X509   │            │ │
+│  │  │  Engine  │  │  Layer   │  │  Store   │  │   Cert   │            │ │
+│  │  └────┬─────┘  └────┬─────┘  └──────────┘  └──────────┘            │ │
+│  │       │             │                                                 │ │
+│  │       │ 握手密钥    │ Record 加解密                                   │ │
+│  │       │             │                                                 │ │
+│  │  ┌────┴─────────────┴────────────────────────────────────────────┐   │ │
+│  │  │              两种加速路径 (二选一)                             │   │ │
+│  │  │                                                              │   │ │
+│  │  │  路径 A: rte_security TLS Record (硬件卸载)                   │   │ │
+│  │  │  ┌──────────────────────────────────────────────────────┐     │   │ │
+│  │  │  │ rte_security_session_create()                        │     │   │ │
+│  │  │  │ → RTE_SECURITY_PROTOCOL_TLS_RECORD                   │     │   │ │
+│  │  │  │ → 硬件自动处理: 加密/解密/序列号/IV                    │     │   │ │
+│  │  │  │ → 支持设备: Marvell CN10K 等                          │     │   │ │
+│  │  │  └──────────────────────────────────────────────────────┘     │   │ │
+│  │  │                                                              │   │ │
+│  │  │  路径 B: rte_cryptodev (仅加密加速)                         │   │ │
+│  │  │  ┌──────────────────────────────────────────────────────┐     │   │ │
+│  │  │  │ rte_crypto_op + AEAD                                   │     │   │ │
+│  │  │  │ → 仅加速加密/解密运算                                  │     │   │ │
+│  │  │  │ → 应用自己管理: 序列号/IV/Record 拼装                  │     │   │ │
+│  │  │  │ → 支持设备: QAT/AESNI-MB/OpenSSL PMD/ARMv8 等          │     │   │ │
+│  │  │  └──────────────────────────────────────────────────────┘     │   │ │
+│  │  └──────────────────────────────────────────────────────────────┘   │ │
+│  └──────────────────────────────────────────────────────────────────────┘ │
+│                                                                             │
+│  DPDK 层:                                                                  │
+│  ─────────                                                               │
+│  ┌──────────────────────────────────────────────────────────────────────┐ │
+│  │  ┌─────────────────────────────────┐  ┌─────────────────────────┐   │ │
+│  │  │  rte_security (TLS Record)      │  │  rte_cryptodev           │   │ │
+│  │  │  仅 Record 层卸载               │  │  通用加密加速            │   │ │
+│  │  └──────────────┬──────────────────┘  └───────────┬─────────────┘   │ │
+│  └─────────────────┼─────────────────────────────────┼─────────────────┘ │
+│                    │                                 │                     │
+│  ┌─────────────────┼─────────────────────────────────┼─────────────────┐ │
+│  │  硬件/软件驱动  ▼                                 ▼                  │ │
+│  │  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐  │ │
+│  │  │  CN10K  │  │  QAT    │  │AESNI-MB │  │OpenSSL  │  │ ARMv8   │  │ │
+│  │  │(TLS卸载)│  │(加密)   │  │(加密)   │  │PMD(加密)│  │(加密)   │  │ │
+│  │  └─────────┘  └─────────┘  └─────────┘  └─────────┘  └─────────┘  │ │
+│  └─────────────────────────────────────────────────────────────────────┘ │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -741,40 +625,47 @@ tls_session_lookup(struct tls_context *ctx,
 │                    TLS 数据面与控制面分离                                   │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│  控制面 (Control Plane):                                                   │
-│  ───────────────────────                                                   │
-│  - TLS 握手协议处理                                                         │
-│  - Session 建立/恢复                                                        │
-│  - 证书验证                                                                 │
-│  - 密钥交换 (ECDH/RSA)                                                     │
-│  - Session Ticket 加解密                                                   │
-│  - 频率较低，延迟不敏感                                                     │
-│  - 可在 CPU 处理                                                           │
+│  控制面 (Control Plane) — 频率低，延迟不敏感:                              │
+│  ────────────────────────────────────────────                               │
+│  - TLS 握手协议处理 (ClientHello/ServerHello/...)                           │
+│  - Session 建立/恢复 (Session ID / Session Ticket)                         │
+│  - 证书验证 (X.509 证书链)                                                 │
+│  - 密钥交换 (ECDHE/RSA)                                                    │
+│  - 密钥派生 (HKDF / PRF)                                                   │
+│  - 可在 CPU 上用 OpenSSL/wolfSSL 等库处理                                   │
 │                                                                             │
-│  数据面 (Data Plane):                                                     │
-│  ───────────────────                                                       │
-│  - TLS Record 加密/解密                                                    │
-│  - Application Data 处理                                                   │
-│  - 序列号维护                                                               │
-│  - 频率极高，延迟敏感                                                        │
-│  - 可卸载到 Crypto PMD                                                     │
+│  数据面 (Data Plane) — 频率高，延迟敏感:                                   │
+│  ─────────────────────────────────────────                                  │
+│  - TLS Record 加密/解密 (AEAD 操作)                                        │
+│  - 序列号管理 (每个 Record 递增)                                            │
+│  - Record 头拼装/解析                                                       │
+│  - 可卸载到 DPDK cryptodev 或 rte_security                                 │
 │                                                                             │
 │  ┌──────────────────────────────────────────────────────────────────────┐ │
 │  │                        控制面                                         │ │
 │  │  ┌────────────┐  ┌────────────┐  ┌────────────┐                     │ │
 │  │  │ 握手处理   │  │ Session 管理│  │ 证书验证   │                     │ │
-│  │  │ (OpenSSL) │  │            │  │ (X509_store)│                    │ │
+│  │  │ (OpenSSL/ │  │ (rte_hash/ │  │ (X509/    │                     │ │
+│  │  │  wolfSSL) │  │  rte_ring) │  │  libcert) │                     │ │
 │  │  └─────┬──────┘  └─────┬──────┘  └─────┬──────┘                     │ │
 │  └────────┼────────────────┼────────────────┼────────────────────────┘ │
 │           │                │                │                              │
-│           │ 密钥材料        │ Session State  │ 证书                        │
+│           │ traffic keys   │ Session State  │ 证书                        │
 │           ▼                ▼                ▼                              │
 │  ┌──────────────────────────────────────────────────────────────────────┐ │
 │  │                     数据面 (DPDK)                                    │ │
-│  │  ┌────────────┐  ┌────────────┐  ┌────────────┐                   │ │
-│  │  │ Record 加密 │  │  Session    │  │ 密钥材料    │                   │ │
-│  │  │ (cryptodev)│  │  (mbuf)    │  │ (DMA)      │                   │ │
-│  │  └────────────┘  └────────────┘  └────────────┘                   │ │
+│  │                                                                      │ │
+│  │  路径 A: rte_security TLS Record 卸载                                │ │
+│  │  ┌──────────────────────────────────────────────────────────────┐   │ │
+│  │  │  输入 mbuf → 硬件自动: Record 头处理 + AEAD + 序列号         │   │ │
+│  │  │  → 输出 mbuf (已加密/已解密的完整 TLS Record)                │   │ │
+│  │  └──────────────────────────────────────────────────────────────┘   │ │
+│  │                                                                      │ │
+│  │  路径 B: rte_cryptodev 加密加速                                      │ │
+│  │  ┌──────────────────────────────────────────────────────────────┐   │ │
+│  │  │  应用拼装 Record → cryptodev AEAD → 应用拼装输出              │   │ │
+│  │  │  (序列号、IV、AAD 由应用管理)                                  │   │ │
+│  │  └──────────────────────────────────────────────────────────────┘   │ │
 │  └──────────────────────────────────────────────────────────────────────┘ │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
@@ -782,478 +673,572 @@ tls_session_lookup(struct tls_context *ctx,
 
 ---
 
-## 6. TLS 记录层实现
+## 6. DPDK TLS Record 加速实现
 
-### 6.1 TLS Context
+### 6.1 路径 A: rte_security TLS Record 卸载
+
+部分硬件（如 Marvell CN10K）支持通过 `rte_security` 卸载整个 TLS Record 层处理。
+DPDK 在 `lib/security/rte_security.h` 中定义了相关结构：
 
 ```c
-// TLS Context (每个连接一个)
-struct tls_context {
-    // 协议版本
-    uint16_t version;
+// DPDK: lib/security/rte_security.h
 
-    // 密码套件
-    uint16_t cipher_suite;
-    const struct tls_cipher_suite *cipher;
-
-    // Crypto session
-    void *crypto_session;
-    uint8_t crypto_dev_id;
-
-    // Session
-    struct tls_session *session;
-    struct tls_session_store *session_store;
-
-    // Traffic keys
-    uint8_t client_write_key[32];
-    uint8_t server_write_key[32];
-    uint8_t client_write_iv[12];
-    uint8_t server_write_iv[12];
-
-    // 序列号
-    uint64_t client_seq;
-    uint64_t server_seq;
-
-    // 状态机
-    enum tls_state {
-        TLS_STATE_INIT = 0,
-        TLS_STATE_HANDSHAKE,
-        TLS_STATE_ESTABLISHED,
-        TLS_STATE_CLOSING,
-        TLS_STATE_CLOSED,
-    } state;
-
-    // DTLS 特定
-    uint16_t epoch;              // 当前时期
-    uint8_t cookie[32];         // DTLS cookie
+// TLS Record 支持的协议版本
+enum rte_security_tls_version {
+    RTE_SECURITY_VERSION_TLS_1_2,   // TLS 1.2
+    RTE_SECURITY_VERSION_TLS_1_3,   // TLS 1.3
+    RTE_SECURITY_VERSION_DTLS_1_2,  // DTLS 1.2
 };
 
-// TLS 1.3 Context 扩展
-struct tls13_context {
-    // TLS 1.3 密钥派生
-    uint8_t early_secret[32];    // Early data secret
-    uint8_t binder_key[32];      // Early data binder key
-
-    uint8_t handshake_secret[32];
-    uint8_t master_secret[48];
-
-    uint8_t client_handshake_secret[32];
-    uint8_t server_handshake_secret[32];
-
-    uint8_t client_traffic_secret[32];
-    uint8_t server_traffic_secret[32];
-
-    uint8_t exporter_master_secret[48];
-    uint8_t resumption_master_secret[48];
-
-    // 0-RTT
-    int early_data_accepted;
-    uint8_t early_data_secret[32];
+// Session 类型: 读 (解密) 或 写 (加密)
+enum rte_security_tls_sess_type {
+    RTE_SECURITY_TLS_SESS_TYPE_READ,   // Decrypt & digest verification
+    RTE_SECURITY_TLS_SESS_TYPE_WRITE,  // Encrypt & digest generation
 };
+
+// TLS Record 卸载配置
+struct rte_security_tls_record_xform {
+    enum rte_security_tls_version ver;
+    enum rte_security_tls_sess_type type;
+    struct rte_security_tls_record_sess_options options;
+    struct rte_security_tls_record_lifetime life;
+
+    union {
+        // TLS 1.2 参数
+        struct {
+            uint64_t seq_no;                                    // 起始序列号
+            uint8_t imp_nonce[RTE_SECURITY_TLS_1_2_IMP_NONCE_LEN]; // 隐式 nonce
+        } tls_1_2;
+
+        // TLS 1.3 参数
+        struct {
+            uint64_t seq_no;                                    // 起始序列号
+            uint8_t imp_nonce[RTE_SECURITY_TLS_1_3_IMP_NONCE_LEN]; // 隐式 nonce
+            uint32_t min_payload_len;                           // 最小 payload 长度
+        } tls_1_3;
+
+        // DTLS 1.2 参数
+        struct {
+            uint16_t epoch;                                     // epoch 值
+            uint64_t seq_no;                                    // 48-bit 起始序列号
+            uint8_t imp_nonce[RTE_SECURITY_DTLS_1_2_IMP_NONCE_LEN];
+            uint32_t ar_win_sz;                                 // 反重放窗口大小
+        } dtls_1_2;
+    };
+};
+
+// 创建 security session 时使用:
+// session_conf.protocol = RTE_SECURITY_PROTOCOL_TLS_RECORD;
+// session_conf.tls_record = { .ver = RTE_SECURITY_VERSION_TLS_1_3, ... };
+// session_conf.crypto_xform = &aead_xform;  // 附带加密 transform
 ```
 
-### 6.2 TLS 加密操作
+**使用 rte_security TLS Record 的完整流程：**
 
 ```c
-// TLS 记录加密 (数据面热点)
+// === rte_security TLS Record 卸载示例 (伪代码) ===
 
-static inline int
-tls_record_encrypt(struct tls_context *ctx,
-                    uint8_t content_type,
-                    const uint8_t *plaintext, size_t pt_len,
-                    uint8_t *ciphertext, size_t *ct_len)
+// Step 1: 查询设备 TLS Record 能力
+const struct rte_security_capability *cap;
+while ((cap = rte_security_capabilities_get(sec_ctx)) != NULL) {
+    if (cap->protocol == RTE_SECURITY_PROTOCOL_TLS_RECORD &&
+        cap->tls_record.ver == RTE_SECURITY_VERSION_TLS_1_3 &&
+        cap->tls_record.type == RTE_SECURITY_TLS_SESS_TYPE_WRITE)
+        break;
+}
+
+// Step 2: 创建 security session
+struct rte_security_session_conf sess_conf = {
+    .protocol = RTE_SECURITY_PROTOCOL_TLS_RECORD,
+    .tls_record = {
+        .ver = RTE_SECURITY_VERSION_TLS_1_3,
+        .type = RTE_SECURITY_TLS_SESS_TYPE_WRITE,
+        .tls_1_3 = {
+            .seq_no = 0,
+            .imp_nonce = { /* 从握手派生的隐式 nonce */ },
+            .min_payload_len = 0,
+        },
+    },
+    .crypto_xform = &aead_xform,  // AEAD transform (AES-128-GCM 等)
+};
+
+void *sec_session = rte_security_session_create(sec_ctx, &sess_conf, sess_pool);
+
+// Step 3: 处理数据包
+// 对于 inline crypto: 直接设置 mbuf 的 ol_flags 即可
+// 对于 lookaside: 通过 rte_crypto_op 提交到 cryptodev
+```
+
+> [!note] rte_security TLS Record 支持情况
+> 截至 DPDK 24.x，TLS Record 卸载仅 Marvell CN10K 系列硬件支持。
+> 大多数硬件只能通过路径 B（rte_cryptodev）加速加密运算。
+
+### 6.2 路径 B: rte_cryptodev 加密加速
+
+这是最通用的方式，适用于所有支持 AEAD 的 cryptodev。应用自行管理
+Record 头、序列号、IV 拼装，仅将加密运算提交给 cryptodev：
+
+```c
+// === rte_cryptodev TLS Record 加速示例 ===
+
+// TLS Record 加密 (数据面热点路径)
+static int
+tls_record_encrypt_aead(struct tls_conn *conn,
+                        struct rte_mbuf *mbuf,
+                        uint8_t content_type)
 {
-    uint64_t seq = ctx->client_seq++;
+    struct rte_crypto_op *op;
+    struct rte_crypto_sym_op *sym_op;
+    uint64_t seq = conn->tx_seq++;
     uint8_t nonce[12];
     uint8_t aad[5];
 
-    // 构建 Nonce (TLS 1.2 GCM)
-    // IV = implicit_iv (4 bytes) || explicit_iv (8 bytes)
-    memcpy(nonce, ctx->client_write_iv, 4);
-    encode_be64(nonce + 4, seq);
+    // 1. 构建 Nonce (TLS 1.2: IV[0..3] || seq_num)
+    memcpy(nonce, conn->write_iv, 4);       // implicit IV (4 bytes)
+    nonce[4] = (seq >> 56) & 0xFF;
+    nonce[5] = (seq >> 48) & 0xFF;
+    nonce[6] = (seq >> 40) & 0xFF;
+    nonce[7] = (seq >> 32) & 0xFF;
+    nonce[8] = (seq >> 24) & 0xFF;
+    nonce[9] = (seq >> 16) & 0xFF;
+    nonce[10] = (seq >> 8) & 0xFF;
+    nonce[11] = seq & 0xFF;
 
-    // 构建 AAD
+    // 2. 构建 AAD (TLS Record 头: type + version + length)
     aad[0] = content_type;
-    aad[1] = (ctx->version >> 8) & 0xFF;
-    aad[2] = ctx->version & 0xFF;
+    aad[1] = (conn->version >> 8) & 0xFF;
+    aad[2] = conn->version & 0xFF;
+    uint16_t pt_len = rte_pktmbuf_pkt_len(mbuf);
     aad[3] = (pt_len >> 8) & 0xFF;
     aad[4] = pt_len & 0xFF;
 
-    // 调用 cryptodev
-    struct rte_crypto_op *op;
-    struct rte_crypto_sym_op *sym_op;
+    // 3. 分配 crypto op
+    op = rte_crypto_op_alloc(conn->op_pool, RTE_CRYPTO_OP_TYPE_SYMMETRIC);
+    if (op == NULL)
+        return -ENOMEM;
 
-    op = rte_crypto_op_alloc(ctx->op_mpool,
-                              RTE_CRYPTO_OP_TYPE_SYMMETRIC);
     sym_op = op->sym;
 
-    // 设置加密参数
-    sym_op->aead.src.offset = 0;
-    sym_op->aead.src.length = pt_len;
-    sym_op->aead.digest = ciphertext + 5 + pt_len;  // tag 位置
-    sym_op->aead.digest_len = 16;
+    // 4. 设置源/目标 mbuf
+    sym_op->m_src = mbuf;
+    sym_op->m_dst = mbuf;  // in-place 加密
 
-    // 发送并等待
-    rte_cryptodev_enqueue_burst(ctx->crypto_dev_id, 0, &op, 1);
-    rte_cryptodev_dequeue_burst(ctx->crypto_dev_id, 0, &op, 1);
+    // 5. 附加 session
+    rte_crypto_op_attach_sym_session(op, conn->crypto_session);
 
-    // 写入 record 头
-    ciphertext[0] = content_type;
-    ciphertext[1] = (ctx->version >> 8) & 0xFF;
-    ciphertext[2] = ctx->version & 0xFF;
-    ciphertext[3] = (pt_len >> 8) & 0xFF;
-    ciphertext[4] = pt_len & 0xFF;
+    // 6. 设置 AEAD 参数
+    sym_op->aead.data.offset = 0;         // 数据在 mbuf 中的偏移
+    sym_op->aead.data.length = pt_len;    // 明文长度
 
-    // Nonce 放在密文前 (TLS 1.2)
-    memcpy(ciphertext + 5, nonce, 8);
+    // 7. 设置 IV (nonce)
+    // rte_crypto_sym_op 的 IV 通过 rte_crypto_op 附带的 private data 传递
+    // 或通过 sym_op 的 iv 字段 (取决于 DPDK 版本)
 
-    *ct_len = pt_len + 5 + 8 + 16;  // header + nonce + ciphertext + tag
+    // 8. 设置 AAD
+    // AAD 的设置方式取决于 PMD:
+    //   - 有的通过 mbuf 的 rte_pktmbuf_attach_extbuf
+    //   - 有的通过 crypto op 的附加数据区
+    //   以下为概念展示:
+    uint8_t *iv_ptr = rte_crypto_op_ctod_offset(op, uint8_t *,
+                                                 sizeof(struct rte_crypto_sym_op));
+    rte_memcpy(iv_ptr, nonce, 12);
 
+    // 9. 提交到 cryptodev (批量)
+    // 实际使用中应批量提交，而非单条
     return 0;
 }
-```
 
-### 6.3 TLS/DTLS 批量处理
-
-```c
-// TLS 批量加密 (优化数据面吞吐)
-
-// 批量 TLS 记录加密
-static inline uint16_t
-tls_encrypt_batch(struct tls_context *ctx,
-                  struct rte_mbuf **pkts_in,
-                  struct rte_mbuf **pkts_out,
+// 批量 TLS Record 加密
+static uint16_t
+tls_encrypt_batch(struct tls_conn *conn,
+                  struct rte_mbuf **pkts,
+                  struct rte_crypto_op **ops,
                   uint16_t nb_pkts)
 {
-    struct rte_crypto_op *ops[32];
-    uint16_t i;
+    uint16_t i, nb_enq, nb_deq;
 
-    // 准备批量操作
+    // 1. 为每个包准备 crypto op
     for (i = 0; i < nb_pkts && i < 32; i++) {
-        struct rte_mbuf *m = pkts_in[i];
-
-        ops[i] = rte_crypto_op_alloc(ctx->op_mpool,
+        ops[i] = rte_crypto_op_alloc(conn->op_pool,
                                       RTE_CRYPTO_OP_TYPE_SYMMETRIC);
+        if (ops[i] == NULL)
+            break;
 
-        // 设置参数
-        setup_aead_op(ops[i], m, ctx);
+        // 设置源 mbuf
+        ops[i]->sym->m_src = pkts[i];
+        ops[i]->sym->m_dst = pkts[i];  // in-place
 
-        // 绑定 mbuf
-        ops[i]->m_src = m;
+        // 附加 session
+        rte_crypto_op_attach_sym_session(ops[i], conn->crypto_session);
+
+        // 设置 AEAD 参数
+        ops[i]->sym->aead.data.offset = 0;
+        ops[i]->sym->aead.data.length = rte_pktmbuf_pkt_len(pkts[i]);
+
+        // 设置 IV、AAD (省略，同上)
     }
 
-    // 批量入队
-    uint16_t nb_enq = rte_cryptodev_enqueue_burst(ctx->crypto_dev_id,
-                                                    0, ops, i);
+    // 2. 批量入队 (非阻塞)
+    nb_enq = rte_cryptodev_enqueue_burst(conn->crypto_dev_id, 0,
+                                          ops, i);
+    if (nb_enq < i)
+        RTE_LOG(WARNING, USER1, "Only enqueued %u/%u ops\n", nb_enq, i);
 
-    // 批量出队
-    uint16_t nb_deq = rte_cryptodev_dequeue_burst(ctx->crypto_dev_id,
-                                                   0, ops, nb_enq);
+    // 3. 批量出队 (非阻塞，可能需要多次轮询)
+    nb_deq = 0;
+    do {
+        nb_deq += rte_cryptodev_dequeue_burst(conn->crypto_dev_id, 0,
+                                                &ops[nb_deq], nb_enq - nb_deq);
+    } while (nb_deq < nb_enq);
 
-    // 处理完成的操作
+    // 4. 处理结果
     for (i = 0; i < nb_deq; i++) {
         if (ops[i]->status == RTE_CRYPTO_OP_STATUS_SUCCESS) {
-            pkts_out[i] = ops[i]->m_src;
+            // 加密成功，拼装 TLS Record 头 + explicit IV
+            tls_record_header_build(ops[i]->sym->m_src, conn);
         } else {
-            // 错误处理
-            rte_pktmbuf_free(ops[i]->m_src);
-            pkts_out[i] = NULL;
+            // 加密失败
+            rte_pktmbuf_free(ops[i]->sym->m_src);
+            ops[i]->sym->m_src = NULL;
         }
-
         rte_crypto_op_free(ops[i]);
     }
 
     return nb_deq;
 }
-
-// DTLS 批量处理 (带序列号管理)
-static inline uint16_t
-dtls_encrypt_batch(struct dtls_context *ctx,
-                    struct rte_mbuf **pkts_in,
-                    struct rte_mbuf **pkts_out,
-                    uint16_t nb_pkts)
-{
-    uint16_t i, j;
-
-    // 按 epoch 分组
-    struct rte_mbuf *group_by_epoch[2][32];
-    uint16_t nb_epoch[2] = {0, 0};
-
-    for (i = 0; i < nb_pkts; i++) {
-        uint16_t epoch = ctx->epoch;
-        if (epoch < 2)
-            group_by_epoch[epoch][nb_epoch[epoch]++] = pkts_in[i];
-    }
-
-    // 分别处理每个 epoch
-    for (j = 0; j < 2; j++) {
-        if (nb_epoch[j] > 0) {
-            tls_encrypt_batch(ctx, group_by_epoch[j],
-                              &pkts_out[nb_deq], nb_epoch[j]);
-        }
-    }
-
-    return nb_deq;
-}
 ```
+
+> [!warning] m_src 字段位置
+> `rte_crypto_op` 没有直接的 `m_src` 字段。mbuf 通过 `op->sym->m_src` 访问，
+> 不是 `op->m_src`。这是常见的 API 误用点。
 
 ---
 
-## 7. OpenSSL 集成
+## 7. OpenSSL 与 DPDK 的集成方式
 
-### 7.1 OpenSSL Engine
+### 7.1 集成架构
+
+DPDK **没有**提供官方的 OpenSSL Engine 或 OpenSSL Provider。
+但有两种常见的集成模式：
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                        OpenSSL Engine 架构                                 │
+│                    OpenSSL 与 DPDK 集成方式                                │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│  OpenSSL 标准流程:                                                         │
-│  ─────────────────                                                         │
-│  Application ──► OpenSSL libssl ──► Software Crypto (AES-NI)              │
+│  模式 A: 控制面用 OpenSSL，数据面用 DPDK cryptodev (推荐)                  │
+│  ────────────────────────────────────────────────────────────               │
 │                                                                             │
-│  OpenSSL Engine 流程:                                                     │
-│  ─────────────────────                                                     │
-│  Application ──► OpenSSL libssl ──► Engine ──► DPDK cryptodev           │
-│                                                    │                       │
-│                                                    ▼                       │
-│                                              QAT/AESNI-MB                  │
+│  ┌──────────────────────────────────────────────────────────────────────┐ │
+│  │  TLS 应用                                                            │ │
+│  │  ┌─────────────────────────┐  ┌─────────────────────────────┐       │ │
+│  │  │  控制面 (OpenSSL)       │  │  数据面 (DPDK cryptodev)    │       │ │
+│  │  │                         │  │                              │       │ │
+│  │  │  - TLS 握手             │  │  - AEAD 加密/解密            │       │ │
+│  │  │  - 证书验证             │  │  - 批量处理                  │       │ │
+│  │  │  - 密钥派生             │  │  - 高吞吐                    │       │ │
+│  │  │  - Session 管理         │  │  - 硬件加速 (QAT/AESNI)     │       │ │
+│  │  └────────────┬────────────┘  └─────────────┬───────────────┘       │ │
+│  │               │ traffic keys                │                         │ │
+│  │               └──────────────┬──────────────┘                         │ │
+│  │                              ▼                                        │ │
+│  │               ┌──────────────────────────────┐                        │ │
+│  │               │  密钥材料同步 (握手结果       │                        │ │
+│  │               │  → 创建 cryptodev session)   │                        │ │
+│  │               └──────────────────────────────┘                        │ │
+│  └──────────────────────────────────────────────────────────────────────┘ │
 │                                                                             │
-│  Engine API:                                                               │
-│  ──────────                                                                │
-│  ENGINE_load_builtin_engines();                                            │
-│  ENGINE_load_dynamic();                                                    │
-│  ENGINE *e = ENGINE_by_id("dpdk");                                        │
-│  ENGINE_init(e);                                                           │
-│  EVP_PKEY *pkey = ENGINE_load_private_key(e, " DPDK:0", ...);            │
+│  模式 B: OpenSSL PMD (软件加密)                                            │
+│  ─────────────────────────────────                                        │
+│                                                                             │
+│  ┌──────────────────────────────────────────────────────────────────────┐ │
+│  │  DPDK OpenSSL PMD 驱动                                               │ │
+│  │                                                                      │ │
+│  │  作用: 将 OpenSSL 的加密能力封装为 DPDK cryptodev PMD                │ │
+│  │  位置: drivers/crypto/openssl/                                       │ │
+│  │  本质: 软件加密，使用 CPU (AES-NI 指令)                              │ │
+│  │                                                                      │ │
+│  │  适用场景:                                                           │ │
+│  │  - 开发/测试环境，没有 QAT 硬件                                     │ │
+│  │  - 需要利用 OpenSSL 3.0 Provider 加速                                │ │
+│  │  - 功能验证（OpenSSL 支持最全的算法）                                │ │
+│  └──────────────────────────────────────────────────────────────────────┘ │
+│                                                                             │
+│  模式 C: 自定义 OpenSSL Provider (高级)                                    │
+│  ──────────────────────────────────────                                    │
+│                                                                             │
+│  ┌──────────────────────────────────────────────────────────────────────┐ │
+│  │  自定义 OpenSSL 3.0 Provider                                         │ │
+│  │                                                                      │ │
+│  │  OpenSSL 3.0 引入 Provider 机制替代旧的 Engine API:                  │ │
+│  │  - ENGINE API 已废弃 (deprecated)                                    │ │
+│  │  - 新的 Provider API (OSSL_PROVIDER)                                 │ │
+│  │  - 可以将 DPDK cryptodev 封装为 OpenSSL Provider                    │ │
+│  │                                                                      │ │
+│  │  注意: DPDK 官方不提供此 Provider，需要应用自行实现                  │ │
+│  │  参考: https://www.openssl.org/docs/man3.0/man7/provider.html       │ │
+│  └──────────────────────────────────────────────────────────────────────┘ │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 7.2 OpenSSL + DPDK Engine
+### 7.2 OpenSSL PMD 的使用
+
+DPDK 内置的 OpenSSL PMD 是一个**软件加密驱动**，它将 OpenSSL 库的
+加密能力封装为 cryptodev 接口，方便应用在不更换代码的情况下切换加密后端：
 
 ```c
-// OpenSSL Engine 实现 (伪代码)
+// === OpenSSL PMD 初始化 ===
 
-// Engine 初始化
-static int
-dpdk_engine_init(ENGINE *e)
-{
-    // 初始化 DPDK EAL
-    static char *dpdk_args[] = {
-        "dpdk",
-        "-l", "0-3",
-        "--master-lcore", "0",
-    };
-
-    rte_eal_init(4, dpdk_args);
-
-    // 初始化 cryptodev
-    uint8_t crypto_dev = rte_cryptodev_get_dev_id("crypto_qat");
-    rte_cryptodev_configure(crypto_dev, &conf);
-    rte_cryptodev_start(crypto_dev);
-
-    return 1;
+// 获取 OpenSSL PMD 设备 ID
+int crypto_dev_id = rte_cryptodev_get_dev_id("crypto_openssl0");
+if (crypto_dev_id < 0) {
+    // OpenSSL PMD 未启动，可能需要添加 vdev
+    // 启动参数: --vdev "crypto_openssl0"
+    return -ENODEV;
 }
 
-// 密码方法
-static const EVP_CIPHER *dpdk_get_cipher(int nid, int key_len)
-{
-    if (nid == NID_aes_256_gcm && key_len == 32)
-        return &dpdk_aes_256_gcm;
-    return NULL;
-}
+// OpenSSL PMD 支持的算法:
+// - AES-CBC / AES-CTR / AES-GCM / AES-CCM
+// - 3DES-CBC
+// - HMAC-SHA1 / HMAC-SHA256 / HMAC-SHA384 / HMAC-SHA512
+// - ChaCha20-Poly1305
+// - RSA (sign/verify/encrypt/decrypt)
+// - ECDSA / ECDH
+// - MD5 / SHA1 / SHA224 / SHA256 / SHA384 / SHA512
 
-// 摘要方法
-static const EVP_MD *dpdk_get_digest(int nid)
-{
-    if (nid == NID_sha256)
-        return &dpdk_sha256;
-    return NULL;
-}
+// 使用方式与硬件 PMD 完全相同 — 这就是 PMD 抽象的价值:
+struct rte_cryptodev_config conf = {
+    .socket_id = rte_socket_id(),
+    .nb_queue_pairs = 1,
+    .ff_disable = 0,
+};
+rte_cryptodev_configure(crypto_dev_id, &conf);
+rte_cryptodev_queue_pair_setup(crypto_dev_id, 0, &qp_conf,
+                                rte_socket_id());
+rte_cryptodev_start(crypto_dev_id);
 
-// 密钥导出
-static int
-dpdk_load_private_key(ENGINE *e, const char *key_id,
-                       UI_METHOD *ui_method, void *callback_data)
-{
-    // 使用 DPDK 处理 RSA/ECDH 私钥操作
-    return dpdk_pkey_method_new(key_id);
-}
-
-// Engine 命令
-static int
-dpdk_engine_ctrl(ENGINE *e, int cmd, long i, void *p, void (*f)())
-{
-    switch (cmd) {
-    case DPDK_CMD_CRYPTO_DEV:
-        // 设置 cryptodev ID
-        return 1;
-    case DPDK_CMD_QUEUE_PAIR:
-        // 设置队列对
-        return 1;
-    }
-    return 0;
-}
-
-// 注册 Engine
-static int
-bind_helper(ENGINE *e)
-{
-    if (!ENGINE_set_id(e, "dpdk") ||
-        !ENGINE_set_destroy_function(e, dpdk_engine_destroy) ||
-        !ENGINE_set_init_function(e, dpdk_engine_init) ||
-        !ENGINE_set_ciphers(e, dpdk_get_cipher) ||
-        !ENGINE_set_digests(e, dpdk_get_digest) ||
-        !ENGINE_set_load_privkey_function(e, dpdk_load_private_key) ||
-        !ENGINE_set_ctrl_function(e, dpdk_engine_ctrl)) {
-        return 0;
-    }
-
-    return 1;
-}
+// 后续使用 rte_crypto_op + enqueue/dequeue，与硬件 PMD 完全一致
 ```
+
+> [!warning] OpenSSL Engine vs Provider
+> - OpenSSL 3.0 已**废弃** Engine API（`ENGINE_by_id()`、`ENGINE_init()` 等）
+> - 新代码应使用 **Provider API**（`OSSL_PROVIDER`）
+> - DPDK **不提供** OpenSSL Engine 或 Provider，OpenSSL PMD 是反向的（OpenSSL → DPDK）
 
 ---
 
-## 8. 完整使用示例
+## 8. 完整使用示例：TLS 终止代理
 
-### 8.1 TLS Proxy
+### 8.1 架构总览
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      TLS 终止代理 (TLS Termination)                        │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  Client ──TLS──► [TLS Proxy] ──HTTP──► Backend Server                     │
+│                                                                             │
+│  ┌──────────────────────────────────────────────────────────────────────┐ │
+│  │                     TLS Proxy 数据流                                 │ │
+│  │                                                                      │ │
+│  │  ┌────────┐     ┌───────────────────┐     ┌────────────────────┐    │ │
+│  │  │ Client │     │   TLS Proxy       │     │  Backend Server   │    │ │
+│  │  │        │     │                   │     │                    │    │ │
+│  │  │ HTTPS  │────►│ 1. 接收 TLS Record│     │                    │    │ │
+│  │  │        │     │ 2. 解密 Record    │     │                    │    │ │
+│  │  │        │     │    (cryptodev)    │────►│ 3. HTTP 明文       │    │ │
+│  │  │        │     │ 3. 转发明文       │     │                    │    │ │
+│  │  │        │◄────│ 4. 加密 Response  │     │                    │    │ │
+│  │  │        │     │    (cryptodev)    │◄────│ 5. HTTP Response   │    │ │
+│  │  │        │     │ 5. 发送 TLS Record│     │                    │    │ │
+│  │  └────────┘     └───────────────────┘     └────────────────────┘    │ │
+│  │                                                                      │ │
+│  │  握手流程 (控制面):                                                  │ │
+│  │  ┌─────────────────────────────────────────────────────────────┐   │ │
+│  │  │  ClientHello → OpenSSL 处理握手 → 派生 traffic keys         │   │ │
+│  │  │  → 创建 cryptodev session → 后续用 DPDK 做数据面加密       │   │ │
+│  │  └─────────────────────────────────────────────────────────────┘   │ │
+│  └──────────────────────────────────────────────────────────────────────┘ │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 8.2 初始化代码
 
 ```c
-// TLS Proxy 示例 (终止 TLS，转发明文)
+// === TLS 终止代理初始化 ===
 
-// TLS Proxy 配置
-struct tls_proxy_config {
-    uint16_t listen_port;           // 监听端口 (TLS)
-    uint16_t backend_port;          // 后端端口 (明文)
-    uint32_t backend_ip;            // 后端 IP
-
-    uint8_t crypto_dev_id;         // Crypto 设备
-    struct tls_session_store *session_store;
-
-    uint8_t *cert_file;            // 证书
-    uint8_t *key_file;             // 私钥
-};
-
-// TLS Proxy 处理
 struct tls_proxy {
-    struct tls_proxy_config config;
+    uint16_t listen_port;
+    uint32_t backend_ip;
+    uint16_t backend_port;
 
-    struct rte_ring *tx_ring;      // 发送队列
-    struct rte_mempool *crypto_op_pool;
+    // DPDK 资源
+    uint8_t crypto_dev_id;
+    uint16_t port_id;              // ethdev port
     struct rte_mempool *mbuf_pool;
+    struct rte_mempool *op_pool;
+    struct rte_mempool *sess_pool;
+
+    // Session 缓存
+    struct rte_hash *session_hash;
 };
 
 int
 tls_proxy_init(struct tls_proxy *proxy)
 {
-    // 初始化 cryptodev
-    rte_cryptodev_configure(proxy->config.crypto_dev_id,
-                             &(struct rte_cryptodev_config){
-                                .socket_id = 0,
-                                .max_nb_queue_pairs = 4,
-                                .max_nb_sessions = 16384,
-                             });
+    struct rte_cryptodev_config dev_conf = {
+        .socket_id = rte_socket_id(),
+        .nb_queue_pairs = 4,
+        .ff_disable = 0,
+    };
 
-    // 创建 session store
-    proxy->config.session_store = tls_session_store_create(
-        16384,  /* max sessions */
-        4096   /* max session size */
-    );
+    // 配置 cryptodev
+    // 注意: rte_cryptodev_config 没有 max_nb_sessions 字段
+    // session 数量由 sess_pool 的大小决定
+    rte_cryptodev_configure(proxy->crypto_dev_id, &dev_conf);
+
+    // 创建 crypto op pool
+    proxy->op_pool = rte_crypto_op_pool_create(
+        "tls_proxy_ops",
+        RTE_CRYPTO_OP_TYPE_SYMMETRIC,
+        4096,       // nb_elts
+        64,         // cache_size
+        0,          // priv_size
+        rte_socket_id());
+
+    // 创建 session pool
+    proxy->sess_pool = rte_cryptodev_sym_session_pool_create(
+        "tls_proxy_sess",
+        16384,      // max nb sessions
+        0,          // session private data size
+        0,          // cache size
+        rte_socket_id());
 
     // 创建 mbuf pool
     proxy->mbuf_pool = rte_pktmbuf_pool_create(
         "tls_proxy_mbuf",
-        8192,
-        256,
-        0,
+        8192, 256, 0,
         RTE_MBUF_DEFAULT_BUF_SIZE,
-        SOCKET_ID_ANY);
+        rte_socket_id());
 
-    // 创建 crypto op pool
-    proxy->crypto_op_pool = rte_crypto_op_pool_create(
-        "tls_proxy_crypto",
-        RTE_CRYPTO_OP_TYPE_SYMMETRIC,
-        4096, 64, 0,
-        SOCKET_ID_ANY);
+    // 创建 session hash 表
+    struct rte_hash_parameters hash_params = {
+        .name = "tls_sessions",
+        .entries = 16384,
+        .key_len = 32,        // session_id 长度
+        .hash_func = rte_jhash,
+        .hash_func_init_val = 0,
+        .socket_id = rte_socket_id(),
+    };
+    proxy->session_hash = rte_hash_create(&hash_params);
+
+    return 0;
+}
+```
+
+### 8.3 数据面处理主循环
+
+```c
+// === TLS 终止代理数据面 ===
+
+// 解析 TLS Record 头 (使用 DPDK 的 rte_tls_hdr)
+static inline int
+tls_parse_record(const uint8_t *data, size_t len,
+                 struct rte_tls_hdr *hdr)
+{
+    if (len < sizeof(*hdr))
+        return -1;
+
+    rte_memcpy(hdr, data, sizeof(*hdr));
+    hdr->version = rte_be_to_cpu_16(hdr->version);
+    hdr->length = rte_be_to_cpu_16(hdr->length);
+
+    if (len < sizeof(*hdr) + hdr->length)
+        return -1;  // 数据不完整
 
     return 0;
 }
 
-// TLS 终止处理
-static void
-tls_terminate(struct tls_proxy *proxy,
-              struct rte_mbuf *pkt,
-              struct tls_context **ctx_out)
-{
-    // 解析 TLS Record
-    struct tls_record_header hdr;
-    if (tls_record_parse(rte_pktmbuf_mtod(pkt, uint8_t *),
-                          rte_pktmbuf_pkt_len(pkt),
-                          &hdr, &rec_len) < 0) {
-        // 错误
-        return;
-    }
-
-    if (hdr.type == TLS_HANDSHAKE) {
-        // 握手处理
-        struct tls_handshake_hdr *hs = (void *)(hdr + 1);
-
-        switch (hs->msg_type) {
-        case TLS_HANDSHAKE_CLIENT_HELLO:
-            // 处理 ClientHello
-            handle_client_hello(proxy, pkt);
-            break;
-
-        case TLS_HANDSHAKE_FINISHED:
-            // 握手完成
-            handle_finished(proxy, pkt);
-            break;
-        }
-    } else if (hdr.type == TLS_APPLICATION_DATA) {
-        // 应用数据，解密
-        struct tls_context *ctx = proxy->current_ctx;
-
-        // 解密
-        uint8_t *plaintext = tls_record_decrypt(ctx, hdr.payload);
-
-        // 发送到后端
-        send_to_backend(proxy, plaintext, pt_len);
-    }
-}
-
-// 主循环
-int
+// 数据面主循环
+void
 tls_proxy_run(struct tls_proxy *proxy)
 {
     struct rte_mbuf *pkts[MAX_PKT_BURST];
-    struct tls_context *ctx;
+    struct rte_crypto_op *ops[MAX_PKT_BURST];
 
-    while (!quit) {
-        // 接收 TLS 连接
+    while (!force_quit) {
+        // 1. 接收数据包
         uint16_t nb_rx = rte_eth_rx_burst(proxy->port_id, 0,
                                            pkts, MAX_PKT_BURST);
+        if (nb_rx == 0)
+            continue;
 
+        // 2. 按连接分组，准备 crypto op
+        uint16_t nb_ops = 0;
         for (uint16_t i = 0; i < nb_rx; i++) {
-            tls_terminate(proxy, pkts[i], &ctx);
+            struct rte_tls_hdr tls_hdr;
+            uint8_t *pkt_data = rte_pktmbuf_mtod(pkts[i], uint8_t *);
 
-            // 更新统计
-            proxy->stats.pkts++;
-            proxy->stats.bytes += rte_pktmbuf_pkt_len(pkts[i]);
+            if (tls_parse_record(pkt_data,
+                                  rte_pktmbuf_pkt_len(pkts[i]),
+                                  &tls_hdr) < 0) {
+                rte_pktmbuf_free(pkts[i]);
+                continue;
+            }
+
+            if (tls_hdr.type == RTE_TLS_TYPE_APPDATA) {
+                // 应用数据 — 准备解密
+                struct tls_conn *conn = find_connection(proxy, pkts[i]);
+                if (conn == NULL) {
+                    rte_pktmbuf_free(pkts[i]);
+                    continue;
+                }
+
+                ops[nb_ops] = rte_crypto_op_alloc(proxy->op_pool,
+                                          RTE_CRYPTO_OP_TYPE_SYMMETRIC);
+                ops[nb_ops]->sym->m_src = pkts[i];
+                ops[nb_ops]->sym->m_dst = pkts[i];
+                rte_crypto_op_attach_sym_session(ops[nb_ops],
+                                                  conn->crypto_session);
+
+                // 设置 AEAD 参数 (跳过 5 字节 TLS Record 头)
+                ops[nb_ops]->sym->aead.data.offset = sizeof(struct rte_tls_hdr);
+                ops[nb_ops]->sym->aead.data.length = tls_hdr.length;
+
+                nb_ops++;
+            } else {
+                // 握手消息 — 交给控制面处理
+                handle_handshake(proxy, pkts[i]);
+            }
         }
 
-        // 处理后端响应
-        // ...
+        if (nb_ops == 0)
+            continue;
 
-        // 加密并发送
-        if (proxy->tx_count > 0) {
-            tls_encrypt_batch(proxy->current_ctx,
-                              proxy->tx_pkts,
-                              proxy->tx_pkts,
-                              proxy->tx_count);
-            rte_eth_tx_burst(proxy->port_id, 0,
-                            proxy->tx_pkts, proxy->tx_count);
+        // 3. 批量提交解密 (非阻塞)
+        uint16_t nb_enq = rte_cryptodev_enqueue_burst(
+            proxy->crypto_dev_id, 0, ops, nb_ops);
+
+        // 4. 批量收集结果 (非阻塞轮询)
+        uint16_t nb_deq = 0;
+        while (nb_deq < nb_enq) {
+            nb_deq += rte_cryptodev_dequeue_burst(
+                proxy->crypto_dev_id, 0,
+                &ops[nb_deq], nb_enq - nb_deq);
+        }
+
+        // 5. 处理解密结果
+        for (uint16_t i = 0; i < nb_deq; i++) {
+            if (ops[i]->status == RTE_CRYPTO_OP_STATUS_SUCCESS) {
+                // 解密成功 → 去掉 TLS Record 头，转发明文到后端
+                rte_pktmbuf_adj(ops[i]->sym->m_src, sizeof(struct rte_tls_hdr));
+                forward_to_backend(proxy, ops[i]->sym->m_src);
+            } else {
+                rte_pktmbuf_free(ops[i]->sym->m_src);
+            }
+            rte_crypto_op_free(ops[i]);
         }
     }
 }
@@ -1295,11 +1280,12 @@ tls_proxy_run(struct tls_proxy *proxy)
 | 优化项 | 说明 | 效果 |
 |--------|------|------|
 | **Session Resumption** | 复用 session 避免完整握手 | 30x 降低延迟 |
-| **Session Ticket** | 分布式 session 存储 | 无状态扩展 |
-| **批量加密** | 批量处理记录层 | 3-5x 提升吞吐 |
-| **硬件卸载** | QAT/IPU 加速 | 10x+ 提升 |
-| **数据面/控制面分离** | 握手在 CPU，加密在硬件 | 最佳效率 |
-| **Early Data (0-RTT)** | TLS 1.3 0-RTT | 首个请求无延迟 |
+| **Session Ticket** | 无状态 session 存储，支持分布式 | 水平扩展 |
+| **批量加密** | 批量提交 crypto op 到 cryptodev | 3-5x 提升吞吐 |
+| **硬件卸载** | QAT/AESNI-MB 加速 AEAD | 10x+ 提升 |
+| **数据面/控制面分离** | 握手用 OpenSSL，加密用 DPDK | 最佳效率 |
+| **Early Data (0-RTT)** | TLS 1.3 首包无延迟 | 首请求零延迟 |
+| **in-place 加密** | `m_src == m_dst`，减少拷贝 | 降低内存带宽 |
 
 ---
 
@@ -1307,34 +1293,38 @@ tls_proxy_run(struct tls_proxy *proxy)
 
 本章核心要点：
 
-1. **TLS vs IPsec**：TLS 工作在应用层 (TCP 和 HTTP 之间)，对应用透明；IPsec 工作在网络层，保护整个 IP 包。
+1. **TLS vs IPsec**：TLS 工作在传输层（TCP 之上），对应用可见；IPsec 工作在网络层，对应用透明。
 
-2. **TLS 1.2 vs 1.3**：1.3 将握手从 2-RTT 降为 1-RTT (0-RTT 可选)，移除 CBC+HMAC，仅保留 AEAD。
+2. **TLS 1.2 vs 1.3**：1.3 将握手从 2-RTT 降为 1-RTT（0-RTT 可选），移除 CBC+HMAC 仅保留 AEAD，将 Content Type 移入密文内部。
 
-3. **DTLS**：基于 UDP 的 TLS，处理包丢失、乱序、重排序，加入 Cookie 交换和重传机制。
+3. **DTLS**：基于 UDP 的 TLS，记录头 13 字节（含 epoch + 48-bit 序列号），处理包丢失、乱序、Cookie 交换和重传。
 
-4. **TLS 记录层**：5 字节头 (type+version+length) + AEAD 加密，序列号隐式或显式。
+4. **TLS 记录层**：TLS 头 5 字节（type + version + length），DTLS 头 13 字节。DPDK 提供 `rte_tls_hdr` 和 `rte_dtls_hdr` 定义。
 
-5. **TLS 握手**：ClientHello/ServerHello → Certificate → KeyExchange → Finished。
+5. **TLS 握手**：ClientHello/ServerHello → Certificate → KeyExchange → Finished。TLS 1.3 密钥派生链：Early Secret → Handshake Secret → Master Secret。
 
-6. **Session Resumption**：Session ID 或 Session Ticket 机制，避免完整握手，降低延迟。
+6. **Session Resumption**：Session ID 或 Session Ticket 机制避免完整握手。TLS 1.3 支持 0-RTT Early Data。
 
-7. **Session Ticket**：加密的 session state，可存储在外部，支持无状态恢复。
+7. **DPDK 不提供 TLS 协议栈**：DPDK 提供三层 TLS 加速能力——`rte_cryptodev`（加密加速）、`rte_security TLS Record`（记录层卸载，仅部分硬件支持）、OpenSSL PMD（软件加密）。
 
-8. **加速架构**：控制面处理握手，数据面处理记录层加密，分离效率。
+8. **控制面/数据面分离**：握手用 OpenSSL/wolfSSL（CPU），Record 加密用 DPDK cryptodev（硬件）。握手完成后将 traffic keys 同步到 cryptodev session。
 
-9. **OpenSSL Engine**：通过 Engine 接口将 DPDK cryptodev 集成到 OpenSSL。
+9. **OpenSSL 集成**：OpenSSL 3.0 废弃了 Engine API，改用 Provider API。DPDK 不提供官方 OpenSSL Engine/Provider。
 
-10. **性能**：QAT 可达 50 Gbps，硬件 IPU 可达 100 Gbps，Session Resumption 可降低 30x 延迟。
+10. **性能**：QAT 可达 50 Gbps，AESNI-MB 可达 8 Gbps/core。批量提交 crypto op + in-place 加密是关键优化手段。
 
 **下一篇预告**：[[2026-04-09-dpdk-deep-dive-ch24-raw-crypto-api|第二十四章]]将讲解 Raw Crypto API 与自定义协议加密——灵活加密接口设计。
 
 ---
 
 > [!tip] 参考文献
-> - RFC 5246, "TLS 1.2"
-> - RFC 8446, "TLS 1.3"
-> - RFC 6347, "DTLS 1.2"
-> - RFC 9009, "DTLS 1.3"
-> - Intel, "DPDK Cryptodev", https://doc.dpdk.org/guides/prog_guide/cryptodev.html
-> - "OpenSSL Engine", https://www.openssl.org/docs/man1.1.1/man3/ENGINE_add.html
+> - RFC 5246, "The Transport Layer Security (TLS) Protocol Version 1.2"
+> - RFC 8446, "The Transport Layer Security (TLS) Protocol Version 1.3"
+> - RFC 6347, "Datagram Transport Layer Security Version 1.2"
+> - RFC 9147, "The Datagram Transport Layer Security (DTLS) Protocol Version 1.3"
+> - RFC 5077, "Transport Layer Security (TLS) Session Resumption"
+> - RFC 8446 Appendix A, "Key Derivation" (TLS 1.3 密钥派生)
+> - DPDK, "Cryptodev Library", https://doc.dpdk.org/guides/prog_guide/cryptodev.html
+> - DPDK, "Security Library", https://doc.dpdk.org/guides/prog_guide/rte_security.html
+> - OpenSSL 3.0, "Provider API", https://www.openssl.org/docs/man3.0/man7/provider.html
+> - DPDK source: `lib/net/rte_tls.h`, `lib/net/rte_dtls.h`, `lib/security/rte_security.h`

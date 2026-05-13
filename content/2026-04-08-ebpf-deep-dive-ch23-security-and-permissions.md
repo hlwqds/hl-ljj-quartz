@@ -167,17 +167,17 @@ graph TB
     end
 
     subgraph "eBPF 能力组合"
-        CB["CAP_BPF<br/>基础加载/Map 创建"]
+        CB["CAP_BPF<br>基础加载/Map 创建"]
 
         subgraph "辅助能力"
-            CN["CAP_NET_ADMIN<br/>XDP / TC / Socket"]
-            CP["CAP_PERFMON<br/>kprobe / fentry / USDT"]
-            CM["CAP_MAC_ADMIN<br/>LSM BPF 钩子"]
-            CS["CAP_SYS_PTRACE<br/>读取进程内存"]
+            CN["CAP_NET_ADMIN<br>XDP / TC / Socket"]
+            CP["CAP_PERFMON<br>kprobe / fentry / USDT"]
+            CM["CAP_MAC_ADMIN<br>LSM BPF 钩子"]
+            CS["CAP_SYS_PTRACE<br>读取进程内存"]
         end
 
-        CT["BPF Token<br/>令牌委派"]
-        CU["BPF_UNPRIV<br/>非特权子集"]
+        CT["BPF Token<br>令牌委派"]
+        CU["BPF_UNPRIV<br>非特权子集"]
     end
 
     CB --- CN
@@ -338,10 +338,10 @@ BPF Token 机制优雅地解决了这个矛盾：**由特权进程创建受限�
 
 ```mermaid
 sequenceDiagram
-    participant K as kubelet<br/>(特权守护进程)
-    participant BPFFS as /sys/fs/bpf<br/>(BPF 文件系统)
-    participant C as Container<br/>(非特权进程)
-    participant V as Kernel<br/>(验证器)
+    participant K as kubelet<br>(特权守护进程)
+    participant BPFFS as /sys/fs/bpf<br>(BPF 文件系统)
+    participant C as Container<br>(非特权进程)
+    participant V as Kernel<br>(验证器)
 
     K->>BPFFS: bpf_token_create() 创建令牌
     Note right of BPFFS: 约束: 仅允许 XDP + HASH Map
@@ -519,9 +519,9 @@ graph LR
     end
 
     subgraph "内核层 (Kernel Space)"
-        XDP["XDP 程序<br/>L3/L4 过滤"]
-        TC["TC 程序<br/>流量整形"]
-        LSM["LSM BPF<br/>系统调用审计"]
+        XDP["XDP 程序<br>L3/L4 过滤"]
+        TC["TC 程序<br>流量整形"]
+        LSM["LSM BPF<br>系统调用审计"]
     end
 
     subgraph "硬件层"
@@ -845,22 +845,22 @@ graph TB
         direction TB
 
         subgraph "权限控制"
-            A1["CAP_BPF<br/>基础能力"]
-            A2["CAP_NET_ADMIN / PERFMON<br/>辅助能力"]
-            A3["BPF Token<br/>令牌委派"]
-            A4["BPF_UNPRIV<br/>非特权子集"]
+            A1["CAP_BPF<br>基础能力"]
+            A2["CAP_NET_ADMIN / PERFMON<br>辅助能力"]
+            A3["BPF Token<br>令牌委派"]
+            A4["BPF_UNPRIV<br>非特权子集"]
         end
 
         subgraph "审计与执行"
-            B1["LSM BPF<br/>程序加载审计"]
-            B2["签名验证<br/>供应链安全"]
-            B3["运行时监控<br/>异常检测"]
+            B1["LSM BPF<br>程序加载审计"]
+            B2["签名验证<br>供应链安全"]
+            B3["运行时监控<br>异常检测"]
         end
 
         subgraph "沙箱隔离"
-            C1["Landlock<br/>文件/网络沙箱"]
-            C2["Namespace<br/>命名空间隔离"]
-            C3["cgroup BPF<br/>资源限制"]
+            C1["Landlock<br>文件/网络沙箱"]
+            C2["Namespace<br>命名空间隔离"]
+            C3["cgroup BPF<br>资源限制"]
         end
     end
 

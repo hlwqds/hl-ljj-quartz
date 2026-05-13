@@ -76,13 +76,13 @@ tags:
 graph LR
     subgraph "旧模式 (Raw Attach)"
         PROC1[用户态进程] -->|crash| DEAD[进程死亡]
-        KPROBE[Kprobe 仍残留<br/>无主孤儿]
-        KPROBE -. "无引用计数<br/>无自动清理" .-> DANGER[系统风险]
+        KPROBE[Kprobe 仍残留<br>无主孤儿]
+        KPROBE -. "无引用计数<br>无自动清理" .-> DANGER[系统风险]
     end
 
     subgraph "现代模式 (BPF Links)"
         PROC2[用户态进程] -->|crash| DEAD2[进程死亡]
-        LINK[BPF Link FD<br/>引用计数=0]
+        LINK[BPF Link FD<br>引用计数=0]
         LINK -->|自动清理| CLEAN[内核钩子移除]
     end
 
@@ -146,12 +146,12 @@ bpf_link__pin(trace_link, "/sys/fs/bpf/my_trace_link");
 ```mermaid
 graph TB
     subgraph "引用计数变化"
-        A[Link 创建<br/>refcount=1<br/>(用户态 FD)] --> B[Pin 到 BPFFS<br/>refcount=2<br/>(FD + FS)]
-        B --> C[进程退出<br/>refcount=1<br/>(仅 FS)]
-        C --> D[rm BPFFS 文件<br/>refcount=0<br/>Link 销毁]
+        A["Link 创建<br>refcount=1<br>(用户态 FD)"] --> B["Pin 到 BPFFS<br>refcount=2<br>(FD + FS)"]
+        B --> C["进程退出<br>refcount=1<br>(仅 FS)"]
+        C --> D["rm BPFFS 文件<br>refcount=0<br>Link 销毁"]
     end
 
-    A --> CRASH[进程崩溃<br/>refcount=0<br/>Link 立即销毁]
+    A --> CRASH["进程崩溃<br>refcount=0<br>Link 立即销毁"]
 ```
 
 ### 3.2 内核内部实现
@@ -269,17 +269,17 @@ bpftool link show -j | jq '.[] | {type, id, prog_id, pinned}'
 ```mermaid
 sequenceDiagram
     participant APP as 用户态
-    participant LINK as BPF Link
+    participant BLINK as BPF Link
     participant OLD as 旧 BPF 程序
     participant NEW as 新 BPF 程序
     participant HOOK as 内核挂载点
 
     APP->>APP: 加载新程序 new_prog
-    APP->>LINK: bpf_link_update(fd, new_prog_fd, opts)
-    LINK->>OLD: refcount--
-    LINK->>NEW: refcount++
-    LINK->>HOOK: 原子替换程序指针
-    Note over HOOK: 无事件丢失<br/>替换瞬间完成
+    APP->>BLINK: bpf_link_update(fd, new_prog_fd, opts)
+    BLINK->>OLD: refcount--
+    BLINK->>NEW: refcount++
+    BLINK->>HOOK: 原子替换程序指针
+    Note over HOOK: 无事件丢失<br>替换瞬间完成
     APP->>OLD: bpf_object__close (可选)
 ```
 

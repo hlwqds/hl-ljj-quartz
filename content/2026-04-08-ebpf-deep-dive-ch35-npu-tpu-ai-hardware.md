@@ -6,8 +6,8 @@ tags:
   - ai
   - npu
   - tpu
-  - hardware-offload
-  - machine-learning
+  - hardware
+  - inference
 ---
 
 > [!info] eBPF 2026 深度探索系列
@@ -65,504 +65,522 @@ tags:
 > 51. [[2026-04-09-ebpf-deep-dive-ch42-service-mesh-integration|第四十二章：eBPF 与 Service Mesh 深度集成]]
 ---
 
-## 1. 核心危机：CPU 内核的"失明"
+## 1. 概述：AI 推理时代的 eBPF
 
-在 2026 年，大模型（LLM）的参数量突破万亿级别，计算中心的主力完全转向了异构芯片（NPU、TPU、下一代 GPU）。
+2026 年，AI 推理已无处不在。从云端数据中心的 LLM 推理到边缘设备的实时图像识别，NPU（神经网络处理单元）和 TPU（张量处理单元）已成为现代计算基础设施的核心组件。
 
-传统的 Linux 内核面临着巨大的盲区：**99% 的核心计算和内存吞吐都在 AI 芯片的 HBM（高带宽显存）和计算阵列中闭环发生。** 宿主机的 CPU 只能看到任务的提交和结果的返回，对内部的算子调度延迟、张量爆炸或流水线气泡一无所知。
+eBPF 在这个生态中扮演着独特的角色：它既是 AI 推理流水线的"观测层"（监控延迟、吞吐量、资源占用），又是 AI 硬件与操作系统之间的"桥梁层"（协调内存分配、调度优先级、管理 DMA 传输）。
 
-如果在宿主机上通过传统的内核探针（如 kprobe）进行监控，高频的中断会直接瘫痪 PCIe 总线，拖垮整体推理性能。
-
-### 1.1 传统监控的局限
-
-```mermaid
-graph LR
-    subgraph "CPU 视角（严重受限）"
-        CPU[宿主 CPU] --> |"只能看到"| Submit[任务提交]
-        CPU --> |"只能看到"| Result[结果返回]
-        CPU -.-> |"完全不可见"| NPU_Black[算子执行<br/>张量计算<br/>显存管理<br/>流水线调度]
-    end
-
-    style NPU_Black fill:#333333,color:#ffffff
-```
-
-| 监控需求 | CPU kprobe 方案 | 问题 |
-|:---|:---|:---|
-| 算子执行延迟 | 无（算子在 NPU 内） | 黑盒 |
-| HBM 利用率 | 无 | 无法直接读取 |
-| 张量异常 (NaN) | 拷贝回 CPU 检查 | PCIe 带宽瓶颈 |
-| 流水线气泡 | 无 | 无法感知 |
-| GPU→CPU 通信延迟 | 可测量但不精确 | PCIe 中间层干扰 |
-
----
-
-## 2. eBPF 固件级下沉 (Firmware Offloading)
-
-为了穿透异构计算的黑盒，各大 AI 芯片厂商（如华为 Ascend、NVIDIA）在 2026 年开放了底层的管理微控制器（Microcontroller），支持原生运行 eBPF 字节码。
-
-### 2.1 架构转换
+### 1.1 AI 推理栈中的 eBPF 定位
 
 ```mermaid
 graph TB
-    subgraph "开发流程（与 Linux eBPF 一致）"
-        Dev[开发者编写 C 代码] --> LLVM[LLVM/Clang 编译]
-        LLVM --> Bytecode[eBPF 字节码 .o]
+    subgraph "AI 应用层"
+        App[LLM 推理服务 / 图像识别]
     end
 
-    subgraph "运行时分流"
-        Bytecode --> Detect{目标平台检测}
-        Detect --> |"CPU"| Kernel_JIT[Linux 内核 JIT]
-        Detect --> |"NPU"| NPU_JIT[NPU 内部 JIT<br/>RISC-V 微码]
-        Detect --> |"SmartNIC"| NIC_JIT[网卡 JIT<br/>硬件微码]
+    subgraph "AI 框架层"
+        FW[PyTorch / TensorFlow / vLLM]
+        FW --> |"runtime 调用"| NPU[NPU 驱动]
     end
 
-    Kernel_JIT --> CPU_Exec[x86-64 执行]
-    NPU_JIT --> NPU_Exec[NPU 流水线执行]
-    NIC_JIT --> NIC_Exec[网卡硬件执行]
+    subgraph "eBPF 观测与协调层"
+        EBPF[BPF Programs<br>- 推理延迟追踪<br>- 内存绑定分析<br>- DMA 带宽监控<br>- 能耗归因]
+        NPU --> EBPF
+        EBPF --> Sched[调度器优化]
+    end
+
+    subgraph "硬件层"
+        NPU_HW[Intel AMX / NVIDIA TensorRT / Google TPU]
+        NPU_HW --> |"DMA 访问"| Mem[GPU/HBM 内存]
+    end
+
+    App --> FW
+    EBPF --> |"调度提示"| Sched
 ```
 
-- **统一的前端**：开发者依然使用 C 语言配合标准 LLVM 工具链编译 eBPF 字节码
-- **异构 JIT 编译器**：在加载时（Load Time），驱动层识别到目标挂载点为 NPU 后，将字节码重定向给 NPU 内部的特制 JIT 引擎，将其翻译为底层硬件（如 RISC-V）的原生机器码
+### 1.2 NPU/TPU 与 CPU 的协同模型
 
-### 2.2 NPU eBPF 运行时环境
-
-| 特性 | CPU eBPF | NPU eBPF |
+| 组件 | 主要职责 | eBPF 能介入的环节 |
 |:---|:---|:---|
-| **寄存器** | 64 位 (R0-R10) | 映射到 NPU 微控制器寄存器 |
-| **内存访问** | 用户态/内核态 | HBM 物理地址空间 |
-| **Map 类型** | 30+ 种 | NPU 专用 Map (TensorMap, OpQueue) |
-| **Helper 函数** | 200+ | < 30 (HBM 读写、算子查询) |
-| **验证器** | Linux Verifier | 简化版 NPU Verifier |
-| **最大指令数** | 100 万条 | 1-4 万条 |
+| **CPU** | 控制流、内存管理、调度 | 追踪系统调用、内存分配、进程调度 |
+| **NPU/TPU** | 张量计算、矩阵乘法 | DMA 传输监控、计算资源分配、队列深度监控 |
+| **Host Memory** | 存储模型权重、KV Cache | 内存带宽监控、NUMA 亲和性 |
+| **Device Memory** | 计算中间结果 | 设备内存页迁移追踪 |
 
 ---
 
-## 3. 核心前沿应用场景
+## 2. eBPF 视角下的 AI 推理延迟剖析
 
-### 3.1 算子级指令重排 (Dynamic Operator Scheduling)
+AI 推理延迟并非只是"输入到输出的总时间"，而是多个阶段的复合。eBPF 能够以极低的开销精确测量每个阶段的耗时。
 
-传统的推理框架静态地将计算流下发给 NPU。利用内置的 eBPF 引擎，我们可以在芯片内部实时拦截算子队列：
+### 2.1 推理延迟的分解
 
-```mermaid
-sequenceDiagram
-    participant FW as 推理框架
-    participant NPU as NPU 芯片
-    participant BPF as eBPF 引擎 (NPU 内)
+**推理延迟分解（总延迟 ≈ 100ms 示例）：**
 
-    FW->>NPU: 提交算子队列 [MatMul, Add, ReLU, Conv]
-    NPU->>BPF: 算子进入执行队列
-    BPF->>BPF: 检测 HBM Block 3 空闲
-    BPF->>BPF: 重排：将依赖 Block 3 的 Conv 提前
-    BPF->>NPU: 修改后的队列 [MatMul, Conv, Add, ReLU]
-    NPU->>FW: 吞吐量提升 12%
+```
+0ms ─────────────────────────────────────────────── 100ms
+ ├─[请求排队 5ms]─────────────────────────────┤
+     ├─[数据预处理 5ms]─┤
+         ├─[调度启动 2ms]─┤
+             ├─[NPU 计算 53ms]─(关键路径)─┤
+                 ├─[结果回传 5ms]─┤
+                     ├─[响应发送 20ms]─┤
 ```
 
-如果 BPF 程序感知到特定的 HBM 块突然空闲，它可以**原地提权并重排后续算子**，实现微秒级的流水线填补，极大提升了持续批处理（Continuous Batching）的吞吐量。
+**各阶段详情：**
 
-### 3.2 中间张量 (Intermediate Tensors) 零拷贝监控
+| 阶段 | 典型耗时 | 占比 | eBPF 测量点 | 优化空间 |
+|:---|:---|:---|:---|:---|
+| **请求排队** | 5-50ms | 5-50% | `sched_wakeup` + `sched_switch` tracepoint | 调度优先级、请求合并 |
+| **数据预处理** | 2-10ms | 2-10% | `kprobe:tensor_preprocess` | 向量化、BATCH 合并 |
+| **模型调度启动** | 0.5-2ms | 0.5-2% | NPU 驱动 kfunc | 容器预热、模型预加载 |
+| **NPU 计算** | 10-80ms | 10-80% | DMA 完成中断 tracepoint | 计算图优化、算子融合 |
+| **结果回传** | 1-5ms | 1-5% | DMA 传输追踪 | 零拷贝、CPU/NPU 并行 |
+| **响应发送** | 5-20ms | 5-20% | `kprobe:inet_sendmsg` | 连接复用、协议优化 |
 
-在模型调试时，探测特定层是否输出 NaN（无效数字）是一大难题。传统方式需将数百 GB 的张量数据拷贝回 CPU 内存进行断言。
+> [!note]
+> NPU 计算是关键路径（crit），通常是优化的重点。eBPF 可通过 DMA 中断时间戳精确测量 NPU 计算的实际耗时。
 
-```mermaid
-graph LR
-    subgraph "传统方式（高开销）"
-        NPU1[NPU 计算] --> |"PCIe DMA<br/>100GB/s"| CPU1[CPU 检查 NaN]
-        CPU1 --> |"拷贝耗时 >100ms"| Result1[结果]
-    end
-
-    subgraph "eBPF 方式（零开销）"
-        NPU2[NPU 计算] --> |"片上读取<br/>2TB/s"| BPF[eBPF 探针<br/>直接扫描 HBM]
-        BPF --> |"仅异常上报"| CPU2[CPU 接收事件]
-    end
-
-    style CPU1 fill:#ff9999
-    style BPF fill:#99ff99
-```
-
-在 2026 架构中，**eBPF 探针直接运行在 NPU 的显存控制器旁**，零拷贝扫描张量。只有在匹配到异常时，才会触发 RingBuffer 上报，实现了纳秒级的底层防御。
-
----
-
-## 4. 代码实战：在 NPU 内部拦截异常张量
-
-以下概念代码展示了运行在 AI 芯片固件层的 BPF 程序逻辑。
+### 2.2 延迟追踪 BPF 程序
 
 ```c
 #include <vmlinux.h>
 #include <bpf/bpf_helpers.h>
-#include <bpf/npu_helpers.h> // 2026 NPU 专用扩展头文件
+#include <bpf/bpf_typedef.h>
 
-// 定义张量元数据结构
-struct tensor_meta {
-    u32 operator_id;
-    u64 hbm_address;
-    u32 size;
-    u16 dtype;       // 0=fp32, 1=fp16, 2=bf16, 3=int8
-    u16 dimensions;
+// 推理请求追踪
+struct inference_request {
+    u64 request_id;
+    u64 enqueue_time_ns;
+    u64 preprocess_done_ns;
+    u64 npu_start_ns;
+    u64 npu_done_ns;
+    u64 complete_ns;
+    u32 tensor_size;
+    u32 model_id;
 };
 
-// 异常事件上报
-struct tensor_alert {
-    u32 operator_id;
-    u64 timestamp_ns;
-    u32 error_type;  // 0=NaN, 1=Inf, 2=Overflow
-    u32 layer_index;
+// 请求追踪 Map
+struct {
+    __uint(type, BPF_MAP_TYPE_HASH);
+    __uint(max_entries, 10240);
+    __type(key, u64);  // request_id
+    __type(value, struct inference_request);
+} inference_tracking SEC(".maps");
+
+// 延迟直方图（纳秒级精度）
+struct {
+    __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
+    __uint(max_entries, 64);  // bucket 索引
+    __type(key, u32);
+    __type(value, u64);
+} latency_histogram SEC(".maps");
+
+// 追踪请求入队时间
+SEC("kprobe/vllm_model_execute")
+int BPF_KPROBE(inference_enqueue, u64 request_id, u32 model_id, u32 tensor_size) {
+    struct inference_request req = {
+        .request_id = request_id,
+        .enqueue_time_ns = bpf_ktime_get_ns(),
+        .model_id = model_id,
+        .tensor_size = tensor_size,
+    };
+    bpf_map_update_elem(&inference_tracking, &request_id, &req, BPF_ANY);
+    return 0;
+}
+
+// 追踪 NPU 计算开始
+SEC("kprobe/npu_kernel_launch")
+int BPF_KPROBE(npu_kernel_start, u64 request_id) {
+    struct inference_request *req = bpf_map_lookup_elem(&inference_tracking, &request_id);
+    if (req) {
+        req->npu_start_ns = bpf_ktime_get_ns();
+    }
+    return 0;
+}
+
+// 追踪 NPU 计算完成
+SEC("kprobe/npu_dispatch_complete")
+int BPF_KPROBE(npu_kernel_done, u64 request_id) {
+    struct inference_request *req = bpf_map_lookup_elem(&inference_tracking, &request_id);
+    if (req) {
+        req->npu_done_ns = bpf_ktime_get_ns();
+        // 计算各阶段延迟并记录直方图
+        u64 preprocess_lat = req->npu_start_ns - req->preprocess_done_ns;
+        u64 npu_lat = req->npu_done_ns - req->npu_start_ns;
+        // 记录到直方图...
+        bpf_map_delete_elem(&inference_tracking, &request_id);
+    }
+    return 0;
+}
+```
+
+---
+
+## 3. NPU 内存管理与 eBPF 协调
+
+NPU 推理的核心瓶颈往往不在计算本身，而在内存带宽和 DMA 效率。eBPF 能够实时监控内存访问模式并动态调整策略。
+
+### 3.1 Host Memory 与 Device Memory 的桥接
+
+```mermaid
+graph LR
+    subgraph "Host (CPU 侧)"
+        HMem[Host Memory<br>模型权重 + KV Cache]
+        CPU[CPU Core]
+    end
+
+    subgraph "PCIe Bus"
+        DMA[DMA 控制器]
+    end
+
+    subgraph "Device (NPU 侧)"
+        DMem[Device Memory<br>HBM / GDDR]
+        NPU[计算单元]
+    end
+
+    HMem --> |"DMA 读取<br>模型权重"| DMA
+    DMA --> DMem
+    DMem --> |"DMA 写入<br>计算结果"| DMA
+    DMA --> HMem
+    NPU --> DMem
+```
+
+### 3.2 DMA 传输监控
+
+```c
+#include <vmlinux.h>
+#include <bpf/bpf_helpers.h>
+
+// DMA 传输统计
+struct dma_transfer {
+    u64 timestamp;
+    u64 bytes;
+    u64 duration_ns;
+    u32 dir;  // 0=host_to_dev, 1=dev_to_host
+    u32 node_id;
 };
+
+struct {
+    __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
+    __uint(max_entries, 128);
+    __type(key, u32);
+    __type(value, u64);
+} dma_bytes_total SEC(".maps");
 
 struct {
     __uint(type, BPF_MAP_TYPE_RINGBUF);
-    __uint(max_entries, 4 * 1024 * 1024);
-} alert_events SEC(".maps");
+    __uint(max_entries, 4096);
+} dma_events SEC(".maps");
 
-// 挂载到 NPU 内部的算子执行完成事件
-SEC("npu/operator_done")
-int bpf_npu_tensor_check(struct npu_op_ctx *ctx) {
-    struct tensor_meta meta;
-
-    // 获取刚刚写完的张量地址 (HBM 物理地址)
-    bpf_npu_get_output_tensor(ctx, &meta);
-
-    // 只检查 fp16 和 fp32 类型
-    if (meta.dtype != 0 && meta.dtype != 1) return NPU_ACT_CONTINUE;
-
-    // 抽样检查策略：只检查每个张量的前 256 个值
-    int check_size = meta.size > 512 ? 512 : meta.size;
-
-    if (meta.dtype == 1) {
-        // fp16 检查
-        u16 buffer[256];
-        bpf_npu_read_hbm(&buffer, sizeof(buffer), meta.hbm_address);
-
-        #pragma unroll
-        for (int i = 0; i < 256; i++) {
-            // 检查 fp16 的 NaN/Inf 特征 (指数全为1)
-            if ((buffer[i] & 0x7C00) == 0x7C00) {
-                struct tensor_alert *alert = bpf_ringbuf_reserve(
-                    &alert_events, sizeof(*alert), 0);
-                if (alert) {
-                    alert->operator_id = meta.operator_id;
-                    alert->timestamp_ns = bpf_ktime_get_ns();
-                    alert->error_type = (buffer[i] & 0x0200) ? 1 : 0;  // Inf vs NaN
-                    alert->layer_index = meta.operator_id >> 16;
-                    bpf_ringbuf_submit(alert, 0);
-                }
-                return NPU_ACT_HALT;  // 熔断流水线
-            }
-        }
-    } else {
-        // fp32 检查
-        u32 buffer[128];
-        bpf_npu_read_hbm(&buffer, sizeof(buffer), meta.hbm_address);
-
-        #pragma unroll
-        for (int i = 0; i < 128; i++) {
-            u32 exp = (buffer[i] >> 23) & 0xFF;
-            if (exp == 0xFF) {
-                // fp32 NaN 或 Inf
-                struct tensor_alert *alert = bpf_ringbuf_reserve(
-                    &alert_events, sizeof(*alert), 0);
-                if (alert) {
-                    alert->operator_id = meta.operator_id;
-                    alert->timestamp_ns = bpf_ktime_get_ns();
-                    alert->error_type = (buffer[i] & 0x00400000) ? 0 : 1;
-                    alert->layer_index = meta.operator_id >> 16;
-                    bpf_ringbuf_submit(alert, 0);
-                }
-                return NPU_ACT_HALT;
-            }
-        }
+// 追踪 DMA 传输开始
+SEC("kprobe/intel_npu_dmactl_start")
+int BPF_KPROBE(dma_start, u64 addr, u64 size, u32 dir) {
+    u32 key = dir;
+    u64 *cnt = bpf_map_lookup_elem(&dma_bytes_total, &key);
+    if (cnt) {
+        __sync_fetch_and_add(cnt, size);
     }
-
-    return NPU_ACT_CONTINUE;
-}
-```
-
-### 4.1 算子调度优化代码
-
-```c
-// 在 NPU 内部运行的算子调度优化器
-SEC("npu/operator_queue")
-int bpf_npu_schedule(struct npu_queue_ctx *ctx) {
-    struct npu_op_info ops[8];  // 当前队列中的算子
-    int count = bpf_npu_get_queue_ops(ctx, ops, 8);
-
-    if (count < 2) return NPU_ACT_CONTINUE;
-
-    // 简化的调度策略：将计算密集型和访存密集型算子交替排列
-    // 以减少 HBM bank 冲突
-    for (int i = 0; i < count - 1; i++) {
-        u8 type_i = ops[i].op_type;     // 0=compute, 1=memory
-        u8 type_next = ops[i + 1].op_type;
-
-        // 如果连续两个算子类型相同，尝试交换
-        if (type_i == type_next && i + 2 < count) {
-            // 检查交换是否安全（无数据依赖）
-            if (!bpf_npu_has_dependency(&ops[i], &ops[i + 2])) {
-                bpf_npu_swap_ops(ctx, i + 1, i + 2);
-            }
-        }
-    }
-
-    return NPU_ACT_CONTINUE;
-}
-```
-
----
-
-## 5. NPU eBPF 的性能基准
-
-| 操作 | CPU kprobe | NPU eBPF | 加速比 |
-|:---|:---|:---|:---|
-| 张量 NaN 检测 (1GB) | 200ms (PCIe 拷贝) | 0.5ms (片上读取) | **400x** |
-| 算子队列查询 | 10μs (MMIO) | 0.05μs (片上寄存器) | **200x** |
-| HBM 利用率采样 | N/A | 0.1μs | 无对比 |
-| 算子重排延迟 | N/A | 5μs | N/A |
-
----
-
-## 6. 2026 年 AI 芯片 eBPF 支持现状
-
-| 厂商 | 芯片平台 | eBPF 支持 | 特色能力 | 成熟度 |
-|:---|:---|:---|:---|:---|
-| **NVIDIA** | H100/H200 B200 | GPU 内置 eBPF 引擎 | CUDA 算子拦截、NVLink 监控 | 生产可用 |
-| **华为** | Ascend 910C | CANN eBPF Runtime | 算力池管理、通信拓扑感知 | 生产可用 |
-| **Google** | TPU v5p | XLA-eBPF 集成 | 稀疏计算优化 | Beta |
-| **AMD** | MI300X | ROCm eBPF 前端 | CDNA 算子监控 | Alpha |
-| **寒武纪** | MLU370 | 国产 eBPF 兼容引擎 | 本地化支持 | Alpha |
-
----
-
-## 7. eBPF 在 AI 训练集群中的监控应用
-
-虽然 NPU eBPF 主要面向推理场景，但在大模型训练集群中也展现了不可替代的价值。
-
-### 7.1 训练 vs 推理的监控差异
-
-| 维度 | 推理监控 | 训练监控 |
-|:---|:---|:---|
-| **主要关注** | 延迟、吞吐、准确率 | 吞吐、利用率、收敛速度 |
-| **采样策略** | 按请求 | 按迭代 (iteration) |
-| **容忍开销** | < 1% | < 2%（训练本身计算密集） |
-| **关键指标** | P99 延迟、Token/秒 | TFLOPS、GPU 利用率、梯度统计 |
-| **异常类型** | NaN 输出、超时 | 梯度爆炸、通信瓶颈、OOM |
-
-### 7.2 NCCL 通信库 eBPF 监控
-
-在分布式训练中，GPU 间的通信（NCCL）往往是最大瓶颈。eBPF 可以在不修改训练代码的情况下监控通信延迟：
-
-```c
-// 监控 NCCL AllReduce 通信延迟
-SEC("uprobe//usr/lib/x86_64-linux-gnu/libnccl.so:ncclAllReduce")
-int BPF_UPROBE(nccl_allreduce_entry, void *sendbuf, void *recvbuf,
-               size_t count, int datatype, int op, int comm, void *stream) {
-    u64 pid_tgid = bpf_get_current_pid_tgid();
-    struct nccl_timing t = {
-        .start_ns = bpf_ktime_get_ns(),
-        .count = count,
-    };
-    bpf_map_update_elem(&nccl_active, &pid_tgid, &t, BPF_ANY);
     return 0;
 }
 
-SEC("uretprobe//usr/lib/x86_64-linux-gnu/libnccl.so:ncclAllReduce")
-int BPF_URETPROBE(nccl_allreduce_exit, int ret) {
-    u64 pid_tgid = bpf_get_current_pid_tgid();
-    struct nccl_timing *t = bpf_map_lookup_elem(&nccl_active, &pid_tgid);
-    if (!t) return 0;
-
-    u64 duration = bpf_ktime_get_ns() - t->start_ns;
-
-    struct nccl_report *r = bpf_ringbuf_reserve(&nccl_events, sizeof(*r), 0);
-    if (r) {
-        r->duration_us = duration / 1000;
-        r->count = t->count;
-        r->pid = pid_tgid >> 32;
-        bpf_ringbuf_submit(r, 0);
+// DMA 传输完成事件
+SEC("tracepoint/intel_npu/dma_complete")
+int on_dma_complete(struct trace_event_raw_intel_npu_dma *ctx) {
+    struct dma_transfer *ev = bpf_ringbuf_reserve(&dma_events, sizeof(*ev), 0);
+    if (ev) {
+        ev->timestamp = bpf_ktime_get_ns();
+        ev->bytes = ctx->transfer_size;
+        ev->duration_ns = ctx->duration_ns;
+        ev->dir = ctx->direction;
+        bpf_ringbuf_submit(ev, 0);
     }
-    bpf_map_delete_elem(&nccl_active, &pid_tgid);
     return 0;
 }
 ```
 
-### 7.3 训练瓶颈诊断表
-
-| 症状 | eBPF 诊断方法 | 可能原因 | 优化方向 |
-|:---|:---|:---|:---|
-| GPU 利用率 < 50% | `nccl_allreduce` 延迟 P99 > 5ms | 通信瓶颈 | 增加带宽、梯度压缩 |
-| GPU 利用率波动大 | HBM 读写模式分析 | 数据加载瓶颈 | 预取 (prefetch)、增加 DataLoader workers |
-| 单卡 OOM | 显存分配时序追踪 | Batch Size 过大或内存泄漏 | 减小 Batch Size、梯度累积 |
-| 训练速度随规模下降 | 跨节点通信占比分析 | 弱扩展性问题 | ZeRO 优化、流水线并行 |
-| 梯度出现 NaN | HBM 张量采样 (ch4 代码) | 学习率过高或数值不稳定 | 梯度裁剪、混合精度训练 |
-
-### 7.4 集群级能耗与算力调度
-
-结合 [[2026-04-08-ebpf-deep-dive-ch37-green-computing|第三十七章]] 的能耗监控技术，可以在 AI 训练集群中实现"能效优先"的任务调度：
-
-```mermaid
-graph TB
-    subgraph "监控层"
-        GPU_Monitor[NPU/GPU eBPF 监控] --> Metrics[算力利用率 + 能耗]
-        NCCL_Monitor[NCCL 通信监控] --> Metrics
-        RAPL_Monitor[RAPL 能耗采样] --> Metrics
-    end
-
-    subgraph "调度层"
-        Metrics --> Scheduler[智能调度器]
-        Scheduler --> |"低电价 + 高利用率"| Normal[正常训练]
-        Scheduler --> |"高电价 / 低利用率"| Throttle[降频或暂停]
-        Scheduler --> |"通信瓶颈"| Rebalance[重新分片]
-    end
-
-    subgraph "优化层"
-        Throttle --> Spot[竞价实例]
-        Rebalance --> Parallel[调整并行策略]
-    end
-```
-
-通过将 eBPF 采集的 GPU/NPU 实时利用率与电价信号结合，训练调度器可以：
-1. 在电价低谷时段加速训练（提升频率/批量大小）
-2. 在电价高峰时段降低频率或迁移到竞价实例
-3. 当检测到通信瓶颈时，自动触发并行策略调整
-
 ---
 
-## 9. NPU eBPF 的多租户隔离与资源配额
+## 4. 调度优化：让 NPU 不再等待
 
-### 9.1 租户资源隔离模型
+eBPF 与 `sched_ext` 的结合，使得 AI 推理任务能够获得精准的调度优化，避免 NPU 处于空闲等待状态。
 
-在 AI 推理即服务（AIaaS）场景中，多个租户共享 NPU 集群。eBPF 可以实现精细的资源隔离：
+### 4.1 问题：NPU 空转现象
 
-```mermaid
-graph TB
-    subgraph "租户 A"
-        A1[推理请求] --> A_Queue[租户 A 算子队列]
-    end
+传统调度器不理解 AI 推理的工作负载特性，常常出现：
+- CPU 预处理还未完成，NPU 已空闲等待
+- 多个推理请求竞争导致上下文切换开销
+- KV Cache 跨 NUMA 节点访问导致的内存延迟
 
-    subgraph "租户 B"
-        B1[推理请求] --> B_Queue[租户 B 算子队列]
-    end
-
-    subgraph "NPU eBPF 调度器"
-        A_Queue --> Scheduler[资源配额管理]
-        B_Queue --> Scheduler
-        Scheduler --> |"令牌桶限速"| NPU_Exec[NPU 执行引擎]
-    end
-
-    subgraph "监控与计费"
-        NPU_Exec --> Monitor[eBPF 监控探针]
-        Monitor --> A_Bill[租户 A 账单]
-        Monitor --> B_Bill[租户 B 账单]
-    end
-```
-
-### 9.2 令牌桶限速代码
+### 4.2 NPU 感知的调度 BPF 程序
 
 ```c
-// 基于 eBPF 的 NPU 算力配额管理
-struct tenant_quota {
-    u64 tokens;          // 剩余令牌数
-    u64 last_refill_ns;  // 上次填充时间
-    u64 rate_per_sec;    // 每秒补充速率
-    u64 max_burst;       // 最大突发量
-};
+#include <vmlinux.h>
+#include <bpf/bpf_helpers.h>
+#include <bpf/bpf_typedef.h>
 
+// 推理任务优先级映射
 struct {
     __uint(type, BPF_MAP_TYPE_HASH);
-    __type(key, u32);            // tenant_id
-    __type(value, struct tenant_quota);
+    __uint(max_entries, 10240);
+    __type(key, u32);  // pid
+    __type(value, u32); // priority: 0=low, 1=medium, 2=high
+} inference_priority SEC(".maps");
+
+// NPU 队列深度（通过驱动暴露）
+struct {
+    __uint(type, BPF_MAP_TYPE_RINGBUF);
     __uint(max_entries, 1024);
-} tenant_quotas SEC(".maps");
+} npu_queue_depth SEC(".maps");
 
-SEC("npu/operator_submit")
-int bpf_npu_quota_enforce(struct npu_op_ctx *ctx) {
-    u32 tenant_id = ctx->tenant_id;
-    struct tenant_quota *q = bpf_map_lookup_elem(&tenant_quotas, &tenant_id);
-    if (!q) return NPU_ACT_CONTINUE;
+SEC("sched_ext::pre_schedule")
+int pre_schedule(struct scx Sched_context *ctx) {
+    u32 pid = bpf_get_current_pid_tgid() >> 32;
+    u32 *prio = bpf_map_lookup_elem(&inference_priority, &pid);
 
-    u64 now = bpf_ktime_get_ns();
-    u64 elapsed = now - q->last_refill_ns;
-
-    // 补充令牌
-    if (elapsed > 0) {
-        u64 refill = (elapsed * q->rate_per_sec) / 1000000000ULL;
-        if (q->tokens + refill > q->max_burst)
-            q->tokens = q->max_burst;
-        else
-            q->tokens += refill;
-        q->last_refill_ns = now;
+    if (prio) {
+        // AI 推理任务：根据优先级分配 CPU
+        // 高优先级任务优先分配到 NPU 亲和的 CPU 核心
+        if (*prio >= 2) {
+            // 实时推理任务：绑定到 NPU 直通 CPU
+            scx_bpf_select_cpu_dfl(ctx, 0, /* prefer_numa */ true, /* allow_overlap */ false);
+        }
     }
 
-    // 检查配额
-    if (q->tokens < ctx->estimated_ops) {
-        // 配额不足：降级处理或排队
-        ctx->priority = NPU_PRIORITY_LOW;
-        return NPU_ACT_THROTTLE;
+    return 0;
+}
+
+SEC("sched_ext::post_schedule")
+int post_schedule(struct scx Sched_context *ctx) {
+    u32 pid = bpf_get_current_pid_tgid() >> 32;
+    u32 *prio = bpf_map_lookup_elem(&inference_priority, &pid);
+
+    if (prio && *prio >= 1) {
+        // 记录任务运行历史，用于后续优化
+        struct task_ctx {
+            u64 last_run_ns;
+            u32 run_time_ns;
+        } tctx;
+
+        struct bpf_tasks_ctx *task = bpf_get_task();
+        tctx.last_run_ns = bpf_ktime_get_ns();
+        tctx.run_time_ns = task->sum_exec_ns;
+        // 更新统计...
     }
 
-    // 扣减令牌
-    q->tokens -= ctx->estimated_ops;
-    return NPU_ACT_CONTINUE;
+    return 0;
 }
 ```
 
-### 9.3 多租户监控指标
+---
 
-| 指标 | 采集方式 | 用途 |
-|:---|:---|:---|
-| 租户算力使用率 | 算子执行时间聚合 | 容量规划 |
-| 租户 HBM 占用 | HBM 分配追踪 | 资源回收 |
-| 租户请求延迟 P99 | 请求级时间戳 | SLA 监控 |
-| 租户配额触发次数 | 令牌桶统计 | 计费调整 |
-| 租户间干扰度 | 调度延迟方差 | 性能隔离验证 |
+## 5. TPU 与云端 AI 推理的 eBPF 监控
+
+Google TPU 通过自定义网卡的 DMA 接口与主机通信，eBPF 能够在这个路径上进行细粒度的流量控制与监控。
+
+### 5.1 TPU 推理架构
+
+```mermaid
+graph TB
+    subgraph "TPU Host"
+        App[推理应用] --> Runtime[TFRT Runtime]
+        Runtime -->|"gRPC"| NIC[TPU NIC]
+        NIC -.->|"DMA read"| HostMem[Host Memory]
+    end
+
+    subgraph "TPU Device"
+        NIC -.->|"PCIe"| TPU[TPU Core]
+        TPU --> HBM[TPU HBM]
+        TPU --> ThreadList[Threadpool]
+    end
+
+    subgraph "eBPF 监控层"
+        NIC -.->|"XDP"| NPU_XDP[XDP: 流量整形]
+        ThreadList -.->|"tracepoint"| SchedTP[调度 Tracepoint]
+        HBM -.->|"perf"| MemBW[内存带宽监控]
+    end
+```
+
+### 5.2 TPU 流量整形
+
+```c
+// 限制 TPU 推理请求的突发流量，避免拥塞
+SEC("xdp/tpu_control")
+int xdp_tpu_shaper(struct xdp_md *ctx) {
+    void *data = (void *)(long)ctx->data;
+    void *data_end = (void *)(long)ctx->data_end;
+
+    struct ethhdr *eth = data;
+    if ((void *)(eth + 1) > data_end) return XDP_PASS;
+
+    // 检查是否是 TPU 控制流量
+    if (eth->h_proto != bpf_htons(0x86DD)) return XDP_PASS;  // IPv6
+
+    struct ipv6hdr *ip6h = (void *)(eth + 1);
+    if ((void *)(ip6h + 1) > data_end) return XDP_PASS;
+
+    // 检查 TPU gRPC 端口
+    if (ip6h->nexthdr == 6) {  // TCP
+        struct tcphdr *tcp = (void *)(ip6h + 1);
+        if ((void *)(tcp + 1) > data_end) return XDP_PASS;
+
+        // TPU 控制端口 443
+        u16 dport = bpf_ntohs(tcp->dest);
+        if (dport == 443) {
+            // 令牌桶限速：每 10ms 允许 1000 包
+            return xdp_adjust_tail(ctx, 0);  // 触发限速逻辑
+        }
+    }
+
+    return XDP_PASS;
+}
+```
 
 ---
 
-## 10. FAQ
+## 6. 案例：使用 eBPF 实现 LLM 推理的 KV Cache 优化
 
-**Q1：NPU eBPF 探针会影响推理性能吗？**
+### 6.1 问题背景
 
-A：影响极小。由于探针运行在 NPU 内部的微控制器上（与主计算单元并行），不会占用计算阵列资源。主要开销来自 HBM 读取（纳秒级）和 RingBuffer 写入（仅在异常时触发）。实测对正常推理吞吐的影响 < 0.5%。
+大语言模型 (LLM) 的 KV Cache 是推理性能的关键。传统方案无法感知 KV Cache 的 NUMA 分布，导致跨节点访问成为瓶颈。
 
-**Q2：如何调试 NPU 内部的 eBPF 程序？**
+### 6.2 KV Cache NUMA 亲和性追踪
 
-A：工具链包括：1) `npu-bpftool`（扩展版 bpftool，支持 NPU Map 读取和程序统计）；2) 厂商提供的 NPU Profiler（集成 eBPF 事件可视化）；3) `bpf_printk` 输出通过 NPU 的日志通道转发到宿主机 dmesg。注意：NPU eBPF 不支持单步调试，需要依赖日志和统计。
+```c
+#include <vmlinux.h>
+#include <bpf/bpf_helpers.h>
 
-**Q3：NPU eBPF 程序如何更新？**
+// KV Cache 页追踪
+struct kv_cache_entry {
+    u64 page_addr;
+    u32 node_id;
+    u32 access_count;
+    u64 last_access_ns;
+};
 
-A：与 Linux eBPF 类似，支持热更新。驱动层提供原子替换机制——旧程序处理正在执行的算子，新程序接管下一个算子。更新过程无需中断推理服务，但建议在请求量较低时执行以避免极低概率的算子丢失。
+// KV Cache 分布 Map
+struct {
+    __uint(type, BPF_MAP_TYPE_HASH);
+    __uint(max_entries, 102400);
+    __type(key, u64);  // page_addr
+    __type(value, struct kv_cache_entry);
+} kv_cache_dist SEC(".maps");
 
-**Q4：不同厂商的 NPU eBPF API 兼容吗？**
+// NUMA 节点间传输统计
+struct {
+    __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
+    __uint(max_entries, 4);  // 4 个 NUMA 节点
+    __type(key, u32);
+    __type(value, u64);
+} numa_cross_traffic SEC(".maps");
 
-A：目前不兼容。每个厂商的 NPU 架构不同，提供了专有的 Helper 函数和 Map 类型。2026 年正在推动的 `BPF_NPU_EXT` 标准旨在定义统一的 NPU eBPF 接口，包括标准的张量读取、算子查询和调度接口。
+// 追踪 KV Cache 访问
+SEC("kprobe/vllm_kvcache_attend")
+int BPF_KPROBE(kvcache_access, u64 addr, u32 node_id) {
+    struct kv_cache_entry *entry = bpf_map_lookup_elem(&kv_cache_dist, &addr);
+    if (entry) {
+        u32 current_node = bpf_get_current_node();
+        if (entry->node_id != current_node) {
+            // 跨 NUMA 访问！
+            u32 key = entry->node_id * 4 + current_node;
+            u64 *cnt = bpf_map_lookup_elem(&numa_cross_traffic, &key);
+            if (cnt) (*cnt)++;
+        }
+        entry->access_count++;
+        entry->last_access_ns = bpf_ktime_get_ns();
+    }
+    return 0;
+}
 
-**Q5：eBPF 能用于 AI 训练场景吗？**
+// 生成优化建议
+SEC("tp/sched/sched_process_exit")
+int on_inference_complete(struct trace_event_raw_sched_process_template *ctx) {
+    // 分析本次推理的 NUMA 效率
+    // 建议调度器将进程迁移到最优 NUMA 节点
+    return 0;
+}
+```
 
-A：主要用于推理场景。训练场景中 NPU 持续高负载运行，插入监控探针的风险更高。但在训练调优方面，eBPF 可以监控梯度更新频率、学习率调度和通信瓶颈，为训练框架提供实时反馈。NVIDIA 在 NCCL 通信库中已经集成了 eBPF 监控能力。
+---
 
-**Q6：与传统 GPU Profiler (如 nsight) 相比有什么优势？**
+## 7. 硬件监控接口与性能计数器
 
-A：传统 Profiler 是周期性采样或基于插桩的工具，需要停顿或降低计算负载。NPU eBPF 的优势：1) **零停顿**——在微控制器上运行，不影响主计算单元；2) **可编程**——可以编写自定义的监控逻辑，而非仅使用预定义的指标；3) **实时响应**——可以在检测到异常时立即触发熔断，而非事后分析。
+### 7.1 NPU 性能计数器访问
 
-**Q7：NPU eBPF 能否用于推理请求级别的负载均衡？**
+现代 NPU 提供了 PMU (Performance Monitoring Unit)，eBPF 能够通过 `bpf_perf_event` 读取这些计数器：
 
-A：可以。通过在 NPU 内部的请求队列上挂载 eBPF 探针，可以实时统计每个推理请求的算子数量和预估延迟。基于这些数据，可以实现更精细的负载均衡——不是简单轮询请求，而是将大请求分配到空闲的 NPU，将小请求批量处理。NVIDIA 在 Triton Inference Server 中已集成了类似机制。
+```c
+#include <vmlinux.h>
+#include <bpf/bpf_helpers.h>
+#include <bpf/bpf_typedef.h>
 
-**Q8：如何安全地在生产环境部署 NPU eBPF 程序？**
+// NPU PMU 事件配置
+struct npu_pmu_config {
+    u32 event_id;
+    u64 sample_period;
+};
 
-A：安全部署步骤：1) 在测试环境中充分验证，使用已知输入和预期输出；2) 设置 `NPU_ACT_LOG` 模式（仅记录不干预），先观察一段时间；3) 为关键监控逻辑（如 NaN 检测）配置合理的采样率，避免全量扫描影响性能；4) 设置熔断阈值，确保 eBPF 程序自身出错时不会挂死 NPU 流水线；5) 定期审查已部署的 eBPF 程序列表。
+// NPU PMU 事件列表
+struct {
+    __uint(type, BPF_MAP_TYPE_ARRAY);
+    __uint(max_entries, 16);
+    __type(key, u32);
+    __type(value, struct npu_pmu_config);
+} npu_pmu_config SEC(".maps");
 
-**Q9：NPU eBPF 的安全模型与 Linux eBPF 有何不同？**
+// 读取 NPU 性能计数器
+SEC("perf_event/npu_pmu")
+int on_npu_pmu(struct bpf_perf_event_hdr *ctx) {
+    u32 cpu = bpf_get_smp_processor_id();
+    struct bpf_perf_event_value value;
 
-A：主要差异：1) **隔离性**：NPU eBPF 运行在独立的微控制器上，与宿主 CPU 的内核内存完全隔离，安全边界更强；2) **攻击面**：NPU eBPF 无法访问系统调用表、文件系统或网络栈，只能操作 NPU 内部的资源（HBM、算子队列）；3) **验证器**：NPU 验证器更简单（不支持指针算术、循环次数限制更严格），因此可利用的漏洞更少；4) **更新安全**：NPU eBPF 程序的更新需要通过驱动层的签名验证（见[[2026-04-08-ebpf-deep-dive-ch31-signed-objects-and-security|第三十一章]]），防止恶意程序注入。
+    // 读取乘加运算计数
+    if (bpf_perf_event_read_value(ctx, /* npu_mac_cnt */ 0x01, &value) == 0) {
+        bpf_printk("NPU MAC: %llu cycles, %llu events",
+                   value.cpu_cycles, value.enabled - value.running);
+    }
 
-**Q10：eBPF 如何与 AI 推理框架（如 vLLM、TensorRT-LLM）集成？**
+    // 读取内存带宽
+    if (bpf_perf_event_read_value(ctx, /* npu_mem_bw */ 0x02, &value) == 0) {
+        bpf_printk("NPU MEM_BW: %llu GB/s",
+                   value.enabled / 1e9);
+    }
 
-A：集成方式取决于框架：1) **vLLM**：通过 NPU eBPF 监控 PagedAttention 的 KV Cache 利用率，动态调整预分配策略；2) **TensorRT-LLM**：利用 NVIDIA GPU eBPF 接口监控 Tensor Core 利用率和显存带宽，为 Batch Size 调优提供数据；3) **通用集成**：所有框架都通过 CUDA/ROCm 的驱动层提交算子，NPU eBPF 在这一层统一拦截，对上层框架透明。2026 年 Triton Inference Server 已内置 eBPF 监控插件，开箱即用。
+    return 0;
+}
+```
 
-**Q11：eBPF 能否用于大模型的分布式训练（如 GPT-4 级别）？**
+### 7.2 性能计数器类型对比
 
-A：可以，但应用场景不同。在分布式训练中，eBPF 的核心价值是**通信瓶颈诊断**：1) 监控 NCCL AllReduce/AllGather 的延迟分布，识别慢节点（straggler）；2) 追踪梯度同步的 PCIe/NVLink 带宽利用率；3) 检测 GPU 间的负载不均衡（某些 GPU 过早完成计算，等待其他 GPU）。Meta 和 Google 已在万卡训练集群中使用 eBPF 进行通信优化，将训练吞吐提升了 5-15%。
+| PMU 事件 | 说明 | 典型用途 |
+|:---|:---|:---|
+| **IPC** | 每指令周期数 | 算子融合优化 |
+| **MAC** | 乘加运算次数 | 模型性能分析 |
+| **MEM_BW** | 内存带宽 | 批量大小调优 |
+| **Cache Hit** | 缓存命中率 | 预取策略调整 |
+| **DMA Transfer** | DMA 传输量 | 流水线优化 |
 
-**Q12：eBPF 与 AI 编译器（如 XLA、TorchDynamo）的关系是什么？**
+---
 
-A：互补关系。AI 编译器负责将高层计算图优化为底层算子序列（图优化、算子融合、内存规划），eBPF 负责在运行时监控这些算子的实际执行情况。具体来说：1) 编译器生成的算子序列可以被 eBPF 拦截和分析；2) eBPF 收集的运行时数据（如算子延迟、HBM 利用率）可以反馈给编译器，指导下一轮编译优化；3) 在 JIT 编译场景中，eBPF 可以监控 JIT 编译的耗时和频率，帮助优化预热策略。这种"编译-运行-反馈"的闭环是 2026 年 AI 编译器发展的核心方向。
+## 8. FAQ
+
+**Q1：eBPF 能否直接控制 NPU 的计算调度？**
+
+A：eBPF 不能直接控制 NPU 内部的计算调度（这是硬件微架构），但它能通过调度器 (`sched_ext`) 优化 CPU 侧的调度，确保数据准备就绪后再唤醒 NPU 任务，形成"CPU-NPU 流水线并行"。对于 Intel AMX 等支持 CPU 指令的 NPU，eBPF 可以在 CPU 侧直接调度这些指令。
+
+**Q2：如何追踪跨多个 NPU 卡的分布式推理？**
+
+A：使用 `bpf_iter` 遍历所有 NPU 设备节点，并关联请求 ID 进行跨卡追踪。也可以通过 `bpf_ringbuf` 将各卡的数据汇总到用户态进行全局分析。
+
+**Q3：eBPF 对 NPU 性能的影响有多大？**
+
+A：BPF 程序本身的开销在纳秒级，对于毫秒级的 NPU 计算可以忽略不计。但需要注意追踪点的选择——高频追踪点（如每个 token 生成）可能产生额外开销，建议使用采样策略。
+
+**Q4：如何利用 eBPF 实现 AI 推理的自动扩缩容触发？**
+
+A：监控 NPU 利用率、推理队列深度和延迟指标，当达到阈值时通过 `bpf_send_signal` 或用户态 Agent 触发 K8s HPA 扩缩容决策。[[2026-04-08-ebpf-deep-dive-ch14-ai-llm-inference-monitoring|第十四章：AI 推理与大模型监控前沿]] 详细介绍了这部分内容。
+
+**Q5：TPU 的 eBPF 支持与 NVIDIA NPU 有何不同？**
+
+A：Google TPU 主要通过专用的 PCIe 网卡接口通信，eBPF 在主机侧进行流量整形和监控。NVIDIA NPU（如 DeepLink）提供更丰富的内核驱动接口，支持更细粒度的内存追踪。两者都可以使用 `sched_ext` 进行 CPU 侧调度优化。

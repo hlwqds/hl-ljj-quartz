@@ -155,18 +155,28 @@ enum rte_timer_state {
 ```c
 // lib/eal/common/rte_timer.c
 
+#define RTE_TIMER_NUM_WHEELS 4       // 4 级时间轮
+#define RTE_TIMER_SLOTS_PER_WHEEL 64 // 每级 64 个 slot
+#define RTE_TIMER_SHIFT 6            // log2(64) = 6 位
+#define RTE_TIMER_MASK  0x3F         // 6 位掩码
+
 struct priv_timer {
     unsigned int lcore_id;           // 本地 lcore ID
-    
-    struct rte_timer **pending;      // 定时器链表数组
-    uint32_t pending_limit;           // pending 数组大小
-    
+
+    // 四级时间轮，每级 64 个 slot，每个 slot 是一个定时器链表头
+    struct rte_timer *pending[RTE_TIMER_NUM_WHEELS][RTE_TIMER_SLOTS_PER_WHEEL];
+
+    // wheel[0]: 精度 1 tick,    覆盖 0~63
+    // wheel[1]: 精度 64 ticks,  覆盖 64~4095
+    // wheel[2]: 精度 4096 ticks, 覆盖 4096~262143
+    // wheel[3]: 精度 262144,    覆盖 262144~16777215
+
     uint64_t timer_jiffies;          // 本地 jiffies（递增）
-    
+
     rte_spinlock_t lock;             // 并发保护
 };
 
-// 全局变量
+// 全局变量：每个 lcore 一个 priv_timer
 static struct priv_timer timemap[RTE_MAX_LCORE];
 ```
 
@@ -185,7 +195,7 @@ static struct priv_timer timemap[RTE_MAX_LCORE];
 │  rte_timer_manage() 被调用时递增                                            │
 │                                                                             │
 │  示例：                                                                     │
-│  - expire = 500, 当前 jiffies = 400  → 100ms 后到期                         │
+│  - expire = 500, 当前 jiffies = 400  → 1000ms（1秒）后到期                    │
 │  - expire = 400, 当前 jiffies = 400  → 立即到期                             │
 │  - expire = 300, 当前 jiffies = 400  → 已过期（需要重新调度）                 │
 │                                                                             │
@@ -303,26 +313,35 @@ rte_timer_reset(struct rte_timer *tim,
 ### 5.2 timer_add 内部实现
 
 ```c
-// 内部函数：将定时器添加到 bucket
+// 内部函数：将定时器添加到对应 level 和 slot
 static void
-timer_add(struct rte_timer *tim, uint32_t period)
+timer_add(struct priv_timer *priv, struct rte_timer *tim,
+           unsigned int sl_local)
 {
-    struct priv_timer *priv = &timemap[tim->s.lcore_id];
     uint64_t expire = tim->expire;
-    uint32_t slot;
-    
-    // 计算 bucket 索引
-    // expire % priv->pending_limit
-    slot = expire & (priv->pending_limit - 1);
-    
-    // 插入到链表头部
-    tim->next = priv->pending[slot];
-    tim->prev = &priv->pending[slot];
-    
-    if (priv->pending[slot])
-        priv->pending[slot]->prev = &tim->next;
-    
-    priv->pending[slot] = tim;
+    uint64_t diff = expire - priv->timer_jiffies;
+    unsigned int level, slot;
+
+    // 根据 diff 选择 level
+    if (diff < (1ULL << RTE_TIMER_SHIFT))
+        level = 0;
+    else if (diff < (1ULL << (2 * RTE_TIMER_SHIFT)))
+        level = 1;
+    else if (diff < (1ULL << (3 * RTE_TIMER_SHIFT)))
+        level = 2;
+    else
+        level = 3;
+
+    // 计算 slot：取 expire 对应 level 的 6 位
+    slot = (expire >> (level * RTE_TIMER_SHIFT)) & RTE_TIMER_MASK;
+
+    // 插入到对应 level[slot] 的链表头部
+    struct rte_timer **list = &priv->pending[level][slot];
+    tim->next = *list;
+    tim->prev = list;
+    if (*list)
+        (*list)->prev = &tim->next;
+    *list = tim;
 }
 ```
 
@@ -388,7 +407,7 @@ _rte_timer_stop(struct rte_timer *tim,
 ### 7.1 rte_timer_manage
 
 ```c
-// lib/eal/common/rte_timer.c
+// lib/eal/common/rte_timer.c（简化）
 
 void
 rte_timer_manage(void)
@@ -397,55 +416,67 @@ rte_timer_manage(void)
     struct rte_timer *tim, **prev;
     uint64_t cur_jiffies;
     uint32_t slot;
-    
+    unsigned int lvl;
+
     // 1. 加锁
     rte_spinlock_lock(&priv->lock);
-    
-    // 2. 更新本地 jiffies
-    cur_jiffies = priv->timer_jiffies;
-    
-    // 3. 检查当前 slot 的所有定时器
-    slot = cur_jiffies & (priv->pending_limit - 1);
-    
-    prev = &priv->pending[slot];
-    
+
+    // 2. 递增 jiffies
+    cur_jiffies = priv->timer_jiffies++;
+
+    // 3. 级联检查：如果 wheel[0] cur_slot == 0，说明转完了一圈
+    //    需要从 wheel[1] "降落"定时器到 wheel[0]
+    slot = cur_jiffies & RTE_TIMER_MASK;  // wheel[0] 当前 slot
+    if (slot == 0) {
+        // wheel[0] 转了一圈，级联 wheel[1] → wheel[0]
+        timer_cascade(priv, 1);
+
+        // 如果 wheel[1] 也转了一圈，级联 wheel[2] → wheel[1]
+        if ((cur_jiffies >> RTE_TIMER_SHIFT) & RTE_TIMER_MASK == 0) {
+            timer_cascade(priv, 2);
+            // wheel[2] 同理
+            if ((cur_jiffies >> (2 * RTE_TIMER_SHIFT)) & RTE_TIMER_MASK == 0) {
+                timer_cascade(priv, 3);
+            }
+        }
+    }
+
+    // 4. 检查 wheel[0] 当前 slot 的所有定时器
+    prev = &priv->pending[0][slot];
+
     while ((tim = *prev) != NULL) {
-        // 4. 检查是否到期
-        // expire 可能溢出，但差值计算是正确的
+        // 5. 检查是否到期
         if (tim->expire > cur_jiffies) {
-            // 未到期，检查下一个
+            // 未到期（可能被其他 lcore 插入），跳过
             prev = &tim->next;
             continue;
         }
-        
-        // 5. 已到期：标记为 PENDING
-        tim->s.state = RTE_TIMER_PENDING;
-        
-        // 6. 从链表移除
+
+        // 6. 已到期：标记为 RUNNING
+        tim->s.state = RTE_TIMER_RUNNING;
+
+        // 7. 从链表移除
         *prev = tim->next;
         if (tim->next)
             tim->next->prev = prev;
         tim->prev = prev;
         tim->next = NULL;
-        
-        // 7. 解锁，执行回调
-        // 注意：回调可能调用 rte_timer_reset
+
+        // 8. 解锁，执行回调
+        //    注意：回调内可能调用 rte_timer_reset 重新调度
         rte_spinlock_unlock(&priv->lock);
-        
+
         tim->f(tim, tim->arg);
-        
-        // 8. 重新加锁，检查是否被重新调度
+
+        // 9. 重新加锁，检查是否被重新调度
         rte_spinlock_lock(&priv->lock);
-        
-        if (tim->s.state == RTE_TIMER_PENDING) {
-            // 没有被重新调度，停止
+
+        if (tim->s.state == RTE_TIMER_RUNNING) {
+            // 没有被重新调度，标记为 STOP
             tim->s.state = RTE_TIMER_STOP;
         }
     }
-    
-    // 9. 递增 jiffies
-    priv->timer_jiffies++;
-    
+
     rte_spinlock_unlock(&priv->lock);
 }
 ```
@@ -457,15 +488,20 @@ rte_timer_manage(void)
 │                        rte_timer_manage 执行流程                             │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│  1. 更新本地 jiffies                                                        │
+│  1. 递增 jiffies                                                            │
 │     cur_jiffies = ++priv->timer_jiffies                                    │
 │                                                                             │
-│  2. 获取当前 slot                                                           │
-│     slot = cur_jiffies & (pending_limit - 1)                              │
+│  2. 级联检查（如果 wheel[0] 绕回 0）                                        │
+│     slot = cur_jiffies & 0x3F                                              │
+│     if (slot == 0) {                                                       │
+│         timer_cascade(priv, 1);  // wheel[1] → wheel[0]                    │
+│         // 递归检查更高级                                                   │
+│     }                                                                       │
 │                                                                             │
-│  3. 遍历 slot 链表                                                          │
+│  3. 检查 wheel[0] 当前 slot                                                 │
+│     slot = cur_jiffies & RTE_TIMER_MASK                                    │
 │     ┌──────────────────────────────────────────────────────────────────┐    │
-│     │  while (tim = *prev) {                                          │    │
+│     │  while (tim = priv->pending[0][slot]) {                         │    │
 │     │      if (tim->expire > cur_jiffies)                             │    │
 │     │          prev = &tim->next;  // 未到期，下一个                  │    │
 │     │      else                                                       │    │
@@ -473,28 +509,15 @@ rte_timer_manage(void)
 │     │  }                                                              │    │
 │     └──────────────────────────────────────────────────────────────────┘    │
 │                                                                             │
-│  4. 回调执行                                                                 │
+│  4. 回调执行（解锁期间执行，允许回调重新调度）                                 │
 │     ┌──────────────────────────────────────────────────────────────────┐    │
 │     │  rte_spinlock_unlock(&priv->lock);                             │    │
-│     │                                                                   │    │
-│     │  tim->f(tim, tim->arg);  // 执行用户回调                        │    │
-│     │                                                                   │    │
-│     │  // 注意：回调执行期间锁是释放的！                               │    │
-│     │  // 回调可能调用 rte_timer_reset 重新调度当前定时器              │    │
-│     │                                                                   │    │
+│     │  tim->f(tim, tim->arg);                                         │    │
 │     │  rte_spinlock_lock(&priv->lock);                                │    │
 │     └──────────────────────────────────────────────────────────────────┘    │
 │                                                                             │
-│  5. 检查是否被重新调度                                                       │
-│     ┌──────────────────────────────────────────────────────────────────┐    │
-│     │  if (tim->s.state == PENDING) {                                 │    │
-│     │      // 没有被重新调度，停止                                     │    │
-│     │      tim->s.state = STOP;                                        │    │
-│     │  } else {                                                        │    │
-│     │      // 被重新调度（可能在回调中调用 rte_timer_reset）           │    │
-│     │      // 已在 timer_add 中添加到新 slot                           │    │
-│     │  }                                                                │    │
-│     └──────────────────────────────────────────────────────────────────┘    │
+│  5. 检查是否被回调中的 rte_timer_reset 重新调度                               │
+│     state == RUNNING → 停止；state == PENDING → 已在链表中                 │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -503,97 +526,364 @@ rte_timer_manage(void)
 
 ## 8. 级联 (Cascade) 机制
 
-### 8.1 问题
+### 8.1 为什么需要级联
 
-由于 pending_limit 是固定的（2^24），当定时器过期时间超过 pending_limit 时，需要级联机制：
+单个 wheel 的大小是有限的（64 个 slot），那过期时间超过 64 ticks 的定时器放哪？
 
 ```
-pending_limit = 2^24 = 16,777,216 slots
-
 问题：
-- 如果 expire > pending_limit，不能直接用 slot = expire % limit
-- 需要在更高层级的 wheel 中调度
+  wheel[0] 只有 64 个 slot（覆盖 jiffies 0~63）
+  如果定时器 expire = 200，200 > 63，直接放不下
 
-解决：级联
-- 主 wheel 有 24 个 level
-- 每个 level 管理不同的精度范围
+不能无限扩大 wheel[0]：
+  64 个 slot × 8 字节指针 = 512 字节（一个缓存行内）
+  4096 个 slot = 32KB（cache 放不下，每次查表都 miss）
 ```
 
-### 8.2 级联算法
+### 为什么需要级联——场景对比
+
+假设需要管理以下 5 个定时器，当前 jiffies = 0：
+
+```
+  Timer A: expire = 10    (10 ticks 后)
+  Timer B: expire = 50    (50 ticks 后)
+  Timer C: expire = 200   (200 ticks 后)
+  Timer D: expire = 5000  (5000 ticks 后)
+  Timer E: expire = 100000 (100000 ticks 后)
+```
+
+**方案 A：一个大 wheel（不级联）**
+
+为了放下 expire=100000 的定时器，需要至少 100000 个 slot：
+
+```
+  wheel: 100000 个 slot
+  ┌────┬────┬────┬────┬───···───┬────┬────┬────┬───···───┬────┬────┐
+  │ 0  │ 1  │ ... │ 10 │  ...   │ 50 │ ... │ 200│  ...   │5000│... │
+  └────┴────┴────┴────┴───···───┴────┴────┴────┴───···───┴────┴────┘
+    │    │         │              │         │              │
+    │    │    Timer A              │    Timer C       Timer D
+    │    │                                              Timer E
+    │  (大量空 slot)
+    │
+  Timer B
+
+  问题：
+  - 100000 × 8B = 800KB，远超 L1 cache（32~64KB）
+  - 每次 timer_manage 都要读 cache line miss 的内存
+  - 99995 个 slot 是空的，浪费内存和带宽
+```
+
+**方案 B：四级时间轮（级联）**
+
+用 4 个小 wheel，每个只有 64 slot = 512 字节，总共 2KB，全部塞进 L1 cache：
+
+```
+  jiffies = 0 时插入：
+
+  wheel[0] (1 tick 精度，覆盖 0~63):
+  ┌────┬────┬────┬────┬────┬────┬────┬────┬────┬───···───┬────┬────┐
+  │ 0  │ 1  │ 2  │ ... │ 10 │ ... │ 50 │ ... │          │ 62 │ 63 │
+  └────┴────┴────┴────┴────┴────┴────┴────┴────┴───···───┴────┴────┘
+       │                  │              │
+       │              Timer A        Timer B         ← 精确定位到 slot
+       │
+
+  wheel[1] (64 tick 精度，覆盖 64~4095):
+  ┌────┬────┬────┬────┬────┬────┬────┬────┬────┬───···───┬────┬────┐
+  │ 0  │ 1  │ 2  │ 3  │ 4  │ ... │    │    │          │ 62 │ 63 │
+  └────┴────┴────┴────┴────┴────┴────┴────┴────┴───···───┴────┴────┘
+                       │
+                   Timer C                         ← 200/64=3，放 slot 3
+                   (expire=200)
+
+  wheel[2] (4096 tick 精度，覆盖 4096~262143):
+  ┌────┬────┬────┬────┬────┬────┬────┬────┬────┬───···───┬────┬────┐
+  │ 0  │ 1  │ ... │ 31 │ ... │    │    │    │          │ 62 │ 63 │
+  └────┴────┴────┴────┴────┴────┴────┴────┴────┴───···───┴────┴────┘
+                    │
+                Timer D                              ← 5000/4096=1，放 slot 1
+                (expire=5000)
+
+  wheel[3] (262144 tick 精度，覆盖 262144~16777215):
+  ┌────┬────┬────┬────┬────┬────┬────┬────┬────┬───···───┬────┬────┐
+  │ 0  │ 1  │ ... │ 24 │ ... │    │    │    │          │ 62 │ 63 │
+  └────┴────┴────┴────┴────┴────┴────┴────┴────┴───···───┴────┴────┘
+                    │
+                Timer E                              ← 100000/262144=0，放 slot 24
+                (expire=100000)                        (100000>>18 & 0x3F = 24)
+```
+
+**级联过程：定时器从粗粒度"降落"到细粒度**
+
+用一个远期定时器 Timer C (expire=200) 的完整生命周期，展示级联如何随时间自然发生：
+
+```
+╔═══════════════════════════════════════════════════════════════════════════╗
+║  Timer C (expire=200) 的降落过程                                         ║
+╠═══════════════════════════════════════════════════════════════════════════╣
+║                                                                           ║
+║  ── jiffies = 0: 插入 ──────────────────────────────────────────────     ║
+║                                                                           ║
+║    wheel[0]:  (空)                                                       ║
+║    wheel[1]:  slot[3] → Timer C    ← 200 太远，放不下 wheel[0]          ║
+║               (200>>6 & 0x3F = 3)                                         ║
+║                                                                           ║
+║    Timer C 安静地待在 wheel[1]，不做任何处理                               ║
+║                                                                           ║
+║                                                                           ║
+║  ── jiffies = 10: wheel[0] 扫到 slot[10] ──────────────────────────     ║
+║                                                                           ║
+║    wheel[0]:  slot[10] → Timer A → 执行 ✅                                ║
+║    wheel[1]:  slot[3] → Timer C    ← 没人碰它                             ║
+║                                                                           ║
+║                                                                           ║
+║  ── jiffies = 50: wheel[0] 扫到 slot[50] ──────────────────────────     ║
+║                                                                           ║
+║    wheel[0]:  slot[50] → Timer B → 执行 ✅                                ║
+║    wheel[1]:  slot[3] → Timer C    ← 还是没人碰它                         ║
+║                                                                           ║
+║                                                                           ║
+║  ── jiffies = 63→64: wheel[0] 转完一圈！ ──────────────────────────     ║
+║                                                                           ║
+║    wheel[0] cur: 63 → 0   (绕回)                                         ║
+║    触发级联: timer_cascade(priv, 1)                                      ║
+║    wheel[1] cur = (64>>6) & 0x3F = 1                                     ║
+║                                                                           ║
+║    检查 wheel[1] slot[1]: 空                                             ║
+║    ─────────────────────────                                              ║
+║    Timer C 在 slot[3]，还没轮到，不降落                                   ║
+║    wheel[0] 继续转第二圈...                                               ║
+║                                                                           ║
+║                                                                           ║
+║  ── jiffies = 128: wheel[0] 又转完一圈 ─────────────────────────────     ║
+║                                                                           ║
+║    wheel[1] cur = (128>>6) & 0x3F = 2                                     ║
+║    检查 wheel[1] slot[2]: 空                                             ║
+║    Timer C 在 slot[3]，还没轮到                                           ║
+║                                                                           ║
+║                                                                           ║
+║  ── jiffies = 192: wheel[0] 又转完一圈 ─────────────────────────────     ║
+║                                                                           ║
+║    wheel[1] cur = (192>>6) & 0x3F = 3    ★ 终于轮到 slot[3] 了！ ★      ║
+║                                                                           ║
+║    ┌─────────────────────────────────────────────────────┐               ║
+║    │  级联！取出 wheel[1] slot[3] 的所有定时器           │               ║
+║    │                                                     │               ║
+║    │  Timer C (expire=200)                               │               ║
+║    │    ↓ 重新计算 slot                                   │               ║
+║    │    200 & 0x3F = 8                                   │               ║
+║    │    ↓ 插入 wheel[0]                                   │               ║
+║    │  wheel[0] slot[8] → Timer C                         │               ║
+║    │                                                     │               ║
+║    │  wheel[1] slot[3]: 空（Timer C 已搬走）             │               ║
+║    └─────────────────────────────────────────────────────┘               ║
+║                                                                           ║
+║    wheel[0]:  slot[8] → Timer C    ← 刚从 wheel[1] 降落下来              ║
+║    wheel[1]:  slot[3] → (空)                                             ║
+║                                                                           ║
+║                                                                           ║
+║  ── jiffies = 200: wheel[0] 扫到 slot[8] ──────────────────────────     ║
+║                                                                           ║
+║    wheel[0] cur = 200 & 0x3F = 8                                         ║
+║    slot[8] → Timer C → 执行 ✅                                           ║
+║                                                                           ║
+║    Timer C 从插入到执行的全过程：                                         ║
+║    wheel[1] slot[3] 静躺了 192 个 tick → jiffies=192 降落 →              ║
+║    wheel[0] slot[8] 静躺了 8 个 tick  → jiffies=200 执行                  ║
+║                                                                           ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+```
+
+关键感受：**级联不是主动搜索，而是被动等待时间流过来**。Timer C 在 wheel[1] 里一动不动，等 wheel[1] 的 cur 指针自然转到它所在的 slot 时，才被"冲"到下一级。整个过程没有任何查找开销。
+
+```
+  总结：
+
+  不级联（一个大 wheel）:    100000 slot × 8B = 800KB    ← cache miss
+  级联（四个小 wheel）:     4 × 64 slot × 8B = 2KB      ← 全在 L1 cache
+
+  timer_manage 每次调用:
+    - 99% 的情况：只访问 wheel[0] 的一个 slot（512B 内）
+    - 1/64 的情况：触发一次级联（从 wheel[1] 降落）
+    - 1/4096 的情况：触发二级级联（从 wheel[2] 降落）
+    - 分摊下来，每个 tick 的级联开销趋近于 0
+```
+
+解决方案：**多级时间轮**，类似时钟的秒针→分针→时针的进位关系。
+
+### 8.2 四级时间轮结构
+
+DPDK rte_timer 借鉴 Linux 内核，使用 4 级时间轮，每级 64 个 slot：
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    四级时间轮（Hierarchical Timer Wheel）                     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  wheel[0]  精度: 1 tick        覆盖: jiffies 0 ~ 63                         │
+│  ┌───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┐          │
+│  │ 0 │ 1 │ 2 │ 3 │ 4 │ 5 │ 6 │ 7 │ ... │ 61│ 62│ 63│   │   │   │          │
+│  └───┴───┴───┴───┴───┴───┴───┴───┴───┴───┴───┴───┴───┴───┴───┘          │
+│       ↑ cur                                                          │
+│  直接对应当前 jiffies 的低 6 位。大部分定时器落在这里，O(1) 处理。          │
+│                                                                             │
+│  wheel[1]  精度: 64 ticks       覆盖: jiffies 64 ~ 4095 (64×64-1)          │
+│  ┌───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┐          │
+│  │ 0 │ 1 │ 2 │ 3 │ 4 │ 5 │ 6 │ 7 │ ... │ 61│ 62│ 63│   │   │   │          │
+│  └───┴───┴───┴───┴───┴───┴───┴───┴───┴───┴───┴───┴───┴───┴───┘          │
+│       ↑ cur                                                          │
+│  对应 jiffies 的第 6~11 位。wheel[0] 转完一圈，这里推进一格。              │
+│                                                                             │
+│  wheel[2]  精度: 4096 ticks     覆盖: jiffies 4096 ~ 262143 (4096×64-1)    │
+│  ┌───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┐          │
+│  │ 0 │ 1 │ 2 │ 3 │ 4 │ 5 │ 6 │ 7 │ ... │ 61│ 62│ 63│   │   │   │          │
+│  └───┴───┴───┴───┴───┴───┴───┴───┴───┴───┴───┴───┴───┴───┴───┘          │
+│  对应 jiffies 的第 12~17 位。                                               │
+│                                                                             │
+│  wheel[3]  精度: 262144 ticks   覆盖: jiffies 262144 ~ 16777215             │
+│  ┌───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┐          │
+│  │ 0 │ 1 │ 2 │ 3 │ 4 │ 5 │ 6 │ 7 │ ... │ 61│ 62│ 63│   │   │   │          │
+│  └───┴───┴───┴───┴───┴───┴───┴───┴───┴───┴───┴───┴───┴───┴───┘          │
+│  对应 jiffies 的第 18~23 位。最大覆盖约 1600 万 ticks。                     │
+│                                                                             │
+│  slot 计算公式:                                                             │
+│    level 0:  slot = (expire >> 0)  & 0x3F    // 低 6 位                    │
+│    level 1:  slot = (expire >> 6)  & 0x3F    // 第 6~11 位                 │
+│    level 2:  slot = (expire >> 12) & 0x3F    // 第 12~17 位                │
+│    level 3:  slot = (expire >> 18) & 0x3F    // 第 18~23 位                │
+│                                                                             │
+│  等价于把 expire 当作一个 24 位整数，每 6 位切一段：                         │
+│    expire = [wheel3: 6bit][wheel2: 6bit][wheel1: 6bit][wheel0: 6bit]       │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 8.3 级联过程图解
+
+级联的核心思想：**低级 wheel 转完一圈时，从高级 wheel 取出定时器"降落"到低级 wheel**。
+
+类比时钟：
+```
+  秒针（wheel[0]）转 60 圈 → 分针（wheel[1]）走 1 格
+  分针（wheel[1]）转 60 圈 → 时针（wheel[2]）走 1 格
+```
+
+具体场景：当前 jiffies = 64，添加一个 expire = 200 的定时器
+
+```
+步骤 1: 插入定时器
+
+  expire = 200 = 0b 000000_000000_000011_001000
+                       [w3]    [w2]    [w1]    [w0]
+                       00      00      11      001000
+
+  expire > 63 → 不能放 wheel[0]
+  expire > 4095? → 不，200 < 4095 → 放 wheel[1]
+  wheel[1] slot = (200 >> 6) & 0x3F = 3
+
+  wheel[0]: （空，当前 jiffies=64，已转完一圈）
+  wheel[1]: slot[3] → [timer expire=200]   ← 定时器放在这里
+
+
+步骤 2: 时间推进，jiffies = 64 时触发级联
+
+  jiffies = 64 = 0b 000000_000000_000001_000000
+  wheel[0] cur = (64 >> 0) & 0x3F = 0    ← 绕回 0 了！
+
+  wheel[0] 刚转完一圈（jiffies 0~63），需要从 wheel[1] "降落"定时器：
+
+  wheel[1] cur = (64 >> 6) & 0x3F = 1
+  检查 wheel[1] slot[1]：空的 → 跳过
+
+  （此时 timer 在 slot[3]，还没到，不级联）
+
+
+步骤 3: 继续推进，jiffies = 256 时
+
+  jiffies = 256 = 0b 000000_000000_010000_000000
+  wheel[1] cur = (256 >> 6) & 0x3F = 4
+
+  wheel[1] 转到了 slot[4]，之前 slot[3] 的定时器已经过了！
+  取出 wheel[1] slot[3] 的 [timer expire=200]
+
+  级联：重新计算这个定时器应该放 wheel[0] 的哪个 slot
+  new_slot = 200 & 0x3F = 8    （低 6 位）
+  插入 wheel[0] slot[8]
+
+
+步骤 4: jiffies = 200 时，定时器到期
+
+  wheel[0] cur = 200 & 0x3F = 8
+  遍历 slot[8] 的链表 → 找到 timer expire=200 → 执行回调！
+```
+
+### 8.4 级联代码逻辑
 
 ```c
-// timer_manage 中的级联处理
+// rte_timer_manage() 内部的级联处理（简化）
 static void
-timer_cascade(struct priv_timer *priv, uint32_t level)
+timer_cascade(struct priv_timer *priv, unsigned int curr_level)
 {
-    uint64_t slot;
-    struct rte_timer *tim, **prev;
-    
-    // 计算上一级 wheel 的 slot
-    // level 0: slot = jiffies & (limit-1)
-    // level 1: slot = (jiffies >> 24) & (limit-1)
-    // level 2: slot = (jiffies >> 48) & (limit-1)
-    
-    slot = (priv->timer_jiffies >> (24 * level)) & 
-           (priv->pending_limit - 1);
-    
-    prev = &priv->pending[slot];
-    
-    while ((tim = *prev) != NULL) {
-        // 从当前 level 移除
-        *prev = tim->next;
-        
-        // 插入到下一级
-        // 计算新过期时间
-        uint32_t new_period = tim->s.period;
-        
-        if (new_period >= priv->pending_limit) {
-            // 仍然太长，继续级联
-            timer_cascade(priv, level + 1);
-        } else {
-            // 重新计算 slot
-            uint32_t new_slot = (tim->expire >> (24 * level)) & 
-                                  (priv->pending_limit - 1);
-            timer_add(tim, new_period);
-        }
+    unsigned int slot;
+    struct rte_timer *tim, *next;
+
+    // 计算当前 level 的当前 slot
+    slot = (priv->timer_jiffies >> (RTE_TIMER_SHIFT * curr_level))
+           & RTE_TIMER_MASK;
+    //  RTE_TIMER_SHIFT = 6 (每级 6 位)
+    //  RTE_TIMER_MASK  = 0x3F
+
+    // 遍历该 slot 中的所有定时器
+    for (tim = priv->pending[curr_level][slot]; tim != NULL; tim = next) {
+        next = tim->next;
+
+        // 从当前 level 的链表移除
+        timer_del(tim);
+
+        // 重新插入：timer_add_internal 会根据剩余时间
+        // 选择合适的 level（可能降回更低级 wheel）
+        timer_add_internal(priv, tim, curr_level - 1);
+        //                  ↑ 降落一级
     }
 }
 ```
 
-### 8.3 级联示意图
+### 8.5 插入时如何选择 level
+
+```c
+// 简化的 level 选择逻辑
+static unsigned int
+timer_get_level(uint64_t expire, uint64_t now)
+{
+    uint64_t diff = expire - now;
+
+    if (diff < (1ULL << (RTE_TIMER_SHIFT * 1)))
+        return 0;   // 0~63 ticks     → wheel[0]
+    if (diff < (1ULL << (RTE_TIMER_SHIFT * 2)))
+        return 1;   // 64~4095 ticks  → wheel[1]
+    if (diff < (1ULL << (RTE_TIMER_SHIFT * 3)))
+        return 2;   // 4096~262143    → wheel[2]
+    return 3;       // 更大           → wheel[3]
+}
+```
+
+### 8.6 时间复杂度分析
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                         多级时间轮级联                                        │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│  Level 0 (最细粒度)                                                         │
-│  ┌───┬───┬───┬───┬───┬───┬───┬───┐                                        │
-│  │ 0 │ 1 │ 2 │ 3 │ 4 │ 5 │ 6 │ 7 │ ... (16M slots)                        │
-│  └───┴───┴───┴───┴───┴───┴───┴───┘                                        │
-│         ▲  当前处理的 slot                                                  │
-│         │                                                                   │
-│         │ 定时器过期时间 > 16M                                              │
-│         │ 需要级联到 Level 1                                               │
-│         │                                                                   │
-│  Level 1 (粗粒度)                                                           │
-│  ┌───┬───┬───┬───┬───┬───┬───┬───┐                                        │
-│  │ 0 │ 1 │ 2 │ 3 │ 4 │ 5 │ 6 │ 7 │ ...                                   │
-│  └───┴───┴───┴───┴───┴───┴───┴───┘                                        │
-│         ▲  当前处理的 slot                                                  │
-│         │                                                                   │
-│         │ 定时器过期时间 > 2^48                                             │
-│         │ 需要级联到 Level 2                                               │
-│                                                                             │
-│  Level 2+                                                                   │
-│  ...                                                                       │
-│                                                                             │
-│  好处：                                                                   │
-│  - 大部分定时器只需操作 Level 0（O(1)）                                      │
-│  - 只有超长定时器才会触发级联                                               │
-│  - 总时间复杂度仍接近 O(1)                                                  │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
+操作            时间复杂度    说明
+─────────────────────────────────────────────────
+添加定时器       O(1)        计算 level + slot，头插链表
+删除定时器       O(1)        双向链表 O(1) 摘除
+到期检查         O(1)        只看 wheel[0] 当前 slot
+级联降落         分摊 O(1)    每个定时器最多级联 4 次（4 级）
+执行回调         O(k)        k = 当前 slot 的定时器数
+─────────────────────────────────────────────────
+
+级联不是每次都触发：
+  - wheel[0] 转一圈（64 ticks）→ wheel[1] 级联一次
+  - wheel[1] 转一圈（4096 ticks）→ wheel[2] 级联一次
+  - 大部分 tick 只检查 wheel[0]，无级联开销
 ```
 
 ---
@@ -691,15 +981,15 @@ stats_timer_callback(struct rte_timer *tim, void *arg)
     uint64_t rx_pkts = atomic_load(&g_rx_pkts);
     uint64_t tx_pkts = atomic_load(&g_tx_pkts);
     uint64_t dropped = atomic_load(&g_dropped);
-    
+
     printf("Stats: rx=%lu tx=%lu dropped=%lu\n",
            rx_pkts, tx_pkts, dropped);
-    
+
     // 重置 counters
     atomic_store(&g_rx_pkts, 0);
     atomic_store(&g_tx_pkts, 0);
     atomic_store(&g_dropped, 0);
-    
+
     // 调度下次
     rte_timer_reset(&stats_timer,
                      STATS_REPORT_INTERVAL,
@@ -708,6 +998,123 @@ stats_timer_callback(struct rte_timer *tim, void *arg)
                      stats_timer_callback,
                      NULL);
 }
+```
+
+### 9.4 ARP 表老化
+
+```c
+// ARP 条目有生存时间，超时需要删除
+// 一个网关可能有数万条 ARP，每条都需要定时器
+
+struct arp_entry {
+    uint32_t ip;
+    struct rte_ether_addr mac;
+    struct rte_timer expiry_timer;
+};
+
+static void
+arp_expire_callback(struct rte_timer *tim, void *arg)
+{
+    struct arp_entry *entry = arg;
+    arp_table_remove(entry->ip);  // 从哈希表删除
+    rte_free(entry);
+}
+
+// 收到 ARP 回复时，重置老化定时器
+void arp_on_reply(struct arp_entry *entry)
+{
+    rte_timer_reset(&entry->expiry_timer,
+                     ARP_TIMEOUT,           // 通常 5 分钟
+                     RTE_TIMER_SINGLE,
+                     rte_lcore_id(),
+                     arp_expire_callback,
+                     entry);
+}
+```
+
+### 9.5 LACP 心跳
+
+```c
+// LACP 协议要求每 1 秒发送一次 LACPDU，维持链路聚合
+
+static struct rte_timer lacp_timer;
+
+static void
+lacp_tx_callback(struct rte_timer *tim, void *arg)
+{
+    struct rte_eth_dev *dev = arg;
+    lacp_send_pdu(dev);  // 组装并发送 LACPDU
+}
+
+// 初始化 LACP
+void lacp_init(struct rte_eth_dev *dev)
+{
+    rte_timer_init(&lacp_timer);
+    rte_timer_reset(&lacp_timer,
+                     rte_get_timer_hz(),    // 1 秒（假设 timer_hz 和实际秒对应）
+                     RTE_TIMER_PERIODICAL,
+                     rte_lcore_id(),
+                     lacp_tx_callback,
+                     dev);
+}
+```
+
+### 9.6 TCP 重传（用户态 TCP 栈）
+
+```c
+// F-Stack / mTCP 等用户态 TCP 栈需要 RTO 重传定时器
+// 一个服务器可能同时管理数十万条 TCP 连接，每条都有独立的 RTO 定时器
+
+struct tcp_connection {
+    // ...
+    struct rte_timer rto_timer;       // 重传超时
+    struct rte_timer keepalive_timer; // 保活探测
+};
+
+static void
+tcp_retransmit_callback(struct rte_timer *tim, void *arg)
+{
+    struct tcp_connection *conn = arg;
+
+    if (conn->retrans_count >= MAX_RETRANS) {
+        tcp_close(conn);  // 超过最大重传次数，断开
+        return;
+    }
+
+    // 重传未确认的段
+    tcp_retransmit_unacked(conn);
+
+    // 指数退避：RTO 翻倍，重新调度
+    conn->rto <<= 1;
+    rte_timer_reset(&conn->rto_timer,
+                     conn->rto,
+                     RTE_TIMER_SINGLE,
+                     rte_lcore_id(),
+                     tcp_retransmit_callback,
+                     conn);
+}
+```
+
+### 9.7 场景总结
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    DPDK 定时器使用场景一览                                    │
+├──────────────────────┬──────────────┬──────────────┬────────────────────────┤
+│ 场景                 │ 定时器数量    │ 精度要求     │ 单次/周期              │
+├──────────────────────┼──────────────┼──────────────┼────────────────────────┤
+│ 连接跟踪 (conntrack) │ 数万~数十万   │ 秒级         │ 每流一个，收到包重置   │
+│ ARP 表老化           │ 数万         │ 分钟级       │ 单次，收到回复重置     │
+│ LACP 心跳            │ 每端口一个   │ 秒级         │ 周期 1s               │
+│ Bonding 链路检测     │ 每端口一个   │ 百毫秒级     │ 周期 100ms            │
+│ TCP 重传 (RTO)       │ 每连接一个   │ 百毫秒级     │ 单次，指数退避         │
+│ TCP keepalive        │ 每连接一个   │ 秒级         │ 周期 75s              │
+│ NAT 会话超时         │ 数十万       │ 秒级         │ 单次，收到包重置       │
+│ 统计上报             │ 几个         | 秒级         │ 周期 10s              │
+│ IPsec SA 重密钥      │ 每个 SA 一个 │ 分钟~小时级  │ 单次                  │
+├──────────────────────┼──────────────┼──────────────┼────────────────────────┤
+│ 共同特点：量大（万级以上）、精度要求低（秒级即可）→ rte_timer 甜区          │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -838,7 +1245,7 @@ main_loop(void *arg)
 
 8. **应用场景**：链路检测、会话超时、统计上报等。
 
-**下一篇预告**：[[2026-04-09-dpdk-deep-dive-ch9-kni-interface|第九章]]将深入讲解 DPDK KNI (Kernel NIC Interface)——用户态与内核通信、DPDK 管理物理网卡、Linux 内核网络栈复用的完整路径。
+**下一篇预告**：[[2026-04-09-dpdk-deep-dive-ch9-lazy-expiry-gc|第九章]]将深入讲解高性能网关中的定时器替代方案——懒惰过期（Lazy Expiration）、分片 GC（Sharded GC）、多层时间桶（Multi-level Time Bucket），以及用 DPDK 实现简化版连接跟踪的完整流程。
 
 ---
 

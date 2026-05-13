@@ -76,12 +76,12 @@ tags:
 
 ```mermaid
 graph LR
-    A["用户态编译<br/>clang -O2 -target bpf"] --> B["eBPF 字节码<br/>(ELF .text)"]
-    B --> C["bpf() syscall<br/>BPF_PROG_LOAD"]
-    C --> D{"Verifier<br/>静态分析"}
-    D -->|通过| E["JIT 编译<br/>& 挂载"]
-    D -->|拒绝| F["返回错误<br/>EINVAL / EACCES"]
-    E --> G["运行中<br/>(安全保证)"]
+    A["用户态编译<br>clang -O2 -target bpf"] --> B["eBPF 字节码<br>(ELF .text)"]
+    B --> C["bpf() syscall<br>BPF_PROG_LOAD"]
+    C --> D{"Verifier<br>静态分析"}
+    D -->|通过| E["JIT 编译<br>& 挂载"]
+    D -->|拒绝| F["返回错误<br>EINVAL / EACCES"]
+    E --> G["运行中<br>(安全保证)"]
 ```
 
 ### 1.1 历史演进
@@ -121,7 +121,7 @@ Verifier 的验证过程分为**两遍 (Two Passes)**：
 ```mermaid
 graph TD
     Start["开始验证"] --> P1["第一遍: CFG 构建"]
-    P1 --> CFG["控制流图<br/>(基本块 + 边)"]
+    P1 --> CFG["控制流图<br>(基本块 + 边)"]
     CFG --> Dead["检测不可达代码"]
     Dead --> P2["第二遍: 状态机模拟"]
     P2 --> Split["分支点: 状态分裂"]
@@ -129,7 +129,7 @@ graph TD
     Split --> Path2["路径 B 状态"]
     Path1 --> Merge["汇合点: 状态合并"]
     Path2 --> Merge
-    Merge --> Check{"所有路径<br/>安全通过?"}
+    Merge --> Check{"所有路径<br>安全通过?"}
     Check -->|是| Pass["验证通过 ✅"]
     Check -->|否| Fail["返回具体错误 ❌"]
 ```
@@ -241,9 +241,9 @@ Verifier 对每条内存访问指令执行三层检查：
 
 ```mermaid
 graph TD
-    A["内存访问: *ptr"] --> B{"ptr 类型是<br/>PTR_* ?"}
+    A["内存访问: *ptr"] --> B{"ptr 类型是<br>PTR_* ?"}
     B -->|否| REJECT1["拒绝: 不是指针类型"]
-    B -->|是| C{"ptr + size<br/><= 边界?"}
+    B -->|是| C{"ptr + size<br><= 边界?"}
     C -->|否| REJECT2["拒绝: 潜在越界"]
     C -->|是| D{"ptr 已初始化?"}
     D -->|否| REJECT3["拒绝: 未初始化"]

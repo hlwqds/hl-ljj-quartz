@@ -264,7 +264,7 @@ sequenceDiagram
     BPF->>TCP: 注入 TCP Option (ID=254, 8字节 TraceID)
     TCP->>Wire: 带染色标记的报文发出
     Wire->>Wire: 中间设备透传 TCP Options
-    Note over Wire: 下游 eBPF 无需上下文 Map<br/>直接从 TCP Option 读取 TraceID
+    Note over Wire: 下游 eBPF 无需上下文 Map<br>直接从 TCP Option 读取 TraceID
 ```
 
 **实现要点**：

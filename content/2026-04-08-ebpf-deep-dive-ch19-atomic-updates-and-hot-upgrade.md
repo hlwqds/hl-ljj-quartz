@@ -87,7 +87,7 @@ tags:
 ```mermaid
 flowchart TB
     subgraph "模式 A：先卸后挂 (Destructive)"
-        A1["卸载旧程序"] --> A2["真空期<br/>流量裸奔!"] --> A3["加载新程序"]
+        A1["卸载旧程序"] --> A2["真空期<br>流量裸奔!"] --> A3["加载新程序"]
     end
 
     subgraph "模式 B：级联替换 (Cascade)"
@@ -95,7 +95,7 @@ flowchart TB
     end
 
     subgraph "模式 C：RCU 原子切换 (Atomic)"
-        C1["加载新程序 (预热)"] --> C2["Map 继承"] --> C3["bpf_link_update<br/>原子指针替换"]
+        C1["加载新程序 (预热)"] --> C2["Map 继承"] --> C3["bpf_link_update<br>原子指针替换"]
     end
 
     style A2 fill:#f66,stroke:#333,color:#fff
@@ -117,7 +117,7 @@ flowchart TB
 ```mermaid
 flowchart LR
     subgraph "内核空间"
-        Hook["XDP Hook<br/>(NIC Driver)"] --> Link["bpf_link<br/>prog 指针"]
+        Hook["XDP Hook<br>(NIC Driver)"] --> Link["bpf_link<br>prog 指针"]
         Link --> OldProg["旧程序 v1.0"]
         Link -.->|原子替换| NewProg["新程序 v1.1"]
     end
@@ -247,7 +247,7 @@ cleanup:
 flowchart TB
     subgraph "旧程序 v1"
         OldProg["BPF Program v1"] --> OldMap["conntrack_map"]
-        OldMap -->|"bpf_obj_pin()"| PinFS["/sys/fs/bpf/firewall/<br/>conntrack_map"]
+        OldMap -->|"bpf_obj_pin()"| PinFS["/sys/fs/bpf/firewall/<br>conntrack_map"]
     end
     subgraph "新程序 v2"
         NewProg["BPF Program v2"] -->|"bpf_obj_get()"| PinFS
@@ -310,15 +310,15 @@ sequenceDiagram
     participant User as 运维平台
     participant Old as 旧程序 Blue
     participant New as 新程序 Green
-    participant Link as BPF Link
-    participant Map as BPF Maps
+    participant BLink as BPF Link
+    participant BMap as BPF Maps
 
     User->>New: 1. 加载但不挂载 Dry Run
-    New->>Map: 2. bpf_obj_get 继承旧 Map FD
+    New->>BMap: 2. bpf_obj_get 继承旧 Map FD
     User->>New: 3. 健康检查 bpf_prog_test_run
     New-->>User: 3a. Test OK
-    User->>Link: 4. bpf_link_update 原子切换
-    Note over Link: 流量瞬间切向 New
+    User->>BLink: 4. bpf_link_update 原子切换
+    Note over BLink: 流量瞬间切向 New
     User->>Old: 5. 确认稳定后注销 Old
 ```
 
@@ -389,7 +389,7 @@ flowchart TB
     Start[发现新版本异常] --> D{异常类型?}
     D -->|性能退化| R[执行原子回滚]
     D -->|功能错误| R
-    D -->|崩溃| Auto[内核自动回退<br/>link 保持旧程序]
+    D -->|崩溃| Auto[内核自动回退<br>link 保持旧程序]
     R --> Verify[验证回滚]
     Verify --> Fix[分析并修复后重走蓝绿]
     style R fill:#f96,stroke:#333

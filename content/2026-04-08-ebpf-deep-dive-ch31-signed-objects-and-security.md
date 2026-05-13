@@ -87,7 +87,7 @@ graph TB
         Dev[开发者提交代码] --> CI[CI/CD 安全流水线]
         CI --> Audit[静态分析 + 代码审查]
         Audit --> Build[编译 .o 文件]
-        Build --> Sign[签名服务<br/>使用 HSM 保护的私钥]
+        Build --> Sign[签名服务<br>使用 HSM 保护的私钥]
         Sign --> Artifact[签名后的 .o 文件]
     end
 
@@ -167,7 +167,7 @@ graph LR
     end
 
     subgraph "加载时（运行时）"
-        L1[原始字节码] --> LR[libbpf 重定位<br/>Map FD/CO-RE 偏移]
+        L1[原始字节码] --> LR[libbpf 重定位<br>Map FD/CO-RE 偏移]
         LR --> L2[重定位后字节码]
         L2 --> LH[提取稳定指令部分]
         LH --> LV[验证签名]
@@ -373,13 +373,13 @@ sysctl -w kernel.bpf_verify_signature=2
 graph TB
     subgraph "安全开发阶段"
         Dev[开发者] --> PR[代码审查]
-        PR --> SAST[静态分析<br/>Semgrep + 自定义规则]
+        PR --> SAST[静态分析<br>Semgrep + 自定义规则]
         SAST --> Build[CI 构建]
     end
 
     subgraph "签名与存储"
-        Build --> HSM[硬件安全模块<br/>HSM 签名]
-        HSM --> Registry[BPF 私有仓库<br/>OCI 兼容]
+        Build --> HSM[硬件安全模块<br>HSM 签名]
+        HSM --> Registry[BPF 私有仓库<br>OCI 兼容]
     end
 
     subgraph "部署阶段"

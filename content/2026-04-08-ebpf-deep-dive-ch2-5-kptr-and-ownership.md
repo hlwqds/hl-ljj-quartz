@@ -80,15 +80,15 @@ tags:
 ```mermaid
 graph LR
     subgraph "Pre-2021: 无指针存储"
-        M1["Map 只能存标量"] --> L["无法构建<br/>链表/树/图"]
+        M1["Map 只能存标量"] --> L["无法构建<br>链表/树/图"]
     end
 
     subgraph "2021-2024: PTR_TO_BTF_ID"
-        M2["Map 可以存 BTF 指针"] --> L2["只读引用<br/>不能管理生命周期"]
+        M2["Map 可以存 BTF 指针"] --> L2["只读引用<br>不能管理生命周期"]
     end
 
     subgraph "2024-2026: kptr + Ownership"
-        M3["Map 存储受控指针"] --> L3["完整数据结构<br/>链表/树/图"]
+        M3["Map 存储受控指针"] --> L3["完整数据结构<br>链表/树/图"]
         M3 --> S["Verifier 追踪所有权"]
         S --> L3
     end
@@ -179,9 +179,9 @@ stateDiagram-v2
     Owned --> Transferred: 传递给另一个容器
     Freed --> [*]
 
-    note right of Allocated: 必须在当前函数中<br/>释放或转移
-    note right of Owned: Verifier 自动追踪<br/>容器拥有所有权
-    note right of Freed: Verifier 确认<br/>每个 new 都有对应 drop
+    note right of Allocated: 必须在当前函数中<br>释放或转移
+    note right of Owned: Verifier 自动追踪<br>容器拥有所有权
+    note right of Freed: Verifier 确认<br>每个 new 都有对应 drop
 ```
 
 ### 3.3 与 C malloc 的对比
@@ -367,9 +367,9 @@ int add_to_tree(struct pt_regs *ctx) {
 ```mermaid
 graph TD
     Q["数据量？"]
-    Q -->|"< 100" | A["ARRAY + 线性扫描<br/>简单、无竞争"]
-    Q -->|"100-10K" | H["HASH + 链表<br/>O(1) 查找"]
-    Q -->|"> 10K" | R["RBTREE<br/>O(log n) 查找"]
+    Q -->|"< 100" | A["ARRAY + 线性扫描<br>简单、无竞争"]
+    Q -->|"100-10K" | H["HASH + 链表<br>O(1) 查找"]
+    Q -->|"> 10K" | R["RBTREE<br>O(log n) 查找"]
 
     H --> H2["需要淘汰？"]
     H2 -->|是| L["HASH + LRU"]
@@ -460,7 +460,7 @@ flowchart TD
     A["bpf_obj_new()"] --> B["标记 ptr: OWNED"]
     B --> C{ptr 被存入容器?}
     C -->|bpf_list_push_back| D["标记 ptr: OWNED_BY_CONTAINER"]
-    C -->|bpf_kptr_xchg| E["标记新 ptr: OWNED_BY_CONTAINER<br/>标记旧 ptr: OWNED"]
+    C -->|bpf_kptr_xchg| E["标记新 ptr: OWNED_BY_CONTAINER<br>标记旧 ptr: OWNED"]
     C -->|直接赋值| F["❌ 拒绝: 必须用 xchg"]
 
     D --> G{函数返回时?}

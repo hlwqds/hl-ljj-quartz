@@ -233,7 +233,7 @@ fentry/fexit 是 2020 年引入的新一代追踪机制，其核心是 **BPF Tra
 graph TB
     subgraph "内存布局"
         TARGET[目标内核函数]
-        NOP[nop 指令区<br/>5字节]
+        NOP[nop 指令区<br>5字节]
         TRAMP[BPF Trampoline 代码段]
         BPF1[BPF 程序 1]
         BPF2[BPF 程序 2]
@@ -241,7 +241,7 @@ graph TB
     end
 
     TARGET -->|"第一次调用"| NOP
-    NOP -->|"动态替换为<br/>call trampoline"| TRAMP
+    NOP -->|"动态替换为<br>call trampoline"| TRAMP
     TRAMP --> BPF1
     BPF1 --> BPF2
     BPF2 --> BPFN
@@ -422,7 +422,7 @@ const char *syms[] = {
 ```mermaid
 graph LR
     subgraph "用户空间"
-        BPFCTL[bpf 系统调用<br/>一次调用]
+        BPFCTL[bpf 系统调用<br>一次调用]
     end
 
     subgraph "内核空间"
@@ -433,7 +433,7 @@ graph LR
         K3[kprobe: tcp_set_state]
     end
 
-    BPFCTL -->|"bpf_prog_attach<br/>BPF_TRACE_KPROBE_MULTI"| FP
+    BPFCTL -->|"bpf_prog_attach<br>BPF_TRACE_KPROBE_MULTI"| FP
     FP --> FT
     FT --> K1
     FT --> K2
@@ -666,7 +666,7 @@ graph TD
     USD -- 否 --> UPROBE[uprobe / uretprobe]
 
     SEC --> LSM[LSM BPF]
-    SEC --> CHECK{是否需要<br/>拒绝操作?}
+    SEC --> CHECK{是否需要<br>拒绝操作?}
     CHECK -- 是 --> LSM
     CHECK -- 否 --> FENTRY
 
@@ -768,6 +768,555 @@ int BPF_PROG(trace_socket_connect, struct socket *sock,
 3. **采样率控制**：对于热路径函数，使用 `bpf_get_prandom_u32() < sampling_rate` 控制采样
 4. **字符串截断**：使用 `bpf_probe_read_*_str` 时指定合理的最大长度，避免不必要的拷贝
 5. **提前返回**：将最常见的过滤条件放在 BPF 程序最前面，尽早返回减少开销
+
+---
+
+## 9.3 实战：kprobe 全流量抓取与自流量排除
+
+本节实现一个完整的 eBPF 全流量抓取系统：kprobe 挂载在 `inet_sendmsg`/`inet_recvmsg`，追踪所有 TCP 流量，通过 socket cookie 排除自身发送的 collector 流量，在 `sock_close` 时一次性上报最终统计。
+
+### 9.3.1 整体架构
+
+```mermaid
+graph TB
+    subgraph "用户态"
+        US[用户态 Agent]
+        CO[Collector 连接 socket]
+        NR[Netlink / sock_diag 查最终字节]
+    end
+
+    subgraph "内核态 eBPF"
+        ACC[inet_accept<br>记录 live_flows]
+        SEND[inet_sendmsg<br>统计发送字节]
+        RECV[inet_recvmsg<br>统计接收字节]
+        CLOSE[sock_release<br>close 时上报]
+        EXCL[agent_sockets<br>自流量排除]
+    end
+
+    subgraph "Maps"
+        LF[live_flows<br>cookie → flow_info]
+        TX[tx_bytes<br>cookie → 字节]
+        RX[rx_bytes<br>cookie → 字节]
+        AG[agent_sockets<br>cookie → 1]
+    end
+
+    ACC --> LF
+    SEND --> TX
+    RECV --> RX
+    SEND --> EXCL
+    RECV --> EXCL
+    CLOSE --> LF
+    CLose --> TX
+    CLOSE --> RX
+    CLOSE --> NR
+    NR -.-> US
+
+    CO -.->|send 时<br>触发 SEND| EXCL
+```
+
+### 9.3.2 数据结构
+
+```c
+// ============================================================
+// flow_capture.h — 全流量抓取 eBPF 程序
+// ============================================================
+
+#define MAX_LIVE_FLOWS   100000
+#define MAX_AGENT_SOCKS  1024
+
+/* 活跃连接信息表：在 accept/connect 时写入，close 时读取并删除 */
+struct {
+    __uint(type, BPF_MAP_TYPE_HASH);
+    __uint(max_entries, MAX_LIVE_FLOWS);
+    __type(key, __u64);           /* sock_cookie */
+    __type(value, struct flow_info);
+} live_flows SEC(".maps");
+
+/* 发送字节统计：每个 socket 一个累加值 */
+struct {
+    __uint(type, BPF_MAP_TYPE_HASH);
+    __uint(max_entries, MAX_LIVE_FLOWS);
+    __type(key, __u64);           /* sock_cookie */
+    __type(value, __u64);         /* 累计发送字节数 */
+} tx_bytes SEC(".maps");
+
+/* 接收字节统计：每个 socket 一个累加值 */
+struct {
+    __uint(type, BPF_MAP_TYPE_HASH);
+    __uint(max_entries, MAX_LIVE_FLOWS);
+    __type(key, __u64);           /* sock_cookie */
+    __type(value, __u64);         /* 累计接收字节数 */
+} rx_bytes SEC(".maps");
+
+/* 自流量排除表：agent 进程创建的 socket cookie 写入这里 */
+struct {
+    __uint(type, BPF_MAP_TYPE_HASH);
+    __uint(max_entries, MAX_AGENT_SOCKS);
+    __type(key, __u64);           /* sock_cookie */
+    __type(value, __u8);          /* 固定值 1 */
+} agent_sockets SEC(".maps");
+
+/* 上报事件的 ring buffer */
+struct {
+    __uint(type, BPF_MAP_TYPE_RINGBUF);
+    __uint(max_entries, 256 * 1024);
+} events SEC(".maps");
+
+/* 运行时注入：agent PID，用于过滤 */
+const volatile __u32 agent_pid = 0;
+
+/* 连接信息结构体 */
+struct flow_info {
+    __u32 saddr;          /* 源 IP */
+    __u32 daddr;          /* 目的 IP */
+    __u16 sport;          /* 源 port */
+    __u16 dport;          /* 目的 port */
+    __u8  proto;          /* 协议 (IPPROTO_TCP/UDP) */
+    __u8  state;          /* 连接状态 */
+    __u32 tid;            /* 创建该 socket 的线程 ID */
+    __u64 timestamp;      /* 创建时间 */
+};
+
+/* 上报事件 */
+struct flow_event {
+    __u64 cookie;
+    __u32 saddr;
+    __u32 daddr;
+    __u16 sport;
+    __u16 dport;
+    __u8  proto;
+    __u8  state;
+    __u64 tx_bytes;
+    __u64 rx_bytes;
+    __u64 duration_ns;    /* 连接持续时间 */
+};
+```
+
+### 9.3.3 辅助函数
+
+```c
+/* 从 fd 获取 socket cookie */
+static __always_inline __u64 get_sock_cookie_from_fd(int fd)
+{
+    struct socket *sock = bpf_sock_from_fd(fd);
+    if (!sock)
+        return 0;
+    return bpf_sock_cookie(sock->sk);
+}
+
+/* 检查是否是 agent 自己的 socket */
+static __always_inline int is_agent_socket(__u64 cookie)
+{
+    if (!agent_pid)
+        return 0;
+    __u8 *v = bpf_map_lookup_elem(&agent_sockets, &cookie);
+    return v && *v == 1;
+}
+
+/* 检查是否是 agent 进程 */
+static __always_inline int is_agent_process(void)
+{
+    if (!agent_pid)
+        return 0;
+    return bpf_get_current_pid_tgid() >> 32 == agent_pid;
+}
+
+/* 构建 flow_key（用于去重，实际上这里用 cookie 就够了） */
+static __always_inline struct flow_info build_flow_info(struct sock *sk)
+{
+    struct flow_info info = {
+        .saddr   = sk->__sk_common.skc_rcv_saddr,
+        .daddr   = sk->__sk_common.skc_daddr,
+        .sport   = sk->__sk_common.skc_num,
+        .dport   = bpf_ntohs(sk->__sk_common.skc_dport),
+        .proto   = sk->__sk_common.skc_protocol,
+        .state   = sk->sk_state,
+        .tid     = bpf_get_current_pid_tgid() & 0xFFFFFFFF,
+        .timestamp = bpf_ktime_get_ns(),
+    };
+    return info;
+}
+```
+
+### 9.3.4 核心挂载点
+
+```c
+// ============================================================
+// 挂载点 1：inet_accept — 记录 downstream 连接（client → agent）
+// ============================================================
+SEC("kprobe/inet_accept")
+int BPF_KPROBE(kprobe_accept, struct socket *listen_sock,
+               struct socket *new_sock)
+{
+    struct sock *sk = new_sock->sk;
+    if (!sk)
+        return 0;
+
+    __u64 cookie = bpf_sock_cookie(sk);
+    struct flow_info info = build_flow_info(sk);
+
+    /* 写入 live_flows */
+    bpf_map_update_elem(&live_flows, &cookie, &info, BPF_ANY);
+
+    /* 初始化 tx/rx 统计 */
+    __u64 zero = 0;
+    bpf_map_update_elem(&tx_bytes, &cookie, &zero, BPF_ANY);
+    bpf_map_update_elem(&rx_bytes, &cookie, &zero, BPF_ANY);
+
+    /* 如果是 agent 进程自己的 accept（agent 作为 server），
+     * 也加入排除列表（虽然 agent 通常不会 accept collector 连接）*/
+    if (is_agent_process()) {
+        __u8 one = 1;
+        bpf_map_update_elem(&agent_sockets, &cookie, &one, BPF_ANY);
+    }
+
+    return 0;
+}
+
+// ============================================================
+// 挂载点 2：tcp_v4_connect — 记录 upstream 连接（agent → server）
+// ============================================================
+SEC("kprobe/tcp_v4_connect")
+int BPF_KPROBE(kprobe_connect, struct sock *sk)
+{
+    if (!sk)
+        return 0;
+
+    /* 这个点发生在 connect() 调用时，连接还未完成
+     * socket cookie 已经分配，但连接状态是 TCP_CLOSE */
+    __u64 cookie = bpf_sock_cookie(sk);
+
+    /* 如果是 agent 发起的连接（连 collector），加入排除列表 */
+    if (is_agent_process()) {
+        __u8 one = 1;
+        bpf_map_update_elem(&agent_sockets, &cookie, &one, BPF_ANY);
+    }
+
+    return 0;
+}
+
+// ============================================================
+// 挂载点 3：inet_sendmsg — 统计发送字节（排除自流量）
+// ============================================================
+SEC("kprobe/inet_sendmsg")
+int BPF_KPROBE(kprobe_send, struct socket *sock,
+               struct msghdr *msg, size_t size)
+{
+    struct sock *sk = sock->sk;
+    if (!sk)
+        return 0;
+
+    __u64 cookie = bpf_sock_cookie(sk);
+
+    /* 排除自流量：agent → collector 的发送不走统计 */
+    if (is_agent_socket(cookie))
+        return 0;
+
+    /* 累加发送字节 */
+    __u64 *tx = bpf_map_lookup_elem(&tx_bytes, &cookie);
+    if (tx) {
+        __sync_fetch_and_add(tx, size);
+    }
+
+    return 0;
+}
+
+// ============================================================
+// 挂载点 4：inet_recvmsg — 统计接收字节（排除自流量）
+// ============================================================
+SEC("kprobe/inet_recvmsg")
+int BPF_KPROBE(kprobe_recv, struct socket *sock,
+               struct msghdr *msg, size_t size)
+{
+    struct sock *sk = sock->sk;
+    if (!sk)
+        return 0;
+
+    __u64 cookie = bpf_sock_cookie(sk);
+
+    /* 排除自流量 */
+    if (is_agent_socket(cookie))
+        return 0;
+
+    /* 累加接收字节 */
+    __u64 *rx = bpf_map_lookup_elem(&rx_bytes, &cookie);
+    if (rx) {
+        __sync_fetch_and_add(rx, size);
+    }
+
+    return 0;
+}
+
+// ============================================================
+// 挂载点 5：sock_close — 连接关闭时上报统计
+// ============================================================
+SEC("kprobe/sock_release")
+int BPF_KPROBE(kprobe_close, struct socket *sock)
+{
+    struct sock *sk = sock->sk;
+    if (!sk)
+        return 0;
+
+    __u64 cookie = bpf_sock_cookie(sk);
+
+    /* 查 live_flows，看是否是追踪的连接 */
+    struct flow_info *info = bpf_map_lookup_elem(&live_flows, &cookie);
+    if (!info)
+        return 0;  /* 不是我们追踪的连接 */
+
+    /* 查 tx/rx 统计 */
+    __u64 tx = 0, rx = 0;
+    __u64 *txp = bpf_map_lookup_elem(&tx_bytes, &cookie);
+    __u64 *rxp = bpf_map_lookup_elem(&rx_bytes, &cookie);
+    if (txp) tx = *txp;
+    if (rxp) rx = *rxp;
+
+    /* 构建上报事件 */
+    struct flow_event event = {
+        .cookie   = cookie,
+        .saddr    = info->saddr,
+        .daddr    = info->daddr,
+        .sport    = info->sport,
+        .dport    = info->dport,
+        .proto    = info->proto,
+        .state    = info->state,
+        .tx_bytes = tx,
+        .rx_bytes = rx,
+        .duration_ns = bpf_ktime_get_ns() - info->timestamp,
+    };
+
+    /* 通过 ring buffer 上报 */
+    bpf_ringbuf_output(&events, &event, sizeof(event), 0);
+
+    /* 清理：删除 live_flows 和 tx/rx entries */
+    bpf_map_delete_elem(&live_flows, &cookie);
+    bpf_map_delete_elem(&tx_bytes, &cookie);
+    bpf_map_delete_elem(&rx_bytes, &cookie);
+    /* agent_sockets 的清理由 agent_pid 退出时自然过期（进程退出后 map 清空）*/
+
+    return 0;
+}
+
+// ============================================================
+// 挂载点 6：tcp_set_state — 追踪连接状态变化
+// ============================================================
+SEC("tracepoint/tcp/tcp_set_state")
+int on_tcp_set_state(struct trace_event_raw_tcp_set_state *ctx)
+{
+    struct sock *sk = (struct sock *)ctx->skaddr;
+    if (!sk)
+        return 0;
+
+    __u64 cookie = bpf_sock_cookie(sk);
+
+    /* 更新连接状态 */
+    struct flow_info *info = bpf_map_lookup_elem(&live_flows, &cookie);
+    if (info) {
+        info->state = ctx->new_state;
+    }
+
+    return 0;
+}
+
+char _license[] SEC("license") = "GPL";
+```
+
+### 9.3.5 用户态程序
+
+```c
+// ============================================================
+// user.c — 用户态 Agent 主程序
+// ============================================================
+#include <stdio.h>
+#include <stdlib.h>
+#include <signal.h>
+#include <unistd.h>
+#include <sys/socket.h>
+#include <linux/bpf.h>
+#include <bpf/bpf.h>
+#include <bpf/libbpf.h>
+#include "flow_capture.skel.h"
+
+static volatile int running = 1;
+
+static void signal_handler(int sig)
+{
+    running = 0;
+}
+
+/* 处理 ring buffer 事件（从内核上报的 flow_event） */
+static int handle_event(void *ctx, void *data, size_t len)
+{
+    struct flow_event *e = data;
+    printf("[flow] cookie=0x%llx %pI4:%d -> %pI4:%d proto=%d "
+           "tx=%llu rx=%llu duration=%lluus state=%d\n",
+           e->cookie,
+           &e->saddr, e->sport,
+           &e->daddr, e->dport,
+           e->proto,
+           e->tx_bytes, e->rx_bytes,
+           e->duration_ns / 1000,
+           e->state);
+    return 0;
+}
+
+int main(int argc, char **argv)
+{
+    struct flow_capture_bpf *skel;
+    struct ring_buffer *rb = NULL;
+    int agent_pid = getpid();
+
+    printf("[*] agent pid=%d\n", agent_pid);
+
+    /* -------- 加载 eBPF 程序 -------- */
+    skel = flow_capture_bpf__open();
+    if (!skel) {
+        fprintf(stderr, "open failed\n");
+        return 1;
+    }
+
+    /* 注入 agent_pid，运行时用于过滤 */
+    skel->rodata->agent_pid = agent_pid;
+
+    /* -------- 加载并 attach -------- */
+    if (flow_capture_bpf__load(skel)) {
+        fprintf(stderr, "load failed: %s\n", libbpf_strerror(errno));
+        return 1;
+    }
+
+    /* attach 所有 kprobe */
+    if (flow_capture_bpf__attach(skel)) {
+        fprintf(stderr, "attach failed\n");
+        return 1;
+    }
+
+    printf("[*] eBPF programs attached\n");
+
+    /* -------- 设置 ring buffer 回调 -------- */
+    int events_fd = bpf_map__fd(skel->maps.events);
+    rb = ring_buffer__new(events_fd, handle_event, NULL, NULL);
+    if (!rb) {
+        fprintf(stderr, "ring_buffer__new failed\n");
+        return 1;
+    }
+
+    /* -------- 连接 collector（会触发 tcp_v4_connect） -------- */
+    int collector_fd = socket(AF_INET, SOCK_STREAM, 0);
+    struct sockaddr_in collector_addr = {
+        .sin_family = AF_INET,
+        .sin_port = htons(9000),
+        .sin_addr.s_addr = inet_addr("10.0.1.100"),
+    };
+
+    if (connect(collector_fd, (struct sockaddr *)&collector_addr,
+                sizeof(collector_addr)) < 0) {
+        perror("connect collector");
+        /* 不退出，collector 连接失败不影响业务流量抓取 */
+    } else {
+        printf("[*] connected to collector (fd=%d)\n", collector_fd);
+    }
+
+    /* -------- 信号处理 -------- */
+    signal(SIGINT, signal_handler);
+    signal(SIGTERM, signal_handler);
+
+    /* -------- 主循环 -------- */
+    printf("[*] capturing traffic...\n");
+    while (running) {
+        /* poll ring buffer，超时 1s */
+        ring_buffer__poll(rb, 1000);
+    }
+
+    /* -------- 清理 -------- */
+    printf("[*] shutting down...\n");
+    close(collector_fd);
+    ring_buffer__free(rb);
+    flow_capture_bpf__destroy(skel);
+
+    return 0;
+}
+```
+
+### 9.3.6 整体数据流
+
+```
+同一台机器上，send/recv 的 5-tuple 方向天然相反，不会合并：
+
+  socket_A (client 侧):
+    send → 5-tuple = (10.0.0.1:50000 → 10.0.0.2:80)  ← 一个 key
+    recv → 5-tuple = (10.0.0.2:80 → 10.0.0.1:50000) ← 另一个 key，天然分开！
+
+  socket_B (server 侧):
+    send → 5-tuple = (10.0.0.2:80 → 10.0.0.1:50000)
+    recv → 5-tuple = (10.0.0.1:50000 → 10.0.0.2:80)
+
+所以 send/recv 的重复计数问题在"同一机器"内本来就不存在：
+  tx_bytes[cookie] 和 rx_bytes[cookie] 用 cookie 做 key 完全独立
+  不会发生"同一字节被计入同一个 key"的情况
+```
+
+### 9.3.7 cookie 的唯一作用：排除自流量
+
+```
+cookie 的作用只有一件事：
+
+  agent → collector 的发送 → inet_sendmsg 被触发
+                                ↓
+  bpf_sock_cookie(sk) → 查 agent_sockets → 存在 → 跳过统计
+                                ↓
+  防止自流量进入统计，导致自抓死循环
+
+除此之外，cookie 不参与任何去重或合并逻辑。
+```
+
+### 9.3.8 运行结果
+
+```bash
+# 编译
+clang -target bpf -O2 -g -I/usr/include/bpf \
+      -I./vmlinux.h \
+      flow_capture.bpf.c -o flow_capture.bpf.o
+
+# 用户态程序
+clang -O2 -g -o user user.c -lbpf -lelf
+
+# 运行
+$ sudo ./user
+[*] agent pid=12345
+[*] eBPF programs attached
+[*] connected to collector (fd=8)
+[*] capturing traffic...
+
+# 模拟业务流量（另一台机器上）
+$ curl http://10.0.1.200/api/data
+
+# agent 输出：
+[flow] cookie=0x7f3a1b2c3d4e5f00 10.0.0.50:45678 -> 10.0.1.200:80 proto=6 tx=523 rx=4821 duration=1245000us state=1
+[flow] cookie=0x8a9b0c1d2e3f4a0 10.0.1.200:80 -> 10.0.0.50:45678 proto=6 tx=4821 rx=523 duration=1245000us state=1
+
+# collector 发送的包（自流量，被排除）：
+# (无输出，inet_sendmsg 中的 is_agent_socket(cookie) 返回 true，统计被跳过)
+```
+
+### 9.3.9 关键设计决策
+
+| 决策 | 选择 | 原因 |
+|------|------|------|
+| **统计时机** | close 时一次性上报 | map 只存活跃连接，不存在重复计数 |
+| **自流量排除** | cookie 查 agent_sockets | 不依赖 IP/端口，精确到 socket 级别 |
+| **tx/rx 分开** | tx_bytes[cookie] + rx_bytes[cookie] | send/recv 的 5-tuple 方向天然相反，但按 cookie 分表更直接准确 |
+| **socket pair 关联** | 不做 | 上报时每条记录包含 tx/rx，远端可自行聚合 |
+| **close 前查最终字节** | 用户态 netlink | eBPF 里 getsockopt 能力有限，close 后通过 sock_diag 拿精确值 |
+
+### 9.3.10 已知局限
+
+| 局限 | 影响 | 缓解方案 |
+|------|------|----------|
+| **kprobe 中断开销** | 高频 send/recv 时 ~500-1000ns/call | 生产环境用 fentry 替代 |
+| **老内核 (< 5.6)** | 无 bpf_sock_cookie | 用 tid<<32 \| fd 或 getsockopt(SO_COOKIE) |
+| **多线程共享 socket** | cookie 相同，tx/rx 合并统计 | 可接受，同一 socket 的统计本就该合并 |
+| **进程退出时 map 未清理** | agent_sockets 残留 | 容器环境进程退出即清理，或定期同步 PID 列表 |
+| **ring buffer 丢事件** | 高并发时可能丢失 | 调大 max_entries，或用 perf event array 兜底 |
 
 ---
 

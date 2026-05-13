@@ -408,13 +408,13 @@ int cgroup_microseg(struct __sk_buff *skb) {
 
 ```mermaid
 graph TB
-    subgraph 前端 "前端分段 (id=1001)"
+    subgraph 前端分段["前端分段 (id=1001)"]
         FE1[Pod 1] --- FE2[Pod 2]
     end
-    subgraph 后端 "后端分段 (id=2001)"
+    subgraph 后端分段["后端分段 (id=2001)"]
         BE1[Pod 1] --- BE2[Pod 2]
     end
-    subgraph 数据 "数据分段 (id=3001)"
+    subgraph 数据分段["数据分段 (id=3001)"]
         DB1[(PostgreSQL)] --- DB2[(Redis)]
     end
     FE1 -->|:8080 only| BE1

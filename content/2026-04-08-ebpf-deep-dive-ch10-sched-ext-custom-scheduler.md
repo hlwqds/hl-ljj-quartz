@@ -123,7 +123,7 @@ sched_ext **不是替代** CFS，而是在 CFS 之上添加了一个可编程层
 
 ```mermaid
 graph LR
-    TASK[新任务就绪] --> SCX{sched_ext<br/>BPF 调度器}
+    TASK[新任务就绪] --> SCX{sched_ext<br>BPF 调度器}
     SCX -- "处理" --> DSQ[DSQ 队列]
     SCX -- "跳过" --> CFS[CFS 调度器]
     DSQ --> CPU[CPU 执行]
@@ -468,13 +468,13 @@ dmesg | grep -i sched_ext
 graph TB
     subgraph "NUMA Node 0"
         C0[CPU 0-7]
-        M0[内存 0-127GB<br/>本地延迟: ~80ns]
+        M0[内存 0-127GB<br>本地延迟: ~80ns]
         C0 --- M0
     end
 
     subgraph "NUMA Node 1"
         C1[CPU 8-15]
-        M1[内存 128-255GB<br/>本地延迟: ~80ns]
+        M1[内存 128-255GB<br>本地延迟: ~80ns]
         C1 --- M1
     end
 
@@ -555,9 +555,9 @@ void BPF_STRUCT_OPS(cg_enqueue, struct task_struct *p, u64 enq_flags) {
 ```mermaid
 graph TB
     subgraph "Kubernetes"
-        P1[Pod: high-priority<br/>QoS: Guaranteed]
-        P2[Pod: normal<br/>QoS: Burstable]
-        P3[Pod: best-effort<br/>QoS: BestEffort]
+        P1[Pod: high-priority<br>QoS: Guaranteed]
+        P2[Pod: normal<br>QoS: Burstable]
+        P3[Pod: best-effort<br>QoS: BestEffort]
     end
 
     subgraph "cgroup 层级"

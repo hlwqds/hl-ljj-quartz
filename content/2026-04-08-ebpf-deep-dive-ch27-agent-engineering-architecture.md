@@ -150,15 +150,15 @@ Agent 启动时会执行一系列微型测试：
 graph TB
     subgraph ControlPlane["管理平面 (Control Plane)"]
         API["REST / gRPC API"]
-        ConfigMgr["配置中心<br/>策略下发"]
-        ModuleRepo["模块仓库<br/>版本管理"]
+        ConfigMgr["配置中心<br>策略下发"]
+        ModuleRepo["模块仓库<br>版本管理"]
     end
 
     subgraph AgentNode["Agent 节点 (每台主机)"]
         subgraph Core["核心引擎"]
-            Scheduler["调度器<br/>模块编排"]
-            Loader["加载器<br/>BPF Object 管理"]
-            HealthMon["健康监控<br/>自愈循环"]
+            Scheduler["调度器<br>模块编排"]
+            Loader["加载器<br>BPF Object 管理"]
+            HealthMon["健康监控<br>自愈循环"]
         end
 
         subgraph DataBus["数据总线"]
@@ -174,8 +174,8 @@ graph TB
         end
 
         subgraph Export["数据导出"]
-            Aggregator["聚合器<br/>采样 / 去重"]
-            Backend["后端<br/>Prometheus / Kafka"]
+            Aggregator["聚合器<br>采样 / 去重"]
+            Backend["后端<br>Prometheus / Kafka"]
         end
     end
 
@@ -313,16 +313,16 @@ eBPF Agent 的数据管道是连接内核态探针与用户态业务逻辑的桥
 ```mermaid
 graph LR
     subgraph Kernel["内核态"]
-        Probe["eBPF Probe<br/>(kprobe / tracepoint)"]
+        Probe["eBPF Probe<br>(kprobe / tracepoint)"]
         MapWrite["写入 Map / Ring Buffer"]
     end
 
     subgraph UserSpace["用户态"]
         Mmap["mmap 消费 Ring Buffer"]
-        Parse["事件解析<br/>(BTF 驱动)"]
-        Enrich["上下文富化<br/>(进程名 / cgroup)"]
+        Parse["事件解析<br>(BTF 驱动)"]
+        Enrich["上下文富化<br>(进程名 / cgroup)"]
         Filter["采样 / 聚合"]
-        Export["导出<br/>(gRPC / HTTP)"]
+        Export["导出<br>(gRPC / HTTP)"]
     end
 
     Probe --> MapWrite
@@ -431,10 +431,10 @@ int trace_exec(struct trace_event_raw_sched_process_exec *ctx) {
 ```mermaid
 graph TB
     subgraph Layers["配置层级 (优先级从高到低)"]
-        L1["运行时 API<br/>动态策略调整"]
-        L2["节点本地配置<br/>(/etc/agent/config.yaml)"]
-        L3["集群默认配置<br/>(ConfigMap / Consul)"]
-        L4["编译时默认值<br/>(rodata 常量)"]
+        L1["运行时 API<br>动态策略调整"]
+        L2["节点本地配置<br>(/etc/agent/config.yaml)"]
+        L3["集群默认配置<br>(ConfigMap / Consul)"]
+        L4["编译时默认值<br>(rodata 常量)"]
     end
 
     L1 -->|覆盖| L2
@@ -442,7 +442,7 @@ graph TB
     L3 -->|覆盖| L4
 
     subgraph Output["最终生效配置"]
-        Effective["合并后的有效配置<br/>下发至 BPF Maps"]
+        Effective["合并后的有效配置<br>下发至 BPF Maps"]
     end
 
     L1 & L2 & L3 & L4 --> Effective

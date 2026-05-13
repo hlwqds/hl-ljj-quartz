@@ -115,10 +115,10 @@ graph TB
     end
 
     subgraph "eBPF 探针层"
-        SSL[SSL_write/SSL_read<br/>捕获 HTTP 请求/响应]
-        CUDA[cudaLaunchKernel<br/>捕获 GPU 算子]
-        NCCL[ncclAllReduce<br/>捕获通信开销]
-        KVT[kv_cache 操作<br/>捕获缓存命中率]
+        SSL[SSL_write/SSL_read<br>捕获 HTTP 请求/响应]
+        CUDA[cudaLaunchKernel<br>捕获 GPU 算子]
+        NCCL[ncclAllReduce<br>捕获通信开销]
+        KVT[kv_cache 操作<br>捕获缓存命中率]
     end
 
     subgraph "数据聚合层"
@@ -360,13 +360,13 @@ graph LR
     subgraph "CPU 瓶颈特征"
         C1[CPU 100%]
         C2[GPU < 50%]
-        C3[TTFT 高<br/>TBT 正常]
+        C3[TTFT 高<br>TBT 正常]
     end
 
     subgraph "GPU 瓶颈特征"
         G1[CPU 正常]
         G2[GPU 100%]
-        G3[TBT 高<br/>TTFT 正常]
+        G3[TBT 高<br>TTFT 正常]
     end
 
     subgraph "内存瓶颈特征"

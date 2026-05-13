@@ -166,17 +166,17 @@ BPF Iterators 的精妙之处在于：**用 BPF 程序替换 `seq_operations` �
 ```mermaid
 graph TB
     subgraph "传统 seq_file"
-        T_Start[seq_ops.start<br/>内核 C 代码]
-        T_Next[seq_ops.next<br/>内核 C 代码]
-        T_Show[seq_ops.show<br/>内核 C 代码]
-        T_Stop[seq_ops.stop<br/>内核 C 代码]
+        T_Start[seq_ops.start<br>内核 C 代码]
+        T_Next[seq_ops.next<br>内核 C 代码]
+        T_Show[seq_ops.show<br>内核 C 代码]
+        T_Stop[seq_ops.stop<br>内核 C 代码]
     end
 
     subgraph "BPF Iterator seq_file"
-        B_Start[seq_ops.start<br/>内核 C 代码<br/>（驱动迭代器遍历）]
-        B_Next[seq_ops.next<br/>内核 C 代码<br/>（驱动迭代器遍历）]
-        B_Show[seq_ops.show → BPF 程序<br/>用户自定义过滤与输出]
-        B_Stop[seq_ops.stop<br/>内核 C 代码<br/>（清理状态）]
+        B_Start[seq_ops.start<br>内核 C 代码<br>（驱动迭代器遍历）]
+        B_Next[seq_ops.next<br>内核 C 代码<br>（驱动迭代器遍历）]
+        B_Show[seq_ops.show → BPF 程序<br>用户自定义过滤与输出]
+        B_Stop[seq_ops.stop<br>内核 C 代码<br>（清理状态）]
     end
 
     T_Show -.->|替换为| B_Show
@@ -792,12 +792,12 @@ graph TD
     B --> C{获取下一个元素}
     C -->|有效元素| D[执行 BPF 程序]
     D --> E{是否删除该元素？}
-    E -->|是| F[bpf_map_delete_elem<br/>延迟释放（RCU）]
+    E -->|是| F[bpf_map_delete_elem<br>延迟释放（RCU）]
     E -->|否| G[继续下一个]
     F --> G
     G --> C
     C -->|遍历结束| H[RCU read unlock]
-    H --> I[被删除的元素<br/>在 grace period 后释放]
+    H --> I[被删除的元素<br>在 grace period 后释放]
 
     style F fill:#f5b7b1,stroke:#e74c3c,stroke-width:2px
 ```
@@ -944,9 +944,9 @@ graph TB
     end
 
     subgraph "BPF 子系统"
-        Prog[BPF Iterator 程序<br/>SEC iter/xxx]
-        Verifier[Verifier<br/>安全验证]
-        Map[BPF Maps<br/>状态存储]
+        Prog[BPF Iterator 程序<br>SEC iter/xxx]
+        Verifier[Verifier<br>安全验证]
+        Map[BPF Maps<br>状态存储]
     end
 
     subgraph "内核对象"

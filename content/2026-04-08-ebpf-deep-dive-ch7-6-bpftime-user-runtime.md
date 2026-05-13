@@ -419,7 +419,7 @@ bpftime 提供两种 BPF 字节码执行方式，根据 BPF 程序的复杂度�
 ```mermaid
 graph TB
     BPF[BPF 字节码] --> ANALYZER{指令分析器}
-    ANALYZER -- "简单程序<br/>(<1000 指令)" --> JIT[JIT 编译器]
+    ANALYZER -- "简单程序<br>(<1000 指令)" --> JIT[JIT 编译器]
     ANALYZER -- "复杂程序 / 特殊指令" --> INTERP[eBPF 解释器]
 
     JIT --> NATIVE[x86_64 原生代码]
@@ -481,9 +481,9 @@ BPF 字节码 (ELF .text)
 ```mermaid
 graph TB
     subgraph "共享内存区域 (shm_open + mmap)"
-        HDR[Map Header<br/>magic + type + key_size + value_size]
-        DATA[Data Region<br/>Hash buckets / Array slots]
-        LOCK[Spinlock Region<br/>Per-bucket locks]
+        HDR[Map Header<br>magic + type + key_size + value_size]
+        DATA[Data Region<br>Hash buckets / Array slots]
+        LOCK[Spinlock Region<br>Per-bucket locks]
     end
 
     subgraph "进程 A (bpftime)"

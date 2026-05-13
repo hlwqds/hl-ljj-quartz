@@ -249,59 +249,270 @@ rte_eal_init()
 ### 3.2 ixgbe_pci_probe
 
 ```c
-// drivers/net/ixgbe/ixgbe_ethdev.c
+// drivers/net/ixgbe/ixgbe_ethdev.c（简化）
 
 static int
 ixgbe_pci_probe(struct rte_pci_driver *pci_drv,
                   struct rte_pci_device *pci_dev)
 {
     struct rte_eth_dev *eth_dev;
+    struct ixgbe_hw *hw;
     int ret;
-    
-    // 1. 创建设备
+
+    // 1. 创建 eth_dev，分配全局设备槽位
     eth_dev = rte_eth_dev_allocate(pci_dev->device.name);
-    if (eth_dev == NULL) {
-        ret = -ENOMEM;
-        goto out;
-    }
-    
-    // 2. 填充设备信息
     eth_dev->device = &pci_dev->device;
     eth_dev->driver = &rte_ixgbe_pmd.driver;
-    eth_dev->intr_handle = pci_dev->intr_handle;
-    
-    // 3. 映射 PCI BAR
-    ret = ixgbe_map_pci_bar(eth_dev);
-    if (ret != 0)
-        goto out;
-    
-    // 4. 初始化硬件
-    ret = ixgbe_hw_init(eth_dev);
-    if (ret != 0)
-        goto out;
-    
-    // 5. 分配队列
-    ret = ixgbe_alloc_queues(eth_dev);
-    if (ret != 0)
-        goto out;
-    
-    // 6. 设置回调
+
+    // 2. 分配驱动私有数据（ixgbe_hw、队列数组等）
+    eth_dev->data->dev_private = rte_zmalloc("ixgbe_private",
+        sizeof(struct ixgbe_adapter));
+    struct ixgbe_adapter *adapter = eth_dev->data->dev_private;
+    hw = &adapter->hw;
+
+    // 3. 映射 PCI BAR 到用户态
+    //    BAR0 包含所有设备寄存器（MMIO）
+    hw->hw_addr = pci_map_resource(
+        pci_dev->mem_resource[0].addr,
+        pci_dev->mem_resource[0].len);
+    // 现在 hw->hw_addr + 寄存器偏移 就能直接读写硬件
+
+    // 4. 硬件识别与复位
+    //    通过 BAR 寄存器读取设备 ID，确认具体型号
+    hw->device_id = pci_dev->id.device_id;
+    hw->vendor_id = pci_dev->id.vendor_id;
+    hw->subsystem_vendor_id = pci_dev->id.subsystem_vendor_id;
+
+    // 5. 硬件复位（写 BAR 寄存器，等硬件完成复位）
+    IXGBE_WRITE_REG(hw, IXGBE_CTRL, IXGBE_CTRL_RST);
+    // 等待硬件复位完成（轮询 BAR 寄存器状态位）
+    msec_delay(IXGBE_RESET_DELAY);
+
+    // 6. 设置 dev_ops 函数指针表
+    eth_dev->dev_ops = &ixgbe_eth_dev_ops;
     eth_dev->rx_pkt_burst = ixgbe_recv_pkts;
     eth_dev->tx_pkt_burst = ixgbe_xmit_pkts;
-    eth_dev->dev_ops = &ixgbe_dev_ops;
-    
-    printf("ixgbe: %s found\n", eth_dev->name);
-    
-out:
-    return ret;
+
+    // 注意：probe 阶段不配置 ring，不启动收发包
+    // 只是识别硬件、映射 BAR、注册操作函数
+    return 0;
+}
+```
+
+> **probe 只做三件事**：映射 BAR（获得寄存器访问权）、识别硬件型号、注册 dev_ops。
+> Ring 配置在 `rx_queue_setup` 中，真正启动硬件在 `dev_start` 中。
+
+---
+
+## 4. 从 probe 到收发包的完整初始化链
+
+应用程序初始化一个 DPDK 端口的典型调用顺序：
+
+```
+rte_eal_init()                 ← EAL 层：扫描 PCI 总线，匹配 PMD，调用 probe
+    │
+    ├─► ixgbe_pci_probe()      ← probe：映射 BAR，识别硬件，注册 dev_ops
+    │       （此时硬件处于复位后 idle 状态，ring 不存在）
+    │
+    ▼
+rte_eth_dev_configure()        ← 应用层：设置 RX/TX 队列数量、offload 能力
+    │
+    ├─► ixgbe_dev_configure()  ← PMD：检查参数合法性，保存配置
+    │
+    ▼
+rte_eth_rx_queue_setup()       ← 应用层：为每个 RX 队列分配描述符环 + mbuf
+    │
+    ├─► ixgbe_rx_queue_setup() ← PMD：分配 rx_ring、sw_ring，填充 mbuf
+    │       （此时 NIC 还不知道 ring 的存在）
+    │
+    ▼
+rte_eth_tx_queue_setup()       ← 应用层：为每个 TX 队列分配描述符环
+    │
+    ├─► ixgbe_tx_queue_setup() ← PMD：分配 tx_ring、sw_ring
+    │       （此时 NIC 还不知道 ring 的存在）
+    │
+    ▼
+rte_eth_dev_start()            ← 应用层：启动端口，开始收发包 ★
+    │
+    ├─► ixgbe_dev_start()      ← PMD：写 BAR 寄存器，告诉 NIC ring 在哪
+    │       ★ 这是 CPU 真正和硬件交互配置 ring 的地方 ★
+    │
+    ▼
+rte_eth_rx_burst()             ← 应用层：开始轮询收包
+```
+
+### 4.1 dev_start：CPU 告诉 NIC ring 在哪
+
+`rte_eth_dev_start()` 是整个初始化链中**真正和硬件握手**的一步：
+
+```c
+// drivers/net/ixgbe/ixgbe_ethdev.c（简化）
+
+static int
+ixgbe_dev_start(struct rte_eth_dev *dev)
+{
+    struct ixgbe_adapter *adapter = dev->data->dev_private;
+    struct ixgbe_hw *hw = &adapter->hw;
+
+    // 1. 分配并配置硬件接收队列
+    for (int i = 0; i < dev->data->nb_rx_queues; i++) {
+        ixgbe_dev_rx_queue_start(dev, i);
+    }
+
+    // 2. 分配并配置硬件发送队列
+    for (int i = 0; i < dev->data->nb_tx_queues; i++) {
+        ixgbe_dev_tx_queue_start(dev, i);
+    }
+
+    // 3. 设置 MAC 地址过滤
+    ixgbe_set_mac_addr(hw, dev->data->mac_addrs);
+
+    // 4. 配置 RSS（如果多队列）
+    ixgbe_configure_rss(dev);
+
+    // 5. 配置中断（如果用 eventfd 模式）
+    ixgbe_configure_interrupt(dev);
+
+    // 6. ★ 启动接收单元 ★
+    IXGBE_WRITE_REG(hw, IXGBE_RXCTRL, IXGBE_RXCTRL_RXEN);
+    //                                    ↑ 写 BAR 寄存器
+    //                                    NIC 开始从 ring 读描述符收包
+
+    // 7. ★ 启动链路 ★
+    ixgbe_set_link_up(hw);
+
+    return 0;
+}
+```
+
+### 4.2 ixgbe_dev_rx_queue_start：把 ring 地址写给 NIC
+
+这是 probe → setup → start 三步中，**唯一把 ring 信息写入硬件寄存器**的地方：
+
+```c
+// drivers/net/ixgbe/ixgbe_ethdev.c（简化）
+
+static int
+ixgbe_dev_rx_queue_start(struct rte_eth_dev *dev, uint16_t rx_queue_id)
+{
+    struct ixgbe_hw *hw = &adapter->hw;
+    struct ixgbe_rx_queue *rxq = dev->data->rx_queues[rx_queue_id];
+
+    // ★ 1. 把 rx_ring 的物理地址写给 NIC ★
+    //    NIC DMA 引擎通过这个地址访问描述符
+    uint64_t rdba = rxq->rx_ring_phys_addr;
+    IXGBE_WRITE_REG(hw, IXGBE_RDBAL(rx_queue_id),
+                    (uint32_t)(rdba & 0xFFFFFFFF));
+    IXGBE_WRITE_REG(hw, IXGBE_RDBAH(rx_queue_id),
+                    (uint32_t)(rdba >> 32));
+    //  IXGBE_RDBAL = RX Descriptor Base Address Low
+    //  IXGBE_RDBAH = RX Descriptor Base Address High
+    //  → NIC 现在知道 ring 在内存的哪个位置
+
+    // ★ 2. 告诉 NIC ring 有多大 ★
+    uint32_t rlen = rxq->nb_rx_desc;
+    IXGBE_WRITE_REG(hw, IXGBE_RDLEN(rx_queue_id), rlen);
+    //  NIC 通过 ring 大小计算环形绕回（rlen 必须是 2^n）
+
+    // ★ 3. 设置描述符大小（16/32/64 字节）★
+    IXGBE_WRITE_REG(hw, IXGBE_SRRCTL(rx_queue_id),
+                    (IXGBE_SRRCTL_BSIZEPKT_2K <<    // buffer size 2048
+                     IXGBE_SRRCTL_BSIZEPKT_SHIFT) |
+                    IXGBE_SRRCTL_DESCTYPE_ADV);      // advanced descriptor
+
+    // ★ 4. 设置 head/tail 指针初始值 ★
+    IXGBE_WRITE_REG(hw, IXGBE_RDH(rx_queue_id), 0);
+    IXGBE_WRITE_REG(hw, IXGBE_RDT(rx_queue_id), rxq->nb_rx_desc - 1);
+    //  RDH = RX Descriptor Head (NIC 维护，CPU 只读)
+    //  RDT = RX Descriptor Tail (CPU 维护，通知 NIC 有空闲描述符)
+
+    // ★ 5. 启用该队列的 DMA ★
+    IXGBE_WRITE_REG(hw, IXGBE_RXDCTL(rx_queue_id),
+                    IXGBE_RXDCTL_ENABLE);
+    //  现在这个队列开始工作了
+
+    return 0;
+}
+```
+
+所有 `IXGBE_WRITE_REG` 展开后就是：
+
+```c
+#define IXGBE_WRITE_REG(hw, reg, value) \
+    rte_write32((value), (volatile uint32_t *)((hw)->hw_addr + (reg)))
+//                   ↑ volatile 写
+//                              ↑ BAR0 基地址 + 寄存器偏移
+```
+
+### 4.3 初始化完成后的状态
+
+```
+                    CPU 侧                              NIC 侧
+                    ──────                              ──────
+
+ BAR 寄存器:
+   RDBAL[0] = 0x7f...1000  ──────────────────────►  NIC DMA 引擎记住 ring 地址
+   RDLEN[0] = 512         ──────────────────────►  NIC 知道 ring 大小
+   RDT[0]   = 511         ◄──────────────────────  CPU 维护（告诉 NIC 有多少空闲）
+   RDH[0]   = 0           ◄──────────────────────  NIC 维护（写到哪了）
+   RXDCTL[0]= ENABLE      ──────────────────────►  队列开始工作
+
+ hugepage 内存:
+   rx_ring:
+   ┌─────────────────────────────────────────┐
+   │ desc[0].pkt_addr = 0x7f...2000         │ ◄── NIC 读这个地址
+   │ desc[0].hdr_addr = 0x7f...2000         │     DMA 写包到这里
+   │ desc[1].pkt_addr = 0x7f...3000         │
+   │ ...                                     │
+   └─────────────────────────────────────────┘
+
+   sw_ring (仅 CPU):
+   ┌─────────────────────────────────────────┐
+   │ [0] = mbuf0  [1] = mbuf1  [2] = mbuf2  │ ◄── CPU 用这个找 mbuf
+   └─────────────────────────────────────────┘
+```
+
+### 4.4 TX 队列启动同理
+
+```c
+static int
+ixgbe_dev_tx_queue_start(struct rte_eth_dev *dev, uint16_t tx_queue_id)
+{
+    struct ixgbe_hw *hw = &adapter->hw;
+    struct ixgbe_tx_queue *txq = dev->data->tx_queues[tx_queue_id];
+
+    // 写 ring 基地址
+    uint64_t tdba = txq->tx_ring_phys_addr;
+    IXGBE_WRITE_REG(hw, IXGBE_TDBAL(tx_queue_id),
+                    (uint32_t)(tdba & 0xFFFFFFFF));
+    IXGBE_WRITE_REG(hw, IXGBE_TDBAH(tx_queue_id),
+                    (uint32_t)(tdba >> 32));
+
+    // 写 ring 大小
+    IXGBE_WRITE_REG(hw, IXGBE_TDLEN(tx_queue_id), txq->nb_tx_desc);
+
+    // 初始化 head/tail
+    IXGBE_WRITE_REG(hw, IXGBE_TDH(tx_queue_id), 0);
+    IXGBE_WRITE_REG(hw, IXGBE_TDT(tx_queue_id), 0);
+    //  TDH = TX Descriptor Head (NIC 维护)
+    //  TDT = TX Descriptor Tail (CPU 维护，通知 NIC 有新包要发)
+
+    // 启用队列
+    IXGBE_WRITE_REG(hw, IXGBE_TXDCTL(tx_queue_id),
+                    IXGBE_TXDCTL_ENABLE);
+
+    return 0;
 }
 ```
 
 ---
 
-## 4. Rx/Tx 队列设置
+## 5. Rx/Tx 队列设置
 
-### 4.1 rx_queue_setup
+> **注意**：`rx_queue_setup` / `tx_queue_setup` 只分配内存和填充描述符，**不写硬件寄存器**。
+> NIC 在此时还不知道 ring 的存在。硬件配置在后面的 `dev_start` 中完成（见第 4 节）。
+
+### 5.1 rx_queue_setup
 
 ```c
 // 应用程序调用
@@ -371,42 +582,33 @@ ixgbe_rx_queue_setup(struct rte_eth_dev *dev,
         q->sw_ring[i] = m;
     }
     
-    // 5. 配置 SRR (Split and Receive) 寄存器
-    //    告诉 NIC 如何处理接收的数据
-    
-    // 6. 保存到 dev_data
+    // 5. 保存到 dev_data
     dev->data->rx_queues[rx_queue_id] = q;
     
     return 0;
 }
 ```
 
-### 4.2 Rx 描述符结构
+### 5.2 Rx 描述符结构
 
 ```c
 // drivers/net/ixgbe/ixgbe_rxtx.h
 
 // 82599 接收描述符（16 字节）
-typedef union {
+typedef union __rte_packed ixgbe_adv_rx_desc {
     struct {
         __le64 pkt_addr;     // 数据包缓冲区的物理地址
         __le64 hdr_addr;     // 头部缓冲区的物理地址
     } read;
-    
+
     struct {
         __le32 data_error;   // 接收错误状态
         __le32 rsss;         // RSS hash 结果
     } qw1;
-} __rte_packed union ixgbe_adv_rx_desc;
-
-// 接收描述符状态
-struct ixgbe_adv_rx_desc {
-    volatile uint64_t pkt_addr;    // DMA 地址
-    volatile uint64_t hdr_addr;    // Header 地址
 };
 ```
 
-### 4.3 Rx 描述符环
+### 5.3 Rx 描述符环
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -443,9 +645,9 @@ struct ixgbe_adv_rx_desc {
 
 ---
 
-## 5. 收包流程 (rx_burst)
+## 6. 收包流程 (rx_burst)
 
-### 5.1 ethdev 层
+### 6.1 ethdev 层
 
 ```c
 // lib/ethdev/rte_eth_rx_burst
@@ -468,7 +670,55 @@ rte_eth_rx_burst(uint16_t port_id,
 }
 ```
 
-### 5.2 ixgbe_recv_pkts 实现
+### 6.2 RX Head/Tail 与 DD 位
+
+在理解收包代码之前，需要先搞清楚 RX ring 中 head/tail 的含义。硬件寄存器的命名是从 **NIC（生产者）** 的视角定义的：
+
+```
+RX ring（NIC 是生产者，CPU 是消费者）:
+
+        NIC 写方向 →
+  ┌────┬────┬────┬────┬────┬────┬────┬────┐
+  │ 0  │ 1  │ 2  │ 3  │ 4  │ 5  │ 6  │ 7  │
+  └────┴────┴────┴────┴────┴────┴────┴────┘
+   ↑                  ↑                  ↑
+  RDH (Head)         NIC 正在写         RDT (Tail)
+  NIC 维护                              CPU 维护
+  (NIC 写到哪了)                         (CPU 回填到哪了)
+```
+
+| 寄存器 | 全称 | 维护者 | 含义 |
+|--------|------|--------|------|
+| RDH | RX Descriptor Head | NIC | NIC 当前正在写的描述符位置 |
+| RDT | RX Descriptor Tail | CPU | CPU 已经回填到的描述符位置 |
+
+- NIC 从 RDH 向 RDT 方向消费描述符（收包）
+- CPU 回填新 mbuf 后更新 RDT，告诉 NIC "到这里为止都是可用的"
+- RDT 不得追上 RDH，否则 NIC 会读到未回填的描述符
+
+#### DD (Descriptor Done) 位
+
+CPU 和 NIC 同时操作同一个 ring，需要一种**无锁同步机制**。DD 位就是 NIC 写完包后设置的状态标志：
+
+```
+时间线:
+
+  t1  CPU 写 desc[i].pkt_addr = mbuf 的 IOVA    ← "这个缓冲区给你用"
+  t2  CPU 更新 RDT                                ← "新描述符可用了"
+  t3  NIC 读到描述符，开始 DMA 写包
+  t4  NIC DMA 完成，写 DD = 1                     ← "写完了，你来取"
+  t5  CPU 轮询看到 DD = 1，读包数据
+  t6  CPU 回填新 mbuf，DD = 0                     ← "下一个给你用"
+
+没有 DD 位，CPU 无法判断 NIC 是否写完，可能读到半包数据。
+没有中断、没有锁，就靠这一个 bit 做同步——这也是 Poll Mode Driver 名字的由来。
+```
+
+#### 为什么 CPU 的游标叫 rx_tail
+
+`q->rx_tail` 是 RDT 寄存器的软件副本，代表 CPU 上次回填到的位置，也就是 CPU 下次要扫描的起始位置。叫 "tail" 是因为它直接对应硬件寄存器 RDT（RX Descriptor **Tail**），名字来自硬件手册，不是从软件消费者角度命名的。
+
+### 6.3 ixgbe_recv_pkts 实现
 
 ```c
 // drivers/net/ixgbe/ixgbe_rxtx.c
@@ -486,7 +736,7 @@ ixgbe_recv_pkts(void *rx_queue,
     uint16_t next_dd;
     uint16_t current_dd;
     
-    // 1. 获取当前的 consumer index
+    // 1. 获取 CPU 的扫描游标（RDT 的软件副本）
     next_dd = q->rx_tail;
     
     // 2. 批量处理
@@ -561,7 +811,11 @@ ixgbe_recv_pkts(void *rx_queue,
             next_dd = 0;
     }
     
-    // 12. 更新 consumer index
+    // 12. 更新游标（软件副本）
+    q->rx_tail = next_dd;
+
+    // 13. 写 RDT 寄存器，通知 NIC：这些描述符已回填新 mbuf
+    IXGBE_PCI_REG_WRITE(q->rdt_reg_addr, next_dd);
     q->rx_tail = next_dd;
     
     // 13. 写入 EOP + RS 位（通知 NIC 描述符已消费）
@@ -571,7 +825,7 @@ ixgbe_recv_pkts(void *rx_queue,
 }
 ```
 
-### 5.3 Rx 完整流程图
+### 6.4 Rx 完整流程图
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -625,9 +879,9 @@ ixgbe_recv_pkts(void *rx_queue,
 
 ---
 
-## 6. 发包流程 (tx_burst)
+## 7. 发包流程 (tx_burst)
 
-### 6.1 tx_queue_setup
+### 7.1 tx_queue_setup
 
 ```c
 // ixgbe_tx_queue_setup 实现
@@ -671,7 +925,7 @@ ixgbe_tx_queue_setup(struct rte_eth_dev *dev,
 }
 ```
 
-### 6.2 ixgbe_xmit_pkts 实现
+### 7.2 ixgbe_xmit_pkts 实现
 
 ```c
 // drivers/net/ixgbe/ixgbe_rxtx.c
@@ -742,22 +996,22 @@ ixgbe_xmit_pkts(void *tx_queue,
 }
 ```
 
-### 6.3 Tx 描述符结构
+### 7.3 Tx 描述符结构
 
 ```c
 // drivers/net/ixgbe/ixgbe_rxtx.h
 
 // 82599 发送描述符（16 字节）
-typedef union {
+typedef union __rte_packed ixgbe_adv_tx_desc {
     struct {
         __le64 buffer_addr;      // 数据缓冲区的物理地址
         __le64 cmd_type_len;      // 命令和长度
     } read;
-    
+
     struct {
         __le32 dw[4];
     } w32;
-} __rte_packed union ixgbe_adv_tx_desc;
+};
 
 // cmd_type_len 字段定义
 #define IXGBE_ADVTXD_DCMD_EOP    (1ULL << 24)  // End of Packet
@@ -769,9 +1023,9 @@ typedef union {
 
 ---
 
-## 7. 常见 PMD 驱动
+## 8. 常见 PMD 驱动
 
-### 7.1 Intel 驱动
+### 8.1 Intel 驱动
 
 | 驱动 | 设备 | 特点 |
 |------|------|------|
@@ -780,7 +1034,7 @@ typedef union {
 | **i40e** | XL710, X710 | 10G/40G NIC |
 | **ice** | E800, E810 | 100G, Advanced Vector |
 
-### 7.2 虚拟化驱动
+### 8.2 虚拟化驱动
 
 | 驱动 | 设备 | 特点 |
 |------|------|------|
@@ -788,7 +1042,7 @@ typedef union {
 | **vmxnet3** | VMware | ESXi 虚拟网卡 |
 | **bnxt** | Broadcom | 融合网卡 |
 
-### 7.3 其他厂商
+### 8.3 其他厂商
 
 | 驱动 | 厂商 | 特点 |
 |------|------|------|
@@ -798,9 +1052,9 @@ typedef union {
 
 ---
 
-## 8. virtio PMD 详解
+## 9. virtio PMD 详解
 
-### 8.1 virtio 概述
+### 9.1 virtio 概述
 
 virtio 是 QEMU/KVM 虚拟机的标准半虚拟化网络驱动，比纯软件模拟快得多：
 
@@ -830,7 +1084,7 @@ virtio 是 QEMU/KVM 虚拟机的标准半虚拟化网络驱动，比纯软件模
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 8.2 virtio 描述符环
+### 9.2 virtio 描述符环
 
 ```c
 // virtio 驱动使用 vring（虚拟队列）
@@ -855,9 +1109,9 @@ struct virtnet_rx {
 
 ---
 
-## 9. 驱动性能优化
+## 10. 驱动性能优化
 
-### 9.1 Batch Processing
+### 10.1 Batch Processing
 
 ```c
 // 优化：批量处理减少函数调用开销
@@ -867,10 +1121,10 @@ for (int i = 0; i < nb_rx; i++) {
 }
 
 // 优化：批量释放
-rte_mbuf_raw_free_bulk(pkts, nb_rx);  // 一次函数调用
+rte_pktmbuf_free_bulk(pkts, nb_rx);  // 一次函数调用
 ```
 
-### 9.2 预取优化
+### 10.2 预取优化
 
 ```c
 // 预取下一个要处理的描述符
@@ -886,7 +1140,7 @@ ixgbe_recv_pkts(void *rxq, struct rte_mbuf **rx_pkts, uint16_t nb_pkts)
 }
 ```
 
-### 9.3 NIC Offload 配置
+### 10.3 NIC Offload 配置
 
 ```c
 // 启用 NIC 硬件卸载
@@ -912,7 +1166,7 @@ struct rte_eth_conf port_conf = {
 
 ---
 
-## 10. 小结
+## 11. 小结
 
 本章核心要点：
 

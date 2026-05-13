@@ -76,11 +76,11 @@ eBPF (Extended Berkeley Packet Filter) 是一个运行在 Linux 内核中的**�
 
 ```mermaid
 graph LR
-    C["C 代码<br/>(libbpf/bpftool)"] -->|编译| A["eBPF 字节码<br/>(ELF .text section)"]
-    A -->|加载| V["Verifier<br/>(静态验证)"]
+    C["C 代码<br>(libbpf/bpftool)"] -->|编译| A["eBPF 字节码<br>(ELF .text section)"]
+    A -->|加载| V["Verifier<br>(静态验证)"]
     V -->|通过| JIT["JIT 编译器"]
-    JIT -->|运行| N["原生机器码<br/>(x86_64 / ARM64)"]
-    V -->|拒绝| Err["错误日志<br/>(bpftool prog dump)"]
+    JIT -->|运行| N["原生机器码<br>(x86_64 / ARM64)"]
+    V -->|拒绝| Err["错误日志<br>(bpftool prog dump)"]
 ```
 
 上图展示了 eBPF 程序从 C 源码到原生执行的完整生命周期。本章聚焦的是中间的**字节码层**——即 eBPF 虚拟机的指令集架构 (ISA)。
@@ -554,11 +554,11 @@ bpf_map_delete_elem(&my_hash, &key);
 
 ```mermaid
 graph TD
-    B["eBPF 字节码<br/>(64-bit 指令数组)"] --> S["安全扫描<br/>(双重验证)"]
-    S --> I["指令翻译<br/>(1:1 或 1:N 映射)"]
-    I --> O["优化 Pass<br/>(常量折叠、死代码消除)"]
-    O --> N["原生机器码<br/>(x86_64 / ARM64)"]
-    N --> F["flush_icache<br/>(指令缓存刷新)"]
+    B["eBPF 字节码<br>(64-bit 指令数组)"] --> S["安全扫描<br>(双重验证)"]
+    S --> I["指令翻译<br>(1:1 或 1:N 映射)"]
+    I --> O["优化 Pass<br>(常量折叠、死代码消除)"]
+    O --> N["原生机器码<br>(x86_64 / ARM64)"]
+    N --> F["flush_icache<br>(指令缓存刷新)"]
     F --> R["可执行内存页"]
 ```
 

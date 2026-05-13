@@ -80,10 +80,10 @@ eBPF 程序不能像普通用户态程序那样自由调用任意函数。它只
 graph TD
     subgraph "调用机制光谱"
         direction LR
-        H["Helper Functions<br/>内核标准 API<br/>⬅ 稳定、安全、受限"]
-        B["BPF-to-BPF Calls<br/>程序内子函数<br/>⬅ 灵活、共享栈"]
-        T["Tail Calls<br/>跨程序跳转<br/>⬅ 独立栈、不返回"]
-        K["kfuncs<br/>内核原生函数<br/>⬅ 最灵活、类型安全"]
+        H["Helper Functions<br>内核标准 API<br>⬅ 稳定、安全、受限"]
+        B["BPF-to-BPF Calls<br>程序内子函数<br>⬅ 灵活、共享栈"]
+        T["Tail Calls<br>跨程序跳转<br>⬅ 独立栈、不返回"]
+        K["kfuncs<br>内核原生函数<br>⬅ 最灵活、类型安全"]
     end
 
     H ---|演进| B
@@ -269,7 +269,28 @@ static int sub_func() {
     return 0;
 }
 
-// Verifier 报错：combined stack size 550 exceeds 512 byte limit!
+// 传统理解：combined stack size 550 exceeds 512 byte limit!
+```
+
+#### Kernel 6.19 的变化：Adaptive Private Stack
+
+在 kernel 6.19 中，`MAX_BPF_STACK` 仍然是 512 字节，但 verifier 对栈的检查逻辑发生了重要变化（verifier.c:6530）：
+
+| 程序类型 | 栈检查模式 | 说明 |
+|---------|-----------|------|
+| `kprobe` | `PRIV_STACK_ADAPTIVE` | 每个 subprog **独立**分配栈 |
+| `tracepoint` | `PRIV_STACK_ADAPTIVE` | 同上 |
+| `perf_event` | `PRIV_STACK_ADAPTIVE` | 同上 |
+| `raw_tracepoint` | `PRIV_STACK_ADAPTIVE` | 同上 |
+| `tracing` / `lsm` | 条件启用 | 需要递归或手动请求 |
+| `socket_filter` / `cgroup_skb` / `sched_cls` 等 | `NO_PRIV_STACK` | **累加**所有 subprog 栈 |
+
+`PRIV_STACK_ADAPTIVE` 模式下，每个 subprog 获得独立的 private stack，不再共享 512B。因此上面的 300+250=550B 场景在 kprobe 下**完全合法**（max(300, 250) = 300 < 512）。
+
+`NO_PRIV_STACK` 模式下（如 `cgroup_skb`、`sched_cls`），栈仍然是累加的，550 > 512 会触发：
+
+```
+combined stack size of 2 calls is 550. Too large
 ```
 
 **解决方案：**
@@ -290,6 +311,9 @@ static int sub_func() {
     // buf2 的生命周期结束，栈空间被回收
     return deeper_func();  // 现在有空间了
 }
+
+// 方案 4（仅限 NO_PRIV_STACK 类型）：切换到支持 adaptive private stack 的程序类型
+// 如 kprobe、tracepoint 等
 ```
 
 ---
@@ -309,7 +333,7 @@ sequenceDiagram
 
     P1->>P1: 处理逻辑...
     P1->>Map: bpf_tail_call(ctx, map, index=0)
-    Note over P1: 程序 A 的栈被清空<br/>R1-R5 传入 ctx<br/>执行权完全转移
+    Note over P1: 程序 A 的栈被清空<br>R1-R5 传入 ctx<br>执行权完全转移
 
     alt index=0 存在
         Map-->>P2: 跳转到程序 B
@@ -319,7 +343,7 @@ sequenceDiagram
         P3->>P3: 处理逻辑...
         P3-->>Exit: BPF_EXIT (返回)
     else index 不存在
-        Note over P1: bpf_tail_call 返回 -ENOENT<br/>程序 A 继续执行
+        Note over P1: bpf_tail_call 返回 -ENOENT<br>程序 A 继续执行
         P1-->>Exit: BPF_EXIT
     end
 ```
@@ -592,8 +616,8 @@ stateDiagram-v2
     Owned --> Transferred: 传递给另一个容器
     Freed --> [*]
 
-    note right of Allocated: 必须在当前函数<br/>释放或转移所有权
-    note right of Freed: Verifier 确保每个<br/>分配都有对应的释放
+    note right of Allocated: 必须在当前函数<br>释放或转移所有权
+    note right of Freed: Verifier 确保每个<br>分配都有对应的释放
 ```
 
 所有权规则：

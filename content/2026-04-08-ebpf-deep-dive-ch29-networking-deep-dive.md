@@ -81,9 +81,9 @@ tags:
 graph TB
     subgraph "网络数据包处理路径"
         NIC["网卡驱动 (NIC)"]
-        XDP["XDP<br/>L2/L3 快速路径"]
-        TC["TC (Traffic Control)<br/>L3/L4 策略"]
-        Sockmap["Sockmap<br/>Socket 重定向"]
+        XDP["XDP<br>L2/L3 快速路径"]
+        TC["TC (Traffic Control)<br>L3/L4 策略"]
+        Sockmap["Sockmap<br>Socket 重定向"]
         TCP["TCP/IP 协议栈"]
         App["用户态应用"]
     end

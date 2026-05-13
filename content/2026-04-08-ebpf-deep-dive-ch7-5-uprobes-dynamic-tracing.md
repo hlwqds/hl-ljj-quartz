@@ -79,8 +79,8 @@ graph TB
     end
 
     subgraph "uprobe 拦截点"
-        PROBE1["uprobe: SSL_write 入口<br/>捕获明文"]
-        PROBE2["uretprobe: SSL_write 返回<br/>捕获返回值"]
+        PROBE1["uprobe: SSL_write 入口<br>捕获明文"]
+        PROBE2["uretprobe: SSL_write 返回<br>捕获返回值"]
     end
 
     subgraph "内核 eBPF"
@@ -150,11 +150,11 @@ graph LR
     end
 
     subgraph "uretprobe 修改后"
-        CALL2[call target_func] --> SAVE[保存返回地址 A<br/>到 uprobe trampoline]
-        SAVE --> TRAMP[替换返回地址为<br/>trampoline 地址 B]
+        CALL2[call target_func] --> SAVE[保存返回地址 A<br>到 uprobe trampoline]
+        SAVE --> TRAMP[替换返回地址为<br>trampoline 地址 B]
         TRAMP --> EXEC2[执行函数体]
         EXEC2 --> TRAMP_RET[ret → trampoline]
-        TRAMP_RET --> POST[执行 post_handler<br/>BPF 程序]
+        TRAMP_RET --> POST[执行 post_handler<br>BPF 程序]
         POST --> JUMP[jmp 返回地址 A]
     end
 ```

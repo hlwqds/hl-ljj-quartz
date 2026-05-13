@@ -49,7 +49,7 @@ DPDK 处理百万级数据包时，需要识别"这是什么样的流量"：
 │                                                                             │
 │  软件分类                                                                  │
 │  ┌──────────────────────────────────────────────────────────────────────┐  │
-│  │                    librte_acl (Trie + NBFSM)                          │  │
+│  │                    librte_acl (Trie + NFA/DFA)                          │  │
 │  └──────────────────────────────────────────────────────────────────────┘  │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
@@ -124,58 +124,307 @@ struct rte_eth_conf conf = {
     },
 };
 
-// RSS 哈希字段
-#define RTE_ETH_RSS_IPV4        (1ULL << 2)
-#define RTE_ETH_RSS_IPV6        (1ULL << 3)
-#define RTE_ETH_RSS_IPV6_EXT    (1ULL << 4)
-#define RTE_ETH_RSS_TCP         (1ULL << 5)
-#define RTE_ETH_RSS_UDP         (1ULL << 6)
-#define RTE_ETH_RSS_SCTP        (1ULL << 7)
-#define RTE_ETH_RSS_TUNNEL      (1ULL << 8)  // VXLAN, GRE
-#define RTE_ETH_RSS_L2_PAYLOAD  (1ULL << 15)
-#define RTE_ETH_RSS_PORT        (1ULL << 16)
+// RSS 哈希字段（部分常用值，完整列表见 rte_ethdev.h）
+#define RTE_ETH_RSS_IPV4              0x1       // bit 0: IPv4（含所有 IPv4 子类型）
+#define RTE_ETH_RSS_FRAG_IPV4         0x2       // bit 1: IPv4 分片
+#define RTE_ETH_RSS_NONFRAG_IPV4_TCP  0x4       // bit 2: IPv4 非_frag + TCP
+#define RTE_ETH_RSS_NONFRAG_IPV4_UDP  0x8       // bit 3: IPv4 非_frag + UDP
+#define RTE_ETH_RSS_NONFRAG_IPV4_SCTP 0x10      // bit 4: IPv4 非_frag + SCTP
+#define RTE_ETH_RSS_NONFRAG_IPV4_OTHER 0x20     // bit 5: IPv4 非_frag + 其他
+#define RTE_ETH_RSS_IPV6              0x40      // bit 6: IPv6
+#define RTE_ETH_RSS_L2_PAYLOAD        0x1000    // bit 12: L2 payload
+#define RTE_ETH_RSS_L3_SRC_ONLY       0x10000   // bit 16: 仅 L3 源地址
+#define RTE_ETH_RSS_L3_DST_ONLY       0x20000   // bit 17: 仅 L3 目的地址
+#define RTE_ETH_RSS_L4_SRC_ONLY       0x40000   // bit 18: 仅 L4 源端口
+#define RTE_ETH_RSS_L4_DST_ONLY       0x80000   // bit 19: 仅 L4 目的端口
+
+// 注意：RTE_ETH_RSS_IP 和 RTE_ETH_RSS_TCP 是组合宏，不是单个 bit
+// RTE_ETH_RSS_IP = RTE_ETH_RSS_IPV4 | RTE_ETH_RSS_IPV6 | RTE_ETH_RSS_FRAG_IPV4 | ...
+// RTE_ETH_RSS_TCP = 所有 TCP 相关 bit 的组合
+// RTE_ETH_RSS_UDP = 所有 UDP 相关 bit 的组合
 ```
 
 ### 2.3 RSS 硬件实现
 
 ```c
-// RSS Indirection Table (Intel NIC)
+// RSS 哈希计算（软件实现，NIC 硬件自动完成，这里仅展示原理）
+// 实际收包时 NIC 硬件已经算好了，CPU 只需要读 m->hash.rss
 
-// indirection_table[128] 存储队列映射
-// 哈希值的后 7 位 (hash & 127) 作为索引
-
-static uint16_t
-ixgbe_rss_hash(struct rte_mbuf *m, uint32_t *rss_hash)
+static inline uint32_t
+rss_hash_ipv4_tcp(const struct rte_ipv4_hdr *ip,
+                   const struct rte_tcp_hdr *tcp,
+                   const uint8_t *rss_key)
 {
-    struct rte_ether_hdr *eth = rte_pktmbuf_mtod(m, struct rte_ether_hdr *);
-    void *hdr;
-    uint32_t hash;
-    
-    // 根据协议类型提取字段
-    if (eth->ether_type == rte_cpu_to_be_16(RTE_ETHER_TYPE_IPV4)) {
-        struct rte_ipv4_hdr *ip = (struct rte_ipv4_hdr *)(eth + 1);
-        hdr = ip;
-        
-        if (ip->next_proto_id == IPPROTO_TCP) {
-            struct rte_tcp_hdr *tcp = (struct rte_tcp_hdr *)((char *)ip + 
-                            (ip->version_ihl & 0x0F) * 4);
-            // 计算 4-tuple 哈希
-            hash = rte_softrss_be(m->pkt_len ^ 
-                        ((uint64_t)ip->src_addr << 32) ^
-                        ((uint64_t)ip->dst_addr << 16) ^
-                        ((uint64_t)tcp->src_port << 8) ^
-                        tcp->dst_port,
-                        toeplitz_key);
-        }
-    }
-    
-    // 存储哈希值到 mbuf
-    m->hash.rss = hash;
-    m->ol_flags |= PKT_RX_RSS_HASH;
-    
-    // 返回队列索引
-    return ixgbe_queues[hash & (ixgbe_nb_queues - 1)];
+    // Toeplitz 哈希输入：将五元组按 4 字节对齐拼成数组
+    uint32_t input[6];
+    uint32_t input_len = 0;
+
+    // src_ip (4 字节) + dst_ip (4 字节)
+    input[0] = ip->src_addr;
+    input[1] = ip->dst_addr;
+    input_len = 2;
+
+    // src_port (2 字节) + dst_port (2 字节) 拼成一个 uint32_t
+    // 注意：网络字节序，低 16 位是 src_port，高 16 位是 dst_port
+    input[2] = (uint32_t)tcp->src_port | ((uint32_t)tcp->dst_port << 16);
+    input_len = 3;
+
+    return rte_softrss_be(input, input_len, rss_key);
+    // rte_softrss_be 签名:
+    //   uint32_t rte_softrss_be(const uint32_t *input,
+    //                             uint32_t input_len,    // uint32_t 个数
+    //                             const uint8_t *key);
+    // key 需要通过 rte_convert_rss_key() 预转换
 }
+```
+
+### 2.4 对称哈希与 Hash 算法选择
+
+#### 问题：非对称哈希导致双向流量分散
+
+默认 Toeplitz 哈希把 src_ip/dst_ip、src_port/dst_port 当作不同字段顺序输入，交换方向后 hash 值不同：
+
+```
+  同一条 TCP 连接的两个方向：
+
+  请求方向 (A→B)                         响应方向 (B→A)
+  ┌──────────────────────┐               ┌──────────────────────┐
+  │ src_ip  = 10.0.0.1   │               │ src_ip  = 10.0.0.2   │
+  │ dst_ip  = 10.0.0.2   │               │ dst_ip  = 10.0.0.1   │
+  │ src_port = 12345     │               │ src_port = 80        │
+  │ dst_port = 80        │               │ dst_port = 12345     │
+  └──────────┬───────────┘               └──────────┬───────────┘
+             │                                      │
+             ▼                                      ▼
+        hash = 0xABCD                          hash = 0x37F1
+             │                                      │
+             ▼                                      ▼
+        queue 3                                 queue 1
+
+  问题：同一连接的正反方向包到了不同队列 → 不同 lcore 处理
+        → 连接状态需要跨 lcore 共享或同步，严重影响性能
+```
+
+这在**有状态网关**（NAT、Firewall、Conntrack、Load Balancer）中是致命的——必须保证双向流量到同一队列。
+
+#### 解决方案一：对称 RSS (Symmetric RSS)
+
+DPDK 提供了 `RTE_ETH_RSS_SYMMETRIC` 功能标志，启用后硬件会自动将 src/dst 对调后再做一次 hash，取较小值（或组合），保证双向一致：
+
+```c
+// 查询硬件是否支持对称 RSS
+struct rte_eth_dev_info dev_info;
+rte_eth_dev_info_get(port_id, &dev_info);
+
+if (dev_info.hash_key_config.supported_hash_functions &
+    RTE_ETH_HASH_FUNCTION_SYMMETRIC_TOEPLITZ) {
+    printf("硬件支持对称 Toeplitz\n");
+}
+
+// 启用对称 RSS：在 rss_hf 中加入 RTE_ETH_RSS_SYMMETRIC
+struct rte_eth_rss_conf rss_conf;
+rte_eth_dev_rss_hash_conf_get(port_id, &rss_conf);
+
+rss_conf.rss_hf |= RTE_ETH_RSS_SYMMETRIC;
+
+int ret = rte_eth_dev_rss_hash_conf_set(port_id, &rss_conf);
+if (ret != 0) {
+    printf("对称 RSS 设置失败: %s\n", strerror(-ret));
+    // 可能硬件不支持，需要软件兜底
+}
+```
+
+对称 Toeplitz 的原理很简单：对输入字段排序，使 (A→B) 和 (B→A) 产生相同的 hash 输入：
+
+```
+  标准 Toeplitz 输入：                     对称 Toeplitz 输入：
+  [src_ip, dst_ip, src_port, dst_port]     [min(src,dst), max(src,dst), min(sport,dport), max(sport,dport)]
+
+  A→B: [10.0.0.1, 10.0.0.2, 12345, 80]   A→B: [10.0.0.1, 10.0.0.2, 80, 12345]
+  B→A: [10.0.0.2, 10.0.0.1, 80, 12345]    B→A: [10.0.0.1, 10.0.0.2, 80, 12345]
+                                         ─────────────────────────────────────
+         hash 不同                                hash 相同 ✓
+```
+
+#### 解决方案二：软件对称哈希（硬件不支持时）
+
+不是所有 NIC 都支持对称 RSS。对于不支持的硬件，可以在收包路径上用软件补正：
+
+```c
+// 软件对称 hash：对原始 hash 输入排序后重新计算
+static inline uint32_t
+symmetric_rss_hash(uint32_t ip_a, uint32_t ip_b,
+                   uint16_t port_a, uint16_t port_b,
+                   const uint8_t *rss_key)
+{
+    // 排序：确保输入顺序一致
+    if (ip_a > ip_b) {
+        uint32_t tmp_ip = ip_a; ip_a = ip_b; ip_b = tmp_ip;
+        uint16_t tmp_port = port_a; port_a = port_b; port_b = tmp_port;
+    }
+
+    uint32_t input[3];
+    input[0] = ip_a;
+    input[1] = ip_b;
+    input[2] = (uint32_t)port_a | ((uint32_t)port_b << 16);
+
+    return rte_softrss_be(input, 3, rss_key);
+}
+```
+
+> [!warning] 软件对称 hash 的代价
+> 每次 hash 需要 3 次比较 + 可能的交换，再加一次 Toeplitz 计算。在 14.88Mpps 线速下，
+> 大约增加 ~5-8ns/包 的延迟。对于非线速场景（如出口网关）完全可以接受。
+
+#### Hash 算法选择
+
+不同硬件支持的 RSS hash 算法不同，DPDK 通过 `rte_eth_hash_function` 枚举统一抽象：
+
+```c
+// rte_ethdev.h 中的 hash 算法枚举
+enum rte_eth_hash_function {
+    RTE_ETH_HASH_FUNCTION_DEFAULT = 0,    // 硬件默认（通常是 Toeplitz）
+    RTE_ETH_HASH_FUNCTION_TOEPLITZ,       // Toeplitz（最通用，RFC 1071）
+    RTE_ETH_HASH_FUNCTION_SIMPLE_XOR,     // 简单异或（最快，但分布较差）
+    RTE_ETH_HASH_FUNCTION_SYMMETRIC_TOEPLITZ,  // 对称 Toeplitz
+    RTE_ETH_HASH_FUNCTION_SIMPLE_XOR_SYM,      // 对称简单异或
+    RTE_ETH_HASH_FUNCTION_CRC,            // CRC32（部分 ARM NIC）
+};
+```
+
+```c
+// 查询硬件支持的 hash 算法
+struct rte_eth_dev_info dev_info;
+rte_eth_dev_info_get(port_id, &dev_info);
+
+uint64_t supported = dev_info.hash_key_config.supported_hash_functions;
+
+printf("支持的 hash 算法:\n");
+if (supported & RTE_ETH_HASH_FUNCTION_TOEPLITZ)
+    printf("  - Toeplitz\n");
+if (supported & RTE_ETH_HASH_FUNCTION_SYMMETRIC_TOEPLITZ)
+    printf("  - Symmetric Toeplitz\n");
+if (supported & RTE_ETH_HASH_FUNCTION_SIMPLE_XOR)
+    printf("  - Simple XOR\n");
+
+// 设置 hash 算法（通过 rss_conf）
+struct rte_eth_rss_conf rss_conf;
+rte_eth_dev_rss_hash_conf_get(port_id, &rss_conf);
+
+// 指定 hash 函数
+rss_conf.algorithm = RTE_ETH_HASH_FUNCTION_SYMMETRIC_TOEPLITZ;
+rss_conf.rss_hf = RTE_ETH_RSS_NONFRAG_IPV4_TCP | RTE_ETH_RSS_NONFRAG_IPV4_UDP
+                | RTE_ETH_RSS_SYMMETRIC;
+
+int ret = rte_eth_dev_rss_hash_conf_set(port_id, &rss_conf);
+```
+
+#### 算法对比
+
+```
+┌─────────────────────────┬──────────────┬──────────────┬──────────────────┐
+│ Hash 算法               │ 分布质量      │ 对称性       │ 典型硬件         │
+├─────────────────────────┼──────────────┼──────────────┼──────────────────┤
+│ Toeplitz                │ 好           │ ✗            │ Intel ixgbe/i40e │
+│ Symmetric Toeplitz      │ 好           │ ✓            │ Intel i40e/Mellanox│
+│ Simple XOR              │ 差           │ ✗            │ 部分 ARM NIC     │
+│ Simple XOR (symmetric)  │ 差           │ ✓            │ 部分 ARM NIC     │
+│ CRC32                   │ 中           │ ✗            │ Marvell, ARM     │
+└─────────────────────────┴──────────────┴──────────────┴──────────────────┘
+
+选型建议：
+  - 默认场景（无状态转发）        → Toeplitz，分布好，兼容性强
+  - 有状态网关（NAT/FW/LB）       → Symmetric Toeplitz，必须保证双向一致
+  - 性能极致、对分布不敏感         → Simple XOR，计算开销最小
+```
+
+#### 通过 ethtool 配置对称 RSS（内核态）
+
+DPDK 绑定端口之前，或者未使用 DPDK 的场景下，可以通过 `ethtool` 配置 RSS。但需要注意：**不同厂商实现对称 hash 的机制完全不同**，不能一概而论。
+
+**Mellanox/ConnectX — 特殊 RSS Key**
+
+Mellanox 的做法是写入一组精心构造的 Toeplitz key，利用 key 的数学特性使 hash 输出对称：
+
+```bash
+# 查看当前 RSS 配置
+ethtool -x eth3
+
+# 输出示例：
+# RSS hash key:
+# 6D:5A:6D:5A:6D:5A:6D:5A:6D:5A:6D:5A:6D:5A:6D:5A:6D:5A:6D:5A:6D:5A:6D:5A:6D:5A:6D:5A:6D:5A:6D:5A:6D:5A:6D:5A:6D:5A:6D:5A
+# RSS indirection table:
+# 0:  0  1  2  3  4  5  6  7  8  9  10  11  12  13  14  15
+# 16: 0  1  2  3  4  5  6  7  8  9  10  11  12  13  14  15
+
+# 写入对称 key + 均匀分配到 16 个队列
+ethtool -X eth3 \
+  hkey 6D:5A:6D:5A:6D:5A:6D:5A:6D:5A:6D:5A:6D:5A:6D:5A:6D:5A:6D:5A:6D:5A:6D:5A:6D:5A:6D:5A:6D:5A:6D:5A:6D:5A:6D:5A:6D:5A:6D:5A \
+  equal 16
+
+# 查看支持的 hash 字段组合
+ethtool -n eth3 rx-flow-hash tcp4
+
+# 查看 RSS 是否启用
+ethtool -k eth3 | grep hash
+```
+
+`6D:5A` 交替重复 key 的数学原理：
+
+```
+Toeplitz 哈希中，key 的每个字节控制输入中对应 bit 位的权重。
+对称 Toeplitz 矩阵要求：输入位 i 和输入位 (N-i) 的权重相同。
+
+6D = 0110_1101
+5A = 0101_1010
+↑              ↑
+bit 7..0     bit 7..0
+
+6D 和 5A 互为"位翻转"关系：
+  6D = ~5A 的低 7 位 + 保留 bit 7
+  使得对称位置的 bit 权重互补，从而 hash(A,B) = hash(B,A)
+
+这个 key 在 Mellanox ConnectX 的 PRM（Programmer's Reference Manual）
+中有明确定义，是厂商提供的标准对称 key。
+```
+
+> [!warning] 6D:5A key 只对 Mellanox 有效
+> 把这个 key 写到 Intel 网卡上不会产生对称 hash。Intel 的对称 hash 依赖
+> 硬件内部重排输入字段，和 key 无关。使用前必须确认网卡型号。
+
+**Intel 网卡 — 硬件功能标志**
+
+Intel 不靠特殊 key，而是通过驱动标志让硬件自动重排 src/dst：
+
+```bash
+# 部分 Intel 驱动支持通过 ethtool 配置 hash 字段
+# sdfn 表示：s(src) d(dst) f(fwd/both) n(no-change)
+# 让 src 和 dst 都参与 hash 且位置对称
+ethtool -N eth3 rx-flow-hash tcp4 sdfn
+
+# 更可靠的方式是直接通过 DPDK API 配置（见上文代码示例）
+```
+
+**厂商差异总结**
+
+```
+┌───────────────────┬──────────────────────────────┬──────────────────────┐
+│ 厂商              │ 对称 hash 机制               │ 配置方式             │
+├───────────────────┼──────────────────────────────┼──────────────────────┤
+│ Mellanox ConnectX │ 特殊 Toeplitz key 产生       │ ethtool -X 写入      │
+│ (MLX4/MLX5)      │ 对称输出                     │ 6D:5A key            │
+├───────────────────┼──────────────────────────────┼──────────────────────┤
+│ Intel ixgbe/i40e/ │ 硬件内部 min/max 排序        │ DPDK: algorithm =   │
+│ ice               │ 输入字段                     │ SYMMETRIC_TOEPLITZ  │
+├───────────────────┼──────────────────────────────┼──────────────────────┤
+│ Broadcom (bnxt)   │ 固件支持对称模式             │ firmware CLI 配置    │
+├───────────────────┼──────────────────────────────┼──────────────────────┤
+│ 部分 ARM NIC      │ 不支持                       │ 只能软件对称 hash    │
+└───────────────────┴──────────────────────────────┴──────────────────────┘
+
+重要：ethtool 操作的是内核态 RSS，DPDK 绑定端口后两者独立。
+      使用 DPDK 时必须通过 rte_eth_dev_rss_hash_conf_set() 配置，
+      ethtool 写入的 key 不会被 DPDK PMD 继承。
 ```
 
 ---
@@ -227,90 +476,103 @@ Flow Director 是 Intel 特有的硬件功能，支持精确的五元组匹配�
 ### 3.2 Flow Director 配置
 
 ```c
-// lib/ethdev/rte_fdir.h
+// lib/ethdev/rte_eth_ctrl.h（不是 rte_fdir.h）
 
 // Flow Director 模式
-enum rte_fdir_mode {
-    RTE_FDIR_MODE_NONE        = 0,   // 关闭
-    RTE_FDIR_MODE_PERFECT     = 1,   // 精确匹配（默认）
-    RTE_FDIR_MODE_SIGNATURE   = 2,   // 签名模式（节省资源）
-    RTE_FDIR_MODE_TB5         = 3,   // 5-tuple
-    RTE_FDIR_MODE_TB4         = 4,   // 4-tuple
-    RTE_FDIR_MODE_TB3         = 5,   // 3-tuple
-    RTE_FDIR_MODE_IP_DA       = 6,   // IP dest only
-    RTE_FDIR_MODE_UDP_SA      = 7,   // UDP src only
+enum rte_eth_fdir_mode {
+    RTE_ETH_FDIR_MODE_NONE      = 0,  // 关闭
+    RTE_ETH_FDIR_MODE_SIGNATURE = 1,  // 签名模式（节省 FDIR 表项）
+    RTE_ETH_FDIR_MODE_PERFECT   = 2,  // 精确匹配（默认）
+    RTE_ETH_FDIR_MODE_PERFECT_MAC_VLAN = 3,  // 精确匹配 + MAC/VLAN
+    RTE_ETH_FDIR_MODE_PERFECT_TUNNEL = 4,  // 隧道精确匹配
 };
 
-// Flow Director 过滤结构
-struct rte_fdir_filter {
-    rte_be32_t ip_spec;           // IPv4 源/目标地址
-    rte_be32_t ip_mask;           // 地址掩码
-    rte_be16_t port_spec;         // 端口
-    rte_be16_t port_mask;         // 端口掩码
-    uint8_t proto;                // 协议
-    uint8_t proto_mask;           // 协议掩码
-    uint16_t vlan_id;             // VLAN
-    uint16_t vlan_mask;
-    uint16_t flexbytes;           // 灵活字节
-    uint16_t flex_mask;
+// FDIR 过滤器输入（五元组）
+struct rte_eth_fdir_input {
+    uint16_t flow_type;  // 指定匹配类型（如 ETH_RSS_IPV4_TCP）
+    union {
+        struct rte_eth_ipv4_flow ipv4;   // src/dst IP + src/dst port
+        struct rte_eth_ipv6_flow ipv6;
+        struct rte_eth_udpv4_flow udpv4;
+    } flow;
+    uint32_t flex_bytes;  // 灵活匹配字节
 };
 
-// 添加 Flow Director 规则
-int
-rte_eth_dev_fdir_add(uint16_t port_id,
-                      const struct rte_fdir_filter *filter,
-                      enum rte_eth_fdir_behavior behavior,
-                      uint8_t queue_index)
-{
-    struct rte_eth_dev *dev = &rte_eth_devices[port_id];
-    return dev->dev_ops->fdir_add(dev, filter, behavior, queue_index);
-}
+// FDIR 动作
+struct rte_eth_fdir_action {
+    enum rte_eth_fdir_action_type action_type;
+    union {
+        uint16_t rx_queue;   // QUEUE 动作的目标队列
+        uint8_t  flex_off;   // FLEX 动作的偏移
+    };
+};
 
-// 行为定义
+// 完整的 FDIR 过滤器结构
+struct rte_eth_fdir_filter {
+    uint16_t soft_id;              // 软件 ID（用户标识）
+    enum rte_eth_fdir_behavior behavior;  // 匹配/不匹配时的行为
+    struct rte_eth_fdir_input input;      // 匹配条件
+    struct rte_eth_fdir_action action;    // 匹配后执行的动作
+};
+
+// 匹配/不匹配行为
 enum rte_eth_fdir_behavior {
-    RTE_ETH_FDIR_ACCEPT = 0,       // 接收
-    RTE_ETH_FDIR_DROP   = 1,       // 丢弃
-    RTE_ETH_FDIR_PASS   = 2,       // 穿透（不匹配时）
-    RTE_ETH_FDIR_QUEUE  = 3,        // 排队
-    RTE_ETH_FDIR_PRIO   = 4,       // 优先级
+    RTE_ETH_FDIR_NO_BSWITCH = 0,    // 不影响队列分配
+    RTE_ETH_FDIR_BSWITCH_FILTER = 1, // 匹配时执行 action，不匹配走 RSS
+    RTE_ETH_FDIR_BSWITCH_FILTER_PERFECT = 2, // 仅在完美匹配时执行
 };
+
+// 动作类型
+enum rte_eth_fdir_action_type {
+    RTE_ETH_FDIR_ACTION_QUEUE     = 0,  // 分配到特定队列
+    RTE_ETH_FDIR_ACTION_DROP      = 1,  // 丢弃
+    RTE_ETH_FDIR_ACTION_PASSTHRU  = 2,  // 放行（走正常路径）
+    RTE_ETH_FDIR_ACTION_REJECT    = 3,  // 拒绝
+    RTE_ETH_FDIR_ACTION_FLEX      = 4,  // 灵活字节匹配
+};
+
+// 添加 Flow Director 规则（通过通用过滤 API）
+int
+rte_eth_dev_filter_ctrl(uint16_t port_id,
+                         enum rte_filter_type filter_type,
+                         enum rte_filter_op filter_op,
+                         void *arg);
+// filter_type = RTE_ETH_FILTER_FDIR
+// filter_op   = RTE_ETH_FILTER_ADD / RTE_ETH_FILTER_DELETE
+// arg         = (struct rte_eth_fdir_filter *)
 ```
 
 ### 3.3 Flow Director 使用示例
 
 ```c
-// 示例：丢弃来自特定 IP 的 TCP 流量
+// 示例：将来自 10.0.0.1 的 TCP 流量分配到队列 3
 
-struct rte_eth_fdir_filter filter = {
-    .ip_spec = {
-        .src_ip = RTE_IPV4(10, 0, 0, 1),
-        .dst_ip = RTE_IPV4(0, 0, 0, 0),
-    },
-    .ip_mask = {
-        .src_ip = 0xFFFFFFFF,
-        .dst_ip = 0x00000000,
-    },
-    .port_spec = {
-        .src = 0,
-        .dst = 0,
-    },
-    .port_mask = {
-        .src = 0,
-        .dst = 0,
-    },
-    .proto = IPPROTO_TCP,
-    .proto_mask = 0xFF,
-};
+struct rte_eth_fdir_filter filter;
 
-// 添加 DROP 规则
-int ret = rte_eth_dev_fdir_add(port_id,
-                                 &filter,
-                                 RTE_ETH_FDIR_DROP,
-                                 0);  // queue 不适用于 DROP
+memset(&filter, 0, sizeof(filter));
+filter.soft_id = 0;
+filter.behavior = RTE_ETH_FDIR_BSWITCH_FILTER;
+
+// 设置匹配条件：IPv4 + TCP 五元组
+filter.input.flow_type = RTE_ETH_FLOW_NONFRAG_IPV4_TCP;
+filter.input.flow.ipv4.src_ip = rte_cpu_to_be_32(RTE_IPV4(10, 0, 0, 1));
+filter.input.flow.ipv4.dst_ip = 0;          // 匹配任意目的 IP
+filter.input.flow.ipv4.src_port = 0;          // 匹配任意源端口
+filter.input.flow.ipv4.dst_port = 0;          // 匹配任意目的端口
+
+// 设置动作：分配到队列 3
+filter.action.action_type = RTE_ETH_FDIR_ACTION_QUEUE;
+filter.action.rx_queue = 3;
+
+// 添加规则
+int ret = rte_eth_dev_filter_ctrl(port_id,
+                                    RTE_ETH_FILTER_FDIR,
+                                    RTE_ETH_FILTER_ADD,
+                                    &filter);
 if (ret < 0)
     rte_exit(EXIT_FAILURE, "Failed to add FDIR rule\n");
 
-printf("Flow Director: Dropping TCP from 10.0.0.1\n");
+printf("Flow Director: 10.0.0.1 TCP -> queue 3\n");
 ```
 
 ---
@@ -322,46 +584,48 @@ printf("Flow Director: Dropping TCP from 10.0.0.1\n");
 当硬件分类不够用时，librte_acl 提供软件层面的高性能 ACL：
 
 ```c
-// lib/librte_acl/rte_acl.h
+// lib/acl/rte_acl.h
 
-// ACL 规则定义
-struct rte_acl_rule {
-    uint32_t data[40];  // 用户定义的数据（可存储 queue、action 等）
-    
-    /* 匹配字段 */
-    struct {
-        uint8_t type;    // RTE_ACL_FIELD_TYPE_*
-        uint8_t size;    // 字段大小（字节）
-        uint16_t offset; // 在数据包中的偏移
-        uint32_t value;  // 值
-        uint32_t mask;   // 掩码
-    } field[RTE_ACL_MAX_FIELDS];
+// ACL 规则定义（使用宏生成）
+// 每个字段包含 value（匹配值）和 mask_range（掩码或范围）
+struct rte_acl_field {
+    uint32_t value;                       // 匹配值
+    union rte_acl_field_types {
+        uint32_t mask;                    // 位掩码（MASK 类型）
+        uint32_t range;                   // 范围（RANGE 类型，低 16 位=低，高 16 位=高）
+    } mask_range;
 };
 
-// 示例：定义 5-tuple 规则
-struct my_rule {
-    struct rte_acl_rule base;
-    
-    // 字段定义
-    struct {
-        struct rte_acl_field_def ipv4_src;
-        struct rte_acl_field_def ipv4_dst;
-        struct rte_acl_field_def sport;
-        struct rte_acl_field_def dport;
-        struct rte_acl_field_def proto;
-    };
+// 规则数据（匹配后返回的信息）
+struct rte_acl_rule_data {
+    uint32_t category_mask;  // 类别掩码
+    int32_t  priority;       // 优先级
+    uint32_t userdata;       // 用户数据（存储 action、queue 等）
+};
+
+// 用宏定义规则结构（NUM_FIELDS = 匹配字段数）
+RTE_ACL_RULE_DEF(acl_rule, NUM_FIELDS)
+// 展开后生成:
+struct acl_rule {
+    struct rte_acl_rule_data data;       // 规则数据
+    struct rte_acl_field field[NUM_FIELDS]; // 匹配字段数组
 };
 ```
 
 ### 4.2 ACL 构建流程
 
 ```c
+#define NUM_FIELDS 5
+
+// 用宏定义规则结构
+RTE_ACL_RULE_DEF(acl_rule, NUM_FIELDS);
+
 // 1. 创建 ACL 上下文
 struct rte_acl_ctx *acl_ctx;
 struct rte_acl_param acl_param = {
     .name = "my_acl",
     .socket_id = SOCKET_ID_ANY,
-    .rule_size = sizeof(struct my_rule),
+    .rule_size = sizeof(struct acl_rule),
     .max_rule_count = 1024,
 };
 
@@ -371,29 +635,58 @@ if (!acl_ctx) {
 }
 
 // 2. 添加规则
-struct my_rule rule = {
-    .data = { .category_mask = 1, .priority = 1, .action = DROP },
-    .field = {
-        // src_ip: 偏移 12 字节，4 字节，掩码 255.255.255.0
-        { .type = RTE_ACL_FIELD_TYPE_MASK, .offset = 12, .size = 4,
-          .value = RTE_IPV4(10, 0, 0, 0), .mask = RTE_IPV4(255, 255, 255, 0) },
-        // dst_ip, sport, dport, proto...
-    },
-};
+struct acl_rule rule;
+memset(&rule, 0, sizeof(rule));
 
-rte_acl_add(acl_ctx, (struct rte_acl_rule *)&rule);
+// 规则数据：匹配后返回 DROP（编码在 userdata 中）
+rule.data.category_mask = 1;
+rule.data.priority = 1;
+rule.data.userdata = ACL_ACTION_DROP;
 
-// 3. 构建 AC 结构（NBFSM + Trie）
+// 匹配字段：src_ip = 10.0.0.0/24
+rule.field[0].value = RTE_IPV4(10, 0, 0, 0);
+rule.field[0].mask_range.mask = RTE_IPV4(255, 255, 255, 0);
+
+// dst_ip: 不限制
+rule.field[1].value = 0;
+rule.field[1].mask_range.mask = 0;
+
+// src_port: 不限制
+rule.field[2].value = 0;
+rule.field[2].mask_range.mask = 0;
+
+// dst_port: 不限制
+rule.field[3].value = 0;
+rule.field[3].mask_range.mask = 0;
+
+// proto: TCP
+rule.field[4].value = IPPROTO_TCP;
+rule.field[4].mask_range.mask = 0xFF;
+
+rte_acl_add_rules(acl_ctx, (struct rte_acl_rule *)&rule, 1);
+
+// 3. 定义字段布局并构建（Trie 结构）
 struct rte_acl_config build_config = {
     .num_categories = 1,           // 单一类别
-    .num_fields = 5,               // 5 个字段
+    .num_fields = NUM_FIELDS,
     .defs = {
-        { .type = RTE_ACL_FIELD_TYPE_MASK, .offset = 12, .size = 4 },
-        { .type = RTE_ACL_FIELD_TYPE_MASK, .offset = 16, .size = 4 },
-        { type = RTE_ACL_FIELD_TYPE_RANGE, .offset = 20, .size = 2 }, // sport
-        { type = RTE_ACL_FIELD_TYPE_RANGE, .offset = 22, .size = 2 }, // dport
-        { .type = RTE_ACL_FIELD_TYPE_BITMASK, .offset = 23, .size = 1 },
+        [0] = { .type = RTE_ACL_FIELD_TYPE_BITMASK,
+               .size = sizeof(uint32_t), .offset = sizeof(struct rte_ether_hdr),
+               .field_index = 0, .input_index = 0 },
+        [1] = { .type = RTE_ACL_FIELD_TYPE_BITMASK,
+               .size = sizeof(uint32_t), .offset = sizeof(struct rte_ether_hdr) + 12,
+               .field_index = 0, .input_index = 1 },
+        [2] = { .type = RTE_ACL_FIELD_TYPE_RANGE,
+               .size = sizeof(uint16_t), .offset = sizeof(struct rte_ether_hdr) + 20,
+               .field_index = 0, .input_index = 2 },
+        [3] = { .type = RTE_ACL_FIELD_TYPE_RANGE,
+               .size = sizeof(uint16_t), .offset = sizeof(struct rte_ether_hdr) + 22,
+               .field_index = 0, .input_index = 3 },
+        [4] = { .type = RTE_ACL_FIELD_TYPE_BITMASK,
+               .size = sizeof(uint8_t), .offset = sizeof(struct rte_ether_hdr) + 23,
+               .field_index = 0, .input_index = 4 },
     },
+};
 };
 
 rte_acl_build(acl_ctx, &build_config);
@@ -441,18 +734,21 @@ classify_packet(struct rte_acl_ctx *acl_ctx,
 }
 ```
 
-### 4.4 ACL 内部实现：NBFSM
+### 4.4 ACL 内部实现：Trie + 多字段比较
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                     NBFSM (Non-deterministic Finite State Machine)          │
+│                     ACL 内部结构（Trie + 多字段并行比较）                     │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
 │  示例规则：                                                                 │
 │  Rule 1: src_ip=10.0.0.0/24, action=ACCEPT                                  │
 │  Rule 2: src_ip=10.0.1.0/24, action=DROP                                    │
 │                                                                             │
-│  NBFSM 构建：                                                               │
+│  构建过程：                                                                 │
+│                                                                             │
+│  1. 规则 → NFA (非确定性有限自动机)                                        │
+│     多条规则合并为一个 NFA，共享公共前缀                                  │
 │                                                                             │
 │     ┌────────┐                                                            │
 │     │ START  │                                                            │
@@ -460,8 +756,8 @@ classify_packet(struct rte_acl_ctx *acl_ctx,
 │         │ 10.0.x.x                                                        │
 │         ▼                                                                  │
 │     ┌────────┐                                                            │
-│     │  Match │                                                            │
-│     │  10.0. │                                                            │
+│     │  Trie   │  ← 共享前缀 "10.0."                                      │
+│     │  节点   │                                                            │
 │     └───┬────┘                                                            │
 │         │                                                                  │
 │    ┌────┴────┐                                                            │
@@ -473,16 +769,16 @@ classify_packet(struct rte_acl_ctx *acl_ctx,
 │  └──┬─┘   └──┬─┘                                                         │
 │     │       │                                                             │
 │     ▼       ▼                                                             │
-│  ┌──────────────┐                                                        │
-│  │ R1 Match     │   ───► Action: ACCEPT                                  │
-│  │ (last byte)  │                                                        │
-│  └──────────────┘                                                        │
-│                  ┌──────────────┐                                        │
-│                  │ R2 Match     │   ───► Action: DROP                     │
-│                  │ (last byte)  │                                        │
-│                  └──────────────┘                                        │
+│  ACCEPT      DROP                                                           │
 │                                                                             │
-│  NBFSM → DFASM (确定性化) → Trie 结构优化                                  │
+│  2. NFA → DFA (确定性有限自动机，subset construction)                      │
+│     消除非确定性，保证每个输入只有唯一匹配路径                              │
+│                                                                             │
+│  3. DFA → Trie 优化                                                       │
+│     DPDK ACL 的独特之处：不是纯字节级 Trie，而是按字段粒度构建            │
+│     一次比较一个完整字段（如整个 src_ip），减少跳转次数                   │
+│                                                                             │
+│  查找时：从 Trie 根节点开始，逐字段比较，O(W) 其中 W 是字段总宽度        │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -493,28 +789,141 @@ classify_packet(struct rte_acl_ctx *acl_ctx,
 
 ### 5.1 rte_flow 概述
 
-rte_flow 是 DPDK 20.11+ 引入的通用流规则 API，抽象了硬件能力：
+rte_flow 是 DPDK 引入的通用流规则 API，抽象了硬件能力。注意 `struct rte_flow` 是**不透明句柄**，应用程序不直接访问其内部成员，而是通过 API 操作：
 
 ```c
 // lib/ethdev/rte_flow.h
 
-// 流规则组成
-struct rte_flow {
-    struct rte_flow_attr attr;           // 规则属性
-    struct rte_flow_pattern *pattern;   // 匹配模式
-    struct rte_flow_action *actions;     // 执行动作
-};
+// 创建流规则（返回不透明句柄）
+struct rte_flow *
+rte_flow_create(uint16_t port_id,
+    const struct rte_flow_attr *attr,       // 规则属性
+    const struct rte_flow_item pattern[],   // 匹配模式（以 END 结尾）
+    const struct rte_flow_action actions[], // 执行动作（以 END 结尾）
+    struct rte_flow_error *error);
+
+// 销毁流规则
+int
+rte_flow_destroy(uint16_t port_id, struct rte_flow *flow,
+    struct rte_flow_error *error);
 
 // 属性
 struct rte_flow_attr {
-    uint32_t group;          // 流表组
-    uint32_t priority;       // 优先级（0 最高）
+    uint32_t group;          // 流表组（0 是最高优先级）
+    uint32_t priority;       // 组内优先级（0 最高）
     uint32_t ingress;         // 入口流量
     uint32_t egress;          // 出口流量
     uint32_t transfer;       // 转移（switch domain）
-    uint32_t reserved;       // 保留
 };
 ```
+
+#### rte_flow 抽象了哪些硬件能力
+
+rte_flow 的设计目标是将不同厂商网卡各自独立的流分类 API 统一到一个接口下。在 rte_flow 出现之前，Intel 有 Flow Director、Mellanox 有 Flow Steering、Broadcom 有 CCE（Content Classification Engine）——每个厂商的 API 完全不同。rte_flow 通过 Pattern + Action 的 match-action 模型把它们统一起来了：
+
+```
+┌───────────────────────────────────────────────────────────────────────────┐
+│                    rte_flow 统一抽象层                                     │
+├───────────────────────────────────────────────────────────────────────────┤
+│                                                                           │
+│  应用程序                                                                 │
+│  ┌─────────────────────────────────────────────────────────────────────┐ │
+│  │  rte_flow_create(port, attr, pattern, actions, &error)              │ │
+│  │  rte_flow_destroy(port, flow, &error)                               │ │
+│  └───────────────────────────┬─────────────────────────────────────────┘ │
+│                              │                                            │
+│                              ▼                                            │
+│  ┌───────────────────────────────────────────────────────────────────┐   │
+│  │                      PMD 翻译层                                    │   │
+│  └────┬──────────┬──────────┬──────────┬──────────┬─────────────────┘   │
+│       │          │          │          │          │                       │
+│       ▼          ▼          ▼          ▼          ▼                       │
+│  ┌─────────┐┌─────────┐┌──────────┐┌──────────┐┌──────────┐             │
+│  │ Intel   ││Mellanox ││ Broadcom ││ Marvell  ││ Huawei   │             │
+│  │ i40e/ice││ MLX5    ││ bnxt    ││ octeontx ││ hinic    │             │
+│  └────┬────┘└────┬────┘└────┬─────┘└────┬─────┘└────┬─────┘             │
+│       │          │          │           │            │                    │
+│       ▼          ▼          ▼           ▼            ▼                    │
+│  ┌─────────┐┌─────────┐┌──────────┐┌──────────┐┌──────────┐             │
+│  │ FD/FDIR ││Flow     ││ CCE      ││ PKTFLW   ││ Normal   │             │
+│  │+FDID    ││Steering ││ TCAM     ││ Cam/FLW  ││ Match    │             │
+│  │+SIDEBAND││(NIC +   ││          ││          ││          │             │
+│  │+COMMS   ││ Switch) ││          ││          ││          │             │
+│  └─────────┘└─────────┘└──────────┘└──────────┘└──────────┘             │
+│                                                                           │
+└───────────────────────────────────────────────────────────────────────────┘
+```
+
+各厂商的硬件功能与 rte_flow 的对应关系：
+
+```
+┌───────────────┬─────────────────────────────┬──────────────────────────┐
+│ 厂商 / 系列    │ 底层硬件功能                 │ rte_flow 翻译到           │
+├───────────────┼─────────────────────────────┼──────────────────────────┤
+│ Intel         │ FDIR (Flow Director)        │ QUEUE / DROP / MARK      │
+│ ixgbe         │   五元组精确匹配             │ → FDIR 精确表             │
+│               │                             │                          │
+│ Intel         │ FDID (Flow Director ID)     │ MARK                     │
+│ i40e/ice      │   标记 + 元数据传递           │ → FDIR ID 字段            │
+│               │                             │                          │
+│ Intel         │ RSS (Receive Side Scaling)   │ RSS 动作                  │
+│ i40e/ice      │   Toeplitz / XOR hash       │ → 硬件 hash 配置           │
+│               │                             │                          │
+│ Intel         │ SIDEBAND (Switch Filter)     │ transfer + PORT / VF     │
+│ ice           │   E-Switch 级别的流规则       │ → E-Switch TCAM          │
+│               │   (SR-IOV 场景下 VF 间转发)   │                          │
+│               │                             │                          │
+│ Intel         │ COMMS (Comms Package)        │ PFC / DSCP 动作           │
+│ ice           │   QoS 相关流规则              │ → QoS 硬件配置            │
+├───────────────┼─────────────────────────────┼──────────────────────────┤
+│ Mellanox      │ Flow Steering (NIC)         │ QUEUE / DROP / RSS       │
+│ ConnectX-4/5  │   NIC 级别的 match-action    │ → NIC Steering Table      │
+│               │   基于 hash 或 exact match   │                          │
+│               │                             │                          │
+│ Mellanox      │ Flow Steering (FDB)         │ transfer + PORT / VF     │
+│ ConnectX-4/5  │   E-Switch FDB 表            │ → FDB (Forwarding DB)     │
+│               │   (SR-IOV VF 间转发/镜像)    │   TCAM                   │
+│               │                             │                          │
+│ Mellanox      │ TIR (Transport Interface)   │ RSS                      │
+│ ConnectX-6/7  │   高级 RSS + 间接表          │ → TIR hash 配置           │
+│               │                             │                          │
+│ NVIDIA        │ Match-Action Engine         │ 多种组合                  │
+│ BlueField DPU │   DPU 内部可编程流水线       │ → 硬件流水线              │
+├───────────────┼─────────────────────────────┼──────────────────────────┤
+│ Broadcom      │ CCE (Content Classification│ QUEUE / DROP / MARK      │
+│ NetXtreme     │   Engine)                   │ → CCE 规则                │
+│               │   TCAM + Exact Match        │                          │
+│               │                             │                          │
+│ Broadcom      │ TRUFLOW                     │ RSS + 复杂规则             │
+│ (SmartNIC)    │   高级流分类引擎              │ → TRUFLOW 硬件表          │
+├───────────────┼─────────────────────────────┼──────────────────────────┤
+│ Marvell       │ PKTFLOW / CAM               │ QUEUE / DROP             │
+│ OcteonTX      │   硬件 CAM 匹配              │ → 硬件 CAM 表             │
+├───────────────┼─────────────────────────────┼──────────────────────────┤
+│ Huawei        │ Normal Match                │ QUEUE / DROP             │
+│ Hi1822        │   硬件流分类                  │ → 硬件规则表              │
+└───────────────┴─────────────────────────────┴──────────────────────────┘
+```
+
+> [!tip] 理解翻译层
+> rte_flow 不是"在软件里实现流分类"，而是一个**翻译层**。`rte_flow_create()` 被调用后，
+> 对应的 PMD 将 pattern + action 翻译成该厂商硬件能理解的寄存器配置或表项写入命令。
+> 如果硬件不支持某个 pattern/action 组合，调用会返回错误，应用需要 fallback 到软件处理。
+>
+> 查询硬件能力的方式：
+> ```c
+> struct rte_flow_action actions[] = {
+>     { .type = RTE_FLOW_ACTION_TYPE_COUNT },  // 想用 COUNT
+>     { .type = RTE_FLOW_ACTION_TYPE_END },
+> };
+>
+> // 检查硬件是否支持这个动作
+> int ret = rte_flow_validate(port_id, &attr, pattern, actions, &error);
+> if (ret != 0) {
+>     printf("不支持: %s\n", error.message);  // 获取具体原因
+>     // fallback 到软件计数
+> }
+> ```
 
 ### 5.2 模式项 (Pattern Items)
 
@@ -610,63 +1019,58 @@ static const struct rte_flow_action actions[] = {
 ```c
 // 示例 1：匹配特定 UDP 流量并指定队列
 
+// spec/mask 必须用 static 变量，不能用 compound literal（悬垂指针风险）
+static const struct rte_flow_item_ipv4 ipv4_spec = {
+    .hdr.dst_addr = RTE_IPV4(10, 0, 0, 1),
+};
+static const struct rte_flow_item_udp udp_spec = {
+    .hdr.dst_port = rte_cpu_to_be_16(80),
+};
+
 static int
 setup_flow_redirect(uint16_t port_id, uint16_t queue_id)
 {
+    struct rte_flow_error error;
     struct rte_flow_attr attr = {
         .ingress = 1,     // 入方向
         .priority = 0,   // 高优先级
     };
-    
-    // 匹配模式：dst=10.0.0.1 且 dst_port=80
+
+    // 匹配模式：ETH → IPv4(dst=10.0.0.1) → UDP(dst_port=80)
     struct rte_flow_item pattern[] = {
         {
+            .type = RTE_FLOW_ITEM_TYPE_ETH,
+            .spec = &rte_flow_item_eth_mask,  // match any ETH
+        },
+        {
             .type = RTE_FLOW_ITEM_TYPE_IPV4,
+            .spec = &ipv4_spec,
             .mask = &rte_flow_item_ipv4_mask,
-            .spec = &(struct rte_flow_item_ipv4) {
-                .hdr = {
-                    .dst_addr = RTE_IPV4(10, 0, 0, 1),
-                },
-            },
         },
         {
             .type = RTE_FLOW_ITEM_TYPE_UDP,
+            .spec = &udp_spec,
             .mask = &rte_flow_item_udp_mask,
-            .spec = &(struct rte_flow_item_udp) {
-                .hdr = {
-                    .dst_port = rte_cpu_to_be_16(80),
-                },
-            },
         },
-        {
-            .type = RTE_FLOW_ITEM_TYPE_END,
-        },
+        { .type = RTE_FLOW_ITEM_TYPE_END },
     };
-    
+
     // 动作：排队到指定队列
+    static struct rte_flow_action_queue queue_conf = { .index = 0 };
+    queue_conf.index = queue_id;
+
     struct rte_flow_action actions[] = {
-        {
-            .type = RTE_FLOW_ACTION_TYPE_QUEUE,
-            .conf = &(struct rte_flow_action_queue) {
-                .index = queue_id,
-            },
-        },
-        {
-            .type = RTE_FLOW_ACTION_TYPE_END,
-        },
+        { .type = RTE_FLOW_ACTION_TYPE_QUEUE, .conf = &queue_conf },
+        { .type = RTE_FLOW_ACTION_TYPE_END },
     };
-    
-    // 创建流规则
-    struct rte_flow *flow = rte_flow_create(port_id,
-                                              &attr,
-                                              pattern,
-                                              actions,
-                                              &error);
+
+    struct rte_flow *flow = rte_flow_create(port_id, &attr,
+                                              pattern, actions, &error);
     if (!flow) {
         printf("Flow creation failed: %s\n", error.message);
         return -1;
     }
-    
+
     return 0;
 }
 
@@ -675,74 +1079,71 @@ setup_flow_redirect(uint16_t port_id, uint16_t queue_id)
 static int
 setup_flow_rss(uint16_t port_id)
 {
+    struct rte_flow_error error;
     struct rte_flow_attr attr = {
         .ingress = 1,
     };
-    
+
     struct rte_flow_item pattern[] = {
         { .type = RTE_FLOW_ITEM_TYPE_ETH },
         { .type = RTE_FLOW_ITEM_TYPE_IPV4 },
         { .type = RTE_FLOW_ITEM_TYPE_END },
     };
-    
-    // RSS 配置
+
+    // RSS 配置：按 L3+L4 哈希分散到 4 个队列
     uint16_t queues[] = { 0, 1, 2, 3 };
     struct rte_flow_action_rss rss_conf = {
         .func = RTE_ETH_HASH_FUNCTION_DEFAULT,
         .level = 0,
-        .types = RTE_ETH_RSS_IP | RTE_ETH_RSS_UDP,
+        .types = RTE_ETH_RSS_NONFRAG_IPV4_UDP | RTE_ETH_RSS_NONFRAG_IPV4_TCP,
         .key_len = 40,
         .queue_num = 4,
         .queue = queues,
     };
-    
+
     struct rte_flow_action actions[] = {
-        {
-            .type = RTE_FLOW_ACTION_TYPE_RSS,
-            .conf = &rss_conf,
-        },
+        { .type = RTE_FLOW_ACTION_TYPE_RSS, .conf = &rss_conf },
         { .type = RTE_FLOW_ACTION_TYPE_END },
     };
-    
+
     return rte_flow_create(port_id, &attr, pattern, actions, &error) != NULL;
 }
 
-// 示例 3：VLAN 流量镜像
+// 示例 3：VLAN 流量镜像到指定物理端口
+
+static const struct rte_flow_item_vlan vlan_spec = {
+    .tci = rte_cpu_to_be_16(100),  // VLAN ID 100
+};
 
 static int
 setup_flow_mirror(uint16_t port_id, uint16_t mirror_port)
 {
+    struct rte_flow_error error;
     struct rte_flow_attr attr = {
         .ingress = 1,
         .group = 1,  // 使用 group 1
     };
-    
-    // 匹配特定 VLAN
+
+    // 匹配：ETH → VLAN(100) → any
     struct rte_flow_item pattern[] = {
         { .type = RTE_FLOW_ITEM_TYPE_ETH },
         {
             .type = RTE_FLOW_ITEM_TYPE_VLAN,
+            .spec = &vlan_spec,
             .mask = &rte_flow_item_vlan_mask,
-            .spec = &(struct rte_flow_item_vlan) {
-                .tci = rte_cpu_to_be_16(100),  // VLAN 100
-            },
         },
-        { .type = RTE_FLOW_ITEM_TYPE_IPV4 },
         { .type = RTE_FLOW_ITEM_TYPE_END },
     };
-    
-    // 动作：发送到镜像端口
+
+    // 动作：转发到指定物理端口
+    static struct rte_flow_action_phy_port port_conf = { .id = 0 };
+    port_conf.id = mirror_port;
+
     struct rte_flow_action actions[] = {
-        {
-            .type = RTE_FLOW_ACTION_TYPE_PHY_PORT,
-            .conf = &(struct rte_flow_action_phy_port) {
-                .original = 1,  // 保留原始端口
-                .index = mirror_port,
-            },
-        },
+        { .type = RTE_FLOW_ACTION_TYPE_PHY_PORT, .conf = &port_conf },
         { .type = RTE_FLOW_ACTION_TYPE_END },
     };
-    
+
     return rte_flow_create(port_id, &attr, pattern, actions, &error) != NULL;
 }
 ```
@@ -766,8 +1167,8 @@ setup_flow_mirror(uint16_t port_id, uint16_t mirror_port)
 //   - 异常流量检测
 
 // 规则匹配顺序：
-// 1. 按 group 优先级匹配（group 0 最低，group 31 最高）
-// 2. 同 group 内按 priority 匹配
+// 1. 按 group 优先级匹配（group 0 最高优先级，逐级递减）
+// 2. 同 group 内按 priority 匹配（数值越小优先级越高）
 // 3. 匹配到则执行动作，不再继续匹配
 
 // 示例：多组配置
@@ -837,7 +1238,7 @@ else {
 
 // 1. RSS 做基础负载均衡
 struct rte_flow_action_rss rss_conf = {
-    .types = RTE_ETH_RSS_IP | RTE_ETH_RSS_L4,
+    .types = RTE_ETH_RSS_NONFRAG_IPV4_TCP | RTE_ETH_RSS_NONFRAG_IPV4_UDP,
     .queue_num = nb_queues,
     .queue = queues,
 };
@@ -847,28 +1248,38 @@ struct rte_flow_action_rss rss_conf = {
 //    - 视频流量 → 视频队列 (queue 1-3)
 //    - 普通流量 → 普通队列 (queue 4-7)
 
+static const struct rte_flow_item_ipv4 mgmt_ipv4_spec = {
+    .hdr.dst_addr = RTE_IPV4(10, 0, 0, 254),
+};
+static const struct rte_flow_item_tcp mgmt_tcp_spec = {
+    .hdr.dst_port = rte_cpu_to_be_16(22),
+};
+
 static int
 setup_lb_flows(uint16_t port_id)
 {
+    struct rte_flow_error error;
+
     // 管理流量 - 高优先级
     struct rte_flow_item pattern_mgmt[] = {
         { .type = RTE_FLOW_ITEM_TYPE_IPV4,
-          .spec = &(struct rte_flow_item_ipv4) {
-              .hdr = { .dst_addr = RTE_IPV4(10, 0, 0, 254) } } },
+          .spec = &mgmt_ipv4_spec,
+          .mask = &rte_flow_item_ipv4_mask },
         { .type = RTE_FLOW_ITEM_TYPE_TCP,
-          .spec = &(struct rte_flow_item_tcp) {
-              .hdr = { .dst_port = rte_cpu_to_be_16(22) } } },
+          .spec = &mgmt_tcp_spec,
+          .mask = &rte_flow_item_tcp_mask },
         { .type = RTE_FLOW_ITEM_TYPE_END },
     };
-    
+
+    static struct rte_flow_action_queue queue0 = { .index = 0 };
     struct rte_flow_action actions_mgmt[] = {
-        { .type = RTE_FLOW_ACTION_TYPE_QUEUE, .conf = &(struct rte_flow_action_queue){0} },
+        { .type = RTE_FLOW_ACTION_TYPE_QUEUE, .conf = &queue0 },
         { .type = RTE_FLOW_ACTION_TYPE_END },
     };
-    
-    rte_flow_create(port_id, &(struct rte_flow_attr){.ingress=1,.priority=1},
-                    pattern_mgmt, actions_mgmt, &error);
-    
+
+    struct rte_flow_attr attr_mgmt = { .ingress = 1, .priority = 1 };
+    rte_flow_create(port_id, &attr_mgmt, pattern_mgmt, actions_mgmt, &error);
+
     // ... 类似处理其他流量类型
 }
 ```
@@ -881,42 +1292,49 @@ setup_lb_flows(uint16_t port_id)
 static int
 setup_ddos_protection(uint16_t port_id)
 {
+    struct rte_flow_error error;
+
     // 1. 统计每个 IP 的流量
     struct rte_flow_action_count count_conf = {
         .id = 0,  // 统计 ID
     };
-    
+
     struct rte_flow_item pattern_count[] = {
         { .type = RTE_FLOW_ITEM_TYPE_IPV4 },
         { .type = RTE_FLOW_ITEM_TYPE_END },
     };
-    
+
     struct rte_flow_action actions_count[] = {
         { .type = RTE_FLOW_ACTION_TYPE_COUNT, .conf = &count_conf },
         { .type = RTE_FLOW_ACTION_TYPE_PASSTHRU },  // 继续处理
         { .type = RTE_FLOW_ACTION_TYPE_END },
     };
-    
-    rte_flow_create(port_id, &(struct rte_flow_attr){.ingress=1,.group=2},
+
+    struct rte_flow_attr attr_count = { .ingress = 1, .group = 2 };
+    rte_flow_create(port_id, &attr_count,
                     pattern_count, actions_count, &error);
-    
+
     // 2. 读取统计，超过阈值的 DROP
     //    (在定时器中检查 rate，超过 10000 pps 则添加 DROP 规则)
-    
+
     // 3. DROP 规则
+    static struct rte_flow_item_ipv4 drop_ipv4_spec;
+    drop_ipv4_spec.hdr.src_addr = attacker_ip;
+
     struct rte_flow_item pattern_drop[] = {
         { .type = RTE_FLOW_ITEM_TYPE_IPV4,
-          .spec = &(struct rte_flow_item_ipv4) {
-              .hdr = { .src_addr = attacker_ip } } },
+          .spec = &drop_ipv4_spec,
+          .mask = &rte_flow_item_ipv4_mask },
         { .type = RTE_FLOW_ITEM_TYPE_END },
     };
-    
+
     struct rte_flow_action actions_drop[] = {
         { .type = RTE_FLOW_ACTION_TYPE_DROP },
         { .type = RTE_FLOW_ACTION_TYPE_END },
     };
-    
-    rte_flow_create(port_id, &(struct rte_flow_attr){.ingress=1,.priority=0},
+
+    struct rte_flow_attr attr_drop = { .ingress = 1, .priority = 0 };
+    rte_flow_create(port_id, &attr_drop,
                     pattern_drop, actions_drop, &error);
 }
 ```
@@ -931,7 +1349,7 @@ setup_ddos_protection(uint16_t port_id)
 
 2. **Flow Director**：Intel 硬件支持的精确匹配，支持 DROP、QUEUE 等动作，适合 DDoS 防护、流量过滤。
 
-3. **librte_acl**：软件层面的 ACL 库，使用 NBFSM + Trie 结构，支持复杂规则匹配（如 CIDR 范围）。
+3. **librte_acl**：软件层面的 ACL 库，使用 NFA → DFA → Trie 多阶段编译，支持复杂规则匹配（如 CIDR 范围）。
 
 4. **rte_flow**：DPDK 统一的匹配-动作框架，抽象了底层硬件差异，支持 Pattern + Action 组合。
 

@@ -88,29 +88,29 @@ graph LR
 ### 2.2 Ring 数据结构
 
 ```c
-// lib/eal/common/eal_ring.h
+// lib/ring/rte_ring_core.h
 
 struct rte_ring {
     char name[RTE_RING_NAMESIZE];   // 32 字节名称
-    int flags;                       // 标志（RING_F_SP_ENQ 等）
+    int32_t flags;                   // 标志（RING_F_SP_ENQ 等）
     uint32_t size;                   // ring 大小（2 的幂）
     uint32_t mask;                   // size - 1（用于 & mask 替代 %）
-    
-    // 可见性保证：生产端和消费端可以不同步
-    // 但更新顺序必须遵守 memory ordering
-    
+
+    // head/tail 是单调递增的序号，不是 ring 数组下标
+    // 实际下标通过 pos & mask 计算
+
     /* Producer 部分 */
     struct {
-        volatile uint32_t head;   // 队首（消费位置）
-        volatile uint32_t tail;   // 队尾（生产位置）
+        volatile uint32_t head;   // 生产者写游标：已 claim 但未 commit 的位置
+        volatile uint32_t tail;   // 生产者提交游标：消费者可安全读取的位置
     } prod;
-    
+
     /* Consumer 部分 */
     struct {
-        volatile uint32_t head;   // 队首
-        volatile uint32_t tail;   // 队尾
+        volatile uint32_t head;   // 消费者读游标：已 claim 但未 commit 的位置
+        volatile uint32_t tail;   // 消费者释放游标：生产者可安全写入的位置
     } cons;
-    
+
     // 对象存储
     void *ring[];  // 柔性数组，大小为 size
 };
@@ -286,12 +286,12 @@ __rte_ring_sp_do_enqueue(struct rte_ring *r, void * const *obj_table,
     
     // 4. 写入对象到 ring
     // 这里不需要 CAS，因为只有一个生产者
-    // 但需要内存屏障保证写入顺序
     for (uint32_t i = 0; i < n; i++) {
         r->ring[(prod_head + i) & r->mask] = obj_table[i];
     }
-    
-    // 5. 内存屏障：确保数据写入在更新 head 之前
+
+    // 5. 内存屏障：确保数据写入在更新 tail 之前
+    // 消费者看到 tail 更新后，保证数据已经写入
     rte_smp_wmb();  // 写屏障（Store-Store）
     
     // 6. 更新 prod_tail（可见性保证）
@@ -418,15 +418,15 @@ __rte_ring_sc_do_dequeue(struct rte_ring *r, void **obj_table,
     }
     
     cons_next = cons_head + n;
-    
-    // 3. 读取数据（单消费者，不需要 CAS）
-    // 但需要内存屏障保证读取顺序
+
+    // 3. 内存屏障：确保看到生产者写入的最新数据
+    // 必须在读 prod.tail 之后、读 ring 数据之前
+    rte_smp_rmb();  // 读屏障（Load-Load）
+
+    // 4. 读取数据（单消费者，不需要 CAS）
     for (uint32_t i = 0; i < n; i++) {
         obj_table[i] = r->ring[(cons_head + i) & r->mask];
     }
-    
-    // 4. 内存屏障
-    rte_smp_rmb();  // 读屏障（Load-Load）
     
     // 5. 更新 cons_tail
     r->cons.tail = cons_next;
@@ -512,6 +512,10 @@ __rte_ring_mc_do_dequeue(struct rte_ring *r, void **obj_table,
 // 完整屏障（Full）：综合 wmb + rmb
 #define rte_smp_mb() asm volatile("lock; addl $0,0(%%rsp)" ::: "memory")
 
+// 注意：以上 asm 是 x86 实现（空指令 + 编译器屏障）
+// x86 TSO 保证了 Store-Store 和 Load-Load 顺序，所以 wmb/rmb 不需要 CPU 指令
+// 在 ARM/PowerPC 上，这些宏会展开为实际的内存屏障指令（dmb/isync/sync）
+
 // x86 上：
 // - wmb: 不需要指令（x86 TSO 保证 store order）
 // - rmb: 不需要指令（x86 TSO 保证 load order）
@@ -546,32 +550,59 @@ uint32_t n = rte_ring_sc_dequeue(r, objs, 32);
 // 问题：需要栈空间存储指针数组
 ```
 
-### 7.2 ring_pool 的改进
+### 7.2 Ring 元素大小优化
+
+在 DPDK 20.11 之前，`rte_ring` 内部数组存储的永远是 `void*` 指针（8 字节/元素），对象本身存放在 ring 外部。每次 enqueue/dequeue 需要两次内存访问：先从 ring 数组读出指针，再解引用访问实际对象，而且对象散落在堆的各处，cache locality 差。
+
+DPDK 20.11 引入了 `rte_ring_create_elem()`，将对象**直接内嵌**到 ring 数组中，省掉指针间接寻址：
+
+```
+指针模式（rte_ring_create）:
+  ring 数组:  [ptr0] [ptr1] [ptr2] ...   ← 第一次访存
+                ↓
+  对象内存:   [obj0] [obj1] [obj2] ...   ← 第二次访存，地址不连续
+
+内嵌模式（rte_ring_create_elem）:
+  ring 数组:  [obj0] [obj1] [obj2] ...   ← 一次访存，连续内存
+```
 
 ```c
-// DPDK 20.11 引入 ring_pool
-// 直接返回对象指针，无需预分配数组
+// 指针模式：ring 存储 void*，对象在外部（传统方式）
+struct rte_ring *r = rte_ring_create("ptr_ring", 1024, socket_id, 0);
+rte_ring_sp_enqueue(r, obj);  // 传入 8 字节指针
 
-// 创建 pool mode 的 ring
-struct rte_ring *r = rte_ring_create_pool(
-    "obj_pool",    // 名称
-    1024,          // 大小
-    socket_id,     // NUMA socket
-    0              // flags
-);
+// 内嵌模式：对象直接存入 ring 数组
+struct rte_ring *r = rte_ring_create_elem("elem_ring", 1024,
+    sizeof(struct my_obj), socket_id, 0);
 
-// 入队：直接传入对象指针
-rte_ring_sp_enqueue(r, obj);
+// 入队：传入对象地址，ring 内部 memcpy 到数组
+rte_ring_sp_enqueue_elem(r, &my_obj);
 
-// 出队：直接返回对象指针
-void *obj;
-if (rte_ring_sc_dequeue(r, &obj) == 0) {
-    // 成功获取 obj
-}
+// 出队：ring 内部 memcpy 到本地变量
+struct my_obj out;
+rte_ring_sc_dequeue_elem(r, &out);
+```
 
-// 批量出队
-void *objs[32];
-uint32_t n = rte_ring_mc_dequeue_burst(r, objs, 32, NULL);
+两种模式的选择取决于对象大小和访问模式：
+
+| | 指针模式 (`rte_ring_create`) | 内嵌模式 (`rte_ring_create_elem`) |
+|---|---|---|
+| 适用对象大小 | 任意 | 小对象（16~64 字节） |
+| 每次访存次数 | 2（指针 + 解引用） | 1（直接访问） |
+| 拷贝开销 | 无 | enqueue/dequeue 时 memcpy |
+| 对象可共享 | 可以，多个 ring 指向同一对象 | 不行，是值拷贝 |
+| 典型场景 | mbuf（128B）传递 | 流表条目、统计计数器 |
+
+> **为什么 mbuf 场景仍然用指针模式？** mbuf 本身 128 字节，每次拷贝的代价远大于一次指针解引用。而且 mbuf 经常需要在多个 ring 之间传递（rx_ring → tx_ring），指针模式天然支持零拷贝共享。
+
+```c
+// 批量操作（最常用）
+struct rte_mbuf *pkts[32];
+uint16_t nb_rx = rte_eth_rx_burst(port, queue, pkts, 32);
+
+// 直接转发到另一个 ring（零拷贝，只是传递指针）
+uint16_t nb_enq = rte_ring_sp_enqueue_burst(tx_ring,
+    (void **)pkts, nb_rx);
 ```
 
 ---
@@ -618,13 +649,10 @@ for (int i = 0; i < 1000000; i++) {
 }
 // 吞吐量: ~150 Mpps (单线程)
 
-// Lock-free stack (SPSC)
-struct lfstack *stack = lfstack_create();
-for (int i = 0; i < 1000000; i++) {
-    lfstack_push(stack, obj);
-    lfstack_pop(stack, &obj);
-}
-// 吞吐量: ~140 Mpps (单线程)
+// 无锁队列（其他实现对比）
+// 真正的性能对比应基于同平台的基准测试
+// DPDK ring 在 x86 单线程 SP/SC 下约 200-300 Mops
+// mutex queue 在 x86 单线程下约 2-5 Mops
 
 // Mutex queue
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -771,15 +799,15 @@ dump_ring(const struct rte_ring *r)
 }
 
 // 获取实时统计
-int
-get_ring_stats(const struct rte_ring *r, struct rte_ring_stats *stats)
-{
-    stats->enq_count = r->prod.tail;
-    stats->deq_count = r->cons.tail;
-    stats->enq_fail = r->enq_fail;
-    stats->deq_fail = r->deq_fail;
-    return 0;
-}
+uint32_t used = (r->prod.tail >= r->cons.head) ?
+                 r->prod.tail - r->cons.head :
+                 r->size - r->cons.head + r->prod.tail;
+uint32_t free = r->size - used;
+
+printf("  used: %u, free: %u\n", used, free);
+
+// DPDK 提供 rte_ring_dump() 打印 ring 详细信息
+rte_ring_dump(stdout, r);
 ```
 
 ---

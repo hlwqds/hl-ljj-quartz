@@ -108,10 +108,10 @@ graph TB
     end
 
     subgraph "四个 Ring Buffer"
-        FILL[Fill Ring<br/>用户→内核<br/>提供空闲 Frame]
-        RX[RX Ring<br/>内核→用户<br/>已收到的包]
-        TX[TX Ring<br/>用户→内核<br/>待发送的包]
-        COMP[Completion Ring<br/>内核→用户<br/>已发送完成的包]
+        FILL[Fill Ring<br>用户→内核<br>提供空闲 Frame]
+        RX[RX Ring<br>内核→用户<br>已收到的包]
+        TX[TX Ring<br>用户→内核<br>待发送的包]
+        COMP[Completion Ring<br>内核→用户<br>已发送完成的包]
     end
 
     FILL -->|空闲地址| UMEM
@@ -436,10 +436,10 @@ graph TB
     end
 
     subgraph "CPU 核心"
-        C0[CPU 0<br/>处理 Queue 0]
-        C1[CPU 1<br/>处理 Queue 1]
-        C2[CPU 2<br/>处理 Queue 2]
-        CN[CPU N<br/>处理 Queue N]
+        C0[CPU 0<br>处理 Queue 0]
+        C1[CPU 1<br>处理 Queue 1]
+        C2[CPU 2<br>处理 Queue 2]
+        CN[CPU N<br>处理 Queue N]
     end
 
     Q0 --> C0
@@ -509,16 +509,16 @@ AF_XDP 零拷贝的关键在于 DMA 映射——将 UMEM 的虚拟地址映射�
 ```mermaid
 graph LR
     subgraph "用户态"
-        VADDR[虚拟地址<br/>0x7f0000000000]
+        VADDR[虚拟地址<br>0x7f0000000000]
     end
 
     subgraph "内核态"
-        PADDR[物理地址<br/>0x100000000]
-        DMA_MAP[DMA 映射表<br/>IOMMU / 直接映射]
+        PADDR[物理地址<br>0x100000000]
+        DMA_MAP[DMA 映射表<br>IOMMU / 直接映射]
     end
 
     subgraph "硬件"
-        NIC_DMA[NIC DMA 引擎<br/>通过总线地址访问]
+        NIC_DMA[NIC DMA 引擎<br>通过总线地址访问]
     end
 
     VADDR -->|mmap| PADDR

@@ -91,11 +91,11 @@ pin: true
 
 | # | 章节 | 主题 | 状态 |
 |---|------|------|------|
-| 27 | [[2026-04-09-vpp-deep-dive-ch27-profiling|VPP 深入探讨：性能剖析工具]] | trace、profile | 🚧 |
-| 28 | [[2026-04-09-vpp-deep-dive-ch28-memory-tuning|VPP 深入探讨：Buffer 与 Memory 调优]] | heap、cache | 🚧 |
-| 29 | [[2026-04-09-vpp-deep-dive-ch29-interrupt|VPP 深入探讨：中断与轮询模式]] | adaptive、coalescing | 🚧 |
-| 30 | [[2026-04-09-vpp-deep-dive-ch30-rss|VPP 深入探讨：RSS 与多队列]] | Receive Side Scaling | 🚧 |
-| 31 | [[2026-04-09-vpp-deep-dive-ch31-graph-tuning|VPP 深入探讨：Graph 调优]] | 热点检测 | 🚧 |
+| 27 | [[2026-04-16-vpp-deep-dive-ch27-profiling|VPP 深入探讨：性能剖析工具]] | trace、profile | ✅ |
+| 28 | [[2026-04-16-vpp-deep-dive-ch28-memory-tuning|VPP 深入探讨：Buffer 与 Memory 调优]] | heap、cache | ✅ |
+| 29 | [[2026-04-16-vpp-deep-dive-ch29-interrupt|VPP 深入探讨：中断与轮询模式]] | adaptive、coalescing | ✅ |
+| 30 | [[2026-04-16-vpp-deep-dive-ch30-rss|VPP 深入探讨：RSS 与多队列]] | Receive Side Scaling | ✅ |
+| 31 | [[2026-04-16-vpp-deep-dive-ch31-graph-tuning|VPP 深入探讨：Graph 调优]] | 热点检测 | ✅ |
 
 ---
 
@@ -113,14 +113,14 @@ pin: true
 
 ## Part VIII：云原生与前沿
 
-| # | 章节 | 主题 | 状态 |
-|---|------|------|------|
-| 37 | [[2026-04-09-vpp-deep-dive-ch37-cnf|VPP 深入探讨：CNF 云原生]] | microgateway、sidecar | 🚧 |
-| 38 | [[2026-04-09-vpp-deep-dive-ch38-vpp-ebpf|VPP 深入探讨：VPP + eBPF]] | XDP 协同、TC 集成 | 🚧 |
-| 39 | [[2026-04-09-vpp-deep-dive-ch39-p4|VPP 深入探讨：P4 可编程数据面]] | P4 运行时集成 | 🚧 |
-| 40 | [[2026-04-09-vpp-deep-dive-ch40-dpu|VPP 深入探讨：DPU/IPU 集成]] | DOCA、Broadcom Stingray | 🚧 |
-| 41 | [[2026-04-09-vpp-deep-dive-ch41-5g-upf|VPP 深入探讨：5G UPF 加速]] | 用户面锚点 | 🚧 |
-| 42 | [[2026-04-09-vpp-deep-dive-ch42-future|VPP 深入探讨：未来展望与路线图]] | FD.io 规划 | 🚧 |
+|| # | 章节 | 主题 | 状态 |
+||---|------|------|------|
+|| 37 | [[2026-04-16-vpp-deep-dive-ch37-cnf-cloud-native|VPP 深入探讨：CNF 云原生网络功能]] | 微服务化架构、容器化部署、Service Mesh 集成 | ✅ |
+|| 38 | [[2026-04-16-vpp-deep-dive-ch38-vpp-ebpf|VPP 深入探讨：VPP + eBPF 协同]] | XDP 集成、TC 流量控制、AF-XDP 零拷贝 | ✅ |
+|| 39 | [[2026-04-16-vpp-deep-dive-ch39-p4-dataplane|VPP 深入探讨：P4 可编程数据面]] | P4 架构、P4Runtime 控制、STRONGMAN 模式 | ✅ |
+|| 40 | [[2026-04-16-vpp-deep-dive-ch40-dpu-ipu|VPP 深入探讨：DPU/IPU 集成]] | DOCA 框架、BlueField、IPU、Stingray | ✅ |
+|| 41 | [[2026-04-16-vpp-deep-dive-ch41-5g-upf|VPP 深入探讨：5G UPF 加速]] | 3GPP 架构、N3/N9/N6 接口、GTP-U、PFCP | ✅ |
+|| 42 | [[2026-04-16-vpp-deep-dive-ch42-future|VPP 深入探讨：未来展望与路线图]] | FD.io 路线图、AI/ML、RISC-V、零信任 | ✅ |
 
 ---
 

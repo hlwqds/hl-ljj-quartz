@@ -84,13 +84,13 @@ EAL 支持丰富的启动参数：
 
 | 参数 | 说明 | 示例 |
 |------|------|------|
-| `-c COREMASK` | CPU mask（已废弃） | `-c 0xf` |
+| `-c COREMASK` | CPU mask（十六进制 bitmask） | `-c 0xf` |
 | `-l CORELIST` | lcore 列表 | `-l 0-3` |
 | `-n CHANNELS` | DDR 通道数 | `-n 4` |
 | `--lcores COREMAP` | lcore 到 CPU 的映射 | `--lcores='0-3@0,4-7@1'` |
 | `--socket-mem MEM` | 每个 Socket 的大页内存 | `--socket-mem=1024,1024` |
-| `-m SIZE` | 总大页内存（已废弃） | `-m 1024` |
-| `--master-lcore MSCID` | master lcore ID | `--master-lcore 0` |
+| `-m SIZE` | 总大页内存（所有 socket） | `-m 1024` |
+| `--main-lcore MAINLCID` | main lcore ID | `--main-lcore 0` |
 | `-v` | 显示版本 | `-v` |
 | `--huge-dir` | 大页目录 | `--huge-dir=/mnt/huge` |
 | `--file-prefix` | 大页文件前缀 | `--file-prefix=myapp` |
@@ -169,37 +169,34 @@ int rte_eal_cpu_init(void) {
 // 获取 CPU 对应的 NUMA socket
 static inline int cpu_to_socket(int cpu) {
     char path[128];
-    FILE *f;
-    int socket;
-    
-    sprintf(path, 
-            "/sys/devices/system/cpu/cpu%d/topology/thread_siblings_list", 
+    int socket_id;
+
+    // 方法 1: 通过 physical_package_id 获取（推荐）
+    sprintf(path,
+            "/sys/devices/system/cpu/cpu%d/topology/physical_package_id",
             cpu);
-    
-    f = fopen(path, "r");
+
+    FILE *f = fopen(path, "r");
     if (f) {
-        // 读取 thread_siblings_list (first cpu in the core)
-        int first_cpu;
-        fscanf(f, "%d", &first_cpu);
+        fscanf(f, "%d", &socket_id);
         fclose(f);
-        
-        // 从 first_cpu 获取 socket
-        sprintf(path, 
-                "/sys/devices/system/cpu/cpu%d/node", 
-                first_cpu);
-        
-        if (access(path, F_OK) == 0) {
-            f = fopen(path, "r");
-            fscanf(f, "%d", &socket);
-            fclose(f);
-        } else {
-            socket = 0;  // Fallback to socket 0
-        }
-    } else {
-        socket = 0;
+        return socket_id;
     }
-    
-    return socket;
+
+    // 方法 2: 通过 NUMA node 反查
+    // 遍历 /sys/devices/system/node/ 找到包含该 CPU 的 node
+    for (int nid = 0; nid < RTE_MAX_NUMA_NODES; nid++) {
+        sprintf(path,
+                "/sys/devices/system/node/node%d/cpulist", nid);
+        f = fopen(path, "r");
+        if (!f) continue;
+
+        // 读取 cpulist，检查是否包含目标 CPU
+        // ...
+        fclose(f);
+    }
+
+    return 0;  // Fallback
 }
 ```
 
@@ -281,8 +278,8 @@ echo 1024 > /sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages
 
 # 查看大页文件
 ls -la /mnt/huge/
-# -rw------- 1 root root 2G Apr  9 10:00 2MB-0-1048576kB
-# -rw------- 1 root root 2G Apr  1 10:00 1048576kB-0
+# -rw------- 1 root root 2M Apr  9 10:00 map_0
+# -rw------- 1 root root 1G Apr  9 10:00 map_0
 ```
 
 ### 4.3 memseg 结构
@@ -386,14 +383,14 @@ graph TD
 # 示例 1: lcore 0-3 绑定到 CPU 0-3
 ./dpdk-app --lcores='0-3@0-3'
 
-# 示例 2: lcore 0-1 绑定到 CPU 0, lcore 2-3 绑定到 CPU 4
+# 示例 2: lcore 0-1 绑定到 CPU 0, lcore 2-3 绑定到 CPU 4（隔核，留给 OS）
 ./dpdk-app --lcores='0-1@0,2-3@4'
 
-# 示例 3: 复杂映射，NUMA aware
+# 示例 3: 多组映射，共享物理核（超线程场景）
 ./dpdk-app --lcores='0-3@0,4-7@1,8-11@0,12-15@1'
-
-# 示例 4: 使用角色分隔符
-./dpdk-app --lcores='0-3@0,4-7@1;ROLE_SERVICE=8-15@0-7'
+# lcore 0→cpu0, lcore 1→cpu1, lcore 2→cpu2, lcore 3→cpu3
+# lcore 4→cpu1, lcore 5→cpu2, lcore 6→cpu3, lcore 7→cpu4
+# 多个 lcore 共享同一物理核，适用于 SMT 场景
 ```
 
 ### 6.2 lcore 绑定实现
@@ -483,9 +480,9 @@ int rte_eal_remote_launch(int (*f)(void *), void *arg, unsigned lcore_id) {
 
 ## 7. Master lcore
 
-### 7.1 Master lcore 的角色
+### 7.1 Main lcore 的角色
 
-Master lcore 是 DPDK 应用中**负责初始化和协调**的特殊 lcore：
+Main lcore（早期版本称为 Master lcore，DPDK 21.11 起统一更名为 Main lcore）是 DPDK 应用中**负责初始化和协调**的特殊 lcore：
 
 | 职责 | 说明 |
 |------|------|
@@ -497,29 +494,29 @@ Master lcore 是 DPDK 应用中**负责初始化和协调**的特殊 lcore：
 ### 7.2 指定 master lcore
 
 ```bash
-# 方法 1: --master-lcore 参数
-./dpdk-app --master-lcore=0 --lcores='0@0,1-3@1-3'
+# 方法 1: --main-lcore 参数
+./dpdk-app --main-lcore=0 --lcores='0@0,1-3@1-3'
 
-# 方法 2: 自动选择（默认第一个 WORKER lcore）
+# 方法 2: 自动选择（默认 lcore 列表中的第一个）
 ```
 
-### 7.3 Master lcore 初始化代码
+### 7.3 Main lcore 初始化代码
 
 ```c
 // lib/eal/common/eal_common_process.c
 
-// 设置 master lcore
-static int eal_parse_master_lcore(const char *arg) {
+// 设置 main lcore
+static int eal_parse_main_lcore(const char *arg) {
     unsigned m_lcore = atoi(arg);
-    
+
     if (m_lcore >= rte_config.lcore_count) {
-        RTE_LOG(ERR, EAL, "Invalid master lcore %u\n", m_lcore);
+        RTE_LOG(ERR, EAL, "Invalid main lcore %u\n", m_lcore);
         return -1;
     }
-    
-    rte_config.master_lcore = m_lcore;
+
+    rte_config.main_lcore = m_lcore;
     rte_config.lcore_role[m_lcore] = ROLE_RTE;
-    
+
     return 0;
 }
 ```
@@ -579,23 +576,29 @@ static void *eal_intr_thread(void *arg) {
 
 ### 8.2 中断类型
 
-| 类型 | 说明 | VFIO 支持 |
-|------|------|----------|
-| **INTx** | Legacy PCI 中断 | ✅ |
-| **MSI** | Message Signaled Interrupt | ✅ |
-| **MSI-X** | 扩展 MSI，支持更多向量 | ✅ (推荐) |
+| 类型 | 机制 | 最大向量数 | 共享 | VFIO |
+|------|------|-----------|------|------|
+| **INTx** | 物理信号线（INTA/B/C/D） | 1 | 多设备共享 | ✅ |
+| **MSI** | 内存写事务（in-band） | 32 | 独占 | ✅ |
+| **MSI-X** | 内存写事务，中断表在设备内存 | 2048 | 独占，per-vector 掩码 | ✅ (推荐) |
+
+**INTx** 是最古老的 PCI 中断方式，通过主板上的物理信号线传递中断。多设备共享同一根线时需要轮询确认，无法按 CPU 亲和性分发。
+
+**MSI** 将中断改为内存写操作——设备向特定地址写入一个携带中断向量号的值，无需物理信号线。每个设备最多 32 个向量，支持按 CPU 路由，不共享。
+
+**MSI-X** 在 MSI 基础上大幅扩展，最多 2048 个向量，且每个向量可独立绑定到不同 CPU、独立掩码。DPDK 中每个 RX 队列绑定独立 MSI-X 向量，实现 RSS + per-queue 中断亲和。不过 DPDK 的 Poll Mode Driver（PMD）通常禁用中断，完全靠 `rte_eth_rx_burst` 轮询收包；MSI-X 更多用于 interrupt mode 和 VFIO 中断通知场景。
 
 ```c
 // 配置 MSI-X 中断
-int rte_eth_dev_rx_intr_ctl(uint16_t port_id, uint16_t qid, 
+int rte_eth_dev_rx_intr_ctl(uint16_t port_id, uint16_t qid,
                             int epfd, int op, void *data) {
     struct vfio_irq_info info = { .argsz = sizeof(info) };
     info.index = VFIO_PCI_MSIX_IRQ_INDEX;
-    
+
     // 设置 MSI-X 中断
     struct vfio_irq_set *irq_set;
     irq_set = setup_irq_set(VFIO_PCI_MSIX_IRQ_INDEX, qid, op, data);
-    
+
     return ioctl(vfio_dev_fd, VFIO_DEVICE_SET_IRQS, irq_set);
 }
 ```
@@ -621,11 +624,10 @@ int rte_eal_timer_init(void) {
         rte_config.timer_source = RTE_TIMER_ARM_GPT;
     }
     
-    // 2. 初始化 per-lcore 定时器管理
-    RTE_LCORE_FOREACH_WORKER(lcore_id) {
-        rte_timer_subsystem_init();
-    }
-    
+    // 2. 初始化全局定时器子系统（只需调用一次）
+    rte_timer_subsystem_init();
+    // per-lcore 的 timer 数据结构在各 lcore 线程启动时自动初始化
+
     return 0;
 }
 ```
@@ -713,15 +715,29 @@ graph LR
 ### 11.2 Service lcore 配置
 
 ```bash
-# --lcores 格式扩展，支持 ROLE_SERVICE
-./dpdk-app --lcores='0-3@0-3;SERVICE=4-7@4-7'
+# 方法 1: 通过 -s / --service-core-mask 指定 service core
+./dpdk-app -l 0-3 -s 0xf0
+# -l 0-3    → 工作 lcore 0-3
+# -s 0xf0   → service core 4-7（bit 4-7 置位）
 
-# 或者通过 API
-struct servicecore_info info = {
-    .lcores = {4, 5, 6, 7},
-    .count = 4
-};
-rte_service_set_affinity(&info);
+# 方法 2: 通过 API 注册
+```
+
+```c
+// 将 lcore 4、5 注册为 service core
+rte_service_lcore_add(4);
+rte_service_lcore_add(5);
+
+// 启动 service core
+rte_service_lcore_start(4);
+rte_service_lcore_start(5);
+
+// 将特定 service 映射到 service core
+rte_service_map_lcore_set(service_id, 4, 1);  // 映射
+rte_service_map_lcore_set(service_id, 5, 1);  // 映射
+
+// 启动 service
+rte_service_runstate_set(service_id, 1);
 ```
 
 ---
@@ -784,11 +800,13 @@ int main(int argc, char *argv[])
     argv += ret;
     
     // ========== PCI 探测 ==========
+    uint16_t nb_ports = 0;
     RTE_ETH_FOREACH_DEV(port_id) {
         printf("Found port: %u\n", port_id);
+        nb_ports++;
     }
-    
-    if (port_id == 0) {
+
+    if (nb_ports == 0) {
         printf("No Ethernet ports, exiting\n");
         return -1;
     }
@@ -870,7 +888,7 @@ int main(int argc, char *argv[])
 
 4. **IOVA 模式**：VFIO + IOMMU 支持 VA mode（推荐），UIO 只能使用 PA mode。
 
-5. **Master lcore**：负责初始化和协调，通常不参与数据平面。
+5. **Main lcore**：负责初始化和协调，通常不参与数据平面（DPDK 21.11 起由 Master lcore 更名）。
 
 6. **Service lcore**：DPDK 17+ 引入，释放数据平面 lcore 的慢路径任务。
 

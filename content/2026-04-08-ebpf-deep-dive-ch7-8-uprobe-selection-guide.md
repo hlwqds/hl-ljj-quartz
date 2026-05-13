@@ -78,11 +78,11 @@ tags:
 ```mermaid
 graph LR
     subgraph "演进路线"
-        UP[传统 ptrace<br/>2010s] --> UPROBE[内核 uprobe<br/>2017+]
-        UP --> BPFTRACE[bpftrace<br/>2019+]
-        UPROBE --> UPROBE_MULTI[uprobe_multi<br/>2024+]
-        UP --> BPFTIME[bpftime<br/>2023+]
-        BPFTIME --> BPFTIME_SHM[bpftime SHM<br/>2024+]
+        UP[传统 ptrace<br>2010s] --> UPROBE[内核 uprobe<br>2017+]
+        UP --> BPFTRACE[bpftrace<br>2019+]
+        UPROBE --> UPROBE_MULTI[uprobe_multi<br>2024+]
+        UP --> BPFTIME[bpftime<br>2023+]
+        BPFTIME --> BPFTIME_SHM[bpftime SHM<br>2024+]
     end
 ```
 
@@ -324,10 +324,10 @@ int attach_probe(const char *binary, const char *symbol) {
 
 ```mermaid
 graph LR
-    TRY[尝试 bpftime] -->|成功| FAST[用户态模式<br/>~30ns]
+    TRY[尝试 bpftime] -->|成功| FAST[用户态模式<br>~30ns]
     TRY -->|失败| FALLBACK[退化到 uprobe]
-    FALLBACK -->|成功| NORMAL[内核态模式<br/>~3000ns]
-    FALLBACK -->|高频警告| SAMPLE[采样模式<br/>降低频率]
+    FALLBACK -->|成功| NORMAL[内核态模式<br>~3000ns]
+    FALLBACK -->|高频警告| SAMPLE[采样模式<br>降低频率]
 
     style FAST fill:#c8e6c9
     style NORMAL fill:#fff3e0
@@ -463,9 +463,9 @@ int BPF_UPROBE(python_eval_trace, struct _frame *frame) {
 ```mermaid
 graph TD
     START[开始选型] --> SCALE{节点规模}
-    SCALE -- "<100 节点" --> SIMPLE[内核 uprobe<br/>简单可靠]
-    SCALE -- "100-1000 节点" --> MIXED[混合方案<br/>性能+安全]
-    SCALE -- ">1000 节点" --> BPFTIME[bpftime<br/>降低总 CPU 开销]
+    SCALE -- "<100 节点" --> SIMPLE[内核 uprobe<br>简单可靠]
+    SCALE -- "100-1000 节点" --> MIXED[混合方案<br>性能+安全]
+    SCALE -- ">1000 节点" --> BPFTIME[bpftime<br>降低总 CPU 开销]
 
     MIXED --> FREQ{目标函数频率}
     FREQ -- ">10K/s" --> B_HIGH[bpftime 处理高频]

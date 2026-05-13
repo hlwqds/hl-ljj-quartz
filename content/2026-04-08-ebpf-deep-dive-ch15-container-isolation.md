@@ -73,16 +73,16 @@ tags:
 ```mermaid
 graph TB
     subgraph "传统隔离层"
-        NS[Namespaces<br/>隔离: 看不见]
-        CG[Cgroups<br/>限制: 用不多]
-        SEC[Seccomp<br/>过滤: 不能做 syscall]
+        NS[Namespaces<br>隔离: 看不见]
+        CG[Cgroups<br>限制: 用不多]
+        SEC[Seccomp<br>过滤: 不能做 syscall]
     end
 
     subgraph "eBPF 增强隔离层"
-        LSM[LSM BPF<br/>深度参数检查]
-        NET[XDP/TC<br/>网络微隔离]
-        FS[文件系统守卫<br/>路径级动态拦截]
-        PROC[进程行为分析<br/>异常检测]
+        LSM[LSM BPF<br>深度参数检查]
+        NET[XDP/TC<br>网络微隔离]
+        FS[文件系统守卫<br>路径级动态拦截]
+        PROC[进程行为分析<br>异常检测]
     end
 
     NS --> LSM
@@ -125,12 +125,12 @@ Linux 5.7+ 引入了 cgroup-level LSM BPF，允许为不同的 cgroup（即不�
 graph TB
     subgraph "Kubernetes Pod A"
         CGA[Cgroup: /kubepods/besteffort/pod123]
-        POL_A[策略: 禁止 /etc/shadow<br/>禁止非 TCP socket<br/>禁止 ptrace]
+        POL_A[策略: 禁止 /etc/shadow<br>禁止非 TCP socket<br>禁止 ptrace]
     end
 
     subgraph "Kubernetes Pod B"
         CGB[Cgroup: /kubepods/burstable/pod456]
-        POL_B[策略: 允许 /etc/shadow<br/>允许所有 socket<br/>禁止 execve]
+        POL_B[策略: 允许 /etc/shadow<br>允许所有 socket<br>禁止 execve]
     end
 
     subgraph "LSM BPF 层"
@@ -359,7 +359,7 @@ graph TB
     TRACE --> EVT
     CG --> EVT
 
-    EVT --> ES[Elasticsearch<br/>审计日志]
+    EVT --> ES[Elasticsearch<br>审计日志]
     EVT --> ALERT[告警: Slack/Teams]
 ```
 

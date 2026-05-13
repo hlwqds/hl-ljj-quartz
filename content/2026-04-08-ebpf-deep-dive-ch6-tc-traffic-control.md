@@ -115,9 +115,9 @@ TC 的基础架构由三层组成：
 
 ```mermaid
 graph TB
-    IFACE[网卡 eth0] --> QDISC[qdisc: 排队规则<br/>clsact (无队列)]
-    QDISC --> CLS1[class/filter 1<br/>TC Ingress]
-    QDISC --> CLS2[class/filter 2<br/>TC Egress]
+    IFACE[网卡 eth0] --> QDISC[qdisc: 排队规则<br>clsact (无队列)]
+    QDISC --> CLS1[class/filter 1<br>TC Ingress]
+    QDISC --> CLS2[class/filter 2<br>TC Egress]
 
     CLS1 --> ACT1[action 1: BPF 程序]
     CLS2 --> ACT2[action 2: BPF 程序]
@@ -330,7 +330,7 @@ graph TB
     end
 
     subgraph "全局共享"
-        MAPS[BPF Maps<br/>Service 映射<br/>策略缓存<br/>连接跟踪]
+        MAPS[BPF Maps<br>Service 映射<br>策略缓存<br>连接跟踪]
     end
 
     P1 --> MAPS
@@ -356,10 +356,10 @@ sequenceDiagram
     participant Q as fq qdisc
     participant NIC as 网卡
 
-    Note over TC: BPF 程序给报文打上<br/>earliest departure time
+    Note over TC: BPF 程序给报文打上<br>earliest departure time
     TC->>Q: skb->tstamp = now + delay
 
-    Note over Q: fq qdisc 根据 tstamp<br/>排序发送
+    Note over Q: fq qdisc 根据 tstamp<br>排序发送
     Q->>Q: 检查 skb->tstamp
     Q->>Q: tstamp <= now? → 立即发送
     Q->>Q: tstamp > now? → 等待
@@ -556,11 +556,11 @@ int tc_policy_egress(struct __sk_buff *skb) {
 ```mermaid
 graph LR
     subgraph "XDP 层"
-        XDP_IN[XDP: 50Mpps<br/>L3 黑名单 / DDoS]
+        XDP_IN[XDP: 50Mpps<br>L3 黑名单 / DDoS]
     end
 
     subgraph "TC Ingress"
-        TC_I[TC: 10Mpps<br/>容器策略 / 带宽]
+        TC_I[TC: 10Mpps<br>容器策略 / 带宽]
     end
 
     subgraph "协议栈"
@@ -569,7 +569,7 @@ graph LR
     end
 
     subgraph "TC Egress"
-        TC_E[TC: 10Mpps<br/>DNAT / SNAT / QoS]
+        TC_E[TC: 10Mpps<br>DNAT / SNAT / QoS]
     end
 
     XDP_IN -- PASS --> TC_I -- OK --> IP_IP --> TCP_TC --> TC_E

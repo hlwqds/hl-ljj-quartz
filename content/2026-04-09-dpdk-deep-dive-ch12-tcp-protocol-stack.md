@@ -16,14 +16,14 @@ description: "深入理解 DPDK 中的 TCP 处理——三次握手、连接状�
 
 DPDK 本身**不提供完整的 TCP 协议栈**，但提供了构建 TCP 应用所需的基础设施：
 
-| 组件 | 说明 |
-|------|------|
-| **mbuf** | 存储 TCP 段（segment） |
-| **Flow Classification** | 识别 TCP 连接，进行会话分发 |
-| **rte_ring** | 存储待发送/接收的 TCP segment |
-| **rte_timer** | RTT 定时器、重传定时器 |
-| **cryptodev** | TLS/DTLS 硬件卸载 |
-| **KNI** | 与内核 TCP 栈交互 |
+| 组件                      | 说明                    |
+| ----------------------- | --------------------- |
+| **mbuf**                | 存储 TCP 段（segment）     |
+| **Flow Classification** | 识别 TCP 连接，进行会话分发      |
+| **rte_ring**            | 存储待发送/接收的 TCP segment |
+| **rte_timer**           | RTT 定时器、重传定时器         |
+| **cryptodev**           | TLS/DTLS 硬件卸载         |
+| **KNI**                 | 与内核 TCP 栈交互           |
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -76,14 +76,14 @@ struct rte_tcp_hdr {
 } __rte_packed;
 
 // TCP Flags
-#define RTE_TCP_CWR_FLAG   (1 << 7)   // Congestion Window Reduced
-#define RTE_TCP_ECE_FLAG   (1 << 6)   // ECN Echo
-#define RTE_TCP_URG_FLAG   (1 << 5)   // Urgent
-#define RTE_TCP_ACK_FLAG   (1 << 4)   // Acknowledge
-#define RTE_TCP_PSH_FLAG   (1 << 3)   // Push
-#define RTE_TCP_RST_FLAG   (1 << 2)   // Reset
-#define RTE_TCP_SYN_FLAG   (1 << 1)   // Synchronize
-#define RTE_TCP_FIN_FLAG   (1 << 0)   // Finish
+#define RTE_TCP_CWR_FLAG   0x80   // Congestion Window Reduced
+#define RTE_TCP_ECE_FLAG   0x40   // ECN Echo
+#define RTE_TCP_URG_FLAG   0x20   // Urgent
+#define RTE_TCP_ACK_FLAG   0x10   // Acknowledge
+#define RTE_TCP_PSH_FLAG   0x08   // Push
+#define RTE_TCP_RST_FLAG   0x04   // Reset
+#define RTE_TCP_SYN_FLAG   0x02   // Synchronize
+#define RTE_TCP_FIN_FLAG   0x01   // Finish
 
 // 数据偏移计算
 #define TCP_HEADER_LEN(tcp_hdr) (((tcp_hdr)->data_off & 0xF0) >> 2)
@@ -139,8 +139,8 @@ typedef struct {
     uint8_t timestamp;      // 时间戳是否启用
     uint32_t ts_val;        // TS Val
     uint32_t ts_ecr;        // TS Echo
-    uint8_t sack_blks[8][8]; // SACK blocks (4 个)
-    uint8_t sack_count;      // SACK block 数量
+    uint32_t sack_blks[4][2]; // SACK blocks (最多 4 个, 每个 [left_edge, right_edge])
+    uint8_t sack_count;       // SACK block 数量
 } tcp_options_t;
 
 static void
@@ -190,6 +190,20 @@ parse_tcp_options(const uint8_t *opt, uint8_t len, tcp_options_t *opts)
             }
             pos += opt[pos + 1];
             break;
+
+        case TCP_OPT_SACK: {
+            // SACK 选项: kind(1) + length(1) + n * [left(4) + right(4)]
+            uint8_t sack_len = opt[pos + 1];
+            uint8_t nblks = (sack_len - 2) / 8;  // 每个 block 8 字节
+            if (nblks > 4) nblks = 4;            // RFC 最多 4 个
+            opts->sack_count = nblks;
+            for (uint8_t b = 0; b < nblks && pos + 2 + b * 8 + 8 <= len; b++) {
+                opts->sack_blks[b][0] = rte_be_to_cpu_32(*(uint32_t *)(opt + pos + 2 + b * 8));
+                opts->sack_blks[b][1] = rte_be_to_cpu_32(*(uint32_t *)(opt + pos + 6 + b * 8));
+            }
+            pos += sack_len;
+            break;
+        }
 
         default:
             // 未知选项，跳过
@@ -347,14 +361,19 @@ struct tcp_conn {
     uint32_t snd_nxt;             // 下一个要发送的序列号
     uint32_t snd_una;             // 最早未确认的序列号
     uint32_t snd_wnd;             // 发送窗口大小
-    uint32_t snd_up;             // 发送紧急指针
+    uint32_t snd_wnd_max;         // 最大发送窗口
+    uint32_t snd_up;              // 发送紧急指针
 
     uint32_t rcv_nxt;             // 期望接收的下一个序列号
     uint32_t rcv_wnd;             // 接收窗口大小
-    uint32_t rcv_up;             // 接收紧急指针
+    uint32_t rcv_wnd_max;         // 最大接收窗口（接收缓冲区大小）
+    uint32_t rcv_up;              // 接收紧急指针
 
     // 状态
     enum tcp_state state;
+
+    // 所属 listener（被动打开时）
+    struct tcp_listener *listener;
 
     // 定时器
     struct rte_timer retransmit_timer;  // 重传定时器
@@ -367,11 +386,14 @@ struct tcp_conn {
     uint32_t rtt;                 // 往返时间（微秒）
     uint32_t rttvar;              // RTT 偏差
     uint32_t srtt;                // 平滑 RTT
+    uint32_t rto;                 // 重传超时（微秒）
 
     // 拥塞控制
     uint32_t cwnd;                // 拥塞窗口
     uint32_t ssthresh;            // 慢启动阈值
     uint8_t  cong_state;          // 拥塞状态
+    uint32_t recovery_point;      // 快速恢复点
+    uint32_t dup_ack_count;       // 重复 ACK 计数
 
     // 时间戳
     uint8_t  ts_on;               // 时间戳是否启用
@@ -400,8 +422,8 @@ struct tcp_conn {
 ```c
 // 主动打开连接
 static struct tcp_conn *
-tcp_connect(uint32_t local_ip, uint16_t local_port,
-            uint32_t remote_ip, uint16_t remote_port)
+tcp_conn_connect(uint32_t local_ip, uint16_t local_port,
+                 uint32_t remote_ip, uint16_t remote_port)
 {
     struct tcp_conn *conn = rte_malloc("tcp_conn", sizeof(struct tcp_conn), 0);
     if (!conn)
@@ -424,8 +446,8 @@ tcp_connect(uint32_t local_ip, uint16_t local_port,
     conn->wscale = 0;
     conn->state = TCP_STATE_SYN_SENT;
 
-    // 发送 SYN
-    send_tcp_segment(conn, RTE_TCP_SYN_FLAG, 0, NULL, 0);
+    // 发送 SYN（seq=snd_nxt, ack=0, 无数据）
+    send_tcp_segment(conn, RTE_TCP_SYN_FLAG, conn->snd_nxt, 0, NULL, 0);
 
     // 启动重传定时器
     rte_timer_reset(&conn->retransmit_timer,
@@ -445,9 +467,23 @@ send_tcp_segment(struct tcp_conn *conn,
                  uint32_t seq, uint32_t ack,
                  const void *data, uint16_t len)
 {
+    uint8_t opt_len = 0;
+
+    // 计算选项长度（SYN 段携带 MSS + WSCALE + TIMESTAMP）
+    if (flags & RTE_TCP_SYN_FLAG) {
+        opt_len = 4 + 3 + 1 + 2 + 10;  // MSS(4) + NOP(1)+WSCALE(3) + NOP(2)+TS(10)
+        // 对齐到 4 字节: 4+4+12 = 20 → 已对齐
+    }
+
+    uint16_t tcp_hdr_len = sizeof(struct rte_tcp_hdr) + opt_len;
+    uint16_t pkt_len = sizeof(struct rte_ether_hdr) + sizeof(struct rte_ipv4_hdr)
+                     + tcp_hdr_len + len;
+
     struct rte_mbuf *m = rte_pktmbuf_alloc(mbuf_pool);
     if (!m)
         return -1;
+
+    rte_pktmbuf_append(m, pkt_len);
 
     // 准备头部空间
     struct rte_ether_hdr *eth = rte_pktmbuf_mtod(m, struct rte_ether_hdr *);
@@ -459,48 +495,65 @@ send_tcp_segment(struct tcp_conn *conn,
     // ... 设置 MAC 地址
 
     // IPv4
-    ip->version_ihl = (4 << 4) | (5);
-    ip->total_length = rte_cpu_to_be_16(sizeof(struct rte_ipv4_hdr) +
-                                        sizeof(struct rte_tcp_hdr) + len);
+    ip->version_ihl = (4 << 4) | 5;
+    ip->type_of_service = 0;
+    ip->total_length = rte_cpu_to_be_16(sizeof(struct rte_ipv4_hdr) + tcp_hdr_len + len);
+    ip->packet_id = 0;
+    ip->fragment_offset = 0;
+    ip->time_to_live = 64;                              // TTL 必须设置
     ip->next_proto_id = IPPROTO_TCP;
     ip->src_addr = conn->local_ip;
     ip->dst_addr = conn->remote_ip;
+    ip->hdr_checksum = 0;                               // 留零，NIC 计算
 
     // TCP
     tcp->src_port = rte_cpu_to_be_16(conn->local_port);
     tcp->dst_port = rte_cpu_to_be_16(conn->remote_port);
     tcp->sent_seq = rte_cpu_to_be_32(seq);
     tcp->recv_ack = rte_cpu_to_be_32(ack);
-    tcp->data_off = (5 << 4);  // 5 * 4 = 20 字节，无选项
+    tcp->data_off = ((tcp_hdr_len / 4) << 4);           // 数据偏移（单位 4 字节）
     tcp->tcp_flags = flags;
-    tcp->rx_win = rte_cpu_to_be_16(conn->rcv_wnd >> conn->wscale);
+    tcp->rx_win = rte_cpu_to_be_16(conn->rcv_wnd);
+    tcp->cksum = 0;                                     // 留零，NIC 计算
 
-    // 添加选项（如果是 SYN）
+    // 填写 TCP 选项
     if (flags & RTE_TCP_SYN_FLAG) {
         uint8_t *opt = (uint8_t *)(tcp + 1);
+
+        // MSS 选项 (4 bytes)
         opt[0] = TCP_OPT_MSS;
         opt[1] = 4;
         *(uint16_t *)(opt + 2) = rte_cpu_to_be_16(conn->mss);
+
+        // NOP + WSCALE 选项 (4 bytes)
         opt[4] = TCP_OPT_NOP;
         opt[5] = TCP_OPT_WSCALE;
         opt[6] = 3;
         opt[7] = 0;  // 无窗口扩大（简化）
-        opt[8] = TCP_OPT_NOP;
-        opt[9] = TCP_OPT_NOP;
+
+        // NOP + NOP + TIMESTAMP 选项 (12 bytes)
+        opt[8]  = TCP_OPT_NOP;
+        opt[9]  = TCP_OPT_NOP;
         opt[10] = TCP_OPT_TIMESTAMP;
         opt[11] = 10;
-        *(uint32_t *)(opt + 12) = rte_cpu_to_be_32(rte_get_timer_cycles());
-        *(uint32_t *)(opt + 16) = 0;
-        tcp->data_off = (9 << 4);  // 9 * 4 = 36 字节
+        // 使用 TSC 转换为毫秒级时间戳
+        uint64_t ts_ms = rte_rdtsc() / (rte_get_tsc_hz() / 1000);
+        *(uint32_t *)(opt + 12) = rte_cpu_to_be_32((uint32_t)ts_ms);
+        *(uint32_t *)(opt + 16) = rte_cpu_to_be_32(conn->ts_recent);
     }
 
-    // 复制数据
+    // 复制数据（从选项之后的位置开始，避免覆盖选项）
     if (data && len > 0) {
-        rte_memcpy(tcp + 1, data, len);
+        rte_memcpy((uint8_t *)(tcp + 1) + opt_len, data, len);
     }
 
-    // 设置 offload
-    m->ol_flags |= PKT_TX_IPV4 | PKT_TX_IP_CKSUM | PKT_TX_TCP_CKSUM;
+    // 设置 offload flags
+    m->ol_flags |= RTE_MBUF_F_TX_IPV4
+                 | RTE_MBUF_F_TX_IP_CKSUM
+                 | RTE_MBUF_F_TX_TCP_CKSUM;
+    m->l2_len = sizeof(struct rte_ether_hdr);
+    m->l3_len = sizeof(struct rte_ipv4_hdr);
+    m->l4_len = tcp_hdr_len;
 
     // 发送
     return rte_eth_tx_burst(port_id, queue_id, &m, 1);
@@ -831,8 +884,17 @@ tcp_cong_avoid(struct tcp_conn *conn)
 static void
 tcp_cong_on_ack(struct tcp_conn *conn, uint32_t ack_seq)
 {
-    if (conn->snd_una == ack_seq) {
-        // 这是新的确认
+    if (ack_seq > conn->snd_una) {
+        // 新的确认：有数据被确认，更新窗口
+        conn->snd_una = ack_seq;
+        conn->dup_ack_count = 0;  // 重置重复 ACK 计数
+
+        if (conn->cong_state == TCP_CONG_RECOVERY) {
+            // 快速恢复中，检查是否恢复完毕
+            if (ack_seq >= conn->recovery_point) {
+                conn->cong_state = TCP_CONG_OPEN;
+            }
+        }
 
         if (conn->cong_state == TCP_CONG_OPEN) {
             if (conn->cwnd < conn->ssthresh) {
@@ -840,15 +902,11 @@ tcp_cong_on_ack(struct tcp_conn *conn, uint32_t ack_seq)
             } else {
                 tcp_cong_avoid(conn);
             }
-        } else if (conn->cong_state == TCP_CONG_RECOVERY) {
-            // 快速恢复
-            conn->snd_una = ack_seq;
-
-            if (conn->snd_una >= conn->recovery_point) {
-                // 退出快速恢复
-                conn->cong_state = TCP_CONG_OPEN;
-            }
         }
+    } else if (ack_seq == conn->snd_una) {
+        // 重复 ACK：没有新数据被确认
+        conn->dup_ack_count++;
+        tcp_fast_retransmit(conn, conn->dup_ack_count);
     }
 }
 
@@ -962,9 +1020,9 @@ tcp_parse_timestamp_for_rtt(struct tcp_conn *conn, struct rte_tcp_hdr *tcp)
 ### 7.1 四次挥手
 
 ```c
-// 主动关闭
+// 主动关闭连接
 static void
-tcp_close(struct tcp_conn *conn)
+tcp_conn_close(struct tcp_conn *conn)
 {
     switch (conn->state) {
     case TCP_STATE_ESTABLISHED:
@@ -994,12 +1052,13 @@ handle_fin(struct tcp_conn *conn, struct rte_tcp_hdr *tcp)
 {
     uint8_t flags = tcp->tcp_flags;
     uint32_t seq = rte_be_to_cpu_32(tcp->sent_seq);
+    uint32_t ack = rte_be_to_cpu_32(tcp->recv_ack);
 
     switch (conn->state) {
     case TCP_STATE_ESTABLISHED:
         // 收到对端的 FIN
         conn->rcv_nxt = seq + 1;
-        send_ack(conn);  // 发送 ACK
+        send_ack(conn);
 
         // 通知应用对端关闭
         notify_peer_closed(conn);
@@ -1008,30 +1067,32 @@ handle_fin(struct tcp_conn *conn, struct rte_tcp_hdr *tcp)
         break;
 
     case TCP_STATE_FIN_WAIT1:
-        if (flags & RTE_TCP_ACK_FLAG) {
-            // 收到对方的 FIN + ACK
-            conn->snd_una = rte_be_to_cpu_32(tcp->recv_ack);
-            conn->rcv_nxt = seq + 1;
-            send_ack(conn);
+        conn->rcv_nxt = seq + 1;
+        send_ack(conn);
 
+        if (flags & RTE_TCP_ACK_FLAG) {
+            // FIN + ACK → 直接进入 TIME_WAIT
+            conn->snd_una = ack;
             conn->state = TCP_STATE_TIME_WAIT;
             start_timewait_timer(conn);
-        }
-        break;
-
-    case TCP_STATE_FIN_WAIT1:
-        if (!(flags & RTE_TCP_ACK_FLAG)) {
-            // 收到对方的 FIN，但没有 ACK
-            conn->rcv_nxt = seq + 1;
-            send_ack(conn);
-
+        } else {
+            // FIN without ACK → CLOSING（同时关闭）
             conn->state = TCP_STATE_CLOSING;
         }
         break;
 
+    case TCP_STATE_FIN_WAIT2:
+        // 收到对端的 FIN，回复 ACK → TIME_WAIT
+        conn->rcv_nxt = seq + 1;
+        send_ack(conn);
+
+        conn->state = TCP_STATE_TIME_WAIT;
+        start_timewait_timer(conn);
+        break;
+
     case TCP_STATE_CLOSING:
-        // 同时关闭
-        conn->snd_una = rte_be_to_cpu_32(tcp->recv_ack);
+        // 同时关闭：收到 ACK → TIME_WAIT
+        conn->snd_una = ack;
         conn->rcv_nxt = seq + 1;
         send_ack(conn);
 
@@ -1040,8 +1101,8 @@ handle_fin(struct tcp_conn *conn, struct rte_tcp_hdr *tcp)
         break;
 
     case TCP_STATE_LAST_ACK:
-        // 收到最后的 ACK
-        conn->snd_una = rte_be_to_cpu_32(tcp->recv_ack);
+        // 收到最后的 ACK → CLOSED
+        conn->snd_una = ack;
         conn->state = TCP_STATE_CLOSED;
         destroy_conn(conn);
         break;
@@ -1114,7 +1175,7 @@ struct tcp_socket *tcp_accept(struct tcp_socket *s)
 // 连接
 int tcp_connect(struct tcp_socket *s, uint32_t ip, uint16_t port)
 {
-    s->conn = tcp_connect(local_ip, local_port, remote_ip, remote_port);
+    s->conn = tcp_conn_connect(local_ip, local_port, ip, port);
     s->role = 1;
     // 等待连接建立（可能需要非阻塞轮询）
     return 0;
@@ -1138,7 +1199,7 @@ ssize_t tcp_recv(struct tcp_socket *s, void *buf, size_t len)
 int tcp_close(struct tcp_socket *s)
 {
     if (s->conn) {
-        tcp_close(s->conn);
+        tcp_conn_close(s->conn);
     }
     rte_free(s);
 }
