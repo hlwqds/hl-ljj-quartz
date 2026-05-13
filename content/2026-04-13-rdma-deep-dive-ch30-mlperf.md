@@ -69,26 +69,26 @@ MLPerf 基准套件：
 Ring AllReduce 算法 (4 GPUs):
 
   Phase 1: Reduce (3 步)
-  
+
   Step 1:    GPU0 → GPU1,    GPU2 → GPU3
              R0 += R1        R2 += R3
-             
+
   Step 2:    GPU1 → GPU2,    GPU3 → GPU0
              R0 += R2        R1 += R3
-             
+
   Step 3:    GPU2 → GPU3,    GPU3 → GPU1
              R0 += R3        R1 += R3
              ─────────────────────────────────
              R0 = Σ(R0, R1, R2, R3)  全部完成
-             
+
   Phase 2: Broadcast (3 步)
-  
+
   Step 1:    GPU0 → GPU1,    GPU0 → GPU2
              R1 = R0         R2 = R0
-             
+
   Step 2:    GPU1 → GPU2,    GPU2 → GPU3
              R2 = R0         R3 = R0
-             
+
   Step 3:    GPU3 → GPU0     (all complete)
              All GPUs have ΣR
 ```
@@ -99,26 +99,26 @@ template<typename T>
 void ring_allreduce(T* buffer, int count, int nGPUs, int rank) {
     int left = (rank - 1 + nGPUs) % nGPUs;
     int right = (rank + 1) % nGPUs;
-    
+
     // Phase 1: Reduce
     // 每个 GPU 发送部分结果到右侧，接收左侧的结果并累加
     for (int step = 0; step < nGPUs - 1; step++) {
         int send_idx = (rank - step + nGPUs) % nGPUs;
         int recv_idx = (rank - step - 1 + nGPUs) % nGPUs;
-        
+
         // RDMA: 从左侧 GPU 读数据
-        rdma_get(left, buffer + send_idx * chunk, chunk, 
+        rdma_get(left, buffer + send_idx * chunk, chunk,
                  &temp_buffer[recv_idx * chunk]);
-        
+
         // 本地归约
         reduce_add(&buffer[send_idx * chunk], &temp_buffer[recv_idx * chunk], chunk);
     }
-    
+
     // Phase 2: Broadcast
     // 每个 GPU 发送完整结果到右侧
     for (int step = 0; step < nGPUs - 1; step++) {
         int send_idx = (rank + 1 + step) % nGPUs;
-        
+
         // RDMA: 写数据到右侧 GPU
         rdma_put(right, buffer, chunk * nGPUs,
                  GPU_addr(send_idx));
@@ -139,10 +139,10 @@ Pairwise Exchange (Double Binary Tree):
 
   Step 1:  GPU0↔GPU1,  GPU2↔GPU3  (交换)
            R0,R1      R2,R3
-           
+
   Step 2:  GPU0↔GPU2,  GPU1↔GPU3  (合并)
            R0+R1      R2+R3
-           
+
   Step 3:  GPU0↔GPU1,  GPU2↔GPU3  (广播)
            Final      Final
 ```
@@ -227,24 +227,24 @@ void hierarchical_allreduce(float* buffer, int count) {
     int local_rank = get_local_rank();   // 0-3
     int global_rank = get_global_rank();  // 0-7
     int node_id = global_rank / 4;        // 0 或 1
-    
+
     // Step 1: 本地 NVLink AllReduce (节点内)
     // 仅在 local_rank=0 的 GPU 保留结果
     if (local_rank == 0) {
         // 本地 4 GPU Ring AllReduce
         ring_allreduce(buffer, count, 4, local_rank);
     }
-    
+
     // 同步到所有本地 GPU
     broadcast_to_local_gpus(buffer, count);
-    
+
     // Step 2: 跨节点 RDMA AllReduce
     // Node 0 和 Node 1 之间
     if (local_rank == 0) {
         // 跨节点 Ring AllReduce (2 节点)
         rdma_allreduce(buffer, count, node_id);
     }
-    
+
     // Step 3: 本地 Broadcast
     broadcast_to_local_gpus(buffer, count);
 }
@@ -263,16 +263,16 @@ void train_step_with_overlap(Tensor* gradients) {
     cudaStreamBeginCapture(computeStream);
     compute_gradients(gradients);
     cudaStreamEndCapture(computeStream);
-    
+
     // 启动 AllReduce (CUDA Stream 2)
     ncclAllReduce(gradients->data, gradients->data,
                   count, ncclFloat, ncclSum,
                   comm, commStream);
-    
+
     // 同步
     cudaStreamSynchronize(computeStream);
     cudaStreamSynchronize(commStream);
-    
+
     // 优化器步骤
     optimizer_step();
 }
@@ -281,13 +281,13 @@ void train_step_with_overlap(Tensor* gradients) {
 void train_step_with_events(Tensor* gradients) {
     // 计算下一个 batch 的梯度
     compute_next_gradients(next_gradients);  // async
-    
+
     // 同步并开始 AllReduce
     cudaEventRecord(computeDone, computeStream);
     cudaStreamWaitEvent(commStream, computeDone);
-    
+
     ncclAllReduce(gradients->data, gradients->data, ...);
-    
+
     // AllReduce 期间可以继续计算
     prepare_next_batch();
 }
@@ -400,20 +400,20 @@ def compute_scaling_efficiency(results):
     results: dict mapping (n_gpus, n_nodes) -> throughput (images/sec)
     """
     baseline = results[(1, 1)]  # 单 GPU baseline
-    
+
     print("MLPerf ResNet-50 Scaling Efficiency")
     print("=" * 60)
     print(f"{'Config':<20} {'Throughput':<15} {'Ideal':<15} {'Efficiency':<15}")
     print("-" * 60)
-    
+
     for config, throughput in sorted(results.items()):
         n_gpus, n_nodes = config
         ideal = baseline * n_gpus
         efficiency = (throughput / ideal) * 100
-        
+
         config_str = f"{n_gpus}GPU x{n_nodes}Node"
         print(f"{config_str:<20} {throughput:<15.1f} {ideal:<15.1f} {efficiency:<15.1f}%")
-    
+
     print("-" * 60)
 
 # 示例数据
@@ -468,7 +468,7 @@ MLPerf v4.0 ResNet-50 性能参考 (H100 GPU):
   1x H100 (A100)         6,500 img/s     100%
   8x H100 (NVLink)       48,000 img/s    92.3%
   64x H100 (8-node IB)   340,000 img/s   84.6%
-  
+
   关键发现：
   - 单节点 NVLink 扩展效率 > 95%
   - 跨节点 IB 通信引入 ~5-10% 开销

@@ -10,8 +10,8 @@ tags:
   - mtls
 ---
 
-> [!info] eBPF 2026 深度探索系列
-> 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+> [!info] eBPF 2026 深度探索系列 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+>
 > 1. [[2026-04-08-ebpf-deep-dive-ch1-registers-and-instructions|第一章：寄存器与指令集]]
 > 2. [[2026-04-08-ebpf-deep-dive-ch1-5-function-calls|第一.五章：四种函数调用与动态内存]]
 > 3. [[2026-04-08-ebpf-deep-dive-ch1-6-the-verifier|第一.六章：验证器 (Verifier) 的底层逻辑]]
@@ -63,6 +63,7 @@ tags:
 > 49. [[2026-04-09-ebpf-deep-dive-ch40-network-protocols-deep-dive|第四十章：网络协议深度解析——TCP/UDP/QUIC 的 eBPF 视角]]
 > 50. [[2026-04-09-ebpf-deep-dive-ch41-memory-safety-and-vulnerabilities|第四十一章：eBPF 内存安全与漏洞分析]]
 > 51. **第四十二章：eBPF 与 Service Mesh 深度集成**
+
 ---
 
 ## 1. 概述：Service Mesh 的困境与 eBPF 的突破
@@ -86,13 +87,13 @@ graph LR
     end
 ```
 
-| 指标 | Sidecar 模式 | eBPF 加速模式 | 改善 |
-|:---|:---|:---|:---|
-| **P99 延迟** | +2-5ms | +0.1-0.3ms | **10-50x** |
-| **CPU 开销/Pod** | 0.5-1 核 | 0.05-0.1 核 | **10x** |
-| **内存开销/Pod** | 100-200MB | 5-10MB | **20x** |
-| **吞吐损失** | 10-20% | 1-3% | **10x** |
-| **加密 (mTLS)** | Envoy 处理 | eBPF + Kernel TLS | 更高效 |
+| 指标             | Sidecar 模式 | eBPF 加速模式     | 改善       |
+| :--------------- | :----------- | :---------------- | :--------- |
+| **P99 延迟**     | +2-5ms       | +0.1-0.3ms        | **10-50x** |
+| **CPU 开销/Pod** | 0.5-1 核     | 0.05-0.1 核       | **10x**    |
+| **内存开销/Pod** | 100-200MB    | 5-10MB            | **20x**    |
+| **吞吐损失**     | 10-20%       | 1-3%              | **10x**    |
+| **加密 (mTLS)**  | Envoy 处理   | eBPF + Kernel TLS | 更高效     |
 
 ---
 
@@ -131,17 +132,17 @@ graph TB
 ```yaml
 # Helm 安装 Cilium (替代 kube-proxy)
 helm install cilium cilium/cilium \
-    --namespace kube-system \
-    --set kubeProxyReplacement=strict \
-    --set hubble.enabled=true \
-    --set hubble.relay.enabled=true \
-    --set hubble.ui.enabled=true \
-    --set encryption.enabled=true \
-    --set encryption.type=wireguard \
-    --set bpf.masquerade=true \
-    --set hostPort.enabled=true \
-    --set k8sServiceHost=${KUBERNETES_SERVICE_HOST} \
-    --set k8sServicePort=${KUBERNETES_SERVICE_PORT}
+--namespace kube-system \
+--set kubeProxyReplacement=strict \
+--set hubble.enabled=true \
+--set hubble.relay.enabled=true \
+--set hubble.ui.enabled=true \
+--set encryption.enabled=true \
+--set encryption.type=wireguard \
+--set bpf.masquerade=true \
+--set hostPort.enabled=true \
+--set k8sServiceHost=${KUBERNETES_SERVICE_HOST} \
+--set k8sServicePort=${KUBERNETES_SERVICE_PORT}
 ```
 
 ---
@@ -202,7 +203,7 @@ spec:
   # 强制 mTLS：拒绝所有非加密流量
   ingressDeny:
     - fromEndpoints:
-        - matchLabels: {}  # 所有来源
+        - matchLabels: {} # 所有来源
       # 仅允许 mTLS (TLS SNI 匹配)
 ```
 
@@ -284,7 +285,7 @@ spec:
   host: my-service
   trafficPolicy:
     tls:
-      mode: ISTIO_MUTUAL  # 强制 mTLS
+      mode: ISTIO_MUTUAL # 强制 mTLS
   subsets:
     - name: stable
       labels:
@@ -363,19 +364,19 @@ graph TB
 
 ### 5.2 详细对比表
 
-| 维度 | Sidecar (Envoy) | Sidecarless (eBPF) | 混合模式 |
-|:---|:---|:---|:---|
-| **L3/L4 策略** | iptables + Envoy | eBPF XDP/TC | eBPF |
-| **L7 路由** | Envoy 原生 | Gateway API | Envoy (按需) |
-| **mTLS** | Envoy 处理 | Kernel TLS / WireGuard | eBPF + Envoy |
-| **可观测性** | Envoy Access Log | eBPF + Hubble | 两者结合 |
-| **gRPC 负载均衡** | Envoy (L7 LB) | SockOps (L4) | Envoy |
-| **故障注入** | Envoy 支持 | 不支持 | Envoy |
-| **流量镜像** | Envoy 支持 | eBPF TC | 两者结合 |
-| **资源开销** | 高 | 极低 | 中 |
-| **部署复杂度** | 中（Sidecar 注入） | 低（CNI 替换） | 中 |
-| **成熟度** | 生产级 (5+ 年) | 快速成熟 (2026) | 推荐 |
-| **社区** | Istio 主导 | Cilium 主导 | 两者协作 |
+| 维度              | Sidecar (Envoy)    | Sidecarless (eBPF)     | 混合模式     |
+| :---------------- | :----------------- | :--------------------- | :----------- |
+| **L3/L4 策略**    | iptables + Envoy   | eBPF XDP/TC            | eBPF         |
+| **L7 路由**       | Envoy 原生         | Gateway API            | Envoy (按需) |
+| **mTLS**          | Envoy 处理         | Kernel TLS / WireGuard | eBPF + Envoy |
+| **可观测性**      | Envoy Access Log   | eBPF + Hubble          | 两者结合     |
+| **gRPC 负载均衡** | Envoy (L7 LB)      | SockOps (L4)           | Envoy        |
+| **故障注入**      | Envoy 支持         | 不支持                 | Envoy        |
+| **流量镜像**      | Envoy 支持         | eBPF TC                | 两者结合     |
+| **资源开销**      | 高                 | 极低                   | 中           |
+| **部署复杂度**    | 中（Sidecar 注入） | 低（CNI 替换）         | 中           |
+| **成熟度**        | 生产级 (5+ 年)     | 快速成熟 (2026)        | 推荐         |
+| **社区**          | Istio 主导         | Cilium 主导            | 两者协作     |
 
 ---
 
@@ -549,12 +550,12 @@ spec:
 ---
 # 启用 WireGuard 加密的跨集群通信
 helm upgrade cilium cilium/cilium \
-    --set cluster.name=cluster-a \
-    --set cluster.id=1 \
-    --set tunnelProtocol=vxlan \
-    --set encryption.enabled=true \
-    --set encryption.type=wireguard \
-    --set meshClusterSecret=shared-secret-value
+--set cluster.name=cluster-a \
+--set cluster.id=1 \
+--set tunnelProtocol=vxlan \
+--set encryption.enabled=true \
+--set encryption.type=wireguard \
+--set meshClusterSecret=shared-secret-value
 ```
 
 ---
@@ -563,14 +564,14 @@ helm upgrade cilium cilium/cilium \
 
 ### 8.1 延迟基准测试
 
-| 场景 | Sidecar (Envoy) | eBPF (Cilium) | 混合模式 | 说明 |
-|:---|:---|:---|:---|:---|
-| **同 Pod 通信** | 0.3ms | 0.02ms | 0.02ms | eBPF 直连 |
-| **跨 Pod 同节点** | 0.8ms | 0.15ms | 0.2ms | eBPF sk_assign |
-| **跨节点** | 2.1ms | 0.5ms | 0.8ms | eBPF 减少 2 次拷贝 |
-| **mTLS 加密** | 3.5ms | 1.2ms | 1.5ms | Kernel TLS 更快 |
-| **gRPC 流式** | 1.5ms | 0.3ms | 0.5ms | eBPF L4 直通 |
-| **P99 (1000 QPS)** | 5.2ms | 0.8ms | 1.2ms | 尾延迟差距更大 |
+| 场景               | Sidecar (Envoy) | eBPF (Cilium) | 混合模式 | 说明               |
+| :----------------- | :-------------- | :------------ | :------- | :----------------- |
+| **同 Pod 通信**    | 0.3ms           | 0.02ms        | 0.02ms   | eBPF 直连          |
+| **跨 Pod 同节点**  | 0.8ms           | 0.15ms        | 0.2ms    | eBPF sk_assign     |
+| **跨节点**         | 2.1ms           | 0.5ms         | 0.8ms    | eBPF 减少 2 次拷贝 |
+| **mTLS 加密**      | 3.5ms           | 1.2ms         | 1.5ms    | Kernel TLS 更快    |
+| **gRPC 流式**      | 1.5ms           | 0.3ms         | 0.5ms    | eBPF L4 直通       |
+| **P99 (1000 QPS)** | 5.2ms           | 0.8ms         | 1.2ms    | 尾延迟差距更大     |
 
 ### 8.2 吞吐量基准测试
 
@@ -590,12 +591,12 @@ wrk -t12 -c400 -d30s --latency http://my-service:80/api
 
 ### 8.3 资源消耗对比
 
-| 资源 | Sidecar (100 Pods) | eBPF (100 Pods) | 节省 |
-|:---|:---|:---|:---|
-| **CPU 总量** | 50 核 | 5 核 | 90% |
-| **内存总量** | 16GB | 500MB | 97% |
-| **Pod 启动延迟** | +8s (Sidecar 注入) | +0.5s (CNI 配置) | 94% |
-| **节点密度** | ~50 Pods/节点 | ~110 Pods/节点 | 2.2x |
+| 资源             | Sidecar (100 Pods) | eBPF (100 Pods)  | 节省 |
+| :--------------- | :----------------- | :--------------- | :--- |
+| **CPU 总量**     | 50 核              | 5 核             | 90%  |
+| **内存总量**     | 16GB               | 500MB            | 97%  |
+| **Pod 启动延迟** | +8s (Sidecar 注入) | +0.5s (CNI 配置) | 94%  |
+| **节点密度**     | ~50 Pods/节点      | ~110 Pods/节点   | 2.2x |
 
 ---
 

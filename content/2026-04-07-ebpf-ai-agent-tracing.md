@@ -30,7 +30,7 @@ graph TD
     User((用户)) -- "修改 app.py" --> Agent[Agent Runtime/Python]
     Agent -- "HTTPS (Prompt)" --> LLM((LLM 大脑))
     LLM -- "HTTPS (Tool Call: read_file)" --> Agent
-    
+
     subgraph "内核层 (eBPF 监控区)"
         Agent -- "sys_openat/read" --> FS[文件系统/磁盘]
         FS -- "File Data" --> Agent
@@ -48,18 +48,19 @@ graph TD
 
 ### 2.2 eBPF 关键监控点
 
-| 阶段 | 行为 | eBPF 挂载点 | 捕获信息 |
-| :--- | :--- | :--- | :--- |
-| **决策** | LLM 下达 Tool Call 指令 | `SSL_read` (uprobe) | 解密后的 JSON，如 `{"tool": "read_file"}` |
-| **执行-读** | Agent 读取目标文件 | `sys_enter_openat` | 目标路径 (如 `app.py`)，确认 Agent 正在“动”哪个文件 |
-| **执行-写** | Agent 应用修改补丁 | `sys_enter_write` | 写入的内容长度、文件描述符，甚至可以捕获 Diff 内容 |
-| **反馈** | Agent 将执行结果上报给 LLM | `SSL_write` (uprobe) | “读取成功”或“写入完成”的确认 Payload |
+| 阶段        | 行为                       | eBPF 挂载点          | 捕获信息                                            |
+| :---------- | :------------------------- | :------------------- | :-------------------------------------------------- |
+| **决策**    | LLM 下达 Tool Call 指令    | `SSL_read` (uprobe)  | 解密后的 JSON，如 `{"tool": "read_file"}`           |
+| **执行-读** | Agent 读取目标文件         | `sys_enter_openat`   | 目标路径 (如 `app.py`)，确认 Agent 正在“动”哪个文件 |
+| **执行-写** | Agent 应用修改补丁         | `sys_enter_write`    | 写入的内容长度、文件描述符，甚至可以捕获 Diff 内容  |
+| **反馈**    | Agent 将执行结果上报给 LLM | `SSL_write` (uprobe) | “读取成功”或“写入完成”的确认 Payload                |
 
 ## 3. 核心观测价值
 
 ### 3.1 意图与动作的因果关联 (Causality)
 
 eBPF 的核心能力在于能够通过进程上下文（PID/TID）将不同层面的事件强关联：
+
 - **Intent (意图):** 从 `SSL_read` 捕获 LLM 下发的指令。
 - **Action (动作):** 从 `Syscalls` 捕获 Agent 进程紧接着发起的物理操作。
 - **因果性:** 通过 PID 匹配，实现从“大脑决策”到“手脚执行”的全程闭环追踪。
@@ -67,6 +68,7 @@ eBPF 的核心能力在于能够通过进程上下文（PID/TID）将不同层�
 ### 3.2 多进程协作追踪 (Sub-process Tracking)
 
 当 Agent 执行复杂任务（如“修复代码并运行测试”）时，通常会启动多个子进程：
+
 1. Agent (Python) -> `fork/execve` -> Shell (`/bin/bash`)
 2. Shell -> `fork/execve` -> Compiler (`go build`)
 3. Shell -> `fork/execve` -> Test Runner (`pytest`)
@@ -84,11 +86,13 @@ eBPF 的核心能力在于能够通过进程上下文（PID/TID）将不同层�
 ## 5. 适用场景与局限性
 
 ### 5.1 适用场景 (The Sweet Spot)
+
 - **本地/私有化 Agent:** 运行在受控 Linux 环境（如开发机、私有云 K8s）中的 Agent。
 - **第三方 Agent 插件审计:** 当你需要运行一个闭源的 Agent 插件，且不信任其行为时，eBPF 是唯一的非侵入式安全审计手段。
 - **本地编码助手:** 观测 IDE 插件或 CLI 工具与本地文件系统的交互。
 
 ### 5.2 局限性 (The Boundary)
+
 - **纯 SaaS 托管环境:** 在完全托管的 AI 服务中（如 OpenAI Assistants），由于缺乏内核访问权，无法部署 eBPF 探针。
 - **跨机通信透明度:** 如果 Agent 与工具（Tool）分布在不同的物理机，需要依赖分布式追踪（Distributed Tracing）或统一的网格观测。
 

@@ -15,8 +15,8 @@ tags:
   - security
 ---
 
-> [!info] Cilium 2026 深度探索系列
-> 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+> [!info] Cilium 2026 深度探索系列 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+>
 > 1. [[2026-04-14-cilium-deep-dive-ch1-cilium-overview|第一章：Cilium 概述]]
 > 2. [[2026-04-14-cilium-deep-dive-ch2-architecture|第二章：Cilium 架构]]
 > 3. [[2026-04-14-cilium-deep-dive-ch3-ebpf-datapath|第三章：eBPF 数据面]]
@@ -55,27 +55,27 @@ spec:
     matchLabels:
       app: api-gateway
   ingress:
-  - fromEndpoints:
-    - matchLabels:
-        app: frontend
-    toPorts:
-    - port: "8080"
-      protocol: TCP
-      rules:
-        http:
-        - method: "GET"
-          path: "/api/v1/users.*"
-        - method: "POST"
-          path: "/api/v1/orders"
+    - fromEndpoints:
+        - matchLabels:
+            app: frontend
+      toPorts:
+        - port: "8080"
+          protocol: TCP
+          rules:
+            http:
+              - method: "GET"
+                path: "/api/v1/users.*"
+              - method: "POST"
+                path: "/api/v1/orders"
 ```
 
 ### 1.1 L7 策略 vs L4 策略
 
-| 层级 | 匹配依据 | 示例 |
-|:---|:---|:---|
-| **L3** | IP 地址、 CIDR | `fromCidrs: ["10.0.0.0/8"]` |
+| 层级   | 匹配依据         | 示例                                     |
+| :----- | :--------------- | :--------------------------------------- |
+| **L3** | IP 地址、 CIDR   | `fromCidrs: ["10.0.0.0/8"]`              |
 | **L4** | IP + 端口 + 协议 | `toPorts: [{port: "80", protocol: TCP}]` |
-| **L7** | 应用层数据 | HTTP 路径、gRPC 方法、DNS 域名 |
+| **L7** | 应用层数据       | HTTP 路径、gRPC 方法、DNS 域名           |
 
 ### 1.2 L7 策略组件架构
 
@@ -124,33 +124,33 @@ spec:
     matchLabels:
       app: api
   ingress:
-  - fromEndpoints:
-    - matchLabels:
-        app: client
-    toPorts:
-    - port: "8080"
-      protocol: TCP
-      rules:
-        http:
-        # 允许 GET 请求到 /api/users 路径
-        - method: "GET"
-          path: "/api/users.*"
-        # 允许 POST 请求到 /api/orders 路径
-        - method: "POST"
-          path: "/api/orders"
+    - fromEndpoints:
+        - matchLabels:
+            app: client
+      toPorts:
+        - port: "8080"
+          protocol: TCP
+          rules:
+            http:
+              # 允许 GET 请求到 /api/users 路径
+              - method: "GET"
+                path: "/api/users.*"
+              # 允许 POST 请求到 /api/orders 路径
+              - method: "POST"
+                path: "/api/orders"
 ```
 
 ### 2.2 HTTP 方法列表
 
-| 方法 | 说明 | 幂等性 |
-|:---|:---|:---|
-| GET | 获取资源 | 幂等 |
-| POST | 创建资源 | 非幂等 |
-| PUT | 更新资源（完整） | 幂等 |
-| PATCH | 部分更新资源 | 非幂等 |
-| DELETE | 删除资源 | 幂等 |
-| HEAD | 获取头部信息 | 幂等 |
-| OPTIONS | 获取支持的选项 | 幂等 |
+| 方法    | 说明             | 幂等性 |
+| :------ | :--------------- | :----- |
+| GET     | 获取资源         | 幂等   |
+| POST    | 创建资源         | 非幂等 |
+| PUT     | 更新资源（完整） | 幂等   |
+| PATCH   | 部分更新资源     | 非幂等 |
+| DELETE  | 删除资源         | 幂等   |
+| HEAD    | 获取头部信息     | 幂等   |
+| OPTIONS | 获取支持的选项   | 幂等   |
 
 ### 2.3 路径匹配规则
 
@@ -159,21 +159,21 @@ Cilium 使用 **正则表达式** 进行路径匹配：
 ```yaml
 # 路径匹配示例
 http:
-# 精确匹配
-- method: "GET"
-  path: "/health"
+  # 精确匹配
+  - method: "GET"
+    path: "/health"
 
-# 前缀匹配
-- method: "GET"
-  path: "/api/v1.*"     # 匹配 /api/v1/anything
+  # 前缀匹配
+  - method: "GET"
+    path: "/api/v1.*" # 匹配 /api/v1/anything
 
-# 带有查询参数
-- method: "GET"
-  path: "/api/users\\?role=admin"  # 转义 ?
+  # 带有查询参数
+  - method: "GET"
+    path: "/api/users\\?role=admin" # 转义 ?
 
-# 正则表达式
-- method: "GET"
-  path: "/api/users/[0-9]+"  # 匹配 /api/users/123
+  # 正则表达式
+  - method: "GET"
+    path: "/api/users/[0-9]+" # 匹配 /api/users/123
 ```
 
 ### 2.4 完整 HTTP 策略示例
@@ -189,30 +189,30 @@ spec:
     matchLabels:
       app: user-service
   ingress:
-  - fromEndpoints:
-    - matchLabels:
-        app: api-gateway
-    toPorts:
-    - port: "8080"
-      protocol: TCP
-      rules:
-        http:
-        # 用户管理
-        - method: "GET"
-          path: "/api/v1/users"
-        - method: "POST"
-          path: "/api/v1/users"
-        - method: "GET"
-          path: "/api/v1/users/[0-9]+"
-        - method: "PUT"
-          path: "/api/v1/users/[0-9]+"
-        - method: "DELETE"
-          path: "/api/v1/users/[0-9]+"
-        # 账户操作
-        - method: "POST"
-          path: "/api/v1/users/[0-9]+/password"
-        - method: "POST"
-          path: "/api/v1/users/[0-9]+/verify"
+    - fromEndpoints:
+        - matchLabels:
+            app: api-gateway
+      toPorts:
+        - port: "8080"
+          protocol: TCP
+          rules:
+            http:
+              # 用户管理
+              - method: "GET"
+                path: "/api/v1/users"
+              - method: "POST"
+                path: "/api/v1/users"
+              - method: "GET"
+                path: "/api/v1/users/[0-9]+"
+              - method: "PUT"
+                path: "/api/v1/users/[0-9]+"
+              - method: "DELETE"
+                path: "/api/v1/users/[0-9]+"
+              # 账户操作
+              - method: "POST"
+                path: "/api/v1/users/[0-9]+/password"
+              - method: "POST"
+                path: "/api/v1/users/[0-9]+/verify"
 ```
 
 ---
@@ -224,11 +224,11 @@ spec:
 ```yaml
 # 要求特定 Header
 http:
-- method: "POST"
-  path: "/api/payments"
-  headers:
-  - "Content-Type: application/json"
-  - "Authorization: Bearer .*"   # 正则匹配
+  - method: "POST"
+    path: "/api/payments"
+    headers:
+      - "Content-Type: application/json"
+      - "Authorization: Bearer .*" # 正则匹配
 ```
 
 ### 3.2 常见 Header 匹配场景
@@ -238,19 +238,19 @@ http:
 - method: "GET"
   path: "/api/.*"
   headers:
-  - "X-API-Key: [a-f0-9]{32}"   # 32位十六进制 API Key
+    - "X-API-Key: [a-f0-9]{32}" # 32位十六进制 API Key
 
 # JWT Token 验证
 - method: "POST"
   path: "/api/.*"
   headers:
-  - "Authorization: Bearer eyJ.*"  # JWT Token 前缀
+    - "Authorization: Bearer eyJ.*" # JWT Token 前缀
 
 # 来源验证
 - method: "GET"
   path: "/api/.*"
   headers:
-  - "X-Forwarded-For: 192\\.168\\..*"
+    - "X-Forwarded-For: 192\\.168\\..*"
 ```
 
 ### 3.3 多个 Header 要求
@@ -258,12 +258,12 @@ http:
 ```yaml
 # 必须同时满足多个 Header
 http:
-- method: "POST"
-  path: "/api/admin/.*"
-  headers:
-  - "X-Admin-Token: .+"          # 必须有 Admin Token
-  - "X-Request-ID: [a-z0-9-]+"  # 必须有请求 ID
-  - "Content-Type: application/json"
+  - method: "POST"
+    path: "/api/admin/.*"
+    headers:
+      - "X-Admin-Token: .+" # 必须有 Admin Token
+      - "X-Request-ID: [a-z0-9-]+" # 必须有请求 ID
+      - "Content-Type: application/json"
 ```
 
 ---
@@ -298,24 +298,24 @@ spec:
     matchLabels:
       app: user-service
   ingress:
-  - fromEndpoints:
-    - matchLabels:
-        app: api-gateway
-    toPorts:
-    - port: "50051"
-      protocol: TCP
-      rules:
-        http:
-        # gRPC 方法匹配（使用 POST + 路径）
-        - method: "POST"
-          path: "/UserService/GetUser"
-        - method: "POST"
-          path: "/UserService/CreateUser"
-        - method: "POST"
-          path: "/UserService/DeleteUser"
-        # 前缀匹配
-        - method: "POST"
-          path: "/UserService/Update.*"
+    - fromEndpoints:
+        - matchLabels:
+            app: api-gateway
+      toPorts:
+        - port: "50051"
+          protocol: TCP
+          rules:
+            http:
+              # gRPC 方法匹配（使用 POST + 路径）
+              - method: "POST"
+                path: "/UserService/GetUser"
+              - method: "POST"
+                path: "/UserService/CreateUser"
+              - method: "POST"
+                path: "/UserService/DeleteUser"
+              # 前缀匹配
+              - method: "POST"
+                path: "/UserService/Update.*"
 ```
 
 ### 4.3 gRPC 健康检查
@@ -347,15 +347,15 @@ spec:
     matchLabels:
       app: webserver
   egress:
-  - toPorts:
-    - port: "53"
-      protocol: UDP
-      rules:
-        dns:
-        # 允许访问的域名
-        - matchPattern: "*.example.com"
-        - matchPattern: "api.internal.net"
-        - matchPattern: "*.kubernetes.default"
+    - toPorts:
+        - port: "53"
+          protocol: UDP
+          rules:
+            dns:
+              # 允许访问的域名
+              - matchPattern: "*.example.com"
+              - matchPattern: "api.internal.net"
+              - matchPattern: "*.kubernetes.default"
 ```
 
 ### 5.2 DNS 策略匹配模式
@@ -363,17 +363,17 @@ spec:
 ```yaml
 # 域名匹配模式
 dns:
-# 精确域名
-- matchPattern: "api.example.com"
+  # 精确域名
+  - matchPattern: "api.example.com"
 
-# 子域名（*.example.com 匹配 api.example.com, www.example.com）
-- matchPattern: "*.example.com"
+  # 子域名（*.example.com 匹配 api.example.com, www.example.com）
+  - matchPattern: "*.example.com"
 
-# 多级子域名
-- matchPattern: "*.api.example.com"
+  # 多级子域名
+  - matchPattern: "*.api.example.com"
 
-# Kubernetes 服务
-- matchPattern: "*.kubernetes.default.svc.cluster.local"
+  # Kubernetes 服务
+  - matchPattern: "*.kubernetes.default.svc.cluster.local"
 ```
 
 ### 5.3 出口 DNS 控制示例
@@ -389,21 +389,21 @@ spec:
     matchLabels:
       app: microservice
   egress:
-  # 允许 DNS 查询
-  - toPorts:
-    - port: "53"
-      protocol: UDP
-      rules:
-        dns:
-        # 内部 Kubernetes 服务
-        - matchPattern: "*.svc.cluster.local"
-        - matchPattern: "kubernetes.default"
-        # 内部 API
-        - matchPattern: "*.internal.net"
-        - matchPattern: "db.internal.com"
-        # 外部白名单
-        - matchPattern: "*.github.com"
-        - matchPattern: "storage.googleapis.com"
+    # 允许 DNS 查询
+    - toPorts:
+        - port: "53"
+          protocol: UDP
+          rules:
+            dns:
+              # 内部 Kubernetes 服务
+              - matchPattern: "*.svc.cluster.local"
+              - matchPattern: "kubernetes.default"
+              # 内部 API
+              - matchPattern: "*.internal.net"
+              - matchPattern: "db.internal.com"
+              # 外部白名单
+              - matchPattern: "*.github.com"
+              - matchPattern: "storage.googleapis.com"
 ```
 
 ---
@@ -425,29 +425,29 @@ spec:
     matchLabels:
       app: kafka-consumer
   egress:
-  - toEndpoints:
-    - matchLabels:
-        app: kafka-broker
-    toPorts:
-    - port: "9092"
-      protocol: TCP
-      rules:
-        kafka:
-        # 允许读取特定 topic
-        - topic: "user-events"
-          action: produce
-        - topic: "order-events"
-          action: consume
+    - toEndpoints:
+        - matchLabels:
+            app: kafka-broker
+      toPorts:
+        - port: "9092"
+          protocol: TCP
+          rules:
+            kafka:
+              # 允许读取特定 topic
+              - topic: "user-events"
+                action: produce
+              - topic: "order-events"
+                action: consume
 ```
 
 ### 6.2 Kafka 动作
 
-| 动作 | 说明 |
-|:---|:---|
-| produce | 允许生产消息 |
-| consume | 允许消费消息 |
-| read | 读取（consume 的别名） |
-| write | 写入（produce 的别名） |
+| 动作    | 说明                   |
+| :------ | :--------------------- |
+| produce | 允许生产消息           |
+| consume | 允许消费消息           |
+| read    | 读取（consume 的别名） |
+| write   | 写入（produce 的别名） |
 
 ---
 
@@ -468,47 +468,47 @@ spec:
     matchLabels:
       app: database
   ingress:
-  - fromEndpoints:
-    - matchLabels:
-        app: api-service
-    toPorts:
-    - port: "5432"
-      protocol: TCP
-      rules:
-        postgres:
-        # 允许 SELECT
-        - operation: "SELECT"
-        # 允许 INSERT
-        - operation: "INSERT"
-        # 允许 UPDATE
-        - operation: "UPDATE"
-        # 允许 DELETE（限制）
-        - operation: "DELETE"
-          # 可以加条件限制
+    - fromEndpoints:
+        - matchLabels:
+            app: api-service
+      toPorts:
+        - port: "5432"
+          protocol: TCP
+          rules:
+            postgres:
+              # 允许 SELECT
+              - operation: "SELECT"
+              # 允许 INSERT
+              - operation: "INSERT"
+              # 允许 UPDATE
+              - operation: "UPDATE"
+              # 允许 DELETE（限制）
+              - operation: "DELETE"
+                # 可以加条件限制
 ```
 
 ### 7.2 支持的 SQL 数据库
 
-| 数据库 | 协议 |
-|:---|:---|
+| 数据库     | 协议       |
+| :--------- | :--------- |
 | PostgreSQL | `postgres` |
-| MySQL | `mysql` |
-| Redis | `redis` |
+| MySQL      | `mysql`    |
+| Redis      | `redis`    |
 
 ### 7.3 PostgreSQL 操作类型
 
 ```yaml
 postgres:
-- operation: "SELECT"
-- operation: "INSERT"
-- operation: "UPDATE"
-- operation: "DELETE"
-- operation: "CREATE"
-- operation: "DROP"
-- operation: "ALTER"
-- operation: "TRUNCATE"
-- operation: "GRANT"
-- operation: "REVOKE"
+  - operation: "SELECT"
+  - operation: "INSERT"
+  - operation: "UPDATE"
+  - operation: "DELETE"
+  - operation: "CREATE"
+  - operation: "DROP"
+  - operation: "ALTER"
+  - operation: "TRUNCATE"
+  - operation: "GRANT"
+  - operation: "REVOKE"
 ```
 
 ---
@@ -522,9 +522,9 @@ postgres:
 ```yaml
 # HTTP 拒绝示例
 http:
-# 只允许 GET /api/public/*
-- method: "GET"
-  path: "/api/public.*"
+  # 只允许 GET /api/public/*
+  - method: "GET"
+    path: "/api/public.*"
 # 其他所有请求被拒绝
 ```
 
@@ -576,40 +576,40 @@ spec:
     matchLabels:
       app: api-gateway
   ingress:
-  # 来自前端的请求
-  - fromEndpoints:
-    - matchLabels:
-        app: frontend
-    toPorts:
-    - port: "8080"
-      protocol: TCP
-      rules:
-        http:
-        # 用户 API
-        - method: "GET"
-          path: "/api/v1/users"
-        - method: "POST"
-          path: "/api/v1/users"
-        - method: "GET"
-          path: "/api/v1/users/[0-9]+"
-        # 产品 API
-        - method: "GET"
-          path: "/api/v1/products"
-        - method: "POST"
-          path: "/api/v1/products"
-        # 订单 API
-        - method: "GET"
-          path: "/api/v1/orders"
-        - method: "POST"
-          path: "/api/v1/orders"
-        - method: "PUT"
-          path: "/api/v1/orders/[0-9]+"
-        # 健康检查
-        - method: "GET"
-          path: "/health"
-        - method: "GET"
-          path: "/metrics"
-        # 拒绝其他所有请求
+    # 来自前端的请求
+    - fromEndpoints:
+        - matchLabels:
+            app: frontend
+      toPorts:
+        - port: "8080"
+          protocol: TCP
+          rules:
+            http:
+              # 用户 API
+              - method: "GET"
+                path: "/api/v1/users"
+              - method: "POST"
+                path: "/api/v1/users"
+              - method: "GET"
+                path: "/api/v1/users/[0-9]+"
+              # 产品 API
+              - method: "GET"
+                path: "/api/v1/products"
+              - method: "POST"
+                path: "/api/v1/products"
+              # 订单 API
+              - method: "GET"
+                path: "/api/v1/orders"
+              - method: "POST"
+                path: "/api/v1/orders"
+              - method: "PUT"
+                path: "/api/v1/orders/[0-9]+"
+              # 健康检查
+              - method: "GET"
+                path: "/health"
+              - method: "GET"
+                path: "/metrics"
+            # 拒绝其他所有请求
 ```
 
 ### 9.2 支付服务严格策略
@@ -625,30 +625,30 @@ spec:
     matchLabels:
       app: payment-service
   ingress:
-  - fromEndpoints:
-    - matchLabels:
-        app: api-gateway
-    toPorts:
-    - port: "8080"
-      protocol: TCP
-      rules:
-        http:
-        # 支付操作
-        - method: "POST"
-          path: "/api/v1/payments/create"
-          headers:
-          - "Authorization: Bearer .+"
-          - "X-Idempotency-Key: [a-zA-Z0-9-]+"
-        - method: "GET"
-          path: "/api/v1/payments/[0-9]+"
-          headers:
-          - "Authorization: Bearer .+"
-        # 退款
-        - method: "POST"
-          path: "/api/v1/payments/[0-9]+/refund"
-          headers:
-          - "Authorization: Bearer .+"
-          - "X-Admin-Token: .+"
+    - fromEndpoints:
+        - matchLabels:
+            app: api-gateway
+      toPorts:
+        - port: "8080"
+          protocol: TCP
+          rules:
+            http:
+              # 支付操作
+              - method: "POST"
+                path: "/api/v1/payments/create"
+                headers:
+                  - "Authorization: Bearer .+"
+                  - "X-Idempotency-Key: [a-zA-Z0-9-]+"
+              - method: "GET"
+                path: "/api/v1/payments/[0-9]+"
+                headers:
+                  - "Authorization: Bearer .+"
+              # 退款
+              - method: "POST"
+                path: "/api/v1/payments/[0-9]+/refund"
+                headers:
+                  - "Authorization: Bearer .+"
+                  - "X-Admin-Token: .+"
 ```
 
 ### 9.3 多服务协调策略
@@ -666,43 +666,43 @@ spec:
     matchLabels:
       app: order-service
   egress:
-  # 调用库存服务
-  - toEndpoints:
-    - matchLabels:
-        app: inventory-service
-    toPorts:
-    - port: "8080"
-      protocol: TCP
-      rules:
-        http:
-        - method: "POST"
-          path: "/api/v1/reserve"
-        - method: "POST"
-          path: "/api/v1/release"
-  
-  # 调用用户服务
-  - toEndpoints:
-    - matchLabels:
-        app: user-service
-    toPorts:
-    - port: "8080"
-      protocol: TCP
-      rules:
-        http:
-        - method: "GET"
-          path: "/api/v1/users/[0-9]+/balance"
-  
-  # 调用支付服务
-  - toEndpoints:
-    - matchLabels:
-        app: payment-service
-    toPorts:
-    - port: "8080"
-      protocol: TCP
-      rules:
-        http:
-        - method: "POST"
-          path: "/api/v1/charges"
+    # 调用库存服务
+    - toEndpoints:
+        - matchLabels:
+            app: inventory-service
+      toPorts:
+        - port: "8080"
+          protocol: TCP
+          rules:
+            http:
+              - method: "POST"
+                path: "/api/v1/reserve"
+              - method: "POST"
+                path: "/api/v1/release"
+
+    # 调用用户服务
+    - toEndpoints:
+        - matchLabels:
+            app: user-service
+      toPorts:
+        - port: "8080"
+          protocol: TCP
+          rules:
+            http:
+              - method: "GET"
+                path: "/api/v1/users/[0-9]+/balance"
+
+    # 调用支付服务
+    - toEndpoints:
+        - matchLabels:
+            app: payment-service
+      toPorts:
+        - port: "8080"
+          protocol: TCP
+          rules:
+            http:
+              - method: "POST"
+                path: "/api/v1/charges"
 ```
 
 ---
@@ -713,13 +713,13 @@ spec:
 
 L7 策略需要深度包检测，性能影响比 L3/L4 更大：
 
-| 策略类型 | 性能影响 | 原因 |
-|:---|:---|:---|
-| L3/L4 | 极低 | eBPF O(1) 查找 |
-| HTTP | 中等 | 需要 HTTP 解析 |
-| gRPC | 中等 | HTTP/2 + Protobuf 解析 |
-| SQL | 较高 | 需要 SQL 语句解析 |
-| Kafka | 较高 | 需要 Kafka 协议解析 |
+| 策略类型 | 性能影响 | 原因                   |
+| :------- | :------- | :--------------------- |
+| L3/L4    | 极低     | eBPF O(1) 查找         |
+| HTTP     | 中等     | 需要 HTTP 解析         |
+| gRPC     | 中等     | HTTP/2 + Protobuf 解析 |
+| SQL      | 较高     | 需要 SQL 语句解析      |
+| Kafka    | 较高     | 需要 Kafka 协议解析    |
 
 ### 10.2 优化建议
 
@@ -777,12 +777,12 @@ hubble observe --type drop --from-label app=client | head -20
 
 L7 网络策略是 Cilium 最强大的安全特性之一：
 
-| 协议 | 策略能力 |
-|:---|:---|
-| HTTP | 方法、路径、Header、查询参数 |
-| gRPC | 服务名、方法名 |
-| DNS | 域名匹配（FQDN） |
-| Kafka | Topic、动作（produce/consume） |
-| SQL | 操作类型（SELECT/INSERT/UPDATE/DELETE） |
+| 协议  | 策略能力                                |
+| :---- | :-------------------------------------- |
+| HTTP  | 方法、路径、Header、查询参数            |
+| gRPC  | 服务名、方法名                          |
+| DNS   | 域名匹配（FQDN）                        |
+| Kafka | Topic、动作（produce/consume）          |
+| SQL   | 操作类型（SELECT/INSERT/UPDATE/DELETE） |
 
 L7 策略提供**应用层可见性和控制**，是实现零信任网络的关键组件。

@@ -1,7 +1,26 @@
 ---
 title: WireGuard 内核深度探索 Ch6：生产部署与调优
 date: 2026-05-06 09:00:00
-tags: [WireGuard, Production, Deployment, Kubernetes, Docker, Systemd, Monitoring, Prometheus, Grafana, Troubleshooting, Security, Hardening, High Availability, Load Balancing, Firewall, Iptables, Failover]
+tags:
+  [
+    WireGuard,
+    Production,
+    Deployment,
+    Kubernetes,
+    Docker,
+    Systemd,
+    Monitoring,
+    Prometheus,
+    Grafana,
+    Troubleshooting,
+    Security,
+    Hardening,
+    High Availability,
+    Load Balancing,
+    Firewall,
+    Iptables,
+    Failover,
+  ]
 description: WireGuard 生产环境实战指南：Docker/Kubernetes 部署、Systemd 管理、监控告警、故障排除、安全加固、高可用设计与性能调优。
 ---
 
@@ -206,7 +225,7 @@ exec "$@"
 ```yaml
 # docker-compose.yml — WireGuard 服务编排
 
-version: '3.8'
+version: "3.8"
 
 services:
   wireguard:
@@ -323,47 +342,47 @@ spec:
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
       containers:
-      - name: wireguard
-        image: linuxserver/wireguard:latest
-        imagePullPolicy: IfNotPresent
-        securityContext:
-          privileged: true
-          capabilities:
-            add:
-              - NET_ADMIN
-              - SYS_MODULE
-        env:
-        - name: TZ
-          value: "Asia/Shanghai"
-        - name: SERVERPORT
-          value: "51820"
-        - name: PEERS
-          value: "10"
-        - name: INTERNAL_SUBNET
-          value: "10.0.0.0/24"
-        - name: ALLOWEDIPS
-          value: "0.0.0.0/0"
-        resources:
-          requests:
-            cpu: 100m
-            memory: 128Mi
-          limits:
-            cpu: 500m
-            memory: 256Mi
-        volumeMounts:
-        - name: config
-          mountPath: /config
-        - name: modules
-          mountPath: /lib/modules
-          readOnly: true
+        - name: wireguard
+          image: linuxserver/wireguard:latest
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            privileged: true
+            capabilities:
+              add:
+                - NET_ADMIN
+                - SYS_MODULE
+          env:
+            - name: TZ
+              value: "Asia/Shanghai"
+            - name: SERVERPORT
+              value: "51820"
+            - name: PEERS
+              value: "10"
+            - name: INTERNAL_SUBNET
+              value: "10.0.0.0/24"
+            - name: ALLOWEDIPS
+              value: "0.0.0.0/0"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: modules
+              mountPath: /lib/modules
+              readOnly: true
       volumes:
-      - name: config
-        emptyDir: {}
-      - name: modules
-        hostPath:
-          path: /lib/modules
+        - name: config
+          emptyDir: {}
+        - name: modules
+          hostPath:
+            path: /lib/modules
       tolerations:
-      - operator: Exists
+        - operator: Exists
 ```
 
 ### 4.2 Helm 部署
@@ -440,11 +459,11 @@ metadata:
 spec:
   # 通过 Envoy 代理 WireGuard 流量
   services:
-  - name: wireguard
-    namespace: wireguard
-    ports:
-    - port: 51820
-      protocol: UDP
+    - name: wireguard
+      namespace: wireguard
+      ports:
+        - port: 51820
+          protocol: UDP
 ```
 
 ---
@@ -698,41 +717,41 @@ if __name__ == '__main__':
 groups:
   - name: wireguard
     rules:
-    - alert: WireGuardDown
-      expr: up{job="wireguard"} == 0
-      for: 1m
-      labels:
-        severity: critical
-      annotations:
-        summary: "WireGuard is down"
-        description: "WireGuard exporter is not responding"
+      - alert: WireGuardDown
+        expr: up{job="wireguard"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "WireGuard is down"
+          description: "WireGuard exporter is not responding"
 
-    - alert: NoActivePeers
-      expr: wireguard_peers_total == 0
-      for: 5m
-      labels:
-        severity: warning
-      annotations:
-        summary: "No active WireGuard peers"
-        description: "There are no active WireGuard peers connected"
+      - alert: NoActivePeers
+        expr: wireguard_peers_total == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "No active WireGuard peers"
+          description: "There are no active WireGuard peers connected"
 
-    - alert: HighPacketLoss
-      expr: rate(wireguard_rx_packets_total[5m]) == 0 and rate(wireguard_tx_packets_total[5m]) > 1000
-      for: 5m
-      labels:
-        severity: warning
-      annotations:
-        summary: "High packet loss detected"
-        description: "Possible packet loss on WireGuard tunnel"
+      - alert: HighPacketLoss
+        expr: rate(wireguard_rx_packets_total[5m]) == 0 and rate(wireguard_tx_packets_total[5m]) > 1000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High packet loss detected"
+          description: "Possible packet loss on WireGuard tunnel"
 
-    - alert: PeerHandshakeTimeout
-      expr: time() - wireguard_peer_last_handshake_seconds > 300
-      for: 5m
-      labels:
-        severity: warning
-      annotations:
-        summary: "Peer handshake timeout"
-        description: "Peer {{ $labels.peer }} has not handshake in 5 minutes"
+      - alert: PeerHandshakeTimeout
+        expr: time() - wireguard_peer_last_handshake_seconds > 300
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Peer handshake timeout"
+          description: "Peer {{ $labels.peer }} has not handshake in 5 minutes"
 ```
 
 ---

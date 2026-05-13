@@ -1,19 +1,32 @@
 ---
 title: "P4 深度探索 (四十五)：eBPF vs P4 深度对比——架构差异、适用场景、协同编程、性能分析与生态演进"
 date: 2026-04-14
-tags: [p4, series, ebpf, xdp, comparison, advanced, programmable, data-plane, pipeline, hardware, software]
+tags:
+  [
+    p4,
+    series,
+    ebpf,
+    xdp,
+    comparison,
+    advanced,
+    programmable,
+    data-plane,
+    pipeline,
+    hardware,
+    software,
+  ]
 description: "P4 与 eBPF 深度对比——从设计理念、架构层级、处理流水线、性能模型、适用场景全面解析，探讨硬件可编程(P4)与内核可编程(eBPF)的融合与协同，交换机/网卡/主机的协同编程模型"
 ---
 
-> [!info] P4 深度探索系列
-> 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+> [!info] P4 深度探索系列 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-14-p4-deep-dive-ch1-p4-overview|第一章：P4 概述]]
-> ...
-> 41. [[2026-04-14-p4-deep-dive-ch41-debug|第四十一章：P4 排错与诊断]]
-> 42. [[2026-04-14-p4-deep-dive-ch42-resource|第四十二章：P4 资源优化]]
-> 43. [[2026-04-14-p4-deep-dive-ch43-compiler|第四十三章：P4 编译器 (p4c) 架构]]
-> 44. [[2026-04-14-p4-deep-dive-ch44-perf|第四十四章：P4 性能优化]]
-> **45. 第四十五章：eBPF vs P4 深度对比——架构、场景、性能与生态**
+>    ...
+> 2. [[2026-04-14-p4-deep-dive-ch41-debug|第四十一章：P4 排错与诊断]]
+> 3. [[2026-04-14-p4-deep-dive-ch42-resource|第四十二章：P4 资源优化]]
+> 4. [[2026-04-14-p4-deep-dive-ch43-compiler|第四十三章：P4 编译器 (p4c) 架构]]
+> 5. [[2026-04-14-p4-deep-dive-ch44-perf|第四十四章：P4 性能优化]]
+>    **45. 第四十五章：eBPF vs P4 深度对比——架构、场景、性能与生态**
 
 ---
 
@@ -248,7 +261,7 @@ P4 vs eBPF 架构对比:
 
   P4 (Tofino):
   ────────────
-  Packet Input → [Parser: 200ns] → [Stage × N: 300ns×12] → [Traffic Mgr: 500ns] 
+  Packet Input → [Parser: 200ns] → [Stage × N: 300ns×12] → [Traffic Mgr: 500ns]
              → [Deparser: 100ns] → Packet Output
   Total: ~3-4 us (cut-through)
 

@@ -10,14 +10,14 @@ tags: [network, github, tooling, ebpf]
 
 **cilium/ebpf** 是 Cilium 团队维护的纯 Go 语言实现的 eBPF 程序开发库，提供对 Linux eBPF 子系统的完整绑定。该项目支持读取、修改和加载 eBPF 程序及 Map，广泛应用于云原生网络、安全和可观测性场景。
 
-| 属性 | 值 |
-|------|-----|
-| GitHub | [cilium/ebpf](https://github.com/cilium/ebpf) |
-| Stars | 7.7k |
-| 语言 | Go |
-| 最新 Release | v0.21.0 (2026-03-05) |
-| 最近更新 | Apr 21, 2026 (2 天前) |
-| Fork | 852 |
+| 属性         | 值                                            |
+| ------------ | --------------------------------------------- |
+| GitHub       | [cilium/ebpf](https://github.com/cilium/ebpf) |
+| Stars        | 7.7k                                          |
+| 语言         | Go                                            |
+| 最新 Release | v0.21.0 (2026-03-05)                          |
+| 最近更新     | Apr 21, 2026 (2 天前)                         |
+| Fork         | 852                                           |
 
 ## 核心技术亮点
 

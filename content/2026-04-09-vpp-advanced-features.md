@@ -711,14 +711,14 @@ traffic_manager_node_fn(vlib_main_t *vm,
 
 ## 9. 总结
 
-| 特性 | 用途 | 位置 |
-|------|------|------|
-| **Policer** | 流量限制 | Ingress |
-| **ACL** | 访问控制 | Ingress |
-| **QoS Mark** | 优先级标记 | Ingress |
-| **Shaper** | 流量整形 | Egress |
-| **WFQ** | 公平调度 | Egress |
-| **Interface Queue** | 队列管理 | Egress |
+| 特性                | 用途       | 位置    |
+| ------------------- | ---------- | ------- |
+| **Policer**         | 流量限制   | Ingress |
+| **ACL**             | 访问控制   | Ingress |
+| **QoS Mark**        | 优先级标记 | Ingress |
+| **Shaper**          | 流量整形   | Egress  |
+| **WFQ**             | 公平调度   | Egress  |
+| **Interface Queue** | 队列管理   | Egress  |
 
 VPP 高级特性组合可以构建复杂的流量管理系统：
 

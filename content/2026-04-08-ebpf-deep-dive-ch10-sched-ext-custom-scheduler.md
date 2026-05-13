@@ -9,8 +9,8 @@ tags:
   - performance
 ---
 
-> [!info] eBPF 2026 深度探索系列
-> 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+> [!info] eBPF 2026 深度探索系列 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+>
 > 1. [[2026-04-08-ebpf-deep-dive-ch1-registers-and-instructions|第一章：寄存器与指令集]]
 > 2. [[2026-04-08-ebpf-deep-dive-ch1-5-function-calls|第一.五章：四种函数调用与动态内存]]
 > 3. [[2026-04-08-ebpf-deep-dive-ch1-6-the-verifier|第一.六章：验证器 (Verifier) 的底层逻辑]]
@@ -62,6 +62,7 @@ tags:
 > 49. [[2026-04-09-ebpf-deep-dive-ch40-network-protocols-deep-dive|第四十章：网络协议深度解析——TCP/UDP/QUIC 的 eBPF 视角]]
 > 50. [[2026-04-09-ebpf-deep-dive-ch41-memory-safety-and-vulnerabilities|第四十一章：eBPF 内存安全与漏洞分析]]
 > 51. [[2026-04-09-ebpf-deep-dive-ch42-service-mesh-integration|第四十二章：eBPF 与 Service Mesh 深度集成]]
+
 ---
 
 # 第十章：sched_ext 自定义 CPU 调度器
@@ -97,12 +98,12 @@ graph TB
 
 ### 1.1 调度器演进史
 
-| 时代 | 调度器 | 特点 | 局限 |
-|:---|:---|:---|:---|
-| Linux 2.4 | O(1) | 固定时间复杂度 | 交互式任务响应差 |
-| Linux 2.6.23 | CFS | 完全公平调度 | 无法定制 |
-| Linux 6.6 | EEVDF | 确定性虚拟截止时间 | 仍为通用策略 |
-| Linux 6.12 | sched_ext | 可编程调度 | 需要 BPF 编程能力 |
+| 时代         | 调度器    | 特点               | 局限              |
+| :----------- | :-------- | :----------------- | :---------------- |
+| Linux 2.4    | O(1)      | 固定时间复杂度     | 交互式任务响应差  |
+| Linux 2.6.23 | CFS       | 完全公平调度       | 无法定制          |
+| Linux 6.6    | EEVDF     | 确定性虚拟截止时间 | 仍为通用策略      |
+| Linux 6.12   | sched_ext | 可编程调度         | 需要 BPF 编程能力 |
 
 ### 1.2 谁在生产中使用
 
@@ -140,11 +141,11 @@ graph LR
 
 sched_ext 的核心数据结构是 DSQ（分发队列），任务在不同 DSQ 之间流转：
 
-| DSQ 类型 | ID | 特点 |
-|:---|:---|:---|
-| `SCX_DSQ_LOCAL` | Per-CPU (负数) | 每个 CPU 专属的队列 |
-| `SCX_DSQ_GLOBAL` | 0 | 全局共享队列 |
-| 自定义 DSQ | 用户定义 | 任意数量的自定义队列 |
+| DSQ 类型         | ID             | 特点                 |
+| :--------------- | :------------- | :------------------- |
+| `SCX_DSQ_LOCAL`  | Per-CPU (负数) | 每个 CPU 专属的队列  |
+| `SCX_DSQ_GLOBAL` | 0              | 全局共享队列         |
+| 自定义 DSQ       | 用户定义       | 任意数量的自定义队列 |
 
 ```mermaid
 graph TB
@@ -187,21 +188,21 @@ task->scx.dsq_vtime = prev_vtime + (slice * NICE_0_LOAD / task->load_weight);
 
 sched_ext 通过 `struct sched_ext_ops` 暴露调度决策点：
 
-| 操作 | 触发时机 | 必须实现 | 说明 |
-|:---|:---|:---|:---|
-| `select_cpu` | 任务唤醒时选择 CPU | 否（有默认实现） | 返回目标 CPU 编号 |
-| `enqueue` | 任务变为就绪态 | 是 | 将任务放入 DSQ |
-| `dequeue` | 任务离开就绪态 | 否 | 从 DSQ 移除任务 |
-| `dispatch` | CPU 需要新任务时 | 是 | 从 DSQ 取任务执行 |
-| `running` | 任务开始执行 | 否 | 可用于统计 |
-| `stopping` | 任务停止执行 | 否 | 更新 vtime 等 |
-| `tick` | 时钟中断 | 否 | 周期性检查（抢占决策） |
-| `yield` | 任务主动让出 CPU | 否 | 处理 yield 语义 |
-| `set_cpumask` | 任务 CPU 亲和性变化 | 否 | 响应 cpuset 变更 |
-| `init` | 调度器初始化 | 否 | 创建 DSQ、初始化 Map |
-| `exit` | 调度器退出 | 否 | 清理资源 |
-| `enable` | CPU 被启用 | 否 | CPU online 回调 |
-| `disable` | CPU 被禁用 | 否 | CPU offline 回调 |
+| 操作          | 触发时机            | 必须实现         | 说明                   |
+| :------------ | :------------------ | :--------------- | :--------------------- |
+| `select_cpu`  | 任务唤醒时选择 CPU  | 否（有默认实现） | 返回目标 CPU 编号      |
+| `enqueue`     | 任务变为就绪态      | 是               | 将任务放入 DSQ         |
+| `dequeue`     | 任务离开就绪态      | 否               | 从 DSQ 移除任务        |
+| `dispatch`    | CPU 需要新任务时    | 是               | 从 DSQ 取任务执行      |
+| `running`     | 任务开始执行        | 否               | 可用于统计             |
+| `stopping`    | 任务停止执行        | 否               | 更新 vtime 等          |
+| `tick`        | 时钟中断            | 否               | 周期性检查（抢占决策） |
+| `yield`       | 任务主动让出 CPU    | 否               | 处理 yield 语义        |
+| `set_cpumask` | 任务 CPU 亲和性变化 | 否               | 响应 cpuset 变更       |
+| `init`        | 调度器初始化        | 否               | 创建 DSQ、初始化 Map   |
+| `exit`        | 调度器退出          | 否               | 清理资源               |
+| `enable`      | CPU 被启用          | 否               | CPU online 回调        |
+| `disable`     | CPU 被禁用          | 否               | CPU offline 回调       |
 
 ```mermaid
 sequenceDiagram
@@ -519,11 +520,11 @@ void BPF_STRUCT_OPS(numa_enqueue, struct task_struct *p, u64 enq_flags) {
 
 ### 4.3 性能对比
 
-| 场景 | CFS 延迟 | NUMA 感知 sched_ext | 提升 |
-|:---|:---|:---|:---|
-| Redis 单实例 | 15μs | 12μs | 20% |
-| PostgreSQL TPCC | 3.2ms | 2.1ms | 34% |
-| AI 训练数据加载 | 45μs | 28μs | 38% |
+| 场景            | CFS 延迟 | NUMA 感知 sched_ext | 提升 |
+| :-------------- | :------- | :------------------ | :--- |
+| Redis 单实例    | 15μs     | 12μs                | 20%  |
+| PostgreSQL TPCC | 3.2ms    | 2.1ms               | 34%  |
+| AI 训练数据加载 | 45μs     | 28μs                | 38%  |
 
 ---
 
@@ -614,13 +615,13 @@ sequenceDiagram
 
 ### 6.2 优势与劣势
 
-| 维度 | 纯内核调度 | 用户态调度 |
-|:---|:---|:---|
-| **延迟** | ~0.1μs | ~1-5μs |
-| **灵活性** | 受 BPF 验证器限制 | 任意语言和库 |
-| **AI 集成** | 不可行 | 可调用 ML 模型 |
-| **复杂算法** | 受指令数限制 | 无限制 |
-| **安全性** | 高（验证器保证） | 中（信任用户态进程） |
+| 维度         | 纯内核调度        | 用户态调度           |
+| :----------- | :---------------- | :------------------- |
+| **延迟**     | ~0.1μs            | ~1-5μs               |
+| **灵活性**   | 受 BPF 验证器限制 | 任意语言和库         |
+| **AI 集成**  | 不可行            | 可调用 ML 模型       |
+| **复杂算法** | 受指令数限制      | 无限制               |
+| **安全性**   | 高（验证器保证）  | 中（信任用户态进程） |
 
 ### 6.3 适用场景
 
@@ -632,15 +633,15 @@ sequenceDiagram
 
 ## 7. 安全保障机制
 
-| 机制 | 说明 | 配置 |
-|:---|:---|:---|
-| **超时回退** | 调度器在 `timeout_ms` 内未分发任务，自动回退 CFS | `.timeout_ms = 5000` |
-| **starvation 检测** | CPU 空闲超过阈值时自动回退 | 内核默认 30s |
-| **watchdog** | 内核 watchdog 监控调度延迟 | `kernel.watchdog_thresh` |
-| **权限要求** | 加载需要 `CAP_SYS_ADMIN` | 或 `CAP_PERFMON` (受限模式) |
-| **CPU 热插拔** | 调度器必须正确处理 CPU offline/online | 实现 `enable`/`disable` 回调 |
-| **内存安全** | BPF 验证器确保所有内存访问合法 | 自动 |
-| **运行时错误** | 返回负值会被记录但不会崩溃 | 检查 `dmesg` |
+| 机制                | 说明                                             | 配置                         |
+| :------------------ | :----------------------------------------------- | :--------------------------- |
+| **超时回退**        | 调度器在 `timeout_ms` 内未分发任务，自动回退 CFS | `.timeout_ms = 5000`         |
+| **starvation 检测** | CPU 空闲超过阈值时自动回退                       | 内核默认 30s                 |
+| **watchdog**        | 内核 watchdog 监控调度延迟                       | `kernel.watchdog_thresh`     |
+| **权限要求**        | 加载需要 `CAP_SYS_ADMIN`                         | 或 `CAP_PERFMON` (受限模式)  |
+| **CPU 热插拔**      | 调度器必须正确处理 CPU offline/online            | 实现 `enable`/`disable` 回调 |
+| **内存安全**        | BPF 验证器确保所有内存访问合法                   | 自动                         |
+| **运行时错误**      | 返回负值会被记录但不会崩溃                       | 检查 `dmesg`                 |
 
 ### 7.1 退出信息结构
 
@@ -665,13 +666,13 @@ enum scx_exit_kind {
 
 ## 8. sched_ext vs PREEMPT_RT
 
-| 维度 | sched_ext | PREEMPT_RT |
-|:---|:---|:---|
-| **作用层** | 调度策略（谁先运行） | 内核机制（能否被抢占） |
-| **延迟类型** | 逻辑延迟（调度决策） | 物理延迟（锁/中断） |
-| **加载方式** | 热加载 BPF 程序 | 内核编译选项 |
-| **组合** | 互补 | 互补 |
-| **影响范围** | 任务级 | 内核全局 |
+| 维度         | sched_ext            | PREEMPT_RT             |
+| :----------- | :------------------- | :--------------------- |
+| **作用层**   | 调度策略（谁先运行） | 内核机制（能否被抢占） |
+| **延迟类型** | 逻辑延迟（调度决策） | 物理延迟（锁/中断）    |
+| **加载方式** | 热加载 BPF 程序      | 内核编译选项           |
+| **组合**     | 互补                 | 互补                   |
+| **影响范围** | 任务级               | 内核全局               |
 
 **2026 最佳实践：PREEMPT_RT + sched_ext**
 
@@ -722,13 +723,13 @@ echo 'w' > /proc/sysrq-trigger  # 触发 sched_ext 卸载
 
 ### 9.2 性能优化技巧
 
-| 优化点 | 方法 | 效果 |
-|:---|:---|:---|
-| **减少 `select_cpu` 开销** | 简单场景直接返回 `prev_cpu` | 降低唤醒延迟 |
-| **DSQ 数量控制** | 不要创建过多 DSQ（建议 < 16） | 减少内存开销 |
-| **避免 `bpf_printk`** | 生产环境使用 per-CPU Map 统计 | 减少 ~1μs/次 |
-| **vtime 合理设置** | 在 `stopping` 中更新 vtime | 保证公平性 |
-| **本地优先** | `dispatch` 优先 consume 本地 DSQ | 减少 CPU 迁移 |
+| 优化点                     | 方法                             | 效果          |
+| :------------------------- | :------------------------------- | :------------ |
+| **减少 `select_cpu` 开销** | 简单场景直接返回 `prev_cpu`      | 降低唤醒延迟  |
+| **DSQ 数量控制**           | 不要创建过多 DSQ（建议 < 16）    | 减少内存开销  |
+| **避免 `bpf_printk`**      | 生产环境使用 per-CPU Map 统计    | 减少 ~1μs/次  |
+| **vtime 合理设置**         | 在 `stopping` 中更新 vtime       | 保证公平性    |
+| **本地优先**               | `dispatch` 优先 consume 本地 DSQ | 减少 CPU 迁移 |
 
 ### 9.3 常见陷阱
 
@@ -758,15 +759,15 @@ bool BPF_STRUCT_OPS(bad_init) {
 
 ## 10. 实际应用场景
 
-| 场景 | 调度策略 | 效果 |
-|:---|:---|:---|
-| **高频交易** | 固定核心 + FIFO | P99 延迟降低 50%+ |
-| **游戏服务器** | 帧线程独占核心 | 帧率稳定性提升 30% |
-| **AI 推理** | GPU 亲和调度 | 推理吞吐提升 15% |
-| **容器混部** | 基于优先级的分时 | 利用率提升 30% |
-| **实时控制** | EDF 算法 | 任务截止满足率 >99% |
-| **数据库** | NUMA 感知调度 | 查询延迟降低 25% |
-| **视频转码** | 批处理调度 | 吞吐提升 40% |
+| 场景           | 调度策略         | 效果                |
+| :------------- | :--------------- | :------------------ |
+| **高频交易**   | 固定核心 + FIFO  | P99 延迟降低 50%+   |
+| **游戏服务器** | 帧线程独占核心   | 帧率稳定性提升 30%  |
+| **AI 推理**    | GPU 亲和调度     | 推理吞吐提升 15%    |
+| **容器混部**   | 基于优先级的分时 | 利用率提升 30%      |
+| **实时控制**   | EDF 算法         | 任务截止满足率 >99% |
+| **数据库**     | NUMA 感知调度    | 查询延迟降低 25%    |
+| **视频转码**   | 批处理调度       | 吞吐提升 40%        |
 
 ---
 
@@ -775,6 +776,7 @@ bool BPF_STRUCT_OPS(bad_init) {
 **Q1：sched_ext 调度器出错会导致系统死机吗？**
 
 A：不会。sched_ext 内置了多重保护机制：
+
 1. **超时回退**：`timeout_ms` 指定时间内无法分发任务，自动切换回 CFS
 2. **watchdog**：内核 watchdog 检测到 CPU 饥饿时触发回退
 3. **SysRq**：可通过 `echo 'w' > /proc/sysrq-trigger` 紧急卸载
@@ -783,6 +785,7 @@ A：不会。sched_ext 内置了多重保护机制：
 **Q2：sched_ext 在生产环境稳定吗？**
 
 A：截至 2026 年，sched_ext 已在 Linux 6.12 中正式合并（GA）。Meta、Google、Cloudflare 等公司已在生产环境大规模部署。建议：
+
 1. 充分测试后再上生产（至少 2 周灰度）
 2. 设置合理的 `timeout_ms`（推荐 5000ms）
 3. 部署监控（调度延迟、DSQ 深度、CPU 利用率）
@@ -799,6 +802,7 @@ A：sched_ext 的 `select_cpu` 回调可以感知 NUMA 拓扑。调度器可以�
 **Q5：如何从零开始编写一个 sched_ext 调度器？**
 
 A：推荐路径：
+
 1. 从 `scx_simple` 开始（Linux 内核 `tools/sched_ext/scx_simple.bpf.c`）
 2. 理解 `enqueue` 和 `dispatch` 两个核心回调
 3. 使用 `scx_rusty`（Rust 版本）作为生产级参考

@@ -5,8 +5,8 @@ tags: [dpdk, series, eal, lcore, initialization, memory, interrupt]
 description: "深入理解 DPDK EAL 初始化的完整流程——rte_eal_init 每一步的内部实现、lcore 发现与绑定机制、master lcore 角色、以及大页内存初始化"
 ---
 
-> [!info] DPDK 深度探索系列
-> 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
+> [!info] DPDK 深度探索系列 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-09-dpdk-deep-dive-ch1-architecture-overview|第一章：架构概述——kernel bypass 原理与 DPDK 定位]]
 > 2. [[2026-04-09-dpdk-deep-dive-ch2-uio-vfio-iommu|第二章：UIO/VFIO/IOMMU 用户态驱动框架]]
 > 3. **第三章：EAL 初始化与 lcore 模型**
@@ -26,14 +26,14 @@ graph TB
     subgraph "DPDK Application"
         A["App (L2FWD, ACL, NAT...)"]
     end
-    
+
     subgraph "DPDK Libraries"
         B["ethdev (网卡抽象)"]
         C["rte_flow (流表)"]
         D["cryptodev (加解密)"]
         E["LPM/ACL (路由/访问控制)"]
     end
-    
+
     subgraph "EAL (Environment Abstraction Layer)"
         F["lcore 管理<br/>(CPU 发现/绑定)"]
         G["内存管理<br/>(大页/IOVA)"]
@@ -41,12 +41,12 @@ graph TB
         I["日志<br/>(分级日志)"]
         J["PCI<br/>(设备探测)"]
     end
-    
+
     subgraph "Kernel / Hardware"
         K["Linux Kernel<br/>(UIO/VFIO)"]
         L["CPU/Hardware"]
     end
-    
+
     A --> B --> F
     B --> C --> G
     B --> D --> H
@@ -82,21 +82,21 @@ int main(int argc, char **argv) {
 
 EAL 支持丰富的启动参数：
 
-| 参数 | 说明 | 示例 |
-|------|------|------|
-| `-c COREMASK` | CPU mask（十六进制 bitmask） | `-c 0xf` |
-| `-l CORELIST` | lcore 列表 | `-l 0-3` |
-| `-n CHANNELS` | DDR 通道数 | `-n 4` |
-| `--lcores COREMAP` | lcore 到 CPU 的映射 | `--lcores='0-3@0,4-7@1'` |
-| `--socket-mem MEM` | 每个 Socket 的大页内存 | `--socket-mem=1024,1024` |
-| `-m SIZE` | 总大页内存（所有 socket） | `-m 1024` |
-| `--main-lcore MAINLCID` | main lcore ID | `--main-lcore 0` |
-| `-v` | 显示版本 | `-v` |
-| `--huge-dir` | 大页目录 | `--huge-dir=/mnt/huge` |
-| `--file-prefix` | 大页文件前缀 | `--file-prefix=myapp` |
-| `-t TIMEOUT` | 初始化超时 | `-t 10` |
-| `--allow` | 允许的设备 | `--allow=0000:01:00.0` |
-| `--log-level` | 日志级别 | `--log-level=8` |
+| 参数                    | 说明                         | 示例                     |
+| ----------------------- | ---------------------------- | ------------------------ |
+| `-c COREMASK`           | CPU mask（十六进制 bitmask） | `-c 0xf`                 |
+| `-l CORELIST`           | lcore 列表                   | `-l 0-3`                 |
+| `-n CHANNELS`           | DDR 通道数                   | `-n 4`                   |
+| `--lcores COREMAP`      | lcore 到 CPU 的映射          | `--lcores='0-3@0,4-7@1'` |
+| `--socket-mem MEM`      | 每个 Socket 的大页内存       | `--socket-mem=1024,1024` |
+| `-m SIZE`               | 总大页内存（所有 socket）    | `-m 1024`                |
+| `--main-lcore MAINLCID` | main lcore ID                | `--main-lcore 0`         |
+| `-v`                    | 显示版本                     | `-v`                     |
+| `--huge-dir`            | 大页目录                     | `--huge-dir=/mnt/huge`   |
+| `--file-prefix`         | 大页文件前缀                 | `--file-prefix=myapp`    |
+| `-t TIMEOUT`            | 初始化超时                   | `-t 10`                  |
+| `--allow`               | 允许的设备                   | `--allow=0000:01:00.0`   |
+| `--log-level`           | 日志级别                     | `--log-level=8`          |
 
 ### 2.3 初始化流程图
 
@@ -111,7 +111,7 @@ graph TD
     G --> H["rte_eal_log_init()<br/>日志系统"]
     H --> I["rte_eal_service_cores_setup()<br/>Service lcore"]
     I --> J["完成"]
-    
+
     style A fill:#feca57
     style J fill:#51cf66
 ```
@@ -138,27 +138,27 @@ static struct lcore_info lcore_config[RTE_MAX_LCORE];
 
 int rte_eal_cpu_init(void) {
     unsigned lcore_id = 0;
-    
+
     // 遍历 /sys/devices/system/cpu/ 获取所有逻辑核
     for (int cpu = 0; cpu < CPU_SETSIZE; cpu++) {
         if (!is_cpu_present(cpu))
             continue;
-        
+
         // 获取 socket_id (NUMA node)
         lcore_config[lcore_id].socket_id = cpu_to_socket(cpu);
-        
+
         // 获取 core_id
         lcore_config[lcore_id].core_id = cpu_to_core(cpu);
-        
+
         // 设置 cpuset
         CPU_SET(cpu, &lcore_config[lcore_id].cpuset);
-        
+
         lcore_id++;
     }
-    
+
     // 设置全局 lcore 数量
     rte_config.lcore_count = lcore_id;
-    
+
     return 0;
 }
 ```
@@ -320,10 +320,10 @@ struct rte_memzone {
 
 ### 5.1 两种 IOVA 模式
 
-| 模式 | 说明 | 适用场景 |
-|------|------|---------|
+| 模式           | 说明            | 适用场景             |
+| -------------- | --------------- | -------------------- |
 | **IOVA as PA** | IOVA = 物理地址 | VFIO with IOMMU, UIO |
-| **IOVA as VA** | IOVA = 虚拟地址 | 虚拟化场景，VFIO |
+| **IOVA as VA** | IOVA = 虚拟地址 | 虚拟化场景，VFIO     |
 
 ```c
 // lib/eal/common/eal_memory.c
@@ -337,7 +337,7 @@ enum rte_iova_mode {
 // 检测 VFIO IOMMU 是否支持 DMA 地址翻译
 static int detect_iova_mode(void) {
     struct vfio_iommu_info *info;
-    
+
     // 检查是否使用 VFIO
     if (rte_eal_has_type(RTE_DEV_BUS_PCI)) {
         // 尝试获取 VFIO IOMMU 信息
@@ -347,7 +347,7 @@ static int detect_iova_mode(void) {
                 return RTE_IOVA_VA;
         }
     }
-    
+
     return RTE_IOVA_PA;  // 默认 PA 模式
 }
 ```
@@ -357,11 +357,11 @@ static int detect_iova_mode(void) {
 ```mermaid
 graph TD
     A["EAL Init"] --> B["Detect VFIO"]
-    B --> C{"VFIO + IOMMU 
-    supports 
+    B --> C{"VFIO + IOMMU
+    supports
     VA mode?"}
     C -->|Yes| D["IOVA = VA"]
-    C -->|No| E["UIO or 
+    C -->|No| E["UIO or
     no IOMMU"]
     E --> F["IOVA = PA"]
     D --> G["使用 VA mode
@@ -402,46 +402,46 @@ graph TD
 static int eal_parse_lcores(const char *arg) {
     const char *p = arg;
     unsigned lcore_id = 0;
-    
+
     while (*p) {
         // 解析 lcore_set
         unsigned start, end;
         sscanf(p, "%u-%u", &start, &end);
-        
+
         // 跳过 '@'
         while (*p && *p != '@') p++;
         if (*p != '@') return -1;
         p++;
-        
+
         // 解析 cpu_set
         rte_cpuset_t cpuset;
         CPU_ZERO(&cpuset);
-        
+
         while (*p && *p != ',' && *p != ';') {
             unsigned cpu_start, cpu_end;
             sscanf(p, "%u-%u", &cpu_start, &cpu_end);
-            
+
             for (unsigned cpu = cpu_start; cpu <= cpu_end; cpu++)
                 CPU_SET(cpu, &cpuset);
-            
+
             while (*p && *p != ',' && *p != ';') p++;
             if (*p == '-') p++;  // skip '-'
         }
-        
+
         // 应用绑定
         for (unsigned l = start; l <= end; l++) {
             lcore_config[l].cpuset = cpuset;
             lcore_config[l].socket_id = cpu_to_socket(cpu_start);
             lcore_id++;
         }
-        
+
         if (*p == ';') {
             // 处理角色...
             p++;
         }
         if (*p == ',') p++;
     }
-    
+
     return 0;
 }
 ```
@@ -453,13 +453,13 @@ static int eal_parse_lcores(const char *arg) {
 int eal_thread_set_affinity(unsigned lcore_id) {
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
-    
+
     // 从 lcore_config 获取 cpuset
     for (int i = 0; i < CPU_SETSIZE; i++) {
         if (CPU_ISSET(i, &lcore_config[lcore_id].cpuset))
             CPU_SET(i, &cpuset);
     }
-    
+
     // 设置当前线程的 CPU 亲和性
     pthread_t tid = pthread_self();
     return pthread_setaffinity_np(tid, sizeof(cpu_set_t), &cpuset);
@@ -470,7 +470,7 @@ int rte_eal_remote_launch(int (*f)(void *), void *arg, unsigned lcore_id) {
     // 创建线程
     pthread_t tid;
     pthread_create(&tid, NULL, eal_thread_loop, arg);
-    
+
     // 等待线程初始化完成
     // ...
 }
@@ -484,12 +484,12 @@ int rte_eal_remote_launch(int (*f)(void *), void *arg, unsigned lcore_id) {
 
 Main lcore（早期版本称为 Master lcore，DPDK 21.11 起统一更名为 Main lcore）是 DPDK 应用中**负责初始化和协调**的特殊 lcore：
 
-| 职责 | 说明 |
-|------|------|
+| 职责       | 说明                                           |
+| ---------- | ---------------------------------------------- |
 | **初始化** | 执行所有库的初始化（如 rte_eth_dev_configure） |
-| **协调** | 分发任务给 worker lcore |
-| **清理** | 负责应用退出时的资源释放 |
-| **主循环** | 通常不参与数据平面（可配置） |
+| **协调**   | 分发任务给 worker lcore                        |
+| **清理**   | 负责应用退出时的资源释放                       |
+| **主循环** | 通常不参与数据平面（可配置）                   |
 
 ### 7.2 指定 master lcore
 
@@ -536,16 +536,16 @@ int rte_eal_intr_init(void) {
         // 初始化 VFIO 中断处理
         vfio_intr_init();
     }
-    
+
     // 2. 设置管道用于中断事件通知
     int pipefd[2];
     pipe(pipefd);
     intr_pipe_read = pipefd[0];
     intr_pipe_write = pipefd[1];
-    
+
     // 3. 启动中断处理线程
     pthread_create(&intr_thread, NULL, eal_intr_thread, NULL);
-    
+
     return 0;
 }
 
@@ -553,14 +553,14 @@ int rte_eal_intr_init(void) {
 static void *eal_intr_thread(void *arg) {
     struct epoll_event ev;
     int epfd = epoll_create1(0);
-    
+
     // 监听 VFIO 中断和管道
     epoll_ctl(epfd, EPOLL_CTL_ADD, intr_pipe_read, &ev);
     epoll_ctl(epfd, EPOLL_CTL_ADD, vfio_event_fd, &ev);
-    
+
     while (1) {
         int n = epoll_wait(epfd, &ev, 1, -1);
-        
+
         if (ev.data.fd == intr_pipe_read) {
             // 收到退出信号
             break;
@@ -569,18 +569,18 @@ static void *eal_intr_thread(void *arg) {
             handle_vfio_irq();
         }
     }
-    
+
     return NULL;
 }
 ```
 
 ### 8.2 中断类型
 
-| 类型 | 机制 | 最大向量数 | 共享 | VFIO |
-|------|------|-----------|------|------|
-| **INTx** | 物理信号线（INTA/B/C/D） | 1 | 多设备共享 | ✅ |
-| **MSI** | 内存写事务（in-band） | 32 | 独占 | ✅ |
-| **MSI-X** | 内存写事务，中断表在设备内存 | 2048 | 独占，per-vector 掩码 | ✅ (推荐) |
+| 类型      | 机制                         | 最大向量数 | 共享                  | VFIO      |
+| --------- | ---------------------------- | ---------- | --------------------- | --------- |
+| **INTx**  | 物理信号线（INTA/B/C/D）     | 1          | 多设备共享            | ✅        |
+| **MSI**   | 内存写事务（in-band）        | 32         | 独占                  | ✅        |
+| **MSI-X** | 内存写事务，中断表在设备内存 | 2048       | 独占，per-vector 掩码 | ✅ (推荐) |
 
 **INTx** 是最古老的 PCI 中断方式，通过主板上的物理信号线传递中断。多设备共享同一根线时需要轮询确认，无法按 CPU 亲和性分发。
 
@@ -615,7 +615,7 @@ int rte_eth_dev_rx_intr_ctl(uint16_t port_id, uint16_t qid,
 int rte_eal_timer_init(void) {
     // 1. 检测硬件时钟源
     const char *clock_source = eal_timer_source();
-    
+
     if (strcmp(clock_source, "TSC") == 0) {
         rte_config.timer_source = RTE_TIMER_TSC;
     } else if (strcmp(clock_source, "HPET") == 0) {
@@ -623,7 +623,7 @@ int rte_eal_timer_init(void) {
     } else if (strcmp(clock_source, "ARM Generic Timer") == 0) {
         rte_config.timer_source = RTE_TIMER_ARM_GPT;
     }
-    
+
     // 2. 初始化全局定时器子系统（只需调用一次）
     rte_timer_subsystem_init();
     // per-lcore 的 timer 数据结构在各 lcore 线程启动时自动初始化
@@ -634,11 +634,11 @@ int rte_eal_timer_init(void) {
 
 ### 9.2 时钟源对比
 
-| 时钟源 | 精度 | 性能 | 适用场景 |
-|--------|------|------|----------|
-| **TSC** | 1-2 cycles | 最高 | x86 推荐，数据平面 |
-| **HPET** | 100ns | 中 | 需要跨 socket 同步 |
-| **ARM Generic Timer** | 架构相关 | 高 | ARM 平台 |
+| 时钟源                | 精度       | 性能 | 适用场景           |
+| --------------------- | ---------- | ---- | ------------------ |
+| **TSC**               | 1-2 cycles | 最高 | x86 推荐，数据平面 |
+| **HPET**              | 100ns      | 中   | 需要跨 socket 同步 |
+| **ARM Generic Timer** | 架构相关   | 高   | ARM 平台           |
 
 ---
 
@@ -674,7 +674,7 @@ rte_log_set_level(rte_log_lib_ethdev, RTE_LOG_DEBUG);
 // 使用日志宏
 RTE_LOG(INFO, EAL, "EAL initialized on lcore %u\n", lcore_id);
 RTE_LOG(ERR, EAL, "Failed to initialize PCI: %s\n", strerror(errno));
-RTE_LOG(DEBUG, Mempool, "mempool %s free_count=%lu\n", 
+RTE_LOG(DEBUG, Mempool, "mempool %s free_count=%lu\n",
         name, rte_mempool_free_count(pool));
 ```
 
@@ -691,21 +691,21 @@ graph LR
     subgraph "Data Plane Lcores (快速路径)"
         A["lcore 0-3"]
     end
-    
+
     subgraph "Service Lcores (慢路径)"
         B["lcore 4-7"]
     end
-    
+
     subgraph "数据平面任务"
         C["快速包处理<br/>rte_eth_rx_burst"]
     end
-    
+
     subgraph "慢路径任务"
         D["统计收集<br/>指标上报"]
         E["定时清理<br/>连接老化"]
         F["管理平面<br/>CLI 处理"]
     end
-    
+
     A --> C
     B --> D
     B --> E
@@ -760,28 +760,28 @@ static int
 lcore_worker(void *arg)
 {
     uint16_t port_id = *(uint16_t *)arg;
-    
+
     printf("Worker lcore %u started, handling port %u\n",
            rte_lcore_id(), port_id);
-    
+
     while (!quit) {
         struct rte_mbuf *pkts[32];
-        
+
         // 批量接收
         uint16_t nb_rx = rte_eth_rx_burst(port_id, 0, pkts, 32);
-        
+
         if (nb_rx == 0)
             continue;
-        
+
         // 处理并转发
         for (int i = 0; i < nb_rx; i++) {
             rte_pktmbuf_free(pkts[i]);
         }
-        
+
         // 批量发送
         // rte_eth_tx_burst(...);
     }
-    
+
     return 0;
 }
 
@@ -789,16 +789,16 @@ int main(int argc, char *argv[])
 {
     int ret;
     uint16_t port_id;
-    
+
     // ========== EAL 初始化 ==========
     ret = rte_eal_init(argc, argv);
     if (ret < 0)
         rte_exit(EXIT_FAILURE, "EAL init failed\n");
-    
+
     // 调整参数（EAL 会修改 argc/argv）
     argc -= ret;
     argv += ret;
-    
+
     // ========== PCI 探测 ==========
     uint16_t nb_ports = 0;
     RTE_ETH_FOREACH_DEV(port_id) {
@@ -810,7 +810,7 @@ int main(int argc, char *argv[])
         printf("No Ethernet ports, exiting\n");
         return -1;
     }
-    
+
     // ========== 端口配置 ==========
     struct rte_eth_conf port_conf = {
         .rxmode = {
@@ -820,11 +820,11 @@ int main(int argc, char *argv[])
             .mq_mode = RTE_ETH_MQ_TX_NONE,
         },
     };
-    
+
     ret = rte_eth_dev_configure(0, 1, 1, &port_conf);
     if (ret < 0)
         rte_exit(EXIT_FAILURE, "Port config failed\n");
-    
+
     // ========== 设置 Rx/Tx 队列 ==========
     struct rte_mempool *mbuf_pool = rte_pktmbuf_pool_create(
         "mbuf_pool",
@@ -834,42 +834,42 @@ int main(int argc, char *argv[])
         RTE_MBUF_DEFAULT_BUF_SIZE,
         rte_eth_dev_socket_id(0)
     );
-    
+
     ret = rte_eth_rx_queue_setup(0, 0, RX_DESC,
                                    rte_eth_dev_socket_id(0),
                                    NULL, mbuf_pool);
-    
+
     ret = rte_eth_tx_queue_setup(0, 0, TX_DESC,
                                    rte_eth_dev_socket_id(0),
                                    NULL);
-    
+
     // ========== 启动端口 ==========
     ret = rte_eth_dev_start(0);
     if (ret < 0)
         rte_exit(EXIT_FAILURE, "Start port failed\n");
-    
+
     rte_eth_promiscuous_enable(0);
-    
+
     // ========== 启动 worker lcore ==========
     unsigned lcore_id;
     RTE_LCORE_FOREACH_WORKER(lcore_id) {
         rte_eal_remote_launch(lcore_worker, &port_id, lcore_id);
     }
-    
+
     // Master lcore 主循环
     printf("Master lcore %u running\n", rte_lcore_id());
-    
+
     // ========== 等待退出 ==========
     while (!quit) {
         sleep(1);
     }
-    
+
     // 清理
     rte_eal_mp_wait_lcore();
     rte_eth_dev_stop(0);
     rte_eth_dev_close(0);
     rte_eal_cleanup();
-    
+
     return 0;
 }
 ```
@@ -897,6 +897,7 @@ int main(int argc, char *argv[])
 ---
 
 > [!tip] 参考文献
+>
 > - Intel, "DPDK EAL Reference", https://doc.dpdk.org/guides/prog_guide/env_abstraction_layer.html
 > - Intel, "DPDK Memory Management", https://doc.dpdk.org/guides/prog_guide/mempool_lib.html
 > - Linux Kernel Documentation, "HugeTLB", https://www.kernel.org/doc/html/latest/admin-guide/mm/hugetlbpage.html

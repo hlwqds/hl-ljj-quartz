@@ -5,8 +5,8 @@ tags: [vpn, series, xray, vless, xtls, reality, proxy, censorship]
 description: "Xray 核心深度解析——VLESS+XTLS、Trojan-Go 协议融合、Reality 协议、vision 网络、mux.cool 多路复用、性能优化与最佳配置"
 ---
 
-> [!info] VPN 技术深度探索系列
-> 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+> [!info] VPN 技术深度探索系列 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-vpn-deep-dive-ch28-trojan|Trojan 协议]]
 > 2. **第二十九章：Xray 核心**
 > 3. [[2026-04-13-vpn-deep-dive-ch30-clash|第三十章：Clash 生态]]

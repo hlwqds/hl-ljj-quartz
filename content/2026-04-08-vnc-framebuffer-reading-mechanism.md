@@ -7,6 +7,7 @@ tags: [vnc, remote-desktop, framebuffer, qemu, kvm]
 # VNC 帧缓冲区读取机制：物理机与虚拟机的差异
 
 > [!info] VNC 协议系列
+>
 > - [[2026-04-08-vnc-protocol-and-traffic-fingerprint|VNC 协议原理与流量特征分析]]
 > - **VNC 帧缓冲区读取机制：物理机与虚拟机的差异**（本文）
 > - [[2026-04-08-vm-installation-without-vnc|虚拟机无 VNC 安装方案：纯文本全链路管理]]
@@ -153,14 +154,14 @@ static void vnc_refresh(DisplayChangeListener *dcl)
 
 ## 两种场景的对比
 
-| 维度 | 物理机 | 虚拟机 (QEMU/KVM) |
-|------|--------|-------------------|
-| 帧缓冲区位置 | 内核管理的 /dev/fb0 或 DRM 显存 | QEMU 进程的用户态堆内存 |
-| 读取方式 | X11 协议 / mmap / screencopy | 直接访问进程内内存 |
-| VNC Server | 独立进程（x11vnc / TightVNC 等） | QEMU 内置模块 |
-| Guest/OS 感知 | OS 感知（需要 X Server 或 FB 设备） | **完全无感知** |
-| 性能瓶颈 | X Server 拷贝开销 / mmap 同步 | 虚拟显卡 I/O 路径 |
-| 需要安装软件 | 是（VNC Server） | 否（QEMU 自带） |
+| 维度          | 物理机                              | 虚拟机 (QEMU/KVM)       |
+| ------------- | ----------------------------------- | ----------------------- |
+| 帧缓冲区位置  | 内核管理的 /dev/fb0 或 DRM 显存     | QEMU 进程的用户态堆内存 |
+| 读取方式      | X11 协议 / mmap / screencopy        | 直接访问进程内内存      |
+| VNC Server    | 独立进程（x11vnc / TightVNC 等）    | QEMU 内置模块           |
+| Guest/OS 感知 | OS 感知（需要 X Server 或 FB 设备） | **完全无感知**          |
+| 性能瓶颈      | X Server 拷贝开销 / mmap 同步       | 虚拟显卡 I/O 路径       |
+| 需要安装软件  | 是（VNC Server）                    | 否（QEMU 自带）         |
 
 ## 总结
 

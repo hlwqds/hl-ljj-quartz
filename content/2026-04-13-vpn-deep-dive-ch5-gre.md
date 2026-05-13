@@ -5,8 +5,8 @@ tags: [vpn, series, networking, security, tunnel, gre, ipsec]
 description: "GRE 隧道协议详解——GRE 头格式、键控 GRE、PMTUD、GRE 与 IPSec 配合、CRLDP、Linux GRE 配置与排错"
 ---
 
-> [!info] VPN 技术深度探索系列
-> 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+> [!info] VPN 技术深度探索系列 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-vpn-deep-dive-ch1-vpn-fundamentals|VPN 基础概念]]
 > 2. [[2026-04-13-vpn-deep-dive-ch2-tunnel-basics|第二章：隧道技术基础]]
 > 3. [[2026-04-13-vpn-deep-dive-ch3-crypto-fundamentals|第三章：密码学基础]]
@@ -20,12 +20,12 @@ description: "GRE 隧道协议详解——GRE 头格式、键控 GRE、PMTUD、G
 
 GRE 的核心价值：
 
-| 特性 | 说明 |
-|------|------|
+| 特性           | 说明                                 |
+| -------------- | ------------------------------------ |
 | **多协议封装** | 可承载 IPv4/IPv6/MPLS/OSI 等多种协议 |
-| **无状态隧道** | 隧道端点不需要维护隧道状态 |
-| **灵活扩展** | 可选 Key、Sequence Number、Checksum |
-| **无内置加密** | 通常需配合 IPSec 使用 |
+| **无状态隧道** | 隧道端点不需要维护隧道状态           |
+| **灵活扩展**   | 可选 Key、Sequence Number、Checksum  |
+| **无内置加密** | 通常需配合 IPSec 使用                |
 
 ```mermaid
 graph LR
@@ -35,15 +35,15 @@ graph LR
         P3["MPLS"]
         P4["OSI CLNP"]
     end
-    
+
     subgraph GRE["GRE 隧道"]
         G["GRE Header"]
     end
-    
+
     subgraph Transport["传输协议"]
         T["Outer IP (Protocol=47)"]
     end
-    
+
     P1 --> G
     P2 --> G
     P3 --> G
@@ -84,17 +84,17 @@ GRE 头本身没有固定长度——通过**可选字段**实现扩展：
 
 ### 2.2 GRE 头字段详解
 
-| 字段 | 位 | 说明 |
-|------|----|------|
-| **C (Checksum)** | Bit 0 | 1=存在 Checksum 字段 |
-| **R (Routing)** | Bit 1 | 1=存在路由字段（已废弃） |
-| **K (Key)** | Bit 2 | 1=存在 Key 字段（区分隧道流） |
-| **S (Sequence)** | Bit 3 | 1=存在 Sequence Number（序列化） |
-| **s (Strict Source Route)** | Bit 4 | 严格源路由（已废弃） |
-| **Recursion Control** | Bits 5-7 | 允许的封装深度（防环路） |
-| **Flags** | Bits 8-12 | 保留，必须为 0 |
-| **Version** | Bits 13-15 | 必须为 0 |
-| **Protocol Type** | 16 bits | 载荷协议类型（Ethernet=0x6558, IPv4=0x0800, IPv6=0x86DD） |
+| 字段                        | 位         | 说明                                                      |
+| --------------------------- | ---------- | --------------------------------------------------------- |
+| **C (Checksum)**            | Bit 0      | 1=存在 Checksum 字段                                      |
+| **R (Routing)**             | Bit 1      | 1=存在路由字段（已废弃）                                  |
+| **K (Key)**                 | Bit 2      | 1=存在 Key 字段（区分隧道流）                             |
+| **S (Sequence)**            | Bit 3      | 1=存在 Sequence Number（序列化）                          |
+| **s (Strict Source Route)** | Bit 4      | 严格源路由（已废弃）                                      |
+| **Recursion Control**       | Bits 5-7   | 允许的封装深度（防环路）                                  |
+| **Flags**                   | Bits 8-12  | 保留，必须为 0                                            |
+| **Version**                 | Bits 13-15 | 必须为 0                                                  |
+| **Protocol Type**           | 16 bits    | 载荷协议类型（Ethernet=0x6558, IPv4=0x0800, IPv6=0x86DD） |
 
 ### 2.3 常见 Protocol Type
 
@@ -179,17 +179,17 @@ sequenceDiagram
     participant Host as 本地主机
     participant GRE as GRE 隧道设备
     participant Internet as 公共网络
-    
+
     App->>Host: 原始 IP 包 (Dst: 192.168.2.20)
     Host->>Host: 路由查找 → 命中 gre0
-    
+
     Note over Host: 内核 TCP/IP 栈处理
-    
+
     Host->>GRE: 将包发给 gre0 虚拟接口
     GRE->>GRE: 添加 GRE 头 (Key + 可选字段)
     GRE->>GRE: 添加外层 IP 头 (Src: 203.0.113.10, Dst: 198.51.100.20)
     GRE->>Internet: 发送封装后的数据包
-    
+
     Note over Internet: 攻击者看到：外层 IP + GRE 头 + 内层 IP（均为明文）
 ```
 
@@ -211,9 +211,9 @@ sequenceDiagram
     participant Internet as 公共网络
     participant GW as 隧道网关
     participant Internal as 内部网络
-    
+
     Internet->>GW: 收到 GRE 包 (外层 IP + GRE + 内层载荷)
-    
+
     GW->>GW: 1. 验证外层 IP 目的地址是本机
     GW->>GW: 2. 验证 GRE 协议号 (Protocol = 47)
     GW->>GW: 3. 检查 Key 字段（如果配置了键控）
@@ -229,35 +229,35 @@ sequenceDiagram
 
 ### 5.1 GRE 的优势
 
-| 特性 | 说明 |
-|------|------|
-| **多协议支持** | 可封装 IPv4/IPv6/Ethernet/MPLS/OSI 等 |
-| **广泛支持** | 几乎所有厂商路由器、Linux、Windows 均支持 |
-| **无状态** | 端点不需要维护连接状态 |
-| **灵活扩展** | 可选 Key、Sequence、Checksum |
-| **低开销** | 仅 4-24 字节 GRE 头 |
+| 特性           | 说明                                      |
+| -------------- | ----------------------------------------- |
+| **多协议支持** | 可封装 IPv4/IPv6/Ethernet/MPLS/OSI 等     |
+| **广泛支持**   | 几乎所有厂商路由器、Linux、Windows 均支持 |
+| **无状态**     | 端点不需要维护连接状态                    |
+| **灵活扩展**   | 可选 Key、Sequence、Checksum              |
+| **低开销**     | 仅 4-24 字节 GRE 头                       |
 
 ### 5.2 GRE 的限制
 
-| 限制 | 说明 |
-|------|------|
-| **无加密** | 载荷完全明文传输 |
-| **无身份认证** | 无法验证对端身份 |
-| **无完整性保护** | 数据可被篡改 |
-| **NAT 兼容差** | GRE 本身不是 UDP，穿越 NAT 困难 |
-| **MTU 问题** | 封装后包增大，可能触发分片 |
+| 限制             | 说明                            |
+| ---------------- | ------------------------------- |
+| **无加密**       | 载荷完全明文传输                |
+| **无身份认证**   | 无法验证对端身份                |
+| **无完整性保护** | 数据可被篡改                    |
+| **NAT 兼容差**   | GRE 本身不是 UDP，穿越 NAT 困难 |
+| **MTU 问题**     | 封装后包增大，可能触发分片      |
 
 ### 5.3 GRE vs IPIP 对比
 
-|| GRE | IPIP |
-|------|-----|------|
-| 协议号 | IP Protocol 47 | IP Protocol 4 |
-| 多协议封装 | 是 | 否（仅 IPv4） |
-| Key 字段 | 有（可选） | 无 |
-| Checksum | 有（可选） | 无 |
-| Sequence | 有（可选） | 无 |
-| NAT 穿越 | 差 | 差（但稍好） |
-| 典型用途 | 运营商骨干网 | 简单站点互联 |
+|            | GRE            | IPIP          |
+| ---------- | -------------- | ------------- |
+| 协议号     | IP Protocol 47 | IP Protocol 4 |
+| 多协议封装 | 是             | 否（仅 IPv4） |
+| Key 字段   | 有（可选）     | 无            |
+| Checksum   | 有（可选）     | 无            |
+| Sequence   | 有（可选）     | 无            |
+| NAT 穿越   | 差             | 差（但稍好）  |
+| 典型用途   | 运营商骨干网   | 简单站点互联  |
 
 ---
 
@@ -379,7 +379,7 @@ GRE 封装会增加额外头部，可能导致数据包超过路径 MTU：
 
 # 但 IPSec 还会增加更多开销：
 # ESP Header: 8-12 bytes
-# ESP Trailer: 2-3 bytes  
+# ESP Trailer: 2-3 bytes
 # ESP ICV: 12-16 bytes (AES-GCM)
 # 最终: 1500 + 4 + 20 + 8 + 16 = 1548 bytes
 ```
@@ -538,13 +538,13 @@ iptables -A INPUT -p udp --dport 4500 -j ACCEPT  # NAT-T
 
 ### 10.1 常见问题与解决方案
 
-| 问题 | 原因 | 解决 |
-|------|------|------|
+| 问题             | 原因            | 解决                           |
+| ---------------- | --------------- | ------------------------------ |
 | GRE 隧道 up/down | 路由问题/防火墙 | 检查外层路由、确认 GRE 端口 47 |
-| 隧道通但无流量 | 路由未指向隧道 | 检查 `ip route` |
-| PMTUD 失败 | ICMP 被屏蔽 | 配置 MSS Clamping |
-| 键控 GRE 不通 | Key 不匹配 | 两端 Key 必须一致 |
-| OSPF 邻居不起来 | 多播被 NAT 屏蔽 | 改用 GRE 封装多播 |
+| 隧道通但无流量   | 路由未指向隧道  | 检查 `ip route`                |
+| PMTUD 失败       | ICMP 被屏蔽     | 配置 MSS Clamping              |
+| 键控 GRE 不通    | Key 不匹配      | 两端 Key 必须一致              |
+| OSPF 邻居不起来  | 多播被 NAT 屏蔽 | 改用 GRE 封装多播              |
 
 ### 10.2 排错命令汇总
 
@@ -579,21 +579,22 @@ cat /proc/net/gre
 
 ## 11. 总结
 
-|| GRE 关键知识点 |
-|---|---|
-| **协议定位** | L3 隧道协议，IP Protocol 47 |
-| **头格式** | 4 字节最小，可选 Key(4B)、Seq(4B)、Checksum(4B) |
-| **核心优势** | 多协议封装、无状态、广泛兼容 |
-| **核心缺陷** | 无加密、无认证、明文传输 |
-| **最佳拍档** | IPSec（GRE over IPSec 封装） |
-| **MTU 注意** | 需预留 GRE 头(4-24B) + 外层IP(20B) 开销 |
-| **典型场景** | 站点互联、动态路由、NAT 穿越、MPLS 接入 |
+|              | GRE 关键知识点                                  |
+| ------------ | ----------------------------------------------- |
+| **协议定位** | L3 隧道协议，IP Protocol 47                     |
+| **头格式**   | 4 字节最小，可选 Key(4B)、Seq(4B)、Checksum(4B) |
+| **核心优势** | 多协议封装、无状态、广泛兼容                    |
+| **核心缺陷** | 无加密、无认证、明文传输                        |
+| **最佳拍档** | IPSec（GRE over IPSec 封装）                    |
+| **MTU 注意** | 需预留 GRE 头(4-24B) + 外层IP(20B) 开销         |
+| **典型场景** | 站点互联、动态路由、NAT 穿越、MPLS 接入         |
 
 **下一章预告：** [[2026-04-13-vpn-deep-dive-ch6-ipip|SIT 隧道]] — IP in IP 封装、6to4/4to6/ISATAP 隧道协议。
 
 ---
 
 > [!quote] 参考文献
+>
 > - [[2026-04-13-kernel-protocol-stack-deep-dive-ch17-gre|GRE 隧道 (Kernel Protocol Stack)]] — 内核 GRE 实现
 > - RFC 1701 - Generic Routing Encapsulation (GRE)
 > - RFC 1702 - Generic Routing Encapsulation over IPv4 networks

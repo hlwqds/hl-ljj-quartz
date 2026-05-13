@@ -1,12 +1,27 @@
 ---
 title: "Kernel Protocol Stack 深度探索 (二十四)：TCP 拥塞控制"
 date: 2026-04-13
-tags: [linux, kernel, networking, series, tcp, congestion-control, cwnd, ssthresh, reno, cubic, bbr, slow-start, fast-retransmit]
+tags:
+  [
+    linux,
+    kernel,
+    networking,
+    series,
+    tcp,
+    congestion-control,
+    cwnd,
+    ssthresh,
+    reno,
+    cubic,
+    bbr,
+    slow-start,
+    fast-retransmit,
+  ]
 description: "深入解析 TCP 拥塞控制算法——慢启动、拥塞避免、快速重传、拥塞窗口管理、Reno/CUBIC/BBR 算法对比"
 ---
 
-> [!info] Kernel Protocol Stack 深度探索系列
-> 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Kernel Protocol Stack 深度探索系列 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-kernel-protocol-stack-deep-dive-ch1-skbuff|第一章：sk_buff 与数据包生命周期]]
 > 2. [[2026-04-13-kernel-protocol-stack-deep-dive-ch2-netdevice|第二章：Netdevice 与网卡抽象]]
 > 3. [[2026-04-13-kernel-protocol-stack-deep-dive-ch3-ring-buffer|第三章：Ring Buffer 与 DMA]]
@@ -39,6 +54,7 @@ description: "深入解析 TCP 拥塞控制算法——慢启动、拥塞避免�
 TCP 拥塞控制是防止网络过载的核心机制，通过动态调整发送速率来匹配网络容量。与流量控制（flow control，接收方 buffer 限制）不同，拥塞控制针对的是网络路径上的拥塞状态。
 
 核心变量：
+
 - **snd_cwnd（Congestion Window）**：拥塞窗口，发送方允许发送的未确认字节数
 - **snd_ssthresh（Slow Start Threshold）**：慢启动阈值，区分慢启动和拥塞避免阶段
 
@@ -96,6 +112,7 @@ for each ACK received:
 ```
 
 每收到一个 ACK，snd_cwnd 增加一个 MSS。假设 MSS=1460，初始 cwnd=1460：
+
 - 第1个 ACK：cwnd=2920（+1460）
 - 第2个 ACK：cwnd=4380（+1460）
 - 第3个 ACK：cwnd=5840（+1460）
@@ -236,6 +253,7 @@ static void tcp_enter_cwr(struct sock *sk, int cwr)
 ## 6. Reno 算法
 
 Reno 是最经典的拥塞控制算法，包含：
+
 - 慢启动
 - 拥塞避免
 - 快速重传
@@ -248,7 +266,7 @@ Reno 是最经典的拥塞控制算法，包含：
    - ssthresh = snd_cwnd / 2
    - snd_cwnd = ssthresh + 3 * MSS
    - 重传丢失段
-   
+
 2. 超时：
    - ssthresh = snd_cwnd / 2
    - snd_cwnd = 1 MSS
@@ -276,6 +294,7 @@ W(t) = C * (t - K)^3 + Wmax
 ```
 
 CUBIC 特点：
+
 - 在 Wmax 附近停留较长时间（稳定点）
 - 快速增长到 Wmax，然后缓慢增加
 - 丢包后重新开始，对丢包不敏感
@@ -360,6 +379,7 @@ BBR（Bottleneck Bandwidth and Round-trip propagation time）是基于模型的�
 ### 8.1 核心思想
 
 BBR 不依赖丢包来检测拥塞，而是主动估计：
+
 - **BDP（Bottleneck Bandwidth and RTT）**：`BDP = bandwidth * RTT`
 - 目标：让 cwnd 接近 BDP
 
@@ -422,7 +442,7 @@ static void bbrCongBbr(struct sock *sk, u32 ack, u32 in_flight)
     bw = bbr->bw * (u64)tp->mss_cache;
 
     // 根据 BDP 调整 cwnd
-    cwnd = min(div_u64(bw * bbr->min_rtt, USEC_PER_SEC), 
+    cwnd = min(div_u64(bw * bbr->min_rtt, USEC_PER_SEC),
                2 * tp->mss_cache * bbr->min_rtt);
     tp->snd_cwnd = max(cwnd, 2 * tp->mss_cache);
 }
@@ -430,13 +450,13 @@ static void bbrCongBbr(struct sock *sk, u32 ack, u32 in_flight)
 
 ### 8.4 BBR vs Reno/CUBIC
 
-| 特性 | Reno/CUBIC | BBR |
-|------|------------|-----|
-| 拥塞信号 | 丢包 | 带宽 + RTT |
-| 队列行为 | 队列满后丢包 | 主动排空队列 |
+| 特性       | Reno/CUBIC       | BBR              |
+| ---------- | ---------------- | ---------------- |
+| 拥塞信号   | 丢包             | 带宽 + RTT       |
+| 队列行为   | 队列满后丢包     | 主动排空队列     |
 | 带宽利用率 | 中等（队列缓冲） | 高（无队列堆积） |
-| RTT | 较高 | 较低 |
-| 公平性 | 较好 | 激进（抢占） |
+| RTT        | 较高             | 较低             |
+| 公平性     | 较好             | 激进（抢占）     |
 
 ---
 
@@ -652,12 +672,12 @@ ESTAB      0       0        10.0.0.1:443        10.0.0.2:54321
 
 ## 14. 总结
 
-| 算法 | 拥塞信号 | 特点 |
-|------|---------|------|
-| Reno | 丢包 | 简单有效，TCP 基础算法 |
-| CUBIC | 丢包 | Linux 默认，三次多项式，Wmax 附近稳定 |
-| BBR | 带宽+RTT | Google 开发，无队列，高带宽利用率 |
-| Hystart | RTT 增长 | CUBIC 附件，提前退出慢启动 |
-| ECN | IP ECN 位 | 显式通知，不依赖丢包 |
+| 算法    | 拥塞信号  | 特点                                  |
+| ------- | --------- | ------------------------------------- |
+| Reno    | 丢包      | 简单有效，TCP 基础算法                |
+| CUBIC   | 丢包      | Linux 默认，三次多项式，Wmax 附近稳定 |
+| BBR     | 带宽+RTT  | Google 开发，无队列，高带宽利用率     |
+| Hystart | RTT 增长  | CUBIC 附件，提前退出慢启动            |
+| ECN     | IP ECN 位 | 显式通知，不依赖丢包                  |
 
 拥塞控制是 TCP 最重要的特性之一，决定了网络利用率和公平性。现代内核默认使用 CUBIC，但在特定场景（长肥管道、高延迟链路）BBR 有明显优势。

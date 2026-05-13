@@ -6,12 +6,12 @@ Part V shifts focus to traffic engineering—the mechanisms that give operators 
 
 ## Chapters
 
-| Chapter | Title | Key Topics |
-|---------|-------|------------|
-| 19 | [FlexAlgo](ch19-flex-algo.md) | Flexible Algorithm, IGP algorithm constraints, delay/bandwidth priority, affinity-based routing |
-| 20 | [SR-TE](ch20-sr-te.md) | SR-TE tunnels, path computation, PCE/PCC architecture, traffic steering |
-| 21 | [Traffic Steering](ch21-steering.md) | LFA/RLFA/TI-LFA, ECMP, UCMP, failure protection mechanisms |
-| 22 | [Traffic Matrix](ch22-sr-traffic-matrix.md) | Traffic matrix measurement, TE optimization, automated tuning |
+| Chapter | Title                                       | Key Topics                                                                                      |
+| ------- | ------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| 19      | [FlexAlgo](ch19-flex-algo.md)               | Flexible Algorithm, IGP algorithm constraints, delay/bandwidth priority, affinity-based routing |
+| 20      | [SR-TE](ch20-sr-te.md)                      | SR-TE tunnels, path computation, PCE/PCC architecture, traffic steering                         |
+| 21      | [Traffic Steering](ch21-steering.md)        | LFA/RLFA/TI-LFA, ECMP, UCMP, failure protection mechanisms                                      |
+| 22      | [Traffic Matrix](ch22-sr-traffic-matrix.md) | Traffic matrix measurement, TE optimization, automated tuning                                   |
 
 ## Learning Path
 
@@ -28,6 +28,7 @@ Part V builds from path control to traffic engineering:
 ## Key Concepts Covered
 
 ### FlexAlgo
+
 - Algorithm field in SID advertisements (0-127)
 - Metric types: IGP, TE, latency, hop count
 - Affinity constraints: include, exclude, include-any
@@ -35,6 +36,7 @@ Part V builds from path control to traffic engineering:
 - FlexAlgo integration with SRv6 SIDs
 
 ### SR-TE Architecture
+
 - Source-based TE vs. RSVP-TE comparison
 - SR Policy tunnel model
 - PCE/PCC architecture and PCEP protocol
@@ -43,6 +45,7 @@ Part V builds from path control to traffic engineering:
 - Multi-domain SR-TE considerations
 
 ### Traffic Steering
+
 - Steering resolution process at ingress
 - ECMP and weighted ECMP (UCMP)
 - LFA: loop-free alternate fundamentals and limitations
@@ -51,6 +54,7 @@ Part V builds from path control to traffic engineering:
 - Multi-layer protection: local LFA + TI-LFA + re-optimization
 
 ### Traffic Matrix
+
 - Traffic matrix definition and structure
 - Measurement approaches: NetFlow/IPFIX, SNMP, IOAM
 - OD pair and temporal analysis
@@ -74,14 +78,17 @@ Part V builds from path control to traffic engineering:
 Part V connects to prior and subsequent parts:
 
 **From Part III (Forwarding):**
+
 - Chapter 14 (SR Policy) provides the control-plane framework that SR-TE builds upon
 - Chapter 13 (TI-LFA) details the protection mechanism referenced in traffic steering
 
 **From Part IV (VPN):**
+
 - SR-TE commonly engineers VPN traffic for SLA compliance
 - Traffic matrix measurement applies to VPN services
 
 **To Part VI (Cloud):**
+
 - Cloud connectivity relies on SR-TE for path control
 - Traffic engineering enables cloud interconnect SLAs
 - Global traffic matrix informs inter-cloud capacity planning

@@ -11,8 +11,8 @@ tags:
 description: "Zeek（原 Bro）网络分析框架概述——项目历史、架构概览、与 Suricata 对比、源码目录结构解读"
 ---
 
-> [!info] Zeek 2026 深度探索系列
-> 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Zeek 2026 深度探索系列 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. **第一章：Zeek 概述**
 > 2. [[2026-04-15-zeek-deep-dive-ch2-installation|第二章：安装部署]]
 > 3. [[2026-04-15-zeek-deep-dive-ch3-config|第三章：配置系统]]
@@ -41,6 +41,7 @@ Zeek 起源于 **Berkeley Lab**（劳伦斯伯克利国家实验室），由 **V
 ```
 
 **2018 年品牌更名**：Bro 名称与某安全公司品牌产生冲突，项目团队决定更名。Zeek 这个名字既保留了"B"的发音延续性（Zee-Bro），又是一个全新的品牌。**代码层面**的更名包括：
+
 - `bro` → `zeek`（命令行、目录名）
 - `bro-cut` → `zeek-cut`
 - `bro-http` → `zeek-http`
@@ -51,14 +52,14 @@ Zeek 起源于 **Berkeley Lab**（劳伦斯伯克利国家实验室），由 **V
 
 Zeek 定位为 **NSM（Network Security Monitoring）** 框架，而非单纯的 IDS。与 Suricata 的规则驱动（Signature-based）不同，Zeek 采用 **脚本驱动（Script-driven）** 的分析范式：
 
-| 维度 | Zeek | Suricata |
-| :--- | :--- | :--- |
-| **分析范式** | 脚本驱动（Policy-by-script） | 规则驱动（Rule-based） |
-| **核心语言** | ZeekScript（事件型脚本） | Suricata Rules（模式匹配） |
-| **日志粒度** | 细粒度连接记录 + 应用层语义 | 告警 + 流记录 |
-| **协议分析** | 内置协议解析器（HTTP/DNS/TLS/...） | 协议检测 + 规则匹配 |
-| **定制方式** | ZeekScript 脚本 + C++ 插件 | 规则编写 + Lua 脚本 |
-| **性能模型** | 事件引擎（单线程 + 多 worker） | 多线程流水线 |
+| 维度         | Zeek                               | Suricata                   |
+| :----------- | :--------------------------------- | :------------------------- |
+| **分析范式** | 脚本驱动（Policy-by-script）       | 规则驱动（Rule-based）     |
+| **核心语言** | ZeekScript（事件型脚本）           | Suricata Rules（模式匹配） |
+| **日志粒度** | 细粒度连接记录 + 应用层语义        | 告警 + 流记录              |
+| **协议分析** | 内置协议解析器（HTTP/DNS/TLS/...） | 协议检测 + 规则匹配        |
+| **定制方式** | ZeekScript 脚本 + C++ 插件         | 规则编写 + Lua 脚本        |
+| **性能模型** | 事件引擎（单线程 + 多 worker）     | 多线程流水线               |
 
 Zeek 的核心哲学：**"记录一切，分析在后"** — Zeek 尽可能完整地记录网络行为，生成高价值的结构化日志，分析师在事后通过日志进行深度调查。
 
@@ -105,7 +106,7 @@ Zeek 架构分为 **C++ 核心层** 和 **ZeekScript 脚本层** 两大组成部
 **核心组件**：
 
 1. **Packet Manager**：从网络接口抓取数据包，通过 `libpcap` / `AF_XDP` / `PF_RING` 等接口
-2. **Event Engine**：将数据包转化为事件（_events），是 Zeek 的心脏
+2. **Event Engine**：将数据包转化为事件（\_events），是 Zeek 的心脏
 3. **Script Interpreter**：执行 ZeekScript 脚本，处理事件
 4. **Analyzer Framework**：协议解析器框架，支持 HTTP、DNS、TLS、SMB 等协议
 5. **Logging Framework**：将分析结果写入日志文件
@@ -144,6 +145,7 @@ ts           host        uri         method      status_code  user_agent
 ```
 
 这些日志可用于：
+
 - **威胁狩猎**：通过日志关联发现攻击痕迹
 - **网络取证**：还原完整的网络会话
 - **性能分析**：分析连接延迟、流量模式
@@ -157,15 +159,15 @@ ts           host        uri         method      status_code  user_agent
 
 Zeek 和 Suricata 都是网络分析框架，但设计哲学截然不同：
 
-| 特性 | Zeek | Suricata |
-| :--- | :--- | :--- |
-| **分析方式** | 脚本驱动，语义分析 | 规则驱动，模式匹配 |
-| **日志类型** | 连接 + 应用层详细日志 | 告警（Alert）+ 流统计 |
-| **协议理解** | 完整协议状态机 | 协议检测 + 规则匹配 |
-| **误报率** | 低（语义分析更精准） | 依赖规则质量 |
-| **吞吐量** | ~1-5 Gbps（单 worker） | ~10+ Gbps（多线程流水线） |
-| **学习曲线** | 高（需要学 ZeekScript） | 中（规则语法简单） |
-| **定制能力** | 极强（脚本 + C++ 插件） | 强（规则 + Lua） |
+| 特性         | Zeek                    | Suricata                  |
+| :----------- | :---------------------- | :------------------------ |
+| **分析方式** | 脚本驱动，语义分析      | 规则驱动，模式匹配        |
+| **日志类型** | 连接 + 应用层详细日志   | 告警（Alert）+ 流统计     |
+| **协议理解** | 完整协议状态机          | 协议检测 + 规则匹配       |
+| **误报率**   | 低（语义分析更精准）    | 依赖规则质量              |
+| **吞吐量**   | ~1-5 Gbps（单 worker）  | ~10+ Gbps（多线程流水线） |
+| **学习曲线** | 高（需要学 ZeekScript） | 中（规则语法简单）        |
+| **定制能力** | 极强（脚本 + C++ 插件） | 强（规则 + Lua）          |
 
 ### 3.2 互补部署场景
 
@@ -195,6 +197,7 @@ Zeek 和 Suricata 都是网络分析框架，但设计哲学截然不同：
 同一个 HTTP 请求在两个系统中的输出：
 
 **Suricata EVE JSON（告警导向）**：
+
 ```json
 {
   "event_type": "http",
@@ -210,6 +213,7 @@ Zeek 和 Suricata 都是网络分析框架，但设计哲学截然不同：
 ```
 
 **Zeek http.log（完整记录）**：
+
 ```json
 {
   "ts": 1713206400.123,

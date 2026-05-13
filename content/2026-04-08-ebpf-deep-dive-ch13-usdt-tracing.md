@@ -9,8 +9,8 @@ tags:
   - performance
 ---
 
-> [!info] eBPF 2026 深度探索系列
-> 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+> [!info] eBPF 2026 深度探索系列 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+>
 > 1. [[2026-04-08-ebpf-deep-dive-ch1-registers-and-instructions|第一章：寄存器与指令集]]
 > 2. [[2026-04-08-ebpf-deep-dive-ch1-5-function-calls|第一.五章：四种函数调用与动态内存]]
 > 3. [[2026-04-08-ebpf-deep-dive-ch1-6-the-verifier|第一.六章：验证器 (Verifier) 的底层逻辑]]
@@ -62,6 +62,7 @@ tags:
 > 49. [[2026-04-09-ebpf-deep-dive-ch40-network-protocols-deep-dive|第四十章：网络协议深度解析——TCP/UDP/QUIC 的 eBPF 视角]]
 > 50. [[2026-04-09-ebpf-deep-dive-ch41-memory-safety-and-vulnerabilities|第四十一章：eBPF 内存安全与漏洞分析]]
 > 51. [[2026-04-09-ebpf-deep-dive-ch42-service-mesh-integration|第四十二章：eBPF 与 Service Mesh 深度集成]]
+
 ---
 
 ## 1. 什么是 USDT？
@@ -141,13 +142,13 @@ USDT 的实现逻辑非常巧妙，它通过二进制文件的特殊段进行协
 
 除了插入 nop 指令外，编译器还会将探针的元数据写入 ELF 文件的 `.note.stapsdt` 段 (或 `.note.gnu.build-attr`，取决于工具链版本)。每个 USDT 探针的元数据包含：
 
-| 字段 | 说明 | 示例 |
-|:---|:---|:---|
-| Provider | 探针提供者名称 | `mysql` |
-| Name | 探针名称 | `query__start` |
-| Location | nop 指令在二进制中的偏移量 | `0x1a3f0` |
-| Semaphore | 信号量地址 (可选，用于 is-enabled 检查) | `0x2b100` |
-| Arguments | 参数类型和位置描述 | `char *, int` |
+| 字段      | 说明                                    | 示例           |
+| :-------- | :-------------------------------------- | :------------- |
+| Provider  | 探针提供者名称                          | `mysql`        |
+| Name      | 探针名称                                | `query__start` |
+| Location  | nop 指令在二进制中的偏移量              | `0x1a3f0`      |
+| Semaphore | 信号量地址 (可选，用于 is-enabled 检查) | `0x2b100`      |
+| Arguments | 参数类型和位置描述                      | `char *, int`  |
 
 ### 3.3 运行时激活：int3 断点替换
 
@@ -397,10 +398,10 @@ sequenceDiagram
 
 USDT 探针的参数通过 CPU 寄存器和栈传递。eBPF 的 `bpf_usdt_arg()` 辅助函数自动处理了这些底层细节，但了解其机制有助于调试：
 
-| 架构 | 参数 0 | 参数 1 | 参数 2 | 参数 3 | 参数 4 | 参数 5+ |
-|:---|:---|:---|:---|:---|:---|:---|
-| x86-64 | `rdi` | `rsi` | `rdx` | `rcx` | `r8` | `r9`, 然后栈 |
-| aarch64 | `x0` | `x1` | `x2` | `x3` | `x4` | `x5`-`x7`, 然后栈 |
+| 架构    | 参数 0 | 参数 1 | 参数 2 | 参数 3 | 参数 4 | 参数 5+           |
+| :------ | :----- | :----- | :----- | :----- | :----- | :---------------- |
+| x86-64  | `rdi`  | `rsi`  | `rdx`  | `rcx`  | `r8`   | `r9`, 然后栈      |
+| aarch64 | `x0`   | `x1`   | `x2`   | `x3`   | `x4`   | `x5`-`x7`, 然后栈 |
 
 ### 6.2 bpf_usdt_arg 的工作原理
 
@@ -448,14 +449,14 @@ glibc 从 2.9 版本开始集成 USDT 探针，覆盖内存分配、线程、I/O
 readelf -n /lib/x86_64-linux-gnu/libc.so.6 | grep -A5 stapsdt
 ```
 
-| Provider | Probe | 参数 | 用途 |
-|:---|:---|:---|:---|
-| `libc` | `memory__malloc__start` | `size_t size` | 追踪 malloc 调用 |
-| `libc` | `memory__malloc__done` | `void *ptr, size_t size` | 记录分配结果 |
-| `libc` | `memory__free__start` | `void *ptr` | 追踪 free 调用 |
-| `libc` | `memory__realloc__start` | `void *ptr, size_t size` | 追踪 realloc 调用 |
-| `libc` | `pthread__start` | `pthread_t *thread` | 线程创建 |
-| `libc` | `pthread__attr_set*` | 各种属性 | 线程属性变更 |
+| Provider | Probe                    | 参数                     | 用途              |
+| :------- | :----------------------- | :----------------------- | :---------------- |
+| `libc`   | `memory__malloc__start`  | `size_t size`            | 追踪 malloc 调用  |
+| `libc`   | `memory__malloc__done`   | `void *ptr, size_t size` | 记录分配结果      |
+| `libc`   | `memory__free__start`    | `void *ptr`              | 追踪 free 调用    |
+| `libc`   | `memory__realloc__start` | `void *ptr, size_t size` | 追踪 realloc 调用 |
+| `libc`   | `pthread__start`         | `pthread_t *thread`      | 线程创建          |
+| `libc`   | `pthread__attr_set*`     | 各种属性                 | 线程属性变更      |
 
 **实战示例：追踪进程的内存分配热点**
 
@@ -474,15 +475,15 @@ usdt:/lib/x86_64-linux-gnu/libc.so.6:libc:memory__malloc__start
 
 HotSpot JVM 通过 `-XX:+ExtendedDTraceProbes` (JDK 8) 或默认启用 (JDK 11+) 提供 USDT 探针：
 
-| Provider | Probe | 参数 | 用途 |
-|:---|:---|:---|:---|
-| `hotspot` | `gc__begin` | `boolean full` | GC 开始事件 |
-| `hotspot` | `gc__end` | `boolean full` | GC 结束事件 |
-| `hotspot` | `thread__start` | `char *name` | 线程启动 |
-| `hotspot` | `thread__stop` | `char *name` | 线程终止 |
-| `hotspot` | `class__loaded` | `char *name` | 类加载 |
-| `hotspot` | `method__entry` | `char *method` | 方法进入 |
-| `hotspot` | `object__alloc` | `size_t size` | 对象分配 |
+| Provider  | Probe           | 参数           | 用途        |
+| :-------- | :-------------- | :------------- | :---------- |
+| `hotspot` | `gc__begin`     | `boolean full` | GC 开始事件 |
+| `hotspot` | `gc__end`       | `boolean full` | GC 结束事件 |
+| `hotspot` | `thread__start` | `char *name`   | 线程启动    |
+| `hotspot` | `thread__stop`  | `char *name`   | 线程终止    |
+| `hotspot` | `class__loaded` | `char *name`   | 类加载      |
+| `hotspot` | `method__entry` | `char *method` | 方法进入    |
+| `hotspot` | `object__alloc` | `size_t size`  | 对象分配    |
 
 **实战示例：追踪 GC 停顿时间**
 
@@ -507,13 +508,13 @@ usdt:/usr/lib/jvm/java-17-openjdk/lib/server/libjvm.so:hotspot:gc__end
 
 Python 从 3.11 开始默认启用 USDT 探针，覆盖函数调用、行执行、垃圾回收等：
 
-| Provider | Probe | 参数 | 用途 |
-|:---|:---|:---|:---|
-| `python` | `function__entry` | `char *filename, int lineno, char *funcname` | 函数进入 |
-| `python` | `function__return` | `char *filename, int lineno, char *funcname` | 函数返回 |
-| `python` | `line` | `char *filename, int lineno` | 行执行追踪 |
-| `python` | `gc__start` | `int generation` | GC 开始 |
-| `python` | `import__find__module__start` | `char *module` | 模块导入 |
+| Provider | Probe                         | 参数                                         | 用途       |
+| :------- | :---------------------------- | :------------------------------------------- | :--------- |
+| `python` | `function__entry`             | `char *filename, int lineno, char *funcname` | 函数进入   |
+| `python` | `function__return`            | `char *filename, int lineno, char *funcname` | 函数返回   |
+| `python` | `line`                        | `char *filename, int lineno`                 | 行执行追踪 |
+| `python` | `gc__start`                   | `int generation`                             | GC 开始    |
+| `python` | `import__find__module__start` | `char *module`                               | 模块导入   |
 
 **注意**：Python 3.11 以下版本需要在编译时使用 `--with-dtrace` 选项启用。
 
@@ -540,14 +541,14 @@ usdt:/usr/bin/python3.12:python:function__return
 
 Node.js 从 0.6 版本开始支持 DTrace/USDT 探针，是所有主流运行时中 USDT 支持最完善的：
 
-| Provider | Probe | 参数 | 用途 |
-|:---|:---|:---|:---|
-| `node` | `http__server__request` | `char *url, char *method` | HTTP 请求 |
-| `node` | `http__server__response` | `char *url, int status` | HTTP 响应 |
-| `node` | `net__server__connection` | `char *remote_ip, int port` | TCP 连接 |
-| `node` | `gc__start` | `int gc_type` | GC 开始 |
-| `node` | `fs__sync__start` | `char *path` | 同步文件操作 |
-| `node` | `dns__lookup` | `char *hostname` | DNS 查询 |
+| Provider | Probe                     | 参数                        | 用途         |
+| :------- | :------------------------ | :-------------------------- | :----------- |
+| `node`   | `http__server__request`   | `char *url, char *method`   | HTTP 请求    |
+| `node`   | `http__server__response`  | `char *url, int status`     | HTTP 响应    |
+| `node`   | `net__server__connection` | `char *remote_ip, int port` | TCP 连接     |
+| `node`   | `gc__start`               | `int gc_type`               | GC 开始      |
+| `node`   | `fs__sync__start`         | `char *path`                | 同步文件操作 |
+| `node`   | `dns__lookup`             | `char *hostname`            | DNS 查询     |
 
 **实战示例：追踪 Node.js HTTP 请求路径分布**
 
@@ -576,12 +577,12 @@ interval:s:5
 
 Go 从 1.21 版本开始正式支持 USDT 探针 (通过 `runtime/dtrace` 包)：
 
-| Provider | Probe | 参数 | 用途 |
-|:---|:---|:---|:---|
-| `runtime` | `runtime:sched_wait` | `int64 wait_start` | Goroutine 调度等待 |
-| `runtime` | `runtime:gc_start` | `int gc_type` | GC 开始 |
-| `runtime` | `runtime:gc_done` | `int64 duration_ns` | GC 结束 |
-| `runtime` | `runtime:goroutine_create` | `int goid` | Goroutine 创建 |
+| Provider  | Probe                      | 参数                | 用途               |
+| :-------- | :------------------------- | :------------------ | :----------------- |
+| `runtime` | `runtime:sched_wait`       | `int64 wait_start`  | Goroutine 调度等待 |
+| `runtime` | `runtime:gc_start`         | `int gc_type`       | GC 开始            |
+| `runtime` | `runtime:gc_done`          | `int64 duration_ns` | GC 结束            |
+| `runtime` | `runtime:goroutine_create` | `int goid`          | Goroutine 创建     |
 
 **注意**：Go 的 USDT 探针需要在编译时添加 `-tags usdt` 标志，且仅支持 Linux 和 macOS。
 
@@ -639,31 +640,31 @@ graph TB
 
 ### 8.3 与 uprobe 的开销对比
 
-| 指标 | USDT (未附加) | USDT (已附加) | uprobe (已附加) |
-|:---|:---|:---|:---|
-| CPU 开销 | ~0.3 ns (1 nop) | ~1-5 us | ~1-10 us |
-| 内存开销 | 几十字节 (ELF Note) | +BPF 程序内存 | +BPF 程序内存 |
-| 启动延迟 | 无 | 毫秒级 (int3 替换) | 毫秒级 (int3 替换) |
-| 对目标影响 | 无 | 中断目标线程 | 中断目标线程 |
-| ABI 稳定性 | 高 (开发者承诺) | 高 | 低 (依赖内部函数名) |
+| 指标       | USDT (未附加)       | USDT (已附加)      | uprobe (已附加)     |
+| :--------- | :------------------ | :----------------- | :------------------ |
+| CPU 开销   | ~0.3 ns (1 nop)     | ~1-5 us            | ~1-10 us            |
+| 内存开销   | 几十字节 (ELF Note) | +BPF 程序内存      | +BPF 程序内存       |
+| 启动延迟   | 无                  | 毫秒级 (int3 替换) | 毫秒级 (int3 替换)  |
+| 对目标影响 | 无                  | 中断目标线程       | 中断目标线程        |
+| ABI 稳定性 | 高 (开发者承诺)     | 高                 | 低 (依赖内部函数名) |
 
 ---
 
 ## 9. 2026 生产环境常用埋点总览
 
-| 应用 | 提供者 (Provider) | 典型埋点 | 监控价值 |
-|:---|:---|:---|:---|
-| **MySQL** | `mysql` | `query__start`, `query__done` | 数据库 SQL 执行分布分析 |
-| **PostgreSQL** | `postgres` | `query__start`, `transaction__start` | 慢查询与事务监控 |
-| **Node.js** | `node` | `http__server__request` | Web 请求实时吞吐量监控 |
-| **Java** | `hotspot` | `thread__start`, `gc__begin` | JVM 运行时性能诊断 |
-| **Python** | `python` | `function__entry`, `line` | 零侵入的 Python 脚本画像 |
-| **Go** | `runtime` | `gc__done`, `sched_wait` | Goroutine 调度与 GC 延迟分析 |
-| **glibc** | `libc` | `memory__malloc__start` | 全局内存分配热点定位 |
-| **Redis** | `redis` | `command__processed` | Redis 命令延迟与吞吐统计 |
-| **Nginx** | `nginx` | `http__request__done` | 请求延迟与错误率监控 |
-| **Ruby** | `ruby` | `method__entry`, `gc__start` | Rails 应用性能分析 |
-| **PHP** | `php` | `function__entry`, `request__shutdown` | PHP-FPM 请求生命周期追踪 |
+| 应用           | 提供者 (Provider) | 典型埋点                               | 监控价值                     |
+| :------------- | :---------------- | :------------------------------------- | :--------------------------- |
+| **MySQL**      | `mysql`           | `query__start`, `query__done`          | 数据库 SQL 执行分布分析      |
+| **PostgreSQL** | `postgres`        | `query__start`, `transaction__start`   | 慢查询与事务监控             |
+| **Node.js**    | `node`            | `http__server__request`                | Web 请求实时吞吐量监控       |
+| **Java**       | `hotspot`         | `thread__start`, `gc__begin`           | JVM 运行时性能诊断           |
+| **Python**     | `python`          | `function__entry`, `line`              | 零侵入的 Python 脚本画像     |
+| **Go**         | `runtime`         | `gc__done`, `sched_wait`               | Goroutine 调度与 GC 延迟分析 |
+| **glibc**      | `libc`            | `memory__malloc__start`                | 全局内存分配热点定位         |
+| **Redis**      | `redis`           | `command__processed`                   | Redis 命令延迟与吞吐统计     |
+| **Nginx**      | `nginx`           | `http__request__done`                  | 请求延迟与错误率监控         |
+| **Ruby**       | `ruby`            | `method__entry`, `gc__start`           | Rails 应用性能分析           |
+| **PHP**        | `php`             | `function__entry`, `request__shutdown` | PHP-FPM 请求生命周期追踪     |
 
 ---
 
@@ -961,16 +962,16 @@ int main(void) {
 
 ## 11. 性能诊断：USDT vs uprobe
 
-| 特性 | uprobe | USDT |
-|:---|:---|:---|
-| **决定权** | 监控者决定 (任意函数) | **开发者决定 (预埋点)** |
-| **维护成本** | 高 (需匹配符号表) | **低 (ABI 稳定)** |
-| **运行时开销 (激活时)** | 较高 | 较高 |
-| **运行时开销 (静默时)** | 零 | **零 (仅一个 nop)** |
-| **参数类型** | 需要手动解析寄存器/栈 | **自动类型化** |
-| **跨版本兼容** | 差 (函数签名可能变化) | **好 (开发者承诺稳定)** |
-| **覆盖范围** | 任意函数入口 | **仅预埋点位置** |
-| **发现难度** | 需要 readelf + nm 手动查找 | **工具自动发现** |
+| 特性                    | uprobe                     | USDT                    |
+| :---------------------- | :------------------------- | :---------------------- |
+| **决定权**              | 监控者决定 (任意函数)      | **开发者决定 (预埋点)** |
+| **维护成本**            | 高 (需匹配符号表)          | **低 (ABI 稳定)**       |
+| **运行时开销 (激活时)** | 较高                       | 较高                    |
+| **运行时开销 (静默时)** | 零                         | **零 (仅一个 nop)**     |
+| **参数类型**            | 需要手动解析寄存器/栈      | **自动类型化**          |
+| **跨版本兼容**          | 差 (函数签名可能变化)      | **好 (开发者承诺稳定)** |
+| **覆盖范围**            | 任意函数入口               | **仅预埋点位置**        |
+| **发现难度**            | 需要 readelf + nm 手动查找 | **工具自动发现**        |
 
 ---
 
@@ -990,7 +991,7 @@ int main(void) {
 
 ### FAQ 4: USDT 探针的最大参数数量和类型限制是什么？
 
-**答**：USDT 标准支持最多 12 个参数 (`DTRACE_PROBE12`)。参数类型支持整数类型 (int, long, size_t)、指针类型 (char *, void *) 和浮点类型 (double)。但在 eBPF 中，`bpf_usdt_arg()` 每次最多读取 8 字节，浮点数需要特殊处理 (因为 eBPF 硬件不支持浮点运算)。对于字符串参数，传递的是用户态指针，需要使用 `bpf_probe_read_user_str()` 读取内容。结构体参数建议拆分为多个标量参数传递。
+**答**：USDT 标准支持最多 12 个参数 (`DTRACE_PROBE12`)。参数类型支持整数类型 (int, long, size*t)、指针类型 (char *, void \_) 和浮点类型 (double)。但在 eBPF 中，`bpf_usdt_arg()` 每次最多读取 8 字节，浮点数需要特殊处理 (因为 eBPF 硬件不支持浮点运算)。对于字符串参数，传递的是用户态指针，需要使用 `bpf_probe_read_user_str()` 读取内容。结构体参数建议拆分为多个标量参数传递。
 
 ### FAQ 5: 如何调试 USDT 探针不触发的问题？
 

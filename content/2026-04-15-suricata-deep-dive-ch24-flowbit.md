@@ -13,8 +13,8 @@ tags:
 description: "深入解析 Suricata 的 Flowbit 机制：FlowBit 布尔标记、FlowVar 字符串变量、FlowInt 整数变量、以及规则中的状态追踪实现源码"
 ---
 
-> [!info] Suricata 2026 深度探索系列
-> 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Suricata 2026 深度探索系列 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-15-suricata-deep-dive-ch1-overview|第一章：Suricata 概述]]
 > 2. [[2026-04-15-suricata-deep-dive-ch2-config|第二章：Suricata 配置系统]]
 > 3. [[2026-04-15-suricata-deep-dive-ch3-runmodes|第三章：Runmodes 运行模式]]
@@ -71,13 +71,13 @@ graph TD
 
 ### 1.1 Flowbit vs Snort
 
-| 特性 | Suricata Flowbit | Snort |
-|:---|:---|:---|
-| **类型** | FlowBit/FlowVar/FlowInt | session 件 |
-| **作用域** | Flow 级别 | Session 级别 |
-| **数据类型** | 布尔/整数/字符串 | 整数 |
-| **持久化** | Flow 生命周期 | Stream 生命周期 |
-| **规则引用** | flowbit:set/match/unset | session |
+| 特性         | Suricata Flowbit        | Snort           |
+| :----------- | :---------------------- | :-------------- |
+| **类型**     | FlowBit/FlowVar/FlowInt | session 件      |
+| **作用域**   | Flow 级别               | Session 级别    |
+| **数据类型** | 布尔/整数/字符串        | 整数            |
+| **持久化**   | Flow 生命周期           | Stream 生命周期 |
+| **规则引用** | flowbit:set/match/unset | session         |
 
 ### 1.2 Flowbit 配置
 
@@ -121,16 +121,16 @@ typedef struct FlowbitRef_ {
 typedef struct DetectFlowbitsDesc_ {
     /* 类型 */
     FlowbitType type;
-    
+
     /* 名称 */
     char *name;
-    
+
     /* 索引 */
     uint16_t idx;
-    
+
     /* 标志 */
     uint8_t in_set;           // 是否在集合中
-    
+
 } DetectFlowbitsDesc;
 ```
 
@@ -150,10 +150,10 @@ typedef struct FlowVar_ {
     uint16_t idx;             // 变量索引
     FlowVarType type;         // 类型
     void *data;               // 数据指针
-    
+
     /* 链表 */
     struct FlowVar_ *next;
-    
+
 } FlowVar;
 
 // src/detect-flowvar.h — FlowVar 字符串
@@ -176,23 +176,23 @@ typedef struct FlowBits_ {
     /* 位图存储 */
     uint8_t *bits;
     uint32_t size;           // 位图大小（字节）
-    
+
     /* 已设置的位计数 */
     uint32_t count;
-    
+
     /* 最大位数（用于日志） */
     uint32_t max_idx;
-    
+
 } FlowBits;
 
 // src/flow.h — Flow 中的 Flowbit 存储
 typedef struct FlowFlowVarData_ {
     /* 变量列表 */
     FlowVar *flowvar;
-    
+
     /* Flowbit 位图 */
     FlowBits flowbits;
-    
+
 } FlowFlowVarData;
 ```
 
@@ -214,7 +214,7 @@ static int DetectFlowbitSet(
     if (fd->type != FLOWBIT_TYPE_SET) {
         return 0;
     }
-    
+
     /* 获取 Flow 存储 */
     FlowFlowVarData *fv = FlowGetStorageById(f, FlowGetFlowVarFlowId());
     if (fv == NULL) {
@@ -225,12 +225,12 @@ static int DetectFlowbitSet(
         }
         FlowSetStorageById(f, FlowGetFlowVarFlowId(), fv);
     }
-    
+
     /* 确保位图足够大 */
     uint32_t bit_idx = fd->idx;
     uint32_t byte_idx = bit_idx / 8;
     uint32_t bit_offset = bit_idx % 8;
-    
+
     if (byte_idx >= fv->flowbits.size) {
         /* 扩展位图 */
         uint32_t new_size = byte_idx + 1;
@@ -242,15 +242,15 @@ static int DetectFlowbitSet(
         fv->flowbits.bits = new_bits;
         fv->flowbits.size = new_size;
     }
-    
+
     /* 设置位 */
     fv->flowbits.bits[byte_idx] |= (1 << bit_offset);
     fv->flowbits.count++;
-    
+
     if (bit_idx > fv->flowbits.max_idx) {
         fv->flowbits.max_idx = bit_idx;
     }
-    
+
     return 1;
 }
 ```
@@ -266,29 +266,29 @@ static int DetectFlowbitIsset(
     uint8_t flags,
     DetectFlowbitsDesc *fd)
 {
-    if (fd->type != FLOWBIT_TYPE_ISSET && 
+    if (fd->type != FLOWBIT_TYPE_ISSET &&
         fd->type != FLOWBIT_TYPE_ISNOTSET) {
         return 0;
     }
-    
+
     /* 获取 Flow 存储 */
     FlowFlowVarData *fv = FlowGetStorageById(f, FlowGetFlowVarFlowId());
     if (fv == NULL || fv->flowbits.bits == NULL) {
         /* 没有设置任何 flowbit */
         return (fd->type == FLOWBIT_TYPE_ISNOTSET) ? 1 : 0;
     }
-    
+
     /* 检查指定位 */
     uint32_t bit_idx = fd->idx;
     uint32_t byte_idx = bit_idx / 8;
     uint32_t bit_offset = bit_idx % 8;
-    
+
     if (byte_idx >= fv->flowbits.size) {
         return (fd->type == FLOWBIT_TYPE_ISNOTSET) ? 1 : 0;
     }
-    
+
     int is_set = (fv->flowbits.bits[byte_idx] & (1 << bit_offset)) != 0;
-    
+
     if (fd->type == FLOWBIT_TYPE_ISSET) {
         return is_set ? 1 : 0;
     } else {
@@ -311,23 +311,23 @@ static int DetectFlowbitUnset(
     if (fd->type != FLOWBIT_TYPE_UNSET) {
         return 0;
     }
-    
+
     /* 获取 Flow 存储 */
     FlowFlowVarData *fv = FlowGetStorageById(f, FlowGetFlowVarFlowId());
     if (fv == NULL || fv->flowbits.bits == NULL) {
         return 0;
     }
-    
+
     /* 清除指定位 */
     uint32_t bit_idx = fd->idx;
     uint32_t byte_idx = bit_idx / 8;
     uint32_t bit_offset = bit_idx % 8;
-    
+
     if (byte_idx < fv->flowbits.size) {
         fv->flowbits.bits[byte_idx] &= ~(1 << bit_offset);
         fv->flowbits.count--;
     }
-    
+
     return 1;
 }
 ```
@@ -347,17 +347,17 @@ static int DetectFlowvarMatch(
     uint8_t flags,
     DetectFlowvarData *fv)
 {
-    if (fv->type != FLOWVAR_TYPE_INT && 
+    if (fv->type != FLOWVAR_TYPE_INT &&
         fv->type != FLOWVAR_TYPE_STRING) {
         return 0;
     }
-    
+
     /* 获取 Flow 存储 */
     FlowFlowVarData *fd = FlowGetStorageById(f, FlowGetFlowVarFlowId());
     if (fd == NULL) {
         return 0;
     }
-    
+
     /* 查找变量 */
     FlowVar *v = fd->flowvar;
     while (v != NULL) {
@@ -366,11 +366,11 @@ static int DetectFlowvarMatch(
         }
         v = v->next;
     }
-    
+
     if (v == NULL) {
         return 0;
     }
-    
+
     /* 比较 */
     if (fv->type == FLOWVAR_TYPE_INT) {
         FlowVarInt *vi = (FlowVarInt *)v->data;
@@ -392,21 +392,21 @@ static FlowVar *FlowVarAdd(Flow *f, uint16_t idx, void *data, FlowVarType type)
         }
         FlowSetStorageById(f, FlowGetFlowVarFlowId(), fd);
     }
-    
+
     /* 分配新变量 */
     FlowVar *v = SCCalloc(1, sizeof(FlowVar));
     if (v == NULL) {
         return NULL;
     }
-    
+
     v->idx = idx;
     v->type = type;
     v->data = data;
-    
+
     /* 链表头插入 */
     v->next = fd->flowvar;
     fd->flowvar = v;
-    
+
     return v;
 }
 ```
@@ -436,14 +436,14 @@ typedef struct DetectFlowintData_ {
 #define FLOWINT_TYPE_ADD      2
 #define FLOWINT_TYPE_SUB      3
 #define FLOWINT_TYPE_CMP      4
-    
+
     /* 变量名 */
     char *name;
     uint16_t idx;
-    
+
     /* 值 */
     int64_t value;
-    
+
 } DetectFlowintData;
 
 // src/detect-flowint.c — FlowInt 操作
@@ -456,10 +456,10 @@ static int DetectFlowintMatch(
 {
     /* 获取 Flow 存储 */
     FlowFlowVarData *fv = FlowGetStorageById(f, FlowGetFlowVarFlowId());
-    
+
     FlowVarInt vi;
     vi.value = 0;
-    
+
     if (fv != NULL) {
         /* 查找现有值 */
         FlowVar *v = fv->flowvar;
@@ -471,27 +471,27 @@ static int DetectFlowintMatch(
             v = v->next;
         }
     }
-    
+
     switch (fd->type) {
         case FLOWINT_TYPE_SET:
             vi.value = fd->value;
             FlowVarAddInt(f, fd->idx, vi.value);
             return 1;
-            
+
         case FLOWINT_TYPE_ADD:
             vi.value += fd->value;
             FlowVarAddInt(f, fd->idx, vi.value);
             return 1;
-            
+
         case FLOWINT_TYPE_SUB:
             vi.value -= fd->value;
             FlowVarAddInt(f, fd->idx, vi.value);
             return 1;
-            
+
         case FLOWINT_TYPE_CMP:
             return (vi.value == fd->value) ? 1 : 0;
     }
-    
+
     return 0;
 }
 ```
@@ -522,22 +522,22 @@ static int DetectFlowbitParse(
     DetectFlowbitsDesc *fd)
 {
     /* 格式: flowbit:set,name 或 flowbit:isset,name */
-    
+
     char *str = SCStrdup(rawstr);
     if (str == NULL) {
         return -1;
     }
-    
+
     char *colon = strchr(str, ':');
     if (colon == NULL) {
         SCFree(str);
         return -1;
     }
-    
+
     *colon = '\0';
     char *type_str = str;
     char *name = colon + 1;
-    
+
     /* 解析类型 */
     if (strcmp(type_str, "set") == 0) {
         fd->type = FLOWBIT_TYPE_SET;
@@ -555,17 +555,17 @@ static int DetectFlowbitParse(
         SCFree(str);
         return -1;
     }
-    
+
     /* 复制名称 */
     fd->name = SCStrdup(name);
     if (fd->name == NULL) {
         SCFree(str);
         return -1;
     }
-    
+
     /* 计算哈希索引 */
     fd->idx = FlowbitNameHash(fd->name);
-    
+
     SCFree(str);
     return 0;
 }
@@ -576,11 +576,11 @@ static uint16_t FlowbitNameHash(const char *name)
     /* 使用 DJB2 哈希 */
     uint32_t hash = 5381;
     int c;
-    
+
     while ((c = *name++) != '\0') {
         hash = ((hash << 5) + hash) + c;
     }
-    
+
     return (uint16_t)(hash % FLOWBIT_MAX);
 }
 ```
@@ -624,17 +624,17 @@ static void JsonFlowFlowbits(JsonBuilder *jb, Flow *f)
     if (fv == NULL || fv->flowbits.bits == NULL) {
         return;
     }
-    
+
     /* 遍历所有位 */
     jb_start_array(jb, "flowbits");
-    
+
     for (uint32_t i = 0; i <= fv->flowbits.max_idx; i++) {
         uint32_t byte_idx = i / 8;
         uint32_t bit_offset = i % 8;
-        
+
         if (byte_idx < fv->flowbits.size &&
             (fv->flowbits.bits[byte_idx] & (1 << bit_offset))) {
-            
+
             /* 获取名称 */
             const char *name = FlowbitGetNameByIdx(i);
             if (name != NULL) {
@@ -642,7 +642,7 @@ static void JsonFlowFlowbits(JsonBuilder *jb, Flow *f)
             }
         }
     }
-    
+
     jb_close(jb);
 }
 ```
@@ -660,6 +660,7 @@ Flowbit 是 Suricata 实现Flow级别状态追踪的核心机制：
 5. **规则链**：可以用多个规则构建复杂的状态机
 
 典型应用场景：
+
 - 攻击分阶段检测（先检测入侵，再检测数据窃取）
 - 认证状态追踪（登录后允许访问敏感资源）
 - 请求计数和频率限制

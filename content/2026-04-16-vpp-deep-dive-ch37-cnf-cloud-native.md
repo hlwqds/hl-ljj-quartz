@@ -36,15 +36,15 @@ CNF (Cloud-Native Network Function) = 云原生 + 网络功能
 
 ### 1.2 VNF vs CNF 对比
 
-|| 特性 | 传统 VNF | CNF |
-|------|---------|-----|
-| **架构** | 单体 | 微服务 |
-| **部署** | 专用 VM | 容器/Pod |
-| **扩缩容** | 分钟级 | 秒级 |
-| **故障恢复** | 慢 | 快 |
-| **资源利用率** | 低 | 高 |
-| **声明周期管理** | 手动 | 声明式 |
-| **依赖** | 专用硬件驱动 | 标准接口 |
+|                  | 特性         | 传统 VNF | CNF |
+| ---------------- | ------------ | -------- | --- |
+| **架构**         | 单体         | 微服务   |
+| **部署**         | 专用 VM      | 容器/Pod |
+| **扩缩容**       | 分钟级       | 秒级     |
+| **故障恢复**     | 慢           | 快       |
+| **资源利用率**   | 低           | 高       |
+| **声明周期管理** | 手动         | 声明式   |
+| **依赖**         | 专用硬件驱动 | 标准接口 |
 
 ### 1.3 CNF 设计原则
 
@@ -144,48 +144,48 @@ metadata:
     tier: network
 spec:
   containers:
-  # VPP 数据平面
-  - name: vpp-dataplane
-    image: vfiovpp/vpp:latest
-    securityContext:
-      capabilities:
-        add: ["NET_ADMIN", "SYS_ADMIN"]
-      privileged: true
-    volumeMounts:
-    - name: hugepages
-      mountPath: /dev/hugepages
-    - name: vpp-run
-      mountPath: /run/vpp
-    resources:
-      requests:
-        memory: "1Gi"
-        hugepages-2Mi: "1Gi"
-        cpu: "500m"
-      limits:
-        memory: "2Gi"
-        hugepages-2Mi: "2Gi"
-        cpu: "2000m"
-  
-  # 控制平面 Agent
-  - name: vpp-agent
-    image: vfiovpp/agent:latest
-    env:
-    - name: VPP_DATAPLANE_URL
-      value: "unix:/run/vpp/vpp.sock"
-    - name: KUBERNETES_SERVICE_HOST
-      valueFrom:
-        fieldRef:
-          fieldPath: status.hostIP
-    volumeMounts:
-    - name: vpp-run
-      mountPath: /run/vpp
-  
+    # VPP 数据平面
+    - name: vpp-dataplane
+      image: vfiovpp/vpp:latest
+      securityContext:
+        capabilities:
+          add: ["NET_ADMIN", "SYS_ADMIN"]
+        privileged: true
+      volumeMounts:
+        - name: hugepages
+          mountPath: /dev/hugepages
+        - name: vpp-run
+          mountPath: /run/vpp
+      resources:
+        requests:
+          memory: "1Gi"
+          hugepages-2Mi: "1Gi"
+          cpu: "500m"
+        limits:
+          memory: "2Gi"
+          hugepages-2Mi: "2Gi"
+          cpu: "2000m"
+
+    # 控制平面 Agent
+    - name: vpp-agent
+      image: vfiovpp/agent:latest
+      env:
+        - name: VPP_DATAPLANE_URL
+          value: "unix:/run/vpp/vpp.sock"
+        - name: KUBERNETES_SERVICE_HOST
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+      volumeMounts:
+        - name: vpp-run
+          mountPath: /run/vpp
+
   volumes:
-  - name: hugepages
-    emptyDir:
-      medium: HugePages
-  - name: vpp-run
-    emptyDir: {}
+    - name: hugepages
+      emptyDir:
+        medium: HugePages
+    - name: vpp-run
+      emptyDir: {}
 ```
 
 ### 2.3 VPP CNF 网络模型
@@ -260,25 +260,25 @@ metadata:
   name: vpp-cnf
 spec:
   containers:
-  - name: vpp
-    livenessProbe:
-      exec:
-        command:
-        - /usr/bin/vppctl
-        - show version
-      initialDelaySeconds: 10
-      periodSeconds: 30
-      timeoutSeconds: 5
-      failureThreshold: 3
-    
-    readinessProbe:
-      exec:
-        command:
-        - /usr/bin/vppctl
-        - show interface
-      initialDelaySeconds: 5
-      periodSeconds: 10
-      timeoutSeconds: 3
+    - name: vpp
+      livenessProbe:
+        exec:
+          command:
+            - /usr/bin/vppctl
+            - show version
+        initialDelaySeconds: 10
+        periodSeconds: 30
+        timeoutSeconds: 5
+        failureThreshold: 3
+
+      readinessProbe:
+        exec:
+          command:
+            - /usr/bin/vppctl
+            - show interface
+        initialDelaySeconds: 5
+        periodSeconds: 10
+        timeoutSeconds: 3
 ```
 
 ### 3.3 扩缩容
@@ -354,22 +354,22 @@ metadata:
   name: vpp-firewall
 spec:
   hosts:
-  - vpp-firewall
+    - vpp-firewall
   http:
-  - match:
-    - headers:
-        x-firewall-mode:
-          exact: strict
-    route:
-    - destination:
-        host: vpp-firewall
-        subset: strict
-      weight: 100
-  - route:
-    - destination:
-        host: vpp-firewall
-        subset: normal
-      weight: 100
+    - match:
+        - headers:
+            x-firewall-mode:
+              exact: strict
+      route:
+        - destination:
+            host: vpp-firewall
+            subset: strict
+          weight: 100
+    - route:
+        - destination:
+            host: vpp-firewall
+            subset: normal
+          weight: 100
 ```
 
 ## 5. MANO 集成
@@ -408,35 +408,35 @@ spec:
 # VPP CNF VNFD (VNF Descriptor)
 vnfd:vnfd-catalog:
   vnfd:
-  - id: vpp-firewall-vnfd
-    provider: acme
-    product: firewall
-    software-versions:
-      version: "1.0"
-    description: VPP-based Firewall CNF
-    pd:
-      dependency: []
-    mgmt-interface:
-      endpoint: vpp-agent:5001
-    connection-point:
-    - id: cp1
-      type: VPORT
-    vdu:
-    - id: vpp-vdu
-      count: 1
-      interface:
-      - name: eth0
-        type: EXTERNAL
-      - name: tap0
-        type: INTERNAL
-      infra-instrumentation: {}
-      cloud-init:
-        file: cloud-init.yaml
-    forward-interface:
-    - id: data
-      type: WIRING
-      virtual-interface:
-        type: VIRTIO
+    - id: vpp-firewall-vnfd
+      provider: acme
+      product: firewall
+      software-versions:
+        version: "1.0"
+      description: VPP-based Firewall CNF
+      pd:
+        dependency: []
+      mgmt-interface:
+        endpoint: vpp-agent:5001
+      connection-point:
+        - id: cp1
+          type: VPORT
+      vdu:
+        - id: vpp-vdu
+          count: 1
+          interface:
+            - name: eth0
+              type: EXTERNAL
+            - name: tap0
+              type: INTERNAL
+          infra-instrumentation: {}
+          cloud-init:
+            file: cloud-init.yaml
+      forward-interface:
+        - id: data
+          type: WIRING
+          virtual-interface:
+            type: VIRTIO
 ```
 
 ### 5.3 CNF 部署流程
@@ -582,7 +582,7 @@ resources:
     # 需要: 10M / 2M = 5 cores (数据平面)
     # 加上控制平面: +1 core
     total: 6 cores
-  
+
   memory:
     # Buffer 内存
     # 10M PPS * 50μs buffer time = 500 packets/flow
@@ -590,7 +590,7 @@ resources:
     # 500 * 100K * 256B = 12.8GB
     # 加上开销: ~16GB
     hugepages-2Mi: 16Gi
-  
+
   network:
     # 每个 Pod 2-4 个接口
     # 每个接口 ~1G hugepages

@@ -5,8 +5,8 @@ tags: [linux, kernel, networking, series, napi, polling, interrupt-coalescing, d
 description: "深入解析 Linux 内核 NAPI 机制——New API 的完整实现、轮询与中断的动态切换、dynirq 自适应中断合并、GRO 与 NAPI 的协同、以及常见网卡驱动的 NAPI 集成"
 ---
 
-> [!info] Kernel Protocol Stack 深度探索系列
-> 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Kernel Protocol Stack 深度探索系列 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-kernel-protocol-stack-deep-dive-ch1-skbuff|第一章：sk_buff 与数据包生命周期]]
 > 2. [[2026-04-13-kernel-protocol-stack-deep-dive-ch2-netdevice|第二章：Netdevice 与网卡抽象]]
 > 3. [[2026-04-13-kernel-protocol-stack-deep-dive-ch3-ring-buffer|第三章：Ring Buffer 与 DMA]]
@@ -40,7 +40,7 @@ graph LR
     F --> G["包3 到达"]
     G --> H["硬中断"]
     H --> I["处理包3"]
-    
+
     style B fill:#FFB6C1
     style E fill:#FFB6C1
     style H fill:#FFB6C1
@@ -86,14 +86,14 @@ graph LR
 
 ### 1.3 NAPI 优缺点对比
 
-| 特性 | 传统 netif_rx | NAPI |
-|------|--------------|------|
-| 中断频率 | 每包一次 | 远少于包数 |
-| 批处理 | 无 | 有（减少 cache miss） |
-| 延迟 | 低（立即中断） | 略高（等待轮询） |
-| CPU 开销 | 高（中断+处理切换） | 低（批量处理） |
-| 实现复杂度 | 简单 | 复杂（需要 poll 回调） |
-| 适用场景 | < 100Kpps | > 100Kpps |
+| 特性       | 传统 netif_rx       | NAPI                   |
+| ---------- | ------------------- | ---------------------- |
+| 中断频率   | 每包一次            | 远少于包数             |
+| 批处理     | 无                  | 有（减少 cache miss）  |
+| 延迟       | 低（立即中断）      | 略高（等待轮询）       |
+| CPU 开销   | 高（中断+处理切换） | 低（批量处理）         |
+| 实现复杂度 | 简单                | 复杂（需要 poll 回调） |
+| 适用场景   | < 100Kpps           | > 100Kpps              |
 
 ---
 
@@ -106,28 +106,28 @@ graph LR
 struct napi_struct {
     /* === 链表 === */
     struct list_head    poll_list;          // 连接 softnet_data.poll_list
-    
+
     /* === 状态 === */
     unsigned long       state;              // NAPI_STATE_xxx 标志位
     int                 weight;             // 每次轮询最多处理的包数
     int                 Gro_max_size;       // GRO 最大包大小
-    
+
     /* === 关联 === */
     struct net_device   *dev;               // 关联的 net_device
     struct sk_buff*    (*poll)(struct napi_struct *, int);
                                         // 驱动实现的轮询回调
-    
+
     /* === 统计 === */
     unsigned int        poll_count;         // 轮询次数（调试）
     unsigned int        gro_count;          // GRO 合并次数
     unsigned int        irq_count;          // 中断次数
-    
+
     /* ===dynirq === */
     struct hrtimer      timer;              // dynirq 定时器
-    
+
     /* === 内存 === */
     void                *skb;                // 预分配的 skb（可选）
-    
+
     /* === 私有数据 === */
     void                *ptr;                // 驱动私有数据
 };
@@ -156,23 +156,23 @@ enum {
 void i40e_set_interrupt_capability(struct i40e_pf *pf)
 {
     int v_idx, q_vectors;
-    
+
     // 计算需要的向量数
     q_vectors = pf->num_alloc_vsi * pf->num_req_q_vectors;
-    
+
     for (v_idx = 0; v_idx < q_vectors; v_idx++) {
         struct i40e_q_vector *q_vector;
-        
+
         q_vector = kzalloc(sizeof(*q_vector), GFP_KERNEL);
-        
+
         // 初始化 NAPI
         netif_napi_add(pf->netdev, &q_vector->napi,
                       i40e_napi_poll,    // 轮询回调
                       NAPI_POLL_WEIGHT); // 权重
-        
+
         // 设置权重（可选）
         // netif_napi_set_weight(&q_vector->napi, weight);
-        
+
         // 初始化 timer（dynirq）
         hrtimer_init(&q_vector->napi.timer, CLOCK_MONOTONIC,
                      HRTIMER_MODE_REL_PINNED);
@@ -188,10 +188,10 @@ void netif_napi_add(struct net_device *dev, struct napi_struct *napi,
     napi->poll = poll;
     napi->weight = weight;
     napi->dev = dev;
-    
+
     // 加入设备的 NAPI 链表
     list_add_tail(&napi->dev_list, &dev->napi_list);
-    
+
     // 设置 GRO 默认值
     napi->Gro_max_size = dev->mtu + dev->hard_header_len + VLAN_HLEN;
 }
@@ -204,15 +204,15 @@ void netif_napi_add(struct net_device *dev, struct napi_struct *napi,
 int dev_open(struct net_device *dev)
 {
     int ret;
-    
+
     ret = __dev_open(dev);
     if (ret < 0)
         return ret;
-    
+
     // 启用所有 NAPI
     list_for_each_entry(napi, &dev->napi_list, dev_list)
         napi_enable(napi);
-    
+
     return 0;
 }
 
@@ -222,7 +222,7 @@ int dev_close(struct net_device *dev)
     // 禁用所有 NAPI
     list_for_each_entry(napi, &dev->napi_list, dev_list)
         napi_disable(napi);
-    
+
     __dev_close(dev);
 }
 
@@ -231,7 +231,7 @@ void napi_enable(struct napi_struct *napi)
 {
     // 确保没有在禁用状态
     BUG_ON(!test_bit(NAPI_STATE_DISABLE, &napi->state));
-    
+
     // 清除 SCHED 标志，允许轮询
     clear_bit(NAPI_STATE_DISABLE, &napi->state);
     smp_mb__after_atomic();
@@ -241,11 +241,11 @@ void napi_enable(struct napi_struct *napi)
 void napi_disable(struct napi_struct *napi)
 {
     set_bit(NAPI_STATE_DISABLE, &napi->state);
-    
+
     // 等待正在运行的 poll 退出
     while (test_bit(NAPI_STATE_IN_BUSY_POLL, &napi->state))
         usleep_range(1000, 2000);
-    
+
     // 等待 poll 回调完成
     while (!list_empty(&napi->poll_list))
         usleep_range(1000, 2000);
@@ -256,7 +256,7 @@ void napi_disable(struct napi_struct *napi)
 
 ## 3. NAPI 轮询流程
 
-### 3.1 轮询入口：__napi_schedule
+### 3.1 轮询入口：\_\_napi_schedule
 
 当硬件中断触发 NAPI 时，`__napi_schedule` 将 NAPI 加入 softnet_data 的待轮询列表：
 
@@ -264,18 +264,18 @@ void napi_disable(struct napi_struct *napi)
 void __napi_schedule(struct napi_struct *napi)
 {
     unsigned long flags;
-    
+
     local_irq_save(flags);
-    
+
     // 加入 softnet_data.poll_list
     list_add_tail(&napi->poll_list, &this_cpu_ptr(&softnet_data)->poll_list);
-    
+
     // 设置 SCHED 标志
     set_bit(NAPI_STATE_SCHED, &napi->state);
-    
+
     // 触发 NET_RX_SOFTIRQ
     raise_softirq_irqoff(NET_RX_SOFTIRQ);
-    
+
     local_irq_restore(flags);
 }
 
@@ -285,13 +285,13 @@ void napi_complete_done(struct napi_struct *napi, int work_done)
     // 如果有更多工作要做，重新调度
     if (likely(work_done < napi->weight))
         return;
-    
+
     // 从 poll_list 移除
     list_del_init(&napi->poll_list);
-    
+
     // 清除 SCHED 标志
     clear_bit(NAPI_STATE_SCHED, &napi->state);
-    
+
     // 如果在中断上下文中，不重新开启中断
     // 否则重新开启硬件中断
     if (likely(!in_interrupt())) {
@@ -314,41 +314,41 @@ static int i40e_napi_poll(struct napi_struct *napi, int budget)
     struct i40e_vsi *vsi = q_vector->vsi;
     bool clean_complete = true;
     int work_done = 0;
-    
+
     // 1. 处理 TX 完成（通常不占 budget）
     if (q_vector->tx.ring) {
         i40e_clean_tx_irq(q_vector->tx.ring);
     }
-    
+
     // 2. 处理 RX（核心）
     if (q_vector->rx.ring) {
         int rx_budget = budget;
-        
+
         // 如果有多队列，根据配置分配 budget
         if (vsi->num_rx_queues > 1)
             rx_budget = budget / 2;
-        
+
         work_done = i40e_clean_rx_irq(q_vector->rx.ring, rx_budget);
-        
+
         // 检查是否需要继续轮询
         if (work_done >= rx_budget)
             clean_complete = false;
     }
-    
+
     // 3. 处理其他任务（如果有）
     if (!list_empty(&q_vector->tx.comphack))
         clean_complete = false;
-    
+
     // 4. 轮询结束
     if (clean_complete) {
         napi_complete_done(napi, work_done);
-        
+
         // 重新开启硬中断
         i40e_enable_vectors(q_vector);
-        
+
         return work_done;
     }
-    
+
     // 5. 还有更多工作，返回 work_done 继续轮询
     return work_done;
 }
@@ -364,28 +364,28 @@ static int i40e_clean_rx_irq(struct i40e_ring *rx_ring, int budget)
 {
     struct sk_buff *skb;
     int packets = 0;
-    
+
     while (likely(packets < budget)) {
         union i40e_rx_desc *desc;
-        
+
         desc = &rx_ring->desc[rx_ring->next_to_clean];
         if (!(desc->wb.status_error & I40E_RXD_STAT_DD))
             break;
-        
+
         // 构建 skb
         skb = i40e_build_skb(rx_ring, desc);
         if (!skb)
             break;
-        
+
         // 设置协议类型
         skb->protocol = eth_type_trans(skb, rx_ring->netdev);
-        
+
         // 送入 GRO 引擎（在协议栈入口合并）
         napi_gro_receive(napi, skb);
-        
+
         packets++;
     }
-    
+
     return packets;
 }
 
@@ -394,7 +394,7 @@ gro_result napi_gro_receive(struct napi_struct *napi, struct sk_buff *skb)
 {
     // 重置 GRO 信息
     skb_gro_reset_offset(skb);
-    
+
     // 调用 GRO 引擎
     return dev_gro_receive(napi, skb);
 }
@@ -405,23 +405,23 @@ gro_result dev_gro_receive(struct napi_struct *napi, struct sk_buff *skb)
     struct list_head *head;
     struct packet_type *ptype;
     gro_result_t ret = GRO_NORMAL;
-    
+
     // 遍历注册的协议类型
     rcu_read_lock();
     list_for_each_entry_rcu(ptype, head, list) {
         if (ptype->type != skb->protocol)
             continue;
-        
+
         if (ptype->gro_receive)
             ret = ptype->gro_receive(head, skb);
     }
     rcu_read_unlock();
-    
+
     // 如果 GRO 成功（合并），不送入协议栈
     // 如果 GRO 失败（不匹配），正常送入协议栈
     if (ret == GRO_NORMAL)
         netif_receive_skb(skb);
-    
+
     return ret;
 }
 ```
@@ -439,15 +439,15 @@ gro_result dev_gro_receive(struct napi_struct *napi, struct sk_buff *skb)
 static enum hrtimer_restart i40e_napi_poll_wait(struct hrtimer *hrtimer)
 {
     struct i40e_q_vector *q_vector;
-    
+
     q_vector = container_of(hrtimer, struct i40e_q_vector, napi.timer);
-    
+
     // timer 到期，检查是否需要继续轮询
     if (!test_bit(NAPI_STATE_SCHED, &q_vector->napi.state)) {
         // 没有在轮询，重新开启硬中断
         i40e_enable_vectors(q_vector);
     }
-    
+
     return HRTIMER_NORESTART;
 }
 ```
@@ -501,15 +501,15 @@ static void i40e_update_ntuple_adaptive_coalesce(struct i40e_q_vector *q_vector)
 {
     struct i40e_ring_container *rx = &q_vector->rx;
     struct i40e_ring_container *tx = &q_vector->tx;
-    
+
     // 统计本周期包数
     u32 rx_packets = q_vector->rx.pkt_count;
     u32 tx_packets = q_vector->tx.pkt_count;
-    
+
     // 清零计数器
     q_vector->rx.pkt_count = 0;
     q_vector->tx.pkt_count = 0;
-    
+
     // 自适应 RX
     if (rx->adaptive) {
         // 高流量：增加合并时间，减少中断
@@ -521,7 +521,7 @@ static void i40e_update_ntuple_adaptive_coalesce(struct i40e_q_vector *q_vector)
             rx->target_usecs = max(rx->target_usecs - 2, 4);
         }
     }
-    
+
     // 类似处理 TX
     ...
 }
@@ -559,30 +559,30 @@ int sock_busy_loop(struct sock *sk, int nonblock)
     struct napi_struct *napi;
     unsigned long dupTime;
     int busy = 0;
-    
+
     // 1. 获取 socket 关联的 NAPI
     napi = sk->sk_napi;
     if (!napi)
         return 0;
-    
+
     // 2. 轮询直到 timeout 或 nonblock
     do {
         // 检查 socket 是否有数据
         if (sk->sk_receive_queue.qlen)
             return 1;
-        
+
         // NAPI poll（不触发软中断）
         if (test_bit(NAPI_STATE_SCHED, &napi->state)) {
             local_bh_disable();
             napi->poll(napi, napi->weight);
             local_bh_enable();
         }
-        
+
         // pause（让出 CPU）
         cpu_relax();
-        
+
     } while (!nonblock && time_before(jiffies, dupTime));
-    
+
     return busy;
 }
 ```
@@ -649,15 +649,15 @@ static int i40e_vsi_request_irq(struct i40e_vsi *vsi)
 {
     struct i40e_pf *pf = vsi->back;
     char int_name[IFNAMSIZ + 16];
-    
+
     for (int i = 0; i < vsi->num_q_vectors; i++) {
         struct i40e_q_vector *q_vector = vsi->q_vectors[i];
-        
+
         // 分配 MSI-X 中断向量
         ret = request_irq(pf->msix_entries[vsi->base_q + i].vector,
                          i40e_msix_clean_rings, 0,
                          int_name, q_vector);
-        
+
         // IRQ 亲和性（默认：每个向量绑定一个 CPU）
         irq_set_affinity_hint(
             pf->msix_entries[vsi->base_q + i].vector,
@@ -741,29 +741,29 @@ static int virtnet_poll(struct napi_struct *napi, int budget)
 {
     struct virtnet_info *vi = container_of(napi, struct virtnet_info, napi);
     int work_done = 0;
-    
+
     // 1. 处理 TX 完成
     virtnet_tx_complete(vi);
-    
+
     // 2. 接收包
     while (work_done < budget) {
         struct sk_buff *skb;
-        
+
         skb = virtnet_get_rx_packet(vi);
         if (!skb)
             break;
-        
+
         skb->protocol = eth_type_trans(skb, vi->dev);
         napi_gro_receive(napi, skb);
         work_done++;
     }
-    
+
     // 3. 如果处理完了，重新开启中断
     if (work_done < budget) {
         napi_complete_done(napi, work_done);
         virtnet_enable_queue(vi);
     }
-    
+
     return work_done;
 }
 
@@ -771,15 +771,15 @@ static int virtnet_poll(struct napi_struct *napi, int budget)
 static irqreturn_t virtnet_interrupt(int irq, void *id)
 {
     struct virtnet_info *vi = id;
-    
+
     // 1. 禁用中断
     virtnet_disable_queue(vi);
-    
+
     // 2. 触发 NAPI
     if (napi_schedule_prep(&vi->napi)) {
         __napi_schedule(&vi->napi);
     }
-    
+
     return IRQ_HANDLED;
 }
 ```

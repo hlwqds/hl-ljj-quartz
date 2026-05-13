@@ -5,10 +5,8 @@ tags: [dpdk, series, gro, gso, generic-reassembly, generic-segmentation, offload
 description: "深入理解 GRO/GSO 通用卸载——将多个小包合并成大包（GRO）减少处理开销，或将大包拆分成小包（GSO）适配 MTU 限制"
 ---
 
-> [!info] DPDK 深度探索系列
-> 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
-> 1-12. 前十二章已完成
-> 13. **第十三章：GRO/GSO 通用卸载机制**
+> [!info] DPDK 深度探索系列 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
+> 1-12. 前十二章已完成 13. **第十三章：GRO/GSO 通用卸载机制**
 
 ---
 
@@ -18,12 +16,12 @@ description: "深入理解 GRO/GSO 通用卸载——将多个小包合并成大
 
 网络中小包（小于 MTU）会导致严重的性能问题：
 
-| 问题              | 影响                                     |
-| --------------- | -------------------------------------- |
-| **协议栈处理开销**     | 每个包都要经过 ETH/IP/TCP header 解析         |
-| **Header 处理占比** | 64 字节包，Header 占 40+ 字节（>60%）      |
-| **Cache 效率低**   | 每个包独立处理，header 解析无法有效利用 Cache |
-| **per-packet 开销** | mbuf 分配、hash 查找、flow 表匹配等固定成本     |
+| 问题                | 影响                                          |
+| ------------------- | --------------------------------------------- |
+| **协议栈处理开销**  | 每个包都要经过 ETH/IP/TCP header 解析         |
+| **Header 处理占比** | 64 字节包，Header 占 40+ 字节（>60%）         |
+| **Cache 效率低**    | 每个包独立处理，header 解析无法有效利用 Cache |
+| **per-packet 开销** | mbuf 分配、hash 查找、flow 表匹配等固定成本   |
 
 ### 1.2 GRO 是硬件做的还是软件做的？
 
@@ -828,20 +826,20 @@ firewall_process(struct rte_mbuf **pkts, uint16_t nb_pkts)
 
 ### 6.1 GRO 性能收益
 
-| 场景           | 无 GRO          | 有 GRO                   | 提升    |
-| ------------ | -------------- | ----------------------- | ----- |
-| **中断次数**     | 1Mpps = 1M 中断  | 合并后 ~100K 中断            | 10x   |
-| **协议栈处理**    | 1Mpps 包处理      | 100K flow 处理            | 10x   |
-| **小包占比 70%** | 100% header 处理 | 70% 合并                  | ~3x   |
-| **延迟**       | 每包立即处理         | burst 内零延迟，超时 flush 有延迟 | 通常零延迟 |
+| 场景             | 无 GRO           | 有 GRO                            | 提升       |
+| ---------------- | ---------------- | --------------------------------- | ---------- |
+| **中断次数**     | 1Mpps = 1M 中断  | 合并后 ~100K 中断                 | 10x        |
+| **协议栈处理**   | 1Mpps 包处理     | 100K flow 处理                    | 10x        |
+| **小包占比 70%** | 100% header 处理 | 70% 合并                          | ~3x        |
+| **延迟**         | 每包立即处理     | burst 内零延迟，超时 flush 有延迟 | 通常零延迟 |
 
 ### 6.2 GSO 性能收益
 
-| 场景 | 无 GSO | 有 GSO | 提升 |
-|------|--------|--------|------|
-| **应用发送** | 逐包发送 | 一次大发送 | 减少系统调用 |
-| **MTU=1500** | 应用处理分片 | NIC 硬件分片 | CPU 节省 |
-| **隧道协议** | VXLAN 9000 包 | 自动分片 | 兼容性 |
+| 场景         | 无 GSO        | 有 GSO       | 提升         |
+| ------------ | ------------- | ------------ | ------------ |
+| **应用发送** | 逐包发送      | 一次大发送   | 减少系统调用 |
+| **MTU=1500** | 应用处理分片  | NIC 硬件分片 | CPU 节省     |
+| **隧道协议** | VXLAN 9000 包 | 自动分片     | 兼容性       |
 
 ### 6.3 选型指南
 
@@ -880,18 +878,18 @@ firewall_process(struct rte_mbuf **pkts, uint16_t nb_pkts)
 
 6. **TCP GSO**：修改序列号、IP ID、TCP flags、重新计算 checksum。
 
+7. **DPDK GRO/GSO 库**： librte_gro 和 librte_gso 提供标准实现。
 
-8. **DPDK GRO/GSO 库**： librte_gro 和 librte_gso 提供标准实现。
+8. **应用场景**：高性能 Web 服务器（GRO 接收、GSO 发送）、防火墙/IDS（GRO 合并检测）。
 
-9. **应用场景**：高性能 Web 服务器（GRO 接收、GSO 发送）、防火墙/IDS（GRO 合并检测）。
-
-10. **性能收益**：GRO 减少 10x 中断，GSO 减少应用分片开销。
+9. **性能收益**：GRO 减少 10x 中断，GSO 减少应用分片开销。
 
 **下一篇预告**：[[2026-04-09-dpdk-deep-dive-ch14-vlan-vxlan|第十四章]]将讲解 VLAN/VXLAN 隧道——802.1Q VLAN 标签、VXLAN 封装格式、Overlay 网络与 DPDK 实现。
 
 ---
 
 > [!tip] 参考文献
+>
 > - Intel, "Generic Segmentation Offload", https://doc.dpdk.org/guides/prog_guide/generic_segmentation_offload.html
 > - Intel, "Generic Receive Offload", https://doc.dpdk.org/guides/prog_guide/generic_receive_offload.html
 > - RFC 793, "TCP"

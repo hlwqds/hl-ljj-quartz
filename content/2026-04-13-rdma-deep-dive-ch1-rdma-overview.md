@@ -23,7 +23,7 @@ description: RDMA 核心价值：零拷贝、零 CPU 参与、内存直接访问
 
 ### 1.1 数据路径中的 CPU 开销
 
-传统 TCP/IP  socket 接收数据的路径：
+传统 TCP/IP socket 接收数据的路径：
 
 ```
 Wire → NIC → Driver → Kernel (TCP/IP stack) → Socket Buffer → App
@@ -33,21 +33,21 @@ Wire → NIC → Driver → Kernel (TCP/IP stack) → Socket Buffer → App
 
 每一步都涉及 CPU：
 
-| 步骤 | 问题 |
-|------|------|
-| **中断** | 网卡通知 CPU，context switch 成本高 |
-| **复制** | NIC→Kernel、Kernel→User，各一次复制 |
+| 步骤         | 问题                                      |
+| ------------ | ----------------------------------------- |
+| **中断**     | 网卡通知 CPU，context switch 成本高       |
+| **复制**     | NIC→Kernel、Kernel→User，各一次复制       |
 | **协议处理** | TCP/IP checksum、排序、重组，CPU 全程参与 |
-| **内存引用** | 数据在不同 memory domain 间映射 |
+| **内存引用** | 数据在不同 memory domain 间映射           |
 
 ### 1.2 量化对比：延迟与 CPU 占用
 
-| 指标 | 传统 TCP | RDMA |
-|------|----------|------|
-| **端到端延迟** | 10–100 μs | 0.5–5 μs |
-| **CPU 占用** | 30–100% | < 5% |
-| **吞吐量** | 受 CPU 限制 | 线速 (100/200/400 Gbps) |
-| **数据复制次数** | 4+ 次 | 0 次（直接 DMA） |
+| 指标             | 传统 TCP    | RDMA                    |
+| ---------------- | ----------- | ----------------------- |
+| **端到端延迟**   | 10–100 μs   | 0.5–5 μs                |
+| **CPU 占用**     | 30–100%     | < 5%                    |
+| **吞吐量**       | 受 CPU 限制 | 线速 (100/200/400 Gbps) |
+| **数据复制次数** | 4+ 次       | 0 次（直接 DMA）        |
 
 对于 HPC、AI 训练、分布式存储等场景，CPU 本应专注计算，却被网络 I/O 拖累。RDMA 正是解决这个矛盾的技术。
 
@@ -93,11 +93,11 @@ RDMA：          App → libibverbs → RNIC/HCA
 
 RDMA 不是单一协议，而是有一组协议栈。目前主流有三个分支：
 
-| 协议 | 全称 | 底层网络 | 主要厂商 |
-|------|------|----------|----------|
-| **InfiniBand** | — | IB 网络（专用） | Mellanox（NVIDIA）、Intel |
-| **RoCE** | RDMA over Converged Ethernet | Ethernet | Mellanox |
-| **iWARP** | internet Wide Area RDMA Protocol | Ethernet | Intel、Chelsio、Cisco |
+| 协议           | 全称                             | 底层网络        | 主要厂商                  |
+| -------------- | -------------------------------- | --------------- | ------------------------- |
+| **InfiniBand** | —                                | IB 网络（专用） | Mellanox（NVIDIA）、Intel |
+| **RoCE**       | RDMA over Converged Ethernet     | Ethernet        | Mellanox                  |
+| **iWARP**      | internet Wide Area RDMA Protocol | Ethernet        | Intel、Chelsio、Cisco     |
 
 ### 3.1 InfiniBand
 
@@ -134,12 +134,12 @@ RDMA 延迟约 1–5 μs，分解来看：
 
 对比 TCP 的 10–100 μs：
 
-| 延迟来源 | TCP | RDMA |
-|----------|-----|------|
-| 中断处理 | 1–5 μs | 0（轮询） |
-| 数据复制 | 2–4 μs | 0 |
-| 协议处理 | 5–20 μs | ~0.5 μs |
-| 内存映射 | 1–5 μs | ~0.5 μs |
+| 延迟来源 | TCP     | RDMA      |
+| -------- | ------- | --------- |
+| 中断处理 | 1–5 μs  | 0（轮询） |
+| 数据复制 | 2–4 μs  | 0         |
+| 协议处理 | 5–20 μs | ~0.5 μs   |
+| 内存映射 | 1–5 μs  | ~0.5 μs   |
 
 ---
 
@@ -195,11 +195,11 @@ RDMA 延迟约 1–5 μs，分解来看：
 
 RDMA 通过三项核心技术实现高性能网络：
 
-| 特性 | 效果 |
-|------|------|
-| **零拷贝** | 数据不经过 CPU 内存复制 |
-| **零 CPU** | RNIC/HCA 自行处理传输 |
-| **内核旁路** | 绕过 TCP/IP 协议栈 |
+| 特性         | 效果                    |
+| ------------ | ----------------------- |
+| **零拷贝**   | 数据不经过 CPU 内存复制 |
+| **零 CPU**   | RNIC/HCA 自行处理传输   |
+| **内核旁路** | 绕过 TCP/IP 协议栈      |
 
 三种协议各有适用场景：
 

@@ -712,14 +712,14 @@ vpp# show buffers
 
 VPP Buffer 管理的核心设计：
 
-| 设计 | 优势 |
-|------|------|
-| **Inline 包头** | 减少 pointer chasing，提高缓存命中率 |
-| **Hugepage** | 减少 TLB miss，支持大内存 |
-| **Per-CPU Cache** | 避免锁竞争，零开销分配 |
-| **Headroom** | 支持隧道封装，无需 buffer 复制 |
-| **Buffer Reuse** | TX 零拷贝，减少内存带宽 |
-| **Prefetch** | 批量处理时隐藏内存延迟 |
+| 设计              | 优势                                 |
+| ----------------- | ------------------------------------ |
+| **Inline 包头**   | 减少 pointer chasing，提高缓存命中率 |
+| **Hugepage**      | 减少 TLB miss，支持大内存            |
+| **Per-CPU Cache** | 避免锁竞争，零开销分配               |
+| **Headroom**      | 支持隧道封装，无需 buffer 复制       |
+| **Buffer Reuse**  | TX 零拷贝，减少内存带宽              |
+| **Prefetch**      | 批量处理时隐藏内存延迟               |
 
 这些设计共同实现了 VPP 的高性能：
 

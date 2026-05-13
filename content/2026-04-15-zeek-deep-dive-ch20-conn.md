@@ -11,8 +11,8 @@ tags:
 description: "深入解析 Zeek 连接分析——connection.log、Conn::Info record、连接状态机、连接追踪机制、连接事件"
 ---
 
-> [!info] Zeek 2026 深度探索系列
-> 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Zeek 2026 深度探索系列 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-15-zeek-deep-dive-ch1-overview|第一章：Zeek 概述]]
 > 2. [[2026-04-15-zeek-deep-dive-ch2-installation|第二章：安装部署]]
 > 3. [[2026-04-15-zeek-deep-dive-ch3-config|第三章：配置系统]]
@@ -135,18 +135,18 @@ type Conn::Info = record {
 
 ### 2.3 主要字段说明
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `ts` | time | 连接开始时间戳 |
-| `uid` | string | 唯一连接标识符 |
-| `id` | conn_id | 4-tuple 连接标识 |
-| `proto` | transport_proto | 传输层协议 (TCP/UDP/ICMP) |
-| `service` | string | 检测到的服务 (http, dns, smtp, ssh, etc.) |
-| `duration` | interval | 连接持续时长 |
-| `orig_bytes` | int64 | 源到目标字节数 |
-| `resp_bytes` | int64 | 目标到源字节数 |
-| `conn_state` | string | 连接最终状态 |
-| `history` | string | 连接状态转换历史 |
+| 字段         | 类型            | 说明                                      |
+| ------------ | --------------- | ----------------------------------------- |
+| `ts`         | time            | 连接开始时间戳                            |
+| `uid`        | string          | 唯一连接标识符                            |
+| `id`         | conn_id         | 4-tuple 连接标识                          |
+| `proto`      | transport_proto | 传输层协议 (TCP/UDP/ICMP)                 |
+| `service`    | string          | 检测到的服务 (http, dns, smtp, ssh, etc.) |
+| `duration`   | interval        | 连接持续时长                              |
+| `orig_bytes` | int64           | 源到目标字节数                            |
+| `resp_bytes` | int64           | 目标到源字节数                            |
+| `conn_state` | string          | 连接最终状态                              |
+| `history`    | string          | 连接状态转换历史                          |
 
 ---
 
@@ -156,22 +156,22 @@ type Conn::Info = record {
 
 Zeek 使用简化的 TCP 状态机，状态码含义：
 
-| 状态码 | 含义 | TCP 状态 |
-|--------|------|----------|
-| `S0` | 连接建立，但未见响应 | SYN sent |
-| `S1` | 连接建立，未见关闭 | Established |
-| `S2` | 连接关闭，本地发送 FIN | Fin wait 1 |
-| `S3` | 连接关闭，本地接收 FIN | Fin wait 2 |
-| `S4` | 连接关闭，本地发送 RST | Reset |
-| `S5` | 连接关闭，响应方发送 FIN | Closing |
-| `S6` | 响应方发送 FIN，本地确认 | Close wait |
-| `S7` | 双方 FIN 交换完成 | Last ack |
-| `S8` | 仅响应方发送 FIN | Time wait |
-| `S9` | 本地发送 FIN 后收到 RST | Fin wait + RST |
-| `S10` | 响应方发送 RST | Reset |
-| `S11` | 连接超时 | Timeout |
-| `S12` | 检测到半开连接 | Half-open |
-| `OTH` | 其他 ICMP 不可达 | - |
+| 状态码 | 含义                     | TCP 状态       |
+| ------ | ------------------------ | -------------- |
+| `S0`   | 连接建立，但未见响应     | SYN sent       |
+| `S1`   | 连接建立，未见关闭       | Established    |
+| `S2`   | 连接关闭，本地发送 FIN   | Fin wait 1     |
+| `S3`   | 连接关闭，本地接收 FIN   | Fin wait 2     |
+| `S4`   | 连接关闭，本地发送 RST   | Reset          |
+| `S5`   | 连接关闭，响应方发送 FIN | Closing        |
+| `S6`   | 响应方发送 FIN，本地确认 | Close wait     |
+| `S7`   | 双方 FIN 交换完成        | Last ack       |
+| `S8`   | 仅响应方发送 FIN         | Time wait      |
+| `S9`   | 本地发送 FIN 后收到 RST  | Fin wait + RST |
+| `S10`  | 响应方发送 RST           | Reset          |
+| `S11`  | 连接超时                 | Timeout        |
+| `S12`  | 检测到半开连接           | Half-open      |
+| `OTH`  | 其他 ICMP 不可达         | -              |
 
 ### 3.2 连接状态转移图
 
@@ -236,18 +236,18 @@ Zeek 使用简化的 TCP 状态机，状态码含义：
 
 `history` 字段记录连接的状态转换，使用字符码：
 
-| 字符 | 含义 |
-|------|------|
-| `S` | SYN |
-| `H` | SYN-ACK handshake |
-| `A` | ACK |
-| `D` | 数据传输 (Data) |
-| `F` | FIN |
-| `R` | RST |
-| `C` | 乱序 (Chunk) |
-| `T` | 重传 (Retransmission) |
-| `I` | 空闲 (Idle) |
-| `Q` | 纯 ACK (Query) |
+| 字符 | 含义                  |
+| ---- | --------------------- |
+| `S`  | SYN                   |
+| `H`  | SYN-ACK handshake     |
+| `A`  | ACK                   |
+| `D`  | 数据传输 (Data)       |
+| `F`  | FIN                   |
+| `R`  | RST                   |
+| `C`  | 乱序 (Chunk)          |
+| `T`  | 重传 (Retransmission) |
+| `I`  | 空闲 (Idle)           |
+| `Q`  | 纯 ACK (Query)        |
 
 例如：`ShADadfR` 表示 SYN → SYN-ACK → ACK → Data → Data → FIN → RST
 
@@ -746,15 +746,16 @@ event http_request(c: connection, method: string, original_uri: string, version:
 
 本章介绍了 Zeek 连接分析的核心机制：
 
-| 组件 | 说明 |
-|------|------|
-| **conn.log** | 所有流量的基础日志，包含 4-tuple、字节数、持续时间、状态 |
-| **Conn::Info** | 连接信息的 record 类型 |
-| **连接状态机** | S0-S12 状态码，记录 TCP 状态转换 |
-| **history** | 连接状态历史，使用字符码记录事件序列 |
-| **连接事件** | connection_established, connection_attempted, connection_state_remove 等 |
+| 组件           | 说明                                                                     |
+| -------------- | ------------------------------------------------------------------------ |
+| **conn.log**   | 所有流量的基础日志，包含 4-tuple、字节数、持续时间、状态                 |
+| **Conn::Info** | 连接信息的 record 类型                                                   |
+| **连接状态机** | S0-S12 状态码，记录 TCP 状态转换                                         |
+| **history**    | 连接状态历史，使用字符码记录事件序列                                     |
+| **连接事件**   | connection_established, connection_attempted, connection_state_remove 等 |
 
 连接分析是 Zeek 的基础：
+
 - 所有协议分析器依赖连接追踪
 - 连接日志是安全分析的重要数据源
 - 连接状态和 history 可用于检测扫描、异常连接

@@ -15,12 +15,14 @@ description: "深入解析 SR-IOV 技术原理、VF/PF 管理机制、DPDK 中�
 ### 1.1 传统 vs SR-IOV
 
 **传统虚拟化网络路径**：
+
 ```
 VM App → Virtio Driver → QEMU → vhost-net → TAP → Linux Bridge → Physical NIC → Wire
          (软件模拟)        (内核)    (内核)    (内核)
 ```
 
 **SR-IOV 路径**：
+
 ```
 VM App → Virtio Driver → Virtual Function (VF) → Physical NIC → Wire
          (半虚拟化)           (硬件直通)       (硬件)
@@ -28,12 +30,12 @@ VM App → Virtio Driver → Virtual Function (VF) → Physical NIC → Wire
 
 ### 1.2 核心概念
 
-| 概念 | 说明 |
-|------|------|
-| **PF (Physical Function)** | 物理网卡的完整功能，宿主机使用 |
-| **VF (Virtual Function)** | PF 虚拟出的轻量级功能，分配给 VM |
-| **SR-IOV** | 标准，允许硬件虚拟化 |
-| **ARI** | Alternative Routing ID，提高 VF 扩展性 |
+| 概念                       | 说明                                   |
+| -------------------------- | -------------------------------------- |
+| **PF (Physical Function)** | 物理网卡的完整功能，宿主机使用         |
+| **VF (Virtual Function)**  | PF 虚拟出的轻量级功能，分配给 VM       |
+| **SR-IOV**                 | 标准，允许硬件虚拟化                   |
+| **ARI**                    | Alternative Routing ID，提高 VF 扩展性 |
 
 ### 1.3 性能优势
 
@@ -70,6 +72,7 @@ VM App → Virtio Driver → Virtual Function (VF) → Physical NIC → Wire
 ### 2.2 VF 资源
 
 每个 VF 独立拥有：
+
 - ** PCIe 配置空间**
 - ** BAR (Base Address Register) 映射**
 - ** DMA 引擎**
@@ -80,14 +83,14 @@ VM App → Virtio Driver → Virtual Function (VF) → Physical NIC → Wire
 
 主流网卡 SR-IOV 支持：
 
-| 厂商 | 型号 | 最大 VF 数 | 驱动 |
-|------|------|------------|------|
-| Intel | X710 | 64 | i40e |
-| Intel | XL710 | 64 | i40e |
-| Intel | XXV710 | 64 | i40e |
-| Intel | E810 | 256 | ice |
-| Broadcom | NetXtreme | 128 | bnxt_en |
-| NVIDIA | ConnectX | 128 | mlx5_core |
+| 厂商     | 型号      | 最大 VF 数 | 驱动      |
+| -------- | --------- | ---------- | --------- |
+| Intel    | X710      | 64         | i40e      |
+| Intel    | XL710     | 64         | i40e      |
+| Intel    | XXV710    | 64         | i40e      |
+| Intel    | E810      | 256        | ice       |
+| Broadcom | NetXtreme | 128        | bnxt_en   |
+| NVIDIA   | ConnectX  | 128        | mlx5_core |
 
 ## 3. Linux 配置
 
@@ -100,8 +103,8 @@ lspci -vv -s 0000:3d:00.0 | grep -i "sr-iov\|Virtual"
 # 输出示例：
 # Capabilities: [160] Single Root I/O Virtualization (SR-IOV)
 #     IOVCap:     Migration-, InterruptMessageNumber: 0
-#     IOVCtl:     Enable- Disable- Migration- INT- 
-#     IOVSta:     Migration- 
+#     IOVCtl:     Enable- Disable- Migration- INT-
+#     IOVSta:     Migration-
 #     VFs:     64 max, 64 current
 
 # 2. 查看当前 VF 数量
@@ -210,10 +213,10 @@ VFS=$(ls /sys/bus/pci/devices/$PF/virtfn* | xargs -I{} basename {})
 for VF in $VFS; do
     # 解绑当前驱动
     sudo dpdk-devbind.py -u $VF
-    
+
     # 绑定到 vfio-pci（推荐）
     sudo dpdk-devbind.py -b vfio-pci $VF
-    
+
     echo "Bound $VF to vfio-pci"
 done
 
@@ -254,14 +257,14 @@ printf("Available ports: %u\n", port_count);
 for (uint16_t port_id = 0; port_id < port_count; port_id++) {
     struct rte_eth_dev_info dev_info;
     rte_eth_dev_info_get(port_id, &dev_info);
-    
+
     printf("Port %u: %s\n", port_id, dev_info.device->name);
     printf("  PCI: %04x:%02x:%02x.%02x\n",
            dev_info.pci_dev->addr.domain,
            dev_info.pci_dev->addr.bus,
            dev_info.pci_dev->addr.devid,
            dev_info.pci_dev->addr.function);
-    
+
     // 检查是否为 VF
     if (dev_info.pci_dev->hdr_type == RTE_PCI_KDRV_VFIO_PCI) {
         printf("  Type: Virtual Function\n");

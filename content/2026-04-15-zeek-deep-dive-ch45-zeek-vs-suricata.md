@@ -36,6 +36,7 @@ Zeek采用基于事件驱动的架构，将网络流量转换为高层语义事�
 ```
 
 核心特性：
+
 - **事件驱动**：所有网络行为都转换为事件，脚本可订阅处理
 - **状态管理**：内置连接状态跟踪，支持复杂会话分析
 - **协议解析**：30+应用层协议解析器，输出结构化日志
@@ -74,6 +75,7 @@ Suricata采用多线程流水线架构，融合了IDS/IPS/NSM功能：
 ```
 
 核心特性：
+
 - **多线程并行**：利用多核处理器，支持自动负载均衡
 - **兼容Snort规则**：支持Suricata特定和Snort规则语法
 - **内置ID/IP/NSM**：一台设备完成多种安全功能
@@ -82,21 +84,21 @@ Suricata采用多线程流水线架构，融合了IDS/IPS/NSM功能：
 ```yaml
 # Suricata规则示例
 alert http $HOME_NET any -> $EXTERNAL_NET any \
-   (msg:"SQL Injection Attempt"; \
-    pcre:"/(union|select|insert|update|delete).*from/i"; \
-    sid:1000001; rev:1;)
+(msg:"SQL Injection Attempt"; \
+pcre:"/(union|select|insert|update|delete).*from/i"; \
+sid:1000001; rev:1;)
 ```
 
 ## 检测能力对比
 
 ### 签名检测
 
-| 特性 | Zeek | Suricata |
-|------|------|----------|
-| 规则格式 | Zeek脚本自定义 | Snort/Suricata规则 |
-| 规则数量 | 依赖脚本实现 | 数十万预置规则 |
+| 特性     | Zeek           | Suricata                  |
+| -------- | -------------- | ------------------------- |
+| 规则格式 | Zeek脚本自定义 | Snort/Suricata规则        |
+| 规则数量 | 依赖脚本实现   | 数十万预置规则            |
 | 规则更新 | 社区活跃度较低 | OISF/Emerging Threats维护 |
-| 规则编写 | 需要编程能力 | 规则语言相对简单 |
+| 规则编写 | 需要编程能力   | 规则语言相对简单          |
 
 ```zeek
 # Zeek实现类似Suricata规则的检测
@@ -115,10 +117,10 @@ event http_request(c: connection, method: string, uri: string) {
 ```yaml
 # Suricata Equivalent
 alert http any any -> any any \
-  (msg:"SQL Injection Attempt"; \
-   content:"union"; nocase; http.uri; \
-   content:"select"; nocase; http.uri; \
-   sid:1000001; rev:1;)
+(msg:"SQL Injection Attempt"; \
+content:"union"; nocase; http.uri; \
+content:"select"; nocase; http.uri; \
+sid:1000001; rev:1;)
 ```
 
 ### 异常检测
@@ -138,21 +140,21 @@ global connection_times: table[addr,addr] of vector of time;
 
 event connection_state_remove(c: connection, reason: string) {
     local key = (c$id$orig_h, c$id$resp_h);
-    
+
     if (c$state == OUTPUT) {
         if (key in connection_times) {
             connection_times[key] += c$start_time;
         } else {
             connection_times[key] = vector(c$start_time);
         }
-        
+
         # 检查时间间隔一致性
         if (|connection_times[key]| >= threshold) {
             local intervals = vector();
             for (i in connection_times[key][1:]) {
                 intervals += connection_times[key][i] - connection_times[key][i-1];
             }
-            
+
             local avg = calc_average(intervals);
             if (std_dev(intervals) < 10secs) {
                 NOTICE([$msg="Potential Beacon Detected",
@@ -164,6 +166,7 @@ event connection_state_remove(c: connection, reason: string) {
 ```
 
 Suricata的异常检测主要依赖：
+
 - **引擎检测**：异常协议特征
 - **阈值模块**：基于计数的检测
 - **app-layer协议异常**：HTTP、DNS等协议层异常
@@ -212,13 +215,13 @@ Suricata的Eve日志也提供丰富的协议信息：
 
 ### 处理能力
 
-| 指标 | Zeek | Suricata |
-|------|------|----------|
-| 单线程处理 | 较高 | 中等 |
-| 多核扩展 | 需要集群 | 自动多线程 |
-| 内存占用 | 较高(状态维护) | 较低 |
-| pcap处理 | 极快 | 快 |
-| 实时处理 | 依赖硬件 | 依赖硬件 |
+| 指标       | Zeek           | Suricata   |
+| ---------- | -------------- | ---------- |
+| 单线程处理 | 较高           | 中等       |
+| 多核扩展   | 需要集群       | 自动多线程 |
+| 内存占用   | 较高(状态维护) | 较低       |
+| pcap处理   | 极快           | 快         |
+| 实时处理   | 依赖硬件       | 依赖硬件   |
 
 ### 资源消耗对比
 
@@ -466,19 +469,19 @@ outputs:
 ```yaml
 # Suricata规则
 alert http $HOME_NET any -> $EXTERNAL_NET any \
-  (msg:"SQL Injection Attempt"; \
-   content:"union"; http.uri; \
-   pcre:"/union\s+select/i"; \
-   sid:1000001; rev:1;)
+(msg:"SQL Injection Attempt"; \
+content:"union"; http.uri; \
+pcre:"/union\s+select/i"; \
+sid:1000001; rev:1;)
 ```
 
 ```zeek
 # 对应Zeek脚本
-event http_request(c: connection, method: string, 
+event http_request(c: connection, method: string,
                    original_uri: string, version: string) {
-    
+
     local uri_lower = to_lower(original_uri);
-    
+
     # 检测SQL注入特征
     if (/\bunion\s+select\b/i in uri_lower) {
         NOTICE([
@@ -508,9 +511,9 @@ event ssh_auth_successful(c: connection, auth_method: string) {
 ```yaml
 # 对应Suricata规则
 alert ssh $HOME_NET any -> $EXTERNAL_NET 22 \
-  (msg:"SSH Login to Suspicious Server"; \
-   flow:established,to_server; \
-   sid:1000002; rev:1;)
+(msg:"SSH Login to Suspicious Server"; \
+flow:established,to_server; \
+sid:1000002; rev:1;)
 ```
 
 ## 配置管理对比
@@ -565,13 +568,13 @@ app-layer:
 
 ## 维护成本对比
 
-| 维度 | Zeek | Suricata |
-|------|------|----------|
-| 学习曲线 | 陡峭(脚本语言) | 平缓(规则语法) |
-| 社区规模 | 较小但专注 | 较大活跃 |
-| 文档质量 | 优秀 | 良好 |
-| 商业支持 | Corelight | Open Information Security Foundation |
-| 更新频率 | 稳定迭代 | 频繁更新 |
+| 维度     | Zeek           | Suricata                             |
+| -------- | -------------- | ------------------------------------ |
+| 学习曲线 | 陡峭(脚本语言) | 平缓(规则语法)                       |
+| 社区规模 | 较小但专注     | 较大活跃                             |
+| 文档质量 | 优秀           | 良好                                 |
+| 商业支持 | Corelight      | Open Information Security Foundation |
+| 更新频率 | 稳定迭代       | 频繁更新                             |
 
 ## 总结
 
@@ -584,6 +587,7 @@ Zeek和Suricata代表了网络安全监控的两个不同哲学：
 最佳实践是**结合使用两者**：使用Suricata进行边界实时检测和阻断，使用Zeek进行深度流量分析和威胁狩猎。这种组合可以充分发挥各自优势，构建全面的网络安全监控体系。
 
 选择建议：
+
 - 预算有限且需要快速部署：优先考虑Suricata
 - 需要深度分析和取证能力：优先考虑Zeek
 - 关键基础设施需要全面监控：两者结合使用

@@ -604,14 +604,14 @@ DPDK 学习路径：
 
 **DPDK 深度探索系列 (ch1-ch47)** 完成！
 
-| 模块 | 章节数 | 核心内容 |
-|------|--------|----------|
-| 基础原理 | 8 | 架构、EAL、Mbuf、Ring、PMD |
-| 网络协议栈 | 8 | Ethernet、IP、TCP、UDP、路由 |
-| 虚拟化加速 | 8 | virtio、vhost-user、vSwitch、SR-IOV |
-| 安全加密 | 8 | Crypto、IPsec、TLS、防火墙 |
-| 性能优化 | 8 | 测量、调优、调试、DDoS |
-| 新兴技术 | 7 | RDMA、eBPF、云原生、行业案例 |
+| 模块       | 章节数 | 核心内容                            |
+| ---------- | ------ | ----------------------------------- |
+| 基础原理   | 8      | 架构、EAL、Mbuf、Ring、PMD          |
+| 网络协议栈 | 8      | Ethernet、IP、TCP、UDP、路由        |
+| 虚拟化加速 | 8      | virtio、vhost-user、vSwitch、SR-IOV |
+| 安全加密   | 8      | Crypto、IPsec、TLS、防火墙          |
+| 性能优化   | 8      | 测量、调优、调试、DDoS              |
+| 新兴技术   | 7      | RDMA、eBPF、云原生、行业案例        |
 
 **总字数**: ~1,200,000 字
 **代码示例**: ~500 个

@@ -8,8 +8,8 @@ tags:
   - debugging
 ---
 
-> [!info] eBPF 2026 深度探索系列
-> 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+> [!info] eBPF 2026 深度探索系列 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+>
 > 1. [[2026-04-08-ebpf-deep-dive-ch1-registers-and-instructions|第一章：寄存器与指令集]]
 > 2. [[2026-04-08-ebpf-deep-dive-ch1-5-function-calls|第一.五章：四种函数调用与动态内存]]
 > 3. **第一.六章：验证器 (Verifier) 的底层逻辑**
@@ -86,15 +86,15 @@ graph LR
 
 ### 1.1 历史演进
 
-| 内核版本 | 里程碑 | 影响 |
-| :--- | :--- | :--- |
-| 3.18 (2015) | eBPF Verifier 诞生 | 仅支持基本寄存器追踪和简单边界检查 |
-| 4.x | 扩展类型系统 | 引入 `PTR_TO_MAP_VALUE_OR_NULL` 等类型 |
-| 5.2 | 指令上限提升 | 从 4096 提升到 100 万条 |
-| 5.3 | 有界循环 (Bounded Loops) | 允许验证器能证明终止的循环 |
-| 5.10+ | BTF-aware 验证 | 利用 BTF 进行跨内核版本的结构体验证 |
-| 6.x | 所有权追踪 | `bpf_obj_new`/`bpf_obj_drop` 的引用计数验证 |
-| 6.x | CFG-aware pruning | 基于控制流图的剪枝优化，减少路径爆炸 |
+| 内核版本    | 里程碑                   | 影响                                        |
+| :---------- | :----------------------- | :------------------------------------------ |
+| 3.18 (2015) | eBPF Verifier 诞生       | 仅支持基本寄存器追踪和简单边界检查          |
+| 4.x         | 扩展类型系统             | 引入 `PTR_TO_MAP_VALUE_OR_NULL` 等类型      |
+| 5.2         | 指令上限提升             | 从 4096 提升到 100 万条                     |
+| 5.3         | 有界循环 (Bounded Loops) | 允许验证器能证明终止的循环                  |
+| 5.10+       | BTF-aware 验证           | 利用 BTF 进行跨内核版本的结构体验证         |
+| 6.x         | 所有权追踪               | `bpf_obj_new`/`bpf_obj_drop` 的引用计数验证 |
+| 6.x         | CFG-aware pruning        | 基于控制流图的剪枝优化，减少路径爆炸        |
 
 ---
 
@@ -138,13 +138,13 @@ graph TD
 
 当两条路径汇合时，Verifier 需要合并各自的寄存器状态。合并规则：
 
-| 寄存器状态 - 路径 A | 寄存器状态 - 路径 B | 合并结果 |
-| :--- | :--- | :--- |
-| `SCALAR_VALUE [0,100]` | `SCALAR_VALUE [0,200]` | `SCALAR_VALUE [0,200]` (取并集) |
-| `PTR_TO_CTX` | `PTR_TO_CTX` | `PTR_TO_CTX` (相同) |
-| `PTR_TO_MAP_VALUE` | `SCALAR_VALUE` | `SCALAR_VALUE` (退化为标量) |
-| `PTR_TO_MAP_VALUE_OR_NULL` | `PTR_TO_MAP_VALUE` | `PTR_TO_MAP_VALUE_OR_NULL` (保留未知性) |
-| `NOT_INIT` | `SCALAR_VALUE` | `NOT_INIT` (未初始化不安全) |
+| 寄存器状态 - 路径 A        | 寄存器状态 - 路径 B    | 合并结果                                |
+| :------------------------- | :--------------------- | :-------------------------------------- |
+| `SCALAR_VALUE [0,100]`     | `SCALAR_VALUE [0,200]` | `SCALAR_VALUE [0,200]` (取并集)         |
+| `PTR_TO_CTX`               | `PTR_TO_CTX`           | `PTR_TO_CTX` (相同)                     |
+| `PTR_TO_MAP_VALUE`         | `SCALAR_VALUE`         | `SCALAR_VALUE` (退化为标量)             |
+| `PTR_TO_MAP_VALUE_OR_NULL` | `PTR_TO_MAP_VALUE`     | `PTR_TO_MAP_VALUE_OR_NULL` (保留未知性) |
+| `NOT_INIT`                 | `SCALAR_VALUE`         | `NOT_INIT` (未初始化不安全)             |
 
 > [!important] 为什么状态会"退化"？
 > 当一个指针在某条路径上被修改为标量（或未初始化），合并后 Verifier 必须假设最坏情况——将两个状态合并为更保守的类型。这就是为什么在 `if/else` 分支中修改指针类型会导致 Verifier 报错。
@@ -186,21 +186,21 @@ struct bpf_reg_state {
 
 ### 3.2 完整类型枚举
 
-| 类型 | 说明 | 能解引用？ | 能算术？ |
-| :--- | :--- | :--- | :--- |
-| `NOT_INIT` | 未初始化 | ❌ | ❌ |
-| `SCALAR_VALUE` | 整数/常数 | ❌ | ✅ |
-| `PTR_TO_CTX` | 指向 Context (如 `xdp_md`) | ✅ (有界) | ✅ (有界) |
-| `PTR_TO_STACK` | 指向 eBPF 栈 | ✅ | ✅ (有界) |
-| `PTR_TO_MAP_VALUE` | 指向 Map 值 | ✅ | ✅ (有界) |
-| `PTR_TO_MAP_VALUE_OR_NULL` | 上述 + 可能为 NULL | ❌ (需先判空) | ❌ |
-| `PTR_TO_PACKET` | 指向 XDP 包数据 | ✅ (有界) | ✅ (有界) |
-| `PTR_TO_PACKET_END` | 指向包结束位置 | ❌ | ❌ |
-| `PTR_TO_MEM` | 指向内核内存 (BTF) | ✅ | ✅ (有界) |
-| `PTR_TO_BTF_ID` | 指向 BTF 类型对象 | ✅ | ✅ (受限) |
-| `PTR_TO_BUF` | 指向缓冲区 | ✅ | ✅ (有界) |
-| `CONST_PTR_TO_MAP` | 指向 Map 结构体 | ❌ | ❌ |
-| `PTR_TO_TUNABLE` | 指向可调优参数 | ✅ | ❌ |
+| 类型                       | 说明                       | 能解引用？    | 能算术？  |
+| :------------------------- | :------------------------- | :------------ | :-------- |
+| `NOT_INIT`                 | 未初始化                   | ❌            | ❌        |
+| `SCALAR_VALUE`             | 整数/常数                  | ❌            | ✅        |
+| `PTR_TO_CTX`               | 指向 Context (如 `xdp_md`) | ✅ (有界)     | ✅ (有界) |
+| `PTR_TO_STACK`             | 指向 eBPF 栈               | ✅            | ✅ (有界) |
+| `PTR_TO_MAP_VALUE`         | 指向 Map 值                | ✅            | ✅ (有界) |
+| `PTR_TO_MAP_VALUE_OR_NULL` | 上述 + 可能为 NULL         | ❌ (需先判空) | ❌        |
+| `PTR_TO_PACKET`            | 指向 XDP 包数据            | ✅ (有界)     | ✅ (有界) |
+| `PTR_TO_PACKET_END`        | 指向包结束位置             | ❌            | ❌        |
+| `PTR_TO_MEM`               | 指向内核内存 (BTF)         | ✅            | ✅ (有界) |
+| `PTR_TO_BTF_ID`            | 指向 BTF 类型对象          | ✅            | ✅ (受限) |
+| `PTR_TO_BUF`               | 指向缓冲区                 | ✅            | ✅ (有界) |
+| `CONST_PTR_TO_MAP`         | 指向 Map 结构体            | ❌            | ❌        |
+| `PTR_TO_TUNABLE`           | 指向可调优参数             | ✅            | ❌        |
 
 ### 3.3 状态追踪示例
 
@@ -253,6 +253,7 @@ graph TD
 **第一层：类型检查** — 目标操作数必须是指针类型（不能对 `SCALAR_VALUE` 解引用）
 
 **第二层：边界检查** — `ptr + access_size` 必须小于等于已知的合法边界：
+
 - 对于 `PTR_TO_PACKET`：边界是 `data_end`
 - 对于 `PTR_TO_STACK`：边界是 `R10`（栈底）
 - 对于 `PTR_TO_MAP_VALUE`：边界是 Map 值的大小
@@ -496,18 +497,18 @@ VERIFIER LOG:
 
 ### 7.3 错误速查表
 
-| 错误信息 | 含义 | 解决方案 |
-| :--- | :--- | :--- |
-| `invalid mem access 'scalar'` | 对非指针值解引用 | 检查指针是否被正确赋值 |
-| `unknown type` | 寄存器类型不确定 | 在使用前进行条件分支判空 |
-| `R? !read_ok` | 寄存器未初始化 | 为变量提供初始值 |
-| `pointer offset out of bounds` | 指针偏移越界 | 添加边界检查 `if (ptr + size > end)` |
-| `math between ptr and scalar` | 对不可混合的类型做运算 | 检查是否在判空前使用了 Map 返回值 |
-| `back-edge from insn X to Y` | 非法循环或跳转 | 确保循环有界或使用 `#pragma unroll` |
-| `stack size XXX exceeds 512` | 栈溢出 | 使用 Per-CPU Map 或减少局部变量 |
-| `misaligned access` | 非对齐内存访问 | 确保偏移量满足类型对齐要求 |
-| `unbounded loop` | 循环无法证明终止 | 为循环添加可推断的上界 |
-| `invalid indirect read from stack` | 从栈上读取未写入的区域 | 确保所有栈槽在使用前都已写入 |
+| 错误信息                           | 含义                   | 解决方案                             |
+| :--------------------------------- | :--------------------- | :----------------------------------- |
+| `invalid mem access 'scalar'`      | 对非指针值解引用       | 检查指针是否被正确赋值               |
+| `unknown type`                     | 寄存器类型不确定       | 在使用前进行条件分支判空             |
+| `R? !read_ok`                      | 寄存器未初始化         | 为变量提供初始值                     |
+| `pointer offset out of bounds`     | 指针偏移越界           | 添加边界检查 `if (ptr + size > end)` |
+| `math between ptr and scalar`      | 对不可混合的类型做运算 | 检查是否在判空前使用了 Map 返回值    |
+| `back-edge from insn X to Y`       | 非法循环或跳转         | 确保循环有界或使用 `#pragma unroll`  |
+| `stack size XXX exceeds 512`       | 栈溢出                 | 使用 Per-CPU Map 或减少局部变量      |
+| `misaligned access`                | 非对齐内存访问         | 确保偏移量满足类型对齐要求           |
+| `unbounded loop`                   | 循环无法证明终止       | 为循环添加可推断的上界               |
+| `invalid indirect read from stack` | 从栈上读取未写入的区域 | 确保所有栈槽在使用前都已写入         |
 
 ---
 
@@ -659,6 +660,7 @@ n->value = 42;  // ❌ Verifier 拒绝: 使用已转移所有权的指针
 **Q3: 为什么有时候 Verifier 在老内核上通过、在新内核上拒绝？**
 
 内核升级可能引入了更严格的验证规则。例如：
+
 - Linux 5.3 开始要求循环有界
 - Linux 6.x 开始要求 `bpf_obj_new` 的所有权必须正确释放
 - 某些 Helper 函数的参数类型检查在新版本中更严格
@@ -668,6 +670,7 @@ n->value = 42;  // ❌ Verifier 拒绝: 使用已转移所有权的指针
 **Q4: 如何绕过 "stack size exceeds 512" 限制？**
 
 三种方案（按推荐顺序）：
+
 1. **将大变量移到 Per-CPU Map**：`BPF_MAP_TYPE_PERCPU_ARRAY` 提供"虚拟大栈"
 2. **减少同时存活的栈变量**：先处理完一个变量再声明下一个（C 作用域技巧）
 3. **使用 `bpf_obj_new`**：在堆上分配，不受栈限制
@@ -675,6 +678,7 @@ n->value = 42;  // ❌ Verifier 拒绝: 使用已转移所有权的指针
 **Q5: Verifier 能检测到数据竞争 (Data Race) 吗？**
 
 不能直接检测。Verifier 是**静态分析器**，只分析单个程序的执行路径。但 Verifier 通过以下方式间接防止数据竞争：
+
 - 要求 Map 访问使用 `__sync_fetch_and_add` 等原子操作
 - 提供 `bpf_spin_lock` 用于 Map 内的互斥访问
 - Per-CPU Map 天然避免了跨 CPU 的数据竞争

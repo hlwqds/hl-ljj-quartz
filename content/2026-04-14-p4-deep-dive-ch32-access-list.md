@@ -5,15 +5,15 @@ tags: [p4, series, acl, firewall, ternary, exact-match, five-tuple, security, p4
 description: "P4 ACL 访问控制列表编程深度解析——Exact/Ternary Match、ACL 表设计、五元组过滤、状态防火墙、单播反向路径过滤 (uRPF)、ACL 优先级与 TCAM 压缩"
 ---
 
-> [!info] P4 深度探索系列
-> 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+> [!info] P4 深度探索系列 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-14-p4-deep-dive-ch1-p4-overview|第一章：P4 概述——诞生背景与协议无关包处理]]
 > 2. [[2026-04-14-p4-deep-dive-ch2-p4-architecture|第二章：P4 架构模型——PSA/V1Model、Ingress/Egress]]
 > 3. [[2026-04-14-p4-deep-dive-ch3-p4-vs-ebpf|第三章：P4 vs eBPF——适用场景与硬件/软件对比]]
-> ...
-> 30. [[2026-04-14-p4-deep-dive-ch30-p4-control-plane-advanced|第三十章：P4 控制面高级主题]]
-> 31. [[2026-04-14-p4-deep-dive-ch31-basic-routing|第三十一章：P4 基础路由编程]]
-> 32. **第三十二章：P4 ACL 编程——访问控制列表、防火墙、Exact/Ternary Match、五元组过滤**
+>    ...
+> 4. [[2026-04-14-p4-deep-dive-ch30-p4-control-plane-advanced|第三十章：P4 控制面高级主题]]
+> 5. [[2026-04-14-p4-deep-dive-ch31-basic-routing|第三十一章：P4 基础路由编程]]
+> 6. **第三十二章：P4 ACL 编程——访问控制列表、防火墙、Exact/Ternary Match、五元组过滤**
 
 ---
 
@@ -48,12 +48,12 @@ ACL 在 Pipeline 中的位置:
 
 ### 1.1 ACL 类型
 
-| ACL 类型 | 匹配字段 | 典型用途 |
-|---------|---------|---------|
-| **MAC ACL** | src/dst MAC, EtherType | L2 过滤 |
-| **VLAN ACL** | VLAN ID, MAC, EtherType | VLAN 内过滤 |
-| **IPv4/IPv6 ACL** | IP 地址, Protocol, Ports | L3/L4 过滤 |
-| **Mixed ACL** | 组合多种字段 | 全面过滤 |
+| ACL 类型          | 匹配字段                 | 典型用途    |
+| ----------------- | ------------------------ | ----------- |
+| **MAC ACL**       | src/dst MAC, EtherType   | L2 过滤     |
+| **VLAN ACL**      | VLAN ID, MAC, EtherType  | VLAN 内过滤 |
+| **IPv4/IPv6 ACL** | IP 地址, Protocol, Ports | L3/L4 过滤  |
+| **Mixed ACL**     | 组合多种字段             | 全面过滤    |
 
 ---
 
@@ -133,13 +133,13 @@ Ternary Match (TCAM):
 
 **五元组 (5-tuple)** 唯一标识一个网络 flow：
 
-| 字段 | 说明 | 示例 |
-|------|------|------|
-| **Src IP** | 源 IP 地址 | 192.168.1.100 |
-| **Dst IP** | 目标 IP 地址 | 10.0.0.1 |
-| **Protocol** | L4 协议 (TCP/UDP/ICMP) | TCP (6) |
-| **Src Port** | 源端口 | 80 |
-| **Dst Port** | 目标端口 | 443 |
+| 字段         | 说明                   | 示例          |
+| ------------ | ---------------------- | ------------- |
+| **Src IP**   | 源 IP 地址             | 192.168.1.100 |
+| **Dst IP**   | 目标 IP 地址           | 10.0.0.1      |
+| **Protocol** | L4 协议 (TCP/UDP/ICMP) | TCP (6)       |
+| **Src Port** | 源端口                 | 80            |
+| **Dst Port** | 目标端口               | 443           |
 
 ### 3.2 五元组 ACL 表
 
@@ -265,9 +265,9 @@ control acl_chain(packet_in packet,
 
 ### 5.1 无状态 vs 有状态
 
-| 类型 | 说明 | 示例 |
-|------|------|------|
-| **无状态 ACL** | 逐包检查，不考虑会话状态 | 传统 ACL |
+| 类型             | 说明                         | 示例              |
+| ---------------- | ---------------------------- | ----------------- |
+| **无状态 ACL**   | 逐包检查，不考虑会话状态     | 传统 ACL          |
 | **有状态防火墙** | 跟踪会话状态，只允许响应流量 | Stateful Firewall |
 
 ### 5.2 有状态防火墙实现
@@ -454,12 +454,12 @@ action mirror_to_cpu() {
 
 TCAM 资源有限，需要压缩：
 
-| 优化技术 | 说明 |
-|---------|------|
-| **合并相似规则** | 使用通配符减少规则数 |
-| **使用 LPM 替代 Ternary** | /24 可以用 LPM 替代多个 /32 |
-| **规则分组** | 按优先级分离表，减少单表大小 |
-| **默认路由压缩** | 使用默认动作用于常见情况 |
+| 优化技术                  | 说明                         |
+| ------------------------- | ---------------------------- |
+| **合并相似规则**          | 使用通配符减少规则数         |
+| **使用 LPM 替代 Ternary** | /24 可以用 LPM 替代多个 /32  |
+| **规则分组**              | 按优先级分离表，减少单表大小 |
+| **默认路由压缩**          | 使用默认动作用于常见情况     |
 
 ### 8.2 压缩示例
 

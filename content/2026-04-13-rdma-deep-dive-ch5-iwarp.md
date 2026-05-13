@@ -24,10 +24,10 @@ iWARP 应运而生——它**利用 TCP 的可靠传输能力**，在普通 IP �
 
 核心区别：
 
-| 协议 | 可靠传输层 | 网络要求 |
-|------|-----------|----------|
+| 协议        | 可靠传输层                     | 网络要求            |
+| ----------- | ------------------------------ | ------------------- |
 | **RoCE v2** | UDP（自己管理可靠性：ECN/CNP） | 无损网络（PFC+ECN） |
-| **iWARP** | TCP/SCTP（内置重传、排序） | 标准 IP 网络即可 |
+| **iWARP**   | TCP/SCTP（内置重传、排序）     | 标准 IP 网络即可    |
 
 ---
 
@@ -67,10 +67,10 @@ DDP 允许将数据直接放置（DMA）到最终目标的内存中，无需中�
 
 DDP 引入了两个重要概念：
 
-| 概念 | 说明 |
-|------|------|
-| **Tagged Buffer** | 有明确地址/长度标识的缓冲区，用于 RDMA Read/Write |
-| **Untagged Buffer** | 无地址标识，用于 Send/Recv，依赖序号关联 |
+| 概念                | 说明                                              |
+| ------------------- | ------------------------------------------------- |
+| **Tagged Buffer**   | 有明确地址/长度标识的缓冲区，用于 RDMA Read/Write |
+| **Untagged Buffer** | 无地址标识，用于 Send/Recv，依赖序号关联          |
 
 ### 3.3 DDP 数据包格式
 
@@ -100,12 +100,12 @@ RDMAP 在 DDP 之上添加 RDMA 操作语义——它定义了哪些 DDP 报文�
 
 ### 4.2 RDMA 操作映射
 
-| RDMA 操作 | RDMAP 层 |
-|-----------|----------|
-| **RDMA Write** | 一个或多个 RDMAP Write 请求 + RTU |
-| **RDMA Read** | RDMAP Read Request + RDMAP Read Response |
-| **Send** | 一个或多个 RDMAP Send + 无确认 |
-| **Atomic** | RDMAP Fetch-Add / Compare-Swap |
+| RDMA 操作      | RDMAP 层                                 |
+| -------------- | ---------------------------------------- |
+| **RDMA Write** | 一个或多个 RDMAP Write 请求 + RTU        |
+| **RDMA Read**  | RDMAP Read Request + RDMAP Read Response |
+| **Send**       | 一个或多个 RDMAP Send + 无确认           |
+| **Atomic**     | RDMAP Fetch-Add / Compare-Swap           |
 
 ### 4.3 RDMAP 消息类型
 
@@ -141,6 +141,7 @@ MPA 在 DDP/RDMAP 报文之间插入 **Marker**（标记字节），使得接收
 ```
 
 MPA 是可选的：
+
 - 使用 TCP 时：通常启用 MPA（用于边界对齐）
 - 使用 SCTP 时：SCTP 本身是消息式的，不需要 MPA
 
@@ -174,10 +175,10 @@ MPA 是可选的：
 
 ## 6. iWARP 端口使用
 
-| 端口 | 协议 | 用途 |
-|------|------|------|
-| **3240** | TCP/SCTP | iWARP 默认控制端口 |
-| **4791** | — | RoCE v2（注意：iWARP 不同） |
+| 端口     | 协议            | 用途                         |
+| -------- | --------------- | ---------------------------- |
+| **3240** | TCP/SCTP        | iWARP 默认控制端口           |
+| **4791** | —               | RoCE v2（注意：iWARP 不同）  |
 | **动态** | TCP (ephemeral) | iWARP 数据连接（发起方端口） |
 
 iWARP 监听 TCP 3240，连接建立后使用 TCP 流进行数据传输。
@@ -190,24 +191,24 @@ iWARP 监听 TCP 3240，连接建立后使用 TCP 流进行数据传输。
 
 TCP 的特性恰好满足 RDMA 可靠传输的需求：
 
-| TCP 特性 | 对 RDMA 的意义 |
-|----------|---------------|
-| **可靠传输** | 不需要像 RoCE 那样自己管理重传 |
-| **排序** | TCP 保证字节顺序，不需要 RDMA 层重新排序 |
-| **流控** | TCP 内置流控 |
-| **拥塞控制** | TCP CUBIC/etc. 自动管理拥塞 |
+| TCP 特性     | 对 RDMA 的意义                           |
+| ------------ | ---------------------------------------- |
+| **可靠传输** | 不需要像 RoCE 那样自己管理重传           |
+| **排序**     | TCP 保证字节顺序，不需要 RDMA 层重新排序 |
+| **流控**     | TCP 内置流控                             |
+| **拥塞控制** | TCP CUBIC/etc. 自动管理拥塞              |
 
 ### 7.2 iWARP 的代价
 
 TCP 的可靠性是以性能为代价的：
 
-| 问题 | 影响 |
-|------|------|
-| **TCP 头部开销** | 20 字节 IP + 20 字节 TCP = 40 字节/包 |
-| **TCP Offload** | 需要 TOE（TCP Offload Engine）否则 CPU 参与处理 |
-| **Nagle 算法** | 可能引入小包延迟 |
-| **拥塞控制** | TCP 拥塞算法与 RDMA 流量特性不完全匹配 |
-| **Head-of-Line Blocking** | TCP 排序可能导致同连接内阻塞 |
+| 问题                      | 影响                                            |
+| ------------------------- | ----------------------------------------------- |
+| **TCP 头部开销**          | 20 字节 IP + 20 字节 TCP = 40 字节/包           |
+| **TCP Offload**           | 需要 TOE（TCP Offload Engine）否则 CPU 参与处理 |
+| **Nagle 算法**            | 可能引入小包延迟                                |
+| **拥塞控制**              | TCP 拥塞算法与 RDMA 流量特性不完全匹配          |
+| **Head-of-Line Blocking** | TCP 排序可能导致同连接内阻塞                    |
 
 ### 7.3 TOE（TCP Offload Engine）
 
@@ -260,12 +261,12 @@ iWARP：
 
 ## 9. iWARP 支持的传输类型
 
-| 类型 | 说明 | iWARP 支持 |
-|------|------|-----------|
-| **RC** | Reliable Connection | 支持 |
+| 类型   | 说明                  | iWARP 支持   |
+| ------ | --------------------- | ------------ |
+| **RC** | Reliable Connection   | 支持         |
 | **UC** | Unreliable Connection | 支持（可选） |
-| **UD** | Unreliable Datagram | 不支持 |
-| **RD** | Reliable Datagram | 不支持 |
+| **UD** | Unreliable Datagram   | 不支持       |
+| **RD** | Reliable Datagram     | 不支持       |
 
 注意：**iWARP 不支持 UD**。这与 RoCE 和 IB 不同——iWARP 没有不可靠数据报模式。
 
@@ -273,23 +274,23 @@ iWARP：
 
 ## 10. iWARP 的使用场景
 
-| 场景 | 适用性 |
-|------|--------|
-| **标准 Ethernet 网络** | ✓ 不需要 DCB/PFC |
-| **WAN 穿越** | ✓ TCP 可路由 |
-| **不支持 TOE 的网卡** | ✗ TCP 处理会消耗 CPU |
-| **超低延迟 HPC 集群** | ✗ 延迟高于 IB/RoCE |
-| **云环境** | △ 需要特殊网卡（如 Chelsio iWARP） |
+| 场景                   | 适用性                             |
+| ---------------------- | ---------------------------------- |
+| **标准 Ethernet 网络** | ✓ 不需要 DCB/PFC                   |
+| **WAN 穿越**           | ✓ TCP 可路由                       |
+| **不支持 TOE 的网卡**  | ✗ TCP 处理会消耗 CPU               |
+| **超低延迟 HPC 集群**  | ✗ 延迟高于 IB/RoCE                 |
+| **云环境**             | △ 需要特殊网卡（如 Chelsio iWARP） |
 
 ---
 
 ## 11. 主流 iWARP 网卡
 
-| 厂商 | 网卡 | 备注 |
-|------|------|------|
-| **Chelsio** | T6 系列 | 完整 iWARP + TOE |
-| **Intel** | E810 (部分) | iWARP 支持 |
-| **Cisco** | usNIC | 思科专有的用户空间 iWARP |
+| 厂商        | 网卡        | 备注                     |
+| ----------- | ----------- | ------------------------ |
+| **Chelsio** | T6 系列     | 完整 iWARP + TOE         |
+| **Intel**   | E810 (部分) | iWARP 支持               |
+| **Cisco**   | usNIC       | 思科专有的用户空间 iWARP |
 
 注意：Mellanox/NVIDIA 网卡**不支持 iWARP**，仅支持 InfiniBand 和 RoCE。
 
@@ -299,18 +300,20 @@ iWARP：
 
 iWARP 协议栈的关键层次：
 
-| 层次 | 作用 |
-|------|------|
-| **RDMAP** | 定义 RDMA 操作（Read/Write/Send/Atomic） |
-| **DDP** | 直接数据放置，将数据 DMA 到最终内存 |
-| **MPA** | 为 TCP 添加 PDU 边界标记（TCP 上需要，SCTP 不需要） |
-| **TCP/SCTP** | 可靠传输 |
+| 层次         | 作用                                                |
+| ------------ | --------------------------------------------------- |
+| **RDMAP**    | 定义 RDMA 操作（Read/Write/Send/Atomic）            |
+| **DDP**      | 直接数据放置，将数据 DMA 到最终内存                 |
+| **MPA**      | 为 TCP 添加 PDU 边界标记（TCP 上需要，SCTP 不需要） |
+| **TCP/SCTP** | 可靠传输                                            |
 
 iWARP 的核心优势：
+
 - **不需要无损网络**——TCP 自带可靠传输
 - **可穿越路由器**——基于标准 IP
 
 代价：
+
 - **更高延迟**——TCP 协议栈和 MPA 开销
 - **需要 TOE**——否则 CPU 负担重
 - **不支持 UD**——无法使用多播

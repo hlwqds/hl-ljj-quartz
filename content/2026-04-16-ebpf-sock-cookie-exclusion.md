@@ -57,6 +57,7 @@ if (ip->daddr == collector_ip || ip->saddr == collector_ip)
 ```
 
 **缺点**：
+
 - 需要预先知道 collector IP，部署时需要改配置
 - IP 可能变化（负载均衡、健康检查），运行时 IP 变更就失效
 - 如果 agent 同时处理多个 collector 流量，逻辑会变得复杂
@@ -76,6 +77,7 @@ if (ctx->mark == 0x1)
 ```
 
 **缺点**：
+
 - mark 容易被其他程序覆盖或清除
 - 需要在宿主机上配置 iptables，侵入性强
 - 如果 mark 被用于其他用途，会产生冲突
@@ -90,6 +92,7 @@ if (sk->sk_bound_dev_if == dummy_ifindex)
 ```
 
 **缺点**：
+
 - agent 需要通过实际网卡与 collector 通信，无法使用 dummy 网卡
 - 如果绑定到真实网卡，会影响正常业务通信
 
@@ -119,12 +122,12 @@ void inet_csk_clone(struct sock *newsk, const struct request_sock *req)
 
 Socket cookie 的特点：
 
-| 特性 | 说明 |
-|------|------|
-| **全局唯一** | 内核保证，每个 socket 分配一次 |
-| **生命周期** | 从 `socket()` 创建到 `close()` 销毁前有效 |
-| **跨方向** | 同一 TCP 连接的 client socket 和 server socket 各有各的 cookie |
-| **不可伪造** | 用户态无法任意指定 cookie 值 |
+| 特性         | 说明                                                           |
+| ------------ | -------------------------------------------------------------- |
+| **全局唯一** | 内核保证，每个 socket 分配一次                                 |
+| **生命周期** | 从 `socket()` 创建到 `close()` 销毁前有效                      |
+| **跨方向**   | 同一 TCP 连接的 client socket 和 server socket 各有各的 cookie |
+| **不可伪造** | 用户态无法任意指定 cookie 值                                   |
 
 ### 3.2 如何获取 socket cookie
 
@@ -170,11 +173,11 @@ static __always_inline __u64 get_sock_cookie(struct sock *sk)
 
 ### 3.3 为什么 sock_cookie 比 (tid, fd) 更可靠
 
-| 标识方式 | 可靠性 | 原因 |
-|----------|--------|------|
-| `tid + fd` | ❌ 一般 | fd 会复用，同一 fd 在不同时间是不同 socket |
-| `pid + tid + fd` | ⚠️ 勉强 | 多线程环境下，同一 tid 可能重建 socket |
-| `sock_cookie` | ✅ 强 | 内核保证全局唯一，socket 生命周期内不变 |
+| 标识方式         | 可靠性  | 原因                                       |
+| ---------------- | ------- | ------------------------------------------ |
+| `tid + fd`       | ❌ 一般 | fd 会复用，同一 fd 在不同时间是不同 socket |
+| `pid + tid + fd` | ⚠️ 勉强 | 多线程环境下，同一 tid 可能重建 socket     |
+| `sock_cookie`    | ✅ 强   | 内核保证全局唯一，socket 生命周期内不变    |
 
 ---
 
@@ -720,13 +723,13 @@ int stream_verdict(struct __sk_buff *ctx)
 
 ## 6. 完整方案对比
 
-| 维度 | IP 排除 | mark 标记 | ifindex | socket cookie (本章) |
-|------|---------|-----------|---------|-------------------|
-| **准确性** | ❌ IP 会变/冲突 | ⚠️ mark 会被覆盖 | ❌ 物理网卡不行 | ✅ 精确到 socket |
-| **部署复杂度** | 需改配置 | 需 iptables | 需 dummy 网卡 | 无侵入 |
-| **多 collector** | 需维护 IP 列表 | 需多 mark | 不适用 | 自动追踪 |
-| **运行时变更** | ❌ 需改配置 | ⚠️ mark 会丢 | ❌ 不可变更 | ✅ 自动跟随 |
-| **老内核兼容** | ✅ | ✅ | ✅ | ❌ 需要 5.6+ |
+| 维度             | IP 排除         | mark 标记        | ifindex         | socket cookie (本章) |
+| ---------------- | --------------- | ---------------- | --------------- | -------------------- |
+| **准确性**       | ❌ IP 会变/冲突 | ⚠️ mark 会被覆盖 | ❌ 物理网卡不行 | ✅ 精确到 socket     |
+| **部署复杂度**   | 需改配置        | 需 iptables      | 需 dummy 网卡   | 无侵入               |
+| **多 collector** | 需维护 IP 列表  | 需多 mark        | 不适用          | 自动追踪             |
+| **运行时变更**   | ❌ 需改配置     | ⚠️ mark 会丢     | ❌ 不可变更     | ✅ 自动跟随          |
+| **老内核兼容**   | ✅              | ✅               | ✅              | ❌ 需要 5.6+         |
 
 ---
 

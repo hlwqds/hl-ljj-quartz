@@ -897,4 +897,3 @@ SR-TE delivers sophisticated traffic engineering without the scaling and complex
 SR-TE represents the convergence of segment routing's simplicity with the traffic engineering capabilities that modern networks require, enabling operators to engineer traffic with precision while maintaining the operational efficiency of source-based routing.
 
 ---
-

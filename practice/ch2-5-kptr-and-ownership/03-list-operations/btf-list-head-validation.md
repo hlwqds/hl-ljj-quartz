@@ -17,6 +17,7 @@ struct map_value {
 ```
 
 错误日志：
+
 ```
 libbpf: BTF loading error: -EINVAL
 ```
@@ -49,6 +50,7 @@ C 语言没有泛型。内核看到 `struct bpf_list_head head` 时，无法知�
 - **node_field_name**：`struct node` 中用于链接的字段名是 `node`
 
 有了这个信息，内核可以做到：
+
 1. **类型安全**：`bpf_list_push_back` 只接受 `struct node` 类型的元素
 2. **所有权环检测**：防止 A→B→C→A 的环形所有权导致内存泄漏
 3. **偏移量计算**：知道 `bpf_list_node` 在 value struct 中的精确偏移
@@ -57,7 +59,7 @@ C 语言没有泛型。内核看到 `struct bpf_list_head head` 时，无法知�
 
 以下是 `bpftool prog load` 触发的完整内核验证链：
 
-```
+````
 用户空间: bpftool prog load xxx.o /sys/fs/bpf/xxx
   │
   ▼
@@ -144,11 +146,12 @@ btf_parse (kernel/bpf/btf.c:5793)
 bpf_spin_lock(&other_map->lock);  // 锁了另一个 map 的 lock
 bpf_list_push_back(&v->head, &n->node);  // 操作 v 的 list_head
 // 两个不同的 map value，锁不匹配！
-```
+````
 
 ### Verifier 的匹配机制
 
 Verifier 为每个 map value / BPF 堆分配维护一个唯一 `(id, ptr)` 对：
+
 - **id**: `reg->id`，verifier 为每个寄存器分配的唯一标识
 - **ptr**: `map_ptr`（map value）或 `btf`（BPF 堆分配）
 
@@ -226,12 +229,13 @@ bpf_spin_unlock(&v->lock) 被调用时 (verifier.c:8494):
 
 ### 关键设计
 
-| 问题 | 答案 |
-|------|------|
+| 问题                                                | 答案                                                                                                            |
+| --------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
 | Verifier 怎么知道哪个 spin_lock 保护哪个 list_head? | 不需要知道。只要 lock 和 head 在**同一个 allocation**（同一个 map value 或同一个 bpf_obj_new 分配），就认为匹配 |
-| 为什么用 (id, ptr) 而不是 lock 偏移量? | 因为一个 allocation 只允许一个 bpf_spin_lock（verifier.c:8462 检查），所以匹配 allocation 等价于匹配 lock |
-| 锁了另一个 map 的 lock 能操作这个 map 的 list 吗? | 不能。(id, ptr) 不同，find_lock_state 返回 NULL |
-| bpf_spin_lock 能嵌套吗? | 不能。第二个 bpf_spin_lock 会触发 "Locking two bpf_spin_locks are not allowed" |
+| 为什么用 (id, ptr) 而不是 lock 偏移量?              | 因为一个 allocation 只允许一个 bpf_spin_lock（verifier.c:8462 检查），所以匹配 allocation 等价于匹配 lock       |
+| 锁了另一个 map 的 lock 能操作这个 map 的 list 吗?   | 不能。(id, ptr) 不同，find_lock_state 返回 NULL                                                                 |
+| bpf_spin_lock 能嵌套吗?                             | 不能。第二个 bpf_spin_lock 会触发 "Locking two bpf_spin_locks are not allowed"                                  |
+
 ```
 
 ## 源码关键函数索引
@@ -264,15 +268,17 @@ bpf_spin_unlock(&v->lock) 被调用时 (verifier.c:8494):
 编译后，`__attribute__((btf_decl_tag("contains:node:node")))` 会被 clang 编码为 BTF 类型：
 
 ```
+
 // bpftool btf dump 输出 (简化)
 struct map_value size=24 vlen=2
-    lock type_id=13 bits_offset=0
-    head type_id=14 bits_offset=64
+lock type_id=13 bits_offset=0
+head type_id=14 bits_offset=64
 
 DECL_TAG "contains:node:node" type_id=14 component_idx=1
-//                     ^^^^^^^^^^^^^^^^^^  ^^^^^^^^  ^^^^^^^^^^^^^
-//                     tag 内容            指向 head  head 是第 1 个成员 (0-indexed)
-```
+// ^^^^^^^^^^^^^^^^^^ ^^^^^^^^ ^^^^^^^^^^^^^
+// tag 内容 指向 head head 是第 1 个成员 (0-indexed)
+
+````
 
 `BTF_KIND_DECL_TAG` 是 BTF 的一种 type kind，内核在 `btf_find_decl_tag_value` 中解析它。
 
@@ -321,21 +327,21 @@ struct map_value {
     struct bpf_rb_root root
         __attribute__((btf_decl_tag("contains:tree_node:rb")));
 };
-```
+````
 
 ### 不需要 decl_tag 的类型
 
-| 类型 | 原因 |
-|------|------|
-| `bpf_spin_lock` | 纯粹的锁，无需额外类型信息 |
-| `bpf_res_spin_lock` | 可重入锁变体，同上 |
-| `bpf_list_node` | 被 `contains:` 引用，自身不需要注解 |
-| `bpf_rb_node` | 同上 |
-| `bpf_timer` | 回调函数通过 `bpf_timer_set_callback()` 运行时注册 |
-| `bpf_wq` | workqueue，回调运行时注册 |
-| `bpf_task_work` | task work，回调运行时注册 |
-| `bpf_refcount` | 纯引用计数，无需类型参数 |
-| `bpf_kptr` | 类型信息通过指针类型本身推断（`__kptr` 标记） |
+| 类型                | 原因                                               |
+| ------------------- | -------------------------------------------------- |
+| `bpf_spin_lock`     | 纯粹的锁，无需额外类型信息                         |
+| `bpf_res_spin_lock` | 可重入锁变体，同上                                 |
+| `bpf_list_node`     | 被 `contains:` 引用，自身不需要注解                |
+| `bpf_rb_node`       | 同上                                               |
+| `bpf_timer`         | 回调函数通过 `bpf_timer_set_callback()` 运行时注册 |
+| `bpf_wq`            | workqueue，回调运行时注册                          |
+| `bpf_task_work`     | task work，回调运行时注册                          |
+| `bpf_refcount`      | 纯引用计数，无需类型参数                           |
+| `bpf_kptr`          | 类型信息通过指针类型本身推断（`__kptr` 标记）      |
 
 **判断依据**：只有**容器类型**（`bpf_list_head`、`bpf_rb_root`）需要 decl_tag，因为内核必须知道容器里装什么类型，才能在 push/insert 时做类型检查和所有权追踪。其他类型要么是被引用的叶子节点（`bpf_list_node`），要么是独立工具（锁、定时器），要么在运行时绑定回调。
 

@@ -5,8 +5,8 @@ tags: [p4, series, multicast, clone, packet-replication, mirror, clone-session, 
 description: "P4 Multicast 与 Clone 深度解析——Multicast Group 多播组配置、Packet Clone 会话复制、Clone Session、Ingress/Egress Clone、Port Mirror、OAM 注入、PSA 中的多播与复制机制"
 ---
 
-> [!info] P4 深度探索系列
-> 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+> [!info] P4 深度探索系列 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-14-p4-deep-dive-ch1-p4-overview|第一章：P4 概述——诞生背景与协议无关包处理]]
 > 2. [[2026-04-14-p4-deep-dive-ch2-p4-architecture|第二章：P4 架构模型——PSA/V1Model、Ingress/Egress]]
 > 3. [[2026-04-14-p4-deep-dive-ch3-p4-vs-ebpf|第三章：P4 vs eBPF——适用场景与硬件/软件对比]]
@@ -691,13 +691,13 @@ Tofino Clone Session:
 
 本章介绍了 P4 中的 **Multicast** 和 **Clone** 两种 Packet 复制机制：
 
-| 机制 | 触发位置 | 典型用途 |
-|------|---------|---------|
-| **Multicast** | Ingress | L2/L3 多播、组播路由、VLAN 广播 |
-| **Ingress Clone (PI2E)** | Ingress | Port Mirror、ACL Log、OAM、INT |
-| **Ingress Clone (PI2I)** | Ingress | Loopback、Local Processing |
-| **Egress Clone (PE2E)** | Egress | OAM Reply、Packet Modification |
-| **Egress Clone (PE2I)** | Egress | 回环处理 |
+| 机制                     | 触发位置 | 典型用途                        |
+| ------------------------ | -------- | ------------------------------- |
+| **Multicast**            | Ingress  | L2/L3 多播、组播路由、VLAN 广播 |
+| **Ingress Clone (PI2E)** | Ingress  | Port Mirror、ACL Log、OAM、INT  |
+| **Ingress Clone (PI2I)** | Ingress  | Loopback、Local Processing      |
+| **Egress Clone (PE2E)**  | Egress   | OAM Reply、Packet Modification  |
+| **Egress Clone (PE2I)**  | Egress   | 回环处理                        |
 
 ### PSA 中的 Multicast/Clone Metadata
 
@@ -711,8 +711,8 @@ struct PSA_ingress_output_metadata_t {
 ```
 
 两种机制共享 ASIC 的 **Packet Replication Engine**，但配置方式不同：
+
 - **Multicast Group** 通过 `multicast_group` 字段引用组表
 - **Clone Session** 通过 `clone_session` 字段引用会话配置
 
 两者结合，可以实现复杂的安全监控、OAM、和遥测功能。
-

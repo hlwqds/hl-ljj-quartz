@@ -14,8 +14,8 @@ tags:
 description: "深入解析 Suricata 的 TCP 重组策略配置：BSD/Linux/Windows/First/Last 策略的行为差异、以及如何根据网络环境选择合适的重组策略"
 ---
 
-> [!info] Suricata 2026 深度探索系列
-> 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Suricata 2026 深度探索系列 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-15-suricata-deep-dive-ch1-overview|第一章：Suricata 概述]]
 > 2. [[2026-04-15-suricata-deep-dive-ch2-config|第二章：Suricata 配置系统]]
 > 3. [[2026-04-15-suricata-deep-dive-ch3-runmodes|第三章：Runmodes 运行模式]]
@@ -82,13 +82,13 @@ graph TD
 
 不同操作系统对 TCP 重传和重叠片段的处理方式不同：
 
-| OS | 处理方式 | 场景 |
-|:---|:-------|:-----|
-| **BSD** | 保留先到达的片段 | 传统 BSD 系统、Solaris |
-| **Linux** | 保留后到达的片段（后发优先） | 大多数 Linux 服务器 |
-| **Windows** | 保留先到达的片段 | Windows 系统 |
-| **First** | 强制保留最先到达 | 高可靠性场景 |
-| **Last** | 强制保留最后到达 | 高可靠性场景 |
+| OS          | 处理方式                     | 场景                   |
+| :---------- | :--------------------------- | :--------------------- |
+| **BSD**     | 保留先到达的片段             | 传统 BSD 系统、Solaris |
+| **Linux**   | 保留后到达的片段（后发优先） | 大多数 Linux 服务器    |
+| **Windows** | 保留先到达的片段             | Windows 系统           |
+| **First**   | 强制保留最先到达             | 高可靠性场景           |
+| **Last**    | 强制保留最后到达             | 高可靠性场景           |
 
 ### 1.2 策略配置
 
@@ -99,7 +99,7 @@ stream:
     # 重组策略
     # 可选: bsd, linux, windows, first, last
     policy: linux
-    
+
     # 针对特定方向的策略
     toserver-policy: linux
     toclient-policy: linux
@@ -130,16 +130,16 @@ typedef enum {
 typedef struct TcpReassemblyConfig_ {
     /* 全局策略 */
     TcpReassemblyPolicy policy;
-    
+
     /* 分方向策略 */
     TcpReassemblyPolicy toserver_policy;
     TcpReassemblyPolicy toclient_policy;
-    
+
     /* 深度配置 */
     uint32_t depth;
     uint32_t toserver_depth;
     uint32_t toclient_depth;
-    
+
 } TcpReassemblyConfig;
 ```
 
@@ -172,17 +172,17 @@ static int StreamReassemblyInsertSegmentBSD(TcpStream *stream,
     /* 遍历已有片段，检查重叠 */
     TcpSegment *prev = NULL;
     TcpSegment *cur = TAILQ_FIRST(&stream->seg_queue);
-    
+
     while (cur != NULL) {
         /* 计算重叠范围 */
         uint32_t seg_start = seg->seq;
         uint32_t seg_end = seg->seq + seg->len;
         uint32_t cur_start = cur->seq;
         uint32_t cur_end = cur->seq + cur->len;
-        
+
         if (SEQ_LEQ(seg_start, cur_end) && SEQ_GT(seg_end, cur_start)) {
             /* 存在重叠 */
-            
+
             if (SEQ_LEQ(seg_start, cur_start)) {
                 /* 新片段在前，保留新片段的前半部分 */
                 uint32_t new_end = cur_start;
@@ -205,18 +205,18 @@ static int StreamReassemblyInsertSegmentBSD(TcpStream *stream,
                 }
             }
         }
-        
+
         prev = cur;
         cur = TAILQ_NEXT(cur, next);
     }
-    
+
     /* 插入片段到队列 */
     if (prev == NULL) {
         TAILQ_INSERT_HEAD(&stream->seg_queue, seg, next);
     } else {
         TAILQ_INSERT_AFTER(&stream->seg_queue, prev, seg, next);
     }
-    
+
     return 1;
 }
 ```
@@ -246,27 +246,27 @@ static int StreamReassemblyInsertSegmentLinux(TcpStream *stream,
 {
     TcpSegment *prev = NULL;
     TcpSegment *cur = TAILQ_FIRST(&stream->seg_queue);
-    
+
     while (cur != NULL) {
         uint32_t seg_start = seg->seq;
         uint32_t seg_end = seg->seq + seg->len;
         uint32_t cur_start = cur->seq;
         uint32_t cur_end = cur->seq + cur->len;
-        
+
         if (SEQ_LEQ(seg_start, cur_end) && SEQ_GT(seg_end, cur_start)) {
             /* 存在重叠 - Linux 策略：后发优先 */
-            
+
             if (SEQ_GT(seg_start, cur_start)) {
                 /* 新片段起始位置更靠后
                  * 保留新片段的前半部分，覆盖旧数据 */
                 uint32_t overlap_start = seg_start;
                 uint32_t overlap_end = MIN(seg_end, cur_end);
-                
+
                 /* 覆盖旧数据 */
-                ReplaceStreamData(stream, overlap_start, 
+                ReplaceStreamData(stream, overlap_start,
                                  overlap_end - overlap_start,
                                  seg->data + (overlap_start - seg_start));
-                
+
                 /* 调整新片段，移除已处理部分 */
                 if (seg_end > cur_end) {
                     seg->seq = cur_end;
@@ -280,11 +280,11 @@ static int StreamReassemblyInsertSegmentLinux(TcpStream *stream,
                 /* 新片段在前，保留新片段，覆盖旧数据 */
                 uint32_t overlap_start = cur_start;
                 uint32_t overlap_end = MIN(seg_end, cur_end);
-                
+
                 ReplaceStreamData(stream, overlap_start,
                                  overlap_end - overlap_start,
                                  seg->data);
-                
+
                 if (seg_end > cur_end) {
                     /* 保留新片段超出部分 */
                     seg->len = seg_end - cur_end;
@@ -293,18 +293,18 @@ static int StreamReassemblyInsertSegmentLinux(TcpStream *stream,
                 }
             }
         }
-        
+
         prev = cur;
         cur = TAILQ_NEXT(cur, next);
     }
-    
+
     /* 插入剩余片段 */
     if (prev == NULL) {
         TAILQ_INSERT_HEAD(&stream->seg_queue, seg, next);
     } else {
         TAILQ_INSERT_AFTER(&stream->seg_queue, prev, seg, next);
     }
-    
+
     return 1;
 }
 ```
@@ -330,10 +330,10 @@ static int StreamReassemblyInsertSegmentWindows(TcpStream *stream,
     /* Windows 策略与 BSD 类似，但在以下情况有差异：
      * 1. 当 seg.seq == cur.seq 时，Windows 保留新数据
      * 2. SACK 启用时的行为差异 */
-    
+
     TcpSegment *prev = NULL;
     TcpSegment *cur = TAILQ_FIRST(&stream->seg_queue);
-    
+
     while (cur != NULL) {
         if (seg->seq == cur->seq) {
             /* 相同起始位置 - Windows 保留新数据 */
@@ -343,16 +343,16 @@ static int StreamReassemblyInsertSegmentWindows(TcpStream *stream,
             /* 继续插入新片段 */
             break;
         }
-        
+
         if (SEQ_LT(seg->seq, cur->seq)) {
             /* 找到插入位置 */
             break;
         }
-        
+
         prev = cur;
         cur = TAILQ_NEXT(cur, next);
     }
-    
+
     /* 插入（复用 BSD 类似逻辑处理重叠） */
     return StreamReassemblyInsertSegmentBSD_WithWindowsEdge(stream, seg);
 }
@@ -372,9 +372,9 @@ static int StreamReassemblyInsertSegmentFirst(TcpStream *stream,
                                                 TcpSegment *seg)
 {
     /* First 策略：完全忽略重叠，只保留最先到达的数据 */
-    
+
     TcpSegment *cur = TAILQ_FIRST(&stream->seg_queue);
-    
+
     while (cur != NULL) {
         /* 检查是否完全被已有片段覆盖 */
         if (SEQ_GEQ(seg->seq, cur->seq) &&
@@ -382,10 +382,10 @@ static int StreamReassemblyInsertSegmentFirst(TcpStream *stream,
             /* 新片段完全被已有片段覆盖，丢弃 */
             return 0;
         }
-        
+
         cur = TAILQ_NEXT(cur, next);
     }
-    
+
     /* 检查是否有部分重叠 */
     cur = TAILQ_FIRST(&stream->seg_queue);
     while (cur != NULL) {
@@ -401,10 +401,10 @@ static int StreamReassemblyInsertSegmentFirst(TcpStream *stream,
                 /* 不可能发生，因为上面已检查 */
             }
         }
-        
+
         cur = TAILQ_NEXT(cur, next);
     }
-    
+
     /* 插入 */
     TcpSegment *prev = NULL;
     cur = TAILQ_FIRST(&stream->seg_queue);
@@ -412,13 +412,13 @@ static int StreamReassemblyInsertSegmentFirst(TcpStream *stream,
         prev = cur;
         cur = TAILQ_NEXT(cur, next);
     }
-    
+
     if (prev == NULL) {
         TAILQ_INSERT_HEAD(&stream->seg_queue, seg, next);
     } else {
         TAILQ_INSERT_AFTER(&stream->seg_queue, prev, seg, next);
     }
-    
+
     return 1;
 }
 ```
@@ -433,38 +433,38 @@ static int StreamReassemblyInsertSegmentLast(TcpStream *stream,
                                               TcpSegment *seg)
 {
     /* Last 策略：移除与新片段重叠的旧数据，保留新数据 */
-    
+
     TcpSegment *cur = TAILQ_FIRST(&stream->seg_queue);
     TcpSegment *next = NULL;
-    
+
     while (cur != NULL) {
         next = TAILQ_NEXT(cur, next);
-        
+
         if (SEQ_LEQ(seg->seq, cur->seq + cur->len) &&
             SEQ_GT(seg->seq + seg->len, cur->seq)) {
             /* 存在重叠 - 删除旧片段 */
             TAILQ_REMOVE(&stream->seg_queue, cur, next);
             TcpSegmentFree(cur);
         }
-        
+
         cur = next;
     }
-    
+
     /* 插入新片段 */
     cur = TAILQ_FIRST(&stream->seg_queue);
     TcpSegment *prev = NULL;
-    
+
     while (cur != NULL && SEQ_LT(cur->seq, seg->seq)) {
         prev = cur;
         cur = TAILQ_NEXT(cur, next);
     }
-    
+
     if (prev == NULL) {
         TAILQ_INSERT_HEAD(&stream->seg_queue, seg, next);
     } else {
         TAILQ_INSERT_AFTER(&stream->seg_queue, prev, seg, next);
     }
-    
+
     return 1;
 }
 ```
@@ -475,13 +475,13 @@ static int StreamReassemblyInsertSegmentLast(TcpStream *stream,
 
 ### 7.1 策略对比表
 
-| 策略 | 保留 | 适用场景 | 优点 | 缺点 |
-|:----|:----|:---------|:-----|:-----|
-| **BSD** | 先到达 | 传统网络 | 兼容性好 | 可能漏检后发重传 |
-| **Linux** | 后到达 | Linux 服务器环境 | 符合大多数服务器 | 可能漏检先发数据 |
-| **Windows** | 先到达 | Windows 客户端 | 兼容 Windows | 与 BSD 类似 |
-| **First** | 强制先到 | 高可靠检测 | 简单明确 | 不够灵活 |
-| **Last** | 强制后到 | 高可靠检测 | 优先最新数据 | 可能丢失原数据 |
+| 策略        | 保留     | 适用场景         | 优点             | 缺点             |
+| :---------- | :------- | :--------------- | :--------------- | :--------------- |
+| **BSD**     | 先到达   | 传统网络         | 兼容性好         | 可能漏检后发重传 |
+| **Linux**   | 后到达   | Linux 服务器环境 | 符合大多数服务器 | 可能漏检先发数据 |
+| **Windows** | 先到达   | Windows 客户端   | 兼容 Windows     | 与 BSD 类似      |
+| **First**   | 强制先到 | 高可靠检测       | 简单明确         | 不够灵活         |
+| **Last**    | 强制后到 | 高可靠检测       | 优先最新数据     | 可能丢失原数据   |
 
 ### 7.2 选择建议
 
@@ -491,15 +491,16 @@ stream:
   reassembly:
     # 大多数 Linux 服务器环境
     policy: linux
-    
+
     # 混合环境：分别设置方向
-    toserver-policy: linux   # 客户端 → 服务器
-    toclient-policy: linux   # 服务器 → 客户端
-    
+    toserver-policy: linux # 客户端 → 服务器
+    toclient-policy: linux # 服务器 → 客户端
+
+
     # Windows 客户端为主的环境
     # policy: windows
     # policy: bsd
-    
+
     # 特殊场景：强制保留最新
     # policy: last
 ```
@@ -512,7 +513,7 @@ graph LR
         E1["抓包来源"] --> E2["主要 OS"]
         E2 --> E3["推荐策略"]
     end
-    
+
     E3 -->|"Linux 服务器"| P1["linux"]
     E3 -->|"Windows 客户端"| P2["windows / bsd"]
     E3 -->|"混合环境"| P3["toserver: linux<br/>toclient: bsd"]
@@ -532,10 +533,10 @@ stream:
   reassembly:
     # 客户端通常是 Windows
     toserver-policy: bsd
-    
+
     # 服务器通常是 Linux
     toclient-policy: linux
-    
+
     # 或者根据实际抓包分析调整
 ```
 
@@ -546,11 +547,11 @@ stream:
   reassembly:
     # 全局深度
     depth: 1048576
-    
+
     # 分方向深度
     toserver-depth: 1048576
     toclient-depth: 1048576
-    
+
     # 也可以设置不同值
     # toserver-depth: 1048576    # 客户端请求通常更长
     # toclient-depth: 262144     # 服务器响应通常更短
@@ -579,9 +580,9 @@ stream:
   reassembly:
     # 检查重复片段
     check-overlap-dictions: true
-    
+
     # 检测到重叠时的行为
-    overlap-limit: 0      # 0 = 无限制
+    overlap-limit: 0 # 0 = 无限制
 ```
 
 ---
@@ -597,6 +598,7 @@ stream:
 5. **Last 策略**：强制保留最后到达，移除所有重叠
 
 选择合适的重组策略需要考虑：
+
 - 网络中主要操作系统的类型
 - 是否有非对称路由
 - 检测的可靠性要求

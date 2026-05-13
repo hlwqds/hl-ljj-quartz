@@ -133,6 +133,7 @@ FC00:0:1:3 FC00:0:1:3 FC00:0:1:3 FC00:0:1:3 FC00:0:1:1
 - **Destination**: FC00:0:1:1::5 (final inner destination)
 
 Segment List (reversed order):
+
 ```
 Segment List[0] = FC00:0:1:1::1 (SR5 - final segment)
 Segment List[1] = FC00:0:1:4::1 (SR4)
@@ -151,7 +152,7 @@ Packet fields:
   Source Address:     2001:db8:cafe:1::1
   Destination Address: FC00:0:1:2::1  (Segment List[3] = first segment)
   Next Header:        43 (SRH)
-  
+
 SRH fields:
   Segments Left:      4
   Last Entry:         3
@@ -164,6 +165,7 @@ Upper layer: TCP to FC00:0:1:1::5
 ```
 
 The source knows:
+
 - Inner destination: FC00:0:1:1::5
 - Outer destination (first segment): FC00:0:1:2::1
 
@@ -291,19 +293,19 @@ A **segment endpoint** is a node whose locator matches the current DA. When a pa
 
 ```
 On packet arrival with SRH:
-    
+
     if Segments_Left > 0:
         # This node is a transit segment
         next_segment = Segment_List[Segments_Left - 1]
         DA = next_segment
         Segments_Left = Segments_Left - 1
-        
+
         # Optional: execute behavior based on SID
         # Optional: process TLVs
         # Optional: update HMAC
-        
+
         Forward based on new DA
-    
+
     else:
         # This node is the final destination
         # Strip SRH
@@ -340,11 +342,11 @@ When Segments Left reaches 0, the packet has reached its final SRv6 segment. The
 ```
 if Segments_Left == 0:
     # Final destination processing
-    
+
     # Option 1: Strip SRH and deliver
     strip_SRH()
     deliver_to_upper_layer()
-    
+
     # Option 2: Keep SRH for processing (some behaviors)
     # (depends on specific behavior being executed)
 ```
@@ -383,6 +385,7 @@ Segments Left = 4
 ```
 
 **State at Source:**
+
 ```
 DA = A (first segment)
 Segments Left = 4
@@ -390,6 +393,7 @@ Segment List unchanged
 ```
 
 **After A processes:**
+
 ```
 DA = B (next segment)
 Segments Left = 3
@@ -397,18 +401,21 @@ Segments Left = 3
 ```
 
 **After B processes:**
+
 ```
 DA = C (next segment)
 Segments Left = 2
 ```
 
 **After C processes:**
+
 ```
 DA = D (next segment)
 Segments Left = 1
 ```
 
 **After D processes:**
+
 ```
 DA = D (remains)
 Segments Left = 0
@@ -421,16 +428,16 @@ Upper layer delivered
 ```
 Hop 0 (Source):
   DA = Segment[3] = A
-  
+
 Hop 1 (A):
   DA = Segment[2] = B
-  
+
 Hop 2 (B):
   DA = Segment[1] = C
-  
+
 Hop 3 (C):
   DA = Segment[0] = D
-  
+
 Hop 4 (D):
   DA = D (final)
   Segments Left = 0
@@ -555,7 +562,7 @@ SRv6 Ping packet:
   - IPv6 Header with SRH
   - ICMPv6 Echo Request
   - Segment list contains SID to test
-  
+
 SRv6 Ping response:
   - Reverse segment list
   - ICMPv6 Echo Reply

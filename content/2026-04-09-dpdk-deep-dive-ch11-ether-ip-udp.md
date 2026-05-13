@@ -5,10 +5,8 @@ tags: [dpdk, series, ether, ipv4, ipv6, udp, checksum, offload, header-parse]
 description: "深入理解 DPDK 协议处理——Ethernet/IPv4/IPv6/UDP 头部结构、解析方法、checksum 计算、以及 NIC 硬件卸载机制"
 ---
 
-> [!info] DPDK 深度探索系列
-> 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
-> 1-10. 前十章已完成
-> 11. **第十一章：Ether/IP/UDP 协议处理与 Checksum Offload**
+> [!info] DPDK 深度探索系列 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
+> 1-10. 前十章已完成 11. **第十一章：Ether/IP/UDP 协议处理与 Checksum Offload**
 
 ---
 
@@ -40,7 +38,7 @@ for each mbuf in pkts:
 
 ### 1.1 常见协议类型
 
-| Ether Type | 协议   | 说明                            |
+| Ether Type | 协议 | 说明                          |
 | ---------- | ---- | ----------------------------- |
 | 0x0800     | IPv4 | Internet Protocol v4          |
 | 0x0806     | ARP  | Address Resolution Protocol   |
@@ -901,6 +899,7 @@ nat_and_forward(struct rte_mbuf *m, uint32_t new_dst_ip,
 ```
 
 > **踩坑提醒**：
+>
 > - 从 RX 收到的 mbuf 上可能残留 `RTE_MBUF_F_RX_*` 标志，这些是**只读**的，不影响 TX。但旧的 TX L4 flag（如果 mbuf 被复用）必须清除，否则 NIC 可能用错误的编码。
 > - `RTE_MBUF_F_TX_L4_MASK` 用于清除 bit 52-53 上的旧 L4 checksum 编码。
 > - 如果只改了 IP 头（如 TTL 递减）但没改 IP 地址，UDP checksum 不受影响，可以不重算 L4。
@@ -1307,6 +1306,7 @@ payload 越大，AVX2 的加速比越接近理论值 8x（256-bit / 32-bit = 8 �
 ---
 
 > [!tip] 参考文献
+>
 > - Intel, "DPDK Packet Framework", https://doc.dpdk.org/guides/prog_guide/packet_framework.html
 > - RFC 791, "Internet Protocol"
 > - RFC 768, "User Datagram Protocol"

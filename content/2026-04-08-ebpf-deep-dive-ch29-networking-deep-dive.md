@@ -10,8 +10,8 @@ tags:
   - performance
 ---
 
-> [!info] eBPF 2026 深度探索系列
-> 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+> [!info] eBPF 2026 深度探索系列 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+>
 > 1. [[2026-04-08-ebpf-deep-dive-ch1-registers-and-instructions|第一章：寄存器与指令集]]
 > 2. [[2026-04-08-ebpf-deep-dive-ch1-5-function-calls|第一.五章：四种函数调用与动态内存]]
 > 3. [[2026-04-08-ebpf-deep-dive-ch1-6-the-verifier|第一.六章：验证器 (Verifier) 的底层逻辑]]
@@ -63,6 +63,7 @@ tags:
 > 49. [[2026-04-09-ebpf-deep-dive-ch40-network-protocols-deep-dive|第四十章：网络协议深度解析——TCP/UDP/QUIC 的 eBPF 视角]]
 > 50. [[2026-04-09-ebpf-deep-dive-ch41-memory-safety-and-vulnerabilities|第四十一章：eBPF 内存安全与漏洞分析]]
 > 51. [[2026-04-09-ebpf-deep-dive-ch42-service-mesh-integration|第四十二章：eBPF 与 Service Mesh 深度集成]]
+
 ---
 
 ## 1. 概述：网络协议栈的全面"透明化"
@@ -71,11 +72,11 @@ tags:
 
 本章聚焦于 eBPF 在网络深水区的三大核心应用场景：
 
-| 场景 | BPF 挂载点 | 核心价值 | 典型项目 |
-|------|-----------|---------|---------|
-| Sockmap 加速 | `sk_msg` / `sk_skb` | 绕过协议栈，零拷贝转发 | Cilium, Envoy |
-| 四层负载均衡 | XDP / TC | $O(1)$ 哈希查找，千万级 PPS | Katran, Cilium |
-| 拥塞控制 | Struct Ops | 动态切换 CC 算法，无需重启 | BBR, CUBIC 变体 |
+| 场景         | BPF 挂载点          | 核心价值                    | 典型项目        |
+| ------------ | ------------------- | --------------------------- | --------------- |
+| Sockmap 加速 | `sk_msg` / `sk_skb` | 绕过协议栈，零拷贝转发      | Cilium, Envoy   |
+| 四层负载均衡 | XDP / TC            | $O(1)$ 哈希查找，千万级 PPS | Katran, Cilium  |
+| 拥塞控制     | Struct Ops          | 动态切换 CC 算法，无需重启  | BBR, CUBIC 变体 |
 
 ```mermaid
 graph TB
@@ -142,11 +143,11 @@ sequenceDiagram
 
 ### 2.2 Sockmap 的 Map 类型对比
 
-| Map 类型 | 键类型 | 适用场景 | 挂载点 |
-|----------|--------|---------|--------|
-| `BPF_MAP_TYPE_SOCKMAP` | 索引值 | TCP socket 重定向 | `sk_msg`, `sk_skb` |
-| `BPF_MAP_TYPE_SOCKHASH` | 4 元组联合键 | 哈希键的高效查找 | `sk_msg`, `sk_skb` |
-| `BPF_MAP_TYPE_SOCKARRAY` | 数组索引 | 数组索引查找 (5.18+) | `sk_msg` |
+| Map 类型                 | 键类型       | 适用场景             | 挂载点             |
+| ------------------------ | ------------ | -------------------- | ------------------ |
+| `BPF_MAP_TYPE_SOCKMAP`   | 索引值       | TCP socket 重定向    | `sk_msg`, `sk_skb` |
+| `BPF_MAP_TYPE_SOCKHASH`  | 4 元组联合键 | 哈希键的高效查找     | `sk_msg`, `sk_skb` |
+| `BPF_MAP_TYPE_SOCKARRAY` | 数组索引     | 数组索引查找 (5.18+) | `sk_msg`           |
 
 `SOCKHASH` 相比 `SOCKMAP` 的优势在于支持 4 元组（src_ip, src_port, dst_ip, dst_port）作为联合键进行哈希查找，更适合生产环境中的服务网格场景。
 
@@ -176,22 +177,22 @@ struct sk_msg_md {
 
 ### 2.4 sk_skb 与 sk_msg 的区别
 
-| 特性 | `sk_msg` | `sk_skb` |
-|------|----------|----------|
-| 数据结构 | `struct scatterlist` | `struct sk_buff` |
-| 挂载点 | sendmsg 系统调用 | socket 收发路径 |
-| 适用场景 | 本地代理加速 | 代理与远端通信 |
-| 头部操作 | 支持 push/pull | 支持完整 skb 操作 |
+| 特性     | `sk_msg`             | `sk_skb`          |
+| -------- | -------------------- | ----------------- |
+| 数据结构 | `struct scatterlist` | `struct sk_buff`  |
+| 挂载点   | sendmsg 系统调用     | socket 收发路径   |
+| 适用场景 | 本地代理加速         | 代理与远端通信    |
+| 头部操作 | 支持 push/pull       | 支持完整 skb 操作 |
 
 ### 2.5 生产环境性能数据
 
 在 Cilium 的 Service Mesh 数据面中，Sockmap 的实测数据（基于 2025 年 Cilium 1.16 基准测试）：
 
-| 指标 | iptables 模式 | Sockmap 加速 | 提升幅度 |
-|------|-------------|-------------|---------|
-| P99 延迟 (同节点) | 150μs | 25μs | **83% 降低** |
-| 吞吐量 (单核) | 2.5 Gbps | 8.2 Gbps | **228% 提升** |
-| CPU 利用率 (100k RPS) | 35% | 12% | **66% 降低** |
+| 指标                  | iptables 模式 | Sockmap 加速 | 提升幅度      |
+| --------------------- | ------------- | ------------ | ------------- |
+| P99 延迟 (同节点)     | 150μs         | 25μs         | **83% 降低**  |
+| 吞吐量 (单核)         | 2.5 Gbps      | 8.2 Gbps     | **228% 提升** |
+| CPU 利用率 (100k RPS) | 35%           | 12%          | **66% 降低**  |
 
 关键结论：Sockmap 对已建立连接的**数据面转发**有显著提升，但对**连接建立**（三次握手）没有影响。
 
@@ -282,24 +283,24 @@ int katran_lb(struct xdp_md *ctx) {
 
 ### 3.4 负载均衡算法对比
 
-| 算法 | 复杂度 | 适用场景 | eBPF 实现难度 |
-|------|--------|---------|-------------|
-| 轮询 (Round Robin) | $O(1)$ | 后端性能均匀 | 低 |
-| 加权轮询 | $O(1)$ | 后端性能差异大 | 低 |
-| 最少连接 | $O(N)$ | 长连接场景 | 中（需维护计数 Map） |
-| 一致性哈希 (Maglev) | $O(1)$ | 大规模动态后端 | 高（查找表预计算） |
-| 源地址哈希 | $O(1)$ | 会话保持 | 低 |
+| 算法                | 复杂度 | 适用场景       | eBPF 实现难度        |
+| ------------------- | ------ | -------------- | -------------------- |
+| 轮询 (Round Robin)  | $O(1)$ | 后端性能均匀   | 低                   |
+| 加权轮询            | $O(1)$ | 后端性能差异大 | 低                   |
+| 最少连接            | $O(N)$ | 长连接场景     | 中（需维护计数 Map） |
+| 一致性哈希 (Maglev) | $O(1)$ | 大规模动态后端 | 高（查找表预计算）   |
+| 源地址哈希          | $O(1)$ | 会话保持       | 低                   |
 
 ### 3.5 性能基准测试
 
 Katran 在 Meta 生产环境中的实测数据（单核，Intel Xeon）：
 
-| 指标 | iptables+IPVS | Katran (XDP) | 提升倍数 |
-|------|-------------|-------------|---------|
-| PPS（64B 小包） | 2M PPS | 40M PPS | **20x** |
-| PPS（1518B 大包） | 1M PPS | 12M PPS | **12x** |
-| 转发延迟 | 15μs | 0.2μs | **75x** |
-| CPU 消耗 (10M PPS) | 100% (1核) | 8% (1核) | **12x** |
+| 指标               | iptables+IPVS | Katran (XDP) | 提升倍数 |
+| ------------------ | ------------- | ------------ | -------- |
+| PPS（64B 小包）    | 2M PPS        | 40M PPS      | **20x**  |
+| PPS（1518B 大包）  | 1M PPS        | 12M PPS      | **12x**  |
+| 转发延迟           | 15μs          | 0.2μs        | **75x**  |
+| CPU 消耗 (10M PPS) | 100% (1核)    | 8% (1核)     | **12x**  |
 
 ---
 
@@ -309,13 +310,13 @@ Katran 在 Meta 生产环境中的实测数据（单核，Intel Xeon）：
 
 内核中内置了多种拥塞控制算法：
 
-| 算法 | 特点 | 适用场景 |
-|------|------|---------|
-| `cubic` | Linux 默认，基于丢包 | 通用有线网络 |
-| `bbr` | Google 开发，基于带宽和 RTT 估计 | 高带宽长距离链路 |
-| `bbr2` | BBR v2，改善公平性 | 多流共享链路 |
-| `dctcp` | 基于 ECN 的数据中心 TCP | 数据中心内部 |
-| `vegas` | 基于 RTT 延迟变化 | 低延迟敏感场景 |
+| 算法    | 特点                             | 适用场景         |
+| ------- | -------------------------------- | ---------------- |
+| `cubic` | Linux 默认，基于丢包             | 通用有线网络     |
+| `bbr`   | Google 开发，基于带宽和 RTT 估计 | 高带宽长距离链路 |
+| `bbr2`  | BBR v2，改善公平性               | 多流共享链路     |
+| `dctcp` | 基于 ECN 的数据中心 TCP          | 数据中心内部     |
+| `vegas` | 基于 RTT 延迟变化                | 低延迟敏感场景   |
 
 传统上，切换拥塞控制算法需要修改 `sysctl`，且修改是全局生效的。
 
@@ -443,12 +444,12 @@ graph TB
 
 Cilium 利用 Sockmap 和 XDP 实现了"无 Sidecar"或"轻量 Sidecar"的数据面：同节点通信使用 Sockmap 延迟降低 ~70%；跨节点通信由 XDP 处理隧道封装/解封装；在 eBPF 层实现透明 mTLS 身份验证。
 
-| 功能 | Envoy 实现 | eBPF 实现 | 性能差异 |
-|------|-----------|----------|---------|
-| L4 路由 | iptables + filter chain | XDP/TC 哈希查找 | 10-20x |
-| L7 HTTP 路由 | Envoy filter chain | sockops + 延迟处理 | 3-5x |
-| TLS 终止 | OpenSSL in Envoy | 内核 TLS + eBPF | 2-3x |
-| 限流 | Envoy token bucket | eBPF Map 计数器 | 100x |
+| 功能         | Envoy 实现              | eBPF 实现          | 性能差异 |
+| ------------ | ----------------------- | ------------------ | -------- |
+| L4 路由      | iptables + filter chain | XDP/TC 哈希查找    | 10-20x   |
+| L7 HTTP 路由 | Envoy filter chain      | sockops + 延迟处理 | 3-5x     |
+| TLS 终止     | OpenSSL in Envoy        | 内核 TLS + eBPF    | 2-3x     |
+| 限流         | Envoy token bucket      | eBPF Map 计数器    | 100x     |
 
 ---
 
@@ -609,12 +610,12 @@ Cilium 通过 eBPF 在内核态直接执行 Kubernetes NetworkPolicy，延迟从
 
 ### 8.1 版本要求
 
-| 功能 | 最低内核版本 | 推荐内核版本 |
-|------|-----------|-----------|
-| Sockmap 基础 | 4.14 | 5.10+ |
-| SOCKHASH | 4.18 | 5.10+ |
-| Struct Ops (TCP CC) | 5.6 | 6.1+ |
-| Sockmap + TLS (kTLS) | 5.10 | 6.6+ |
+| 功能                 | 最低内核版本 | 推荐内核版本 |
+| -------------------- | ------------ | ------------ |
+| Sockmap 基础         | 4.14         | 5.10+        |
+| SOCKHASH             | 4.18         | 5.10+        |
+| Struct Ops (TCP CC)  | 5.6          | 6.1+         |
+| Sockmap + TLS (kTLS) | 5.10         | 6.6+         |
 
 ### 8.2 常见陷阱
 
@@ -692,10 +693,10 @@ int bpf_proxy_accel(struct sk_msg_md *msg) {
 
 在 2026 年，eBPF 让网络成为了应用的一种**"可编程属性"**。无论是本地加速、全局调度还是协议优化，开发者都拥有了在纳秒级精度下操控每一个比特的能力。
 
-| 技术 | 层级 | 核心能力 | 成熟度 |
-|------|------|---------|--------|
-| **Sockmap** | L4 (Socket) | 同节点零拷贝转发 | 生产就绪 |
-| **XDP L4LB** | L2/L3 | 千万级 PPS 负载均衡 | 生产就绪 (Katran/Cilium) |
-| **TCP BPF CC** | L4 (Transport) | 动态拥塞控制算法 | 生产就绪 (6.1+) |
+| 技术           | 层级           | 核心能力            | 成熟度                   |
+| -------------- | -------------- | ------------------- | ------------------------ |
+| **Sockmap**    | L4 (Socket)    | 同节点零拷贝转发    | 生产就绪                 |
+| **XDP L4LB**   | L2/L3          | 千万级 PPS 负载均衡 | 生产就绪 (Katran/Cilium) |
+| **TCP BPF CC** | L4 (Transport) | 动态拥塞控制算法    | 生产就绪 (6.1+)          |
 
 **展望未来**，eBPF 网络技术正在向以下方向演进：硬件卸载集成（eBPF 程序直接编译到 SmartNIC 的 P4 固件中，见[[2026-04-08-ebpf-deep-dive-ch30-hardware-offload|第三十章]]）、多协议支持（QUIC、HTTP/3）、AI 原生网络（ML 自适应策略）、零信任网络（身份感知的细粒度访问控制）。

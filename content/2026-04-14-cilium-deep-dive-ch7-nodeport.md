@@ -12,8 +12,8 @@ tags:
   - load-balancer
 ---
 
-> [!info] Cilium 2026 深度探索系列
-> 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+> [!info] Cilium 2026 深度探索系列 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+>
 > 1. [[2026-04-14-cilium-deep-dive-ch1-cilium-overview|第一章：Cilium 概述]]
 > 2. [[2026-04-14-cilium-deep-dive-ch2-architecture|第二章：Cilium 架构]]
 > 3. [[2026-04-14-cilium-deep-dive-ch3-ebpf-datapath|第三章：eBPF 数据面]]
@@ -38,10 +38,10 @@ spec:
   selector:
     app: my-app
   ports:
-  - port: 80          # Service Port（集群内部访问）
-    targetPort: 8080  # Container Port
-    nodePort: 30080  # NodePort（静态端口，可选）
-    protocol: TCP
+    - port: 80 # Service Port（集群内部访问）
+      targetPort: 8080 # Container Port
+      nodePort: 30080 # NodePort（静态端口，可选）
+      protocol: TCP
 ```
 
 **传统 kube-proxy 实现的问题**：
@@ -157,11 +157,11 @@ nodeport_lb(struct xdp_md *ctx) {
 
 Cilium NodePort 支持三种 XDP 模式：
 
-| 模式 | 说明 | 性能 | 兼容性 |
-|:---|:---|:---|:---|
-| **XDPDirect** | 原生 XDP，直接在驱动层处理 | 最高 | 需要驱动支持 XDP |
-| **XDPGeneric** | 通用 XDP，skb 已分配后处理 | 中等 | 所有驱动支持 |
-| **XDPOffload** | 硬件卸载到 SmartNIC | 最高 | 需要硬件支持 |
+| 模式           | 说明                       | 性能 | 兼容性           |
+| :------------- | :------------------------- | :--- | :--------------- |
+| **XDPDirect**  | 原生 XDP，直接在驱动层处理 | 最高 | 需要驱动支持 XDP |
+| **XDPGeneric** | 通用 XDP，skb 已分配后处理 | 中等 | 所有驱动支持     |
+| **XDPOffload** | 硬件卸载到 SmartNIC        | 最高 | 需要硬件支持     |
 
 ```bash
 # 查看当前 XDP 模式
@@ -169,7 +169,7 @@ kubectl -n kube-system exec ds/cilium -- cilium config | grep xdp
 
 # 查看网卡上的 XDP 程序
 ip link show eth0
-# eth0: <BROADCAST,MULTICAST,UP> 
+# eth0: <BROADCAST,MULTICAST,UP>
 #    xdp_drop: eth_xdp_prog()  ← XDP 程序已挂载
 #    xdpgeneric: eth_xdp_prog()
 #    xdpdrv: eth_xdp_prog()
@@ -186,6 +186,7 @@ kubectl -n kube-system exec ds/cilium -- \
 ### 3.1 DSR 原理
 
 传统 NodePort 路径（SNAT）：
+
 ```
 Client → NodePort → DNAT → Pod → SNAT → Client
          ↑                              │
@@ -193,6 +194,7 @@ Client → NodePort → DNAT → Pod → SNAT → Client
 ```
 
 DSR 路径（无 SNAT）：
+
 ```
 Client → NodePort → DNAT → Pod → 直接响应 Client
                               ↑
@@ -214,23 +216,23 @@ static __always_inline int
 nodeport_lb_dsr(struct xdp_md *ctx, struct dsr_config *cfg) {
     // 1. 选择后端
     __u32 backend_id = lb_select_backend(svc, iphdr->saddr);
-    
+
     // 2. 获取后端信息
     struct backend_value *backend;
     backend = bpf_map_lookup_elem(&cilium_backends, &backend_id);
-    
+
     // 3. 修改目标：ServiceIP → BackendIP
     iphdr->daddr = backend->addr;
-    
+
     // 4. 存储原始目标（用于返回时恢复）
     //    通过 connection tracking 或 IP-in-IP 隧道
     cfg->orig_daddr = service_ip;
     cfg->backend_ip = backend->addr;
-    
+
     // 5. 封装（DSR 需要某种方式保留原始 Service 信息）
     //    方式1：IP-in-IP 封装
     //    方式2：直接路由（后端能直接访问 Client IP）
-    
+
     return XDP_REDIRECT;
 }
 ```
@@ -503,18 +505,18 @@ metadata:
   name: my-app
 spec:
   type: NodePort
-  externalTrafficPolicy: Local  # 仅路由到本地后端
+  externalTrafficPolicy: Local # 仅路由到本地后端
   ports:
-  - port: 80
-    nodePort: 30080
+    - port: 80
+      nodePort: 30080
 ```
 
 **externalTrafficPolicy**：
 
-| 策略 | 说明 | SNAT | 源 IP 保留 |
-|:---|:---|:---|:---|
-| **Cluster** | 流量可分布到任何节点的后端 | 是 | 否 |
-| **Local** | 流量仅路由到本地后端 | 否 | 是 |
+| 策略        | 说明                       | SNAT | 源 IP 保留 |
+| :---------- | :------------------------- | :--- | :--------- |
+| **Cluster** | 流量可分布到任何节点的后端 | 是   | 否         |
+| **Local**   | 流量仅路由到本地后端       | 否   | 是         |
 
 ```bash
 # Local 模式下的 Cilium 处理
@@ -593,33 +595,33 @@ tcpdump -i eth0 -n "tcp port 30080"
 
 ### 7.4 常见问题与解决
 
-| 问题 | 原因 | 解决方法 |
-|:---|:---|:---|
-| NodePort 无法访问 | XDP 未启用 | 检查 `cilium agent` 日志，启用 XDP |
-| 外部无法访问 | 防火墙阻止 | 开放 30000-32767 端口 |
-| DSR 不生效 | 后端跨节点 | 启用 Local externalTrafficPolicy |
-| 后端连接失败 | SNAT 导致回程不通 | 确认网络拓扑支持 DSR |
-| 部分节点不通 | XDP 程序未加载 | 重启该节点 cilium-agent |
+| 问题              | 原因              | 解决方法                           |
+| :---------------- | :---------------- | :--------------------------------- |
+| NodePort 无法访问 | XDP 未启用        | 检查 `cilium agent` 日志，启用 XDP |
+| 外部无法访问      | 防火墙阻止        | 开放 30000-32767 端口              |
+| DSR 不生效        | 后端跨节点        | 启用 Local externalTrafficPolicy   |
+| 后端连接失败      | SNAT 导致回程不通 | 确认网络拓扑支持 DSR               |
+| 部分节点不通      | XDP 程序未加载    | 重启该节点 cilium-agent            |
 
 ---
 
 ## 8. 章节总结
 
-|| 主题 | 关键点 |
-|:---|:---|:---|
-| **XDP 架构** | 网卡驱动层处理 | 最早可编程点，绕过协议栈 |
-| **DSR** | Direct Server Return | 后端直接响应，无 SNAT 开销 |
-| **Backend Selection** | Random/LC/Maglev | 支持多种负载均衡算法 |
-| **Local Priority** | 本地后端优先 | 减少跨节点流量，降低延迟 |
-| **externalTrafficPolicy** | Cluster/Local | 控制流量分布策略 |
+|                           | 主题                 | 关键点                     |
+| :------------------------ | :------------------- | :------------------------- |
+| **XDP 架构**              | 网卡驱动层处理       | 最早可编程点，绕过协议栈   |
+| **DSR**                   | Direct Server Return | 后端直接响应，无 SNAT 开销 |
+| **Backend Selection**     | Random/LC/Maglev     | 支持多种负载均衡算法       |
+| **Local Priority**        | 本地后端优先         | 减少跨节点流量，降低延迟   |
+| **externalTrafficPolicy** | Cluster/Local        | 控制流量分布策略           |
 
 **性能对比**：
 
-| 实现 | 吞吐量 | 延迟 | CPU 开销 |
-|:---|:---|:---|:---|
-| kube-proxy iptables | ~500 Kpps | 高 | 高 |
-| kube-proxy IPVS | ~800 Kpps | 中 | 中 |
-| Cilium XDP DSR | ~2,000+ Kpps | 低 | 低 |
+| 实现                | 吞吐量       | 延迟 | CPU 开销 |
+| :------------------ | :----------- | :--- | :------- |
+| kube-proxy iptables | ~500 Kpps    | 高   | 高       |
+| kube-proxy IPVS     | ~800 Kpps    | 中   | 中       |
+| Cilium XDP DSR      | ~2,000+ Kpps | 低   | 低       |
 
 **下一章**：LoadBalancer——Cilium 如何与云厂商 LB 集成，实现 L2/L4 负载均衡。
 

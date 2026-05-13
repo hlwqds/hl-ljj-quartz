@@ -5,8 +5,8 @@ tags: [vpn, series, networking, security, tunnel, ipip, sit, 6to4, isatap]
 description: "SIT/IPIP 隧道协议详解——IP in IP 封装、SIT 隧道、6to4/4to6/ISATAP 协议、Linux ipip 配置、与 GRE 对比"
 ---
 
-> [!info] VPN 技术深度探索系列
-> 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+> [!info] VPN 技术深度探索系列 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-vpn-deep-dive-ch1-vpn-fundamentals|VPN 基础概念]]
 > 2. [[2026-04-13-vpn-deep-dive-ch2-tunnel-basics|第二章：隧道技术基础]]
 > 3. [[2026-04-13-vpn-deep-dive-ch3-crypto-fundamentals|第三章：密码学基础]]
@@ -19,10 +19,10 @@ description: "SIT/IPIP 隧道协议详解——IP in IP 封装、SIT 隧道、6t
 
 **IP-in-IP**（RFC 2003）是最简单的隧道封装形式——直接将一个 IP 包封装在另一个 IP 包内部。这种隧道协议在 Linux 中对应两种实现：
 
-| 类型 | 说明 |
-|------|------|
-| **IPIP** | IPv4-in-IPv4，最基本的隧道 |
-| **SIT** | Simple Internet Transition，IPv6-in-IPv4 |
+| 类型     | 说明                                     |
+| -------- | ---------------------------------------- |
+| **IPIP** | IPv4-in-IPv4，最基本的隧道               |
+| **SIT**  | Simple Internet Transition，IPv6-in-IPv4 |
 
 IP-in-IP 的设计哲学是**极简主义**——只做封装，不做加密、不做认证、不做多协议支持。在需要这些特性时，通常叠加 IPSec。
 
@@ -32,18 +32,18 @@ graph LR
         O_SRC["Src: 203.0.113.10"]
         O_DST["Dst: 198.51.100.20"]
     end
-    
+
     subgraph Inner["内层 IP 包"]
         I_SRC["Src: 192.168.1.10"]
         I_DST["Dst: 192.168.2.20"]
         I_DATA["Data Payload"]
     end
-    
+
     O_SRC --> O_DST
     O_DST --> I_SRC
     I_SRC --> I_DST
     I_DST --> I_DATA
-    
+
     style Outer fill:#3b82f6,color:#fff
     style Inner fill:#10b981
 ```
@@ -72,13 +72,13 @@ IPIP 是最简单的隧道协议，仅增加一层外层 IP 头：
 
 ### 2.2 外层 IP 头 Protocol 字段
 
-| Protocol 值 | 协议 | 说明 |
-|-------------|------|------|
-| 4 | IP-IP | IP-in-IP 封装 |
-| 41 | IPv6 | 6in4 隧道 (SIT) |
-| 47 | GRE | GRE 封装 |
-| 50 | ESP | IPSec ESP |
-| 51 | AH | IPSec AH |
+| Protocol 值 | 协议  | 说明            |
+| ----------- | ----- | --------------- |
+| 4           | IP-IP | IP-in-IP 封装   |
+| 41          | IPv6  | 6in4 隧道 (SIT) |
+| 47          | GRE   | GRE 封装        |
+| 50          | ESP   | IPSec ESP       |
+| 51          | AH    | IPSec AH        |
 
 ### 2.3 IPIP vs GRE 头对比
 
@@ -99,13 +99,13 @@ GRE 头（最小 4 字节）：
 └──────────────────────────────────────────────────────┘
 ```
 
-|| IPIP | GRE |
-|------|------|-----|
-| 额外头部 | 0 bytes（仅外层IP） | 4-24 bytes |
-| 开销 | 最小 | 稍大 |
-| 多协议支持 | 仅 IPv4 | IPv4/IPv6/Ethernet |
-| Key 字段 | 无 | 有 |
-| NAT 穿越 | 稍好（单层IP） | 差（GRE 协议号） |
+|            | IPIP                | GRE                |
+| ---------- | ------------------- | ------------------ |
+| 额外头部   | 0 bytes（仅外层IP） | 4-24 bytes         |
+| 开销       | 最小                | 稍大               |
+| 多协议支持 | 仅 IPv4             | IPv4/IPv6/Ethernet |
+| Key 字段   | 无                  | 有                 |
+| NAT 穿越   | 稍好（单层IP）      | 差（GRE 协议号）   |
 
 ---
 
@@ -236,7 +236,7 @@ ip -6 addr add 2002:cb00:730a::1/16 dev eth0
 2002:cb00:730a:1::1    ◄───────────────────►   2002:c633:7114:1::1
                              SIT (Protocol 41)
                     203.0.113.10 ◄───────► 198.51.100.20
-                    
+
 通信过程：
 1. 站点 A 要访问 2002:c633:7114:1::1
 2. 从 IPv6 前缀 2002:c633:7114: 提取 IPv4 地址 198.51.100.20
@@ -264,12 +264,12 @@ ip link set tun6to4 up
 
 ### 5.3 6to4 的问题
 
-| 问题 | 说明 |
-|------|------|
-| **依赖公网 IPv4** | 每个 6to4 站点必须有公网 IPv4 |
-| **无法穿越 NAT** | NAT 设备通常不支持 Protocol 41 |
-| **Anycast 不稳定** | 6to4 中继 Anycast 地址不可靠 |
-| **已被放弃** | 2011 年后主流转向 6rd/原生 IPv6 |
+| 问题               | 说明                            |
+| ------------------ | ------------------------------- |
+| **依赖公网 IPv4**  | 每个 6to4 站点必须有公网 IPv4   |
+| **无法穿越 NAT**   | NAT 设备通常不支持 Protocol 41  |
+| **Anycast 不稳定** | 6to4 中继 Anycast 地址不可靠    |
+| **已被放弃**       | 2011 年后主流转向 6rd/原生 IPv6 |
 
 ---
 
@@ -309,13 +309,13 @@ ip link set isatap0 up
 
 ### 6.3 ISATAP vs 6to4
 
-|| ISATAP | 6to4 |
-|--------|--------|------|
-| 用途 | 访问 IPv6 资源（客户端侧） | 站点间 IPv6 互联 |
-| 地址格式 | IPv4 内嵌在 ::5efe: 之后 | 特殊 2002::/16 前缀 |
-| 隧道建立 | 指向 ISATAP 路由器 | 自动发现（Anycast） |
-| NAT 穿越 | 差 | 差 |
-| 现代用途 | 企业内网 IPv6 迁移 | 已基本废弃 |
+|          | ISATAP                     | 6to4                |
+| -------- | -------------------------- | ------------------- |
+| 用途     | 访问 IPv6 资源（客户端侧） | 站点间 IPv6 互联    |
+| 地址格式 | IPv4 内嵌在 ::5efe: 之后   | 特殊 2002::/16 前缀 |
+| 隧道建立 | 指向 ISATAP 路由器         | 自动发现（Anycast） |
+| NAT 穿越 | 差                         | 差                  |
+| 现代用途 | 企业内网 IPv6 迁移         | 已基本废弃          |
 
 ---
 
@@ -426,16 +426,16 @@ iptables -t mangle -A FORWARD -p tcp \
 
 ### 10.1 所有 L3 隧道协议对比
 
-|| IPIP | SIT (6in4) | GRE | WireGuard |
-|------|------|-----------|-----|-----------|
-| **封装协议** | IP=4 | IP=41 | IP=47 | UDP=51820 |
-| **载荷** | 仅 IPv4 | IPv6 | 任意 L3 | 任意 L3 |
-| **Key 字段** | 无 | 无 | 可选 | 内置 |
-| **加密** | 无 | 无 | 无 | ChaCha20 |
-| **MTU 开销** | 20B | 20B | 4-24B | ~60B |
-| **NAT 穿越** | 差 | 差 | 差 | 好 |
-| **复杂度** | 极简 | 极简 | 中等 | 低 |
-| **典型场景** | 运营商互联 | IPv6 过渡 | 企业互联 | 现代 VPN |
+|              | IPIP       | SIT (6in4) | GRE      | WireGuard |
+| ------------ | ---------- | ---------- | -------- | --------- |
+| **封装协议** | IP=4       | IP=41      | IP=47    | UDP=51820 |
+| **载荷**     | 仅 IPv4    | IPv6       | 任意 L3  | 任意 L3   |
+| **Key 字段** | 无         | 无         | 可选     | 内置      |
+| **加密**     | 无         | 无         | 无       | ChaCha20  |
+| **MTU 开销** | 20B        | 20B        | 4-24B    | ~60B      |
+| **NAT 穿越** | 差         | 差         | 差       | 好        |
+| **复杂度**   | 极简       | 极简       | 中等     | 低        |
+| **典型场景** | 运营商互联 | IPv6 过渡  | 企业互联 | 现代 VPN  |
 
 ### 10.2 隧道选择决策树
 
@@ -445,21 +445,21 @@ graph TD
     A --> C{"IPv6 over IPv4?"}
     A --> D{"需要多协议?"}
     A --> E{"需要加密?"}
-    
+
     B --> B1["IPIP<br/>(极简开销)"]
-    
+
     C --> C1{"是否需要自动配置?"}
     C1 --> C2["6to4 (已废弃)"]
     C1 --> C3["6RD (运营商)"]
     C1 --> C4["手动 SIT"]
-    
+
     D --> E
     E --> E1{"是"}
     E --> E2{"否"}
-    
+
     E1 --> E3["WireGuard 或<br/>GRE + IPSec"]
     E2 --> E4["GRE (多协议)<br/>IPIP (简单)"]
-    
+
     B1 --> END["根据场景选择"]
     C2 --> END
     C3 --> END
@@ -472,21 +472,22 @@ graph TD
 
 ## 11. 总结
 
-|| IPIP/SIT 关键知识点 |
-|---|---|
+|               | IPIP/SIT 关键知识点                       |
+| ------------- | ----------------------------------------- |
 | **IPIP 定位** | 最简单的 L3 隧道，Protocol 4，仅封装 IPv4 |
-| **SIT 定位** | IPv6-in-IPv4 隧道，Protocol 41 |
-| **开销** | 仅 20 字节（外层 IP 头） |
-| **核心缺陷** | 无加密、无认证、无多协议、穿越 NAT 困难 |
-| **6to4** | 基于 SIT 的自动 IPv6 隧道，已基本废弃 |
-| **ISATAP** | 站内 IPv4 网络的 IPv6 访问 |
-| **现代替代** | WireGuard（加密）或 GRE+IPSec（多协议） |
+| **SIT 定位**  | IPv6-in-IPv4 隧道，Protocol 41            |
+| **开销**      | 仅 20 字节（外层 IP 头）                  |
+| **核心缺陷**  | 无加密、无认证、无多协议、穿越 NAT 困难   |
+| **6to4**      | 基于 SIT 的自动 IPv6 隧道，已基本废弃     |
+| **ISATAP**    | 站内 IPv4 网络的 IPv6 访问                |
+| **现代替代**  | WireGuard（加密）或 GRE+IPSec（多协议）   |
 
 **下一章预告：** [[2026-04-13-vpn-deep-dive-ch7-mpls-vpn|MPLS VPN]] — MPLS 标签分发、L3VPN (VRF)、L2VPN (VPLS)。
 
 ---
 
 > [!quote] 参考文献
+>
 > - RFC 2003 - IP Encapsulation within IP
 > - RFC 2473 - Generic Packet Tunneling in IPv6
 > - RFC 3053 - IPv6 Tunnel Broker

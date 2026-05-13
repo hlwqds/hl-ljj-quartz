@@ -9,8 +9,8 @@ tags:
   - ddos
 ---
 
-> [!info] eBPF 2026 深度探索系列
-> 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+> [!info] eBPF 2026 深度探索系列 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+>
 > 1. [[2026-04-08-ebpf-deep-dive-ch1-registers-and-instructions|第一章：寄存器与指令集]]
 > 2. [[2026-04-08-ebpf-deep-dive-ch1-5-function-calls|第一.五章：四种函数调用与动态内存]]
 > 3. [[2026-04-08-ebpf-deep-dive-ch1-6-the-verifier|第一.六章：验证器 (Verifier) 的底层逻辑]]
@@ -62,6 +62,7 @@ tags:
 > 49. [[2026-04-09-ebpf-deep-dive-ch40-network-protocols-deep-dive|第四十章：网络协议深度解析——TCP/UDP/QUIC 的 eBPF 视角]]
 > 50. [[2026-04-09-ebpf-deep-dive-ch41-memory-safety-and-vulnerabilities|第四十一章：eBPF 内存安全与漏洞分析]]
 > 51. [[2026-04-09-ebpf-deep-dive-ch42-service-mesh-integration|第四十二章：eBPF 与 Service Mesh 深度集成]]
+
 ---
 
 # 第五章：XDP 极致网络性能与全栈架构
@@ -99,13 +100,13 @@ graph LR
 
 **性能差距的本质原因：**
 
-| 开销来源 | 传统路径 | XDP 路径 |
-|:---|:---|:---|
-| sk_buff 分配 | 必须分配（~200ns） | DROP 时零分配 |
-| 中断处理 | 每包一次硬件中断 | 可批量处理 |
-| 协议栈解析 | L2→L3→L4 全部解析 | 仅在 PASS 时进入 |
-| Netfilter 钩子 | 遍历所有 hook | 完全跳过 |
-| 内存拷贝 | 可能多次拷贝 | 直接操作 DMA 内存 |
+| 开销来源       | 传统路径           | XDP 路径          |
+| :------------- | :----------------- | :---------------- |
+| sk_buff 分配   | 必须分配（~200ns） | DROP 时零分配     |
+| 中断处理       | 每包一次硬件中断   | 可批量处理        |
+| 协议栈解析     | L2→L3→L4 全部解析  | 仅在 PASS 时进入  |
+| Netfilter 钩子 | 遍历所有 hook      | 完全跳过          |
+| 内存拷贝       | 可能多次拷贝       | 直接操作 DMA 内存 |
 
 ### 1.2 XDP 的性能边界
 
@@ -142,11 +143,11 @@ graph TB
     style G1 fill:#ffcdd2
 ```
 
-| 模式            | 运行位置            | 性能         | 硬件要求                         | 适用场景       |
-| :------------ | :-------------- | :--------- | :--------------------------- | :--------- |
-| **Offloaded** | 网卡硬件 (SmartNIC) | 极致 (零 CPU) | Netronome、Mellanox BlueField | 数据中心核心     |
-| **Native**    | 网卡驱动层           | 极高         | 驱动需支持 XDP                    | 生产环境主力     |
-| **Generic**   | 协议栈入口           | 一般         | 无要求                          | 开发调试、CI/CD |
+| 模式          | 运行位置            | 性能          | 硬件要求                      | 适用场景        |
+| :------------ | :------------------ | :------------ | :---------------------------- | :-------------- |
+| **Offloaded** | 网卡硬件 (SmartNIC) | 极致 (零 CPU) | Netronome、Mellanox BlueField | 数据中心核心    |
+| **Native**    | 网卡驱动层          | 极高          | 驱动需支持 XDP                | 生产环境主力    |
+| **Generic**   | 协议栈入口          | 一般          | 无要求                        | 开发调试、CI/CD |
 
 ### 2.2 模式检测与降级
 
@@ -174,13 +175,13 @@ int load_xdp(const char *ifname, struct bpf_program *prog) {
 
 XDP 程序的返回值直接决定数据包的去向：
 
-| 返回码 | 值 | 行为 | 典型场景 |
-|:---|:---|:---|:---|
-| `XDP_ABORTED` | 0 | 丢弃 + 内核警告 | 程序异常 |
-| `XDP_DROP` | 1 | 静默丢弃 | DDoS 防御 |
-| `XDP_PASS` | 2 | 交给协议栈 | 正常流量 |
-| `XDP_TX` | 3 | 原路返回 | L2 负载均衡 |
-| `XDP_REDIRECT` | 4 | 重定向到其他网卡/AF_XDP | 网关转发 |
+| 返回码         | 值  | 行为                    | 典型场景    |
+| :------------- | :-- | :---------------------- | :---------- |
+| `XDP_ABORTED`  | 0   | 丢弃 + 内核警告         | 程序异常    |
+| `XDP_DROP`     | 1   | 静默丢弃                | DDoS 防御   |
+| `XDP_PASS`     | 2   | 交给协议栈              | 正常流量    |
+| `XDP_TX`       | 3   | 原路返回                | L2 负载均衡 |
+| `XDP_REDIRECT` | 4   | 重定向到其他网卡/AF_XDP | 网关转发    |
 
 ### 3.1 XDP_TX：L2 负载均衡原理
 
@@ -478,15 +479,15 @@ graph LR
 
 ### 6.2 功能分工对比
 
-| 功能         | XDP            | TC         |
-| :--------- | :------------- | :--------- |
-| L2 DDoS 防御 | 最佳             | 可以但不推荐     |
-| L3/L4 过滤   | 最佳             | 好          |
-| L7 深度包检测   | 不支持（无 sk_buff） | 最佳         |
-| 出向流量控制     | 不支持            | 最佳         |
-| 容器网络策略     | 有限             | Cilium 的主力 |
-| 带宽限速       | 不支持            | EDT 模式最佳   |
-| AF_XDP 集成  | 原生支持           | 不直接支持      |
+| 功能          | XDP                  | TC            |
+| :------------ | :------------------- | :------------ |
+| L2 DDoS 防御  | 最佳                 | 可以但不推荐  |
+| L3/L4 过滤    | 最佳                 | 好            |
+| L7 深度包检测 | 不支持（无 sk_buff） | 最佳          |
+| 出向流量控制  | 不支持               | 最佳          |
+| 容器网络策略  | 有限                 | Cilium 的主力 |
+| 带宽限速      | 不支持               | EDT 模式最佳  |
+| AF_XDP 集成   | 原生支持             | 不直接支持    |
 
 ---
 
@@ -532,12 +533,12 @@ int xdp_multi_buff(struct xdp_md *ctx) {
 
 **Multi-buff 的关键 API：**
 
-| API                     | 功能                | 内核版本  |
-| :---------------------- | :---------------- | :---- |
-| `bpf_xdp_load_bytes()`  | 从非线性数据加载字节        | 5.18+ |
-| `bpf_xdp_store_bytes()` | 向非线性数据写入字节        | 5.18+ |
-| `ctx->data`             | 第一个 fragment 的起始  | 始终可用  |
-| `ctx->data_end`         | 最后一个 fragment 的结束 | 始终可用  |
+| API                     | 功能                     | 内核版本 |
+| :---------------------- | :----------------------- | :------- |
+| `bpf_xdp_load_bytes()`  | 从非线性数据加载字节     | 5.18+    |
+| `bpf_xdp_store_bytes()` | 向非线性数据写入字节     | 5.18+    |
+| `ctx->data`             | 第一个 fragment 的起始   | 始终可用 |
+| `ctx->data_end`         | 最后一个 fragment 的结束 | 始终可用 |
 
 ---
 
@@ -625,11 +626,11 @@ while (1) {
 
 ### 9.3 性能对比数据
 
-| 场景 | XDP Native | XDP Generic | iptables | nftables |
-|:---|:---|:---|:---|:---|
-| 简单 DROP | 14.8 Mpps | 2.1 Mpps | 0.8 Mpps | 1.5 Mpps |
-| L3 重定向 | 12.0 Mpps | 1.8 Mpps | 0.5 Mpps | 1.2 Mpps |
-| L4 端口过滤 | 10.5 Mpps | 1.5 Mpps | 0.4 Mpps | 1.0 Mpps |
+| 场景        | XDP Native | XDP Generic | iptables | nftables |
+| :---------- | :--------- | :---------- | :------- | :------- |
+| 简单 DROP   | 14.8 Mpps  | 2.1 Mpps    | 0.8 Mpps | 1.5 Mpps |
+| L3 重定向   | 12.0 Mpps  | 1.8 Mpps    | 0.5 Mpps | 1.2 Mpps |
+| L4 端口过滤 | 10.5 Mpps  | 1.5 Mpps    | 0.4 Mpps | 1.0 Mpps |
 
 > 测试环境：Intel Xeon Gold 6230, Mellanox ConnectX-6, 单核
 
@@ -639,13 +640,13 @@ while (1) {
 
 ### 10.1 新特性一览
 
-| 特性 | 状态 | 影响 |
-|:---|:---|:---|
-| **Multi-buff** | 已稳定 (5.18+) | 支持 Jumbo Frames，NVMe-over-Fabrics |
-| **XDP hints** | 实验性 | 硬件向 BPF 程序传递元数据（如 RSS hash） |
-| **XDP on wireless** | 进展中 | WiFi 6/7 网卡支持 |
-| **XDP bonding** | 已支持 | Bond 网卡的 XDP 处理 |
-| **Hardware offload** | 成熟 | Netronome、Mellanox BlueField 2/3 |
+| 特性                 | 状态           | 影响                                     |
+| :------------------- | :------------- | :--------------------------------------- |
+| **Multi-buff**       | 已稳定 (5.18+) | 支持 Jumbo Frames，NVMe-over-Fabrics     |
+| **XDP hints**        | 实验性         | 硬件向 BPF 程序传递元数据（如 RSS hash） |
+| **XDP on wireless**  | 进展中         | WiFi 6/7 网卡支持                        |
+| **XDP bonding**      | 已支持         | Bond 网卡的 XDP 处理                     |
+| **Hardware offload** | 成熟           | Netronome、Mellanox BlueField 2/3        |
 
 ### 10.2 XDP 在 2026 的典型部署架构
 

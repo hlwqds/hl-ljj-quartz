@@ -1,17 +1,24 @@
 ---
 title: "Kernel Protocol Stack 深度探索 (四十二)：TSO 与 UFO"
 date: 2026-04-13
-tags: [linux, kernel, networking, series, tso, ufo, tcp-segmentation-offload, udp-fragmentation-offload, gso, offload, checksum-offload]
+tags:
+  [
+    linux,
+    kernel,
+    networking,
+    series,
+    tso,
+    ufo,
+    tcp-segmentation-offload,
+    udp-fragmentation-offload,
+    gso,
+    offload,
+    checksum-offload,
+  ]
 description: "深入解析 TSO（TCP Segmentation Offload）与 UFO（UDP Fragmentation Offload）——两者的协作原理、TSO 分段机制、GSO 与 TSO 的关系、checksum offload、NETIF_F 标志详解，以及常见问题排查"
 ---
 
-> [!info] Kernel Protocol Stack 深度探索系列
-> 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
-> 41. [[2026-04-13-kernel-protocol-stack-deep-dive-ch41-rss-rps|第四十一章：RSS 与 RPS]]
-> 42. **第四十二章：TSO 与 UFO**
-> 43. [[2026-04-13-kernel-protocol-stack-deep-dive-ch43-bpf-hook|第四十三章：Linux BPF 网络钩子]]
-> 44. [[2026-04-13-kernel-protocol-stack-deep-dive-ch44-offload|第四十四章：硬件 offload]]
-> 45. [[2026-04-13-kernel-protocol-stack-deep-dive-ch45-tuning|第四十五章：网络性能调优]]
+> [!info] Kernel Protocol Stack 深度探索系列 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]] 41. [[2026-04-13-kernel-protocol-stack-deep-dive-ch41-rss-rps|第四十一章：RSS 与 RPS]] 42. **第四十二章：TSO 与 UFO** 43. [[2026-04-13-kernel-protocol-stack-deep-dive-ch43-bpf-hook|第四十三章：Linux BPF 网络钩子]] 44. [[2026-04-13-kernel-protocol-stack-deep-dive-ch44-offload|第四十四章：硬件 offload]] 45. [[2026-04-13-kernel-protocol-stack-deep-dive-ch45-tuning|第四十五章：网络性能调优]]
 
 ---
 
@@ -348,11 +355,11 @@ ethtool -S eth0 | grep -i tso
 
 ### 5.4 TSO vs 软件 GSO 的性能对比
 
-| 场景 | 软件 GSO | TSO (硬件) |
-|------|---------|-----------|
-| CPU 开销 | 高（逐个分片） | 极低（一次构造） |
-| 最大吞吐 | ~5-10 Gbps（取决于 CPU） | 线速（40/100 Gbps） |
-| 分片灵活性 | 完全可控 | 受网卡限制 |
+| 场景       | 软件 GSO                 | TSO (硬件)          |
+| ---------- | ------------------------ | ------------------- |
+| CPU 开销   | 高（逐个分片）           | 极低（一次构造）    |
+| 最大吞吐   | ~5-10 Gbps（取决于 CPU） | 线速（40/100 Gbps） |
+| 分片灵活性 | 完全可控                 | 受网卡限制          |
 
 ---
 
@@ -411,10 +418,10 @@ TSO 发送的多个分段，接收端通过 GRO 合并：
 
 ## 7. 总结
 
-| 机制 | 协议 | 方向 | 实现层 | 关键标志 |
-|------|------|------|--------|---------|
-| **TSO** | TCP | 发送 | 网卡硬件 | NETIF_F_TSO |
-| **UFO** | UDP | 发送 | 网卡硬件 | NETIF_F_UFO |
+| 机制    | 协议 | 方向 | 实现层   | 关键标志    |
+| ------- | ---- | ---- | -------- | ----------- |
+| **TSO** | TCP  | 发送 | 网卡硬件 | NETIF_F_TSO |
+| **UFO** | UDP  | 发送 | 网卡硬件 | NETIF_F_UFO |
 | **GSO** | 通用 | 发送 | 内核软件 | NETIF_F_GSO |
 | **GRO** | 通用 | 接收 | 内核软件 | NETIF_F_GRO |
 

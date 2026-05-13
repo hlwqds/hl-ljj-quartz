@@ -5,8 +5,8 @@ tags: [vpn, series, kubernetes, k8s, cni, cluster-federation, direct-peering, wi
 description: "Kubernetes VPN 方案深度解析——CNI VPN 方案（Calico-WireGuard、Canal、Flannel-WireGuard）、Cluster Federation、Direct Peering、跨集群网络"
 ---
 
-> [!info] VPN 技术深度探索系列
-> 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+> [!info] VPN 技术深度探索系列 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-vpn-deep-dive-ch40-wireguard-ztn|第四十章：WireGuard 零信任]]
 > 2. **第四十一章：Kubernetes VPN 方案**
 > 3. [[2026-04-13-vpn-deep-dive-ch42-cilium-encryption|第四十二章：Cilium 流量加密]]

@@ -5,8 +5,8 @@ tags: [vpn, series, networking, security, tunnel, pptp, gre, mppe, ras, ms-chap]
 description: "PPTP 深度解析——历史背景、GRE 封装、MPPE 加密、MS-CHAPv2 认证、协议缺陷与安全漏洞、为何被淘汰、典型配置示例"
 ---
 
-> [!info] VPN 技术深度探索系列
-> 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+> [!info] VPN 技术深度探索系列 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-vpn-deep-dive-ch1-vpn-fundamentals|VPN 基础概念]]
 > 2. [[2026-04-13-vpn-deep-dive-ch2-tunnel-basics|第二章：隧道技术基础]]
 > 3. [[2026-04-13-vpn-deep-dive-ch3-crypto-fundamentals|第三章：密码学基础]]
@@ -31,26 +31,26 @@ graph TB
         TCP["TCP 1723<br/>(控制通道)"]
         IP["IP 层"]
     end
-    
+
     PPP --> MPPE
     MPPE --> GRE
     GRE --> IP
-    
+
     style PPP fill:#f59f00,stroke:#333
     style MPPE fill:#ef4444,stroke:#333
     style GRE fill:#3b82f6,stroke:#333
 ```
 
-|| 属性 | 值 |
-|------|------|-----|
-| **RFC** | RFC 2637 | 1999 年 |
-| **主导厂商** | Microsoft | |
-| **隧道协议** | GRE (IP Protocol 47) | |
-| **控制通道** | TCP 1723 | |
-| **加密** | MPPE (40-128bit) | |
-| **认证** | MS-CHAPv1/v2, PAP, EAP | |
-| **工作层** | L2 (PPP) → L3 (GRE) | |
-| **NAT 兼容** | 差（GRE 穿透问题） | |
+|              | 属性                   | 值      |
+| ------------ | ---------------------- | ------- |
+| **RFC**      | RFC 2637               | 1999 年 |
+| **主导厂商** | Microsoft              |         |
+| **隧道协议** | GRE (IP Protocol 47)   |         |
+| **控制通道** | TCP 1723               |         |
+| **加密**     | MPPE (40-128bit)       |         |
+| **认证**     | MS-CHAPv1/v2, PAP, EAP |         |
+| **工作层**   | L2 (PPP) → L3 (GRE)    |         |
+| **NAT 兼容** | 差（GRE 穿透问题）     |         |
 
 **PPTP 的历史贡献**：它是第一个将隧道协议与加密绑定的主流商业 VPN 方案，在 2000 年代初广泛部署于 Windows RAS (Remote Access Service) 环境。
 
@@ -132,14 +132,14 @@ s = Reserved (0)
 Recur = Recursion Control (0)
 ```
 
-| 字段 | 位 | 说明 |
-|------|----|------|
-| C | 1 | 校验和是否存在 |
-| K | 1 | Key 字段存在（PPTP 固定为 1） |
-| S | 1 | 序列号是否存在 |
-| Call ID | 16 | 标识会话的唯一 ID（由服务器分配） |
-| Sequence | 32 | 包序列号（用于顺序保证） |
-| Ack | 32 | 确认号（用于可靠性） |
+| 字段     | 位  | 说明                              |
+| -------- | --- | --------------------------------- |
+| C        | 1   | 校验和是否存在                    |
+| K        | 1   | Key 字段存在（PPTP 固定为 1）     |
+| S        | 1   | 序列号是否存在                    |
+| Call ID  | 16  | 标识会话的唯一 ID（由服务器分配） |
+| Sequence | 32  | 包序列号（用于顺序保证）          |
+| Ack      | 32  | 确认号（用于可靠性）              |
 
 ### 2.4 完整封装层次
 
@@ -212,11 +212,11 @@ MasterKey = NTLM(password)  # 经过 PBKDF 等处理
 
 ### 3.3 MPPE 算法对比
 
-| 算法 | 密钥长度 | 状态 | 安全性 | 备注 |
-|------|----------|------|--------|------|
-| MPPE 40-bit | 40 bits | 禁用 | 极弱 | 出口限制版本（美国以外） |
-| MPPE 56-bit | 56 bits | 禁用 | 弱 | 曾经美国国内使用 |
-| MPPE 128-bit | 128 bits | 可用 | 中等 | RC4 + 初始向量，易受攻击 |
+| 算法         | 密钥长度 | 状态 | 安全性 | 备注                     |
+| ------------ | -------- | ---- | ------ | ------------------------ |
+| MPPE 40-bit  | 40 bits  | 禁用 | 极弱   | 出口限制版本（美国以外） |
+| MPPE 56-bit  | 56 bits  | 禁用 | 弱     | 曾经美国国内使用         |
+| MPPE 128-bit | 128 bits | 可用 | 中等   | RC4 + 初始向量，易受攻击 |
 
 ```bash
 # MPPE 加密选项（pptpd.conf 示例）
@@ -325,12 +325,12 @@ PPTP 存在大量严重安全漏洞，已被业界认定为**不安全协议**�
 
 ### 5.2 漏洞时间线
 
-| 年份 | 事件 | 影响 |
-|------|------|------|
-| 1998 | RC4 已知弱点被公开 | MPPE 加密可被攻击 |
-| 2012 | MS-CHAPv2 被完全破解 | https://cloudcracker.com/blog/2012/7/23/cracking-ms-chap-v2 |
-| 2012 | DEF CON 演示 chapcrack | 实时破解 MS-CHAPv2 认证 |
-| 2019 | 进一步优化攻击 | 利用 TPM/硬件安全模块缓解 |
+| 年份 | 事件                   | 影响                                                        |
+| ---- | ---------------------- | ----------------------------------------------------------- |
+| 1998 | RC4 已知弱点被公开     | MPPE 加密可被攻击                                           |
+| 2012 | MS-CHAPv2 被完全破解   | https://cloudcracker.com/blog/2012/7/23/cracking-ms-chap-v2 |
+| 2012 | DEF CON 演示 chapcrack | 实时破解 MS-CHAPv2 认证                                     |
+| 2019 | 进一步优化攻击         | 利用 TPM/硬件安全模块缓解                                   |
 
 ### 5.3 安全建议
 
@@ -339,12 +339,12 @@ PPTP 存在大量严重安全漏洞，已被业界认定为**不安全协议**�
 
 **替代方案：**
 
-| 协议 | 安全性 | 说明 |
-|------|--------|------|
-| **IPSec** | 高 | ESP + AES-GCM，企业标准 |
-| **OpenVPN** | 高 | TLS 隧道，AES-256 |
-| **WireGuard** | 高 | 现代协议，ChaCha20 |
-| **L2TP/IPSec** | 中高 | L2TP + IPSec 加密 |
+| 协议           | 安全性 | 说明                    |
+| -------------- | ------ | ----------------------- |
+| **IPSec**      | 高     | ESP + AES-GCM，企业标准 |
+| **OpenVPN**    | 高     | TLS 隧道，AES-256       |
+| **WireGuard**  | 高     | 现代协议，ChaCha20      |
+| **L2TP/IPSec** | 中高   | L2TP + IPSec 加密       |
 
 ---
 
@@ -468,13 +468,13 @@ pptp.call_id == 0x1234
 
 ## 8. 性能特性
 
-| 指标 | 数值 | 说明 |
-|------|------|------|
-| **MTU** | 1500 - 40 (IP) - 8 (GRE) - 4 (PPP) = 1448 | 额外头部开销 |
-| **吞吐量** | ~100 Mbps (RC4 软加密) | CPU 成为瓶颈 |
-| **延迟** | 低（无额外压缩开销） | GRE 直接封装 |
-| **CPU 开销** | 中等 | RC4 软加密 |
-| **并发连接** | 受限 | GRE 无多路复用 |
+| 指标         | 数值                                      | 说明           |
+| ------------ | ----------------------------------------- | -------------- |
+| **MTU**      | 1500 - 40 (IP) - 8 (GRE) - 4 (PPP) = 1448 | 额外头部开销   |
+| **吞吐量**   | ~100 Mbps (RC4 软加密)                    | CPU 成为瓶颈   |
+| **延迟**     | 低（无额外压缩开销）                      | GRE 直接封装   |
+| **CPU 开销** | 中等                                      | RC4 软加密     |
+| **并发连接** | 受限                                      | GRE 无多路复用 |
 
 ```bash
 # PPTP MTU 问题
@@ -495,13 +495,13 @@ pptp.call_id == 0x1234
 
 ## 9. 总结
 
-| 维度 | 结论 |
-|------|------|
-| **协议定位** | 早期 VPN 协议，PPP over GRE |
-| **历史地位** | 1999 年 RFC，Microsoft Windows 默认 VPN |
-| **安全性** | 已淘汰——MS-CHAPv2 + MPPE 存在严重漏洞 |
-| **加密强度** | RC4 40/56/128-bit，易受攻击 |
-| **NAT 穿透** | 差（GRE 协议问题） |
+| 维度         | 结论                                     |
+| ------------ | ---------------------------------------- |
+| **协议定位** | 早期 VPN 协议，PPP over GRE              |
+| **历史地位** | 1999 年 RFC，Microsoft Windows 默认 VPN  |
+| **安全性**   | 已淘汰——MS-CHAPv2 + MPPE 存在严重漏洞    |
+| **加密强度** | RC4 40/56/128-bit，易受攻击              |
+| **NAT 穿透** | 差（GRE 协议问题）                       |
 | **当前状态** | 不推荐使用，被 IPSec/L2TP/WireGuard 取代 |
 
 **下一章预告：** [[2026-04-13-vpn-deep-dive-ch10-l2tp|L2TP 第二层隧道协议]] — L2TP 控制消息、会话建立、LAC/LNS 架构、与 IPSec 的配合。
@@ -509,6 +509,7 @@ pptp.call_id == 0x1234
 ---
 
 > [!quote] 参考文献
+>
 > - RFC 2637 - Point-to-Point Tunneling Protocol (PPTP)
 > - [[2026-04-13-vpn-deep-dive-ch5-gre|GRE 隧道 (本系列)]] — PPTP 的 GRE 封装基础
 > - [[2026-04-13-vpn-deep-dive-ch3-crypto-fundamentals|密码学基础 (本系列)]] — RC4/MPPE 加密分析

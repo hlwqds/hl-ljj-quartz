@@ -12,18 +12,15 @@ tags:
 description: "深入解析 Suricata 集群模式：unix-cluster 配置、CS 缓冲区、Cluster Node 架构、分布式 Flow 负载均衡、EVE 聚合输出、以及集群管理"
 ---
 
-> [!info] Suricata 2026 深度探索系列
-> 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
-> ...
-> 43. [[2026-04-15-suricata-deep-dive-ch43-app-layer-register|第四十三章：自定义协议 Parser]]
-> 44. [[2026-04-15-suricata-deep-dive-ch44-rust|第四十四章：Rust 扩展]]
-> 45. **第四十五章：集群模式**
+> [!info] Suricata 2026 深度探索系列 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+> ... 43. [[2026-04-15-suricata-deep-dive-ch43-app-layer-register|第四十三章：自定义协议 Parser]] 44. [[2026-04-15-suricata-deep-dive-ch44-rust|第四十四章：Rust 扩展]] 45. **第四十五章：集群模式**
 
 ---
 
 ## 1. 集群模式概述
 
 Suricata 的 **集群模式（Cluster Mode）** 提供**分布式多节点部署**能力，通过 Unix Domain Socket 或 TCP 进行节点间通信，实现：
+
 - **横向扩展**：增加节点提升检测吞吐量
 - **高可用**：单节点故障不影响整体检测
 - **统一管理**：单一配置/规则同步
@@ -77,14 +74,14 @@ graph TD
 
 ### 1.1 集群模式 vs 单机模式
 
-| 特性 | 单机模式 | 集群模式 |
-|:---|:---|:---|
-| **部署规模** | 单节点 | 多节点 |
-| **负载均衡** | 线程级（AutoFP） | 节点级（CS + LB） |
-| **Flow 共享** | 本地哈希表 | Unix Socket 总线 |
-| **EVE 输出** | 本地文件 | 聚合到中心节点 |
-| **规则同步** | 手动分发 | 共享配置 |
-| **故障恢复** | 无 | 节点故障隔离 |
+| 特性          | 单机模式         | 集群模式          |
+| :------------ | :--------------- | :---------------- |
+| **部署规模**  | 单节点           | 多节点            |
+| **负载均衡**  | 线程级（AutoFP） | 节点级（CS + LB） |
+| **Flow 共享** | 本地哈希表       | Unix Socket 总线  |
+| **EVE 输出**  | 本地文件         | 聚合到中心节点    |
+| **规则同步**  | 手动分发         | 共享配置          |
+| **故障恢复**  | 无               | 节点故障隔离      |
 
 ### 1.2 集群架构
 
@@ -120,7 +117,7 @@ graph LR
 # suricata.yaml — 集群模式配置
 cluster:
   # 集群类型
-  type: unixSocket               # unixSocket | tcp
+  type: unixSocket # unixSocket | tcp
 
   # Unix Socket 路径
   unix-socket:
@@ -131,26 +128,26 @@ cluster:
     buffer-size: 16384
 
     # 超时设置
-    read-timeout: 100            # ms
-    write-timeout: 100           # ms
+    read-timeout: 100 # ms
+    write-timeout: 100 # ms
 
   # 集群 ID
-  cluster-id: 1                   # 1-255，每个节点唯一
+  cluster-id: 1 # 1-255，每个节点唯一
 
   # 节点间通信
   inter:
     # 心跳间隔
-    heartbeat: 1000              # ms
+    heartbeat: 1000 # ms
 
     # 节点超时
-    node-timeout: 5000           # ms
+    node-timeout: 5000 # ms
 
   # 负载均衡策略
   load-balance:
     # Hash 方式
-    mode: flow                    # flow | round-robin | static
+    mode: flow # flow | round-robin | static
     # hash 元数据
-    hash: [src, dst, sp, dp]     # 5-tuple hash
+    hash: [src, dst, sp, dp] # 5-tuple hash
 ```
 
 ### 2.2 TCP 集群配置
@@ -175,14 +172,14 @@ cluster:
     # 心跳
     heartbeat:
       enabled: yes
-      interval: 1000            # ms
+      interval: 1000 # ms
 
   # 集群 ID（每个节点唯一）
   cluster-id: 1
 
   # 负载均衡
   load-balance:
-    mode: flow                   # flow | round-robin
+    mode: flow # flow | round-robin
     hash: [src, dst, sp, dp]
 ```
 
@@ -191,7 +188,7 @@ cluster:
 ```yaml
 # suricata.yaml — Worker 节点配置
 cluster:
-  type: worker                   # worker | management
+  type: worker # worker | management
 
   # 上级管理节点
   management:
@@ -215,7 +212,7 @@ runmode: cluster
 ```yaml
 # suricata.yaml — Management 节点配置
 cluster:
-  type: management               # management | worker
+  type: management # management | worker
 
   # 管理服务端口
   management:
@@ -225,8 +222,8 @@ cluster:
   # 配置分发
   config-sync:
     enabled: yes
-    path: /etc/suricata/         # 共享配置路径
-    interval: 30                 # 同步间隔（秒）
+    path: /etc/suricata/ # 共享配置路径
+    interval: 30 # 同步间隔（秒）
 
   # 规则同步
   rule-sync:
@@ -238,7 +235,7 @@ cluster:
   eve-aggregation:
     enabled: yes
     output: /var/log/suricata/eve.json
-    flush-interval: 100           # ms
+    flush-interval: 100 # ms
 ```
 
 ---
@@ -651,7 +648,6 @@ outputs:
 # suricata-mgmt.yaml — Management 节点
 %YAML 1.1
 ---
-
 # 接口
 vars:
   address-groups:
@@ -698,7 +694,6 @@ runmode: cluster
 # suricata-worker.yaml — Worker 节点
 %YAML 1.1
 ---
-
 # 上级管理节点
 cluster:
   type: worker
@@ -818,17 +813,17 @@ void FlowRedistributeToNode(uint32_t flow_hash, uint8_t failed_node_id)
 cluster:
   unix-socket:
     # 增大缓冲区提升吞吐
-    buffer-size: 65536           # 64KB
+    buffer-size: 65536 # 64KB
 
   # 批量发送
   batch:
-    size: 64                    # 每批消息数
-    timeout: 10                 # ms
+    size: 64 # 每批消息数
+    timeout: 10 # ms
 
   # 多队列
   mq:
-    send-queues: 4              # 发送队列数
-    recv-queues: 4              # 接收队列数
+    send-queues: 4 # 发送队列数
+    recv-queues: 4 # 接收队列数
 ```
 
 ### 9.2 内核参数调优

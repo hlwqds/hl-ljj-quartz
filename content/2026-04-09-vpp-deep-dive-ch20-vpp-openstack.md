@@ -397,13 +397,13 @@ vpp# set interface ip addr host-eth0 0.0.0.0
 
 ### 7.1 OVS vs VPP
 
-| 指标 | OVS-Kernel | OVS-DPDK | VPP |
-|------|-------------|-----------|-----|
-| **延迟** | ~100μs | ~20μs | ~10μs |
-| **吞吐量** | ~2 Gbps | ~8 Gbps | ~15 Gbps |
-| **PPS** | ~500K | ~3M | ~10M |
-| **CPU 开销** | 中 | 高 | 低 |
-| **内存** | 低 | 高 | 中 |
+| 指标         | OVS-Kernel | OVS-DPDK | VPP      |
+| ------------ | ---------- | -------- | -------- |
+| **延迟**     | ~100μs     | ~20μs    | ~10μs    |
+| **吞吐量**   | ~2 Gbps    | ~8 Gbps  | ~15 Gbps |
+| **PPS**      | ~500K      | ~3M      | ~10M     |
+| **CPU 开销** | 中         | 高       | 低       |
+| **内存**     | 低         | 高       | 中       |
 
 ### 7.2 配置示例
 
@@ -457,13 +457,13 @@ VPP + OpenStack 架构：
 
 集成组件：
 
-| 组件 | 功能 |
-|------|------|
-| **ML2 Driver** | Neutron 插件接口 |
-| **VPP Agent** | 与 VPP 通信 |
-| **Neutron Router** | L3 路由 |
-| **Security Group** | ACL |
-| **SRIOV** | 硬件直通 |
+| 组件               | 功能             |
+| ------------------ | ---------------- |
+| **ML2 Driver**     | Neutron 插件接口 |
+| **VPP Agent**      | 与 VPP 通信      |
+| **Neutron Router** | L3 路由          |
+| **Security Group** | ACL              |
+| **SRIOV**          | 硬件直通         |
 
 ---
 

@@ -415,24 +415,24 @@ Integration scenarios:
 
 ### 16.9.1 Underlay Comparison
 
-| Aspect | MPLS EVPN | SRv6 EVPN |
-|--------|-----------|-----------|
-| Transport | MPLS LSPs | IPv6 + SRH |
-| Signaling | LDP or RSVP-TE for LSPs | IGP for locators |
-| SID Type | MPLS label (20 bits) | IPv6 SID (128 bits) |
-| Path Control | RSVP-TE or per-LSP steering | SR Policy segment lists |
-| Multi-homing | ESI with L2 FEC | ESI with SRv6 behaviors |
+| Aspect        | MPLS EVPN                         | SRv6 EVPN                 |
+| ------------- | --------------------------------- | ------------------------- |
+| Transport     | MPLS LSPs                         | IPv6 + SRH                |
+| Signaling     | LDP or RSVP-TE for LSPs           | IGP for locators          |
+| SID Type      | MPLS label (20 bits)              | IPv6 SID (128 bits)       |
+| Path Control  | RSVP-TE or per-LSP steering       | SR Policy segment lists   |
+| Multi-homing  | ESI with L2 FEC                   | ESI with SRv6 behaviors   |
 | BUM transport | Pseudowire or Ingress Replication | Multicast over SRv6 or IR |
 
 ### 16.9.2 Operational Comparison
 
-| Aspect | MPLS EVPN | SRv6 EVPN |
-|--------|-----------|-----------|
-| Hardware | Label lookup in TCAM | IPv6 FIB (native) |
-| OAM | LSP ping, VCCV | ICMPv6, SRv6 trace |
-| Scaling | Label stack complexity | Single IPv6 header |
-| IPv6 | Dual-stack or 6PE/6VPE | Native IPv6 underlay |
-| Migration | From VPLS to EVPN | From VPLS to EVPN + SRv6 |
+| Aspect    | MPLS EVPN              | SRv6 EVPN                |
+| --------- | ---------------------- | ------------------------ |
+| Hardware  | Label lookup in TCAM   | IPv6 FIB (native)        |
+| OAM       | LSP ping, VCCV         | ICMPv6, SRv6 trace       |
+| Scaling   | Label stack complexity | Single IPv6 header       |
+| IPv6      | Dual-stack or 6PE/6VPE | Native IPv6 underlay     |
+| Migration | From VPLS to EVPN      | From VPLS to EVPN + SRv6 |
 
 ## 16.10 Packet Flow Examples
 

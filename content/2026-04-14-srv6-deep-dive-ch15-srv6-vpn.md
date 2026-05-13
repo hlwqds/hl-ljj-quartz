@@ -24,16 +24,16 @@ This architecture eliminates the MPLS label stack entirely in favor of IPv6 addr
 
 Understanding the architectural differences between SRv6 VPN and MPLS VPN clarifies the trade-offs operators face:
 
-| Aspect | MPLS VPN | SRv6 VPN |
-|--------|----------|----------|
-| Transport | Label-switched LSPs via LDP or RSVP-TE | IPv6 destination-address routing via IGP |
-| Signaling | LDP for LSP setup, RSVP-TE for TE | IGP for locator reachability, BGP for paths |
-| VPN Delivery | VPN label (20 bits) identifies VRF + route | End.DT4/End.DT6 behavior identifies VRF |
-| Encapsulation | Outer MPLS label stack | Outer IPv6 + SRH |
-| Scalability | O(N) LSP state at transit LSRs | O(N) locator FIB entries at transit routers |
-| OAM | TTL-based LSP ping/traceroute | ICMPv6 + SRv6 trace |
-| Path Control | RSVP-TE or per-LSP steering | SR Policy, TI-LFA, FlexAlgo |
-| IPv6 Native | Not native (labels are IPv4-native) | Native IPv6 underlay and overlay |
+| Aspect        | MPLS VPN                                   | SRv6 VPN                                    |
+| ------------- | ------------------------------------------ | ------------------------------------------- |
+| Transport     | Label-switched LSPs via LDP or RSVP-TE     | IPv6 destination-address routing via IGP    |
+| Signaling     | LDP for LSP setup, RSVP-TE for TE          | IGP for locator reachability, BGP for paths |
+| VPN Delivery  | VPN label (20 bits) identifies VRF + route | End.DT4/End.DT6 behavior identifies VRF     |
+| Encapsulation | Outer MPLS label stack                     | Outer IPv6 + SRH                            |
+| Scalability   | O(N) LSP state at transit LSRs             | O(N) locator FIB entries at transit routers |
+| OAM           | TTL-based LSP ping/traceroute              | ICMPv6 + SRv6 trace                         |
+| Path Control  | RSVP-TE or per-LSP steering                | SR Policy, TI-LFA, FlexAlgo                 |
+| IPv6 Native   | Not native (labels are IPv4-native)        | Native IPv6 underlay and overlay            |
 
 The MPLS VPN model uses a two-level label stack: the outer label steers the packet through the LSP from ingress PE to egress PE, while the inner VPN label (allocated by the egress PE and signaled via BGP) identifies the VRF and specific route at the egress. The egress PE pops both labels and performs a VRF lookup on the inner IP packet.
 
@@ -217,6 +217,7 @@ VRF: vrf-100 at both PEs
 ```
 
 **Control Plane Flow:**
+
 ```
 1. CE1 advertises 2001:db8:1::/48 to PE1 via routing protocol (BGP, OSPF, or static)
 2. PE1 installs route in VRF-100: 2001:db8:1::/48 → CE1 (connected interface)
@@ -231,6 +232,7 @@ VRF: vrf-100 at both PEs
 ```
 
 **Data Plane Flow (CE1 to CE2):**
+
 ```
 1. CE1 sends packet: Src=2001:db8:1::1, Dst=2001:db8:2::1
 2. PE1 receives packet on VRF-100 interface
@@ -261,6 +263,7 @@ Outer transport: IPv6 + SRH
 ```
 
 **Control Plane Flow:**
+
 ```
 1. CE1 advertises 10.1.1.0/24 to PE1
 2. PE1 installs in VRF-100: 10.1.1.0/24 → CE1
@@ -272,6 +275,7 @@ Outer transport: IPv6 + SRH
 ```
 
 **Data Plane Flow:**
+
 ```
 1. CE1 sends: Src=10.1.1.1, Dst=10.2.2.2
 2. PE1 VRF lookup: 10.2.2.2 → End.DT4 SID = FC00:0:2:200::DT4
@@ -375,17 +379,17 @@ SID Behavior Operation:                           |
 
 ### 15.7.2 Operational Comparison
 
-| Operational Aspect | MPLS VPN | SRv6 VPN |
-|-------------------|----------|----------|
-| Label Distribution | LDP or RSVP-TE required | IGP advertising locators suffices |
-| Control Plane | BGP for VPN routes + LDP/RSVP for transport | BGP for both VPN routes and SID distribution |
-| Transit State | O(N) LSPs in network | O(N) locator FIB entries |
-| Path Control | RSVP-TE LSPs or per-flow steering | SR Policy segment lists |
-| Fast Reroute | LFA, RLFA, TI-LFA | TI-LFA (native to SR) |
-| Hardware Efficiency | Label lookup in TCAM | IPv6 FIB lookup (native forwarding) |
-| IPv6 Support | Dual-stack (IPv6 labels possible but uncommon) | Native IPv6 underlay and overlay |
-| OAM Tools | LSP ping, MPLS traceroute | ICMPv6, SRv6 traceroute, IOAM |
-| Troubleshooting | MPLS label operations complex | Standard IPv6 tools plus SID info |
+| Operational Aspect  | MPLS VPN                                       | SRv6 VPN                                     |
+| ------------------- | ---------------------------------------------- | -------------------------------------------- |
+| Label Distribution  | LDP or RSVP-TE required                        | IGP advertising locators suffices            |
+| Control Plane       | BGP for VPN routes + LDP/RSVP for transport    | BGP for both VPN routes and SID distribution |
+| Transit State       | O(N) LSPs in network                           | O(N) locator FIB entries                     |
+| Path Control        | RSVP-TE LSPs or per-flow steering              | SR Policy segment lists                      |
+| Fast Reroute        | LFA, RLFA, TI-LFA                              | TI-LFA (native to SR)                        |
+| Hardware Efficiency | Label lookup in TCAM                           | IPv6 FIB lookup (native forwarding)          |
+| IPv6 Support        | Dual-stack (IPv6 labels possible but uncommon) | Native IPv6 underlay and overlay             |
+| OAM Tools           | LSP ping, MPLS traceroute                      | ICMPv6, SRv6 traceroute, IOAM                |
+| Troubleshooting     | MPLS label operations complex                  | Standard IPv6 tools plus SID info            |
 
 ### 15.7.3 Migration Considerations
 

@@ -5,8 +5,8 @@ tags: [linux, kernel, networking, series, sk_buff, netdevice, memory]
 description: "深入解析 Linux 内核网络数据包的完整生命周期——sk_buff 结构设计哲学、分配释放机制、克隆分片流程、DMA 与 Ring Buffer 的交互、以及内存布局与 Cache 优化"
 ---
 
-> [!info] Kernel Protocol Stack 深度探索系列
-> 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Kernel Protocol Stack 深度探索系列 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. **第一章：sk_buff 与数据包生命周期**
 > 2. [[2026-04-13-kernel-protocol-stack-deep-dive-ch2-netdevice|第二章：Netdevice 与网卡抽象]]
 
@@ -29,11 +29,11 @@ graph LR
     C --> D["协议栈<br/>IP/TCP"]
     D --> E["Socket<br/>缓冲区"]
     E --> F["用户态<br/>recv()"]
-    
+
     G["用户态<br/>send()"] --> H["Socket<br/>缓冲区"]
     H --> I["sk_buff<br/>TX"]
     I --> J["NIC DMA<br/>↑"]
-    
+
     style B fill:#f59f00,stroke:#333
     style I fill:#f59f00,stroke:#333
 ```
@@ -50,48 +50,48 @@ sk_buff 的设计遵循 **Head-Body 分离** 哲学——将元数据（metadata
 // include/linux/skbuff.h
 struct sk_buff {
     /* --- 重要成员，按访问频率排列 --- */
-    
+
     /* 1. 热路径成员（Cache 行对齐） */
     unsigned short      len;           /* 数据长度 */
     unsigned int        data_len;      /* non-linear 区域长度 */
     __u32               hash;          /* flow hash，用于 RSS/rps */
     enum skb_free_reason free_reason;  /* 释放原因（调试） */
-    
+
     /* 2. 指针家族（指向数据区域） */
     unsigned char       *head;         /* 分配起始 */
     unsigned char       *data;         /* 有效数据起始 */
     unsigned char       *tail;         /* 有效数据结束 */
     unsigned char       *end;          /* 分配结束 */
-    
+
     /* 3. 各层协议头指针（懒计算，按需设置） */
     struct ethhdr       *ethernet;
     struct iphdr        *ip_hdr;
     struct ipv6hdr      *ipv6_hdr;
     struct tcphdr       *tcp_hdr;
     struct udphdr       *udp_hdr;
-    
+
     /* 4. 网络层信息 */
     struct sock         *sk;            /* 关联的 sock（TX 时设置） */
     struct net_device   *dev;          /* 关联的 net_device */
     __be16              protocol;      /* Ethernet 协议类型 */
     u8                  ip_summed;     /* checksum 状态 */
-    
+
     /* 5. 时间戳与标记 */
     ktime_t             tstamp;         /* 接收/发送时间 */
     u64                 skb_mstamp_ns; /* 微秒时间戳（jiffies 替代） */
-    
+
     /* 6. 分片信息 */
     struct sk_buff      *next;         /* frag_list 链表 */
     struct sk_buff      *prev;
     struct skb_shared_hwtstamps *hwtstamps;
-    
+
     /* 7. 引用计数与克隆 */
     atomic_t            users;          /* 引用计数，析构依据 */
-    
+
     /* 8. GRO 相关 */
     unsigned int        gro_max_size;
     unsigned int        gro_count;
-    
+
     /* ... 200+ 行其他字段 ... */
 };
 ```
@@ -124,12 +124,12 @@ struct sk_buff {
 
 **关键设计决策：**
 
-| 特性 | 说明 | 优势 |
-|------|------|------|
-| `head/end` | 缓冲区边界指针 | 预分配整个区域，避免动态扩展 |
-| `data/tail` | 有效数据边界 | 支持在头部/尾部增长数据 |
-| `skb_shared_info` | 紧跟 end 之后 | 存储 frags[]、gso_size 等分片信息 |
-| `users` 原子计数 | 引用计数 | 支持克隆、零拷贝共享 |
+| 特性              | 说明           | 优势                              |
+| ----------------- | -------------- | --------------------------------- |
+| `head/end`        | 缓冲区边界指针 | 预分配整个区域，避免动态扩展      |
+| `data/tail`       | 有效数据边界   | 支持在头部/尾部增长数据           |
+| `skb_shared_info` | 紧跟 end 之后  | 存储 frags[]、gso_size 等分片信息 |
+| `users` 原子计数  | 引用计数       | 支持克隆、零拷贝共享              |
 
 ### 2.3 各层头指针懒计算
 
@@ -170,28 +170,28 @@ void skb_add_rx_frag(struct sk_buff *skb, int i, struct page *page,
 struct sk_buff *alloc_skb(unsigned int size, gfp_t priority)
 {
     struct sk_buff *skb;
-    
+
     // 1. 分配 sk_buff 结构体本身（SLAB 可回收）
     skb = kmem_cache_alloc(skbuff_head_cache, priority);
     if (!skb)
         return NULL;
-    
+
     // 2. 分配 data 缓冲区（size 包括 headroom）
     unsigned int overhead = SKB_DATA_ALIGN(size);
     skb->data = __netdev_alloc_skb(dev, overhead, priority);
-    
+
     // 3. 初始化指针
     skb->head = skb->data;
     skb->data = skb->head + NET_SKB_PAD;  // 预留 headroom
     skb->tail = skb->data;
     skb->end  = skb->head + overhead;
-    
+
     // 4. 初始化引用计数 = 1
     atomic_set(&skb->users, 1);
-    
+
     // 5. 初始化 list 指针
     skb->next = skb->prev = NULL;
-    
+
     return skb;
 }
 ```
@@ -235,10 +235,10 @@ void __kfree_skb(struct sk_buff *skb)
     // 1. 调用析构钩子（如有，如 frag 回收）
     if (skb->destructor)
         skb->destructor(skb);
-    
+
     // 2. 释放 data 缓冲区（回 page_pool 或 kfree）
     skb_release_data(skb);
-    
+
     // 3. 释放 sk_buff 结构体（SLAB 回收）
     kmem_cache_free(skbuff_head_cache, skb);
 }
@@ -254,7 +254,7 @@ sequenceDiagram
     participant PP as page_pool
     participant SKB as sk_buff
     participant APP as 应用
-    
+
     NIC->>PP: DMA 直接映射到 page
     PP->>SKB: skb_add_rx_frag() 仅组装 skb
     SKB->>APP: recvfrom() 直接引用 page
@@ -291,23 +291,23 @@ struct sk_buff *skb_clone(struct sk_buff *skb, gfp_t priority);
 struct sk_buff *skb_clone(struct sk_buff *skb, gfp_t priority)
 {
     struct sk_buff *n;
-    
+
     // 1. 从 SLAB 分配新的 sk_buff 头
     n = kmem_cache_alloc(skbuff_head_cache, priority);
     if (!n)
         return NULL;
-    
+
     // 2. 浅拷贝所有字段
     memcpy(n, skb, sizeof(*skb));
-    
+
     // 3. 关键：data 指针共享，仅 users++
     atomic_inc(&skb_shinfo(skb)->dataref);  // data 引用++
     atomic_set(&n->users, 1);               // 新 skb 引用 = 1
-    
+
     // 4. 清除可能指向全局状态的指针
     n->sk = NULL;        // 克隆不继承 sock 引用！
     n->destructor = NULL;
-    
+
     return n;
 }
 ```
@@ -347,18 +347,18 @@ struct sk_buff *skb_copy_expand(const struct sk_buff *skb,
 struct sk_buff *encap_skb(struct sk_buff *skb)
 {
     struct sk_buff *new_skb;
-    
+
     // 需要在头部预留 GRE 头空间（8-16 字节）
-    new_skb = skb_copy_expand(skb, 
+    new_skb = skb_copy_expand(skb,
                                LL_RESERVED_SPACE(dev) + GRE_HEADER_SIZE,
                                0,  // tailroom 足够
                                GFP_ATOMIC);
     if (!new_skb)
         return NULL;
-    
+
     // 移动 data 指针，准备写入 GRE 头
     skb_push(new_skb, GRE_HEADER_SIZE);
-    
+
     return new_skb;
 }
 ```
@@ -409,18 +409,18 @@ sequenceDiagram
     participant DRV as 网卡驱动
     participant NAPI as NAPI (softirq)
     participant STACK as 协议栈
-    
+
     NIC->>DMA: DMA 写入数据到物理内存
     NIC->>DMA: 更新 produce index
-    
+
     Note over DRV: 硬中断触发<br/>netif_napi_add() 注册
     DRV->>NAPI: 触发 NAPI softirq (NET_RX)
-    
+
     loop NAPI poll (轮询直到 budget 用尽)
         NAPI->>DMA: 获取 next descriptor
         DMA->>STACK: napi_gro_receive(skb)
     end
-    
+
     NAPI->>NIC: 重新开启硬中断
 ```
 
@@ -431,44 +431,44 @@ static int i40e_clean_rx_irq(struct i40e_ring *rx_ring, int budget)
 {
     struct sk_buff *skb;
     unsigned int total_bytes = 0, total_packets = 0;
-    
+
     while (total_packets < budget) {
         union i40e_rx_desc *desc;
         struct page *page;
-        
+
         // 1. 获取下一个 descriptor
         desc = &rx_ring->desc[rx_ring->next_to_clean];
-        
+
         // 2. 检查 DD (Descriptor Done) 标志
         if (!(desc->wb.status_error & cpu_to_le16(I40E_RXD_STAT_DD)))
             break;
-        
+
         // 3. 构建 sk_buff（page_pool 模式）
-        skb = napi_alloc_skb(&rx_ring->q_vector->napi, 
+        skb = napi_alloc_skb(&rx_ring->q_vector->napi,
                                rx_ring->netdev->mtu + ETH_HLEN);
         if (!skb) {
             rx_ring->rx_stats.alloc_fail++;
             break;
         }
-        
+
         // 4. 映射 DMA 地址到 skb
         dma_sync_single_for_cpu(rx_ring->dev,
                                   le64_to_cpu(desc->read.pkt_addr),
                                   rx_ring->rx_buf_len,
                                   DMA_FROM_DEVICE);
-        
+
         skb_put(skb, le16_to_cpu(desc->wb.qword1.pkt_len) & 0x7FFF);
-        
+
         // 5. 设置协议类型
         skb->protocol = eth_type_trans(skb, rx_ring->netdev);
-        
+
         // 6. 送入协议栈
         netif_receive_skb(skb);
-        
+
         total_packets++;
         total_bytes += skb->len;
     }
-    
+
     return total_packets;
 }
 ```
@@ -490,14 +490,14 @@ enum gro_result {
 gro_result napi_gro_receive(struct napi_struct *napi, struct sk_buff *skb)
 {
     skb_gro_reset_offset(skb);
-    
+
     for (protocol = rcu_dereference(OFFLOAD_GRO_CB(skb)->prot_hook);
          protocol;
          protocol = next_hook) {
         // 调用注册的 gro_receive 回调
         pp = ptype->gro_receive(head, skb);
     }
-    
+
     // GRO 合并结果处理
     return dev_gro_receive(napi, skb);
 }
@@ -505,10 +505,10 @@ gro_result napi_gro_receive(struct napi_struct *napi, struct sk_buff *skb)
 
 **GRO vs 非 GRO 性能对比（单连接 iperf）：**
 
-| 场景 | 64B 小包 | 1400B MTU | 提升 |
-|------|----------|-----------|------|
-| 禁用 GRO | 380 Kpps | 320 Kpps | 基准 |
-| 启用 GRO | 520 Kpps | 335 Kpps | +37% / +5% |
+| 场景     | 64B 小包 | 1400B MTU | 提升       |
+| -------- | -------- | --------- | ---------- |
+| 禁用 GRO | 380 Kpps | 320 Kpps  | 基准       |
+| 启用 GRO | 520 Kpps | 335 Kpps  | +37% / +5% |
 
 ---
 
@@ -525,7 +525,7 @@ sequenceDiagram
     participant QDISC as qdisc
     participant DEV as netdev TX
     participant NIC as 网卡 DMA
-    
+
     APP->>SOCK: send(fd, buf, len, 0)
     SOCK->>TCP: tcp_sendmsg()
     loop 直到数据发送完毕
@@ -545,11 +545,11 @@ int tcp_sendmsg(struct sock *sk, struct msghdr *msg, size_t size)
 {
     struct tcp_sock *tp = tcp_sk(sk);
     int ret, copied = 0;
-    
+
     while (copied < size) {
         struct sk_buff *skb;
         int copy, err;
-        
+
         // 1. 检查是否可以 attach 到现有 skb（减少分片）
         skb = skb_peek_tail(&sk->sk_write_queue);
         if (skb && can_coalesce(skb, msg->msg_iov)) {
@@ -563,20 +563,20 @@ int tcp_sendmsg(struct sock *sk, struct msghdr *msg, size_t size)
             skb_set_owner_w(skb, sk);
             skb_queue_tail(&sk->sk_write_queue, skb);
         }
-        
+
         // 3. 从用户态复制数据
         copy = min_t(int, copy, size - copied);
         if (memcpy_from_msg(skb_put(skb, copy), msg, copy))
             goto out;
-        
+
         copied += copy;
     }
-    
+
 out:
     // 4. 触发发送（如果没有 pending TX）
     if (copied && !tp->pending_data)
         tcp_push_pending_frames(sk);
-    
+
     return copied;
 }
 ```
@@ -589,15 +589,15 @@ int dev_queue_xmit(struct sk_buff *skb)
     struct net_device *dev = skb->dev;
     struct Qdisc *q;
     int rc;
-    
+
     // 1. 处理虚拟设备（veth、bridge）
     if (netif_is_bridge(skb->dev)) {
         return br_dev_queue_push_xmit(skb);
     }
-    
+
     // 2. 获取 qdisc
     q = rcu_dereference_bh(dev->qdisc);
-    
+
     // 3. 如果 qdisc 无锁，直接发送
     if (q->enqueue == dev_qdisc_put_ops &&
         spin_trylock(&q->busylock)) {
@@ -605,7 +605,7 @@ int dev_queue_xmit(struct sk_buff *skb)
         spin_unlock(&q->busylock);
         return rc;
     }
-    
+
     // 4. 入队（可能触发 backlog）
     return q->enqueue(skb, q, &to_free) & NET_XMIT_MASK;
 }
@@ -730,18 +730,19 @@ cat /proc/net/sockmem
 
 sk_buff 是 Linux 内核网络栈最核心的数据结构，其设计体现了几个关键权衡：
 
-| 设计决策 | 权衡 | 实际效果 |
-|----------|------|----------|
-| Head-Body 分离 | 灵活 vs 简单 | 支持各层协议头指针，修改数据需完整复制 |
-| 引用计数 | 共享 vs 独立 | 克隆开销低，但析构需原子操作 |
-| page_pool | 零分配 vs 复杂 | RX 路径零分配，TX 仍需分配 |
-| GRO | 吞吐 vs 延迟 | 合并小包提升吞吐，增加单包延迟 |
+| 设计决策       | 权衡           | 实际效果                               |
+| -------------- | -------------- | -------------------------------------- |
+| Head-Body 分离 | 灵活 vs 简单   | 支持各层协议头指针，修改数据需完整复制 |
+| 引用计数       | 共享 vs 独立   | 克隆开销低，但析构需原子操作           |
+| page_pool      | 零分配 vs 复杂 | RX 路径零分配，TX 仍需分配             |
+| GRO            | 吞吐 vs 延迟   | 合并小包提升吞吐，增加单包延迟         |
 
 **下一章预告：** [[2026-04-13-kernel-protocol-stack-deep-dive-ch2-netdevice|第二章：Netdevice 与网卡抽象]] — 理解 net_device 结构、驱动注册流程、NAPI 机制与发送队列管理。
 
 ---
 
 > [!quote] 参考文献
+>
 > - [[2026-04-09-dpdk-deep-dive-ch5-mbuf-mechanism|DPDK Mbuf 机制对比]] — 用户态数据包缓冲设计
 > - [[2026-04-08-ebpf-deep-dive-ch6-tc-traffic-control|eBPF TC 钩子]] — sk_buff 的 BPF 视角
 > - [[2026-04-09-dpdk-deep-dive-ch4-hugepage-mempool|DPDK Mempool]] — 大页内存池对比

@@ -5,8 +5,8 @@ tags: [p4, series, architecture, psa, v1model, parser, deparser, ingress, egress
 description: "深入理解 P4 架构模型——PSA (Portable Switch Architecture) 和 V1Model 两种标准架构、Ingress/Egress Pipeline 划分、Parser 状态机、Deparser 重封装、Metadata 传递机制"
 ---
 
-> [!info] P4 深度探索系列
-> 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+> [!info] P4 深度探索系列 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-14-p4-deep-dive-ch1-p4-overview|第一章：P4 概述——诞生背景与协议无关包处理]]
 > 2. **第二章：P4 架构模型——PSA/V1Model、Ingress/Egress、Parser/Deparser**
 > 3. [[2026-04-14-p4-deep-dive-ch3-p4-vs-ebpf|第三章：P4 vs eBPF——适用场景与硬件/软件对比]]
@@ -69,6 +69,7 @@ V1Model 是 BMv2（Behavioral Model v2）软件交换机使用的架构，也是
 ```
 
 **V1Model 特点**：
+
 - Parser → Ingress → Queue → Egress → Deparser
 - Ingress 和 Egress 都是可编程的 Control Block
 - 内置 `queueing_metadata` 提供队列长度、时间戳等信息
@@ -101,6 +102,7 @@ PSA（Portable Switch Architecture）是 P4-16 的标准架构，专为硬件交
 ```
 
 **PSA 特点**：
+
 - **架构定义更完整**：`PSA.p4` 完整定义了所有组件接口
 - **统一 Parser+Deparser**：Parser 解析后，数据包经过 Ingress → Traffic Manager → Egress → Deparser，Deparser 复用 Parser 的解析结果
 - **Traffic Manager**：支持多播（Multicast）、克隆（Clone）、镜像（Mirror）操作
@@ -200,6 +202,7 @@ inout metadata m;              // 自定义的解析上下文
 ### 4.1 Ingress Control：入口流水线
 
 Ingress 是数据包进入交换机后第一个处理阶段，负责：
+
 - **查表匹配**：根据数据包 header 字段查 Match-Action 表
 - **路由决策**：决定数据包出口（egress port）
 - **修改 Header**：更新 TTL、MAC 地址、IP 地址等
@@ -251,6 +254,7 @@ control MainIngress(inout headers h,
 ### 4.2 Egress Control：出口流水线
 
 Egress 是数据包离开交换机前的最后一个处理阶段，负责：
+
 - **出口过滤**：根据出口端口特性过滤数据包
 - **TTL 递减**：在 Ingress 已处理，一般做额外修改
 - **封装/解封装**：VXLAN 封装的终点（Decap）
@@ -284,13 +288,13 @@ control MainEgress(inout headers h,
 
 ### 4.3 Ingress 与 Egress 的区别
 
-| 维度 | Ingress | Egress |
-|------|---------|--------|
-| 执行时机 | 数据包进入交换芯片时 | 数据包离开交换芯片时 |
-| 主要职责 | 路由决策、ACL、转发 | 封装、镜像、出口处理 |
-| 资源 | TCAM（表项查找） | 主要内存访问 |
-| 对同一数据包的多次处理 | 入口侧唯一执行 | 可能因多播而执行多次 |
-| 是否可见出口端口 | 不可见（此时未选定） | 已知（可据此做判断） |
+| 维度                   | Ingress              | Egress               |
+| ---------------------- | -------------------- | -------------------- |
+| 执行时机               | 数据包进入交换芯片时 | 数据包离开交换芯片时 |
+| 主要职责               | 路由决策、ACL、转发  | 封装、镜像、出口处理 |
+| 资源                   | TCAM（表项查找）     | 主要内存访问         |
+| 对同一数据包的多次处理 | 入口侧唯一执行       | 可能因多播而执行多次 |
+| 是否可见出口端口       | 不可见（此时未选定） | 已知（可据此做判断） |
 
 ---
 
@@ -306,6 +310,7 @@ Deparser 是流水线的最后一个组件，负责将 P4 程序中已修改的 
 ```
 
 **核心职责**：
+
 1. 按定义的顺序重新排列 Header 字段
 2. 将修改后的 Header 值写回数据包
 3. 计算并更新 Checksum（如 IPv4 Header Checksum）
@@ -454,6 +459,7 @@ if (sm.mcast_grp == 0 && sm.ingress_port == 1) {
 ```
 
 克隆有两种类型：
+
 - **I2E (Ingress to Egress)**：Ingress 阶段克隆，数据包走完整 Ingress → TM → Egress 流程
 - **E2E (Egress to Egress)**：Egress 阶段克隆，数据包直接复制到目标端口
 
@@ -476,6 +482,7 @@ if (sm.mcast_grp == 0 && sm.ingress_port == 1) {
 ---
 
 > [!tip] 延伸阅读
+>
 > - PSA (Portable Switch Architecture) Specification: https://p4.org/p4-spec/docs/PSA-v1.1.0.html
 > - V1Model Architecture: https://github.com/p4lang/p4c/blob/main/p4include/v1model.p4
 > - P4-16 Language Specification: https://p4.org/p4-spec/docs/P4-16-language.html

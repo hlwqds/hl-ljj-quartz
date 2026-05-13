@@ -10,8 +10,8 @@ tags:
 description: "深入解析 Suricata 的抓包初始化流程：max-pending-packets、buffer-size 等配置项对应的 C 源码实现，Capture 线程启动链路"
 ---
 
-> [!info] Suricata 2026 深度探索系列
-> 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Suricata 2026 深度探索系列 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-15-suricata-deep-dive-ch1-overview|第一章：Suricata 概述]]
 > 2. [[2026-04-15-suricata-deep-dive-ch2-config|第二章：Suricata 配置系统]]
 > 3. [[2026-04-15-suricata-deep-dive-ch3-runmodes|第三章：Runmodes 运行模式]]
@@ -31,7 +31,7 @@ sequenceDiagram
     participant RM as RunModeSet()
     participant TM as TmThreadCreate()
     participant SRC as Source模块
-    
+
     YAML->>SC: max-pending-packets: 1024
     YAML->>SC: capture.threads: 4
     SC->>RM: ParseConfig()
@@ -59,10 +59,10 @@ static void ParseConfig(const char *conf_path)
     /* 读取 max-pending-packets */
     intmax_t max_pending = 1024;
     (void)ConfGetInt("max-pending-packets", &max_pending);
-    
+
     /* 设置到全局变量 */
     g_max_pending_packets = (uint32_t)max_pending;
-    
+
     /* 初始化 Packet 池 */
     PacketPoolInit(g_max_pending_packets);
 }
@@ -73,7 +73,7 @@ typedef struct PacketPool_ {
     __thread Packet **本地_数组;
     uint32_t 本地_count;
     uint32_t 本地_size;
-    
+
     /* 全局备用池 */
     Packet *global_pool;
     uint32_t global_count;
@@ -85,10 +85,10 @@ extern PacketPool packet_pool;
 void PacketPoolInit(uint32_t max_pending)
 {
     packet_pool.max_pending = max_pending;
-    
+
     /* 预分配全局池 */
     packet_pool.global_pool = SCCalloc(max_pending, sizeof(Packet));
-    
+
     /* 每个线程初始化本地池 */
     // ...
 }
@@ -157,12 +157,12 @@ af-packet:
 static int AFPSetSocketOptions(int fd, int buffer_size)
 {
     int optval = buffer_size * 1024;  // KB → bytes
-    
+
     /* 设置接收缓冲区大小 */
     if (setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &optval, sizeof(optval)) == -1) {
         SCLogWarning("Failed to set SO_RCVBUF: %s", strerror(errno));
     }
-    
+
     /* 设置环形缓冲区大小 (需要内核支持) */
     #ifdef SO_ATTACH_FILTER
     struct tpacket_req3 req;
@@ -170,10 +170,10 @@ static int AFPSetSocketOptions(int fd, int buffer_size)
     req.tp_block_nr = 4;
     req.tp_frame_size = getpagesize();        // 4KB
     req.tp_frame_nr = buffer_size;
-    
+
     setsockopt(fd, SOL_PACKET, PACKET_RX_RING, &req, sizeof(req));
     #endif
-    
+
     return 0;
 }
 ```
@@ -190,27 +190,27 @@ int SuricataMain(int argc, char **argv)
 {
     /* 1. 解析命令行 */
     ParseCommandLine(argc, argv);
-    
+
     /* 2. 加载 YAML 配置 */
     if (ConfYamlLoad(conf_filename) != 0) {
         FatalError("Failed to load configuration");
     }
-    
+
     /* 3. 全局初始化 */
     GlobalInits();
-    
+
     /* 4. 初始化 Packet 池（关键）*/
     max_pending_packets = 1024;
     (void)ConfGetInt("max-pending-packets", &max_pending_packets);
     PacketPoolInit(max_pending_packets);
-    
+
     /* 5. 初始化检测引擎 */
     DetectEngineCtx *de_ctx = DetectEngineCtxInit();
     DetectEngineBuild(de_ctx);
-    
+
     /* 6. 设置运行模式并创建线程 */
     RunModeSet(runmode, capture_plugin, ...);
-    
+
     /* 7. 进入主循环 */
     TmThreadWaitOnThreadInit();
     suricata->loop();
@@ -235,7 +235,7 @@ int RunModeSet(const char *runmode, const char *capture_plugin, ...)
     } else if (strcmp(runmode, "pcap") == 0) {
         return RunModePcap(de_ctx);
     }
-    
+
     /* auto 模式：自动选择 */
     runmode = RunModeAutoConf();
     return RunModeSet(runmode, capture_plugin, ...);
@@ -250,7 +250,7 @@ int RunModeAFPAutoFp(DetectEngineCtx *de_ctx)
 {
     /* 1. 读取接口配置 */
     int thread_count = AFPCountThreadsByConf();
-    
+
     /* 2. 创建 Capture 线程 */
     ThreadVars *tv = TmThreadCreatePacketHandler(
         "RxAFPacket",
@@ -259,25 +259,25 @@ int RunModeAFPAutoFp(DetectEngineCtx *de_ctx)
         "FlowManager",     // 管理线程
         NULL
     );
-    
+
     /* 3. 设置抓包模块 */
     TmVarSlotSetFunc(tv, TmModuleGetByName("AF_PACKET"));
-    
+
     /* 4. 设置接口参数 */
     AFPPseudoArgs *args = SCCalloc(1, sizeof(AFPPseudoArgs));
     args->iface = "eth0";
     args->buffer_size = 1024;
     args->ring_size = 2048;
     tv->initdata = args;
-    
+
     /* 5. 启动线程 */
     TmThreadSpawn(tv);
-    
+
     /* 6. 创建 Worker 线程池 */
     for (int i = 0; i < thread_count; i++) {
         CreateWorkerThread(de_ctx, i);
     }
-    
+
     return 0;
 }
 ```
@@ -307,45 +307,45 @@ void TmModuleReceiveAFPPacketRegister(void)
 static TmEcode AFPPacketThreadInit(ThreadVars *tv, const void *initdata, void **data)
 {
     AFPPacketThreadVars *ptv = SCCalloc(1, sizeof(AFPPacketThreadVars));
-    
+
     /* 从 initdata 获取接口配置 */
     AFPPseudoArgs *args = (AFPPseudoArgs *)initdata;
-    
+
     /* 创建 Socket */
     int fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
     if (fd < 0) {
         SCLogError("AF_PACKET socket create failed");
         return TM_ECODE_FAILED;
     }
-    
+
     /* 设置 Socket 选项 */
     AFPSetSocketOptions(fd, args->buffer_size);
-    
+
     /* 绑定到接口 */
     struct ifreq ifr;
     strlcpy(ifr.ifr_name, args->iface, IFNAMSIZ);
     ioctl(fd, SIOCGIFINDEX, &ifr);
-    
+
     struct sockaddr_ll addr;
     addr.sll_family = AF_PACKET;
     addr.sll_ifindex = ifr.ifr_ifindex;
     addr.sll_protocol = htons(ETH_P_ALL);
     bind(fd, (struct sockaddr *)&addr, sizeof(addr));
-    
+
     /* 设置为混杂模式 */
     if (args->promisc) {
         ioctl(fd, SIOCGIFFLAGS, &ifr);
         ifr.ifr_flags |= IFF_PROMISC;
         ioctl(fd, SIOCSIFFLAGS, &ifr);
     }
-    
+
     /* 设置帧映射 (mmap) */
     AFPSetupRing(fd, args->ring_size);
-    
+
     ptv->fd = fd;
     ptv->tv = tv;
     *data = ptv;
-    
+
     return TM_ECODE_OK;
 }
 ```
@@ -358,40 +358,40 @@ static TmEcode AFPPacketLoop(ThreadVars *tv, void *data)
 {
     AFPPacketThreadVars *ptv = (AFPPacketThreadVars *)data;
     struct tpacket_blocks *block;
-    
+
     while (1) {
         /* 阻塞等待数据包 */
         int ret = poll(ptv->fds, ptv->fd_count, -1);
         if (ret < 0) continue;
-        
+
         /* 遍历所有就绪的 ring block */
         for (int i = 0; i < ptv->fd_count; i++) {
             if (ptv->fds[i].revents & POLLIN) {
                 /* 读取 block */
                 block = GetReadyBlock(ptv, i);
-                
+
                 /* 解析每个帧 */
                 for (int j = 0; j < block->hdr->tp_next_to_pr; j++) {
                     /* 获取 Packet */
                     Packet *p = PacketGetFromQueueOrAlloc();
-                    
+
                     /* 复制数据 */
                     CopyData(p, block->addr[j], block->hdr->tp_snaplen);
-                    
+
                     /* 设置元数据 */
                     p->ts = block->tv[j];
                     p->datalen = block->hdr->tp_snaplen;
-                    
+
                     /* 分发到处理管道 */
                     TmThreadsSlotVarRun(tv, p);
                 }
-                
+
                 /* 释放 block */
                 ReleaseBlock(block);
             }
         }
     }
-    
+
     return TM_ECODE_OK;
 }
 ```
@@ -424,11 +424,11 @@ capture:
 af-packet:
   - interface: eth0
     threads: 8
-    buffer-size: 4096          # 增大缓冲区
-    ring-size: 4096            # 增大 Ring
-    use-memory-mmap: yes       # 启用 mmap
-    tpacket-v3: yes            # 使用 TPACKET_V3
-    HockAirbus: yes            # 启用 RX-Ring
+    buffer-size: 4096 # 增大缓冲区
+    ring-size: 4096 # 增大 Ring
+    use-memory-mmap: yes # 启用 mmap
+    tpacket-v3: yes # 使用 TPACKET_V3
+    HockAirbus: yes # 启用 RX-Ring
 ```
 
 ### 6.2 内核参数调优
@@ -464,6 +464,7 @@ net.core.netdev_max_backlog = 65535
 5. **抓包循环**：`poll()` + `mmap()` 实现零拷贝抓包
 
 后续章节我们将深入各抓包模式的详细配置与源码：
+
 - [[2026-04-15-suricata-deep-dive-ch6-af-packet|第六章：AF-PACKET]]
 - [[2026-04-15-suricata-deep-dive-ch7-pcap|第七章：PCAP]]
 - [[2026-04-15-suricata-deep-dive-ch8-nfq|第八章：NFQ]]

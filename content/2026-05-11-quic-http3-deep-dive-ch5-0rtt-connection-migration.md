@@ -1,7 +1,22 @@
 ---
 title: QUIC & HTTP/3 深度探索 Ch5：0-RTT 与连接迁移
 date: 2026-05-11 09:00:00
-tags: [QUIC, 0-RTT, Early Data, Connection Migration, PATH_CHALLENGE, PATH_RESPONSE, PATH_VALIDATION, Connection ID, Stateless Reset, Handshake, PSK, Resumption, NAT Rebinding]
+tags:
+  [
+    QUIC,
+    0-RTT,
+    Early Data,
+    Connection Migration,
+    PATH_CHALLENGE,
+    PATH_RESPONSE,
+    PATH_VALIDATION,
+    Connection ID,
+    Stateless Reset,
+    Handshake,
+    PSK,
+    Resumption,
+    NAT Rebinding,
+  ]
 description: QUIC & HTTP/3 深度探索 Ch5：0-RTT 恢复会话详解、连接迁移机制、PATH_CHALLENGE/PATH_RESPONSE、Stateless Reset、迁移场景与路径验证。
 ---
 

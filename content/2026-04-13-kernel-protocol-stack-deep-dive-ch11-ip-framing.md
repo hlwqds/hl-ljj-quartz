@@ -5,8 +5,8 @@ tags: [linux, kernel, networking, series, ip, ipv4, ipv6, checksum, fragmentatio
 description: "深入解析 IP 协议实现——IPv4/IPv6 头部结构、校验和计算、分片与重组、TTL/DSCP/ECN 字段、以及 IP 选项处理"
 ---
 
-> [!info] Kernel Protocol Stack 深度探索系列
-> 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Kernel Protocol Stack 深度探索系列 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-kernel-protocol-stack-deep-dive-ch1-skbuff|第一章：sk_buff 与数据包生命周期]]
 > 2. [[2026-04-13-kernel-protocol-stack-deep-dive-ch2-netdevice|第二章：Netdevice 与网卡抽象]]
 > 3. [[2026-04-13-kernel-protocol-stack-deep-dive-ch3-ring-buffer|第三章：Ring Buffer 与 DMA]]
@@ -37,25 +37,25 @@ graph LR
     subgraph "应用层"
         APP["应用"]
     end
-    
+
     subgraph "L4 传输层"
         L4["TCP/UDP"]
     end
-    
+
     subgraph "L3 网络层"
         IP["IP"]
     end
-    
+
     subgraph "L2 数据链路层"
         ETH["Ethernet"]
     end
-    
+
     subgraph "物理层"
         NIC["网卡"]
     end
-    
+
     APP --> L4 --> IP --> ETH --> NIC
-    
+
     style IP fill:#f59f00,stroke:#333
 ```
 
@@ -104,7 +104,7 @@ struct iphdr {
     __be16 check;           // Header Checksum
     __be32 saddr;           // Source IP Address
     __be32 daddr;           // Destination IP Address
-    
+
     /* options follow */
 };
 ```
@@ -114,25 +114,26 @@ struct iphdr {
 **Version (4 bits):** IP 版本，IPv4 为 4
 
 **IHL - Internet Header Length (4 bits):** 头部长度，单位为 4 字节
+
 - 最小值 5 (20 bytes，无选项)
 - 最大值 15 (60 bytes，携带选项)
 
 **Type of Service / DSCP + ECN (8 bits):**
 
-| 位 | 7-5 | 4-2 | 1-0 |
-|----|-----|-----|-----|
-| 名称 | Precedence | DSCP | ECN |
+| 位   | 7-5          | 4-2                                | 1-0                              |
+| ---- | ------------ | ---------------------------------- | -------------------------------- |
+| 名称 | Precedence   | DSCP                               | ECN                              |
 | 说明 | 优先级 (0-7) | Differentiated Services Code Point | Explicit Congestion Notification |
 
 **DSCP 值：**
 
-| DSCP | PHB | 用途 |
-|------|-----|------|
-| 0 (BE) | Default | Best Effort，无特殊处理 |
-| 46 | EF | Expedited Forwarding，低延迟 |
-| 34 | AF41 | Assured Forwarding，high drop |
-| 26 | AF31 | Assured Forwarding，medium drop |
-| 18 | AF21 | Assured Forwarding，low drop |
+| DSCP   | PHB     | 用途                            |
+| ------ | ------- | ------------------------------- |
+| 0 (BE) | Default | Best Effort，无特殊处理         |
+| 46     | EF      | Expedited Forwarding，低延迟    |
+| 34     | AF41    | Assured Forwarding，high drop   |
+| 26     | AF31    | Assured Forwarding，medium drop |
+| 18     | AF21    | Assured Forwarding，low drop    |
 
 **Total Length (16 bits):** 整个 IP 包长度，包含头部和数据，最大 65535 字节
 
@@ -140,9 +141,9 @@ struct iphdr {
 
 **Flags + Fragment Offset (16 bits):**
 
-| 位 | 15-13 | 12-0 |
-|----|-------|------|
-| 名称 | Flags | Fragment Offset |
+| 位   | 15-13 | 12-0                   |
+| ---- | ----- | ---------------------- |
+| 名称 | Flags | Fragment Offset        |
 | 说明 | MF/DF | 片偏移（8 字节为单位） |
 
 **TTL (8 bits):** 每经过一个路由器减 1，为 0 时丢弃
@@ -216,7 +217,7 @@ struct ipv6hdr {
     __be16 payload_len;      // Payload Length (不含头部)
     __u8   nexthdr;         // Next Header (类似 IPv4 protocol)
     __u8   hop_limit;       // Hop Limit (类似 IPv4 TTL)
-    
+
     struct in6_addr saddr;   // Source Address (128 bits)
     struct in6_addr daddr;   // Destination Address (128 bits)
 };
@@ -224,31 +225,31 @@ struct ipv6hdr {
 
 ### 3.3 IPv6 vs IPv4 主要区别
 
-| 特性 | IPv4 | IPv6 |
-|------|------|------|
-| 地址长度 | 32 bits | 128 bits |
-| 头部长度 | 20-60 bytes | 固定 40 bytes |
-| 分片 | 发送端和路由器都可分片 | 仅发送端分片 |
-| 校验和 | 头部校验和 | 无校验和 |
-| Options | 通过 IHL 实现选项 | 通过扩展头部实现 |
-| Flow Label | 无 | 20 bits 用于流标记 |
-| ARP | ARP 协议 | NDP (Neighbor Discovery) |
+| 特性       | IPv4                   | IPv6                     |
+| ---------- | ---------------------- | ------------------------ |
+| 地址长度   | 32 bits                | 128 bits                 |
+| 头部长度   | 20-60 bytes            | 固定 40 bytes            |
+| 分片       | 发送端和路由器都可分片 | 仅发送端分片             |
+| 校验和     | 头部校验和             | 无校验和                 |
+| Options    | 通过 IHL 实现选项      | 通过扩展头部实现         |
+| Flow Label | 无                     | 20 bits 用于流标记       |
+| ARP        | ARP 协议               | NDP (Neighbor Discovery) |
 
 ### 3.4 IPv6 扩展头部
 
 IPv6 使用链式扩展头部替代 IPv4 的选项：
 
-| Next Header | 扩展头部 |
-|-------------|---------|
-| 0 | Hop-by-Hop Options |
-| 6 | TCP |
-| 17 | UDP |
-| 43 | Routing (Type 0) |
-| 44 | Fragment |
-| 50 | ESP |
-| 51 | AH |
-| 59 | No Next Header |
-| 60 | Destination Options |
+| Next Header | 扩展头部            |
+| ----------- | ------------------- |
+| 0           | Hop-by-Hop Options  |
+| 6           | TCP                 |
+| 17          | UDP                 |
+| 43          | Routing (Type 0)    |
+| 44          | Fragment            |
+| 50          | ESP                 |
+| 51          | AH                  |
+| 59          | No Next Header      |
+| 60          | Destination Options |
 
 ---
 
@@ -262,22 +263,22 @@ __sum16 ip_fast_csum(const void *iph, unsigned int ihl)
 {
     unsigned int sum;
     __wsum csum;
-    
+
     // 32-bit 分组累加
     sum = *(const __u32 *)iph++;
     sum += *(const __u32 *)iph++;
     sum += *(const __u32 *)iph++;
     sum += *(const __u32 *)iph++;
     ihl -= 4;
-    
+
     while (ihl--) {
         sum += *(const __u32 *)iph++;
     }
-    
+
     // 处理奇数字节
     sum = (sum & 0xffff) + (sum >> 16);
     sum += sum >> 16;
-    
+
     return (__force __sum16)~sum;
 }
 ```
@@ -296,13 +297,13 @@ static int ip_rcv_finish(struct net *net, struct sock *sock,
                           struct sk_buff *skb)
 {
     // 校验和已在 earlier 验证，这里不再重复
-    
+
     // 处理选项
     if (IPCB(skb)->opt.len) {
         if (ip_rcv_options(skb))
             goto drop;
     }
-    
+
     // 路由查找
     return dst_input(skb);
 drop:
@@ -345,13 +346,14 @@ __sum16 tcp_v4_check(struct tcphdr *th, int len,
 
 ### 5.2 IPv4 分片字段
 
-| 字段 | 用途 |
-|------|------|
-| Identification | 同一原始包的所有分片共享同一 ID |
-| Flags | MF (More Fragments) = 1 表示后面还有分片 |
+| 字段            | 用途                                       |
+| --------------- | ------------------------------------------ |
+| Identification  | 同一原始包的所有分片共享同一 ID            |
+| Flags           | MF (More Fragments) = 1 表示后面还有分片   |
 | Fragment Offset | 当前分片在原始数据中的偏移（8 字节为单位） |
 
 **分片规则：**
+
 - 除最后一个分片外，每个分片大小必须是 8 字节的倍数
 - 第一个分片的偏移为 0
 
@@ -367,46 +369,46 @@ static int ip_fragment(struct net *net, struct sock *sk,
     struct sk_buff *skb2;
     unsigned int hlen, left, len, ptr, offset;
     int err = 0;
-    
+
     iph = ip_hdr(skb);
-    
+
     // 计算头部和分片参数
     hlen = iph->ihl * 4;           // 头部长度
     left = ntohs(iph->tot_len) - hlen;  // 数据长度
     ptr = hlen;                    // 指向数据开始
-    
+
     // 每个分片的最大数据量
     fraglen = (mtu - hlen - sizeof(struct ipfrag)) & ~7;
-    
+
     // 分片循环
     while (left > 0) {
         len = min(left, fraglen);
-        
+
         // 分配新的 skb
         skb2 = alloc_skb(len + hlen + LL_RESERVED_SPACE(dev), GFP_ATOMIC);
-        
+
         // 复制头部
         skb_copy_header(skb2, skb);
-        
+
         // 设置分片信息
         iph = ip_hdr(skb2);
         iph->frag_off = htons(offset >> 3);
         if (offset + len < ntohs(orig_iph->tot_len) - hlen)
             iph->frag_off |= htons(IP_MF);  // More fragments
-        
+
         // 复制数据
         skb_copy_bits(skb, ptr, skb_put(skb2, len), len);
-        
+
         // 发送
         iph->tot_len = htons(len + hlen);
         ip_send_check(iph);
         ip_local_out(net, skb2);
-        
+
         left -= len;
         offset += len;
         ptr += len;
     }
-    
+
     kfree_skb(skb);
     return err;
 }
@@ -418,7 +420,7 @@ static int ip_fragment(struct net *net, struct sock *sk,
 // net/ipv4/ip_fragment.c
 struct ipq {
     struct inet_frag_queue base;
-    
+
     u16     id;              // Identification
     u8      protocol;         // Protocol
     u32     saddr;           // Source IP
@@ -429,13 +431,13 @@ static void ip_expire(unsigned long data)
 {
     struct ipq *qp = (struct ipq *)data;
     struct net *net = &init_net;
-    
+
     // 超时，删除所有分片
     ipfrag_skb_cb(qp, IP_FRAG_CB(skb));
     list_for_each_entry(skb, &qp->fragments, frag_list) {
         kfree_skb(skb);
     }
-    
+
     // 通知上层
     icmp_send(ICMP_TIME_EXCEED, ICMP_EXC_FRAG_TIME, 0);
     inet_frag_kill(&qp->q);
@@ -454,24 +456,24 @@ static int ip6_fragment(struct net *net, struct sock *sk,
     struct frag_hdr *fhdr;
     unsigned int mtu, hlen, left, len;
     int err = 0;
-    
+
     // 计算 MTU
     mtu = ip6_skb_dst_mtu(skb);
-    
+
     // IPv6 分片头部
     hlen = sizeof(struct frag_hdr);
-    
+
     while (left > 0) {
         len = min(left, (mtu - hlen - sizeof(struct frag_hdr)) & ~7);
-        
+
         // 创建分片
         skb2 = skb_segment(skb, hlen + sizeof(struct frag_hdr), len);
-        
+
         // 添加 IPv6 分片头部
         fhdr = (struct frag_hdr *)skb_push(skb2, sizeof(struct frag_hdr));
         ipv6_frag_init(fhdr, fragoff, !more);
         fhdr->nexthdr = protocol;
-        
+
         // 发送
         ip6_push_pending_frames(skb);
     }
@@ -495,14 +497,14 @@ IPv4 选项紧跟在头部之后，长度可变：
 
 **常见选项类型：**
 
-| Type | Name | 说明 |
-|------|------|------|
-| 0 | EOOL | End of Options List |
-| 1 | NOP | No Operation |
-| 7 | RR | Record Route |
-| 68 | TS | Timestamp |
-| 131 | LSR | Loose Source Route |
-| 137 | SSRR | Strict Source and Record Route |
+| Type | Name | 说明                           |
+| ---- | ---- | ------------------------------ |
+| 0    | EOOL | End of Options List            |
+| 1    | NOP  | No Operation                   |
+| 7    | RR   | Record Route                   |
+| 68   | TS   | Timestamp                      |
+| 131  | LSR  | Loose Source Route             |
+| 137  | SSRR | Strict Source and Record Route |
 
 ### 6.2 IP 选项代码处理
 
@@ -512,23 +514,23 @@ int ip_forward_options(struct sk_buff *skb)
 {
     struct ip_options *opt = &(IPCB(skb)->opt);
     unsigned char *ptr;
-    
+
     if (opt->rr_needroute) {
         // 记录路由
         ptr = opt->ptr + (opt->rr_len - 1);
         memcpy(ptr, &iph->daddr, 4);
         opt->ptr += 4;
     }
-    
+
     if (opt->srr_is_hit) {
         // 源路由处理
         if (!ip_options_rcu_srh(skb, opt))
             return -EINVAL;
     }
-    
+
     // TTL 减一
     iph->ttl--;
-    
+
     return 0;
 }
 ```
@@ -541,10 +543,10 @@ int ipv6_parse_hopopts(struct sk_buff *skb)
 {
     struct inet_skb_parm *opt = IPCB(skb);
     unsigned int off = sizeof(struct ipv6hdr);
-    
+
     while (off < skb->len) {
         struct hop_opt *hopopt = (struct hop_opt *)(skb->data + off);
-        
+
         switch (hopopt->nexthdr) {
         case IPPROTO_ICMPV6:
             // 处理 ICMPv6
@@ -558,7 +560,7 @@ int ipv6_parse_hopopts(struct sk_buff *skb)
             return -1;
         }
     }
-    
+
     return 0;
 }
 ```
@@ -575,11 +577,11 @@ struct sk_buff {
     // IP 头指针
     struct iphdr       *ip_hdr;
     struct ipv6hdr     *ipv6_hdr;
-    
+
     // 传输层头指针
     struct tcphdr      *tcp_hdr;
     struct udphdr      *udp_hdr;
-    
+
     // 分片信息
     __be16              frag_off;
     u8                  ip_summed;   // CHECKSUM_*
@@ -603,13 +605,13 @@ struct ip_options {
     __u32       faddr;           // 第一个路由目的
     __u32       daddr;           // 最终目的
     __u32       saddr;           // loose source route 的下一跳
-    
+
     int         optlen;         // 选项长度
     int         offset;         // 当前处理偏移
-    
+
     unsigned char       *__data;   // 选项数据
     unsigned char       data[40];   // 最大选项空间
-    
+
     // 标志位
     unsigned char       rr_needroute:1;
     unsigned char       ts_needtime:1;
@@ -631,28 +633,28 @@ graph TD
     subgraph "应用层"
         APP["应用"]
     end
-    
+
     subgraph "L4"
         L4["TCP/UDP"]
     end
-    
+
     subgraph "IPv4/IPv6"
         IP_V["IP Header<br/>20-60/40 bytes"]
         IP_OPT["Options/Ext Headers"]
         IP_CSUM["Checksum"]
         IP_FRAG["Fragmentation"]
     end
-    
+
     subgraph "L2"
         ETH["Ethernet"]
     end
-    
+
     APP --> L4 --> IP_V
     IP_V --> IP_OPT
     IP_V --> IP_CSUM
     IP_V --> IP_FRAG
     IP_FRAG --> ETH
-    
+
     style IP_V fill:#f59f00,stroke:#333
 ```
 

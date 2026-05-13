@@ -76,16 +76,16 @@ The IPv6 basic header's **Next Header** field points to the SRH. The SRH's **Nex
 
 ### 7.3.2 Field Descriptions
 
-| Field | Bits | Description |
-|-------|------|-------------|
-| Next Header | 8 | Protocol identifier of header following SRH (TCP=6, UDP=17) |
-| Hdr Ext Len | 8 | Length of SRH in 8-byte units, not including first 8 bytes |
-| Routing Type | 8 | **4** for Segment Routing Header (RFC 8754) |
-| Segments Left | 8 | Number of segments remaining to be processed |
-| Last Entry | 8 | Index of last element in segment list (array-style) |
-| Flags | 16 |SRH flags for various control functions |
-| Reserved | 16 | Must be zero; for future use |
-| Segment List | 128×n | Array of 128-bit IPv6 addresses |
+| Field         | Bits  | Description                                                 |
+| ------------- | ----- | ----------------------------------------------------------- |
+| Next Header   | 8     | Protocol identifier of header following SRH (TCP=6, UDP=17) |
+| Hdr Ext Len   | 8     | Length of SRH in 8-byte units, not including first 8 bytes  |
+| Routing Type  | 8     | **4** for Segment Routing Header (RFC 8754)                 |
+| Segments Left | 8     | Number of segments remaining to be processed                |
+| Last Entry    | 8     | Index of last element in segment list (array-style)         |
+| Flags         | 16    | SRH flags for various control functions                     |
+| Reserved      | 16    | Must be zero; for future use                                |
+| Segment List  | 128×n | Array of 128-bit IPv6 addresses                             |
 
 ### 7.3.3 Hdr Ext Len Calculation
 
@@ -103,6 +103,7 @@ Hdr Ext Len = n × 2 + (TLV_length / 8)
 ```
 
 Example: 3 segments, no TLVs:
+
 ```
 Hdr Ext Len = 3 × 2 = 6 (48 bytes total for segment list)
 Total SRH length = 8 + 48 = 56 bytes
@@ -139,20 +140,24 @@ Segments Left = 3
 ```
 
 Initial packet state:
+
 - DA = Segment List[Segments Left - 1] = Segment List[2] = R1
 - Segments Left = 3
 
 Processing at R1:
+
 - Decrement Segments Left to 2
 - Update DA to Segment List[Segments Left - 1] = Segment List[1] = R3
 - Forward to R3
 
 Processing at R3:
+
 - Decrement Segments Left to 1
 - Update DA to Segment List[Segments Left - 1] = Segment List[0] = R4
 - Forward to R4
 
 Processing at R4:
+
 - Segments Left = 0 (final destination)
 - Strip SRH
 - Process upper layer
@@ -246,9 +251,9 @@ Flag bits (from MSB to LSB):
 The **Tag** field provides a way to group packets belonging to the same traffic flow or service. Packets with the same Tag can be processed similarly.
 
 Use cases:
+
 - Service-level grouping (e.g., all packets for a specific VPN)
-- OAM packet identification
--流量工程分组标记
+- OAM packet identification -流量工程分组标记
 
 ### 7.6.3 Flag Bits
 
@@ -286,11 +291,11 @@ Type-Length-Value (TLV) options can be appended after the segment list. TLVs car
 
 RFC 8754 defines several TLV types:
 
-| Type | Name | Description |
-|------|------|-------------|
-| 1 | PAD1 | Single-byte padding |
-| 2 | PADN | Variable-length padding |
-| 4 | HMAC | Authentication data |
+| Type | Name | Description             |
+| ---- | ---- | ----------------------- |
+| 1    | PAD1 | Single-byte padding     |
+| 2    | PADN | Variable-length padding |
+| 4    | HMAC | Authentication data     |
 
 ### 7.7.4 PAD1 TLV
 
@@ -354,11 +359,11 @@ if Segments Left > 0:
     next_segment = Segment_List[Segments_Left - 1]
     DA = next_segment
     Segments_Left = Segments_Left - 1
-    
+
     # Optional: process TLVs
     # Optional: update flags
     # Optional: update HMAC if present
-    
+
     Forward packet based on new DA
 else:
     # This node is the final destination
@@ -402,13 +407,13 @@ Hdr Ext Len = (n × 2) + (TLV_size / 8)
 ```
 
 | Segments | Min Size (bytes) | Hdr Ext Len |
-|----------|-----------------|--------------|
-| 0 | 8 | 0 |
-| 1 | 24 | 2 |
-| 2 | 40 | 4 |
-| 3 | 56 | 6 |
-| 5 | 88 | 10 |
-| 10 | 168 | 20 |
+| -------- | ---------------- | ----------- |
+| 0        | 8                | 0           |
+| 1        | 24               | 2           |
+| 2        | 40               | 4           |
+| 3        | 56               | 6           |
+| 5        | 88               | 10          |
+| 10       | 168              | 20          |
 
 ### 7.9.3 Path MTU Considerations
 
@@ -438,6 +443,7 @@ Multiple SRH headers can be stacked when services require multiple levels of seg
 ```
 
 Use cases:
+
 - Inter-AS SRv6 with per-domain segments
 - Service function chaining with multiple policies
 - Traffic engineering with hierarchy
@@ -486,14 +492,14 @@ at node:
 
 ### 7.11.2 Differences
 
-| Aspect | RH0 (Deprecated) | SRH |
-|--------|-----------------|-----|
-| Routing Type | 0 | 4 |
-| Security | Insecure (amplification) | Controlled via HMAC TLV |
-| Transparency | Full header reversal | Preserves segment order |
-| Processing | Pure source routing | Programmable via behaviors |
-| Extensibility | Fixed format | TLV-based extensibility |
-| Standardization | RFC 3515 (deprecated) | RFC 8754 |
+| Aspect          | RH0 (Deprecated)         | SRH                        |
+| --------------- | ------------------------ | -------------------------- |
+| Routing Type    | 0                        | 4                          |
+| Security        | Insecure (amplification) | Controlled via HMAC TLV    |
+| Transparency    | Full header reversal     | Preserves segment order    |
+| Processing      | Pure source routing      | Programmable via behaviors |
+| Extensibility   | Fixed format             | TLV-based extensibility    |
+| Standardization | RFC 3515 (deprecated)    | RFC 8754                   |
 
 ### 7.11.3 Why SRH is Secure Where RH0 Was Not
 

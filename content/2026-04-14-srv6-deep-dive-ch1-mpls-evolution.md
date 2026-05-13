@@ -86,7 +86,7 @@ RSVP-TE enabled network operators to specify exact paths for LSPs. An explicit p
 [R1]----100Gbps----[R2]----100Gbps----[R3]
   |                                   |
   +-------200Gbps----[R4]----200Gbps-+
-  
+
 Shortest path from R1 to R3: R1-R2-R3 (100Gbps capacity)
 Alternative explicit path: R1-R4-R3 (200Gbps capacity)
 

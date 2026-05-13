@@ -24,12 +24,12 @@ Connection ID: 0 to 20 bytes (variable length, per CID)
 
 **CID Length Field:** The first two bits of a long header packet encode the CID length using the same variable-length integer scheme (with a 2-bit prefix).
 
-| Prefix | Length |
-|---|---|
-| `00` | 0 bytes (CID-less packet) |
-| `01` | 1 byte |
-| `10` | 2 bytes |
-| `11` | 3 bytes |
+| Prefix | Length                    |
+| ------ | ------------------------- |
+| `00`   | 0 bytes (CID-less packet) |
+| `01`   | 1 byte                    |
+| `10`   | 2 bytes                   |
+| `11`   | 3 bytes                   |
 
 (For long header packets; short header CIDs are encoded differently in the header.)
 
@@ -57,6 +57,7 @@ Server's view of the connection:
 ```
 
 This allows:
+
 - **Parallel path usage**: Send packets on multiple paths simultaneously
 - **Connection migration**: Switch from one path to another seamlessly
 - **Load balancing**: Server routes connections based on CID, not 4-tuple
@@ -98,6 +99,7 @@ RETIRE_CONNECTION_ID Frame {
 ```
 
 An endpoint might retire CIDs when:
+
 - It no longer needs the alternative path
 - It's reducing the number of active CIDs to save state
 - A particular path is no longer usable
@@ -131,7 +133,7 @@ What happens when a server loses all state for a connection? Normally, the serve
 
 1. The server maintains the `Stateless Reset Token` for each CID it issues.
 2. When the server loses connection state but receives a packet with a CID it issued:
-   a. It verifies the packet number is in a valid range (within 2*max_ack_delay of the last received packet number)
+   a. It verifies the packet number is in a valid range (within 2\*max_ack_delay of the last received packet number)
    b. It computes: `test = HMAC-SHA256(stateless_reset_token, connection_id)`
    c. It compares the first 16 bytes of `test` to the last 16 bytes of the incoming packet
    d. If they match with high probability, it sends a `CONNECTION_CLOSE` with error code `0xXXXXXXXX` (stateless_reset)
@@ -169,6 +171,7 @@ The client must validate the new path before migrating (to prevent amplification
 CID-based routing is one of the most important practical benefits of QUIC for large-scale deployments:
 
 **Traditional (TCP) load balancing:**
+
 ```
 Client → L4 Load Balancer → Backend Server
   (LB rewrites dest IP/port based on 4-tuple hash)
@@ -177,6 +180,7 @@ Client → L4 Load Balancer → Backend Server
 Problem: When the client IP changes (mobile handoff), the 4-tuple hash changes, and the LB might route the packet to a different backend, breaking the connection.
 
 **QUIC CID-based load balancing:**
+
 ```
 Client → L4 Load Balancer → Backend Server
   (LB reads CID from packet header, routes by CID)
@@ -209,6 +213,7 @@ CIDs present a privacy challenge: a CID that persists across network changes cou
 ## 5.11 Summary
 
 Connection IDs are the cornerstone of QUIC's connection-oriented architecture. By decoupling the connection identity from the network address, CIDs enable:
+
 - **Connection migration** across network changes
 - **Parallel path usage** with multiple active CIDs
 - **Stateless load balancing** without sticky 4-tuple requirements

@@ -5,13 +5,13 @@ tags: [p4, series, azure, cloud, sonic, network, programmable, smartswitch, azur
 description: "Azure P4 可编程网络深度解析——Azure SONiC 架构、P4 交换机设计、Dashboard 集成、Azure 虚拟网络、ENSP、Packet个工作流、P4 on Azure HCI"
 ---
 
-> [!info] P4 深度探索系列
-> 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+> [!info] P4 深度探索系列 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-14-p4-deep-dive-ch1-p4-overview|第一章：P4 概述]]
-> ...
-> 35. [[2026-04-14-p4-deep-dive-ch35-telemetry|第三十五章：P4 网络测量编程]]
-> 36. [[2026-04-14-p4-deep-dive-ch36-aws|第三十六章：AWS 网络可编程实践]]
-> 37. **第三十七章：Azure 网络可编程实践——Azure SONiC、P4 交换机、Dashboard 集成**
+>    ...
+> 2. [[2026-04-14-p4-deep-dive-ch35-telemetry|第三十五章：P4 网络测量编程]]
+> 3. [[2026-04-14-p4-deep-dive-ch36-aws|第三十六章：AWS 网络可编程实践]]
+> 4. **第三十七章：Azure 网络可编程实践——Azure SONiC、P4 交换机、Dashboard 集成**
 
 ---
 
@@ -87,14 +87,14 @@ SONiC 系统架构:
 
 ### 2.2 SONiC 核心组件
 
-| 组件 | 描述 | 技术栈 |
-|------|------|--------|
-| **swss** | Switch State Service，核心数据库服务 | C++, Redis |
-| **syncd** | ASIC 同步服务 | C++ |
-| **SAI** | Switch Abstraction Interface | C |
-| **BGP** | 路由协议 (Quagga/FRR) | C |
-| **LLDP** | 链路发现 | C |
-| **PortExpander** | 端口扩展 | C |
+| 组件             | 描述                                 | 技术栈     |
+| ---------------- | ------------------------------------ | ---------- |
+| **swss**         | Switch State Service，核心数据库服务 | C++, Redis |
+| **syncd**        | ASIC 同步服务                        | C++        |
+| **SAI**          | Switch Abstraction Interface         | C          |
+| **BGP**          | 路由协议 (Quagga/FRR)                | C          |
+| **LLDP**         | 链路发现                             | C          |
+| **PortExpander** | 端口扩展                             | C          |
 
 ### 2.3 SONiC 架构 (Container 视图)
 
@@ -644,12 +644,12 @@ pipeline P4Classification {
 
 ### 8.2 NSG 规则设计
 
-| 优先级 | 规则 | 源 | 目的 | 端口 | 动作 |
-|--------|------|-----|------|------|------|
-| 100 | Allow-HTTPS | Any | Web Subnet | 443 | Allow |
-| 200 | Allow-HTTP | Any | Web Subnet | 80 | Allow |
-| 300 | Allow-SQL | Web Subnet | Data Subnet | 1433 | Allow |
-| 4000 | Deny-All | Any | Any | Any | Deny |
+| 优先级 | 规则        | 源         | 目的        | 端口 | 动作  |
+| ------ | ----------- | ---------- | ----------- | ---- | ----- |
+| 100    | Allow-HTTPS | Any        | Web Subnet  | 443  | Allow |
+| 200    | Allow-HTTP  | Any        | Web Subnet  | 80   | Allow |
+| 300    | Allow-SQL   | Web Subnet | Data Subnet | 1433 | Allow |
+| 4000   | Deny-All    | Any        | Any         | Any  | Deny  |
 
 ### 8.3 性能优化
 
@@ -680,12 +680,12 @@ ethtool -l eth0
 
 Azure 的 P4 可编程网络实践：
 
-| 组件 | 技术栈 | P4 用途 |
-|------|--------|--------|
-| **SONiC** | Linux + Redis + SAI | 开源网络 OS |
-| **TOR Switch** | Intel Tofino P4 | 流水线处理 |
-| **vNet Gateway** | Software SDN | 虚拟网络 |
-| **NSG** | P4 ACL | 安全规则 |
-| **Network Watcher** | gNMI/REST | 监控诊断 |
+| 组件                | 技术栈              | P4 用途     |
+| ------------------- | ------------------- | ----------- |
+| **SONiC**           | Linux + Redis + SAI | 开源网络 OS |
+| **TOR Switch**      | Intel Tofino P4     | 流水线处理  |
+| **vNet Gateway**    | Software SDN        | 虚拟网络    |
+| **NSG**             | P4 ACL              | 安全规则    |
+| **Network Watcher** | gNMI/REST           | 监控诊断    |
 
 Azure 通过 SONiC 和 P4 的结合，实现了开放、灵活、高性能的网络基础设施。

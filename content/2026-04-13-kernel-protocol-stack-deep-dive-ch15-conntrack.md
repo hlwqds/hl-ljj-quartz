@@ -5,8 +5,8 @@ tags: [linux, kernel, networking, series, conntrack, nf_conntrack, state_machine
 description: "深入解析 Linux 连接跟踪（Conntrack）机制——nf_conntrack 数据结构、连接状态机、哈希表与超时管理、协议辅助模块（helper）、以及连接跟踪在内核网络栈中的角色"
 ---
 
-> [!info] Kernel Protocol Stack 深度探索系列
-> 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Kernel Protocol Stack 深度探索系列 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-kernel-protocol-stack-deep-dive-ch1-skbuff|第一章：sk_buff 与数据包生命周期]]
 > 2. [[2026-04-13-kernel-protocol-stack-deep-dive-ch2-netdevice|第二章：Netdevice 与网卡抽象]]
 > 3. [[2026-04-13-kernel-protocol-stack-deep-dive-ch3-ring-buffer|第三章：Ring Buffer 与 DMA]]
@@ -41,26 +41,26 @@ graph LR
     subgraph "数据包"
         SKB["sk_buff"]
     end
-    
+
     subgraph "Conntrack"
         CT["nf_conntrack"]
         HASH["哈希表"]
         TIMER["超时管理"]
     end
-    
+
     subgraph "状态"
         NEW["NEW"]
         EST["ESTABLISHED"]
         REL["RELATED"]
     end
-    
+
     SKB --> CT
     CT --> HASH
     CT --> TIMER
     CT --> NEW
     CT --> EST
     CT --> REL
-    
+
     style CT fill:#f59f00,stroke:#333
 ```
 
@@ -81,30 +81,30 @@ struct nf_conn {
             union nf_conntrack_protocol proto;  // L4 协议信息
         }tuplehash[IP_CT_DIR_MAX];       // 双向流（两个方向）
     }tuplehash[IP_CT_DIR_MAX];
-    
+
     /* 状态 */
     unsigned long           status;      // 连接状态标志
-    
+
     /* 引用计数 */
     atomic_t                ct_general__refcnt;
-    
+
     /* 时间戳 */
     struct sk_buff          *skb;        // 最后一个包
     unsigned long           timeout;
-    
+
     /* 方向 */
     u8                      dir[IP_CT_DIR_MAX];
-    
+
     /* 网络命名空间 */
     possible_net_t          ct_net;
-    
+
     /* 辅助数据 */
     struct nf_conn_acct     *acct;
     struct nf_conntrack_extensions *ext;
-    
+
     /* 哈希链表 */
     struct hlist_nulls_node  hnnode;
-    
+
     /* 用户空间期望 */
     struct nf_conntrack_expectations *expectations;
 };
@@ -140,12 +140,12 @@ union nf_conntrack_protocol {
         u8      state;                     // TCP 状态
         u8      flags;                      // 标志（忽略时戳等）
     } tcp;
-    
+
     /* UDP */
     struct nf_ct_udp {
         __be16  src_port, dst_port;
     } udp;
-    
+
     /* ICMP */
     struct nf_ct_icmp {
         u8      type, code;                // ICMP 类型/代码
@@ -211,7 +211,7 @@ flowchart LR
         SYN_SENT -->|"RST"| NONE
         EST -->|"RST"| NONE
     end
-    
+
     style EST fill:#00ff00,stroke:#333
     style SYN_SENT fill:#f59f00,stroke:#333
 ```
@@ -220,11 +220,11 @@ flowchart LR
 
 UDP 是无连接的，但 conntrack 仍然维护状态：
 
-| Conntrack 状态 | 说明 | 超时 |
-|---------------|------|------|
-| NONE | 新连接 | 30s |
-| ASSURED | 确认连接 | 180s |
-| UNREPLIED | 无回复 | 180s |
+| Conntrack 状态 | 说明     | 超时 |
+| -------------- | -------- | ---- |
+| NONE           | 新连接   | 30s  |
+| ASSURED        | 确认连接 | 180s |
+| UNREPLIED      | 无回复   | 180s |
 
 ### 3.4 ICMP 连接状态
 
@@ -253,6 +253,7 @@ static struct nf_conntrack_hash nf_conntrack_hash;
 ```
 
 **哈希计算：**
+
 - 使用源 IP、目的 IP、协议、源端口、目的端口计算哈希
 - 支持 IPv4 和 IPv6
 
@@ -266,14 +267,14 @@ ____nf_conntrack_find(struct net *net, const struct nf_conntrack_zone *zone,
 {
     struct nf_conntrack_tuple_hash *h;
     struct hlist_nulls_nullshead *slot;
-    
+
     slot = &nf_conntrack_hash.hash[hash];
     hlist_nulls_for_each_entry(h, &slot->first, hnnode) {
         if (nf_ct_tuple_equal(tuple, &h->tuplehash[IP_CT_DIR_ORIGINAL].tuple) &&
             nf_ct_zone_equal(nf_ct_l3num(h), zone))
             return h;
     }
-    
+
     return NULL;
 }
 ```
@@ -303,13 +304,13 @@ struct nf_conntrack_l4proto {
     // 协议编号
     __u16 l3proto;               // L3 协议 (AF_INET 等)
     __u16 l4proto;               // L4 协议 (IPPROTO_TCP 等)
-    
+
     // 超时函数
     unsigned int (*get_timeout)(struct nf_conn *ct);
-    
+
     // 定时器回调
     void (*destroy)(struct nf_conn *ct);
-    
+
     // 包处理
     int (*packet)(struct nf_conn *ct,
                   const struct sk_buff *skb,
@@ -353,15 +354,15 @@ struct nf_conntrack_helper {
     struct module           *me;             // 所属模块
     __u16                   l3num;           // L3 协议
     __u16                   l4proto;         // L4 协议
-    
+
     // 尝试函数（识别端口上的连接）
     int (*try_put)(struct sk_buff *skb,
                    struct nf_conn *ct,
                    enum ip_conntrack_info *ctinfo);
-    
+
     // 帮助信息结构
     struct nf_conntrack_helper *next;
-    
+
     // 私有数据
     void                    *data;
 };
@@ -369,16 +370,16 @@ struct nf_conntrack_helper {
 
 ### 6.2 内置 Helpers
 
-| Protocol | Helper 模块 | 用途 |
-|----------|------------|------|
-| FTP | nf_conntrack_ftp | 跟踪 FTP 数据连接 |
-| DNS | nf_conntrack_dns | 跟踪 DNS 查询/响应 |
-| IRC | nf_conntrack_irc | 跟踪 DCC 文件传输 |
-| TFTP | nf_conntrack_tftp | 跟踪 TFTP 数据连接 |
-| SIP | nf_conntrack_sip | 跟踪 SIP 呼叫 |
-| H.323 | nf_conntrack_h323 | 跟踪 H.323 呼叫 |
-| PPTP | nf_conntrack_pptp | 跟踪 PPTP VPN |
-| RAS | nf_conntrack_ras | 跟踪 RAS 协议 |
+| Protocol | Helper 模块       | 用途               |
+| -------- | ----------------- | ------------------ |
+| FTP      | nf_conntrack_ftp  | 跟踪 FTP 数据连接  |
+| DNS      | nf_conntrack_dns  | 跟踪 DNS 查询/响应 |
+| IRC      | nf_conntrack_irc  | 跟踪 DCC 文件传输  |
+| TFTP     | nf_conntrack_tftp | 跟踪 TFTP 数据连接 |
+| SIP      | nf_conntrack_sip  | 跟踪 SIP 呼叫      |
+| H.323    | nf_conntrack_h323 | 跟踪 H.323 呼叫    |
+| PPTP     | nf_conntrack_pptp | 跟踪 PPTP VPN      |
+| RAS      | nf_conntrack_ras  | 跟踪 RAS 协议      |
 
 ### 6.3 FTP Helper 示例
 
@@ -398,10 +399,10 @@ static int ftp_parse_port(struct nf_conn *ct, const char *data, int proto)
     // 解析 IP 和端口
     unsigned int ip[4];
     unsigned int port[2];
-    
+
     sscanf(data, "%u,%u,%u,%u,%u,%u", &ip[0], &ip[1], &ip[2], &ip[3],
            &port[0], &port[1]);
-    
+
     // 创建预期的 NAT 映射
     return nf_ct_expect_add((struct nf_conn *)ct,
                             ip[0]<<24 | ip[1]<<16 | ip[2]<<8 | ip[3],
@@ -437,10 +438,10 @@ struct nf_conntrack_expect {
     struct nf_conntrack_tuple     mask;         // 匹配掩码
     struct nf_conntrack_tuple     tuple;         // 预期元组
     struct nf_conntrack_master    master;        // 主连接
-    
+
     unsigned long               timeout;          // 超时
     atomic_t                    use;              // 使用计数
-    
+
     struct hlist_node           lnode;            // 链表节点
     struct rcu_head             rcu;
 };
@@ -578,30 +579,30 @@ graph TD
     subgraph "数据包"
         SKB["sk_buff"]
     end
-    
+
     subgraph "Conntrack Lookup"
         HASH["哈希表查找"]
         NEW["NEW?"]
     end
-    
+
     subgraph "状态"
         EST["ESTABLISHED"]
         REL["RELATED"]
         INV["INVALID"]
     end
-    
+
     subgraph "Actions"
         ACCEPT["ACCEPT"]
         DROP["DROP"]
         NAT["NAT"]
     end
-    
+
     SKB --> HASH
     HASH -->|"未找到"| NEW -->|"创建"| EST
     HASH -->|"已存在"| EST
     EST -->|"相关包"| REL --> ACCEPT
     HASH -->|"无效"| INV --> DROP
-    
+
     style HASH fill:#f59f00,stroke:#333
 ```
 

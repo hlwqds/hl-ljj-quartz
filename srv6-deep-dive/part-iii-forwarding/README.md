@@ -6,12 +6,12 @@ Part III shifts focus from the protocol layer to the data plane—how SRv6 packe
 
 ## Chapters
 
-| Chapter | Title | Key Topics |
-|---------|-------|------------|
-| 11 | [SRv6 Forwarding Process](ch11-srv6-forwarding.md) | PSP/USP/ST flavors, Upper/Lower HL, HL=0 processing, transit behavior details |
-| 12 | [SRv6 Vanity SID](ch12-srv6-vanity.md) | uSID format, uN/uSF/uA, compression benefits, hardware implementation |
-| 13 | [TI-LFA Protection](ch13-ti-lfa.md) | Topology-Independent LFA, post-convergence path, SRv6 fast reroute |
-| 14 | [SR Policy](ch14-sr-policy.md) | SR Policy architecture, candidate paths, optimization objectives, steering |
+| Chapter | Title                                              | Key Topics                                                                    |
+| ------- | -------------------------------------------------- | ----------------------------------------------------------------------------- |
+| 11      | [SRv6 Forwarding Process](ch11-srv6-forwarding.md) | PSP/USP/ST flavors, Upper/Lower HL, HL=0 processing, transit behavior details |
+| 12      | [SRv6 Vanity SID](ch12-srv6-vanity.md)             | uSID format, uN/uSF/uA, compression benefits, hardware implementation         |
+| 13      | [TI-LFA Protection](ch13-ti-lfa.md)                | Topology-Independent LFA, post-convergence path, SRv6 fast reroute            |
+| 14      | [SR Policy](ch14-sr-policy.md)                     | SR Policy architecture, candidate paths, optimization objectives, steering    |
 
 ## Learning Path
 
@@ -28,6 +28,7 @@ Part III builds from the protocol mechanics established in Part II into operatio
 ## Key Concepts Covered
 
 ### Forwarding Mechanics
+
 - Transit processing: DA update, SL decrement, SRH inspection
 - PSP (Penultimate Segment Pop): strip SRH at endpoint
 - USP (Ultimate Segment Pop): preserve SRH for service chain visibility
@@ -36,6 +37,7 @@ Part III builds from the protocol mechanics established in Part II into operatio
 - HL=0 processing: transit through encapsulation layer
 
 ### uSID Compression
+
 - 16-bit function code in 32-bit uN microsegment
 - uN (microNode-SID): single-hop compression
 - uSF (microService-Function): chainable service segments
@@ -44,6 +46,7 @@ Part III builds from the protocol mechanics established in Part II into operatio
 - Hardware FIB optimization
 
 ### Fast Failure Protection
+
 - Loop-Free Alternate (LFA): pre-computed backup next-hop
 - Topology-Independent LFA: per-segment backup via SR policy
 - Remote LFA (RLFA): tunnel to PQ node for non-LFA coverage
@@ -52,6 +55,7 @@ Part III builds from the protocol mechanics established in Part II into operatio
 - 50ms protection switching requirements
 
 ### SR Policy Architecture
+
 - SR Policy components: segment list, candidate paths, preference
 - Dynamic vs. explicit SR Policy
 - Candidate path attributes: protocol origin, preference, weight
@@ -74,12 +78,14 @@ Part III builds from the protocol mechanics established in Part II into operatio
 ## Relationship to Part II
 
 Part II established the protocol structures:
+
 - IPv6 extension header architecture
 - SRH format and segment list encoding
 - Behavior system (End, End.X, End.DT6, etc.)
 - Network programming model
 
 Part III applies these toward forwarding realities:
+
 - How behaviors execute in hardware
 - How uSID compression enables practical deployment
 - How SRv6 achieves carrier-grade reliability

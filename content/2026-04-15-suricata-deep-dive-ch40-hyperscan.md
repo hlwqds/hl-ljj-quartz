@@ -12,8 +12,8 @@ tags:
 description: "深入解析 Suricata Intel Hyperscan 集成：mpm.hyperscan 配置、Hyperscan 数据库编译、SIMD 加速原理、规则集大小选择策略、以及与 AC 算法的性能对比"
 ---
 
-> [!info] Suricata 2026 深度探索系列
-> 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Suricata 2026 深度探索系列 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-15-suricata-deep-dive-ch1-overview|第一章：Suricata 概述]]
 > 2. [[2026-04-15-suricata-deep-dive-ch2-config|第二章：Suricata 配置系统]]
 > 3. [[2026-04-15-suricata-deep-dive-ch3-runmodes|第三章：Runmodes 运行模式]]
@@ -90,15 +90,15 @@ graph LR
 
 ### 1.1 Hyperscan vs AC 算法对比
 
-| 特性 | AC (Aho-Corasick) | Hyperscan |
-|:---|:---|:---|
-| **时间复杂度** | O(n) | O(n/k) 其中 k=SIMD 宽度 |
-| **空间复杂度** | O(模式数 × 字母表) | 更紧凑的 NFA/DFA 混合 |
-| **正则支持** | 否 | 是 |
-| **SIMD 利用** | 否 | AVX2/AVX-512 |
-| **规则规模** | <10K 规则 | >10K 规则 |
-| **编译时间** | 快 | 慢（编译数据库） |
-| **内存使用** | 中等 | 较低（压缩表示） |
+| 特性           | AC (Aho-Corasick)  | Hyperscan               |
+| :------------- | :----------------- | :---------------------- |
+| **时间复杂度** | O(n)               | O(n/k) 其中 k=SIMD 宽度 |
+| **空间复杂度** | O(模式数 × 字母表) | 更紧凑的 NFA/DFA 混合   |
+| **正则支持**   | 否                 | 是                      |
+| **SIMD 利用**  | 否                 | AVX2/AVX-512            |
+| **规则规模**   | <10K 规则          | >10K 规则               |
+| **编译时间**   | 快                 | 慢（编译数据库）        |
+| **内存使用**   | 中等               | 较低（压缩表示）        |
 
 ### 1.2 SIMD 加速原理
 
@@ -126,7 +126,7 @@ Block 2: EFGHIJKLMNOPQRSTUVWXYZ...
 
 ```yaml
 # suricata.yaml
-mpm-algo: auto                           # 自动选择算法
+mpm-algo: auto # 自动选择算法
 # 可选: ac, ac-bs, ac-oc, hs, mpm-proc
 ```
 
@@ -136,18 +136,18 @@ mpm-algo: auto                           # 自动选择算法
 # suricata.yaml
 mpm:
   # MPM 引擎
-  algo: hs                               # 使用 Hyperscan
-  
+  algo: hs # 使用 Hyperscan
+
   # Hyperscan 特定配置
   hyperscan:
     # 编译器参数
-    compile-limit: 16384                 # 编译超时（毫秒）
-    
+    compile-limit: 16384 # 编译超时（毫秒）
+
     # 数据库模式
-    database-mode: block                 # block/stream/vectored
-    
+    database-mode: block # block/stream/vectored
+
     # 调试
-    debug: no                            # 调试输出
+    debug: no # 调试输出
 ```
 
 ### 2.3 高级 MPM 配置
@@ -156,15 +156,15 @@ mpm:
 # suricata.yaml
 mpm:
   algo: hs
-  
+
   # AC 备用（Hyperscan 失败时）
   ac:
-    hash-size: 8192                     # AC 哈希大小
-    default: yes                        # AC 作为默认
-    
+    hash-size: 8192 # AC 哈希大小
+    default: yes # AC 作为默认
+
   # MPM 配置
-  max-pattern-len: 256                   # 最大模式长度
-  conf_geo: yes                          # 启用地域检测
+  max-pattern-len: 256 # 最大模式长度
+  conf_geo: yes # 启用地域检测
 ```
 
 ### 2.4 检测配置文件中的 MPM
@@ -174,14 +174,14 @@ mpm:
 detection:
   # 检测引擎配置
   detect-config:
-    groups: yes                         # 启用签名组
-    shadow-correl: yes                  # 阴影规则关联
-    
+    groups: yes # 启用签名组
+    shadow-correl: yes # 阴影规则关联
+
   # MPM 设置
   mpm:
-    firefox: yes                        # 浏览器 MPM
-    http-server: yes                    # HTTP 服务器 MPM
-    sqlite: yes                         # SQLite MPM
+    firefox: yes # 浏览器 MPM
+    http-server: yes # HTTP 服务器 MPM
+    sqlite: yes # SQLite MPM
 ```
 
 ---
@@ -196,26 +196,26 @@ typedef struct MpmHyperscanCtx_ {
     /* Hyperscan 数据库 */
     hs_database_t *database;             // 编译后的数据库
     hs_compile_error_t *compile_err;    // 编译错误信息
-    
+
     /* 模式信息 */
     hs_pattern_ext_t *patterns;         // 扩展模式数组
     uint32_t pattern_count;             // 模式数量
     uint32_t pattern_array_size;         // 模式数组大小
-    
+
     /* Scratch 空间 */
     hs_scratch_t *scratch;              // 每线程临时空间
     hs_scratch_t *scratch_prealloc;    // 预分配的 scratch
-    
+
     /* 匹配模式 */
     hs_expr_ext_t *ext;                 // 扩展信息
     uint64_t *match_ids;                // 匹配的规则 ID
-    
+
     /* 标志 */
     uint32_t flags;
 #define MPM_HS_INIT_DONE       0x01     // 初始化完成
 #define MPM_HS_DB_COMPILED     0x02     // 数据库已编译
 #define MPM_HS_SCRATCH_INUSE   0x04     // Scratch 在使用
-    
+
     /* 统计 */
     uint64_t total_matches;              // 总匹配数
     uint64_t total_scans;               // 总扫描数
@@ -229,20 +229,20 @@ typedef struct MpmHyperscanCtx_ {
 typedef struct MpmHyperscanPattern_ {
     /* 模式 ID */
     uint32_t id;
-    
+
     /* 模式内容 */
     uint8_t *pattern;
     uint16_t pattern_len;
-    
+
     /* 扩展标志 */
     uint32_t flags;
 #define MPM_HS_PATTERN_FLAG_NOCASE     0x01  // 不区分大小写
 #define MPM_HS_PATTERN_FLAG_DOTALL     0x02  // . 匹配换行
 #define MPM_HS_PATTERN_FLAG_MULTILINE  0x04  // 多行模式
-    
+
     /* 优先级 */
     uint8_t priority;
-    
+
     /* 回调信息 */
     void *context;
 } MpmHyperscanPattern;
@@ -264,13 +264,13 @@ typedef struct MpmCtx_ {
 
     /* 算法特定上下文 */
     void *ctx;
-    
+
     /* 模式数量 */
     uint32_t pattern_cnt;
-    
+
     /* 内存使用 */
     uint64_t memory;
-    
+
     /* 初始化状态 */
     bool initialized;
 } MpmCtx;
@@ -287,7 +287,7 @@ typedef struct MpmCtx_ {
 MpmCtx *MpmFactoryGetCtx(enum MpmType type, bool alloc)
 {
     MpmCtx *mpm_ctx = NULL;
-    
+
     switch (type) {
         case MPM_HS:
             mpm_ctx = MpmHyperscanInitCtx();
@@ -297,7 +297,7 @@ MpmCtx *MpmFactoryGetCtx(enum MpmType type, bool alloc)
             mpm_ctx = MpmACInitCtx();
             break;
     }
-    
+
     return mpm_ctx;
 }
 
@@ -305,14 +305,14 @@ MpmCtx *MpmFactoryGetCtx(enum MpmType type, bool alloc)
 static MpmCtx *MpmHyperscanInitCtx(void)
 {
     MpmHyperscanCtx *hs_ctx = SCCalloc(1, sizeof(MpmHyperscanCtx));
-    
+
     /* 分配 scratch 空间 */
     hs_ctx->scratch_prealloc = NULL;
-    
+
     MpmCtx *mpm_ctx = SCCalloc(1, sizeof(MpmCtx));
     mpm_ctx->mpm_type = MPM_HS;
     mpm_ctx->ctx = hs_ctx;
-    
+
     return mpm_ctx;
 }
 ```
@@ -326,32 +326,32 @@ int MpmHyperscanAddPattern(MpmCtx *mpm_ctx, uint8_t *pattern,
                            uint8_t flags, uint8_t priority)
 {
     MpmHyperscanCtx *hs_ctx = (MpmHyperscanCtx *)mpm_ctx->ctx;
-    
+
     /* 扩容模式数组 */
     if (hs_ctx->pattern_count >= hs_ctx->pattern_array_size) {
         hs_ctx->pattern_array_size *= 2;
         hs_ctx->patterns = SCRealloc(hs_ctx->patterns,
                          hs_ctx->pattern_array_size * sizeof(hs_pattern_ext_t));
     }
-    
+
     /* 填充模式信息 */
     hs_pattern_ext_t *p = &hs_ctx->patterns[hs_ctx->pattern_count];
     p->pattern = (const char *)pattern;
     p->length = pattern_len;
     p->flags = HS_FLAG_SINGLEMATCH;  // 单匹配模式
-    
+
     if (flags & MPM_PATTERN_FLAG_NOCASE) {
         p->flags |= HS_FLAG_CASELESS;
     }
-    
+
     /* 扩展信息 */
     p->ext = NULL;
     p->id = id;
     p->context = NULL;
-    
+
     hs_ctx->pattern_count++;
     mpm_ctx->pattern_cnt++;
-    
+
     return 0;
 }
 ```
@@ -363,15 +363,15 @@ int MpmHyperscanAddPattern(MpmCtx *mpm_ctx, uint8_t *pattern,
 int MpmHyperscanBuildDatabase(MpmCtx *mpm_ctx)
 {
     MpmHyperscanCtx *hs_ctx = (MpmHyperscanCtx *)mpm_ctx->ctx;
-    
+
     if (hs_ctx->pattern_count == 0) {
         return 0;
     }
-    
+
     /* 分配模式数组给 Hyperscan */
     hs_pattern_ext_t *patterns = hs_ctx->patterns;
     uint32_t count = hs_ctx->pattern_count;
-    
+
     /* 编译数据库 */
     hs_error_t err = hs_compile_ext_multi(
         patterns,              // 模式数组
@@ -383,22 +383,22 @@ int MpmHyperscanBuildDatabase(MpmCtx *mpm_ctx)
         &hs_ctx->database,    // 输出数据库
         &hs_ctx->compile_err, // 错误信息
         &hs_ctx->ext);        // 扩展信息
-    
+
     if (err != HS_SUCCESS) {
         SCLogError("Hyperscan compile failed: %s",
                    hs_ctx->compile_err->message);
         return -1;
     }
-    
+
     hs_ctx->flags |= MPM_HS_DB_COMPILED;
-    
+
     /* 分配 scratch 空间 */
     err = hs_alloc_scratch(hs_ctx->database, &hs_ctx->scratch_prealloc);
     if (err != HS_SUCCESS) {
         SCLogError("Failed to allocate scratch space");
         return -1;
     }
-    
+
     return 0;
 }
 ```
@@ -419,12 +419,12 @@ static int MpmHyperscanMatchCallback(
     void *context)             // 用户上下文
 {
     MpmThreadCtx *mpm_thread_ctx = (MpmThreadCtx *)context;
-    
+
     /* 记录匹配 */
     if (mpm_thread_ctx->match_cnt < mpm_thread_ctx->max_matches) {
         mpm_thread_ctx->matches[mpm_thread_ctx->match_cnt++] = id;
     }
-    
+
     /* 继续扫描 */
     return 0;
 }
@@ -438,7 +438,7 @@ int MpmHyperscanScan(MpmCtx *mpm_ctx, MpmThreadCtx *mpm_thread_ctx,
                      const uint8_t *text, uint32_t text_len)
 {
     MpmHyperscanCtx *hs_ctx = (MpmHyperscanCtx *)mpm_ctx->ctx;
-    
+
     /* 检查 scratch 空间 */
     if (mpm_thread_ctx->scratch == NULL) {
         /* 克隆 scratch 到线程 */
@@ -448,10 +448,10 @@ int MpmHyperscanScan(MpmCtx *mpm_ctx, MpmThreadCtx *mpm_thread_ctx,
             return -1;
         }
     }
-    
+
     /* 重置匹配计数 */
     mpm_thread_ctx->match_cnt = 0;
-    
+
     /* 执行扫描 */
     hs_error_t err = hs_scan(
         hs_ctx->database,          // 数据库
@@ -461,15 +461,15 @@ int MpmHyperscanScan(MpmCtx *mpm_ctx, MpmThreadCtx *mpm_thread_ctx,
         mpm_thread_ctx->scratch,    // scratch 空间
         MpmHyperscanMatchCallback, // 回调函数
         mpm_thread_ctx);            // 上下文
-    
+
     if (err != HS_SUCCESS) {
         SCLogError("Hyperscan scan failed: error %d", err);
         return -1;
     }
-    
+
     hs_ctx->total_scans++;
     hs_ctx->total_matches += mpm_thread_ctx->match_cnt;
-    
+
     return mpm_thread_ctx->match_cnt;
 }
 ```
@@ -533,7 +533,7 @@ int MpmHyperscanStreamUpdate(HyperscanStream *stream,
     if (err != HS_SUCCESS) {
         return -1;
     }
-    
+
     /* 流自动触发回调 */
     return 0;
 }
@@ -552,14 +552,14 @@ int MpmHyperscanScanVectored(MpmCtx *mpm_ctx,
                               uint32_t data_count)
 {
     MpmHyperscanCtx *hs_ctx = (MpmHyperscanCtx *)mpm_ctx->ctx;
-    
+
     /* 构建向量 */
     hs_scan_vector_t vectors[data_count];
     for (uint32_t i = 0; i < data_count; i++) {
         vectors[i].p = (const char *)data_array[i];
         vectors[i].length = data_lens[i];
     }
-    
+
     /* 批量扫描 */
     hs_error_t err = hs_scan_vector(
         hs_ctx->database,
@@ -569,7 +569,7 @@ int MpmHyperscanScanVectored(MpmCtx *mpm_ctx,
         mpm_thread_ctx->scratch,
         MpmHyperscanMatchCallback,
         mpm_thread_ctx);
-    
+
     return (err == HS_SUCCESS) ? mpm_thread_ctx->match_cnt : -1;
 }
 ```
@@ -595,20 +595,21 @@ graph TD
 
 ### 7.2 MPM 配置推荐
 
-| 场景 | 规则规模 | 推荐算法 | 配置 |
-|:---|:---|:---|:---|
-| **ET Open Rules** | ~35K 规则 | Hyperscan | `mpm.algo: hs` |
-| **Snort 规则** | ~50K 规则 | Hyperscan | `mpm.algo: hs` |
-| **小规模自定义** | <5K 规则 | AC | `mpm.algo: ac` |
-| **均衡场景** | 5K-10K | AC-OC | `mpm.algo: ac-oc` |
-| **短模式为主** | 任意 | AC-BS | `mpm.algo: ac-bs` |
-| **正则表达式** | 任意 | Hyperscan | `mpm.algo: hs` |
+| 场景              | 规则规模  | 推荐算法  | 配置              |
+| :---------------- | :-------- | :-------- | :---------------- |
+| **ET Open Rules** | ~35K 规则 | Hyperscan | `mpm.algo: hs`    |
+| **Snort 规则**    | ~50K 规则 | Hyperscan | `mpm.algo: hs`    |
+| **小规模自定义**  | <5K 规则  | AC        | `mpm.algo: ac`    |
+| **均衡场景**      | 5K-10K    | AC-OC     | `mpm.algo: ac-oc` |
+| **短模式为主**    | 任意      | AC-BS     | `mpm.algo: ac-bs` |
+| **正则表达式**    | 任意      | Hyperscan | `mpm.algo: hs`    |
 
 ### 7.3 自动选择
 
 ```yaml
 # suricata.yaml
-mpm-algo: auto                          # 自动选择
+mpm-algo: auto # 自动选择
+
 
 # Suricata 自动选择逻辑:
 # if (规则数 > 10000 || 包含正则) → Hyperscan
@@ -654,12 +655,12 @@ cat > test_hs.c << 'EOF'
 
 int main() {
     printf("Hyperscan version: %s\n", hs_version());
-    
+
     if (!hs_valid_platform()) {
         printf("Warning: Invalid platform for Hyperscan\n");
         return 1;
     }
-    
+
     printf("Hyperscan is properly installed\n");
     return 0;
 }
@@ -696,10 +697,10 @@ suricata -c suricata.yaml -T -v
 mpm:
   hyperscan:
     # Scratch 空间大小（每个线程）
-    scratch-buffer-size: 16384            # KB
-    
+    scratch-buffer-size: 16384 # KB
+
     # 预分配 scratch
-    prealloc-scratch: yes                # 启动时预分配
+    prealloc-scratch: yes # 启动时预分配
 ```
 
 ### 9.2 编译参数调优
@@ -709,10 +710,10 @@ mpm:
 mpm:
   hyperscan:
     # 编译超时
-    compile-limit: 30000                  # 30 秒超时
-    
+    compile-limit: 30000 # 30 秒超时
+
     # CPU 特性
-    cpu-features: auto                    # 自动检测 AVX2/AVX-512
+    cpu-features: auto # 自动检测 AVX2/AVX-512
 ```
 
 ### 9.3 内存调优
@@ -722,8 +723,8 @@ mpm:
 mpm:
   hyperscan:
     # 数据库模式
-    database-mode: stream                 # 流模式（共享状态）
-    
+    database-mode: stream # 流模式（共享状态）
+
   # 配合 Stream 配置
 stream:
   # 流重组内存

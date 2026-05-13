@@ -14,14 +14,14 @@ tags:
   - security
 ---
 
-> [!info] Cilium 2026 深度探索系列
-> 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+> [!info] Cilium 2026 深度探索系列 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+>
 > 1. [[2026-04-14-cilium-deep-dive-ch1-cilium-overview|第一章：Cilium 概述]]
 > 2. [[2026-04-14-cilium-deep-dive-ch2-architecture|第二章：Cilium 架构]]
-> ...
-> 29. [[2026-04-14-cilium-deep-dive-ch29-cert-manager|第二十九章：Cert-Manager 与 TLS 自动化]]
-> 30. [[2026-04-14-cilium-deep-dive-ch30-multitenancy|第三十章：多租户隔离]]
-> 31. **第三十一章：Ambient Mode 概述** ←
+>    ...
+> 3. [[2026-04-14-cilium-deep-dive-ch29-cert-manager|第二十九章：Cert-Manager 与 TLS 自动化]]
+> 4. [[2026-04-14-cilium-deep-dive-ch30-multitenancy|第三十章：多租户隔离]]
+> 5. **第三十一章：Ambient Mode 概述** ←
 
 ---
 
@@ -64,15 +64,15 @@ Ambient Mode 是 Cilium 1.14 引入的**无 Sidecar 零信任服务网格**模�
 
 ### 1.1 Sidecar vs Ambient 模式对比
 
-| 特性 | Sidecar 模式 | Ambient 模式 |
-|:---|:---|:---|
-| **代理部署** | 每个 Pod 注入独立 Sidecar | 节点级共享 Waypoint Proxy |
-| **资源开销** | O(n) Sidecar 数量 | O(节点数) Waypoint 数量 |
-| **启动时间** | Pod 启动依赖 Sidecar 就绪 | Pod 无需等待代理 |
-| **升级影响** | 升级 Sidecar 需重启 Pod | Waypoint 升级不影响 Pod |
-| **L4 透明性** | 需显式配置 | 自动劫持网格流量 |
-| **L7 策略** | 基于 Sidecar 执行 | 基于 Waypoint 执行 |
-| **运维复杂度** | 高（大量 Sidecar） | 低（节点级管理） |
+| 特性           | Sidecar 模式              | Ambient 模式              |
+| :------------- | :------------------------ | :------------------------ |
+| **代理部署**   | 每个 Pod 注入独立 Sidecar | 节点级共享 Waypoint Proxy |
+| **资源开销**   | O(n) Sidecar 数量         | O(节点数) Waypoint 数量   |
+| **启动时间**   | Pod 启动依赖 Sidecar 就绪 | Pod 无需等待代理          |
+| **升级影响**   | 升级 Sidecar 需重启 Pod   | Waypoint 升级不影响 Pod   |
+| **L4 透明性**  | 需显式配置                | 自动劫持网格流量          |
+| **L7 策略**    | 基于 Sidecar 执行         | 基于 Waypoint 执行        |
+| **运维复杂度** | 高（大量 Sidecar）        | 低（节点级管理）          |
 
 ### 1.2 Ambient Mode 核心组件
 
@@ -274,10 +274,10 @@ metadata:
     app: frontend
 spec:
   containers:
-  - name: nginx
-    image: nginx:1.25
-    ports:
-    - containerPort: 80
+    - name: nginx
+      image: nginx:1.25
+      ports:
+        - containerPort: 80
 ```
 
 ---
@@ -323,12 +323,12 @@ kubectl logs -n kube-system -l app=ztunnel -f
 
 ### 6.1 当前限制
 
-| 限制 | 说明 |
-|:---|:---|
-| **Waypoint 作用域** | Waypoint 按 ServiceAccount 作用域隔离 |
-| **L7 协议支持** | 仅支持 HTTP/gRPC，未来扩展 |
-| **迁移限制** | 从 Sidecar 迁移需谨慎规划 |
-| **CiliumClusterwideEnvoyConfig** | 暂不支持集群级 L7 配置 |
+| 限制                             | 说明                                  |
+| :------------------------------- | :------------------------------------ |
+| **Waypoint 作用域**              | Waypoint 按 ServiceAccount 作用域隔离 |
+| **L7 协议支持**                  | 仅支持 HTTP/gRPC，未来扩展            |
+| **迁移限制**                     | 从 Sidecar 迁移需谨慎规划             |
+| **CiliumClusterwideEnvoyConfig** | 暂不支持集群级 L7 配置                |
 
 ### 6.2 不兼容场景
 
@@ -359,11 +359,11 @@ kubectl logs -n kube-system -l app=ztunnel -f
 
 Part VII（Ambient Mode）涵盖 Cilium 无 Sidecar 零信任网格的核心内容：
 
-| 章节 | 主题 | 核心价值 |
-|:---|:---|:---|
-| 31 | Ambient Mode 概述 | 架构理念、组件职责、启用方式 |
-| 32 | Waypoint Proxy | L7 代理、身份路由、策略执行 |
-| 33 | L4/L7 策略 | Ambient 模式下的策略应用 |
-| 34 | 迁移指南 | 从 Sidecar 到 Ambient 的迁移路径 |
+| 章节 | 主题              | 核心价值                         |
+| :--- | :---------------- | :------------------------------- |
+| 31   | Ambient Mode 概述 | 架构理念、组件职责、启用方式     |
+| 32   | Waypoint Proxy    | L7 代理、身份路由、策略执行      |
+| 33   | L4/L7 策略        | Ambient 模式下的策略应用         |
+| 34   | 迁移指南          | 从 Sidecar 到 Ambient 的迁移路径 |
 
 Ambient Mode 代表了 Cilium 在服务网格领域的重要演进，通过**无 Sidecar 架构**实现真正的零信任安全。

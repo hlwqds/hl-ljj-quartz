@@ -10,11 +10,8 @@ tags:
   - ipsec
 ---
 
-> [!info] SRv6 2026 深度探索系列
-> 0. [[2026-04-14-srv6-comprehensive-learning-roadmap|SRv6 全栈学习路径总览]]
-> ...
-> 41. [[2026-04-14-srv6-deep-dive-ch41-srv6-vs-mpls|第四一章：SRv6 vs SR-MPLS]]
-> 42. [[2026-04-14-srv6-deep-dive-ch42-srv6-vs-vxlan|第四二章：SRv6 + EVPN vs VXLAN]]
+> [!info] SRv6 2026 深度探索系列 0. [[2026-04-14-srv6-comprehensive-learning-roadmap|SRv6 全栈学习路径总览]]
+> ... 41. [[2026-04-14-srv6-deep-dive-ch41-srv6-vs-mpls|第四一章：SRv6 vs SR-MPLS]] 42. [[2026-04-14-srv6-deep-dive-ch42-srv6-vs-vxlan|第四二章：SRv6 + EVPN vs VXLAN]]
 > **43. 第四三章：SRv6 加密 vs WireGuard**
 
 ---
@@ -31,14 +28,14 @@ graph TD
         C["TE 能力"]
         D["IPsec 集成"]
     end
-    
+
     subgraph "WireGuard"
         E["Host-centric"]
         F["端到端"]
         G["简单配置"]
         H["内核集成"]
     end
-    
+
     style A fill:#4dabf7,color:#000
     style E fill:#ffd43b,color:#000
 ```
@@ -57,11 +54,11 @@ graph TD
         A["Original Packet"] --> B["SRv6 Encapsulation"]
         B --> C["IPsec ESP"]
         C --> D["Outer IPv6"]
-        
+
         E["SRH"] --> B
         F["SPI"] --> C
     end
-    
+
     style B fill:#4dabf7,color:#000
     style C fill:#ff6b6b,color:#000
 ```
@@ -87,10 +84,10 @@ graph LR
     A["WireGuard Interface"] --> B["Cryptokey Routing"]
     B --> C["UDP (port 51820)"]
     C --> D["Internet"]
-    
+
     A --> E["wg0"]
     E --> F["10.0.0.1/24"]
-    
+
     style B fill:#ffd43b,color:#000
 ```
 
@@ -110,23 +107,23 @@ graph LR
 
 ### 3.1 加密算法
 
-| 算法组件 | SRv6 + IPsec | WireGuard |
-|:---|:---|:---|
-| **密钥交换** | IKEv2 (ECDHE) | Noise Protocol |
-| **加密** | AES-GCM / ChaCha20 | ChaCha20-Poly1305 |
-| **完整性** | HMAC / AES-GCM | Poly1305 |
-| **DH 组** | P-256, P-384, P-521, Curve25519 | Curve25519 |
-| **前向保密** | ✅ (通过 DH) | ✅ |
+| 算法组件     | SRv6 + IPsec                    | WireGuard         |
+| :----------- | :------------------------------ | :---------------- |
+| **密钥交换** | IKEv2 (ECDHE)                   | Noise Protocol    |
+| **加密**     | AES-GCM / ChaCha20              | ChaCha20-Poly1305 |
+| **完整性**   | HMAC / AES-GCM                  | Poly1305          |
+| **DH 组**    | P-256, P-384, P-521, Curve25519 | Curve25519        |
+| **前向保密** | ✅ (通过 DH)                    | ✅                |
 
 ### 3.2 安全特性对比
 
-| 特性 | SRv6 + IPsec | WireGuard |
-|:---|:---|:---|
-| **抗重放攻击** | ESP Sequence + Anti-replay window | Receiver-based counter |
-| **完美前向保密** | ✅ | ✅ |
-| **身份认证** | 证书/预共享密钥 | 预共享密钥 (PSK) |
-| **抗 DoS** | IKE SA 协商 | Cookie 机制 |
-| **零信任支持** | ⚠️ | ✅ |
+| 特性             | SRv6 + IPsec                      | WireGuard              |
+| :--------------- | :-------------------------------- | :--------------------- |
+| **抗重放攻击**   | ESP Sequence + Anti-replay window | Receiver-based counter |
+| **完美前向保密** | ✅                                | ✅                     |
+| **身份认证**     | 证书/预共享密钥                   | 预共享密钥 (PSK)       |
+| **抗 DoS**       | IKE SA 协商                       | Cookie 机制            |
+| **零信任支持**   | ⚠️                                | ✅                     |
 
 ### 3.3 密钥管理
 
@@ -158,12 +155,12 @@ crypto ipsec ikev2
 
 ### 4.1 吞吐量和延迟
 
-| 指标 | SRv6 + IPsec | WireGuard | 备注 |
-|:---|:---|:---|:---|
-| **加密吞吐量** | ~10-40 Gbps (HW) | ~1-5 Gbps (SW) | IPsec 可卸载 |
-| **单核吞吐** | ~1-2 Gbps | ~500 Mbps | WireGuard 高效 |
-| **延迟增加** | ~1-3 ms | ~0.5-1 ms | WireGuard 低开销 |
-| **CPU 利用率** | 高 (无 HW) | 低 | WireGuard 优化 |
+| 指标           | SRv6 + IPsec     | WireGuard      | 备注             |
+| :------------- | :--------------- | :------------- | :--------------- |
+| **加密吞吐量** | ~10-40 Gbps (HW) | ~1-5 Gbps (SW) | IPsec 可卸载     |
+| **单核吞吐**   | ~1-2 Gbps        | ~500 Mbps      | WireGuard 高效   |
+| **延迟增加**   | ~1-3 ms          | ~0.5-1 ms      | WireGuard 低开销 |
+| **CPU 利用率** | 高 (无 HW)       | 低             | WireGuard 优化   |
 
 ### 4.2 性能优化技术
 
@@ -174,7 +171,7 @@ graph TD
     A["WireGuard 数据面"] --> B["SIMD 加速"]
     A --> C["Batch 处理"]
     A --> D["Zero-copy"]
-    
+
     style A fill:#ffd43b,color:#000
 ```
 
@@ -197,23 +194,23 @@ show crypto ipsec sa
 
 ### 5.1 路由和封装
 
-| 特性 | SRv6 + IPsec | WireGuard |
-|:---|:---|:---|
-| **封装协议** | IPv6 + ESP | UDP |
-| **端口** | ESP (Protocol 50) | UDP 51820 |
-| **NAT 穿透** | ❌ (ESP) | ✅ (UDP) |
-| **穿越防火墙** | ⚠️ 需 ALG | ✅ |
-| **MTU 处理** | Path MTU Discovery | 自动分片 |
+| 特性           | SRv6 + IPsec       | WireGuard |
+| :------------- | :----------------- | :-------- |
+| **封装协议**   | IPv6 + ESP         | UDP       |
+| **端口**       | ESP (Protocol 50)  | UDP 51820 |
+| **NAT 穿透**   | ❌ (ESP)           | ✅ (UDP)  |
+| **穿越防火墙** | ⚠️ 需 ALG          | ✅        |
+| **MTU 处理**   | Path MTU Discovery | 自动分片  |
 
 ### 5.2 路径控制
 
-| 特性 | SRv6 + IPsec | WireGuard |
-|:---|:---|:---|
-| **源路由** | ✅ SRv6 | ❌ |
-| **TE 能力** | ✅ FlexAlgo | ❌ |
-| **ECMP** | ✅ 基于 SID | ✅ 基于 5-tuple |
-| **Failover** | TI-LFA 50ms | 依赖底层网络 |
-| **负载均衡** | ✅ | ✅ |
+| 特性         | SRv6 + IPsec | WireGuard       |
+| :----------- | :----------- | :-------------- |
+| **源路由**   | ✅ SRv6      | ❌              |
+| **TE 能力**  | ✅ FlexAlgo  | ❌              |
+| **ECMP**     | ✅ 基于 SID  | ✅ 基于 5-tuple |
+| **Failover** | TI-LFA 50ms  | 依赖底层网络    |
+| **负载均衡** | ✅           | ✅              |
 
 ```mermaid
 graph TD
@@ -223,13 +220,13 @@ graph TD
         C --> D["指定路径"]
         D --> E["TI-LFA 保护"]
     end
-    
+
     subgraph "WireGuard"
         F["流量"] --> G["加密隧道"]
         G --> H["默认路由"]
         H --> I["ECMP"]
     end
-    
+
     style B fill:#4dabf7,color:#000
     style G fill:#ffd43b,color:#000
 ```
@@ -240,30 +237,30 @@ graph TD
 
 ### 6.1 企业互连
 
-| 场景 | SRv6 + IPsec | WireGuard | 推荐 |
-|:---|:---|:---|:---|
-| **总部-分支** | ✅ | ✅ | 取决于规模 |
-| **多站点** | ✅ (Hub-Spoke) | ⚠️ (Mesh 复杂) | SRv6 |
-| **跨境专线** | ✅ | ⚠️ NAT 问题 | SRv6 |
-| **临时站点** | ⚠️ | ✅ 快速部署 | WireGuard |
+| 场景          | SRv6 + IPsec   | WireGuard      | 推荐       |
+| :------------ | :------------- | :------------- | :--------- |
+| **总部-分支** | ✅             | ✅             | 取决于规模 |
+| **多站点**    | ✅ (Hub-Spoke) | ⚠️ (Mesh 复杂) | SRv6       |
+| **跨境专线**  | ✅             | ⚠️ NAT 问题    | SRv6       |
+| **临时站点**  | ⚠️             | ✅ 快速部署    | WireGuard  |
 
 ### 6.2 云环境
 
-| 场景 | SRv6 + IPsec | WireGuard | 推荐 |
-|:---|:---|:---|:---|
-| **云 VPN Gateway** | ✅ AWS/GCP/Azure | ⚠️ 需客户端 | SRv6 |
-| **云间互联** | ✅ | ⚠️ | SRv6 |
-| **远程办公** | ⚠️ | ✅ 客户端 | WireGuard |
-| **K8s Pod-to-Pod** | ✅ CNI | ✅ WireGuard CNI | 两者 |
+| 场景               | SRv6 + IPsec     | WireGuard        | 推荐      |
+| :----------------- | :--------------- | :--------------- | :-------- |
+| **云 VPN Gateway** | ✅ AWS/GCP/Azure | ⚠️ 需客户端      | SRv6      |
+| **云间互联**       | ✅               | ⚠️               | SRv6      |
+| **远程办公**       | ⚠️               | ✅ 客户端        | WireGuard |
+| **K8s Pod-to-Pod** | ✅ CNI           | ✅ WireGuard CNI | 两者      |
 
 ### 6.3 服务提供商网络
 
-| 场景 | SRv6 + IPsec | WireGuard | 推荐 |
-|:---|:---|:---|:---|
-| **PE-CE 加密** | ✅ | ❌ | SRv6 |
-| **骨干网加密** | ✅ | ❌ | SRv6 |
-| **NaaS** | ✅ | ⚠️ | SRv6 |
-| **移动回传** | ✅ | ❌ | SRv6 |
+| 场景           | SRv6 + IPsec | WireGuard | 推荐 |
+| :------------- | :----------- | :-------- | :--- |
+| **PE-CE 加密** | ✅           | ❌        | SRv6 |
+| **骨干网加密** | ✅           | ❌        | SRv6 |
+| **NaaS**       | ✅           | ⚠️        | SRv6 |
+| **移动回传**   | ✅           | ❌        | SRv6 |
 
 ---
 
@@ -299,11 +296,11 @@ crypto ipsec ikev2
     match address access-list CRYPTO_ACL
     authentication rsa-sig
     encryption aes-256
-    
+
 segment-routing srv6
   locator LOC1
     prefix FC00:0:1::/48
-    
+
 interface Tunnel0
   tunnel mode ipv6 segment-routing srv6
   tunnel source GigabitEthernet0/0/0/0
@@ -313,13 +310,13 @@ interface Tunnel0
 
 ### 7.2 监控和排错
 
-| 方面 | SRv6 + IPsec | WireGuard |
-|:---|:---|:---|
-| **状态查看** | `show crypto ipsec sa` | `wg show` |
-| **统计信息** | 丰富 | 有限 |
-| **日志** | syslog | wg show |
-| **排错工具** | 成熟 | 有限 |
-| **第三方监控** | SNMP/NetFlow | ❌ |
+| 方面           | SRv6 + IPsec           | WireGuard |
+| :------------- | :--------------------- | :-------- |
+| **状态查看**   | `show crypto ipsec sa` | `wg show` |
+| **统计信息**   | 丰富                   | 有限      |
+| **日志**       | syslog                 | wg show   |
+| **排错工具**   | 成熟                   | 有限      |
+| **第三方监控** | SNMP/NetFlow           | ❌        |
 
 ---
 
@@ -330,31 +327,31 @@ graph TD
     A["开始选型"] --> B{"需要网络级 TE?"}
     B -->|是| C["SRv6 + IPsec"]
     B -->|否| D{"需要 NAT 穿透?"}
-    
+
     D -->|是| E["WireGuard"]
     D -->|否| F{"需要端到端加密?"}
-    
+
     C --> G{"需要硬件卸载?"}
     G -->|是| H["SRv6 + IPsec HW"]
-    
+
     E --> I{"规模?"}
     I -->|大| J["SRv6 + IPsec"]
     I -->|小| E
-    
+
     style C fill:#4dabf7,color:#000
     style E fill:#ffd43b,color:#000
 ```
 
 ### 8.1 决策矩阵
 
-| 场景 | 推荐 | 原因 |
-|:---|:---|:---|
-| **小型团队自建 VPN** | WireGuard | 简单、快速 |
-| **企业多站点互联** | SRv6 + IPsec | 可扩展、TE |
-| **云骨干网加密** | SRv6 + IPsec | 硬件卸载、高性能 |
-| **远程办公** | WireGuard | 客户端简单 |
-| **IoT 设备** | WireGuard | 低资源占用 |
-| **运营商 NaaS** | SRv6 + IPsec | 可编程、SLA |
+| 场景                 | 推荐         | 原因             |
+| :------------------- | :----------- | :--------------- |
+| **小型团队自建 VPN** | WireGuard    | 简单、快速       |
+| **企业多站点互联**   | SRv6 + IPsec | 可扩展、TE       |
+| **云骨干网加密**     | SRv6 + IPsec | 硬件卸载、高性能 |
+| **远程办公**         | WireGuard    | 客户端简单       |
+| **IoT 设备**         | WireGuard    | 低资源占用       |
+| **运营商 NaaS**      | SRv6 + IPsec | 可编程、SLA      |
 
 ---
 
@@ -368,12 +365,12 @@ graph TD
         A["HQ Router"] --> B["Branch Router"]
         B --> C["Cloud Gateway"]
     end
-    
+
     subgraph "远程办公 (WireGuard)"
         D["Laptop"] --> E["WireGuard Server"]
         E --> C
     end
-    
+
     style A fill:#4dabf7,color:#000
     style D fill:#ffd43b,color:#000
 ```
@@ -401,6 +398,7 @@ ip -6 route add default via FC00:0:1:1::1 table 100
 ## 10. 总结：互补而非替代
 
 > [!tip] SRv6 + IPsec vs WireGuard 选型 checklist
+>
 > - [ ] 评估网络规模和可扩展性需求
 > - [ ] 确认是否需要 NAT 穿透和防火墙穿越
 > - [ ] 分析是否需要 Traffic Engineering 能力
@@ -409,17 +407,18 @@ ip -6 route add default via FC00:0:1:1::1 table 100
 
 **核心结论：**
 
-| 维度 | SRv6 + IPsec | WireGuard | 备注 |
-|:---|:---|:---|:---|
-| **安全性** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | 平手 |
-| **性能** | ⭐⭐⭐⭐ (HW) | ⭐⭐⭐ | SRv6 优 |
-| **易用性** | ⭐⭐⭐ | ⭐⭐⭐⭐⭐ | WireGuard 优 |
-| **可扩展性** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ | SRv6 优 |
-| **NAT 穿透** | ⭐⭐ | ⭐⭐⭐⭐⭐ | WireGuard 优 |
-| **网络编程** | ⭐⭐⭐⭐⭐ | ⭐ | SRv6 独有 |
-| **适用场景** | 运营商/企业 | 小型/远程 | 互补 |
+| 维度         | SRv6 + IPsec  | WireGuard  | 备注         |
+| :----------- | :------------ | :--------- | :----------- |
+| **安全性**   | ⭐⭐⭐⭐⭐    | ⭐⭐⭐⭐⭐ | 平手         |
+| **性能**     | ⭐⭐⭐⭐ (HW) | ⭐⭐⭐     | SRv6 优      |
+| **易用性**   | ⭐⭐⭐        | ⭐⭐⭐⭐⭐ | WireGuard 优 |
+| **可扩展性** | ⭐⭐⭐⭐⭐    | ⭐⭐⭐     | SRv6 优      |
+| **NAT 穿透** | ⭐⭐          | ⭐⭐⭐⭐⭐ | WireGuard 优 |
+| **网络编程** | ⭐⭐⭐⭐⭐    | ⭐         | SRv6 独有    |
+| **适用场景** | 运营商/企业   | 小型/远程  | 互补         |
 
 **最佳实践：**
+
 - 企业骨干网：SRv6 + IPsec（高性能、可编程）
 - 远程办公/个人：WireGuard（简单、零配置）
 - 混合场景：两者结合，分流处理
@@ -429,5 +428,5 @@ ip -6 route add default via FC00:0:1:1::1 table 100
 **SRv6 深度探索系列导航**
 
 > 42. [[2026-04-14-srv6-deep-dive-ch42-srv6-vs-vxlan|第四二章：SRv6 + EVPN vs VXLAN]]
-> **43. 第四三章：SRv6 加密 vs WireGuard**
-> 44. [[2026-04-14-srv6-deep-dive-ch44-srv6-vs-sdwan|第四四章：SRv6 vs 传统 SD-WAN]]
+>     **43. 第四三章：SRv6 加密 vs WireGuard**
+> 43. [[2026-04-14-srv6-deep-dive-ch44-srv6-vs-sdwan|第四四章：SRv6 vs 传统 SD-WAN]]

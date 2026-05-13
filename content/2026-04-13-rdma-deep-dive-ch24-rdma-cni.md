@@ -675,19 +675,19 @@ spec:
     podAffinity:
       # 与其他 GPU Pod 靠近放置
       requiredDuringSchedulingIgnoredDuringExecution:
-      - labelSelector:
-          matchLabels:
-            app: gpu-worker
-        topologyKey: kubernetes.io/hostname
+        - labelSelector:
+            matchLabels:
+              app: gpu-worker
+          topologyKey: kubernetes.io/hostname
   containers:
-  - name: main
-    resources:
-      limits:
-        nvidia.com/gpu: 2
-        rdma/hca: "1"
-    env:
-    - name: NCCL_IB_HCA
-      value: "mlx5_0,mlx5_1"
+    - name: main
+      resources:
+        limits:
+          nvidia.com/gpu: 2
+          rdma/hca: "1"
+      env:
+        - name: NCCL_IB_HCA
+          value: "mlx5_0,mlx5_1"
 ```
 
 ### 7.3 限制与注意事项

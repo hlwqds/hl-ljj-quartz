@@ -32,6 +32,7 @@ QUIC:
 ### 19.3.1 Path vs. Connection
 
 QUIC distinguishes between:
+
 - **Connection**: The logical QUIC state (streams, flow control, crypto keys)
 - **Path**: A specific network route (src IP, src port, dst IP, dst port)
 
@@ -154,14 +155,14 @@ Client:
 
 When migration occurs, the connection state is preserved:
 
-| State | Migrates? | Notes |
-|---|---|---|
-| Stream data | Yes | Unacknowledged data retransmits on new path |
-| Stream offsets | Yes | Preserved, retransmit uses same offsets |
-| Flow control credit | Yes | Advertised limits apply on new path |
-| Congestion state | Partial | cwnd and RTT estimates carry over |
-| Crypto keys | Yes | Established keys work on new path |
-| Packet numbers | No | New path starts with fresh packet numbers |
+| State               | Migrates? | Notes                                       |
+| ------------------- | --------- | ------------------------------------------- |
+| Stream data         | Yes       | Unacknowledged data retransmits on new path |
+| Stream offsets      | Yes       | Preserved, retransmit uses same offsets     |
+| Flow control credit | Yes       | Advertised limits apply on new path         |
+| Congestion state    | Partial   | cwnd and RTT estimates carry over           |
+| Crypto keys         | Yes       | Established keys work on new path           |
+| Packet numbers      | No        | New path starts with fresh packet numbers   |
 
 ### 19.8.1 Packet Number Space After Migration
 
@@ -325,15 +326,16 @@ After migration:
 
 Connection migration enables QUIC connections to survive network changes by decoupling connection identity from network address:
 
-| Mechanism | Role |
-|---|---|
-| Connection ID | Identifies connection independent of address |
-| NEW_CONNECTION_ID | Issues CIDs for potential migration paths |
-| PATH_CHALLENGE | Validates new path (anti-amplification) |
-| PATH_RESPONSE | Proves path is bidirectional |
-| Path state machine | Tracks path validation and preference |
+| Mechanism          | Role                                         |
+| ------------------ | -------------------------------------------- |
+| Connection ID      | Identifies connection independent of address |
+| NEW_CONNECTION_ID  | Issues CIDs for potential migration paths    |
+| PATH_CHALLENGE     | Validates new path (anti-amplification)      |
+| PATH_RESPONSE      | Proves path is bidirectional                 |
+| Path state machine | Tracks path validation and preference        |
 
 Migration involves:
+
 1. Detecting address change
 2. Selecting a CID for the new path
 3. Sending PATH_CHALLENGE to validate

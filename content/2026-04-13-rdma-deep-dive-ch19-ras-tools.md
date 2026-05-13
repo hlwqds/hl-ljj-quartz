@@ -1,7 +1,20 @@
 ---
 title: "RDMA 第十九章：RDMA 配置工具——诊断、测试与验证"
 date: 2026-04-13
-tags: [rdma, tools, perftest, ibstat, ibdevinfo, rping, ucmatose, ibdiagnet, ibv_rc_pingpong, rdma, diagnosis]
+tags:
+  [
+    rdma,
+    tools,
+    perftest,
+    ibstat,
+    ibdevinfo,
+    rping,
+    ucmatose,
+    ibdiagnet,
+    ibv_rc_pingpong,
+    rdma,
+    diagnosis,
+  ]
 description: "详解 RDMA 常用工具：ibv_rc_pingpong、perftest 性能测试、ibstat/ibdevinfo 设备信息、rping/ucmatose 连接测试、ibdiagnet 网络诊断、perfmon 性能计数器。"
 ---
 
@@ -641,13 +654,13 @@ echo "[4] RoCE/ECN Configuration:"
 for DEV in /sys/class/infiniband/*; do
     DEVNAME=$(basename $DEV)
     echo "  Device: $DEVNAME"
-    
+
     # ECN 配置
     if [ -f /sys/class/infiniband/$DEVNAME/ports/1/ecn/enable ]; then
         ECN=$(cat /sys/class/infiniband/$DEVNAME/ports/1/ecn/enable 2>/dev/null)
         echo "    ECN enabled: $ECN"
     fi
-    
+
     # DCBX 状态
     if [ -f /sys/class/infiniband/$DEVNAME/ports/1/dcbx_mode ]; then
         DCBX=$(cat /sys/class/infiniband/$DEVNAME/ports/1/dcbx_mode 2>/dev/null)
@@ -776,14 +789,14 @@ echo "Results saved to: $RESULTS_DIR"
 
 ### 7.1 常见问题与解决
 
-| 问题 | 原因 | 解决方案 |
-|------|------|----------|
-| ibv_devinfo: no devices | RDMA 驱动未加载 | `modprobe mlx5_ib` |
-| Port state: DOWN | 物理链路问题 | 检查光纤/SFP |
-| Ping-pong 失败 | GID/LID 错误 | 检查两端 GID 是否一致 |
-| 带宽远低于预期 | PFC/ECN 未配置 | 检查 DCB 配置 |
-| ECN 测试失败 | ECN 未启用 | `ethtool --set-ecn eth0 on` |
-| 丢包严重 | 拥塞控制问题 | 检查 PFC 和 ECN 配置 |
+| 问题                    | 原因            | 解决方案                    |
+| ----------------------- | --------------- | --------------------------- |
+| ibv_devinfo: no devices | RDMA 驱动未加载 | `modprobe mlx5_ib`          |
+| Port state: DOWN        | 物理链路问题    | 检查光纤/SFP                |
+| Ping-pong 失败          | GID/LID 错误    | 检查两端 GID 是否一致       |
+| 带宽远低于预期          | PFC/ECN 未配置  | 检查 DCB 配置               |
+| ECN 测试失败            | ECN 未启用      | `ethtool --set-ecn eth0 on` |
+| 丢包严重                | 拥塞控制问题    | 检查 PFC 和 ECN 配置        |
 
 ### 7.2 命令速查表
 

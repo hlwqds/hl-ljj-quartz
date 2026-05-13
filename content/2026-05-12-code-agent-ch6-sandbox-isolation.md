@@ -44,13 +44,13 @@ Code Agent（代码智能体）的核心能力是自主执行代码——它可�
 
 在设计沙箱方案前，必须明确要防御的威胁层级：
 
-| 威胁级别 | 描述 | 示例 | 防御手段 |
-|---------|------|------|---------|
-| L1: 进程内隔离 | 同一进程内不同代码块的隔离 | JS 引擎的 V8 上下文隔离 | 虚拟机、安全沙箱（QuickJS/Wasm） |
-| L2: 进程级隔离 | 不同进程之间的隔离 | 恶意代码读取其他进程内存 | Linux Namespace, Seccomp |
-| L3: 容器级隔离 | 容器与容器、容器与宿主 | 容器逃逸 | cgroup v2, AppArmor/SELinux, User Namespace |
-| L4: 虚拟机级隔离 | VM 与 VM、VM 与宿主 | VM 逃逸 | Firecracker, gVisor, KVM |
-| L5: 网络隔离 | 南北向/东西向流量控制 | 外弹内攻、横向移动 | Network Namespace, iptables, eBPF |
+| 威胁级别         | 描述                       | 示例                     | 防御手段                                    |
+| ---------------- | -------------------------- | ------------------------ | ------------------------------------------- |
+| L1: 进程内隔离   | 同一进程内不同代码块的隔离 | JS 引擎的 V8 上下文隔离  | 虚拟机、安全沙箱（QuickJS/Wasm）            |
+| L2: 进程级隔离   | 不同进程之间的隔离         | 恶意代码读取其他进程内存 | Linux Namespace, Seccomp                    |
+| L3: 容器级隔离   | 容器与容器、容器与宿主     | 容器逃逸                 | cgroup v2, AppArmor/SELinux, User Namespace |
+| L4: 虚拟机级隔离 | VM 与 VM、VM 与宿主        | VM 逃逸                  | Firecracker, gVisor, KVM                    |
+| L5: 网络隔离     | 南北向/东西向流量控制      | 外弹内攻、横向移动       | Network Namespace, iptables, eBPF           |
 
 Code Agent 的沙箱通常需要覆盖 L2-L4 层，根据信任等级选择不同强度。
 
@@ -79,12 +79,12 @@ graph TD
         A[init 进程]
         B[其他进程]
     end
-    
+
     subgraph "Container Namespace"
         C[容器 init]
         D[容器内进程]
     end
-    
+
     A -.->|PID Namespace| C
     A -.->|mount Namespace| C
     A -.->|Network Namespace| C
@@ -96,15 +96,15 @@ graph TD
 
 六类核心 Namespace：
 
-| Namespace | 隔离资源 | 关键 syscall | 用途 |
-|-----------|---------|-------------|------|
-| PID | 进程 ID 空间 | clone(CLONE_NEWPID) | 进程树隔离 |
-| Network | 网络设备、端口、路由表 | clone(CLONE_NEWNET) | 网络隔离 |
-| Mount | 文件系统挂载点 | clone(CLONE_NEWNS) | 文件系统隔离 |
-| User | UID/GID 映射 | clone(CLONE_NEWUSER) | 用户权限隔离 |
-| UTS | hostname, domainname | clone(CLONE_NEWUTS) | 主机名隔离 |
-| IPC | System V IPC, POSIX mq | clone(CLONE_NEWIPC) | 进程通信隔离 |
-| Cgroup | cgroup 版本树 | clone(CLONE_NEWCGROUP) | cgroup 视图隔离 |
+| Namespace | 隔离资源               | 关键 syscall           | 用途            |
+| --------- | ---------------------- | ---------------------- | --------------- |
+| PID       | 进程 ID 空间           | clone(CLONE_NEWPID)    | 进程树隔离      |
+| Network   | 网络设备、端口、路由表 | clone(CLONE_NEWNET)    | 网络隔离        |
+| Mount     | 文件系统挂载点         | clone(CLONE_NEWNS)     | 文件系统隔离    |
+| User      | UID/GID 映射           | clone(CLONE_NEWUSER)   | 用户权限隔离    |
+| UTS       | hostname, domainname   | clone(CLONE_NEWUTS)    | 主机名隔离      |
+| IPC       | System V IPC, POSIX mq | clone(CLONE_NEWIPC)    | 进程通信隔离    |
+| Cgroup    | cgroup 版本树          | clone(CLONE_NEWCGROUP) | cgroup 视图隔离 |
 
 **实践：使用 unshare 创建隔离环境**
 
@@ -132,25 +132,25 @@ def create_isolated_process(cmd: list[str], uid_map: str = "0 0 1000 1"):
     # 准备 uid/gid map 文件
     uid_map_content = uid_map
     gid_map_content = "0 0 1000 1"
-    
+
     # fork 子进程
     pid = os.fork()
     if pid == 0:
         # 子进程：创建新 namespace
         libc = ctypes.CDLL("libc.so.6", use_errno=True)
-        
+
         # 创建 User Namespace
         CLONE_NEWUSER = 0x10000000
         CLONE_NEWPID = 0x20000000
         CLONE_NEWNS = 0x00040000
         CLONE_NEWNET = 0x40000000
         CLONE_NEWUTS = 0x04000000
-        
+
         flags = CLONE_NEWUSER | CLONE_NEWPID | CLONE_NEWNS | CLONE_NEWNET | CLONE_NEWUTS
-        
+
         # 设置 GID map（需要提前在父进程写入）
         # 这里省略，实际需要通过写入 /proc/self/gid_map
-        
+
         # 执行 exec
         os.execvp(cmd[0], cmd)
     else:
@@ -176,7 +176,7 @@ graph TD
         E --> F["code-agent-abc123.service"]
         E --> G["code-agent-def456.service"]
     end
-    
+
     F -.->|CPU 权重 512| B
     F -.->|Memory 上限 512M| B
     G -.->|CPU 权重 256| B
@@ -185,13 +185,13 @@ graph TD
 
 **Cgroup v2 vs v1**
 
-| 特性 | cgroup v1 | cgroup v2 |
-|------|----------|-----------|
-| 层级结构 | 每种控制器独立层级 | 统一单一树 |
-| 控制器数量 | 13+ 独立层级 | 单一树，控制器统一管理 |
-| 压力检测 | 无 | 有 PSI (Pressure Stall Information) |
-| 内存保护 | oom_group | memory.min + memory.low |
-| 文档 | deprecated | current |
+| 特性       | cgroup v1          | cgroup v2                           |
+| ---------- | ------------------ | ----------------------------------- |
+| 层级结构   | 每种控制器独立层级 | 统一单一树                          |
+| 控制器数量 | 13+ 独立层级       | 单一树，控制器统一管理              |
+| 压力检测   | 无                 | 有 PSI (Pressure Stall Information) |
+| 内存保护   | oom_group          | memory.min + memory.low             |
+| 文档       | deprecated         | current                             |
 
 **代码示例：创建资源受限的 cgroup**
 
@@ -205,7 +205,7 @@ class CgroupManager:
     管理沙箱进程的 cgroup 资源限制
     """
     CGROUP_BASE = "/sys/fs/cgroup"
-    
+
     def __init__(self, name: str, memory_limit: str = "512M",
                  cpu_quota_us: int = 50000, cpu_period_us: int = 100000,
                  pids_limit: int = 128):
@@ -216,7 +216,7 @@ class CgroupManager:
         self.pids_limit = pids_limit
         self.path = ""
         self.created = False
-        
+
     def create(self):
         """创建 cgroup 并设置限制"""
         # 使用 cgroup v2
@@ -224,30 +224,30 @@ class CgroupManager:
         cgroup_path.mkdir(parents=True, exist_ok=True)
         self.path = str(cgroup_path)
         self.created = True
-        
+
         # 设置内存限制
         self._write("memory.max", self.memory_limit)
-        
+
         # 设置 CPU 限制 (quota/period)
         self._write("cpu.max", f"{self.cpu_quota_us} {self.cpu_period_us}")
-        
+
         # 设置 PID 数量限制
         self._write("pids.max", str(self.pids_limit))
-        
+
         # 启用内存压力通知
         self._write("memory.low", str(int(self.memory_limit.rstrip('KMG')) // 2))
-        
+
     def add_process(self, pid: int):
         """将进程加入 cgroup"""
         if not self.created:
             raise RuntimeError("Cgroup not created")
         self._write("cgroup.procs", str(pid))
-        
+
     def _write(self, file: str, value: str):
         path = os.path.join(self.path, file)
         with open(path, 'w') as f:
             f.write(value)
-            
+
     def destroy(self):
         """销毁 cgroup"""
         if self.created and os.path.exists(self.path):
@@ -264,7 +264,7 @@ def run_in_cgroup(cmd: list[str]):
         pids_limit=64
     )
     cg.create()
-    
+
     pid = os.fork()
     if pid == 0:
         cg.add_process(os.getpid())
@@ -289,12 +289,12 @@ graph LR
 
 **Seccomp 模式演进：**
 
-| 模式 | 引入版本 | 特点 |
-|------|---------|------|
-| seccomp mode 1 | 2.6.12 | 只允许 4 个 syscall：read, write, exit, sigreturn |
-| seccomp mode 2 (SECCOMP_MODE_FILTER) | 2.6.23 | 使用 BPF 过滤任意 syscall |
-| seccomp mode 3 (SECCOMP_MODE_FILTER with no_new_privs) | 3.19 | 配合 no_new_privs 防止 privilege escalation |
-| Seccomp-bpf (libseccomp) | 4.14+ | 标准化 BPF 规则描述语言 |
+| 模式                                                   | 引入版本 | 特点                                              |
+| ------------------------------------------------------ | -------- | ------------------------------------------------- |
+| seccomp mode 1                                         | 2.6.12   | 只允许 4 个 syscall：read, write, exit, sigreturn |
+| seccomp mode 2 (SECCOMP_MODE_FILTER)                   | 2.6.23   | 使用 BPF 过滤任意 syscall                         |
+| seccomp mode 3 (SECCOMP_MODE_FILTER with no_new_privs) | 3.19     | 配合 no_new_privs 防止 privilege escalation       |
+| Seccomp-bpf (libseccomp)                               | 4.14+    | 标准化 BPF 规则描述语言                           |
 
 **Python 示例：使用 libseccomp 限制 syscall**
 
@@ -312,32 +312,32 @@ class Seccomp:
     SCMP_ACT_ERRNO(2) = 0x00050002
     SCMP_ACT_TRACE(2) = 0x7ff00002
     SCMP_ACT_ALLOW = 0x7fff0000
-    
+
     def __init__(self):
         lib = ctypes.util.find_library("seccomp")
         if not lib:
             raise ImportError("libseccomp not found")
         self.lib = ctypes.CDLL(lib)
         self.ctx = self.lib.scmp_default_ctx(False)
-        
+
     def reset(self, def_action: int):
         self.lib.scmp_default_ctx_free(self.ctx)
         self.ctx = self.lib.scmp_default_ctx(def_action)
-        
+
     def block(self, syscall: str):
         """阻止指定 syscall"""
         self.lib.scmp_syscall_resolve_name.restype = ctypes.c_int
         num = self.lib.scmp_syscall_resolve_name(self.ctx, syscall.encode())
         self.lib.scmp_syscall_add(self.ctx, self.SCMP_ACT_KILL, num, 0, 0)
-        
+
     def allow(self, syscall: str):
         num = self.lib.scmp_syscall_resolve_name(self.ctx, syscall.encode())
         self.lib.scmp_syscall_add(self.ctx, self.SCMP_ACT_ALLOW, num, 0, 0)
-        
+
     def load(self):
         self.lib.scmp_act_export_pfc(self.ctx, 1)  # debug: print to stderr
         self.lib.scmp_act_export_bpf(self.ctx, 1)
-        
+
     def is_available(self) -> bool:
         major = ctypes.c_uint32()
         minor = ctypes.c_uint32()
@@ -370,10 +370,10 @@ def create_sandbox_seccomp():
     """
     sc = Seccomp()
     sc.reset(sc.SCMP_ACT_KILL)  # 默认 kill
-    
+
     for syscall in ALLOWED_SYSCALLS:
         sc.allow(syscall)
-        
+
     # 显式 block 高危 syscall
     DANGEROUS = [
         "ptrace",      # 进程调试/注入
@@ -392,7 +392,7 @@ def create_sandbox_seccomp():
     ]
     for syscall in DANGEROUS:
         sc.block(syscall)
-        
+
     sc.load()
     print("Seccomp BPF loaded: allowed={}, blocked={}".format(
         len(ALLOWED_SYSCALLS), len(DANGEROUS)))
@@ -417,7 +417,7 @@ graph TD
         D --> F[runC 进程]
         F --> G[另一个沙箱容器]
     end
-    
+
     subgraph "Each Container Namespace"
         E --> H[PID NS]
         E --> I[Net NS]
@@ -429,15 +429,15 @@ graph TD
 
 **Docker 的隔离能力与局限：**
 
-| 能力 | 实现 | 安全性评估 |
-|------|------|-----------|
-| 进程隔离 | PID Namespace | 良好 |
-| 网络隔离 | Network Namespace | 良好（需要 --network none）|
-| 文件系统隔离 | OverlayFS + readonly | 良好 |
-| 用户隔离 | User Namespace (可选) | 中等（默认 root）|
-| 资源限制 | Cgroup v2 | 优秀 |
-| syscall 限制 | Seccomp (默认 profile) | 中等 |
-| 能力降权 | --cap-drop=ALL | 良好 |
+| 能力         | 实现                   | 安全性评估                  |
+| ------------ | ---------------------- | --------------------------- |
+| 进程隔离     | PID Namespace          | 良好                        |
+| 网络隔离     | Network Namespace      | 良好（需要 --network none） |
+| 文件系统隔离 | OverlayFS + readonly   | 良好                        |
+| 用户隔离     | User Namespace (可选)  | 中等（默认 root）           |
+| 资源限制     | Cgroup v2              | 优秀                        |
+| syscall 限制 | Seccomp (默认 profile) | 中等                        |
+| 能力降权     | --cap-drop=ALL         | 良好                        |
 
 **Docker run 配置 Code Agent 沙箱：**
 
@@ -527,33 +527,33 @@ graph TD
         A[Application]
         A -->|syscall| B[Sentry Process]
         B -->|受限 syscall| C[Host Kernel]
-        
+
         subgraph "Sentry (用户态内核)"
             B --> D[文件描述符表]
             B --> E[内存管理]
             B --> F[进程管理]
             B --> G[网络栈 Gofer]
         end
-        
+
         G -->|9P/FUSE| H[文件系统代理]
     end
-    
+
     style B fill:#f96
     style C fill:#999
 ```
 
 **gVisor vs runc 对比：**
 
-| 特性 | runc | gVisor (runsc) |
-|------|------|----------------|
-| 内核 | 共享宿主机内核 | 用户态 Sentry 内核 |
-| syscall 处理 | 原生 | 模拟/拦截 |
-| 隔离强度 | 中等 | 高 |
-| 性能开销 | 低 | 中等（~5-15%）|
-| 兼容性 | 100% | 约 90%（部分 syscall 不支持）|
-| 启动速度 | <100ms | 100-300ms |
-| 内存开销 | ~1MB | ~50-150MB |
-| 成熟度 | 非常成熟 | 成熟（Google 内部大量使用）|
+| 特性         | runc           | gVisor (runsc)                |
+| ------------ | -------------- | ----------------------------- |
+| 内核         | 共享宿主机内核 | 用户态 Sentry 内核            |
+| syscall 处理 | 原生           | 模拟/拦截                     |
+| 隔离强度     | 中等           | 高                            |
+| 性能开销     | 低             | 中等（~5-15%）                |
+| 兼容性       | 100%           | 约 90%（部分 syscall 不支持） |
+| 启动速度     | <100ms         | 100-300ms                     |
+| 内存开销     | ~1MB           | ~50-150MB                     |
+| 成熟度       | 非常成熟       | 成熟（Google 内部大量使用）   |
 
 ```bash
 # 安装 gVisor
@@ -615,23 +615,23 @@ graph TD
         A[Firecracker Process 1]
         B[Firecracker Process 2]
         C[Firecracker Process N]
-        
+
         A -->|KVM| D[VM Instance 1]
         B -->|KVM| E[VM Instance 2]
         C -->|KVM| F[VM Instance N]
-        
+
         D --> G[Guest Kernel]
         E --> H[Guest Kernel]
         F --> I[Guest Kernel]
-        
+
         G --> J[vCPUs + Memory]
         H --> K[vCPUs + Memory]
         F --> L[vCPUs + Memory]
-        
+
         D -.->|vsock, mmio| A
         E -.->|vsock, mmio| B
     end
-    
+
     subgraph "Host"
         D -.->|tap device| M[Host Network]
         J --> M
@@ -640,15 +640,15 @@ graph TD
 
 **Firecracker vs Docker vs gVisor 对比：**
 
-| 指标 | Docker + runc | gVisor | Firecracker |
-|------|--------------|--------|-------------|
-| 隔离层级 | 操作系统级 | 用户态内核 | 硬件虚拟化 |
-| 启动时间 | <100ms | 100-300ms | 100-150ms |
-| 内存开销 | ~1MB | ~50-150MB | ~5MB |
-| 安全性 | 中 | 高 | 极高 |
-| 兼容性 | 100% | ~90% | 100% |
-| 硬件虚拟化 | 否 | 否 | 是（KVM）|
-| 多租户 | 一般 | 好 | 极佳 |
+| 指标       | Docker + runc | gVisor     | Firecracker |
+| ---------- | ------------- | ---------- | ----------- |
+| 隔离层级   | 操作系统级    | 用户态内核 | 硬件虚拟化  |
+| 启动时间   | <100ms        | 100-300ms  | 100-150ms   |
+| 内存开销   | ~1MB          | ~50-150MB  | ~5MB        |
+| 安全性     | 中            | 高         | 极高        |
+| 兼容性     | 100%          | ~90%       | 100%        |
+| 硬件虚拟化 | 否            | 否         | 是（KVM）   |
+| 多租户     | 一般          | 好         | 极佳        |
 
 ```bash
 # 启动 Firecracker VM
@@ -689,14 +689,14 @@ curl -X PUT --unix-socket /tmp/fc.sock http://localhost/actions -d '{"action_typ
 
 ### 3.4 microVM 综合对比
 
-| 特性 | Docker + runc | gVisor (runsc) | Firecracker | Kata Containers | Unikernel (MirageOS) |
-|------|--------------|----------------|-------------|-----------------|---------------------|
-| 隔离强度 | 中 | 高 | 极高 | 极高 | 极高 |
-| 启动速度 | <100ms | 100-300ms | 100-150ms | 1-2s | <50ms |
-| 内存开销 | ~1MB | ~100MB | ~5MB | ~100MB | <1MB |
-| 兼容性 | 100% | ~90% | 100% | ~95% | 有限 |
-| 复杂度 | 低 | 中 | 中 | 高 | 高 |
-| 适用场景 | 同机器/可信环境 | 不可信代码执行 | 强隔离多租户 | 高安全需求 | 极致轻量 |
+| 特性     | Docker + runc   | gVisor (runsc) | Firecracker  | Kata Containers | Unikernel (MirageOS) |
+| -------- | --------------- | -------------- | ------------ | --------------- | -------------------- |
+| 隔离强度 | 中              | 高             | 极高         | 极高            | 极高                 |
+| 启动速度 | <100ms          | 100-300ms      | 100-150ms    | 1-2s            | <50ms                |
+| 内存开销 | ~1MB            | ~100MB         | ~5MB         | ~100MB          | <1MB                 |
+| 兼容性   | 100%            | ~90%           | 100%         | ~95%            | 有限                 |
+| 复杂度   | 低              | 中             | 中           | 高              | 高                   |
+| 适用场景 | 同机器/可信环境 | 不可信代码执行 | 强隔离多租户 | 高安全需求      | 极致轻量             |
 
 ---
 
@@ -729,23 +729,23 @@ profile sandbox-code-agent flags=(attach_disconnected,mediate_deleted) {
   capability setuid,
   capability setgid,
   capability net_bind_service,
-  
+
   # 文件系统访问限制
   /bin/bash mr,
   /bin/ls mr,
   /usr/bin/python3* mr,
   /lib/x86_64-linux-gnu/** r,
   /usr/lib/** r,
-  
+
   # 只读系统目录
   /etc/passwd r,
   /etc/group r,
   /etc/ld.so.cache r,
-  
+
   # 可写目录（tmpfs）
   /tmp/** rw,
   /run/** rw,
-  
+
   # 禁止访问
   /home/** r,
   /root/** r,
@@ -753,14 +753,14 @@ profile sandbox-code-agent flags=(attach_disconnected,mediate_deleted) {
   /sys/** r,        # 限制 sysfs
   /proc/sys/** rw,  # 禁止修改内核参数
   /dev/** rw,       # 限制设备访问
-  
+
   # 网络限制（沙箱内不允许网络）
   network unix,
   # deny network,
-  
+
   # 禁止加载内核模块
   deny /sys/module/** rw,
-  
+
   # 禁止创建 namespaces（防止沙箱内再创建沙箱）
   deny ptrace,
   deny proc_psi_t,
@@ -860,13 +860,13 @@ Landlock 是 Linux 5.13 引入的轻量级沙箱机制。它允许非特权进�
 
 **Landlock vs AppArmor vs SELinux：**
 
-| 特性 | Landlock | AppArmor | SELinux |
-|------|----------|----------|---------|
-| 所需权限 | 非特权（unprivileged） | root | root |
-| 规则粒度 | 文件系统路径 | 文件系统路径 | SELinux 上下文 |
-| 策略存储 | BPF 对象 | 配置文件 | 内核策略 |
-| 可组合性 | 是（layered） | 否 | 否 |
-| 审计机制 | 无 | 有 | 有 |
+| 特性       | Landlock                 | AppArmor     | SELinux              |
+| ---------- | ------------------------ | ------------ | -------------------- |
+| 所需权限   | 非特权（unprivileged）   | root         | root                 |
+| 规则粒度   | 文件系统路径             | 文件系统路径 | SELinux 上下文       |
+| 策略存储   | BPF 对象                 | 配置文件     | 内核策略             |
+| 可组合性   | 是（layered）            | 否           | 否                   |
+| 审计机制   | 无                       | 有           | 有                   |
 | 主流发行版 | Arch, Gentoo, 部分发行版 | Ubuntu, SUSE | RHEL, CentOS, Fedora |
 
 ```c
@@ -884,11 +884,11 @@ static int landlock_restrict_self(void) {
                              LANDMASK_ACCESS_FS_WRITE |
                              LANDLOCK_ACCESS_FS_EXEC,
     };
-    
+
     int ruleset_fd = syscall(SYS_landlock_create_ruleset,
                               &attr, sizeof(attr), 0);
     if (ruleset_fd < 0) return -1;
-    
+
     // 允许 /usr 只读
     struct landlock_path_beneath_attr path1 = {
         .parent_fd = open("/usr", O_PATH | O_RDONLY),
@@ -896,7 +896,7 @@ static int landlock_restrict_self(void) {
     };
     syscall(SYS_landlock_add_rule, ruleset_fd,
             LANDLOCK_RULE_PATH_BENEATH, &path1, 0);
-    
+
     // 允许 /tmp 读写
     struct landlock_path_beneath_attr path2 = {
         .parent_fd = open("/tmp", O_PATH | O_RDONLY),
@@ -905,7 +905,7 @@ static int landlock_restrict_self(void) {
     };
     syscall(SYS_landlock_add_rule, ruleset_fd,
             LANDLOCK_RULE_PATH_BENEATH, &path2, 0);
-    
+
     // 限制当前进程
     return prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) ||
            syscall(SYS_landlock_restrict_self, ruleset_fd, 0);
@@ -929,7 +929,7 @@ def sandbox_with_landlock():
     import os
     if not os.path.exists("/sys/kernel/security/landlock"):
         raise RuntimeError("Landlock not supported")
-    
+
     # 实际使用需要通过 ctypes 或 rust-bindings 调用
     # 这里仅展示架构
     print("Landlock sandbox:")
@@ -955,14 +955,14 @@ graph TD
         A --> D[IP Routing Table]
         C --> E[iptables NAT]
     end
-    
+
     subgraph "Sandbox NetNS"
         F[veth-sandbox]
         G[lo]
         H[NetNS Routing Table]
         F -.->|peer link| C
     end
-    
+
     style F fill:#f96
     style G fill:#f96
     style H fill:#f96
@@ -1013,7 +1013,7 @@ class NetworkSandbox:
         self.ns_path = f"/var/run/netns/{name}"
         self.veth_host = f"veth-{name}-h"
         self.veth_sandbox = f"veth-{name}-s"
-        
+
     def create(self):
         """创建完全隔离的 network namespace"""
         # 创建 namespace
@@ -1022,27 +1022,27 @@ class NetworkSandbox:
             ns.close()
         except Exception:
             pass  # 已存在
-        
+
         with IPRoute() as ipr:
             # 创建 veth pair
             ipr.link("add", ifname=self.veth_host, peer=self.veth_sandbox,
                      kind="veth")
-            
+
             # 获取 index
             idx_host = ipr.link_lookup(ifname=self.veth_host)[0]
-            
+
             # 将 peer 移到 namespace
             idx_sandbox = ipr.link_lookup(ifname=self.veth_sandbox)[0]
             ipr.link("set", index=idx_sandbox, net_ns_fd=self.name)
-            
+
             # host 端 up
             ipr.link("set", index=idx_host, state="up")
-            
+
     def setup_loopback(self):
         """在沙箱内启用 loopback"""
         with NSPopen(self.name, ["ip", "link", "set", "lo", "up"]) as p:
             p.wait()
-            
+
     def allow_dns(self, dns_ns: str = "default"):
         """
         仅为沙箱添加 DNS 解析（通过 unix socket）
@@ -1052,7 +1052,7 @@ class NetworkSandbox:
         # 但如果没有路由，DNS 仍然无法工作
         # 这是正确的行为：沙箱完全无网络
         pass
-        
+
     def destroy(self):
         """清理网络资源"""
         with IPRoute() as ipr:
@@ -1123,11 +1123,11 @@ graph TD
         A[Upper: 可写层 /var/lib/docker/overlay2/xxx/upper]
         B[Lower: 只读层 /var/lib/docker/overlay2/xxx/lowerdir]
         C[Merged: 合并视图 /var/lib/docker/overlay2/xxx/merged]
-        
+
         A --> C
         B --> C
     end
-    
+
     D[upperdir 文件夹] -->|whiteout| F[rm 删除的文件]
     B -->|opaque| E[upperdir 中不存在时可见]
 ```
@@ -1181,7 +1181,7 @@ class OverlaySandbox:
         self.upper_dir = self.storage_dir / "upper"
         self.work_dir = self.storage_dir / "work"
         self.merged_dir = self.storage_dir / "merged"
-        
+
     def create(self):
         """创建 overlay 沙箱"""
         # 创建目录
@@ -1189,7 +1189,7 @@ class OverlaySandbox:
         self.upper_dir.mkdir(exist_ok=True)
         self.work_dir.mkdir(exist_ok=True)
         self.merged_dir.mkdir(exist_ok=True)
-        
+
         # 挂载 overlay
         result = subprocess.run([
             "mount", "-t", "overlay", "overlay",
@@ -1198,17 +1198,17 @@ class OverlaySandbox:
                   f"workdir={self.work_dir}",
             str(self.merged_dir)
         ], capture_output=True)
-        
+
         if result.returncode != 0:
             raise RuntimeError(f"Overlay mount failed: {result.stderr.decode()}")
-            
+
         return str(self.merged_dir)
-        
+
     def destroy(self, discard_changes: bool = True):
         """销毁沙箱，丢弃或保存更改"""
         # 卸载
         subprocess.run(["umount", str(self.merged_dir)], check=True)
-        
+
         if discard_changes:
             # 丢弃所有更改
             import shutil
@@ -1216,7 +1216,7 @@ class OverlaySandbox:
         else:
             # 保存更改到指定位置
             pass
-            
+
     def snapshot(self) -> str:
         """保存当前状态快照"""
         snapshot_dir = self.storage_dir / "snapshot"
@@ -1286,43 +1286,43 @@ struct sock_filter filter[] = {
     // 验证架构
     BPF_STMT(BPF_LD | BPF_W | BPF_ABS, 0),
     KVM_CHECK_ARCH,
-    
+
     // 加载 syscall 编号
     BPF_STMT(BPF_LD | BPF_W | BPF_ABS, arch_reg),
-    
+
     // 通用：allow read
     BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, __NR_read, 0, 1),
     BPF_STMT(BPF_RET | BPF_K, SECCOMP_RET_ALLOW),
-    
+
     // 通用：allow write
     BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, __NR_write, 0, 1),
     BPF_STMT(BPF_RET | BPF_K, SECCOMP_RET_ALLOW),
-    
+
     // 允许 openat（不含 O_CREAT|O_EXCL|O_TRUNC）
     BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, __NR_openat, 0, 9),
     BPF_STMT(BPF_LD | BPF_W | BPF_ABS, offsetof(struct seccomp_data, args[1])),
     BPF_JUMP(BPF_JMP | BPF_JA, 0, 8),
-    
+
     // 允许 open
     BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, __NR_open, 0, 1),
     BPF_STMT(BPF_RET | BPF_K, SECCOMP_RET_ALLOW),
-    
+
     // 拒绝 mount
     BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, __NR_mount, 0, 1),
     BPF_STMT(BPF_RET | BPF_K, SECCOMP_RET_KILL),
-    
+
     // 拒绝 umount
     BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, __NR_umount2, 0, 1),
     BPF_STMT(BPF_RET | BPF_K, SECCOMP_RET_KILL),
-    
+
     // 拒绝 pivot_root
     BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, __NR_pivot_root, 0, 1),
     BPF_STMT(BPF_RET | BPF_K, SECCOMP_RET_KILL),
-    
+
     // 拒绝 chroot
     BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, __NR_chroot, 0, 1),
     BPF_STMT(BPF_RET | BPF_K, SECCOMP_RET_KILL),
-    
+
     // 默认：trace（用于审计）
     BPF_STMT(BPF_RET | BPF_K, SECCOMP_RET_TRACE),
 };
@@ -1340,7 +1340,7 @@ graph TD
     A --> C[CPU Max Quota]
     A --> D[CPU Period]
     A --> E[CPU Affinity]
-    
+
     B -->|"0-1024 默认 1024"| F[相对权重]
     C -->|"微秒/周期"| G[硬上限]
     D -->|"默认 100ms"| H[调度周期]
@@ -1348,12 +1348,12 @@ graph TD
 
 **cgroup v2 CPU 限制参数：**
 
-| 参数 | 含义 | 示例 |
-|------|------|------|
-| cpu.max | quota period | 50000 100000 = 50% CPU |
-| cpu.weight | 相对权重 | 1024 = 默认权重 |
-| cpu.max.burst | burst 容量 | 50 |
-| cpu.idle | 空闲优化 | 0/1 |
+| 参数          | 含义         | 示例                   |
+| ------------- | ------------ | ---------------------- |
+| cpu.max       | quota period | 50000 100000 = 50% CPU |
+| cpu.weight    | 相对权重     | 1024 = 默认权重        |
+| cpu.max.burst | burst 容量   | 50                     |
+| cpu.idle      | 空闲优化     | 0/1                    |
 
 ```python
 # Python: CPU 限制实现
@@ -1367,7 +1367,7 @@ class CPUCgroup:
     def __init__(self, cgroup_path: str):
         self.cgroup_path = Path(cgroup_path)
         self.cgroup_path.mkdir(parents=True, exist_ok=True)
-        
+
     def set_limit(self, cpu_quota_us: int, cpu_period_us: int = 100000):
         """
         设置 CPU 上限（百分比 = quota/period * 100）
@@ -1377,21 +1377,21 @@ class CPUCgroup:
         # cpu.max = "quota period"
         max_file = self.cgroup_path / "cpu.max"
         max_file.write_text(f"{cpu_quota_us} {cpu_period_us}\n")
-        
+
     def set_weight(self, weight: int = 1024):
         """
         设置相对权重（1-10000）
         """
         weight_file = self.cgroup_path / "cpu.weight"
         weight_file.write_text(f"{weight}\n")
-        
+
     def set_cpuset(self, cpus: list[int]):
         """
         绑定到特定 CPU 核心
         """
         cpuset_file = self.cgroup_path / "cpuset.cpus"
         cpuset_file.write_text(",".join(map(str, cpus)))
-        
+
     def add_task(self, pid: int):
         self.cgroup_path.joinpath("cgroup.procs").write_text(str(pid))
 
@@ -1411,7 +1411,7 @@ graph TD
     A --> D[memory.high]
     A --> E[memory.low]
     A --> F[memory.swap.max]
-    
+
     B -->|已用| G{match?}
     C -->|上限| H[触发 OOM Killer]
     D -->|软上限| I[触发回收]
@@ -1420,13 +1420,13 @@ graph TD
 
 **cgroup v2 内存限制：**
 
-| 参数 | 含义 | 行为 |
-|------|------|------|
-| memory.max | 硬上限 | 超过触发 OOM |
-| memory.high | 软上限 | 超过触发异步回收 |
-| memory.low | 保护线 | 低于此值优先分配 |
-| memory.swap.max | swap 上限 | 超过拒绝 swap |
-| memory.oom.group | OOM 处理 | 整个 cgroup 被杀 |
+| 参数             | 含义      | 行为             |
+| ---------------- | --------- | ---------------- |
+| memory.max       | 硬上限    | 超过触发 OOM     |
+| memory.high      | 软上限    | 超过触发异步回收 |
+| memory.low       | 保护线    | 低于此值优先分配 |
+| memory.swap.max  | swap 上限 | 超过拒绝 swap    |
+| memory.oom.group | OOM 处理  | 整个 cgroup 被杀 |
 
 ```python
 # Python: 内存限制实现
@@ -1440,7 +1440,7 @@ class MemoryCgroup:
     def __init__(self, cgroup_path: str):
         self.cgroup_path = Path(cgroup_path)
         self.cgroup_path.mkdir(parents=True, exist_ok=True)
-        
+
     def set_limit(self, max_bytes: str = "256M",
                   high_bytes: str = "200M",
                   swap_max: str = "0"):
@@ -1451,13 +1451,13 @@ class MemoryCgroup:
         """
         max_file = self.cgroup_path / "memory.max"
         max_file.write_text(max_bytes + "\n")
-        
+
         high_file = self.cgroup_path / "memory.high"
         high_file.write_text(high_bytes + "\n")
-        
+
         swap_file = self.cgroup_path / "memory.swap.max"
         swap_file.write_text(swap_max + "\n")
-        
+
     def get_usage(self) -> dict:
         """获取内存使用统计"""
         stats = {}
@@ -1498,10 +1498,10 @@ def prevent_fork_bomb():
     """
     # rlimit: 每个进程最多 64 个子进程
     resource.setrlimit(resource.RLIMIT_NPROC, (32, 64))
-    
+
     # rlimit: 文件描述符上限
     resource.setrlimit(resource.RLIMIT_NOFILE, (64, 128))
-    
+
     # 禁止创建核心转储
     resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
 ```
@@ -1525,7 +1525,7 @@ class TimedProcess:
         self.timeout = timeout_seconds
         self.process = None
         self.timer = None
-        
+
     def run(self, cmd: list[str], cwd: str = None) -> subprocess.CompletedProcess:
         """
         执行带超时的命令
@@ -1534,7 +1534,7 @@ class TimedProcess:
             if self.process and self.process.poll() is None:
                 # SIGKILL 进程组（包括子进程）
                 os.killpg(os.getpgid(self.process.pid), signal.SIGKILL)
-                
+
         self.process = subprocess.Popen(
             cmd,
             cwd=cwd,
@@ -1542,10 +1542,10 @@ class TimedProcess:
             stderr=subprocess.PIPE,
             preexec_fn=os.setsid  # 创建新进程组
         )
-        
+
         self.timer = Timer(self.timeout, timeout_handler)
         self.timer.start()
-        
+
         try:
             stdout, stderr = self.process.communicate()
             return subprocess.CompletedProcess(
@@ -1573,33 +1573,33 @@ version: 2
 
 resources:
   cpu:
-    quota_us: 50000      # 50% CPU (50000/100000)
-    period_us: 100000    # 100ms period
-    cpus: [0, 1, 2, 3]  # 绑定到特定核心
-    weight: 512          # 相对权重
-    
+    quota_us: 50000 # 50% CPU (50000/100000)
+    period_us: 100000 # 100ms period
+    cpus: [0, 1, 2, 3] # 绑定到特定核心
+    weight: 512 # 相对权重
+
   memory:
-    max: "256M"          # 硬上限
-    high: "200M"        # 软上限触发回收
-    swap_max: "0"       # 禁用 swap
-    oom_group: true     # 整个 cgroup OOM 时一起杀
-    
+    max: "256M" # 硬上限
+    high: "200M" # 软上限触发回收
+    swap_max: "0" # 禁用 swap
+    oom_group: true # 整个 cgroup OOM 时一起杀
+
   pids:
-    max: 64             # 最大进程数
-    
+    max: 64 # 最大进程数
+
   io:
-    weight: 100         # IO 权重
+    weight: 100 # IO 权重
     max_read_bps: "10M"
     max_write_bps: "5M"
-    
+
   time:
-    cpu_max_seconds: 60    # CPU 时间上限（不是 wall time）
-    
+    cpu_max_seconds: 60 # CPU 时间上限（不是 wall time）
+
 network:
-  mode: "none"          # none | bridge | host
-  
+  mode: "none" # none | bridge | host
+
 filesystem:
-  mode: "overlay"       # overlay | bind | tmpfs
+  mode: "overlay" # overlay | bind | tmpfs
   readonly: true
   tmpfs:
     /tmp:
@@ -1610,10 +1610,10 @@ filesystem:
       size: "32M"
       noexec: true
       nosuid: true
-      
+
 security:
-  seccomp: "minimal"     # minimal | standard | none
-  capabilities: []       # 清空所有能力
+  seccomp: "minimal" # minimal | standard | none
+  capabilities: [] # 清空所有能力
   no_new_privs: true
   apparmor: "sandbox-code-agent"
 ```
@@ -1624,15 +1624,15 @@ security:
 
 ### 8.1 综合对比表
 
-| 方案 | 隔离强度 | 性能开销 | 启动速度 | 内存开销 | 兼容性 | 复杂度 | 适用场景 |
-|------|---------|---------|---------|---------|-------|-------|---------|
-| **Docker + runc** | 中 | <5% | <100ms | ~1MB | 100% | 低 | 同机器/可信环境 |
-| **Docker + gVisor** | 高 | 5-15% | 100-300ms | ~100MB | ~90% | 中 | 不可信代码执行 |
-| **Firecracker** | 极高 | 2-5% | 100-150ms | ~5MB | 100% | 中 | 强隔离多租户 |
-| **Kata Containers** | 极高 | 10-20% | 1-2s | ~100MB | ~95% | 高 | 企业高安全需求 |
-| **Unikernel** | 极高 | <1% | <50ms | <1MB | 有限 | 高 |极致轻量专用场景 |
-| **Landlock + NS** | 高 | <3% | <50ms | ~1MB | ~70% | 中 | 轻量快速隔离 |
-| **namespace + seccomp** | 高 | <2% | <20ms | ~500KB | 100% | 高 | 深度定制场景 |
+| 方案                    | 隔离强度 | 性能开销 | 启动速度  | 内存开销 | 兼容性 | 复杂度 | 适用场景         |
+| ----------------------- | -------- | -------- | --------- | -------- | ------ | ------ | ---------------- |
+| **Docker + runc**       | 中       | <5%      | <100ms    | ~1MB     | 100%   | 低     | 同机器/可信环境  |
+| **Docker + gVisor**     | 高       | 5-15%    | 100-300ms | ~100MB   | ~90%   | 中     | 不可信代码执行   |
+| **Firecracker**         | 极高     | 2-5%     | 100-150ms | ~5MB     | 100%   | 中     | 强隔离多租户     |
+| **Kata Containers**     | 极高     | 10-20%   | 1-2s      | ~100MB   | ~95%   | 高     | 企业高安全需求   |
+| **Unikernel**           | 极高     | <1%      | <50ms     | <1MB     | 有限   | 高     | 极致轻量专用场景 |
+| **Landlock + NS**       | 高       | <3%      | <50ms     | ~1MB     | ~70%   | 中     | 轻量快速隔离     |
+| **namespace + seccomp** | 高       | <2%      | <20ms     | ~500KB   | 100%   | 高     | 深度定制场景     |
 
 ### 8.2 选型决策树
 
@@ -1642,19 +1642,19 @@ graph TD
     B -->|完全可信| C[直接 Docker run]
     B -->|部分可信| D{Docker run 是否足够?}
     B -->|完全不可信| E[强隔离需求?]
-    
+
     D -->|是| F[Docker + security-opt + seccomp]
     D -->|否| G[考虑 gVisor]
-    
+
     E -->|是| H[多租户高安全?]
     E -->|否| I[考虑 gVisor]
-    
+
     H -->|是| J[Firecracker]
     H -->|否| K[Firecracker + gVisor]
-    
+
     G -->|性能优先| L[继续用 Docker + seccomp]
     G -->|安全优先| M[选 gVisor]
-    
+
     C --> N[性能最优]
     F --> O[平衡方案]
     M --> P[安全优先]
@@ -1663,15 +1663,15 @@ graph TD
 
 ### 8.3 威胁防御矩阵
 
-| 威胁 | Docker | gVisor | Firecracker | namespace+seccomp |
-|------|--------|--------|-------------|-------------------|
-| 恶意文件访问 | ✓ | ✓ | ✓ | ✓ |
-| 容器逃逸 | 中 | 高 | 极高 | 高 |
-| 资源耗尽 | ✓ | ✓ | ✓ | ✓ |
-| 网络攻击 | ✓ | ✓ | ✓ | ✓ |
-| Syscall 漏洞 | 中 | 高 | 极高 | 高 |
-| 内核漏洞 | 中 | 高 | 极高 | 中 |
-| 侧信道攻击 | 低 | 中 | 高 | 低 |
+| 威胁         | Docker | gVisor | Firecracker | namespace+seccomp |
+| ------------ | ------ | ------ | ----------- | ----------------- |
+| 恶意文件访问 | ✓      | ✓      | ✓           | ✓                 |
+| 容器逃逸     | 中     | 高     | 极高        | 高                |
+| 资源耗尽     | ✓      | ✓      | ✓           | ✓                 |
+| 网络攻击     | ✓      | ✓      | ✓           | ✓                 |
+| Syscall 漏洞 | 中     | 高     | 极高        | 高                |
+| 内核漏洞     | 中     | 高     | 极高        | 中                |
+| 侧信道攻击   | 低     | 中     | 高          | 低                |
 
 ---
 
@@ -1722,13 +1722,13 @@ gsd2 选择 **Docker + gVisor 双模式** 的分层沙箱方案：
 
 **为什么选择这个方案：**
 
-| 考量因素 | 分析 | 结论 |
-|---------|------|------|
-| 启动速度 | gVisor 100-300ms 太慢 | 保留 Docker 快速路径 |
-| 隔离强度 | Docker namespace 不够 | gVisor 提供用户态内核 |
-| 兼容性 | gVisor 约 90% syscall 兼容 | 90% 场景足够 |
-| 性能 | gVisor 5-15% 开销 | 不可信代码可接受 |
-| 运维复杂度 | 统一 Docker API | 两种模式 API 一致 |
+| 考量因素   | 分析                       | 结论                  |
+| ---------- | -------------------------- | --------------------- |
+| 启动速度   | gVisor 100-300ms 太慢      | 保留 Docker 快速路径  |
+| 隔离强度   | Docker namespace 不够      | gVisor 提供用户态内核 |
+| 兼容性     | gVisor 约 90% syscall 兼容 | 90% 场景足够          |
+| 性能       | gVisor 5-15% 开销          | 不可信代码可接受      |
+| 运维复杂度 | 统一 Docker API            | 两种模式 API 一致     |
 
 ### 9.3 gsd2 架构设计
 
@@ -1738,37 +1738,37 @@ graph TD
     B -->|trust=high| C[Light Sandbox]
     B -->|trust=medium| D[Standard Sandbox]
     B -->|trust=low| E[Secure Sandbox]
-    
+
     C --> C1[Docker runc]
     C1 --> C2[Namespace + Cgroup]
-    
+
     D --> D1[Docker + Seccomp]
     D1 --> D2[严格 syscall 白名单]
-    
+
     E --> E1[gVisor runsc]
     E1 --> E2[Sentry 用户态内核]
     E2 --> E3[受限 9P 文件系统]
-    
+
     subgraph "公共层"
         F[eBPF 流量监控]
         G[OverlayFS 临时存储]
         H[审计日志]
     end
-    
+
     C2 --> F
     D2 --> F
     E3 --> F
-    
+
     C2 --> G
     D2 --> G
     E3 --> G
-    
+
     subgraph "网络隔离"
         I[Network NS]
         J[iptables 规则]
         K[eBPF XDP 过滤]
     end
-    
+
     F --> I
     J --> I
     K --> I
@@ -1817,7 +1817,7 @@ class SandboxConfig:
     memory_limit: str = "256M"
     cpu_quota: float = 0.5
     network_mode: str = "none"  # none | localhost | filtered
-    
+
     # gVisor 特有
     enable_gvisor: bool = False
     gvisor_debug: bool = False
@@ -1839,18 +1839,18 @@ class SandboxManager:
         self.sandboxes: dict[str, Sandbox] = {}
         self._resource_mgr = ResourceManager()
         self._network_mgr = NetworkIsolator()
-        
+
     def create(self, config: SandboxConfig) -> str:
         """创建沙箱"""
         sandbox_id = uuid.uuid4().hex[:12]
-        
+
         # 1. 创建 cgroup
         cgroup_path = self._resource_mgr.create_cgroup(
             name=f"gsd2-{sandbox_id}",
             memory_limit=config.memory_limit,
             cpu_quota=int(config.cpu_quota * 100000)
         )
-        
+
         # 2. 创建网络隔离
         netns_name = None
         if config.network_mode != "none":
@@ -1858,13 +1858,13 @@ class SandboxManager:
                 sandbox_id,
                 mode=config.network_mode
             )
-        
+
         # 3. 根据 trust level 选择运行时
         if config.trust_level == TrustLevel.LOW or config.enable_gvisor:
             container_id = self._create_gvisor_sandbox(sandbox_id, config, netns_name)
         else:
             container_id = self._create_docker_sandbox(sandbox_id, config, netns_name)
-        
+
         # 4. 注册沙箱
         sandbox = Sandbox(
             id=sandbox_id,
@@ -1873,9 +1873,9 @@ class SandboxManager:
             status="running"
         )
         self.sandboxes[sandbox_id] = sandbox
-        
+
         return sandbox_id
-        
+
     def _create_docker_sandbox(self, sandbox_id: str,
                                config: SandboxConfig,
                                netns_name: Optional[str]) -> str:
@@ -1883,37 +1883,37 @@ class SandboxManager:
         runtime = "runc"
         security_opts = ["no-new-privileges:true"]
         cap_drop = ["ALL"]
-        
+
         if config.trust_level == TrustLevel.MEDIUM:
             # Standard Mode: 添加严格 seccomp
             security_opts.append(f"seccomp={self._get_seccomp_profile()}")
-        
+
         network_mode = "none"
         if netns_name:
             network_mode = f"container:{netns_name}"
         elif config.network_mode == "localhost":
             network_mode = "bridge"  # 通过 iptables 限制
-            
+
         try:
             container = self.docker_client.containers.run(
                 "gsd2/agent-base:latest",
                 detach=True,
                 name=f"gsd2-{sandbox_id}",
                 hostname=f"sandbox-{sandbox_id}",
-                
+
                 # 资源限制
                 mem_limit=config.memory_limit,
                 cpu_period=100000,
                 cpu_quota=int(config.cpu_quota * 100000),
                 pids_limit=64,
-                
+
                 # 网络
                 network_mode=network_mode,
-                
+
                 # 安全
                 security_opt=security_opts,
                 cap_drop=cap_drop,
-                
+
                 # 文件系统
                 read_only=True,
                 tmpfs={
@@ -1921,20 +1921,20 @@ class SandboxManager:
                     "/run": "rw,noexec,nosuid,size=32m",
                     "/workspace": "rw,size=128m"
                 },
-                
+
                 # 命令保持运行
                 command="sleep infinity"
             )
             return container.id[:12]
         except docker.errors.APIError as e:
             raise RuntimeError(f"Docker sandbox failed: {e}")
-            
+
     def _create_gvisor_sandbox(self, sandbox_id: str,
                                  config: SandboxConfig,
                                  netns_name: Optional[str]) -> str:
         """创建 gVisor 沙箱（Secure Mode）"""
         runtime = "runsc"
-        
+
         # gVisor 特定配置
         runsc_args = [
             "--debug" if config.gvisor_debug else "",
@@ -1943,7 +1943,7 @@ class SandboxManager:
             "--log-file=/var/log/gsd2/runsc.log",
             f"--profile={sandbox_id}",
         ]
-        
+
         try:
             container = self.docker_client.containers.run(
                 "gsd2/agent-base:latest",
@@ -1951,20 +1951,20 @@ class SandboxManager:
                 name=f"gsd2-{sandbox_id}",
                 hostname=f"sandbox-{sandbox_id}",
                 runtime=runtime,
-                
+
                 # 资源限制
                 mem_limit=config.memory_limit,
                 cpu_period=100000,
                 cpu_quota=int(config.cpu_quota * 100000),
                 pids_limit=32,  # gVisor 下进程开销更大，限制更严格
-                
+
                 # gVisor 必须 none 网络
                 network_mode="none",
-                
+
                 # 安全
                 security_opt=["no-new-privileges:true"],
                 cap_drop=["ALL"],
-                
+
                 # 文件系统
                 read_only=True,
                 tmpfs={
@@ -1972,22 +1972,22 @@ class SandboxManager:
                     "/run": "rw,noexec,nosuid,size=16m",
                     "/workspace": "rw,size=64m"
                 },
-                
+
                 command="sleep infinity"
             )
             return container.id[:12]
         except docker.errors.APIError as e:
             raise RuntimeError(f"gVisor sandbox failed: {e}")
-            
+
     def execute(self, sandbox_id: str, code: str,
                 language: str = "python3") -> dict:
         """在沙箱中执行代码"""
         sandbox = self.sandboxes.get(sandbox_id)
         if not sandbox or sandbox.status != "running":
             raise ValueError(f"Sandbox {sandbox_id} not available")
-            
+
         container = self.docker_client.containers.get(sandbox.container_id)
-        
+
         # 构造执行命令
         if language == "python3":
             cmd = f"python3 -c {repr(code)}"
@@ -1995,7 +1995,7 @@ class SandboxManager:
             cmd = f"bash -c {repr(code)}"
         else:
             cmd = f"{language} -c {repr(code)}"
-            
+
         # 添加超时
         exit_code, output = container.exec_run(
             cmd,
@@ -2003,33 +2003,33 @@ class SandboxManager:
             demux=False,
             workdir="/workspace"
         )
-        
+
         return {
             "sandbox_id": sandbox_id,
             "exit_code": exit_code,
             "stdout": output.decode(),
             "language": language
         }
-        
+
     def destroy(self, sandbox_id: str):
         """销毁沙箱"""
         sandbox = self.sandboxes.pop(sandbox_id, None)
         if not sandbox:
             return
-            
+
         try:
             container = self.docker_client.containers.get(sandbox.container_id)
             container.stop(timeout=1)
             container.remove(v=True, force=True)
         except docker.errors.NotFound:
             pass
-            
+
         # 清理 cgroup
         self._resource_mgr.destroy_cgroup(f"gsd2-{sandbox_id}")
-        
+
         # 清理网络
         self._network_mgr.destroy_netns(sandbox_id)
-        
+
         sandbox.status = "destroyed"
 ```
 
@@ -2061,11 +2061,11 @@ ALLOWED_SYSCALLS_LIGHT = [
     "clone", "vfork", "kill", "getpid", "getppid",
     "nanosleep", "clock_nanosleep", "set_tid_address",
     "gettid", "getuid", "getgid", "geteuid", "getegid",
-    
+
     # 内存
     "brk", "mmap", "munmap", "madvise", "mprotect",
     "mremap", "msync", "mincore", "shmget", "shmat",
-    
+
     # 文件
     "open", "openat", "close", "read", "write",
     "lseek", "fstat", "newfstatat", "ftruncate",
@@ -2074,17 +2074,17 @@ ALLOWED_SYSCALLS_LIGHT = [
     "mkdir", "mkdirat", "rmdir", "unlink", "unlinkat",
     "link", "linkat", "symlink", "symlinkat",
     "chmod", "fchmod", "chown", "fchown", "lchown",
-    
+
     # Socket (受限于 network_mode)
     "socket", "bind", "listen", "accept", "accept4",
     "connect", "sendto", "recvfrom", "sendmsg", "recvmsg",
     "getsockname", "getpeername", "setsockopt", "getsockopt",
     "shutdown", "socketpair",
-    
+
     # IO
     "poll", "select", "epoll_create", "epoll_create1",
     "epoll_ctl", "epoll_wait", "epoll_pwait",
-    
+
     # 文件描述符
     "dup", "dup2", "dup3", "pipe", "pipe2",
     "fcntl", "flock", "ioctl", "tee", "splice",
@@ -2103,16 +2103,16 @@ ALLOWED_SYSCALLS_SECURE = list(set(ALLOWED_SYSCALLS_LIGHT) - {
 
 gsd2 在典型 Code Agent 工作负载下的性能数据（Intel Xeon Gold 6230, 16 核）：
 
-| 模式 | 启动时间 | 内存开销 | CPU 开销 | 适用场景 |
-|------|---------|---------|---------|---------|
-| Light (Docker) | 80ms | 1.2MB | <2% | 可信代码、快速反馈 |
-| Standard (Docker+Seccomp) | 95ms | 1.5MB | <3% | 一般代码审查 |
-| Secure (gVisor) | 220ms | 85MB | 8-12% | 不可信用户代码 |
+| 模式                      | 启动时间 | 内存开销 | CPU 开销 | 适用场景           |
+| ------------------------- | -------- | -------- | -------- | ------------------ |
+| Light (Docker)            | 80ms     | 1.2MB    | <2%      | 可信代码、快速反馈 |
+| Standard (Docker+Seccomp) | 95ms     | 1.5MB    | <3%      | 一般代码审查       |
+| Secure (gVisor)           | 220ms    | 85MB     | 8-12%    | 不可信用户代码     |
 
 ```
 Benchmark: gsd2-sandbox-perf (10k iterations)
 Light Mode:    mean=82ms, p95=95ms, p99=110ms
-Standard Mode: mean=98ms, p95=115ms, p99=135ms  
+Standard Mode: mean=98ms, p95=115ms, p99=135ms
 Secure Mode:   mean=225ms, p95=260ms, p99=320ms
 ```
 
@@ -2128,6 +2128,7 @@ Secure Mode:   mean=225ms, p95=260ms, p99=320ms
 4. **gsd2 实践**：通过 Trust Level 驱动的双模式策略，在性能和安全性之间取得工程化平衡
 
 选择沙箱方案时，应基于以下问题给出答案：
+
 - 代码来源是否可信？
 - 隔离失败的后果是什么？
 - 执行频率和延迟要求是什么？
@@ -2137,4 +2138,4 @@ Secure Mode:   mean=225ms, p95=260ms, p99=320ms
 
 ---
 
-*本文是 Code Agent 系列的第六章，关注沙箱隔离技术。后续章节将探讨代码执行引擎、日志审计、灾难恢复等主题。*
+_本文是 Code Agent 系列的第六章，关注沙箱隔离技术。后续章节将探讨代码执行引擎、日志审计、灾难恢复等主题。_

@@ -12,14 +12,14 @@ tags:
   - ingress
 ---
 
-> [!info] Cilium 2026 深度探索系列
-> 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+> [!info] Cilium 2026 深度探索系列 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+>
 > 1. [[2026-04-14-cilium-deep-dive-ch1-cilium-overview|第一章：Cilium 概述]]
 > 2. [[2026-04-14-cilium-deep-dive-ch2-architecture|第二章：Cilium 架构]]
-> ...
-> 25. [[2026-04-14-cilium-deep-dive-ch25-etcd|第二十五章：etcd]]
-> 26. [[2026-04-14-cilium-deep-dive-ch26-ingress|第二十六章：Cilium Ingress Controller]]
-> 27. **第二十七章：Gateway API** ←
+>    ...
+> 3. [[2026-04-14-cilium-deep-dive-ch25-etcd|第二十五章：etcd]]
+> 4. [[2026-04-14-cilium-deep-dive-ch26-ingress|第二十六章：Cilium Ingress Controller]]
+> 5. **第二十七章：Gateway API** ←
 
 ---
 
@@ -64,15 +64,15 @@ Gateway API 是 Kubernetes 下一代的入口流量管理标准，提供了比�
 
 ### 1.2 Gateway API vs Ingress
 
-| 特性 | Ingress | Gateway API |
-|:---|:---|:---|
-| **API 版本** | networking.k8s.io/v1 | gateway.networking.k8s.io/v1 |
-| **资源关系** | 单一资源 | Gateway + Route 分离 |
-| **扩展性** | 注解驱动 | 原生 CRD 支持 |
-| **RoleBinding** | 有限 | Route 级别的 RBAC |
-| **协议支持** | HTTP/HTTPS | HTTP/HTTPS/TCP/UDP/gRPC |
-| **流量权重** | 注解 | 原生字段 |
-| **多租户** | 受限 | 原生支持 |
+| 特性            | Ingress              | Gateway API                  |
+| :-------------- | :------------------- | :--------------------------- |
+| **API 版本**    | networking.k8s.io/v1 | gateway.networking.k8s.io/v1 |
+| **资源关系**    | 单一资源             | Gateway + Route 分离         |
+| **扩展性**      | 注解驱动             | 原生 CRD 支持                |
+| **RoleBinding** | 有限                 | Route 级别的 RBAC            |
+| **协议支持**    | HTTP/HTTPS           | HTTP/HTTPS/TCP/UDP/gRPC      |
+| **流量权重**    | 注解                 | 原生字段                     |
+| **多租户**      | 受限                 | 原生支持                     |
 
 ---
 
@@ -114,37 +114,37 @@ metadata:
 spec:
   gatewayClassName: cilium
   listeners:
-  - name: https
-    port: 443
-    protocol: HTTPS
-    tls:
-      mode: Terminate
-      certificateRefs:
-      - name: cafe-tls
-        kind: Secret
-        group: ""
-        namespace: ingress
-    allowedRoutes:
-      namespaces:
-        from: Same
-  - name: http
-    port: 80
-    protocol: HTTP
-    allowedRoutes:
-      namespaces:
-        from: Same
+    - name: https
+      port: 443
+      protocol: HTTPS
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: cafe-tls
+            kind: Secret
+            group: ""
+            namespace: ingress
+      allowedRoutes:
+        namespaces:
+          from: Same
+    - name: http
+      port: 80
+      protocol: HTTP
+      allowedRoutes:
+        namespaces:
+          from: Same
 ```
 
 ### 3.1 Listener 配置详解
 
-| 字段 | 说明 |
-|:---|:---|
-| `name` | 监听器名称 |
-| `port` | 监听端口 |
-| `protocol` | HTTP/HTTPS/TCP/UDP/gRPC |
-| `tls.mode` | Passthrough/Terminate |
-| `tls.certificateRefs` | TLS 证书引用 |
-| `allowedRoutes.namespaces` | 路由命名空间范围 |
+| 字段                       | 说明                    |
+| :------------------------- | :---------------------- |
+| `name`                     | 监听器名称              |
+| `port`                     | 监听端口                |
+| `protocol`                 | HTTP/HTTPS/TCP/UDP/gRPC |
+| `tls.mode`                 | Passthrough/Terminate   |
+| `tls.certificateRefs`      | TLS 证书引用            |
+| `allowedRoutes.namespaces` | 路由命名空间范围        |
 
 ### 3.2 TLS 配置
 
@@ -153,14 +153,14 @@ spec:
 ```yaml
 spec:
   listeners:
-  - name: https
-    port: 443
-    protocol: HTTPS
-    tls:
-      mode: Terminate
-      certificateRefs:
-      - name: cafe-tls-cert
-        kind: Secret
+    - name: https
+      port: 443
+      protocol: HTTPS
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: cafe-tls-cert
+            kind: Secret
 ```
 
 **透传模式（Passthrough）**：
@@ -168,14 +168,14 @@ spec:
 ```yaml
 spec:
   listeners:
-  - name: tls-passthrough
-    port: 443
-    protocol: TLS
-    tls:
-      mode: Passthrough
-      allowedRoutes:
-        namespaces:
-          from: Same
+    - name: tls-passthrough
+      port: 443
+      protocol: TLS
+      tls:
+        mode: Passthrough
+        allowedRoutes:
+          namespaces:
+            from: Same
 ```
 
 ---
@@ -192,61 +192,61 @@ metadata:
   namespace: default
 spec:
   parentRefs:
-  - name: cafe-gateway
-    namespace: ingress
-    sectionName: https
+    - name: cafe-gateway
+      namespace: ingress
+      sectionName: https
   hostnames:
-  - "cafe.example.com"
+    - "cafe.example.com"
   rules:
-  - matches:
-    - path:
-        type: PathPrefix
-        value: /tea
-    filters:
-    - type: RequestHeaderModifier
-      requestHeaderModifier:
-        add:
-        - name: X-Tea-Request
-          value: "true"
-    backendRefs:
-    - name: tea-svc
-      port: 80
-      weight: 1
-  - matches:
-    - path:
-        type: Exact
-        value: /coffee
-    filters:
-    - type: ResponseHeaderModifier
-      responseHeaderModifier:
-        add:
-        - name: X-Coffee-Served
-          value: "true"
-    backendRefs:
-    - name: coffee-svc
-      port: 80
-      weight: 1
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /tea
+      filters:
+        - type: RequestHeaderModifier
+          requestHeaderModifier:
+            add:
+              - name: X-Tea-Request
+                value: "true"
+      backendRefs:
+        - name: tea-svc
+          port: 80
+          weight: 1
+    - matches:
+        - path:
+            type: Exact
+            value: /coffee
+      filters:
+        - type: ResponseHeaderModifier
+          responseHeaderModifier:
+            add:
+              - name: X-Coffee-Served
+                value: "true"
+      backendRefs:
+        - name: coffee-svc
+          port: 80
+          weight: 1
 ```
 
 ### 4.1 路径匹配类型
 
-| 类型 | 说明 | 示例 |
-|:---|:---|:---|
-| `Exact` | 精确匹配 | `/coffee` 仅匹配 `/coffee` |
-| `PathPrefix` | 前缀匹配 | `/tea` 匹配 `/tea`, `/teapot` |
-| `RegularExpression` | 正则匹配 | `/users/[0-9]+` |
+| 类型                | 说明     | 示例                          |
+| :------------------ | :------- | :---------------------------- |
+| `Exact`             | 精确匹配 | `/coffee` 仅匹配 `/coffee`    |
+| `PathPrefix`        | 前缀匹配 | `/tea` 匹配 `/tea`, `/teapot` |
+| `RegularExpression` | 正则匹配 | `/users/[0-9]+`               |
 
 ### 4.2 权重路由
 
 ```yaml
 rules:
-- backendRefs:
-  - name: service-v1
-    port: 80
-    weight: 90
-  - name: service-v2
-    port: 80
-    weight: 10
+  - backendRefs:
+      - name: service-v1
+        port: 80
+        weight: 90
+      - name: service-v2
+        port: 80
+        weight: 10
 ```
 
 ---
@@ -263,20 +263,20 @@ metadata:
   namespace: default
 spec:
   parentRefs:
-  - name: cafe-gateway
-    namespace: ingress
-    sectionName: https
+    - name: cafe-gateway
+      namespace: ingress
+      sectionName: https
   hostnames:
-  - "api.example.com"
+    - "api.example.com"
   rules:
-  - matches:
-    - method: POST
-      service: cafe.CoffeeService
-    - method: GET
-      service: cafe.TeaService
-    backendRefs:
-    - name: grpc-backend
-      port: 50051
+    - matches:
+        - method: POST
+          service: cafe.CoffeeService
+        - method: GET
+          service: cafe.TeaService
+      backendRefs:
+        - name: grpc-backend
+          port: 50051
 ```
 
 ---
@@ -292,13 +292,13 @@ metadata:
   name: tcp-route
 spec:
   parentRefs:
-  - name: cafe-gateway
-    namespace: ingress
-    sectionName: tcp
+    - name: cafe-gateway
+      namespace: ingress
+      sectionName: tcp
   rules:
-  - backendRefs:
-    - name: tcp-backend
-      port: 9000
+    - backendRefs:
+        - name: tcp-backend
+          port: 9000
 ```
 
 ### 6.2 UDPRoute
@@ -310,13 +310,13 @@ metadata:
   name: udp-route
 spec:
   parentRefs:
-  - name: cafe-gateway
-    namespace: ingress
-    sectionName: udp
+    - name: cafe-gateway
+      namespace: ingress
+      sectionName: udp
   rules:
-  - backendRefs:
-    - name: dns-backend
-      port: 53
+    - backendRefs:
+        - name: dns-backend
+          port: 53
 ```
 
 ---
@@ -329,47 +329,47 @@ Gateway API 的 Filter 机制允许在请求/响应链中注入处理逻辑：
 
 ```yaml
 filters:
-- type: RequestHeaderModifier
-  requestHeaderModifier:
-    add:
-    - name: X-Frontend-ID
-      value: "gateway-1"
-    remove:
-    - name: X-Debug
+  - type: RequestHeaderModifier
+    requestHeaderModifier:
+      add:
+        - name: X-Frontend-ID
+          value: "gateway-1"
+      remove:
+        - name: X-Debug
 ```
 
 ### 7.2 响应头修改
 
 ```yaml
 filters:
-- type: ResponseHeaderModifier
-  responseHeaderModifier:
-    add:
-    - name: X-Served-By
-      value: "cilium-gateway"
+  - type: ResponseHeaderModifier
+    responseHeaderModifier:
+      add:
+        - name: X-Served-By
+          value: "cilium-gateway"
 ```
 
 ### 7.3 请求镜像
 
 ```yaml
 filters:
-- type: RequestMirror
-  requestMirror:
-    backendRef:
-      name: staging-backend
-      port: 80
+  - type: RequestMirror
+    requestMirror:
+      backendRef:
+        name: staging-backend
+        port: 80
 ```
 
 ### 7.4 重试策略
 
 ```yaml
 filters:
-- type: RequestRetry
-  requestRetry:
-    retries: 3
-    conditions:
-    - type: GatewayFamily
-      status: "500"
+  - type: RequestRetry
+    requestRetry:
+      retries: 3
+      conditions:
+        - type: GatewayFamily
+          status: "500"
 ```
 
 ---
@@ -436,8 +436,8 @@ metadata:
   namespace: default
 spec:
   ports:
-  - port: 80
-    targetPort: 8080
+    - port: 80
+      targetPort: 8080
   selector:
     app: tea
 ---
@@ -448,8 +448,8 @@ metadata:
   namespace: default
 spec:
   ports:
-  - port: 80
-    targetPort: 8080
+    - port: 80
+      targetPort: 8080
   selector:
     app: coffee
 ---
@@ -469,13 +469,13 @@ spec:
         app: tea
     spec:
       containers:
-      - name: tea
-        image: hashicorp/http-echo
-        args:
-        - "-text=Hello from Tea Service"
-        - "-listen=:8080"
-        ports:
-        - containerPort: 8080
+        - name: tea
+          image: hashicorp/http-echo
+          args:
+            - "-text=Hello from Tea Service"
+            - "-listen=:8080"
+          ports:
+            - containerPort: 8080
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -493,13 +493,13 @@ spec:
         app: coffee
     spec:
       containers:
-      - name: coffee
-        image: hashicorp/http-echo
-        args:
-        - "-text=Hello from Coffee Service"
-        - "-listen=:8080"
-        ports:
-        - containerPort: 8080
+        - name: coffee
+          image: hashicorp/http-echo
+          args:
+            - "-text=Hello from Coffee Service"
+            - "-listen=:8080"
+          ports:
+            - containerPort: 8080
 ```
 
 ### 9.2 创建 Gateway
@@ -514,22 +514,22 @@ metadata:
 spec:
   gatewayClassName: cilium
   listeners:
-  - name: https
-    port: 443
-    protocol: HTTPS
-    tls:
-      mode: Terminate
-      certificateRefs:
-      - name: cafe-tls
-    allowedRoutes:
-      namespaces:
-        from: Same
-  - name: http
-    port: 80
-    protocol: HTTP
-    allowedRoutes:
-      namespaces:
-        from: Same
+    - name: https
+      port: 443
+      protocol: HTTPS
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: cafe-tls
+      allowedRoutes:
+        namespaces:
+          from: Same
+    - name: http
+      port: 80
+      protocol: HTTP
+      allowedRoutes:
+        namespaces:
+          from: Same
 ```
 
 ### 9.3 创建 HTTPRoute
@@ -543,26 +543,26 @@ metadata:
   namespace: default
 spec:
   parentRefs:
-  - name: cafe-gateway
-    namespace: ingress
-    sectionName: https
+    - name: cafe-gateway
+      namespace: ingress
+      sectionName: https
   hostnames:
-  - "cafe.example.com"
+    - "cafe.example.com"
   rules:
-  - matches:
-    - path:
-        type: PathPrefix
-        value: /tea
-    backendRefs:
-    - name: tea-svc
-      port: 80
-  - matches:
-    - path:
-        type: PathPrefix
-        value: /coffee
-    backendRefs:
-    - name: coffee-svc
-      port: 80
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /tea
+      backendRefs:
+        - name: tea-svc
+          port: 80
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /coffee
+      backendRefs:
+        - name: coffee-svc
+          port: 80
 ```
 
 ---
@@ -574,24 +574,24 @@ spec:
 ```yaml
 spec:
   listeners:
-  - name: tenant-a
-    port: 80
-    protocol: HTTP
-    allowedRoutes:
-      namespaces:
-        from: Selector
-        selector:
-          matchLabels:
-            tenant: a
-  - name: tenant-b
-    port: 80
-    protocol: HTTP
-    allowedRoutes:
-      namespaces:
-        from: Selector
-        selector:
-          matchLabels:
-            tenant: b
+    - name: tenant-a
+      port: 80
+      protocol: HTTP
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels:
+              tenant: a
+    - name: tenant-b
+      port: 80
+      protocol: HTTP
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels:
+              tenant: b
 ```
 
 ### 10.2 RBAC 权限控制
@@ -604,10 +604,10 @@ metadata:
   name: tenant-a-gateway-admin
   namespace: ingress
 rules:
-- apiGroups: ["gateway.networking.k8s.io"]
-  resources: ["httproutes"]
-  verbs: ["get", "list", "watch", "create", "update", "patch"]
-  resourceNames: ["tenant-a-*"]
+  - apiGroups: ["gateway.networking.k8s.io"]
+    resources: ["httproutes"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+    resourceNames: ["tenant-a-*"]
 ```
 
 ---
@@ -633,14 +633,14 @@ kubectl get gateway -A
 # Gateway 状态条件
 status:
   conditions:
-  - type: Accepted
-    status: True
-    reason: Accepted
-    message: "Gateway accepted"
-  - type: ResolvedRefs
-    status: True
-    reason: ResolvedRefs
-    message: "All references resolved"
+    - type: Accepted
+      status: True
+      reason: Accepted
+      message: "Gateway accepted"
+    - type: ResolvedRefs
+      status: True
+      reason: ResolvedRefs
+      message: "All references resolved"
 ```
 
 ### 11.3 Cilium CLI 调试
@@ -701,19 +701,19 @@ metadata:
   namespace: default
 spec:
   parentRefs:
-  - name: production-gateway
-    namespace: ingress
+    - name: production-gateway
+      namespace: ingress
   hostnames:
-  - "api.example.com"
+    - "api.example.com"
   rules:
-  # 默认后端（404 处理）
-  - backendRefs:
-    - name: default-backend
-      port: 80
-    matches:
-    - path:
-        type: PathPrefix
-        value: /
+    # 默认后端（404 处理）
+    - backendRefs:
+        - name: default-backend
+          port: 80
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
 ```
 
 ---

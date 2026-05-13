@@ -10,8 +10,8 @@ tags:
 description: "深入解析 Zeek Hook 机制——Hook 与事件的区别、hook 处理程序编写、&priority 短路求值、hook 调用、内置 hook 示例"
 ---
 
-> [!info] Zeek 2026 深度探索系列
-> 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Zeek 2026 深度探索系列 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-15-zeek-deep-dive-ch1-overview|第一章：Zeek 概述]]
 > 2. [[2026-04-15-zeek-deep-dive-ch2-installation|第二章：安装部署]]
 > 3. [[2026-04-15-zeek-deep-dive-ch3-config|第三章：配置系统]]
@@ -61,13 +61,13 @@ description: "深入解析 Zeek Hook 机制——Hook 与事件的区别、hook 
 
 ### 1.2 核心差异
 
-| 特性 | Event | Hook |
-| :--- | :--- | :--- |
-| **执行模型** | 广播（所有处理程序执行） | 短路（可中断） |
-| **返回值** | 无 | `bool`（可选） |
-| **中断能力** | 无 | `break`/`return F` |
-| **调用方式** | 自动（由事件引擎） | 显式调用 |
-| **使用场景** | 通用事件处理 | 条件检查、访问控制、预处理 |
+| 特性         | Event                    | Hook                       |
+| :----------- | :----------------------- | :------------------------- |
+| **执行模型** | 广播（所有处理程序执行） | 短路（可中断）             |
+| **返回值**   | 无                       | `bool`（可选）             |
+| **中断能力** | 无                       | `break`/`return F`         |
+| **调用方式** | 自动（由事件引擎）       | 显式调用                   |
+| **使用场景** | 通用事件处理             | 条件检查、访问控制、预处理 |
 
 ---
 
@@ -265,6 +265,7 @@ hook MyHook(...) &priority=10 {
 ```
 
 > [!warning] 行为差异
+>
 > - `return F`：当前处理程序返回 False，hook 调用返回 False，但**后续处理程序仍会执行**
 > - `break`：立即停止整个 hook 链，**后续处理程序不执行**
 
@@ -578,5 +579,6 @@ event every_1_sec() {
 **下一章**将介绍 **Packages**——Zeek 的脚本组织和包管理机制，包括 `@load`、ZKG（Zeek Package Manager）和脚本模块化。
 
 > [!tip] 延伸阅读
+>
 > - [Zeek Hook Documentation](https://docs.zeek.org/en/stable/script-reference/)
 > - [Zeek Script Loading](https://docs.zeek.org/en/stable/scripts/base/frameworks/scripts/)

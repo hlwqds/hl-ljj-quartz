@@ -624,14 +624,14 @@ add_vpp_plugin(myplugin
 
 VPP Plugin 开发要点：
 
-| 阶段 | 关键点 |
-|------|--------|
-| **API 设计** | 定义清晰的请求/响应消息 |
-| **Plugin 注册** | 正确的初始化/清理函数 |
-| **消息处理** | Binary API 高性能通信 |
-| **CLI** | 人类可读的调试命令 |
-| **统计** | 暴露可观测性数据 |
-| **测试** | Python/Go bindings 测试 |
+| 阶段            | 关键点                  |
+| --------------- | ----------------------- |
+| **API 设计**    | 定义清晰的请求/响应消息 |
+| **Plugin 注册** | 正确的初始化/清理函数   |
+| **消息处理**    | Binary API 高性能通信   |
+| **CLI**         | 人类可读的调试命令      |
+| **统计**        | 暴露可观测性数据        |
+| **测试**        | Python/Go bindings 测试 |
 
 ---
 
@@ -639,5 +639,5 @@ VPP Plugin 开发要点：
 
 - [VPP Plugin How-To](https://wiki.fd.io/view/VPP/How_To_Write_A_VPP_Plugin)
 - [VPP API Guide](https://wiki.fd.io/view/VPP/VPP_API)
-- [VPP CLI](https://wiki.fd.io/view/VPP/Command-line_Interface_(CLI))
+- [VPP CLI](<https://wiki.fd.io/view/VPP/Command-line_Interface_(CLI)>)
 - [api-app 示例](https://github.com/FDio/vpp/tree/master/src/vpp-api)

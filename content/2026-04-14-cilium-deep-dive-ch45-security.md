@@ -14,14 +14,8 @@ tags:
   - encryption
 ---
 
-> [!info] Cilium 2026 深度探索系列
-> 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
-> ...
-> 42. [[2026-04-14-cilium-deep-dive-ch42-performance|第四十二章：性能调优]]
-> 43. [[2026-04-14-cilium-deep-dive-ch43-ecosystem|第四十三章：Cilium 生态概述]]
-> 44. [[2026-04-14-cilium-deep-dive-ch44-bgp|第四十四章：BGP 网络集成]]
-> 45. **第四十五章：安全生态集成** ←
-> 46. [[2026-04-14-cilium-deep-dive-ch46-operator|第四十六章：扩展与 Operator]]
+> [!info] Cilium 2026 深度探索系列 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+> ... 42. [[2026-04-14-cilium-deep-dive-ch42-performance|第四十二章：性能调优]] 43. [[2026-04-14-cilium-deep-dive-ch43-ecosystem|第四十三章：Cilium 生态概述]] 44. [[2026-04-14-cilium-deep-dive-ch44-bgp|第四十四章：BGP 网络集成]] 45. **第四十五章：安全生态集成** ← 46. [[2026-04-14-cilium-deep-dive-ch46-operator|第四十六章：扩展与 Operator]]
 
 ---
 
@@ -155,13 +149,13 @@ cilium encrypt status
 
 ### 2.3 加密比较
 
-| 特性 | WireGuard | IPsec |
-|:---|:---|:---|
-| 内核要求 | 5.6+ | 4.19+ |
-| 性能 | 更高 | 较高 |
-| 硬件卸载 | 部分支持 | 完整支持 |
-| 配置复杂度 | 简单 | 中等 |
-| 兼容性 | 较新 | 广泛 |
+| 特性       | WireGuard | IPsec    |
+| :--------- | :-------- | :------- |
+| 内核要求   | 5.6+      | 4.19+    |
+| 性能       | 更高      | 较高     |
+| 硬件卸载   | 部分支持  | 完整支持 |
+| 配置复杂度 | 简单      | 中等     |
+| 兼容性     | 较新      | 广泛     |
 
 ---
 
@@ -646,7 +640,7 @@ spec:
     - "10.244.0.100"
   # 排除某些目的地
   excludedCIDRs:
-    - "10.0.0.0/8"  # 集群内部
+    - "10.0.0.0/8" # 集群内部
 ```
 
 ---

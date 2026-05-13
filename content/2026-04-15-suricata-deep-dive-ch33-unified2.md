@@ -11,8 +11,8 @@ tags:
 description: "深入解析 Suricata 的 Unified2 输出系统：unified2 配置、Barnyard2 集成、二进制格式、以及源码实现"
 ---
 
-> [!info] Suricata 2026 深度探索系列
-> 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Suricata 2026 深度探索系列 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-15-suricata-deep-dive-ch1-overview|第一章：Suricata 概述]]
 > 2. [[2026-04-15-suricata-deep-dive-ch2-config|第二章：Suricata 配置系统]]
 > 3. [[2026-04-15-suricata-deep-dive-ch3-runmodes|第三章：Runmodes 运行模式]]
@@ -59,20 +59,20 @@ graph LR
         A["Alert 生成"]
         U["Unified2 输出"]
     end
-    
+
     subgraph "Snort 生态"
         B["Barnyard2"]
         S["Snort"]
         DB["数据库"]
         W["Web UI"]
     end
-    
+
     subgraph "其他工具"
         B2["Basic Analysis"]
         S2["Sguil"]
         E["Enterprise"
     end
-    
+
     A --> U
     U --> |"unified2.log"| B
     B --> DB
@@ -93,17 +93,17 @@ graph LR
 outputs:
   - unified2:
       enabled: yes
-      
+
       # 输出文件
       filename: unified2.log
-      
+
       # 每批次记录数
       batch-size: 100
-      
+
       # 是否包含额外数据
       xff:
         enabled: no
-        
+
       # 告警格式
       alert-variant: 2
 ```
@@ -115,21 +115,21 @@ outputs:
 outputs:
   - unified2:
       enabled: yes
-      
+
       filename: /var/log/suricata/unified2.log
-      
+
       # 类型配置
       types:
         - alert:
             # 是否包含数据包
             include-packet-data: yes
-            
+
             # 保存在 unified2 中的数据包数量
             packet-data-limit: 2
-            
+
             # 是否包含应用层数据
             app-layer-event: yes
-            
+
         - file-log:
             # 是否记录文件信息
             enabled: yes
@@ -142,13 +142,13 @@ outputs:
 outputs:
   - unified2:
       enabled: yes
-      
+
       # Barnyard2 兼容格式
       filename: unified2.log
-      
+
       # 关闭 Suricata 特有的扩展
       nostamp: yes
-      
+
       # 启用 Barnyard2 兼容模式
       barnyard2:
         enabled: yes
@@ -165,19 +165,19 @@ outputs:
 typedef struct Unified2FileHeader_ {
     /* 文件类型标识 */
     uint32_t type;          // UNIFIED2_FILE_TYPE = 2
-    
+
     /* 版本 */
     uint32_t version;       // UNIFIED2_VERSION = 20141007
-    
+
     /* 传感器 ID */
     uint32_t sensor_id;
-    
+
     /* 签名总数（初始为 0） */
     uint32_t sig_count;
-    
+
     /* 事件总数（初始为 0） */
     uint32_t event_count;
-    
+
 } Unified2FileHeader;
 
 /*
@@ -197,50 +197,50 @@ typedef struct Unified2FileHeader_ {
 typedef struct Unified2Event_ {
     /* 事件类型 */
     uint32_t type;          // UNIFIED2_IDS_EVENT = 2
-    
+
     /* 事件 ID */
     uint32_t event_id;
-    
+
     /* 事件时间戳 */
     uint32_t event_second;   // 秒
     uint32_t event_microsecond;  // 微秒
-    
+
     /* 触发规则信息 */
     uint32_t signature_id;   // 规则 ID (snort g_id/s_id)
     uint32_t generator_id;  // 生成器 ID (snort GID)
-    
+
     /* 签名 revision */
     uint32_t signature_revision;
-    
+
     /* 分类 ID */
     uint32_t classification_id;
-    
+
     /* 优先级 */
     uint32_t priority;
-    
+
     /* 源 IP */
     uint32_t src_ip[4];      // IPv6 支持
-    
+
     /* 目标 IP */
     uint32_t dst_ip[4];      // IPv6 支持
-    
+
     /* 源端口/协议 */
     uint16_t src_port;
     uint8_t  protocol;        // 6=TCP, 17=UDP, 1=ICMP
-    
+
     /* 目标端口/协议 */
     uint16_t dst_port;
     uint8_t  dest_protocol;
-    
+
     /* 触发标志 */
     uint8_t  impact_flag;    // 0=blocked, 1=whitlisted, 2=blacklisted
-    
+
     /* 阻塞标志 */
     uint8_t  blocked;
-    
+
     /* Flow 标签 */
     uint32_t flow_label;
-    
+
 } Unified2Event;
 
 /*
@@ -268,29 +268,29 @@ typedef struct Unified2Event_ {
 typedef struct Unified2Packet_ {
     /* 事件类型 */
     uint32_t type;           // UNIFIED2_IDS_EVENT_PKT = 7
-    
+
     /* 事件 ID */
     uint32_t event_id;
     uint32_t event_second;
-    
+
     /* 包数据长度 */
     uint32_t packet_length;
-    
+
     /* Packet 数据 */
     uint8_t packet_data[65535];  // 实际包数据
-    
+
     /* 原始数据包头 */
     uint32_t original_packet_length;
-    
+
     /* 接口索引 */
     uint32_t ifindex;
-    
+
     /* VLAN ID */
     uint16_t vlan_id;
-    
+
     /* 填充 */
     uint16_t pad;
-    
+
 } Unified2Packet;
 ```
 
@@ -337,7 +337,7 @@ static OutputInitResult OutputUnified2LogInit(ConfNode *conf)
     if (ctx == NULL) {
         return ResultInitFail;
     }
-    
+
     /* 获取文件名 */
     const char *filename = ConfNodeLookupChildValue(conf, "filename");
     if (filename != NULL) {
@@ -345,7 +345,7 @@ static OutputInitResult OutputUnified2LogInit(ConfNode *conf)
     } else {
         ctx->filename = SCStrdup("unified2.log");
     }
-    
+
     /* 获取批次大小 */
     const char *batch_str = ConfNodeLookupChildValue(conf, "batch-size");
     if (batch_str != NULL) {
@@ -353,7 +353,7 @@ static OutputInitResult OutputUnified2LogInit(ConfNode *conf)
     } else {
         ctx->batch_size = 100;
     }
-    
+
     /* 初始化文件 */
     ctx->fp = fopen(ctx->filename, "wb");
     if (ctx->fp == NULL) {
@@ -362,13 +362,13 @@ static OutputInitResult OutputUnified2LogInit(ConfNode *conf)
         SCFree(ctx);
         return ResultInitFail;
     }
-    
+
     /* 写入文件头 */
     Unified2WriteFileHeader(ctx->fp);
-    
+
     /* 注册输出 */
     OutputRegisterUnified2Logger(&ctx->module, ctx);
-    
+
     return ResultOk;
 }
 ```
@@ -380,22 +380,22 @@ static OutputInitResult OutputUnified2LogInit(ConfNode *conf)
 static int Unified2WriteFileHeader(FILE *fp)
 {
     Unified2FileHeader header;
-    
+
     /* 填充文件头 */
     header.type = UNIFIED2_FILE_TYPE;
     header.version = UNIFIED2_VERSION;
     header.sensor_id = 1;
     header.sig_count = 0;
     header.event_count = 0;
-    
+
     /* 写入文件 */
     if (fwrite(&header, sizeof(header), 1, fp) != 1) {
         return -1;
     }
-    
+
     /* 刷新缓冲区 */
     fflush(fp);
-    
+
     return 0;
 }
 ```
@@ -408,20 +408,20 @@ static int Unified2WriteEvent(FILE *fp, const Packet *p,
                                const Alert *alert)
 {
     Unified2Event event;
-    
+
     /* 填充 Event */
     event.type = UNIFIED2_IDS_EVENT;
     event.event_id = p->pkt_src << 16 | (p->ts.tv_sec & 0xFFFF);
     event.event_second = p->ts.tv_sec;
     event.event_microsecond = p->ts.tv_usec;
-    
+
     /* 规则信息 */
     event.signature_id = alert->signature_id;
     event.generator_id = alert->gid;
     event.signature_revision = alert->rev;
     event.classification_id = alert->class_id;
     event.priority = alert->severity;
-    
+
     /* IP 地址 */
     if (PKT_IS_IPV4(p)) {
         event.src_ip[0] = ntohl(p->src.ipv4);
@@ -433,23 +433,23 @@ static int Unified2WriteEvent(FILE *fp, const Packet *p,
         memcpy(event.src_ip, &p->src.ipv6, 16);
         memcpy(event.dst_ip, &p->dst.ipv6, 16);
     }
-    
+
     /* 端口和协议 */
     event.src_port = p->sp;
     event.protocol = IP_GET_IPPROTO(p);
     event.dst_port = p->dp;
     event.dest_protocol = IP_GET_IPPROTO(p);
-    
+
     /* 标志 */
     event.impact_flag = 0;
     event.blocked = (p->verdict == VERDICT_DROP) ? 1 : 0;
     event.flow_label = p->flow_id;
-    
+
     /* 写入文件 */
     if (fwrite(&event, sizeof(event), 1, fp) != 1) {
         return -1;
     }
-    
+
     return 0;
 }
 ```
@@ -461,30 +461,30 @@ static int Unified2WriteEvent(FILE *fp, const Packet *p,
 static int Unified2WritePacket(FILE *fp, const Packet *p)
 {
     Unified2PacketHeader pkthdr;
-    
+
     /* 检查是否需要记录包数据 */
     if (!PacketAlertCheck(p, PACKET_ALERT_FLAG_DONT_STORE)) {
         return 0;
     }
-    
+
     /* 填充 Packet 头 */
     pkthdr.type = UNIFIED2_IDS_EVENT_PKT;
     pkthdr.event_id = p->pkt_src << 16 | (p->ts.tv_sec & 0xFFFF);
     pkthdr.event_second = p->ts.tv_sec;
     pkthdr.packet_length = p->pkt_len;
-    
+
     /* 写入 Packet 头 */
     if (fwrite(&pkthdr, sizeof(pkthdr), 1, fp) != 1) {
         return -1;
     }
-    
+
     /* 写入包数据 */
     if (p->pkt_len > 0) {
         if (fwrite(p->pkt, p->pkt_len, 1, fp) != 1) {
             return -1;
         }
     }
-    
+
     return 0;
 }
 ```
@@ -558,16 +558,16 @@ barnyard2 -c /etc/barnyard2.conf -f unified2.log -w /var/log/suricata/unified2.l
 outputs:
   - unified2:
       enabled: yes
-      
+
       types:
         - file-log:
             enabled: yes
-            
+
             # 记录文件信息
             file:
               enabled: yes
               include-hashes: md5,sha1,sha256
-              
+
             # 记录文件内容
             store-files: yes
             store-dir: /var/log/suricata/unified2-files
@@ -580,7 +580,7 @@ outputs:
 outputs:
   - unified2:
       enabled: yes
-      
+
       types:
         - flow:
             enabled: no
@@ -598,11 +598,11 @@ outputs:
 outputs:
   - unified2:
       enabled: yes
-      
+
       filename: /var/log/suricata/unified2.log
-      
+
       # Rotation 配置
-      limit: 1000  # 文件大小限制（MB）
+      limit: 1000 # 文件大小限制（MB）
 ```
 
 ### 7.2 手动 Rotation
@@ -691,13 +691,13 @@ CREATE TABLE udphdr (
 outputs:
   - unified2:
       enabled: yes
-      
+
       # 批量写入
       batch-size: 500
-      
+
       # 使用缓冲
       buffered: yes
-      
+
       # 异步写入
       async: yes
 ```
@@ -709,7 +709,7 @@ outputs:
 outputs:
   - unified2:
       enabled: yes
-      
+
       # 文件大小限制（MB）
       limit: 100
 ```
@@ -721,6 +721,7 @@ outputs:
 ### 10.1 Barnyard2 无法解析
 
 **检查**：
+
 - 确认 unified2 版本兼容
 - 检查 `barnyard2 -c /etc/barnyard2.conf --test-unity2 /path/to/file`
 - 查看 Barnyard2 版本是否支持 Suricata 扩展
@@ -728,15 +729,17 @@ outputs:
 ### 10.2 事件丢失
 
 **原因**：
+
 - Rotation 太快
 - Barnyard2 处理不及时
 
 **解决**：
+
 ```yaml
 outputs:
   - unified2:
       enabled: yes
-      
+
       # 增大文件限制
       limit: 5000
 ```
@@ -744,6 +747,7 @@ outputs:
 ### 10.3 数据库性能
 
 **优化**：
+
 - 使用批量插入
 - 配置合适的索引
 - 考虑使用 PostgreSQL 替代 MySQL

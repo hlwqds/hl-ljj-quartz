@@ -1,12 +1,24 @@
 ---
 title: "Kernel Protocol Stack 深度探索 (二十三)：TCP 数据与缓冲管理"
 date: 2026-04-13
-tags: [linux, kernel, networking, series, tcp, buffer, socket-buffer, receive-window, send-buffer, zero-copy]
+tags:
+  [
+    linux,
+    kernel,
+    networking,
+    series,
+    tcp,
+    buffer,
+    socket-buffer,
+    receive-window,
+    send-buffer,
+    zero-copy,
+  ]
 description: "深入解析 TCP 数据缓冲管理——sk_buff 在 TCP 中的使用、发送/接收缓冲区、滑动窗口、拥塞控制数据结构、zero-copy 优化"
 ---
 
-> [!info] Kernel Protocol Stack 深度探索系列
-> 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Kernel Protocol Stack 深度探索系列 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-kernel-protocol-stack-deep-dive-ch1-skbuff|第一章：sk_buff 与数据包生命周期]]
 > 2. [[2026-04-13-kernel-protocol-stack-deep-dive-ch2-netdevice|第二章：Netdevice 与网卡抽象]]
 > 3. [[2026-04-13-kernel-protocol-stack-deep-dive-ch3-ring-buffer|第三章：Ring Buffer 与 DMA]]
@@ -36,6 +48,7 @@ description: "深入解析 TCP 数据缓冲管理——sk_buff 在 TCP 中的使
 ## 1. 概述：TCP 缓冲管理
 
 TCP 在内核中使用 sk_buff 管理数据缓冲，实现：
+
 - 发送数据缓冲：存储待发送的应用数据
 - 接收数据缓冲：存储已接收待交付应用的数据
 - 滑动窗口：控制数据流速
@@ -51,27 +64,27 @@ TCP 在内核中使用 sk_buff 管理数据缓冲，实现：
 // include/linux/tcp.h
 struct tcp_sock {
     struct inet_connection_sock   inet_conn;
-    
+
     // 序列号相关
     __u32   snd_nxt;              // 下一个要发送的序列号
     __u32   snd_una;              // 最早未确认的序列号
     __u32   snd_wnd;              // 发送窗口大小
     __u32   rcv_nxt;              // 下一个期望接收的序列号
     __u32   rcv_wnd;              // 接收窗口大小
-    
+
     // 发送缓冲区
     struct {
         struct rb_root           out_of_order_queue;  // 乱序队列
         struct sk_buff_head      send_head;            // 发送队列
         int                      nonagle;              // Nagle 算法状态
     } tcp;
-    
+
     // 带宽估计
     __u32   srtt;                 // 平滑 RTT
     __u32   mdev;                 // RTT 偏差
     __u32   mdev_max;             // 最大 RTT 偏差
     __u32   rttvar;               // RTT 方差
-    
+
     // 拥塞控制
     u32     snd_cwnd;             // 拥塞窗口
     u32     snd_ssthresh;         // 慢启动阈值
@@ -130,12 +143,12 @@ int tcp_sendmsg(struct sock *sk, struct msghdr *msg, size_t size)
     struct tcp_sock *tp = tcp_sk(sk);
     struct sk_buff *skb;
     int frag_size, copied = 0;
-    
+
     while (msg->msg_iovlen > 0) {
         // 1. 获取要发送的数据
         struct iovec *iov = msg->msg_iov;
         size_t len = iov->iov_len;
-        
+
         // 2. 查找或创建 sk_buff
         skb = tcp_write_queue_tail(sk);
         if (!skb || skb_has_frag_list(skb)) {
@@ -144,16 +157,16 @@ int tcp_sendmsg(struct sock *sk, struct msghdr *msg, size_t size)
             tcp_init_nondata_skb(skb, tp->write_seq, TCPHDR_ACK | TCPHDR_PSH);
             skb_entail(sk, skb);
         }
-        
+
         // 3. 复制数据到 skb
         frag_size = min(len, skb_sh页可用(skb));
         if (copy_from_iter_full(skb_put(skb, frag_size), frag_size, &msg->msg_iter))
             copied += frag_size;
     }
-    
+
     // 4. 触发发送
     tcp_push(sk, tp, flags, tp->write_seq - tp->snd_nxt, tp->mss_cache, tp->nonagle);
-    
+
     return copied;
 }
 ```
@@ -167,11 +180,11 @@ static int tcp_transmit_skb(struct sock *sk, struct sk_buff *skb, int clone_it,
 {
     struct tcp_sock *tp = tcp_sk(sk);
     struct tcphdr *th;
-    
+
     // 1. 确保 skb 有足够空间
     skb_push(skb, sizeof(*th));
     skb_reset_transport_header(skb);
-    
+
     // 2. 构建 TCP 头
     th = tcp_hdr(skb);
     th->source      = htons(sk->sk_num);
@@ -180,7 +193,7 @@ static int tcp_transmit_skb(struct sock *sk, struct sk_buff *skb, int clone_it,
     th->ack_seq     = htonl(tp->rcv_nxt);
     th->window      = htons(tp->rcv_wnd);
     th->check       = 0;
-    
+
     // 3. 设置 flags
     th->fin         = flags & TCPHDR_FIN;
     th->syn         = flags & TCPHDR_SYN;
@@ -188,11 +201,11 @@ static int tcp_transmit_skb(struct sock *sk, struct sk_buff *skb, int clone_it,
     th->psh         = flags & TCPHDR_PSH;
     th->ack         = flags & TCPHDR_ACK;
     th->urg         = flags & TCPHDR_URG;
-    
+
     // 4. 计算校验和
     th->check = tcp_v4_check(skb->len, sk->sk_rcv_saddr,
                               sk->sk_daddr, csum_partial(th, th->doff * 4, 0));
-    
+
     // 5. 发送
     return ip_queue_xmit(skb, &inet_sk(sk)->cork.fl);
 }
@@ -227,27 +240,27 @@ ip_queue_xmit() -> 添加 IP 头
 int tcp_v4_rcv(struct sk_buff *skb)
 {
     struct sock *sk;
-    
+
     // 1. 验证 TCP 头
     if (!tcp_v4_checksum_init(skb))
         goto discard;
-    
+
     // 2. 查找对应的 socket
     sk = __inet_lookup_skb(&tcp_hashinfo, skb, th->source, th->dest);
     if (!sk)
         goto no_tcp_socket;
-    
+
     // 3. 处理 TIME_WAIT
     if (sk->sk_state == TCP_TIME_WAIT)
         return tcp_timewait_state_process(sk, skb, th);
-    
+
     // 4. 放入接收队列
     if (sk->sk_state == TCP_LISTEN) {
         // 监听 socket，交给 accept()
     } else {
         tcp_v4_do_rcv(sk, skb);
     }
-    
+
     return 0;
 }
 ```
@@ -263,30 +276,30 @@ static int tcp_rcv_established(struct sock *sk, struct sk_buff *skb)
     int len = skb->len;
     u32 seq = ntohl(th->seq);
     u32 ack = ntohl(th->ack_seq);
-    
+
     // 1. 更新 RTT
     if (th->ack && tp->lsndtime)
         tcp_ack_update_rtt(sk, ack, seq);
-    
+
     // 2. 检查序列号
     if (seq != tp->rcv_nxt)
         goto out_of_order;
-    
+
     // 3. 检查窗口
     if (th->window != tp->rcv_wnd)
         tcp_rcv_space_adjust(sk);
-    
+
     // 4. 交付应用数据
     if (skb->len > 0) {
         __skb_pull(skb, th->doff * 4);
         tcp_queue_rcv(sk, skb, &tp->ucopy.task);
     }
-    
+
     // 5. 发送 ACK
     tcp_send_ack(sk);
-    
+
     return 0;
-    
+
 out_of_order:
     // 放入乱序队列
     tcp_data_queue(sk, skb);
@@ -302,13 +315,13 @@ static void tcp_data_queue(struct sock *sk, struct sk_buff *skb)
     struct tcp_sock *tp = tcp_sk(sk);
     struct rb_node **p, *parent;
     int seq = TCP_SKB_CB(skb)->seq;
-    
+
     // 检查是否可以合并
     if (tcp_try_coalesce(sk, tp->receive_queue.prev, skb)) {
         kfree_skb(skb);
         return;
     }
-    
+
     // 插入红黑树（按序列号排序）
     p = &tp->out_of_order_queue.rb_node;
     while (*p) {
@@ -320,7 +333,7 @@ static void tcp_data_queue(struct sock *sk, struct sk_buff *skb)
     }
     rb_link_node(&skb->rbnode, parent, p);
     rb_insert_color(&skb->rbnode, &tp->out_of_order_queue);
-    
+
     // 尝试交付已排序的数据
     tcp_rcv_nxt_update(sk, tp->rcv_nxt);
 }
@@ -338,7 +351,7 @@ static void tcp_data_queue(struct sock *sk, struct sk_buff *skb)
 0         snd_una      snd_nxt                   snd_max
            |           |                           |
            |   已发送未确认  |   可发送（窗口内）         |  不能发送（窗口外）
-           
+
 接收方视角：
 |------------------|------------------------------|
 0               rcv_nxt                     rcv_nxt + rcv_wnd
@@ -354,9 +367,9 @@ static void tcp_rcv_space_adjust(struct sock *sk)
 {
     struct tcp_sock *tp = tcp_sk(sk);
     int rcv_wnd;
-    
+
     rcv_wnd = (tp->rcv_wq.wmem_queued - tp->rcv_qlen) ?: tp->rcv_wnd;
-    
+
     // 更新通告窗口
     if (rcv_wnd > tp->rcv_wnd) {
         tp->rcv_wnd = rcv_wnd;
@@ -396,19 +409,19 @@ struct tcp_sock {
     u32     snd_cwnd_cnt;         // 窗口内已发送字节
     u32     snd_cwnd_clamp;       // 窗口上限
     u32     snd_ssthresh;         // 慢启动阈值
-    
+
     // 快速恢复相关
     u32     high_seq;             // 最高发送序列号
     u32     retrans_stamp;        // 重传时间戳
     u32     undo_marker;          // 恢复点标记
-    
+
     // RTT 相关
     u32     srtt;                 // 平滑 RTT
     u32     mdev;                 // RTT 偏差
     u32     mdev_max;             // 最大 RTT 偏差
     u32     rttvar;               // RTT 方差
     u32     rtt_seq;              // RTT 采样序列号
-    
+
     // 带宽估计
     u32     snd_bw;               // 估计带宽
     u32     snd_bw_est;          // 平滑带宽
@@ -421,31 +434,31 @@ struct tcp_sock {
 // net/ipv4/tcp_cong.c
 struct tcp_congestion_ops {
     char            name[TCP_CA_NAME_MAX];
-    
+
     // 初始化
     void (*init)(struct sock *sk);
-    
+
     // 清理
     void (*release)(struct sock *sk);
-    
+
     // 慢启动
     u32  (*ssthresh)(struct sock *sk);
-    
+
     // 拥塞避免
     void (*cong_avoid)(struct sock *sk, u32 ack, u32 acked);
-    
+
     // 重传超时
     u32  (*recalc_ssthresh)(struct sock *sk);
-    
+
     // 处理 ACK
     void (*state)(struct sock *sk, u8 new_state);
-    
+
     // 取消拥塞
     void (*undo_cwnd)(struct sock *sk);
-    
+
     // CWR 状态
     void (*cwnd_event)(struct sock *sk, enum tcp_ca_event ev);
-    
+
     // 带宽采样
     u32  (*bkup_sa)(const struct sock *sk);
     u32  (*bkup_sk)(const struct sock *sk);
@@ -591,17 +604,17 @@ Zero-copy 方式：
 static void tcp_retransmit_timer(struct sock *sk)
 {
     struct tcp_sock *tp = tcp_sk(sk);
-    
+
     // RTO 超时，重传最早的段
     if (tp->packets_out == 0)
         return;
-    
+
     // 指数退避
     inet_csk(sk)->icsk_rto = min(sk->sk_rcv_saddr * 2, TCP_RTO_MAX);
-    
+
     // 重传
     tcp_retransmit_skb(sk, tcp_write_queue_head(sk));
-    
+
     // 更新慢启动阈值
     tp->snd_ssthresh = tcp_current_ssthresh(sk);
     tp->snd_cwnd = tp->snd_ssthresh;
@@ -615,7 +628,7 @@ static void tcp_retransmit_timer(struct sock *sk)
 if (th->ack == tp->snd_una && th->dupack >= 3) {
     // 快速重传
     tcp_xmit_retransmit_queue(sk);
-    
+
     // 进入快速恢复
     tp->high_seq = tp->snd_nxt;
     tp->frto_counter = 0;
@@ -635,16 +648,16 @@ static int tcp_sendmsg(struct sock *sk, struct msghdr *msg, size_t size)
 {
     struct tcp_sock *tp = tcp_sk(sk);
     int limit;
-    
+
     // 检查内存限制
     if (sk->sk_wmem_alloc + size > sk->sk_sndbuf) {
         // 等待内存释放或发送确认
         wait_for_memory(sk);
     }
-    
+
     // 分配 skb
     skb = alloc_skb_fclone(size + MAX_TCP_HEADER, sk->sk_allocation);
-    
+
     // 更新计数
     sk->sk_wmem_alloc += skb->truesize;
     tp->write_bytes += size;
@@ -659,7 +672,7 @@ static void tcp_prune_ofo_queue(struct sock *sk)
 {
     struct tcp_sock *tp = tcp_sk(sk);
     struct rb_node *node;
-    
+
     // 丢弃乱序队列中最老的包
     node = rb_first(&tp->out_of_order_queue);
     if (node) {
@@ -690,24 +703,28 @@ cat /proc/net/netstat | grep -i "tcp_mem"
 TCP 缓冲管理要点：
 
 **核心数据结构：**
+
 1. sk_buff 链表管理发送/接收队列
 2. 红黑树管理乱序包
 3. 滑动窗口控制数据流
 4. 拥塞窗口防止网络过载
 
 **关键流程：**
+
 1. send() -> sk_buff -> 发送队列 -> 添加 TCP 头 -> 发送
 2. 接收 -> 验证 -> 按序排列 -> 交付应用
 3. 乱序包放入 out_of_order_queue
 4. 重传队列管理丢失数据
 
 **性能优化：**
+
 1. 缓冲区自动调优
 2. Zero-copy（sendfile/splice/MSG_ZEROCOPY）
 3. 内存压力时丢包保流
 4. 拥塞控制算法选择
 
 **调优参数：**
+
 1. tcp_rmem / tcp_wmem：单连接缓冲区
 2. tcp_moderate_rcvbuf：自动调优
 3. tcp_congestion_control：拥塞算法

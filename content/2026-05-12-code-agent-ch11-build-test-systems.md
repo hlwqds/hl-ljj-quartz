@@ -38,6 +38,7 @@ clean:
 ```
 
 Make 的局限性在于：
+
 - 依赖规则需要手动维护
 - 并行构建支持有限
 - 跨平台支持需要额外处理
@@ -106,6 +107,7 @@ cc_test(
 ```
 
 Bazel 的核心特性：
+
 - **可重现构建**：相同的输入产生相同的输出
 - **远程缓存**：支持分布式构建缓存
 - **沙盒执行**：保证构建隔离性
@@ -135,13 +137,13 @@ Bazel 的核心特性：
 
 ### 1.3 构建系统对比
 
-| 特性 | Make | CMake | Bazel | Turborepo |
-|------|------|-------|-------|-----------|
-| **语言** | DSL | DSL | Starlark | JSON |
-| **依赖分析** | 手动 | 半自动 | 自动 | 自动 |
-| **远程缓存** | 不支持 | 需配置 | 原生支持 | 需配置 |
-| **跨平台** | 需适配 | 好 | 优秀 | 仅 JS |
-| **学习曲线** | 低 | 中 | 高 | 低 |
+| 特性         | Make         | CMake        | Bazel        | Turborepo   |
+| ------------ | ------------ | ------------ | ------------ | ----------- |
+| **语言**     | DSL          | DSL          | Starlark     | JSON        |
+| **依赖分析** | 手动         | 半自动       | 自动         | 自动        |
+| **远程缓存** | 不支持       | 需配置       | 原生支持     | 需配置      |
+| **跨平台**   | 需适配       | 好           | 优秀         | 仅 JS       |
+| **学习曲线** | 低           | 中           | 高           | 低          |
 | **适用场景** | C/C++/嵌入式 | C/C++ 跨平台 | 多语言大规模 | JS Monorepo |
 
 ## 2. 多语言构建支持
@@ -408,53 +410,53 @@ pytest --cov=gsd2 --cov-report=html  # 覆盖率报告
 
 ```typescript
 // src/__tests__/protocol.test.ts
-import { describe, it, expect, beforeEach } from 'vitest';
-import { ProtocolHandler } from '../protocol';
-import type { Message } from '../types';
+import { describe, it, expect, beforeEach } from "vitest"
+import { ProtocolHandler } from "../protocol"
+import type { Message } from "../types"
 
-describe('ProtocolHandler', () => {
-  let handler: ProtocolHandler;
+describe("ProtocolHandler", () => {
+  let handler: ProtocolHandler
 
   beforeEach(() => {
-    handler = new ProtocolHandler();
-  });
+    handler = new ProtocolHandler()
+  })
 
-  it('should encode message correctly', () => {
+  it("should encode message correctly", () => {
     const msg: Message = {
-      type: 'request',
-      id: 'req-001',
-      payload: { action: 'ping' }
-    };
-    const encoded = handler.encode(msg);
-    expect(encoded).toBeInstanceOf(Uint8Array);
-  });
+      type: "request",
+      id: "req-001",
+      payload: { action: "ping" },
+    }
+    const encoded = handler.encode(msg)
+    expect(encoded).toBeInstanceOf(Uint8Array)
+  })
 
-  it('should decode valid message', () => {
-    const data = new Uint8Array([0x01, 0x00, 0x04, ...new TextEncoder().encode('ping')]);
-    const msg = handler.decode(data);
-    expect(msg.type).toBe('request');
-  });
+  it("should decode valid message", () => {
+    const data = new Uint8Array([0x01, 0x00, 0x04, ...new TextEncoder().encode("ping")])
+    const msg = handler.decode(data)
+    expect(msg.type).toBe("request")
+  })
 
-  it('should handle invalid data', () => {
-    expect(() => handler.decode(new Uint8Array([0xFF]))).toThrow('Invalid message');
-  });
-});
+  it("should handle invalid data", () => {
+    expect(() => handler.decode(new Uint8Array([0xff]))).toThrow("Invalid message")
+  })
+})
 ```
 
 ```typescript
 // vitest.config.ts
-import { defineConfig } from 'vitest/config';
+import { defineConfig } from "vitest/config"
 
 export default defineConfig({
   test: {
     globals: true,
-    environment: 'node',
+    environment: "node",
     coverage: {
-      provider: 'v8',
-      reporter: ['text', 'html'],
+      provider: "v8",
+      reporter: ["text", "html"],
     },
   },
-});
+})
 ```
 
 ### 3.3 Go 测试框架
@@ -471,7 +473,7 @@ import (
 
 func TestBuffer_Allocate(t *testing.T) {
     buf := NewBuffer(1024)
-    
+
     ptr, err := buf.Allocate(256)
     if err != nil {
         t.Fatalf("Allocate failed: %v", err)
@@ -566,13 +568,13 @@ cargo bench                      # 运行基准测试
 
 ### 3.5 测试框架对比
 
-| 框架 | 语言 | 断言风格 | Fixture | 并行 | 覆盖率 |
-|------|------|----------|---------|------|--------|
-| pytest | Python | assert | 内置 | pytest-xdist | pytest-cov |
-| Jest | JavaScript | expect | @nestjs/testing | --maxWorkers | --coverage |
-| Vitest | TypeScript | expect | 内置 | threads | @vitest/coverage |
-| go test | Go | t.Error/assert | Table-driven | -test.p | go tool cover |
-| cargo test | Rust | assert!/panic! | 内置 | --test-threads | cargo-tarpaulin |
+| 框架       | 语言       | 断言风格       | Fixture         | 并行           | 覆盖率           |
+| ---------- | ---------- | -------------- | --------------- | -------------- | ---------------- |
+| pytest     | Python     | assert         | 内置            | pytest-xdist   | pytest-cov       |
+| Jest       | JavaScript | expect         | @nestjs/testing | --maxWorkers   | --coverage       |
+| Vitest     | TypeScript | expect         | 内置            | threads        | @vitest/coverage |
+| go test    | Go         | t.Error/assert | Table-driven    | -test.p        | go tool cover    |
+| cargo test | Rust       | assert!/panic! | 内置            | --test-threads | cargo-tarpaulin  |
 
 ## 4. Lint 与代码检查
 
@@ -639,21 +641,18 @@ def process_message(handler: MessageHandler, data: bytes) -> None:
 ```javascript
 // .eslintrc.js
 module.exports = {
-  parser: '@typescript-eslint/parser',
+  parser: "@typescript-eslint/parser",
   parserOptions: {
     ecmaVersion: 2022,
-    sourceType: 'module',
+    sourceType: "module",
   },
-  plugins: ['@typescript-eslint'],
-  extends: [
-    'eslint:recommended',
-    'plugin:@typescript-eslint/recommended',
-  ],
+  plugins: ["@typescript-eslint"],
+  extends: ["eslint:recommended", "plugin:@typescript-eslint/recommended"],
   rules: {
-    '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
-    '@typescript-eslint/explicit-function-return-type': 'off',
+    "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
+    "@typescript-eslint/explicit-function-return-type": "off",
   },
-};
+}
 ```
 
 ```bash
@@ -718,12 +717,12 @@ cargo clippy -- -W clippy::all  # 启用所有 clippy 警告
 
 ### 4.5 Lint 工具对比
 
-| 工具 | 语言 | 速度 | 格式化 | 类型检查 |
-|------|------|------|--------|----------|
-| ruff | Python | 10-100x faster | ruff format | mypy (独立) |
-| ESLint | JS/TS | 中等 | Prettier (独立) | TypeScript |
-| golangci-lint | Go | 快 | gofmt/gofumpt | 集成 |
-| clippy | Rust | 中等 | rustfmt | Rustc 集成 |
+| 工具          | 语言   | 速度           | 格式化          | 类型检查    |
+| ------------- | ------ | -------------- | --------------- | ----------- |
+| ruff          | Python | 10-100x faster | ruff format     | mypy (独立) |
+| ESLint        | JS/TS  | 中等           | Prettier (独立) | TypeScript  |
+| golangci-lint | Go     | 快             | gofmt/gofumpt   | 集成        |
+| clippy        | Rust   | 中等           | rustfmt         | Rustc 集成  |
 
 ## 5. 增量构建与缓存
 
@@ -803,17 +802,17 @@ graph TB
         A2[File B]
         A3[File C]
     end
-    
+
     subgraph "Hash"
         H1["hash(A) = abc123"]
         H2["hash(B) = def456"]
         H3["hash(C) = ghi789"]
     end
-    
+
     subgraph "CAS Storage"
         ST["abc123 → content<br/>def456 → content<br/>ghi789 → content"]
     end
-    
+
     A1 --> H1 --> ST
     A2 --> H2 --> ST
     A3 --> H3 --> ST
@@ -832,31 +831,31 @@ class ContentAddressableStore:
         self.objects_dir.mkdir(parents=True, exist_ok=True)
         self.metadata_dir = root / "metadata"
         self.metadata_dir.mkdir(parents=True, exist_ok=True)
-    
+
     def _hash_file(self, path: Path) -> str:
         hasher = hashlib.sha256()
         with open(path, "rb") as f:
             for chunk in iter(lambda: f.read(8192), b""):
                 hasher.update(chunk)
         return hasher.hexdigest()
-    
+
     def store(self, path: Path) -> str:
         digest = self._hash_file(path)
         obj_path = self.objects_dir / digest[:2] / digest[2:]
-        
+
         if not obj_path.exists():
             obj_path.parent.mkdir(parents=True, exist_ok=True)
             os.link(path, obj_path)  # 硬链接节省空间
-        
+
         return digest
-    
+
     def retrieve(self, digest: str, dest: Path) -> bool:
         obj_path = self.objects_dir / digest[:2] / digest[2:]
         if not obj_path.exists():
             return False
         os.link(obj_path, dest)
         return True
-    
+
     def exists(self, digest: str) -> bool:
         obj_path = self.objects_dir / digest[:2] / digest[2:]
         return obj_path.exists()
@@ -873,22 +872,22 @@ graph LR
         S2[config.h]
         S3[protocol.c]
     end
-    
+
     subgraph "Objects"
         O1[main.o]
         O2[protocol.o]
     end
-    
+
     subgraph "Binary"
         B[agent]
     end
-    
+
     S1 -->|compile| O1
     S2 -->|compile| O1
     S2 -->|compile| O2
     S3 -->|compile| O2
     O1 & O2 -->|link| B
-    
+
     style S2 fill:#ff6b6b
     style O1 fill:#ff6b6b
     style B fill:#51cf66
@@ -930,18 +929,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-      
+          python-version: "3.11"
+
       - name: Install uv
         uses: astral-sh/setup-uv@v3
-      
+
       - name: Lint with ruff
         run: uvx ruff check src/
-      
+
       - name: Type check with mypy
         run: uvx mypy src/
 
@@ -949,18 +948,18 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.9', '3.10', '3.11', '3.12']
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      
+
       - name: Install uv
         uses: astral-sh/setup-uv@v3
-      
+
       - name: Run tests
         run: |
           uv sync --all-extras
@@ -971,15 +970,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Build with Bazel
         uses: bazel-contrib/setup-bazel@latest
         with:
           bazelisk-version: latest
-      
+
       - name: Build release
         run: bazel build --config=release //...
-      
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -1118,7 +1117,7 @@ graph TB
     subgraph "Code Change"
         A[Code Commit]
     end
-    
+
     subgraph "CI Pipeline"
         B[Checkout]
         C[Install Dependencies]
@@ -1127,21 +1126,21 @@ graph TB
         F[Integration Tests]
         G[Build Artifacts]
     end
-    
+
     subgraph "Quality Gates"
         H{Tests Pass?}
         I{Coverage > 80%?}
         J{Build Success?}
     end
-    
+
     subgraph "CD Pipeline"
         K[Deploy to Staging]
         L[Smoke Tests]
         M[Deploy to Production]
     end
-    
+
     A --> B --> C --> D --> E --> F --> G
-    
+
     E --> H
     H -->|No| E
     H -->|Yes| I
@@ -1149,11 +1148,11 @@ graph TB
     I -->|Yes| J
     J -->|No| G
     J -->|Yes| K
-    
+
     K --> L
     L -->|Pass| M
     L -->|Fail| K
-    
+
     style K fill:#ffd43b
     style M fill:#51cf66
 ```
@@ -1180,7 +1179,7 @@ class ArtifactVerifier:
             "sha256": "artifact.sha256",
             "sha512": "artifact.sha512",
         }
-    
+
     def verify_checksums(self) -> bool:
         """验证文件完整性"""
         for algo, checksum_file in self.checksums.items():
@@ -1192,36 +1191,36 @@ class ArtifactVerifier:
                 print(f"  Actual:   {actual}")
                 return False
         return True
-    
+
     def verify_format(self, expected_magic: bytes) -> bool:
         """验证文件格式魔数"""
         with open(self.artifact_path, "rb") as f:
             magic = f.read(len(expected_magic))
             return magic == expected_magic
-    
+
     def verify_architecture(self) -> str | None:
         """验证 ELF 架构"""
         if not self.artifact_path.suffix in [".so", ""]:
             return None
-        
+
         with open(self.artifact_path, "rb") as f:
             # ELF magic
             magic = f.read(4)
             if magic != b"\x7fELF":
                 return None
-            
+
             # Class (32/64 bit)
             elf_class = f.read(1)[0]
             # Endianness
             endian = f.read(1)[0]
-            
+
             return "x86_64" if elf_class == 2 else "i386"
-    
+
     def _read_checksum(self, path: str) -> str:
         checksum_path = self.artifact_path.parent / path
         with open(checksum_path) as f:
             return f.read().split()[0]
-    
+
     def _compute_checksum(self, algo: str) -> str:
         hasher = hashlib.new(algo)
         with open(self.artifact_path, "rb") as f:
@@ -1233,7 +1232,7 @@ class ArtifactVerifier:
 if __name__ == "__main__":
     import sys
     verifier = ArtifactVerifier(Path(sys.argv[1]))
-    
+
     if verifier.verify_checksums():
         print("Checksum verification passed")
     else:
@@ -1259,11 +1258,11 @@ def run_regression_test(
 ) -> bool:
     """对比新旧 artifact 的行为"""
     all_passed = True
-    
+
     for case in test_cases:
         old_result = execute_artifact(old_artifact, case["input"])
         new_result = execute_artifact(new_artifact, case["input"])
-        
+
         if old_result != new_result:
             print(f"Regression: {case['name']}")
             print(f"  Old: {old_result}")
@@ -1271,7 +1270,7 @@ def run_regression_test(
             all_passed = False
         else:
             print(f"OK: {case['name']}")
-    
+
     return all_passed
 
 def execute_artifact(artifact: Path, input_data: bytes) -> bytes:
@@ -1311,10 +1310,7 @@ def execute_artifact(artifact: Path, input_data: bytes) -> bytes:
       "size_bytes": 1048576
     }
   ],
-  "dependencies": [
-    "gsd2-core@1.0.0",
-    "protobuf@4.0.0"
-  ],
+  "dependencies": ["gsd2-core@1.0.0", "protobuf@4.0.0"],
   "signatures": {
     "sha256": "abc123...",
     "gpg": "signature_base64"
@@ -1380,7 +1376,7 @@ graph TB
         B[gsd2-agent<br/>Python]
         C[gsd2-dashboard<br/>TypeScript]
         D[gsd2-deploy<br/>Go]
-        
+
         A --> B
         A --> C
         B --> D
@@ -1465,17 +1461,17 @@ graph TD
         C[core.h]
         D[core.c]
     end
-    
+
     subgraph "Build Dependencies"
         E[agent.pex]
         F[protocol.pyc]
         G[libgsd2_core.a]
     end
-    
+
     subgraph "Runtime"
         H[gsd2-agent<br/>Process]
     end
-    
+
     A -->|imports| B
     A -->|depends on| C
     D -->|compiled into| G
@@ -1487,14 +1483,14 @@ graph TD
 
 ### 8.6 Monorepo 工具对比
 
-| 特性 | Nx | Turborepo | Bazel | Lerna |
-|------|-----|-----------|-------|-------|
-| **语言支持** | 多语言 | JS/TS | 多语言 | JS/TS |
-| **增量构建** | 原生 | 原生 | 原生 | 需配置 |
-| **远程缓存** | Nx Cloud | Vercel | 任意 | 需配置 |
-| **任务编排** | 强大 | 简单 | 强大 | 简单 |
-| **学习曲线** | 中高 | 低 | 高 | 低 |
-| **大规模项目** | 优秀 | 良好 | 优秀 | 一般 |
+| 特性           | Nx       | Turborepo | Bazel  | Lerna  |
+| -------------- | -------- | --------- | ------ | ------ |
+| **语言支持**   | 多语言   | JS/TS     | 多语言 | JS/TS  |
+| **增量构建**   | 原生     | 原生      | 原生   | 需配置 |
+| **远程缓存**   | Nx Cloud | Vercel    | 任意   | 需配置 |
+| **任务编排**   | 强大     | 简单      | 强大   | 简单   |
+| **学习曲线**   | 中高     | 低        | 高     | 低     |
+| **大规模项目** | 优秀     | 良好      | 优秀   | 一般   |
 
 ## 9. gsd2 构建测试集成
 
@@ -1517,7 +1513,7 @@ class BuildTool:
     def __init__(self, workspace_root: Path):
         self.workspace_root = workspace_root
         self.bazel_bin = workspace_root / "bazel-bin"
-    
+
     def build(self, target: str, config: str = "release") -> int:
         """构建指定目标"""
         import subprocess
@@ -1525,20 +1521,20 @@ class BuildTool:
         if config == "release":
             cmd.append("--config=release")
         cmd.append(f"--workspace_status={self.workspace_root}")
-        
+
         result = subprocess.run(cmd, cwd=self.workspace_root)
         return result.returncode
-    
+
     def test(self, target: str, verbose: bool = False) -> int:
         """运行测试"""
         import subprocess
         cmd = ["bazel", "test", target]
         if verbose:
             cmd.append("--test_output=all")
-        
+
         result = subprocess.run(cmd, cwd=self.workspace_root)
         return result.returncode
-    
+
     def clean(self) -> int:
         """清理构建产物"""
         import subprocess
@@ -1552,24 +1548,24 @@ class BuildTool:
 def main():
     parser = argparse.ArgumentParser(description="gsd2 Build Tool")
     subparsers = parser.add_subparsers(dest="command")
-    
+
     # build 命令
     build_parser = subparsers.add_parser("build", help="构建目标")
     build_parser.add_argument("target", help="Bazel 目标")
     build_parser.add_argument("--config", default="release", choices=["debug", "release"])
-    
+
     # test 命令
     test_parser = subparsers.add_parser("test", help="运行测试")
     test_parser.add_argument("target", nargs="?", default="//...")
     test_parser.add_argument("-v", "--verbose", action="store_true")
-    
+
     # clean 命令
     subparsers.add_parser("clean", help="清理构建")
-    
+
     args = parser.parse_args()
-    
+
     tool = BuildTool(Path.cwd())
-    
+
     if args.command == "build":
         sys.exit(tool.build(args.target, args.config))
     elif args.command == "test":
@@ -1597,9 +1593,9 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: 'Build mode'
+        description: "Build mode"
         required: true
-        default: 'release'
+        default: "release"
         type: choice
         options:
           - release
@@ -1623,12 +1619,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Bazel
         uses: bazel-contrib/setup-bazel@latest
         with:
           bazelisk-version: 7.0
-      
+
       - name: Build all targets
         run: |
           bazel build //... --config=${{ inputs.mode || 'release' }}
@@ -1641,10 +1637,10 @@ jobs:
         suite: [unit, integration, e2e]
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Bazel
         uses: bazel-contrib/setup-bazel@latest
-      
+
       - name: Run ${{ matrix.suite }} tests
         run: |
           bazel test //tests:${{ matrix.suite }} \
@@ -1656,11 +1652,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Build release artifacts
         run: |
           bazel build //:release_package
-      
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -1674,7 +1670,7 @@ jobs:
     steps:
       - name: Download artifacts
         uses: actions/download-artifact@v4
-      
+
       - name: Deploy to production
         run: |
           ./scripts/deploy.sh production bazel-bin/release_package.tar.gz
@@ -1691,18 +1687,18 @@ graph TB
         L2[Bazel Local CAS<br/>~/.cache/bazel]
         L3[Cargo Cache<br/>target/]
     end
-    
+
     subgraph "Remote Cache"
         R1[Redis CAS<br/>content-addressed]
         R2[S3 Artifacts<br/>build outputs]
         R3[Registry Cache<br/>npm/cargo/pip]
     end
-    
+
     L1 -->|match| L2
     L2 -->|miss| R1
     R1 -->|hit| L2
     L2 -.->|push| R2
-    
+
     N1[New Build] --> L1
     N1 --> R3
 ```
@@ -1728,21 +1724,21 @@ class LocalCache:
     def __init__(self, root: Path):
         self.root = root
         self.root.mkdir(parents=True, exist_ok=True)
-    
+
     def _key_to_path(self, key: str) -> Path:
         return self.root / key[:2] / key[2:]
-    
+
     def get(self, key: str) -> Optional[bytes]:
         path = self._key_to_path(key)
         if path.exists():
             return path.read_bytes()
         return None
-    
+
     def put(self, key: str, value: bytes) -> None:
         path = self._key_to_path(key)
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(value)
-    
+
     def exists(self, key: str) -> bool:
         return self._key_to_path(key).exists()
 
@@ -1751,16 +1747,16 @@ class RemoteCache:
     def __init__(self, redis_url: str, namespace: str = "gsd2:"):
         self.redis = redis.from_url(redis_url)
         self.namespace = namespace
-    
+
     def _key(self, key: str) -> str:
         return f"{self.namespace}{key}"
-    
+
     def get(self, key: str) -> Optional[bytes]:
         return self.redis.get(self._key(key))
-    
+
     def put(self, key: str, value: bytes) -> None:
         self.redis.set(self._key(key), value)
-    
+
     def exists(self, key: str) -> bool:
         return self.redis.exists(self._key(key)) > 0
 
@@ -1769,13 +1765,13 @@ class LayeredCache:
     def __init__(self, local: LocalCache, remote: Optional[RemoteCache] = None):
         self.local = local
         self.remote = remote
-    
+
     def get(self, key: str) -> Optional[bytes]:
         # 先查本地
         value = self.local.get(key)
         if value is not None:
             return value
-        
+
         # 本地未命中，查远程
         if self.remote:
             value = self.remote.get(key)
@@ -1783,14 +1779,14 @@ class LayeredCache:
                 # 回填本地
                 self.local.put(key, value)
                 return value
-        
+
         return None
-    
+
     def put(self, key: str, value: bytes) -> None:
         self.local.put(key, value)
         if self.remote:
             self.remote.put(key, value)
-    
+
     def exists(self, key: str) -> bool:
         return self.local.exists(key) or (self.remote and self.remote.exists(key))
 ```
@@ -1882,53 +1878,53 @@ graph TB
         A[Code Editor]
         B[Git Commit]
     end
-    
+
     subgraph "Pre-commit"
         C[ruff lint]
         D[mypy type check]
         E[pytest unit tests]
     end
-    
+
     subgraph "CI System"
         F[GitHub Actions]
         G[GitLab CI]
     end
-    
+
     subgraph "Build System"
         H[Bazel]
         I[Cargo]
         J[uv pip]
     end
-    
+
     subgraph "Cache Layer"
         K[Local CAS]
         L[Remote CAS]
         M[Redis Cache]
     end
-    
+
     subgraph "Artifacts"
         N[Binaries]
         O[Libraries]
         P[Packages]
     end
-    
+
     A -->|edit| B
     B -->|hook| C
     C -->|pass| D
     D -->|pass| E
-    
+
     B -->|push| F
     B -->|push| G
-    
+
     F & G -->|trigger| H
     H -->|build| I
     H -->|build| J
-    
+
     I -->|cache| K
     J -->|cache| K
     K -.->|sync| L
     L -->|fetch| M
-    
+
     H -->|output| N
     I -->|output| O
     J -->|output| P
@@ -1952,7 +1948,8 @@ gsd2 项目通过 Bazel 作为统一构建入口，结合多语言 rules 和远�
 
 ---
 
-*延伸阅读：*
+_延伸阅读：_
+
 - [Bazel 官方文档](https://bazel.build/external/lockfile#best-practices)
 - [Bazel Remote Caching](https://bazel.build/external/cache)
 - [Modern Python Packaging](https://packaging.python.org/)

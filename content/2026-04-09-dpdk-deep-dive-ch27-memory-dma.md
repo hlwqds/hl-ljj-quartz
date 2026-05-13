@@ -1,14 +1,13 @@
 ---
 title: "DPDK 深度探索 (二十七)：内存优化——DMA 引擎与零拷贝"
 date: 2026-04-09
-tags: [dpdk, series, dma, zero-copy, iova, virtio, vhost, memory, mbuf, direct-memory, indirect-mbuf]
+tags:
+  [dpdk, series, dma, zero-copy, iova, virtio, vhost, memory, mbuf, direct-memory, indirect-mbuf]
 description: "深入理解 DPDK 内存优化——DMA 引擎架构、零拷贝技术、IOVA 寻址、Virtio/Vhost DMA、mbuf DMA 映射、内存原语"
 ---
 
-> [!info] DPDK 深度探索系列
-> 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
-> 1-26. 前二十六章已完成
-> 27. **第二十七章：内存优化——DMA 引擎与零拷贝**
+> [!info] DPDK 深度探索系列 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
+> 1-26. 前二十六章已完成 27. **第二十七章：内存优化——DMA 引擎与零拷贝**
 
 ---
 
@@ -1661,6 +1660,7 @@ vhost_net_accelerate(struct vhost_dma_session *s,
 ---
 
 > [!tip] 参考文献
+>
 > - Intel, "Intel I/O Acceleration Technology", https://www.intel.com/content/www/us/en/architecture-and-technology/io-acceleration.html
 > - "DMA Engine in Linux Kernel", https://www.kernel.org/doc/html/latest/driver-api/dmaengine/
 > - "Virtio Spec", https://docs.oasis-open.org/virtio/virtio/v1.1/virtio-v1.1.pdf

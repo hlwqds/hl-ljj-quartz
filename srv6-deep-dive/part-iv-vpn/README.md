@@ -6,12 +6,12 @@ Part IV shifts focus to SRv6's role in VPN (Virtual Private Network) architectur
 
 ## Chapters
 
-| Chapter | Title | Key Topics |
-|---------|-------|------------|
-| 15 | [SRv6 VPN Overview](ch15-srv6-vpn.md) | SRv6 VPN architecture, L3VPN/BGP VPN, comparison with MPLS VPN, SRv6 VPN behaviors |
-| 16 | [SRv6 EVPN](ch16-srv6-evpn.md) | EVPN integration with SRv6, ESI, LACP, DF election, multi-homing |
-| 17 | [SRv6 VPLS](ch17-srv6-vpls.md) | VPLS over SRv6, MAC learning, flooding suppression, Ethernet service emulation |
-| 18 | [SRv6 IOAM](ch18-srv6-ioam.md) | In-situ OAM, flow telemetry, performance measurement, SRv6 trace |
+| Chapter | Title                                 | Key Topics                                                                         |
+| ------- | ------------------------------------- | ---------------------------------------------------------------------------------- |
+| 15      | [SRv6 VPN Overview](ch15-srv6-vpn.md) | SRv6 VPN architecture, L3VPN/BGP VPN, comparison with MPLS VPN, SRv6 VPN behaviors |
+| 16      | [SRv6 EVPN](ch16-srv6-evpn.md)        | EVPN integration with SRv6, ESI, LACP, DF election, multi-homing                   |
+| 17      | [SRv6 VPLS](ch17-srv6-vpls.md)        | VPLS over SRv6, MAC learning, flooding suppression, Ethernet service emulation     |
+| 18      | [SRv6 IOAM](ch18-srv6-ioam.md)        | In-situ OAM, flow telemetry, performance measurement, SRv6 trace                   |
 
 ## Learning Path
 
@@ -28,6 +28,7 @@ Part IV builds from the programmable network layer established in Part III into 
 ## Key Concepts Covered
 
 ### SRv6 VPN Architecture
+
 - BGP L3VPN with SRv6 transport
 - VPNv6 vs VPNv4 address families
 - Route Target (RT) import/export
@@ -36,6 +37,7 @@ Part IV builds from the programmable network layer established in Part III into 
 - Comparison: MPLS VPN vs SRv6 VPN
 
 ### EVPN Integration
+
 - EVPN overview and route types
 - ESI (Ethernet Segment Identifier) encoding
 - LACP auto-discovery for ES
@@ -45,6 +47,7 @@ Part IV builds from the programmable network layer established in Part III into 
 - Frame forwarding with EVPN
 
 ### VPLS Architecture
+
 - VPLS service model (emulated LAN)
 - Pseudowire (PW) encapsulation
 - VPLS over SRv6 transport
@@ -54,6 +57,7 @@ Part IV builds from the programmable network layer established in Part III into 
 - H-VPLS for scale
 
 ### IOAM and Telemetry
+
 - In-situ OAM vs. out-of-band OAM
 - IOAM trace and telemetry data
 - SRv6 IOAM header integration
@@ -65,6 +69,7 @@ Part IV builds from the programmable network layer established in Part III into 
 ## Relationship to Part III
 
 Part III established the forwarding mechanics:
+
 - End behavior execution and segment processing
 - PSP/USP flavor behavior at segment endpoints
 - uSID compression for efficient hardware forwarding
@@ -72,6 +77,7 @@ Part III established the forwarding mechanics:
 - SR Policy for traffic engineering
 
 Part IV applies these toward VPN service delivery:
+
 - How VPN traffic uses SRv6 transport
 - How SRv6 endpoint behaviors deliver to VRFs
 - How EVPN uses SRv6 for underlay connectivity

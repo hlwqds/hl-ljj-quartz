@@ -10,8 +10,8 @@ tags:
 description: "深入解析 Zeek FTP 分析器——FTP::Info record、FTP 命令/响应日志、文件传输、FTP 反弹攻击检测"
 ---
 
-> [!info] Zeek 2026 深度探索系列
-> 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Zeek 2026 深度探索系列 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-15-zeek-deep-dive-ch1-overview|第一章：Zeek 概述]]
 > 2. [[2026-04-15-zeek-deep-dive-ch2-installation|第二章：安装部署]]
 > 3. [[2026-04-15-zeek-deep-dive-ch3-config|第三章：配置系统]]
@@ -489,15 +489,16 @@ event ftp_request(c: connection, user: string, command: string, arg: string)
 
 本章介绍了 Zeek FTP 分析器的核心能力：
 
-| 组件 | 说明 |
-|------|------|
-| **FTP::Info** | FTP 日志核心 record，包含命令、响应、用户信息 |
-| **ftp_request** | FTP 命令事件 (USER/PASS/RETR/STOR/PORT 等) |
-| **ftp_reply** | FTP 响应事件 (230/530 等) |
-| **ftp-data.log** | FTP 数据通道日志 |
-| **反弹攻击检测** | 检测 PORT 命令指向外部地址 |
+| 组件             | 说明                                          |
+| ---------------- | --------------------------------------------- |
+| **FTP::Info**    | FTP 日志核心 record，包含命令、响应、用户信息 |
+| **ftp_request**  | FTP 命令事件 (USER/PASS/RETR/STOR/PORT 等)    |
+| **ftp_reply**    | FTP 响应事件 (230/530 等)                     |
+| **ftp-data.log** | FTP 数据通道日志                              |
+| **反弹攻击检测** | 检测 PORT 命令指向外部地址                    |
 
 FTP 日志对于检测：
+
 - FTP 暴力破解
 - 敏感文件访问
 - 恶意文件上传

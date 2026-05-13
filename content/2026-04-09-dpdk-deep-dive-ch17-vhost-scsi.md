@@ -5,10 +5,8 @@ tags: [dpdk, series, vhost-scsi, virtio-scsi, storage, iSCSI, TCM, shared-memory
 description: "深入理解 vhost-scsi 存储虚拟化——VM 高性能存储访问、virtio-scsi 协议、Target Core 架构、I/O 环形缓冲区、SPDK vhost-blk"
 ---
 
-> [!info] DPDK 深度探索系列
-> 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
-> 1-16. 前十六章已完成
-> 17. **第十七章：vhost-scsi 存储虚拟化**
+> [!info] DPDK 深度探索系列 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
+> 1-16. 前十六章已完成 17. **第十七章：vhost-scsi 存储虚拟化**
 
 ---
 
@@ -51,24 +49,24 @@ vhost 家族不仅用于网络，还能用于存储。按后端运行位置分�
 
 ### 1.2 virtio-blk vs virtio-scsi
 
-| 特性       | virtio-blk | virtio-scsi                    |
-| -------- | ---------- | ------------------------------ |
-| **设备类型** | 简单块设备      | SCSI 设备                        |
-| **命令**   | 仅读/写       | 完整 SCSI 命令集                    |
-| **目标**   | 单一大文件/设备   | 多个 LUN，多个 Target               |
-| **功能**   | 基本存储       | SCSI 特定功能（trim, report lun...） |
-| **性能**   | 稍高（简单路径）   | 略低（复杂协议）                       |
-| **适用**   | 系统盘、数据盘    | 企业存储SAN                        |
+| 特性         | virtio-blk       | virtio-scsi                          |
+| ------------ | ---------------- | ------------------------------------ |
+| **设备类型** | 简单块设备       | SCSI 设备                            |
+| **命令**     | 仅读/写          | 完整 SCSI 命令集                     |
+| **目标**     | 单一大文件/设备  | 多个 LUN，多个 Target                |
+| **功能**     | 基本存储         | SCSI 特定功能（trim, report lun...） |
+| **性能**     | 稍高（简单路径） | 略低（复杂协议）                     |
+| **适用**     | 系统盘、数据盘   | 企业存储SAN                          |
 
 ### 1.3 存储 I/O vs 网络 I/O
 
-| 维度 | 网络 I/O | 存储 I/O |
-|------|----------|----------|
-| **数据单元** | Packet (可变) | Block (固定 512B/4KB) |
-| **传输模式** | 流式 | 随机访问 |
-| **latency** | μs 级 | μs 级（NVMe ~10-100μs） |
-| **带宽** | 10Gbps+ | NVMe 32Gbps+ |
-| **协议栈** | TCP/IP | SCSI/NVMe |
+| 维度         | 网络 I/O      | 存储 I/O                |
+| ------------ | ------------- | ----------------------- |
+| **数据单元** | Packet (可变) | Block (固定 512B/4KB)   |
+| **传输模式** | 流式          | 随机访问                |
+| **latency**  | μs 级         | μs 级（NVMe ~10-100μs） |
+| **带宽**     | 10Gbps+       | NVMe 32Gbps+            |
+| **协议栈**   | TCP/IP        | SCSI/NVMe               |
 
 ---
 
@@ -441,6 +439,7 @@ virtio_scsi_handle_cmd(struct virtqueue *vq, int vid)
 > SPDK 的核心思想：绕过内核文件系统（ext4/xfs）和内核块设备层，**用户态直接驱动 NVMe 硬件**，实现存储 I/O 的零拷贝、无中断、全轮询。
 >
 > **硬件需求**：SPDK 不需要特殊硬件。它提供多种 bdev 后端：
+>
 > - `malloc bdev`：纯内存盘，零硬件依赖，适合开发测试
 > - `AIO bdev`：普通文件或传统硬盘，内核 AIO 路径，无特殊要求
 > - `NVMe bdev`：NVMe SSD（PCIe 直连），**生产环境首选**——这才是 SPDK 性能优势所在
@@ -685,6 +684,7 @@ qemu-system-x86_64 \
 ### 5.1 TCM 概述
 
 Linux TCM (Target Core / LIO) 是内核的 SCSI Target 框架，支持：
+
 - iSCSI Target
 - FC Target
 - vhost-scsi (virtio-scsi 后端)
@@ -853,14 +853,14 @@ fail:
 
 ### 6.2 vhost-scsi vs iSCSI
 
-| 特性 | vhost-scsi | iSCSI |
-|------|------------|-------|
-| **位置** | VM 内部 | 网络 |
-| **传输** | 共享内存 (virtqueue) | TCP/IP 网络 |
-| **延迟** | ~1μs | ~100-500μs |
-| **带宽** | 几乎无上限 | 受网络限制 |
-| **兼容性** | 需要 virtio 驱动 | 标准 TCP/IP |
-| **目标** | 本地高速存储 | 远程存储访问 |
+| 特性       | vhost-scsi           | iSCSI        |
+| ---------- | -------------------- | ------------ |
+| **位置**   | VM 内部              | 网络         |
+| **传输**   | 共享内存 (virtqueue) | TCP/IP 网络  |
+| **延迟**   | ~1μs                 | ~100-500μs   |
+| **带宽**   | 几乎无上限           | 受网络限制   |
+| **兼容性** | 需要 virtio 驱动     | 标准 TCP/IP  |
+| **目标**   | 本地高速存储         | 远程存储访问 |
 
 ---
 
@@ -929,13 +929,13 @@ fail:
 
 ### 7.2 优化建议
 
-| 优化项 | virtio-blk | virtio-scsi |
-|--------|------------|-------------|
-| **队列深度** | 128-256 | 每个 LUN 128 |
-| **多队列** | 启用多队列 | 启用多队列 |
-| **块大小** | 4KB 对齐 | 4KB 对齐 |
-| **写缓存** | 启用 (BBWC) | 启用 |
-| **I/O 合并** | 启用 | 启用 |
+| 优化项       | virtio-blk  | virtio-scsi  |
+| ------------ | ----------- | ------------ |
+| **队列深度** | 128-256     | 每个 LUN 128 |
+| **多队列**   | 启用多队列  | 启用多队列   |
+| **块大小**   | 4KB 对齐    | 4KB 对齐     |
+| **写缓存**   | 启用 (BBWC) | 启用         |
+| **I/O 合并** | 启用        | 启用         |
 
 ---
 
@@ -957,17 +957,18 @@ fail:
 
 7. **TCM (LIO)**：Linux 内核 SCSI Target 框架，标准管理工具是 `targetcli`。vhost-scsi 作为 TCM 的传输层，通过 `target_init_cmd()` → `target_setup_cmd_from_cdb()` → `transport_generic_new_cmd()` 三步处理命令。
 
-6. **vhost-scsi vs iSCSI**：vhost-scsi 通过共享内存实现超低延迟 (~1μs)，iSCSI 通过网络实现远程访问 (~100-500μs)。
+8. **vhost-scsi vs iSCSI**：vhost-scsi 通过共享内存实现超低延迟 (~1μs)，iSCSI 通过网络实现远程访问 (~100-500μs)。
 
-7. **性能排序**：物理 NVMe > KVM 直通 > vhost-blk > virtio-blk > iSCSI (10G) > NFS v3。
+9. **性能排序**：物理 NVMe > KVM 直通 > vhost-blk > virtio-blk > iSCSI (10G) > NFS v3。
 
-8. **优化方向**：队列深度、块大小对齐、写缓存策略、I/O 合并。
+10. **优化方向**：队列深度、块大小对齐、写缓存策略、I/O 合并。
 
 **下一篇预告**：[[2026-04-09-dpdk-deep-dive-ch18-ivshmem|第十八章]]将讲解 IVSHMEM VM 间共享内存——无hypervisor参与的 VM 间高速通信。
 
 ---
 
 > [!tip] 参考文献
+>
 > - "virtio-blk 规范", https://docs.oasis-open.org/virtio/virtio/v1.1/virtio-v1.1.html#x1-141005
 > - "virtio-scsi 规范", https://docs.oasis-open.org/virtio/virtio/v1.1/virtio-v1.1.html#x1-151007
 > - Intel, "SPDK vhost", https://spdk.io/doc/vhost.html

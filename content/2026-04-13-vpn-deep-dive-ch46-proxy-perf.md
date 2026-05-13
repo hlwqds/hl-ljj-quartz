@@ -5,8 +5,8 @@ tags: [vpn, series, shadowsocks, v2ray, trojan, clash, performance, benchmark]
 description: "翻墙协议性能深度解析——Shadowsocks/V2Ray/Trojan/Clash 吞吐量/延迟对比、WebSocket/TCP/KCP 传输层性能、协议开销分析"
 ---
 
-> [!info] VPN 技术深度探索系列
-> 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+> [!info] VPN 技术深度探索系列 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-vpn-deep-dive-ch45-wireguard-perf|第四十五章：WireGuard 性能]]
 > 2. **第四十六章：翻墙协议性能**
 > 3. [[2026-04-13-vpn-deep-dive-ch47-vpn-hardening|第四十七章：VPN 安全加固]]
@@ -424,7 +424,7 @@ done
       "0": {
         "statsUserUplink": true,
         "statsUserDownlink": true,
-        "bufferSize": 5120  // 增大缓冲区
+        "bufferSize": 5120 // 增大缓冲区
       }
     },
     "system": {
@@ -432,22 +432,24 @@ done
       "statsInboundDownlink": true
     }
   },
-  "inbounds": [{
-    "port": 1080,
-    "listen": "127.0.0.1",
-    "protocol": "socks",
-    "settings": {
-      "udp": true
-    },
-    "streamSettings": {
-      "network": "tcp",
-      "sockopt": {
-        "tcpNoDelay": true,
-        "tcpKeepAliveIdle": 300,
-        "mark": 255
+  "inbounds": [
+    {
+      "port": 1080,
+      "listen": "127.0.0.1",
+      "protocol": "socks",
+      "settings": {
+        "udp": true
+      },
+      "streamSettings": {
+        "network": "tcp",
+        "sockopt": {
+          "tcpNoDelay": true,
+          "tcpKeepAliveIdle": 300,
+          "mark": 255
+        }
       }
     }
-  }]
+  ]
 }
 ```
 
@@ -563,6 +565,7 @@ clash -f config.yaml
 ---
 
 > [!tip] 延伸阅读
+>
 > - V2Ray 官方性能调优：https://www.v2fly.org/en_US/
 > - Clash 配置参考：https://wiki.metacubex.one/
 > - Reality 协议分析：https://github.com/XTLS/Xray-core

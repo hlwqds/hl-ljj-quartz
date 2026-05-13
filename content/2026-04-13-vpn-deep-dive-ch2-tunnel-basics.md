@@ -5,8 +5,8 @@ tags: [vpn, series, networking, tunnel, tun-tap, virtual-interface]
 description: "隧道技术的核心原理——tun/tap 虚拟网络设备、隧道封装与解封装过程、三层隧道 (IPIP/GRE/WireGuard)、隧道接口配置与管理"
 ---
 
-> [!info] VPN 技术深度探索系列
-> 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+> [!info] VPN 技术深度探索系列 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-vpn-deep-dive-ch1-vpn-fundamentals|VPN 基础概念]]
 > 2. **第二章：隧道技术基础**
 > 3. [[2026-04-13-vpn-deep-dive-ch3-crypto-fundamentals|第三章：密码学基础]]
@@ -19,6 +19,7 @@ description: "隧道技术的核心原理——tun/tap 虚拟网络设备、隧�
 **隧道 (Tunnel)** 是 VPN 的核心机制——在两个端点之间创建一个**虚拟的点到点连接**，将原始数据包封装在一种**隧道协议**内部，通过公共网络传输，到达对端后再解封装。
 
 隧道技术的核心问题只有三个：
+
 1. **如何创建虚拟通道？** — tun/tap 虚拟设备
 2. **如何封装数据？** — 隧道协议 (GRE/IPIP/WireGuard)
 3. **如何转发到对端？** — 隧道接口与路由
@@ -28,21 +29,21 @@ graph LR
     subgraph Local["本地网络"]
         A["应用数据"] --> B["原始 IP 包"]
     end
-    
+
     subgraph Tunnel["隧道设备 (tun0/wg0)"]
         B --> C["隧道封装"]
     end
-    
+
     subgraph Internet["公共网络"]
         C --> D["外层 IP 头 + 隧道协议头 + 密文"]
     end
-    
+
     subgraph Remote["远程端点"]
         D --> E["解封装"]
         E --> F["原始 IP 包"]
         F --> G["应用数据"]
     end
-    
+
     style Tunnel fill:#3b82f6,color:#fff
 ```
 
@@ -54,9 +55,9 @@ graph LR
 
 Linux 内核提供两种虚拟网络设备：
 
-| 类型 | 工作层 | 传输单元 | 典型用途 |
-|------|--------|----------|----------|
-| **tun** | L3 (网络层) | IP 数据包 | WireGuard、IPSec、OpenVPN (TUN 模式) |
+| 类型    | 工作层          | 传输单元    | 典型用途                             |
+| ------- | --------------- | ----------- | ------------------------------------ |
+| **tun** | L3 (网络层)     | IP 数据包   | WireGuard、IPSec、OpenVPN (TUN 模式) |
 | **tap** | L2 (数据链路层) | Ethernet 帧 | OpenVPN (TAP 模式)、桥接、虚拟机网络 |
 
 **tun** = network **tun**nel  
@@ -78,11 +79,13 @@ Linux 内核提供两种虚拟网络设备：
 ```
 
 **数据流（发送方向）：**
+
 1. 应用向 tun0 写入 IP 数据包
 2. 内核将数据包传递给绑定该 tun0 的用户空间进程（通过 read()）
 3. 用户空间进程收到数据包，处理后通过隧道发送出去
 
 **数据流（接收方向）：**
+
 1. 隧道收到外部数据包
 2. 用户空间进程通过 write() 将处理后的数据包写回 tun0
 3. 内核网络栈像处理普通网卡一样处理它
@@ -100,13 +103,13 @@ Linux 内核提供两种虚拟网络设备：
 int tun_create(const char *dev_name) {
     struct ifreq ifr = {0};
     int fd = open("/dev/net/tun", O_RDWR);
-    
+
     // 指定 TUN 模式（而非 TAP）
     ifr.ifr_flags = IFF_TUN | IFF_NO_PI;  // IFF_NO_PI = 不包含包信息头
-    
+
     // 请求创建名为 "tun0" 的设备
     strncpy(ifr.ifr_name, dev_name, IFNAMSIZ - 1);
-    
+
     ioctl(fd, TUNSETIFF, &ifr);
     return fd;  // 通过这个 fd 读写 IP 数据包
 }
@@ -209,7 +212,7 @@ sequenceDiagram
     participant Internet as 公共网络
     participant VPN_GW as VPN 网关
     participant Internal as 内部网络
-    
+
     Internet->>VPN_GW: 收到封装数据包 (外层 IP)
     VPN_GW->>VPN_GW: 1. 外层 IP 头剥离
     VPN_GW->>VPN_GW: 2. 隧道协议头剥离
@@ -222,12 +225,12 @@ sequenceDiagram
 
 所有隧道协议都有几个共同特征：
 
-| 特征 | 说明 |
-|------|------|
-| **封装协议头** | 在原始包外层添加自己的头部 (GRE Header / WireGuard Header) |
-| **外层传输层** | 通常使用 UDP（WireGuard）或直接用 IP 协议号 (GRE=47, ESP=50) |
-| **多路复用** | 通过某种方式区分不同隧道的流量（GRE 用 Key，WireGuard 用 Session） |
-| **可选加密** | 部分协议自带加密 (WireGuard)，部分需配合 IPSec (GRE+IPSec) |
+| 特征           | 说明                                                               |
+| -------------- | ------------------------------------------------------------------ |
+| **封装协议头** | 在原始包外层添加自己的头部 (GRE Header / WireGuard Header)         |
+| **外层传输层** | 通常使用 UDP（WireGuard）或直接用 IP 协议号 (GRE=47, ESP=50)       |
+| **多路复用**   | 通过某种方式区分不同隧道的流量（GRE 用 Key，WireGuard 用 Session） |
+| **可选加密**   | 部分协议自带加密 (WireGuard)，部分需配合 IPSec (GRE+IPSec)         |
 
 ---
 
@@ -288,14 +291,14 @@ GRE 头结构：
 
 GRE vs IPIP 的关键区别：
 
-| 特性 | IPIP | GRE |
-|------|------|-----|
-| 协议号 | IP Protocol 4 | IP Protocol 47 |
-| 多协议封装 | 否（仅 IP） | 是（IP/Ethernet/MPLS） |
-| Key 字段 | 无 | 有 |
-| Checksum | 无 | 可选 |
-| Sequence | 无 | 可选 |
-| 加密 | 无 | 无（需配合 IPSec） |
+| 特性       | IPIP          | GRE                    |
+| ---------- | ------------- | ---------------------- |
+| 协议号     | IP Protocol 4 | IP Protocol 47         |
+| 多协议封装 | 否（仅 IP）   | 是（IP/Ethernet/MPLS） |
+| Key 字段   | 无            | 有                     |
+| Checksum   | 无            | 可选                   |
+| Sequence   | 无            | 可选                   |
+| 加密       | 无            | 无（需配合 IPSec）     |
 
 ### 4.3 WireGuard 隧道
 
@@ -336,15 +339,15 @@ WireGuard 封装结构（基于 UDP）：
 
 ### 4.4 协议对比总览
 
-|| IPIP | GRE | WireGuard |
-|------|------|-----|------------|
-| **协议号** | IP=4 | IP=47 | UDP=51820 |
-| **加密** | 无 | 无 | ChaCha20-Poly1305 |
-| **密钥交换** | 无 | 无 | Curve25519 DH |
-| **NAT 穿透** | 差 | 一般 | 好 (UDP) |
-| **多协议** | 仅 IPv4 | 是 | 是 (任何 L3) |
-| **复杂度** | 极简 | 中等 | 低 |
-| **性能** | 高 | 高 | 高 |
+|              | IPIP    | GRE   | WireGuard         |
+| ------------ | ------- | ----- | ----------------- |
+| **协议号**   | IP=4    | IP=47 | UDP=51820         |
+| **加密**     | 无      | 无    | ChaCha20-Poly1305 |
+| **密钥交换** | 无      | 无    | Curve25519 DH     |
+| **NAT 穿透** | 差      | 一般  | 好 (UDP)          |
+| **多协议**   | 仅 IPv4 | 是    | 是 (任何 L3)      |
+| **复杂度**   | 极简    | 中等  | 低                |
+| **性能**     | 高      | 高    | 高                |
 
 ---
 
@@ -384,9 +387,9 @@ IPSec (Tunnel Mode):
 
 ### 5.3 split-tunnel vs full-tunnel
 
-| 模式 | 说明 | 路由 |
-|------|------|------|
-| **Full Tunnel** | 所有流量都走 VPN | `0.0.0.0/0 via VPN_GW` |
+| 模式             | 说明             | 路由                    |
+| ---------------- | ---------------- | ----------------------- |
+| **Full Tunnel**  | 所有流量都走 VPN | `0.0.0.0/0 via VPN_GW`  |
 | **Split Tunnel** | 仅特定流量走 VPN | `10.0.0.0/8 via VPN_GW` |
 
 ```bash
@@ -435,13 +438,13 @@ iptables -t mangle -A FORWARD -p tcp \
 
 ### 6.3 不同隧道的 MTU 开销
 
-|| 协议 | MTU Overhead | 推荐隧道 MTU |
-|------|------|-------------|--------------|
-| IPIP | 20B | 1480 |
-| GRE | 24B (含 GRE 头) | 1476 |
-| WireGuard | ~60B | 1420 |
-| IPSec (ESP) | ~70B | ~1430 |
-| OpenVPN (UDP) | ~70B | 1430 |
+|               | 协议            | MTU Overhead | 推荐隧道 MTU |
+| ------------- | --------------- | ------------ | ------------ |
+| IPIP          | 20B             | 1480         |
+| GRE           | 24B (含 GRE 头) | 1476         |
+| WireGuard     | ~60B            | 1420         |
+| IPSec (ESP)   | ~70B            | ~1430        |
+| OpenVPN (UDP) | ~70B            | 1430         |
 
 ---
 
@@ -480,21 +483,21 @@ sequenceDiagram
     participant A as 客户端 A (NAT A)
     participant B as 客户端 B (NAT B)
     participant S as 中继服务器
-    
+
     Note over A,B: 初始状态：双方都不知道对方的公网地址
-    
+
     A->>S: 注册：我在这里，端口 51820
     B->>S: 注册：我在这里，端口 51820
-    
+
     S->>A: 通知 B 的公网地址 (1.2.3.4:portA)
     S->>B: 通知 A 的公网地址 (5.6.7.8:portB)
-    
+
     Note over A: A 向 B 的公网地址发送 UDP
     Note over B: NAT A 记录出站映射
-    
+
     A->>B: UDP 打洞包 (从 A:NAT 端口 → B 的公网地址)
     B->>A: UDP 打洞包 (从 B:NAT 端口 → A 的公网地址)
-    
+
     Note over A,B: 双方对称型 NAT 同时收到对方的包<br/>→ UDP 映射建立 → P2P 连接成功
 ```
 
@@ -502,20 +505,21 @@ sequenceDiagram
 
 ## 8. 总结：隧道技术全景
 
-|| 维度 | 结论 |
-|------|------|------|
-| **tun vs tap** | tun = L3 IP 包，tap = L2 帧 | WireGuard 用 tun，桥接用 tap |
-| **封装原理** | 外层 IP + 隧道头 + 原始包 | 增加 MTU 开销 |
-| **隧道协议** | IPIP（无加密）/ GRE（通用）/ WireGuard（加密） | 按需选择 |
-| **路由** | 隧道 = 虚拟网卡，路由决定流量走向 | split-tunnel vs full-tunnel |
-| **MTU** | 隧道额外头部导致 MTU 叠加 | 设置 1420 左右 |
-| **NAT** | UDP 隧道穿透性最好 | WireGuard 天然穿透 |
+|                | 维度                                           | 结论                         |
+| -------------- | ---------------------------------------------- | ---------------------------- |
+| **tun vs tap** | tun = L3 IP 包，tap = L2 帧                    | WireGuard 用 tun，桥接用 tap |
+| **封装原理**   | 外层 IP + 隧道头 + 原始包                      | 增加 MTU 开销                |
+| **隧道协议**   | IPIP（无加密）/ GRE（通用）/ WireGuard（加密） | 按需选择                     |
+| **路由**       | 隧道 = 虚拟网卡，路由决定流量走向              | split-tunnel vs full-tunnel  |
+| **MTU**        | 隧道额外头部导致 MTU 叠加                      | 设置 1420 左右               |
+| **NAT**        | UDP 隧道穿透性最好                             | WireGuard 天然穿透           |
 
 **下一章预告：** [[2026-04-13-vpn-deep-dive-ch3-crypto-fundamentals|第三章：密码学基础]] — AES 对称加密、RSA/ECC 非对称加密、Diffie-Hellman 密钥交换、HMAC 完整性校验。
 
 ---
 
 > [!quote] 参考文献
+>
 > - [[2026-04-13-kernel-protocol-stack-deep-dive-ch17-gre|GRE 隧道 (Kernel Protocol Stack)]] — 内核 GRE 实现
 > - [[2026-03-12-wireguard-protocol-deep-dive|WireGuard 协议深度解析]] — 现代 VPN 协议
 > - [[2026-03-12-ipsec-protocol-deep-dive|IPSec 协议深度解析]] — 企业 VPN 事实标准

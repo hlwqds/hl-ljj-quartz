@@ -5,12 +5,7 @@ tags: [linux, kernel, networking, series, bpf, tc, cls-bpf, schedcls, netfilter-
 description: "深入解析 Linux BPF 网络钩子——TC (Traffic Control) BPF 的 cls_bpf/sched_bpf、XDP BPF、nftables eBPF 字节码、BPF_PROG_RUN 与 netdev hook 机制，以及 BPF 网络钩子与传统 iptables 的性能对比"
 ---
 
-> [!info] Kernel Protocol Stack 深度探索系列
-> 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
-> 42. [[2026-04-13-kernel-protocol-stack-deep-dive-ch42-tso|第四十二章：TSO 与 UFO]]
-> 43. **第四十三章：Linux BPF 网络钩子**
-> 44. [[2026-04-13-kernel-protocol-stack-deep-dive-ch44-offload|第四十四章：硬件 offload]]
-> 45. [[2026-04-13-kernel-protocol-stack-deep-dive-ch45-tuning|第四十五章：网络性能调优]]
+> [!info] Kernel Protocol Stack 深度探索系列 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]] 42. [[2026-04-13-kernel-protocol-stack-deep-dive-ch42-tso|第四十二章：TSO 与 UFO]] 43. **第四十三章：Linux BPF 网络钩子** 44. [[2026-04-13-kernel-protocol-stack-deep-dive-ch44-offload|第四十四章：硬件 offload]] 45. [[2026-04-13-kernel-protocol-stack-deep-dive-ch45-tuning|第四十五章：网络性能调优]]
 
 ---
 
@@ -50,13 +45,13 @@ Linux 内核提供了**多个可编程 BPF 钩子点**用于网络数据包处�
 
 ### 1.1 BPF 钩子类型
 
-| 钩子 | 位置 | 程序类型 | 典型用途 |
-|------|------|---------|---------|
-| **XDP** | 驱动层（最早） | `BPF_PROG_TYPE_XDP` | DDoS 防护、包过滤、转发 |
-| **TC cls_bpf** | TC ingress | `BPF_PROG_TYPE_SCHED_CLS` | 流量分类、镜像、负载均衡 |
-| **TC sched_bpf** | TC egress qdisc | `BPF_PROG_TYPE_SCHED_CLS` | 队列调度、丢包 |
-| **Flow dissector** | IP 层之前 | `BPF_PROG_TYPE_FLOW_DISSECTOR` | 自定义协议解析 |
-| **Cgroup sock** | Socket 层 | `BPF_PROG_TYPE_CGROUP_SOCK` | 容器网络策略 |
+| 钩子               | 位置            | 程序类型                       | 典型用途                 |
+| ------------------ | --------------- | ------------------------------ | ------------------------ |
+| **XDP**            | 驱动层（最早）  | `BPF_PROG_TYPE_XDP`            | DDoS 防护、包过滤、转发  |
+| **TC cls_bpf**     | TC ingress      | `BPF_PROG_TYPE_SCHED_CLS`      | 流量分类、镜像、负载均衡 |
+| **TC sched_bpf**   | TC egress qdisc | `BPF_PROG_TYPE_SCHED_CLS`      | 队列调度、丢包           |
+| **Flow dissector** | IP 层之前       | `BPF_PROG_TYPE_FLOW_DISSECTOR` | 自定义协议解析           |
+| **Cgroup sock**    | Socket 层       | `BPF_PROG_TYPE_CGROUP_SOCK`    | 容器网络策略             |
 
 ---
 
@@ -181,7 +176,7 @@ int cls_da(struct __sk_buff *skb)
 char _license[] SEC("license") = "GPL";
 ```
 
-### 2.4 cls_bpf 返回值（TC_ACT_*）
+### 2.4 cls*bpf 返回值（TC_ACT*\*）
 
 ```c
 // include/uapi/linux/pkt_cls.h
@@ -197,14 +192,14 @@ TC_ACT_REDIRECT      /* 重定向：通过 skb_redirect_peer() 发送 */
 
 ### 2.5 TC 钩子与 XDP 的区别
 
-| 特性 | XDP | TC cls_bpf (ingress) |
-|------|-----|---------------------|
-| **执行位置** | 驱动层（更早） | netif_receive_skb 后（协议栈入口） |
-| **访问 skb** | raw packet data（通过 xdp_md） | 完整 skb |
-| **性能** | ~14+ Mpps | ~5-10 Mpps |
-| **修改 skb** | 不能（只能替换） | 可以（push/pop 头） |
-| **GVisor/隧道** | 不能处理隧道封装包 | 可以（封装后） |
-| **对等重定向** | `bpf_redirect()` | `skb_redirect_peer()` |
+| 特性            | XDP                            | TC cls_bpf (ingress)               |
+| --------------- | ------------------------------ | ---------------------------------- |
+| **执行位置**    | 驱动层（更早）                 | netif_receive_skb 后（协议栈入口） |
+| **访问 skb**    | raw packet data（通过 xdp_md） | 完整 skb                           |
+| **性能**        | ~14+ Mpps                      | ~5-10 Mpps                         |
+| **修改 skb**    | 不能（只能替换）               | 可以（push/pop 头）                |
+| **GVisor/隧道** | 不能处理隧道封装包             | 可以（封装后）                     |
+| **对等重定向**  | `bpf_redirect()`               | `skb_redirect_peer()`              |
 
 ---
 
@@ -341,16 +336,16 @@ nft add rule inet filter input bpf obj prog.o sec test
 
 ### 6.1 cls_bpf vs iptables 性能对比
 
-| 指标 | iptables | cls_bpf (TC) |
-|------|---------|--------------|
-| **单规则吞吐** | ~2-3 Mpps/CPU | ~8-12 Mpps/CPU |
-| **扩展匹配** | 灵活（string, geoip 等） | 受限（需自己解析） |
-| **状态维护** | conntrack 集成 | 需要 BPF map 自己维护 |
-| **灵活性** | 规则描述能力强 | 程序化，任意逻辑 |
+| 指标           | iptables                 | cls_bpf (TC)          |
+| -------------- | ------------------------ | --------------------- |
+| **单规则吞吐** | ~2-3 Mpps/CPU            | ~8-12 Mpps/CPU        |
+| **扩展匹配**   | 灵活（string, geoip 等） | 受限（需自己解析）    |
+| **状态维护**   | conntrack 集成           | 需要 BPF map 自己维护 |
+| **灵活性**     | 规则描述能力强           | 程序化，任意逻辑      |
 
 ### 6.2 高性能包处理的 BPF 组合
 
- Cilium 使用的典型组合：
+Cilium 使用的典型组合：
 
 ```
 XDP (drop/sockmap) + TC (transparent proxy) + sk_lookup (socket redirect)

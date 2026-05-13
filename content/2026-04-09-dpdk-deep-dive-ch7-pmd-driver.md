@@ -5,8 +5,8 @@ tags: [dpdk, series, pmd, driver, ethdev, rx-burst, tx-burst, descriptor]
 description: "深入理解 DPDK 网卡驱动的核心——PMD 驱动注册流程、ethdev 抽象层、收发包路径、描述符管理、以及 Intel ixgbe/i40e 驱动的具体实现"
 ---
 
-> [!info] DPDK 深度探索系列
-> 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
+> [!info] DPDK 深度探索系列 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-09-dpdk-deep-dive-ch1-architecture-overview|第一章：架构概述——kernel bypass 原理与 DPDK 定位]]
 > 2. [[2026-04-09-dpdk-deep-dive-ch2-uio-vfio-iommu|第二章：UIO/VFIO/IOMMU 用户态驱动框架]]
 > 3. [[2026-04-09-dpdk-deep-dive-ch3-eal-initialization|第三章：EAL 初始化与 lcore 模型]]
@@ -23,14 +23,14 @@ PMD (Poll Mode Driver) 是 DPDK 的用户态网卡驱动程序，运行在用户
 
 ### 1.1 PMD vs Kernel Driver
 
-| 维度 | Kernel NIC Driver | PMD (DPDK) |
-|------|------------------|------------|
-| **运行位置** | 内核态 | 用户态 |
-| **访问方式** | 系统调用 | mmap BAR |
-| **中断处理** | 硬件中断 | 轮询（Poll Mode） |
-| **协议栈** | 内核 TCP/IP | 用户态或绕过 |
-| **性能** | 受限于内核开销 | 线速（100G+） |
-| **可控性** | 受限 | 完全控制 |
+| 维度         | Kernel NIC Driver | PMD (DPDK)        |
+| ------------ | ----------------- | ----------------- |
+| **运行位置** | 内核态            | 用户态            |
+| **访问方式** | 系统调用          | mmap BAR          |
+| **中断处理** | 硬件中断          | 轮询（Poll Mode） |
+| **协议栈**   | 内核 TCP/IP       | 用户态或绕过      |
+| **性能**     | 受限于内核开销    | 线速（100G+）     |
+| **可控性**   | 受限              | 完全控制          |
 
 ### 1.2 PMD 在 DPDK 架构中的位置
 
@@ -92,15 +92,15 @@ struct rte_eth_dev {
     const char *name;                    // 设备名称 "eth_ixgbe_0"
     uint16_t device_index;               // 设备索引
     uint16_t port_id;                    // 端口 ID（应用程序使用）
-    
+
     struct rte_eth_dev_data *data;       // 设备运行时数据
     const struct rte_eth_dev_ops *dev_ops; // 设备操作函数指针
     struct rte_eth_driver *driver;        // 指向驱动结构
     uint64_t extra_flags;                 // 驱动私有标志
-    
+
     // 驱动特定数据（PMD 私有）
     void *process_private;
-    
+
     enum rte_eth_dev_state state;        // 设备状态
 };
 
@@ -110,12 +110,12 @@ struct rte_eth_dev_data {
     void **tx_queues;                    // Tx 队列指针数组
     uint16_t nb_rx_queues;               // Rx 队列数量
     uint16_t nb_tx_queues;               // Tx 队列数量
-    
+
     struct rte_ether_addr *mac_addresses; // MAC 地址
-    
+
     // 端口配置
     struct rte_eth_conf dev_conf;
-    
+
     // 驱动私有数据
     void *dev_private;
 };
@@ -132,7 +132,7 @@ struct rte_eth_dev_ops {
     int (*dev_start)(struct rte_eth_dev *dev);
     int (*dev_stop)(struct rte_eth_dev *dev);
     int (*dev_close)(struct rte_eth_dev *dev);
-    
+
     /* Rx 队列 */
     int (*rx_queue_setup)(struct rte_eth_dev *dev,
                            uint16_t rx_queue_id,
@@ -141,7 +141,7 @@ struct rte_eth_dev_ops {
                            const struct rte_eth_rxconf *rx_conf,
                            struct rte_mempool *mp);
     void (*rx_queue_release)(struct rte_eth_dev *dev, uint16_t q_id);
-    
+
     /* Tx 队列 */
     int (*tx_queue_setup)(struct rte_eth_dev *dev,
                            uint16_t tx_queue_id,
@@ -149,7 +149,7 @@ struct rte_eth_dev_ops {
                            unsigned int socket_id,
                            const struct rte_eth_txconf *tx_conf);
     void (*tx_queue_release)(struct rte_eth_dev *dev, uint16_t q_id);
-    
+
     /* 收发包 */
     uint16_t (*rx_burst)(void *rxq,
                          struct rte_mbuf **rx_pkts,
@@ -157,12 +157,12 @@ struct rte_eth_dev_ops {
     uint16_t (*tx_burst)(void *txq,
                          struct rte_mbuf **tx_pkts,
                          uint16_t nb_pkts);
-    
+
     /* 统计 */
-    int (*stats_get)(struct rte_eth_dev *dev, 
+    int (*stats_get)(struct rte_eth_dev *dev,
                       struct rte_eth_stats *stats);
     int (*stats_reset)(struct rte_eth_dev *dev);
-    
+
     /* 其他 */
     int (*link_update)(struct rte_eth_dev *dev, int wait_to_complete);
     int (*mac_addr_add)(struct rte_eth_dev *dev,
@@ -197,23 +197,23 @@ rte_ixgbe_pmd_init(const char *name,
                     const char *params)
 {
     struct rte_eth_dev *eth_dev;
-    
+
     // 1. 分配 eth_dev
     eth_dev = rte_eth_dev_allocate(name);
     if (eth_dev == NULL)
         return -ENOMEM;
-    
+
     // 2. 绑定 PCI 设备
     eth_dev->device = &pci_dev->device;
     eth_dev->driver = &rte_ixgbe_pmd.driver;
-    
+
     // 3. 设置 dev_ops
     eth_dev->dev_ops = &ixgbe_dev_ops;
-    
+
     // 4. 设置回调函数（用于 ethdev 层调用 PMD）
     eth_dev->rx_pkt_burst = ixgbe_recv_pkts;
     eth_dev->tx_pkt_burst = ixgbe_xmit_pkts;
-    
+
     return 0;
 }
 
@@ -526,9 +526,9 @@ rte_eth_rx_queue_setup(uint16_t port_id,
 {
     struct rte_eth_dev *dev;
     int ret;
-    
+
     dev = &rte_eth_devices[port_id];
-    
+
     // 调用 PMD 的 rx_queue_setup
     ret = dev->dev_ops->rx_queue_setup(dev,
                                         rx_queue_id,
@@ -550,13 +550,13 @@ ixgbe_rx_queue_setup(struct rte_eth_dev *dev,
 {
     struct ixgbe_rx_queue *q;
     uint16_t max_pkt_len;
-    
+
     // 1. 分配队列结构
     q = rte_zmalloc_socket("rxq",
                             sizeof(struct ixgbe_rx_queue),
                             RTE_CACHE_LINE_SIZE,
                             socket_id);
-    
+
     // 2. 分配 DMA 描述符数组
     //    描述符存储在连续的大页内存中
     uint64_t desc_size = nb_rx_desc * sizeof(union ixgbe_adv_rx_desc);
@@ -564,27 +564,27 @@ ixgbe_rx_queue_setup(struct rte_eth_dev *dev,
                                      desc_size,
                                      RTE_CACHE_LINE_SIZE,
                                      socket_id);
-    
+
     // 3. 保存 mempool（用于分配 mbuf）
     q->mp = mp;
-    
+
     // 4. 填充 DMA 描述符（与 mbuf 关联）
     //    每个描述符指向一个 mbuf 数据缓冲区
     for (int i = 0; i < nb_rx_desc; i++) {
         struct rte_mbuf *m = rte_pktmbuf_alloc(mp);
         m->data_off = RTE_PKTMBUF_HEADROOM;
-        
+
         // 获取 mbuf 的 IOVA 地址（DMA 地址）
         q->rx_ring[i].read.hdr_addr = rte_mbuf_data_iova_default(m);
         q->rx_ring[i].read.pkt_addr = rte_mbuf_data_iova_default(m);
-        
+
         // 保存 mbuf 指针（用于接收后填充数据）
         q->sw_ring[i] = m;
     }
-    
+
     // 5. 保存到 dev_data
     dev->data->rx_queues[rx_queue_id] = q;
-    
+
     return 0;
 }
 ```
@@ -659,9 +659,9 @@ rte_eth_rx_burst(uint16_t port_id,
                   uint16_t nb_pkts)
 {
     struct rte_eth_dev *dev;
-    
+
     dev = &rte_eth_devices[port_id];
-    
+
     // 调用 PMD 的 rx_burst 函数指针
     return (*dev->rx_pkt_burst)(
         dev->data->rx_queues[queue_id],
@@ -687,10 +687,10 @@ RX ring（NIC 是生产者，CPU 是消费者）:
   (NIC 写到哪了)                         (CPU 回填到哪了)
 ```
 
-| 寄存器 | 全称 | 维护者 | 含义 |
-|--------|------|--------|------|
-| RDH | RX Descriptor Head | NIC | NIC 当前正在写的描述符位置 |
-| RDT | RX Descriptor Tail | CPU | CPU 已经回填到的描述符位置 |
+| 寄存器 | 全称               | 维护者 | 含义                       |
+| ------ | ------------------ | ------ | -------------------------- |
+| RDH    | RX Descriptor Head | NIC    | NIC 当前正在写的描述符位置 |
+| RDT    | RX Descriptor Tail | CPU    | CPU 已经回填到的描述符位置 |
 
 - NIC 从 RDH 向 RDT 方向消费描述符（收包）
 - CPU 回填新 mbuf 后更新 RDT，告诉 NIC "到这里为止都是可用的"
@@ -731,96 +731,96 @@ ixgbe_recv_pkts(void *rx_queue,
     struct ixgbe_rx_queue *q = rx_queue;
     union ixgbe_adv_rx_desc *rx_ring = q->rx_ring;
     struct rte_mbuf **sw_ring = q->sw_ring;
-    
+
     uint16_t nb_rx = 0;
     uint16_t next_dd;
     uint16_t current_dd;
-    
+
     // 1. 获取 CPU 的扫描游标（RDT 的软件副本）
     next_dd = q->rx_tail;
-    
+
     // 2. 批量处理
     //    通常 nb_pkts = 32（优化后的 batch size）
     while (nb_rx < nb_pkts) {
         union ixgbe_adv_rx_desc *desc;
         struct rte_mbuf *m;
-        
+
         desc = &rx_ring[next_dd];
-        
+
         // 3. 检查 DD (Descriptor Done) 位
         //    NIC 写入数据后设置 DD 位
-        if (!(desc->wb.upper.status_error & 
+        if (!(desc->wb.upper.status_error &
               rte_cpu_to_le_32(IXGBE_RXDADV_STAT_DD)))
             break;  // 没有更多完成的数据包
-        
+
         // 4. 获取对应的 mbuf
         m = sw_ring[next_dd];
-        
+
         // 5. 更新 mbuf 元数据
         m->data_len = rte_cpu_to_le_16(desc->wb.upper.length);
         m->pkt_len = m->data_len;
         m->port = q->port_id;
-        
+
         // 6. 解析 RSS hash（如果启用）
-        if (desc->wb.lower.status_error & 
+        if (desc->wb.lower.status_error &
             IXGBE_RXDADV_STAT_RSS_HASH) {
             m->ol_flags |= PKT_RX_RSS_HASH;
             m->hash.rss = rte_cpu_to_le_32(
                 desc->wb.lower.hi_dword.rss);
         }
-        
+
         // 7. 检查 Checksum 卸载
-        if (desc->wb.lower.status_error & 
+        if (desc->wb.lower.status_error &
             IXGBE_RXDADV_STAT_IPCS) {
-            if (!(desc->wb.lower.status_error & 
+            if (!(desc->wb.lower.status_error &
                   IXGBE_RXDADV_ERR_IPE))
                 m->ol_flags |= PKT_RX_IP_CKSUM_GOOD;
         }
-        if (desc->wb.lower.status_error & 
+        if (desc->wb.lower.status_error &
             IXGBE_RXDADV_STAT_L4CS) {
-            if (!(desc->wb.lower.status_error & 
+            if (!(desc->wb.lower.status_error &
                   IXGBE_RXDADV_ERR_L4E))
                 m->ol_flags |= PKT_RX_L4_CKSUM_GOOD;
         }
-        
+
         // 8. 检查 VLAN
         if (desc->wb.upper.vlan) {
             m->ol_flags |= PKT_RX_VLAN;
             m->vlan_tci = rte_cpu_to_le_16(
                 desc->wb.upper.vlan);
         }
-        
+
         // 9. 分配新的 mbuf 填充描述符（重新填充）
         struct rte_mbuf *new_m = rte_pktmbuf_alloc(q->mp);
         new_m->data_off = RTE_PKTMBUF_HEADROOM;
-        
+
         // 更新描述符的 DMA 地址
-        rx_ring[next_dd].read.pkt_addr = 
+        rx_ring[next_dd].read.pkt_addr =
             rte_mbuf_data_iova_default(new_m);
         rx_ring[next_dd].read.hdr_addr = 0;
-        
+
         // 保存新 mbuf
         sw_ring[next_dd] = new_m;
-        
+
         // 10. 将完成的 mbuf 放入输出数组
         rx_pkts[nb_rx++] = m;
-        
+
         // 11. 移动指针（绕回）
         next_dd++;
         if (next_dd == q->nb_rx_desc)
             next_dd = 0;
     }
-    
+
     // 12. 更新游标（软件副本）
     q->rx_tail = next_dd;
 
     // 13. 写 RDT 寄存器，通知 NIC：这些描述符已回填新 mbuf
     IXGBE_PCI_REG_WRITE(q->rdt_reg_addr, next_dd);
     q->rx_tail = next_dd;
-    
+
     // 13. 写入 EOP + RS 位（通知 NIC 描述符已消费）
     ixgbe_release_rx_desc(q, next_dd);
-    
+
     return nb_rx;
 }
 ```
@@ -893,34 +893,34 @@ ixgbe_tx_queue_setup(struct rte_eth_dev *dev,
                        const struct rte_eth_txconf *conf)
 {
     struct ixgbe_tx_queue *q;
-    
+
     // 1. 分配队列结构
     q = rte_zmalloc_socket("txq",
                             sizeof(struct ixgbe_tx_queue),
                             RTE_CACHE_LINE_SIZE,
                             socket_id);
-    
+
     // 2. 分配 Tx 描述符环（必须是 2^n）
     uint64_t desc_size = nb_tx_desc * sizeof(union ixgbe_adv_tx_desc);
     q->tx_ring = rte_malloc_socket(NULL,
                                     desc_size,
                                     RTE_CACHE_LINE_SIZE,
                                     socket_id);
-    
+
     // 3. 分配 ctx_ring（存储 TX context）
     q->ctx_ring = rte_malloc_socket(...);
-    
+
     // 4. 初始化 Free Threshold
     q->free_thresh = (conf->tx_free_thresh) ?
                       conf->tx_free_thresh : nb_tx_desc / 4;
-    
+
     // 5. 初始化 RS Threshold
     q->rs_thresh = (conf->tx_rs_thresh) ?
                     conf->tx_rs_thresh : nb_tx_desc / 4;
-    
+
     // 6. 保存到 dev_data
     dev->data->tx_queues[tx_queue_id] = q;
-    
+
     return 0;
 }
 ```
@@ -938,34 +938,34 @@ ixgbe_xmit_pkts(void *tx_queue,
     struct ixgbe_tx_queue *q = tx_queue;
     union ixgbe_adv_tx_desc *tx_ring = q->tx_ring;
     struct rte_mbuf *m;
-    
+
     uint16_t nb_tx = 0;
     uint16_t tx_head = q->tx_head;
     uint16_t tx_tail = q->tx_tail;
-    
+
     while (nb_tx < nb_pkts) {
         m = tx_pkts[nb_tx];
-        
+
         // 1. 检查可用描述符
         uint16_t used = (tx_head >= tx_tail) ?
                          tx_head - tx_tail :
                          q->nb_tx_desc - tx_tail + tx_head;
-        
+
         // 需要 1 个描述符（单 segment）
         if (used >= q->nb_tx_desc - 1)
             break;
-        
+
         // 2. 获取当前描述符
         union ixgbe_adv_tx_desc *desc = &tx_ring[tx_head];
-        
+
         // 3. 填充描述符
         desc->read.buffer_addr = rte_mbuf_data_iova(m);
-        desc->read.cmd_type_len = 
+        desc->read.cmd_type_len =
             IXGBE_ADVTXD_DCMD_DEXT |  // 扩展描述符
             IXGBE_ADVTXD_DCMD_EOP |   // 包结束
             IXGBE_ADVTXD_DCMD_RS |    // 报告状态
             m->data_len;              // 数据长度
-        
+
         // 4. 设置 offload 信息
         if (m->ol_flags & PKT_TX_IPV4) {
             desc->read.olinfo_status |=
@@ -973,25 +973,25 @@ ixgbe_xmit_pkts(void *tx_queue,
         }
         if (m->ol_flags & PKT_TX_L4_CKSUM) {
             desc->read.olinfo_status |=
-                IXGBE_ADVTXD_L4T_SCTP << 
+                IXGBE_ADVTXD_L4T_SCTP <<
                 IXGBE_ADVTXD_L4T_SHIFT;
         }
-        
+
         // 5. 保存 mbuf 指针（发送完成后释放）
         q->sw_ring[tx_head] = m;
-        
+
         nb_tx++;
         tx_head++;
         if (tx_head == q->nb_tx_desc)
             tx_head = 0;
     }
-    
+
     // 6. 更新 tx_head
     q->tx_head = tx_head;
-    
+
     // 7. 写入 doorbell，通知 NIC
     IXGBE_PCI_REG_WRITE(tx_tail + q->tail_db, tx_head);
-    
+
     return nb_tx;
 }
 ```
@@ -1027,28 +1027,28 @@ typedef union __rte_packed ixgbe_adv_tx_desc {
 
 ### 8.1 Intel 驱动
 
-| 驱动 | 设备 | 特点 |
-|------|------|------|
-| **igb** | 82575, 82576 | 1G NIC |
-| **ixgbe** | 82598, 82599, X540 | 10G NIC |
-| **i40e** | XL710, X710 | 10G/40G NIC |
-| **ice** | E800, E810 | 100G, Advanced Vector |
+| 驱动      | 设备               | 特点                  |
+| --------- | ------------------ | --------------------- |
+| **igb**   | 82575, 82576       | 1G NIC                |
+| **ixgbe** | 82598, 82599, X540 | 10G NIC               |
+| **i40e**  | XL710, X710        | 10G/40G NIC           |
+| **ice**   | E800, E810         | 100G, Advanced Vector |
 
 ### 8.2 虚拟化驱动
 
-| 驱动 | 设备 | 特点 |
-|------|------|------|
-| **virtio** | QEMU/KVM virtio-net | 虚拟化通用驱动 |
-| **vmxnet3** | VMware | ESXi 虚拟网卡 |
-| **bnxt** | Broadcom | 融合网卡 |
+| 驱动        | 设备                | 特点           |
+| ----------- | ------------------- | -------------- |
+| **virtio**  | QEMU/KVM virtio-net | 虚拟化通用驱动 |
+| **vmxnet3** | VMware              | ESXi 虚拟网卡  |
+| **bnxt**    | Broadcom            | 融合网卡       |
 
 ### 8.3 其他厂商
 
-| 驱动 | 厂商 | 特点 |
-|------|------|------|
+| 驱动     | 厂商            | 特点               |
+| -------- | --------------- | ------------------ |
 | **mlx5** | NVIDIA/Mellanox | 100G+, RDMA, Verbs |
-| **nfp** | Netronome | 智能网卡 |
-| **sfc** | Solarflare | 低延迟 |
+| **nfp**  | Netronome       | 智能网卡           |
+| **sfc**  | Solarflare      | 低延迟             |
 
 ---
 
@@ -1101,7 +1101,7 @@ struct virtnet_rx {
     struct vring_desc *desc;     // 描述符数组
     struct vring_avail *avail;   // 可用环
     struct vring_used *used;     // 已用环
-    
+
     // 与 ixgbe 不同：描述符是"引用"而非"拥有"
     // 驱动写入 addr，hypervisor DMA 读取/写入
 };
@@ -1135,7 +1135,7 @@ ixgbe_recv_pkts(void *rxq, struct rte_mbuf **rx_pkts, uint16_t nb_pkts)
     for (int i = 0; i < 4 && i < nb_rx; i++) {
         rte_prefetch0(rx_pkts[i]);
     }
-    
+
     // 处理...
 }
 ```
@@ -1191,6 +1191,7 @@ struct rte_eth_conf port_conf = {
 ---
 
 > [!tip] 参考文献
+>
 > - Intel, "DPDK Poll Mode Driver", https://doc.dpdk.org/guides/prog_guide/poll_mode_drv.html
 > - Intel, "DPDK ethdev API", https://doc.dpdk.org/rte_ethdev_8h.html
 > - "ixgbe/ixgbe_rxtx.c source code", https://github.com/DPDK/dpdk/blob/main/drivers/net/ixgbe/ixgbe_rxtx.c

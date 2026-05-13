@@ -1,17 +1,24 @@
 ---
 title: "Kernel Protocol Stack 深度探索 (三十六)：Conntrack 内部机制"
 date: 2026-04-13
-tags: [linux, kernel, networking, series, conntrack, nf-conntrack, hash-table, timeout, gc, nat-helper, ct-state]
+tags:
+  [
+    linux,
+    kernel,
+    networking,
+    series,
+    conntrack,
+    nf-conntrack,
+    hash-table,
+    timeout,
+    gc,
+    nat-helper,
+    ct-state,
+  ]
 description: "深入解析 Linux 连接跟踪（conntrack）内部机制——nf_conn 结构、哈希表设计、tuple 计算、状态机、超时与 GC、NAT 辅助模块（ALG）、以及大规模场景调优"
 ---
 
-> [!info] Kernel Protocol Stack 深度探索系列
-> 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
-> 15. [[2026-04-13-kernel-protocol-stack-deep-dive-ch15-conntrack|第十五章：连接跟踪 Conntrack]]
-> 16. [[2026-04-13-kernel-protocol-stack-deep-dive-ch16-nat|第十六章：NAT 与地址转换]]
-> 33. [[2026-04-13-kernel-protocol-stack-deep-dive-ch33-netfilter-hook|第三十三章：Netfilter 框架详解]]
-> 35. [[2026-04-13-kernel-protocol-stack-deep-dive-ch36-nftables|第三十五章：nftables]]
-> 36. **第三十六章：Conntrack 内部机制**
+> [!info] Kernel Protocol Stack 深度探索系列 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]] 15. [[2026-04-13-kernel-protocol-stack-deep-dive-ch15-conntrack|第十五章：连接跟踪 Conntrack]] 16. [[2026-04-13-kernel-protocol-stack-deep-dive-ch16-nat|第十六章：NAT 与地址转换]] 33. [[2026-04-13-kernel-protocol-stack-deep-dive-ch33-netfilter-hook|第三十三章：Netfilter 框架详解]] 35. [[2026-04-13-kernel-protocol-stack-deep-dive-ch36-nftables|第三十五章：nftables]] 36. **第三十六章：Conntrack 内部机制**
 
 ---
 
@@ -355,7 +362,7 @@ static void nf_ct_delete(struct nf_conn *ct, u32 portid, int report)
 ```
 FTP 主动模式（Active Mode）：
   客户端 (10.0.0.1) → NAT → FTP服务器 (1.2.3.4:21)
-  
+
   客户端发送 PORT 10,0,0,1,12,34（表示监听 10.0.0.1:3106）
   NAT 将载荷改为 PORT <公网IP>,12,34
   同时在 conntrack 中创建 EXPECTED 连接条目：

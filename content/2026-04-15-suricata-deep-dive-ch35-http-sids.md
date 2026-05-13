@@ -12,11 +12,8 @@ tags:
 description: "深入解析 Suricata HTTP 检测规则：http.* 关键字体系、HTTP 规范修饰符、uri/header/cookie/body 检测、HTP 库集成与配置源码映射"
 ---
 
-> [!info] Suricata 2026 深度探索系列
-> 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
-> ...
-> 33. [[2026-04-15-suricata-deep-dive-ch33-unified2|第三十三章：Unified2]]
-> 34. [[2026-04-15-suricata-deep-dive-ch34-rules|第三十四章：规则语法]]
+> [!info] Suricata 2026 深度探索系列 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+> ... 33. [[2026-04-15-suricata-deep-dive-ch33-unified2|第三十三章：Unified2]] 34. [[2026-04-15-suricata-deep-dive-ch34-rules|第三十四章：规则语法]]
 > **35. 当前章节：HTTP 规则**
 
 ---
@@ -42,25 +39,25 @@ alert tcp $HOME_NET any -> $EXTERNAL_NET $HTTP_PORTS (
 
 ### 1.1 HTTP 关键字列表
 
-| 关键字 | 匹配位置 | 说明 |
-|:---|:---|:---|
-| `http.uri` | URI 路径 | 完整 URI 路径（不含 query string） |
-| `http.uri.raw` | 原始 URI | URL 编码前的 URI |
-| `http.request_line` | 完整请求行 | 方法 + URI + 版本 |
-| `http.request_body` | 请求 Body | POST 数据 |
-| `http.header` | 通用头 | 所有请求/响应头 |
-| `http.header.raw` | 原始头 | 未经规范化的头 |
-| `http.cookie` | Cookie 头 | Cookie 值 |
-| `http.user_agent` | User-Agent | 用户代理字符串 |
-| `http.host` | Host 头 | 目标主机 |
-| `http.host.raw` | 原始 Host | 未经规范化的 Host |
-| `http.response_line` | 响应状态行 | 状态码 + 消息 |
-| `http.stat_code` | 状态码 | 响应状态码 |
-| `http.stat_msg` | 状态消息 | 响应状态描述 |
-| `http.response_body` | 响应 Body | 服务器响应内容 |
-| `http.content_type` | Content-Type | 内容类型 |
-| `http.content_len` | Content-Length | 内容长度 |
-| `http.location` | Location 头 | 重定向目标 |
+| 关键字               | 匹配位置       | 说明                               |
+| :------------------- | :------------- | :--------------------------------- |
+| `http.uri`           | URI 路径       | 完整 URI 路径（不含 query string） |
+| `http.uri.raw`       | 原始 URI       | URL 编码前的 URI                   |
+| `http.request_line`  | 完整请求行     | 方法 + URI + 版本                  |
+| `http.request_body`  | 请求 Body      | POST 数据                          |
+| `http.header`        | 通用头         | 所有请求/响应头                    |
+| `http.header.raw`    | 原始头         | 未经规范化的头                     |
+| `http.cookie`        | Cookie 头      | Cookie 值                          |
+| `http.user_agent`    | User-Agent     | 用户代理字符串                     |
+| `http.host`          | Host 头        | 目标主机                           |
+| `http.host.raw`      | 原始 Host      | 未经规范化的 Host                  |
+| `http.response_line` | 响应状态行     | 状态码 + 消息                      |
+| `http.stat_code`     | 状态码         | 响应状态码                         |
+| `http.stat_msg`      | 状态消息       | 响应状态描述                       |
+| `http.response_body` | 响应 Body      | 服务器响应内容                     |
+| `http.content_type`  | Content-Type   | 内容类型                           |
+| `http.content_len`   | Content-Length | 内容长度                           |
+| `http.location`      | Location 头    | 重定向目标                         |
 
 ---
 
@@ -103,25 +100,25 @@ void RegisterHttpUri(void)
 static int DetectHttpUriSetup(char *optstr, Signature *sig)
 {
     DetectHttpUriData *data = SCCalloc(1, sizeof(DetectHttpUriData));
-    
+
     /* 解析 http.uri; 选项 */
     /* 设置匹配标志 */
     data->flags |= HTTP_URI;
-    
+
     /* 查找之前的 content 关键字 */
     DetectContentData *cd = GetLastContent(sig);
     if (cd == NULL) {
         SCLogError("http.uri requires preceding content match");
         return -1;
     }
-    
+
     /* 将 content 标记为 HTTP URI 匹配 */
     cd->flags |= CONTENT_HTTP_URI;
-    
+
     /* 添加到签名 */
     data->next = sig->http_uri;
     sig->http_uri = data;
-    
+
     return 0;
 }
 
@@ -129,13 +126,13 @@ static int DetectHttpUriMatch(void *tx, void *data)
 {
     DetectHttpUriData *hd = (DetectHttpUriData *)data;
     HtpTx *tx = (HtpTx *)tx;
-    
+
     /* 获取解码后的 URI */
     bstr *uri = htp_tx_request_uri(tx);
     if (uri == NULL) {
         return 0;
     }
-    
+
     /* 遍历 URI 中的 content 列表 */
     for (DetectContentData *cd = tx->uri_cont; cd != NULL; cd = cd->next) {
         if (cd->flags & CONTENT_HTTP_URI) {
@@ -144,7 +141,7 @@ static int DetectHttpUriMatch(void *tx, void *data)
             }
         }
     }
-    
+
     return 0;
 }
 ```
@@ -164,13 +161,13 @@ alert http any any -> any any (
 static int DetectHttpUriRawMatch(void *tx, void *data)
 {
     HtpTx *htx = (HtpTx *)tx;
-    
+
     /* 获取原始（未解码）URI */
     bstr *raw_uri = htp_tx_request_uri_raw(htx);
     if (raw_uri == NULL) {
         return 0;
     }
-    
+
     /* 在原始 URI 上进行匹配 */
     return DetectContentMatch(raw_uri, data);
 }
@@ -211,7 +208,7 @@ typedef struct DetectHttpHeaderData_ {
 static int DetectHttpHeaderSetup(char *optstr, Signature *sig)
 {
     DetectHttpHeaderData *data = SCCalloc(1, sizeof(DetectHttpHeaderData));
-    
+
     /* 解析 http.header; 或带值的格式 */
     /* 查找 content 关键字并标记 */
     DetectContentData *cd = GetLastContent(sig);
@@ -219,28 +216,28 @@ static int DetectHttpHeaderSetup(char *optstr, Signature *sig)
         SCLogError("http.header requires preceding content match");
         return -1;
     }
-    
+
     /* 标记为 HTTP 头匹配 */
     cd->flags |= CONTENT_HTTP_HEADER;
-    
+
     return 0;
 }
 
 static int DetectHttpHeaderMatch(void *tx, void *data)
 {
     HtpTx *htx = (HtpTx *)tx;
-    
+
     /* 遍历所有请求头 */
     for (int i = 0; i < htp_table_size(htx->request_headers); i++) {
         htp_header_t *h = htp_table_get_index(htx->request_headers, i);
-        
+
         /* 在头值中匹配 */
         bstr *value = htp_header_value(h);
         if (DetectContentMatch(value, data)) {
             return 1;
         }
     }
-    
+
     return 0;
 }
 ```
@@ -321,20 +318,20 @@ static int DetectHttpRequestBodyMatch(void *tx, void *data)
 {
     HtpTx *htx = (HtpTx *)tx;
     DetectHttpBodyData *bodyd = (DetectHttpBodyData *)data;
-    
+
     /* 获取已重组的请求 body */
     HtpBody *body = &htx->request_body;
-    
+
     /* 遍历 body 数据块 */
     for (int i = 0; i < body->chunks; i++) {
         HtpBodyChunk *chunk = &body->chunk[i];
-        
+
         /* 在 body 数据中搜索 */
         if (DetectContentMatch(chunk->data, chunk->len, bodyd->content)) {
             return 1;
         }
     }
-    
+
     return 0;
 }
 ```
@@ -392,12 +389,12 @@ libhtp:
     # URI 规范化
     uri-include-all: false
     decode-url-encations: true
-    
+
     # 头规范化
     http-body-inline: true
     request-body-limit: 4096
     response-body-limit: 4096
-    
+
     # 编码处理
     double-decode-path: false
     double-decode-query: false
@@ -411,12 +408,12 @@ libhtp:
 
 ### 6.2 规范化级别
 
-| 级别 | 说明 | 配置 |
-|:---:|:---|:---|
-| `Minimal` | 仅解码标准编码 | `decode-utf-8: yes` |
-| `Low` | 基础规范化 | `decode-url-encations: yes` |
-| `Medium` | 中等级别 | `remove-enc-headers: yes` |
-| `High` | 激进规范化 | `double-decode-*` |
+|   级别    | 说明           | 配置                        |
+| :-------: | :------------- | :-------------------------- |
+| `Minimal` | 仅解码标准编码 | `decode-utf-8: yes`         |
+|   `Low`   | 基础规范化     | `decode-url-encations: yes` |
+| `Medium`  | 中等级别       | `remove-enc-headers: yes`   |
+|  `High`   | 激进规范化     | `double-decode-*`           |
 
 ```c
 // src/app-layer-htp.c — 规范化配置
@@ -430,12 +427,12 @@ typedef enum {
 static int HTTPProcessRequestUri(HtpTx *tx, HTTPInspectCtx *ctx)
 {
     bstr *uri = htp_tx_request_uri(tx);
-    
+
     if (ctx->decode_url_encodings) {
         /* URL 解码 */
         uri = HtpDecodeUrlEncoding(uri);
     }
-    
+
     if (ctx->uri_include_all) {
         /* 保留完整 URI */
         tx->uri_raw = bstr_dup(uri);
@@ -443,7 +440,7 @@ static int HTTPProcessRequestUri(HtpTx *tx, HTTPInspectCtx *ctx)
         /* 仅保留路径部分 */
         tx->uri = ExtractUriPath(uri);
     }
-    
+
     return 0;
 }
 ```
@@ -540,30 +537,30 @@ int HTPRegister(void)
 {
     /* 注册协议 */
     AppLayerRegisterProtocol(&hTP);
-    
+
     /* 注册 HTP 库回调 */
     htp_config_register_request(httcp->cfg, HTPRequestCallback);
     htp_config_register_response(httcp->cfg, HTPResponseCallback);
     htp_config_register_request_line_data(httcp->cfg, HTPRequestLineCallback);
     htp_config_register_response_line_data(httcp->cfg, HTPResponseLineCallback);
     htp_config_register_header_data(httcp->cfg, HTPHeaderCallback);
-    
+
     return 0;
 }
 
 static int HTPRequestCallback(htp_tx_t *tx)
 {
     HtpTx *hhtx = SCCalloc(1, sizeof(HtpTx));
-    
+
     /* 存储解析后的数据 */
     hhtx->tx = tx;
     hhtx->request_uri = htp_tx_request_uri(tx);
     hhtx->request_method = htp_tx_request_method(tx);
     hhtx->request_protocol = htp_tx_request_protocol(tx);
-    
+
     /* 触发 HTTP 检测 */
     DetectEngineRun(HTTP_STATE, hhtx);
-    
+
     return 0;
 }
 ```

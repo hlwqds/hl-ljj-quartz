@@ -194,13 +194,13 @@ typedef struct {
     u32 connection_id;
     u32 stream_id;
     u8  packet_number;
-    
+
     /* QUIC 状态机 */
     quic_state_t state;
-    
+
     /* 加密层 */
     quic_crypto_t crypto;
-    
+
     /* 流控 */
     u64 rx_window;
     u64 tx_window;
@@ -213,13 +213,13 @@ static VLIB_NODE_FN(quic_input_node) (vlib_main_t *vm,
 {
     // 1. 解析 QUIC 头
     quic_header_t *hdr = parse_quic_header(b);
-    
+
     // 2. 查找/创建会话
     quic_session_t *s = quic_session_lookup(hdr->dcid);
-    
+
     // 3. 执行状态机
     quic_process(s, hdr);
-    
+
     // 4. 交付到应用层
     quic_deliver_to_app(s);
 }
@@ -386,19 +386,19 @@ static_always_inline void
 memnet_process(vlib_buffer_t *b)
 {
     memnet_packet_t *p = (memnet_packet_t *)b->data;
-    
+
     switch (p->op) {
     case MEMNET_READ:
         // 发起远程读取请求
         send_read_request(p->remote_nid, p->remote_addr);
         break;
-        
+
     case MEMNET_WRITE:
         // 执行远程写入
         remote_memcpy(p->remote_addr, p->data);
         send_ack(p->remote_nid);
         break;
-        
+
     case MEMNET_ATOMIC:
         // 原子操作 (fetch-add, CAS, etc.)
         atomic_op(p->remote_addr, p->op, p->data);
@@ -456,7 +456,7 @@ class TrafficClassifier:
     def __init__(self):
         self.model = joblib.load('/opt/vpp/ml/traffic_classifier.pkl')
         self.feature_extractor = FeatureExtractor()
-    
+
     def classify(self, flow_metadata):
         """
         flow_metadata: {
@@ -468,11 +468,11 @@ class TrafficClassifier:
         """
         features = self.feature_extractor.extract(flow_metadata)
         features_array = np.array(features).reshape(1, -1)
-        
+
         # 分类
         prediction = self.model.predict(features_array)[0]
         confidence = self.model.predict_proba(features_array)[0].max()
-        
+
         # 类别映射
         app_types = {
             0: 'web',
@@ -482,7 +482,7 @@ class TrafficClassifier:
             4: 'p2p',
             5: 'malware'
         }
-        
+
         return {
             'app_type': app_types[prediction],
             'confidence': confidence,
@@ -503,32 +503,32 @@ class PredictiveQoS:
     def __init__(self):
         self.demand_predictor = DemandPredictor()
         self.resource_allocator = ResourceAllocator()
-        
+
     def predict_and_allocate(self, time_horizon=300):
         """
         预测 5 分钟内的流量需求，预先调整资源
         """
         # 1. 获取历史流量数据
         history = self.get_traffic_history(3600)  # 1 hour
-        
+
         # 2. 预测未来需求
         predicted_demand = self.demand_predictor.predict(
             history, horizon=time_horizon
         )
-        
+
         # 3. 动态调整队列
         for qos_flow in predicted_demand:
             current_mbr = qos_flow['mbr']
             predicted_need = qos_flow['predicted_need']
-            
+
             # 预留额外 20% buffer
             new_mbr = int(predicted_need * 1.2)
-            
+
             self.resource_allocator.update_qos(
                 flow_id=qos_flow['id'],
                 mbr=new_mbr
             )
-            
+
         # 4. 生成报告
         return self.generate_allocation_report()
 
@@ -655,14 +655,14 @@ spec:
     labels:
       network.dataplane: vpp
   configPatches:
-  - applyTo: CLUSTER
-    patch:
-      operation: ADD
-      value:
-        name: "xds-grpc"
-        type: STRICT_DNS
-        http2_protocol_options: {}
-        connect_timeout: 5s
+    - applyTo: CLUSTER
+      patch:
+        operation: ADD
+        value:
+          name: "xds-grpc"
+          type: STRICT_DNS
+          http2_protocol_options: {}
+          connect_timeout: 5s
 ```
 
 ### 6.3 GitOps 工作流

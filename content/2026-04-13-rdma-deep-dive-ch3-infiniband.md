@@ -38,12 +38,12 @@ IB 从上到下分为四层：
 
 与 OSI 模型对比：
 
-| IB 层 | 对应 OSI |
-|-------|----------|
+| IB 层     | 对应 OSI       |
+| --------- | -------------- |
 | Transport | L4 (Transport) |
-| Network | L3 (Network) |
-| Link | L2 (Data Link) |
-| Physical | L1 (Physical) |
+| Network   | L3 (Network)   |
+| Link      | L2 (Data Link) |
+| Physical  | L1 (Physical)  |
 
 ---
 
@@ -51,15 +51,15 @@ IB 从上到下分为四层：
 
 ### 2.1 速率与编码
 
-| 世代 | 速率/通道 | 编码 | 说明 |
-|------|----------|------|------|
-| SDR | 8 Gbps | 8b/10b | Single Data Rate |
-| DDR | 16 Gbps | 8b/10b | Double Data Rate |
-| QDR | 32 Gbps | 8b/10b | Quad Data Rate |
-| FDR | 56 Gbps | 64b/66b | Fourteen Data Rate |
-| EDR | 100 Gbps | 64b/66b | Enhanced Data Rate |
-| HDR | 200 Gbps | 64b/66b | High Data Rate |
-| NDR | 400 Gbps | 64b/66b | Next Data Rate |
+| 世代 | 速率/通道 | 编码    | 说明               |
+| ---- | --------- | ------- | ------------------ |
+| SDR  | 8 Gbps    | 8b/10b  | Single Data Rate   |
+| DDR  | 16 Gbps   | 8b/10b  | Double Data Rate   |
+| QDR  | 32 Gbps   | 8b/10b  | Quad Data Rate     |
+| FDR  | 56 Gbps   | 64b/66b | Fourteen Data Rate |
+| EDR  | 100 Gbps  | 64b/66b | Enhanced Data Rate |
+| HDR  | 200 Gbps  | 64b/66b | High Data Rate     |
+| NDR  | 400 Gbps  | 64b/66b | Next Data Rate     |
 
 ### 2.2 物理接口
 
@@ -94,12 +94,12 @@ IB 支持 1x（1 通道）、4x（4 通道）、8x、12x 链路宽度。常用�
 └─────────────────────────────────────────────────────────────┘
 ```
 
-| 字段 | 说明 |
-|------|------|
-| **VL** | Virtual Lane，虚拟通道，0-15 |
-| **DL** | Destination/Source LID length |
-| **LID** | Local ID，本地端口标识（12-bit） |
-| **Packet Type** | 数据包类型（见下文） |
+| 字段            | 说明                             |
+| --------------- | -------------------------------- |
+| **VL**          | Virtual Lane，虚拟通道，0-15     |
+| **DL**          | Destination/Source LID length    |
+| **LID**         | Local ID，本地端口标识（12-bit） |
+| **Packet Type** | 数据包类型（见下文）             |
 
 ### 3.2 LID（Local ID）
 
@@ -208,16 +208,16 @@ Sender                                           Receiver
 
 ### 5.5 传输层数据包类型
 
-| Opcode | 名称 | 说明 |
-|--------|------|------|
-| RC Sendreq | RC 发送请求 | 含 RDMA 操作的请求 |
-| RC SendFirst/Middle/Last | 分段发送 | 大于 MTU 的消息 |
-| RC ACK | 应答 | 确认收到 |
-| RC NAK | 否定应答 | 请求重传 |
-| RDMA Read Request | 读请求 | 读取远程内存 |
-| RDMA Write Request | 写请求 | 写入远程内存 |
-| Atomic Fetch & Add | 原子取加 | |
-| Atomic Compare & Swap | 原子比较交换 | |
+| Opcode                   | 名称         | 说明               |
+| ------------------------ | ------------ | ------------------ |
+| RC Sendreq               | RC 发送请求  | 含 RDMA 操作的请求 |
+| RC SendFirst/Middle/Last | 分段发送     | 大于 MTU 的消息    |
+| RC ACK                   | 应答         | 确认收到           |
+| RC NAK                   | 否定应答     | 请求重传           |
+| RDMA Read Request        | 读请求       | 读取远程内存       |
+| RDMA Write Request       | 写请求       | 写入远程内存       |
+| Atomic Fetch & Add       | 原子取加     |                    |
+| Atomic Compare & Swap    | 原子比较交换 |                    |
 
 ---
 
@@ -248,13 +248,13 @@ Sender                                           Receiver
 
 ## 7. IB 寻址总结
 
-| 地址类型 | 长度 | 范围 | 作用 |
-|----------|------|------|------|
-| **LID** | 16-bit | 1–0xFFFF | 本地子网内 L2 寻址 |
-| **GID** | 128-bit | — | 全局 L3 寻址，IPv6 格式 |
-| **QPN** | 24-bit | — | 标识 Queue Pair |
-| **PSN** | 24-bit | — | 数据包序列号 |
-| **GUID** | 64-bit | — | HCA/Port 全球唯一标识 |
+| 地址类型 | 长度    | 范围     | 作用                    |
+| -------- | ------- | -------- | ----------------------- |
+| **LID**  | 16-bit  | 1–0xFFFF | 本地子网内 L2 寻址      |
+| **GID**  | 128-bit | —        | 全局 L3 寻址，IPv6 格式 |
+| **QPN**  | 24-bit  | —        | 标识 Queue Pair         |
+| **PSN**  | 24-bit  | —        | 数据包序列号            |
+| **GUID** | 64-bit  | —        | HCA/Port 全球唯一标识   |
 
 ---
 
@@ -275,12 +275,12 @@ iWARP:   IB Transport → DDP → RDMAP → TCP/UDP
 
 IB 协议栈四层各有分工：
 
-| 层级 | 核心功能 | 关键头部 |
-|------|----------|----------|
-| **Transport** | 可靠传输、RDMA 操作、原子操作 | BTH |
-| **Network** | 全局路由、跨子网 | GRH (GID) |
-| **Link** | 本地交换、LID 寻址、Credit 流控 | LRH |
-| **Physical** | 高速串行、编码、信号 | — |
+| 层级          | 核心功能                        | 关键头部  |
+| ------------- | ------------------------------- | --------- |
+| **Transport** | 可靠传输、RDMA 操作、原子操作   | BTH       |
+| **Network**   | 全局路由、跨子网                | GRH (GID) |
+| **Link**      | 本地交换、LID 寻址、Credit 流控 | LRH       |
+| **Physical**  | 高速串行、编码、信号            | —         |
 
 > [!next] 下一章
 > 第四章聚焦 RoCE v1/v2——如何将 IB 传输层运行在 Ethernet 上，以及 PFC、ECN、DCB 等无损网络机制。

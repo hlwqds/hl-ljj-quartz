@@ -12,14 +12,8 @@ tags:
 description: "深入解析 Zeek 集群配置——node.cfg、cluster-layout.zeek、流量分发配置、ZeekControl 配置项详解"
 ---
 
-> [!info] Zeek 2026 深度探索系列
-> 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
-> ...
-> 25. [[2026-04-15-zeek-deep-dive-ch25-cluster-arch|第二十五章：集群架构]]
-> 26. **第二十六章：集群配置**
-> 27. [[2026-04-15-zeek-deep-dive-ch27-communication|第二十七章：通信]]
-> 28. [[2026-04-15-zeek-deep-dive-ch28-load-balancing|第二十八章：负载均衡]]
-> 29. [[2026-04-15-zeek-deep-dive-ch29-packet-loss|第二十九章：丢包处理]]
+> [!info] Zeek 2026 深度探索系列 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
+> ... 25. [[2026-04-15-zeek-deep-dive-ch25-cluster-arch|第二十五章：集群架构]] 26. **第二十六章：集群配置** 27. [[2026-04-15-zeek-deep-dive-ch27-communication|第二十七章：通信]] 28. [[2026-04-15-zeek-deep-dive-ch28-load-balancing|第二十八章：负载均衡]] 29. [[2026-04-15-zeek-deep-dive-ch29-packet-loss|第二十九章：丢包处理]]
 
 ---
 
@@ -798,12 +792,12 @@ redef Cluster::manager = { ... };  # 缺少节点定义
 
 本章介绍了 Zeek 集群配置的核心内容：
 
-| 配置文件 | 用途 | 关键参数 |
-|:---|:---|:---|
-| `zeekctl.cfg` | ZeekControl 全局配置 | 日志路径、Broker 端口 |
-| `node.cfg` | 节点配置 | type、host、interface |
-| `cluster-layout.zeek` | 集群拓扑定义 | Manager/Proxy/Worker 定义 |
-| `networks.cfg` | 网络定义 | CIDR 范围 |
+| 配置文件              | 用途                 | 关键参数                  |
+| :-------------------- | :------------------- | :------------------------ |
+| `zeekctl.cfg`         | ZeekControl 全局配置 | 日志路径、Broker 端口     |
+| `node.cfg`            | 节点配置             | type、host、interface     |
+| `cluster-layout.zeek` | 集群拓扑定义         | Manager/Proxy/Worker 定义 |
+| `networks.cfg`        | 网络定义             | CIDR 范围                 |
 
 下一章我们将深入讨论**集群通信**，包括 ZeekControl 协议、Broker 通信框架的实现细节。
 

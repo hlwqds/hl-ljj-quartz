@@ -5,8 +5,8 @@ tags: [p4, series, extern, hash, register, queue, digest, p4-16, psa]
 description: "P4 Extern 对象深度解析——Hash 哈希计算、Checksum 校验和、Register 状态存储、Queue 队列管理、Digest 数据摘要、PSA 中的各种 Extern 对象及其在数据平面中的使用方法"
 ---
 
-> [!info] P4 深度探索系列
-> 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+> [!info] P4 深度探索系列 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-14-p4-deep-dive-ch1-p4-overview|第一章：P4 概述——诞生背景与协议无关包处理]]
 > 2. [[2026-04-14-p4-deep-dive-ch2-p4-architecture|第二章：P4 架构模型——PSA/V1Model、Ingress/Egress]]
 > 3. [[2026-04-14-p4-deep-dive-ch3-p4-vs-ebpf|第三章：P4 vs eBPF——适用场景与硬件/软件对比]]
@@ -54,16 +54,16 @@ P4 程序层级关系:
 
 ### 1.1 PSA 中的主要 Extern
 
-| Extern | 用途 |
-|--------|------|
-| Hash | 哈希计算 (CRC, random, identity) |
-| Checksum | Checksum 验证与重新计算 |
-| Register | 通用读写状态存储 |
-| Counter | 只增计数器 |
-| Gauge | 可增可减计量器 |
-| Meter | 流量速率计量与着色 |
-| Queue | 队列管理与调度 |
-| Digest | 向控制面发送数据包摘要 |
+| Extern   | 用途                             |
+| -------- | -------------------------------- |
+| Hash     | 哈希计算 (CRC, random, identity) |
+| Checksum | Checksum 验证与重新计算          |
+| Register | 通用读写状态存储                 |
+| Counter  | 只增计数器                       |
+| Gauge    | 可增可减计量器                   |
+| Meter    | 流量速率计量与着色               |
+| Queue    | 队列管理与调度                   |
+| Digest   | 向控制面发送数据包摘要           |
 
 ---
 
@@ -785,16 +785,15 @@ PSA_Ingress(
 
 本章介绍了 P4 PSA 架构中的各种 **Extern 对象**：
 
-| Extern | 类型 | 主要用途 |
-|--------|------|---------|
-| Hash | 计算 | 流哈希、ECMP 负载均衡、Flow ID |
-| Checksum | 计算 | IPv4/TCP/UDP Checksum 验证和重新计算 |
-| Register | 状态 | 通用读写存储、会话状态、流量统计 |
-| Counter | 状态 | 只增计数、PKT/Byte 统计 |
-| Gauge | 状态 | 可增可减计量、队列深度 |
-| Meter | 流量管理 | 速率限制、双速率三色算法 (RFC 2697/2698) |
-| Queue | 流量管理 | 队列缓冲、QoS 调度 |
-| Digest | 遥测 | 数据平面到控制平面的数据报告 |
+| Extern   | 类型     | 主要用途                                 |
+| -------- | -------- | ---------------------------------------- |
+| Hash     | 计算     | 流哈希、ECMP 负载均衡、Flow ID           |
+| Checksum | 计算     | IPv4/TCP/UDP Checksum 验证和重新计算     |
+| Register | 状态     | 通用读写存储、会话状态、流量统计         |
+| Counter  | 状态     | 只增计数、PKT/Byte 统计                  |
+| Gauge    | 状态     | 可增可减计量、队列深度                   |
+| Meter    | 流量管理 | 速率限制、双速率三色算法 (RFC 2697/2698) |
+| Queue    | 流量管理 | 队列缓冲、QoS 调度                       |
+| Digest   | 遥测     | 数据平面到控制平面的数据报告             |
 
 理解这些 Extern 对象的**资源约束**和**性能特性**，对于设计高效的数据平面程序至关重要。
-

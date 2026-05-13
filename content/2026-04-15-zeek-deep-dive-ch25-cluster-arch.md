@@ -13,21 +13,15 @@ tags:
 description: "深入解析 Zeek 集群架构——manager/proxy/p logger/worker 角色定义、集群拓扑、ZeekControl 架构、进程间通信机制"
 ---
 
-> [!info] Zeek 2026 深度探索系列
-> 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
-> ...
-> 24. [[2026-04-15-zeek-deep-dive-ch24-notice|第二十四章：Notice 框架]]
-> 25. **第二十五章：集群架构**
-> 26. [[2026-04-15-zeek-deep-dive-ch26-cluster-config|第二十六章：集群配置]]
-> 27. [[2026-04-15-zeek-deep-dive-ch27-communication|第二十七章：通信]]
-> 28. [[2026-04-15-zeek-deep-dive-ch28-load-balancing|第二十八章：负载均衡]]
-> 29. [[2026-04-15-zeek-deep-dive-ch29-packet-loss|第二十九章：丢包处理]]
+> [!info] Zeek 2026 深度探索系列 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
+> ... 24. [[2026-04-15-zeek-deep-dive-ch24-notice|第二十四章：Notice 框架]] 25. **第二十五章：集群架构** 26. [[2026-04-15-zeek-deep-dive-ch26-cluster-config|第二十六章：集群配置]] 27. [[2026-04-15-zeek-deep-dive-ch27-communication|第二十七章：通信]] 28. [[2026-04-15-zeek-deep-dive-ch28-load-balancing|第二十八章：负载均衡]] 29. [[2026-04-15-zeek-deep-dive-ch29-packet-loss|第二十九章：丢包处理]]
 
 ---
 
 ## 1. Zeek 集群概述
 
 Zeek 集群是**分布式网络分析部署架构**，通过将分析负载分散到多个节点实现：
+
 - **横向扩展**：增加 worker 节点提升吞吐量
 - **高可用性**：单节点故障不影响整体分析
 - **集中管理**：统一配置、日志收集、策略下发
@@ -80,12 +74,12 @@ Zeek 集群是**分布式网络分析部署架构**，通过将分析负载分�
 
 ### 1.2 集群角色
 
-| 角色 | 功能 | 数量 | 资源需求 |
-|:---|:---|:---|:---|
-| **Manager** | 集群协调、配置管理、日志聚合 | 1 | 高 CPU/内存 |
-| **Proxy** | 前端代理、流量分发、状态同步 | 2+ | 中等 |
-| **Worker** | 数据包捕获、协议分析、事件生成 | N | 高网络/CPU |
-| **Logger** | 日志写入、持久化 | 1+ | 高磁盘 I/O |
+| 角色        | 功能                           | 数量 | 资源需求    |
+| :---------- | :----------------------------- | :--- | :---------- |
+| **Manager** | 集群协调、配置管理、日志聚合   | 1    | 高 CPU/内存 |
+| **Proxy**   | 前端代理、流量分发、状态同步   | 2+   | 中等        |
+| **Worker**  | 数据包捕获、协议分析、事件生成 | N    | 高网络/CPU  |
+| **Logger**  | 日志写入、持久化               | 1+   | 高磁盘 I/O  |
 
 ---
 
@@ -692,11 +686,11 @@ private:
 
 在小型部署中，可以组合角色：
 
-| 部署规模 | 节点配置 |
-|:---|:---|
-| **单机** | Manager + Proxy + Logger + Worker（全部组合） |
-| **小规模** | Manager + Logger + Worker<br/>Proxy 独立 |
-| **中规模** | Manager 独立<br/>Proxy x 2（HA）<br/>Logger x 2（HA）<br/>Worker x N |
+| 部署规模   | 节点配置                                                                 |
+| :--------- | :----------------------------------------------------------------------- |
+| **单机**   | Manager + Proxy + Logger + Worker（全部组合）                            |
+| **小规模** | Manager + Logger + Worker<br/>Proxy 独立                                 |
+| **中规模** | Manager 独立<br/>Proxy x 2（HA）<br/>Logger x 2（HA）<br/>Worker x N     |
 | **大规模** | Manager Cluster（HA）<br/>Proxy x 4+<br/>Logger Cluster<br/>Worker x 16+ |
 
 ### 6.3 通信路径
@@ -1039,13 +1033,13 @@ bool FailureDetector::IsNodeAlive(const std::string& node_id)
 
 本章介绍了 Zeek 集群的核心架构：
 
-| 组件 | 职责 | 关键源码 |
-|:---|:---|:---|
-| **Manager** | 控制平面、配置管理、日志聚合 | `zeek/cluster/Cluster.cc` |
-| **Proxy** | 流量分发、状态缓存、负载均衡 | `zeek/cluster/Proxy.cc` |
-| **Worker** | 数据包捕获、协议分析、事件生成 | `zeek/cluster/Worker.cc` |
-| **Logger** | 日志持久化、轮转、过滤 | `zeek/cluster/Logger.cc` |
-| **Broker** | 消息通信、发布订阅、RPC | `zeek/broker/Comm.cc` |
+| 组件        | 职责                           | 关键源码                  |
+| :---------- | :----------------------------- | :------------------------ |
+| **Manager** | 控制平面、配置管理、日志聚合   | `zeek/cluster/Cluster.cc` |
+| **Proxy**   | 流量分发、状态缓存、负载均衡   | `zeek/cluster/Proxy.cc`   |
+| **Worker**  | 数据包捕获、协议分析、事件生成 | `zeek/cluster/Worker.cc`  |
+| **Logger**  | 日志持久化、轮转、过滤         | `zeek/cluster/Logger.cc`  |
+| **Broker**  | 消息通信、发布订阅、RPC        | `zeek/broker/Comm.cc`     |
 
 下一章我们将深入讨论**集群配置**，包括 `node.cfg`、`cluster-layout.zeek` 等配置文件的详细说明。
 

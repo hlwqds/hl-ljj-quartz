@@ -14,13 +14,8 @@ tags:
 description: "深入解析 Zeek 硬件加速技术——Intel FDIR / OpenOnload / DPDK 加速、Kernel Bypass、网卡 Offload、硬件过滤、DPDK Packet Capture"
 ---
 
-> [!info] Zeek 2026 深度探索系列
-> 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
-> ...
-> 34. [[2026-04-15-zeek-deep-dive-ch34-memory|第三十四章：内存调优]]
-> 35. [[2026-04-15-zeek-deep-dive-ch35-scripts|第三十五章：脚本优化]]
-> 36. **第三十六章：硬件加速**
-> 37. [[2026-04-15-zeek-deep-dive-ch37-tuning|第三十七章：Tuning 清单]]
+> [!info] Zeek 2026 深度探索系列 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
+> ... 34. [[2026-04-15-zeek-deep-dive-ch34-memory|第三十四章：内存调优]] 35. [[2026-04-15-zeek-deep-dive-ch35-scripts|第三十五章：脚本优化]] 36. **第三十六章：硬件加速** 37. [[2026-04-15-zeek-deep-dive-ch37-tuning|第三十七章：Tuning 清单]]
 
 ---
 
@@ -60,13 +55,13 @@ description: "深入解析 Zeek 硬件加速技术——Intel FDIR / OpenOnload 
 
 ### 1.1 各技术对比
 
-| 技术 | 厂商 | 延迟 | 吞吐量 | CPU 消耗 | 易用性 |
-|:---|:---|:---|:---|:---|:---|
-| **DPDK** | 通用 | 极低 | 极高 | 极低 | 中 |
-| **OpenOnload** | Solarflare | 低 | 高 | 低 | 易 |
-| **Intel FDIR** | Intel E810 | 低 | 高 | 低 | 中 |
-| **PF_RING ZC** | NTITB | 低 | 高 | 低 | 中 |
-| **kernel offload** | 通用 | 中 | 中 | 中 | 易 |
+| 技术               | 厂商       | 延迟 | 吞吐量 | CPU 消耗 | 易用性 |
+| :----------------- | :--------- | :--- | :----- | :------- | :----- |
+| **DPDK**           | 通用       | 极低 | 极高   | 极低     | 中     |
+| **OpenOnload**     | Solarflare | 低   | 高     | 低       | 易     |
+| **Intel FDIR**     | Intel E810 | 低   | 高     | 低       | 中     |
+| **PF_RING ZC**     | NTITB      | 低   | 高     | 低       | 中     |
+| **kernel offload** | 通用       | 中   | 中     | 中       | 易     |
 
 ---
 
@@ -519,13 +514,13 @@ mpstat -P ALL 1
 
 ### 7.1 场景对比
 
-| 场景 | 推荐方案 | 理由 |
-|:---|:---|:---|
-| 1-5 Gbps | 优化 kernel + RSS | 简单、足够 |
-| 5-10 Gbps | Intel FDIR + RSS | 成本低、性能好 |
-| 10-40 Gbps | DPDK / OpenOnload | 极高性能 |
-| 超低延迟 | OpenOnload | 最低延迟 |
-| 云环境 | 优化 kernel + 采样 | 硬件限制 |
+| 场景       | 推荐方案           | 理由           |
+| :--------- | :----------------- | :------------- |
+| 1-5 Gbps   | 优化 kernel + RSS  | 简单、足够     |
+| 5-10 Gbps  | Intel FDIR + RSS   | 成本低、性能好 |
+| 10-40 Gbps | DPDK / OpenOnload  | 极高性能       |
+| 超低延迟   | OpenOnload         | 最低延迟       |
+| 云环境     | 优化 kernel + 采样 | 硬件限制       |
 
 ### 7.2 硬件选型建议
 

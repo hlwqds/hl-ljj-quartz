@@ -13,8 +13,8 @@ tags:
   - networking
 ---
 
-> [!info] Cilium 2026 深度探索系列
-> 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+> [!info] Cilium 2026 深度探索系列 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+>
 > 1. [[2026-04-14-cilium-deep-dive-ch1-cilium-overview|第一章：Cilium 概述]]
 > 2. [[2026-04-14-cilium-deep-dive-ch2-architecture|第二章：Cilium 架构]]
 > 3. [[2026-04-14-cilium-deep-dive-ch3-ebpf-datapath|第三章：eBPF 数据面]]
@@ -62,25 +62,25 @@ VXLAN（Virtual Extensible LAN）是一种**Overlay 网络协议**，通过 UDP 
 
 ### 1.1 为什么需要 VXLAN？
 
-| 问题 | 解决方案 | VXLAN 优势 |
-|:---|:---|:---|
-| Pod IP 跨节点不可路由 | 封装在 UDP 包内 | 穿透三层网络 |
-| VPC/网络限制 | Overlay 网络 | 独立 IP 平面 |
-| Pod IP 漂移 | VTEP 固定 | 流量总能找到节点 |
-| MAC 地址泛洪 | VNI 隔离 | 支持更多网络 |
+| 问题                  | 解决方案        | VXLAN 优势       |
+| :-------------------- | :-------------- | :--------------- |
+| Pod IP 跨节点不可路由 | 封装在 UDP 包内 | 穿透三层网络     |
+| VPC/网络限制          | Overlay 网络    | 独立 IP 平面     |
+| Pod IP 漂移           | VTEP 固定       | 流量总能找到节点 |
+| MAC 地址泛洪          | VNI 隔离        | 支持更多网络     |
 
 ### 1.2 VXLAN vs Geneve
 
 Cilium 支持两种隧道协议：
 
-| 特性 | VXLAN | Geneve |
-|:---|:---|:---|
-| **标准** | RFC 7348 | RFC 8926 |
-| **封装** | 固定头 | 可扩展 TLV |
-| **元数据** | 有限 (VNI) | 灵活 (类 Type-Length-Value) |
-| **硬件支持** | 广泛 | 逐渐支持 |
-| **Cilium 支持** | ✅ 默认 | ✅ 可选 |
-| **性能** | 略优 | 略高灵活性 |
+| 特性            | VXLAN      | Geneve                      |
+| :-------------- | :--------- | :-------------------------- |
+| **标准**        | RFC 7348   | RFC 8926                    |
+| **封装**        | 固定头     | 可扩展 TLV                  |
+| **元数据**      | 有限 (VNI) | 灵活 (类 Type-Length-Value) |
+| **硬件支持**    | 广泛       | 逐渐支持                    |
+| **Cilium 支持** | ✅ 默认    | ✅ 可选                     |
+| **性能**        | 略优       | 略高灵活性                  |
 
 Cilium 默认使用 **VXLAN**，但在需要传输额外元数据时使用 **Geneve**（如用于实现 Transparent Encryption）。
 
@@ -321,12 +321,12 @@ metadata:
 spec:
   ipam:
     podCIDRs:
-    - 10.0.2.0/24      # Node 2 的 Pod CIDR
+      - 10.0.2.0/24 # Node 2 的 Pod CIDR
   encryption:
     enabled: false
   tunnel:
-  - address: 10.0.2.10   # Node 2 的物理 IP
-    protocol: vxlan
+    - address: 10.0.2.10 # Node 2 的物理 IP
+      protocol: vxlan
 ```
 
 **节点注册流程**：
@@ -498,11 +498,11 @@ helm install cilium cilium/cilium \
 
 ### 6.3 模式对比
 
-| 模式 | 延迟 | 吞吐量 | 要求 | 适用场景 |
-|:---|:---|:---|:---|:---|
-| **VXLAN** | 略高 | 略低 | 无 | 跨网络、跨云、跨机房 |
-| **直接路由** | 最低 | 最高 | 二层可达 | 同机房、同 VPC |
-| **混合** | 动态 | 动态 | 灵活 | 大规模集群 |
+| 模式         | 延迟 | 吞吐量 | 要求     | 适用场景             |
+| :----------- | :--- | :----- | :------- | :------------------- |
+| **VXLAN**    | 略高 | 略低   | 无       | 跨网络、跨云、跨机房 |
+| **直接路由** | 最低 | 最高   | 二层可达 | 同机房、同 VPC       |
+| **混合**     | 动态 | 动态   | 灵活     | 大规模集群           |
 
 ---
 
@@ -616,26 +616,26 @@ kubectl -n kube-system exec ds/cilium -- \
 
 ### 8.4 常见问题与解决
 
-| 问题 | 原因 | 解决方法 |
-|:---|:---|:---|
-| 跨节点不通 | 防火墙阻止 UDP 8472 | 开放 8472/6081 端口 |
-| VXLAN 不工作 | 节点 IP 配置错误 | 检查 tunnel_map 配置 |
-| MTU 问题 | 包被分片 | 降低 Pod MTU 到 1450 |
-| VNI 不匹配 | 多个集群 VNI 冲突 | 修改 cluster-id |
-| tunnel_map 为空 | 节点未注册 | 检查 CiliumNode 资源 |
-| 封装失败 | 物理网络 MTU 小 | 使用直接路由或降低 MTU |
+| 问题            | 原因                | 解决方法               |
+| :-------------- | :------------------ | :--------------------- |
+| 跨节点不通      | 防火墙阻止 UDP 8472 | 开放 8472/6081 端口    |
+| VXLAN 不工作    | 节点 IP 配置错误    | 检查 tunnel_map 配置   |
+| MTU 问题        | 包被分片            | 降低 Pod MTU 到 1450   |
+| VNI 不匹配      | 多个集群 VNI 冲突   | 修改 cluster-id        |
+| tunnel_map 为空 | 节点未注册          | 检查 CiliumNode 资源   |
+| 封装失败        | 物理网络 MTU 小     | 使用直接路由或降低 MTU |
 
 ---
 
 ## 9. 章节总结
 
-|| 主题 | 关键点 |
-|:---|:---|:---|
-| **VXLAN 封装** | UDP 4789 封装 | 穿透三层网络，创建 Overlay |
-| **VNI** | 24 位网络标识 | 支持 16M 虚拟网络 |
-| **VTEP** | 封装/解封装点 | CiliumNode 注册 |
-| **eBPF Tunnel Map** | 节点发现 | Remote IP → MAC 映射 |
-| **直接路由** | 无封装 | 低延迟，需要二层可达 |
+|                     | 主题          | 关键点                     |
+| :------------------ | :------------ | :------------------------- |
+| **VXLAN 封装**      | UDP 4789 封装 | 穿透三层网络，创建 Overlay |
+| **VNI**             | 24 位网络标识 | 支持 16M 虚拟网络          |
+| **VTEP**            | 封装/解封装点 | CiliumNode 注册            |
+| **eBPF Tunnel Map** | 节点发现      | Remote IP → MAC 映射       |
+| **直接路由**        | 无封装        | 低延迟，需要二层可达       |
 
 **VXLAN vs 直接路由**：
 
@@ -645,13 +645,13 @@ kubectl -n kube-system exec ds/cilium -- \
 
 **Part II 网络功能总结**：
 
-| 章节 | 主题 | 数据平面 |
-|:---|:---|:---|
-| Ch6 | ClusterIP | eBPF Map O(1) 查找 |
-| Ch7 | NodePort | XDP 网卡驱动层处理 |
-| Ch8 | LoadBalancer | XDP + 云厂商 LB 集成 |
-| Ch9 | ExternalIP | sk_lookup Hook |
-| Ch10 | VXLAN | eBPF Tunnel 封装 |
+| 章节 | 主题         | 数据平面             |
+| :--- | :----------- | :------------------- |
+| Ch6  | ClusterIP    | eBPF Map O(1) 查找   |
+| Ch7  | NodePort     | XDP 网卡驱动层处理   |
+| Ch8  | LoadBalancer | XDP + 云厂商 LB 集成 |
+| Ch9  | ExternalIP   | sk_lookup Hook       |
+| Ch10 | VXLAN        | eBPF Tunnel 封装     |
 
 **下一章预告**：Part III 网络策略——CiliumNetworkPolicy、NetworkPolicy、L7 策略的深度解析。
 

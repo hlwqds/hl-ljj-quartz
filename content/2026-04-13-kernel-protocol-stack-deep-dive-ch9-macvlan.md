@@ -5,8 +5,8 @@ tags: [linux, kernel, networking, series, macvlan, macvtap, ipvlan, veth, virtua
 description: "深入解析 Linux 虚拟网卡技术——MACVLAN 模式（private/public/vepa/bridge）、MACVTAP/IPVTAP、IPVLAN、veth pair 工作机制、以及它们在容器网络中的应用"
 ---
 
-> [!info] Kernel Protocol Stack 深度探索系列
-> 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Kernel Protocol Stack 深度探索系列 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-kernel-protocol-stack-deep-dive-ch1-skbuff|第一章：sk_buff 与数据包生命周期]]
 > 2. [[2026-04-13-kernel-protocol-stack-deep-dive-ch2-netdevice|第二章：Netdevice 与网卡抽象]]
 > 3. [[2026-04-13-kernel-protocol-stack-deep-dive-ch3-ring-buffer|第三章：Ring Buffer 与 DMA]]
@@ -23,33 +23,33 @@ description: "深入解析 Linux 虚拟网卡技术——MACVLAN 模式（privat
 
 Linux 提供多种虚拟网卡技术，它们在不同的应用场景中扮演关键角色：
 
-| 技术 | 工作层 | MAC 地址 | 典型用途 |
-|------|--------|----------|---------|
-| **veth pair** | L2 | 独立 | 容器网络（Docker、K8s） |
-| **macvlan** | L2 | 虚拟独立 MAC | KVM 虚拟机、网络命名空间 |
-| **macvtap** | L2 | 虚拟独立 MAC | KVM 虚拟化（ TAP + macvlan） |
-| **ipvlan** | L2/L3 | 共享父接口 MAC | 容器、高密度虚拟化 |
-| **bridge** | L2 | 无（透明） | 虚拟机/容器互联 |
+| 技术          | 工作层 | MAC 地址       | 典型用途                     |
+| ------------- | ------ | -------------- | ---------------------------- |
+| **veth pair** | L2     | 独立           | 容器网络（Docker、K8s）      |
+| **macvlan**   | L2     | 虚拟独立 MAC   | KVM 虚拟机、网络命名空间     |
+| **macvtap**   | L2     | 虚拟独立 MAC   | KVM 虚拟化（ TAP + macvlan） |
+| **ipvlan**    | L2/L3  | 共享父接口 MAC | 容器、高密度虚拟化           |
+| **bridge**    | L2     | 无（透明）     | 虚拟机/容器互联              |
 
 ```mermaid
 graph LR
     subgraph "物理网络"
         PHY["物理网卡 eth0"]
     end
-    
+
     subgraph "MACVLAN 模式"
         MV_P["macvlan private"]
         MV_PU["macvlan public"]
         MV_VEPA["macvlan vepa"]
         MV_BR["macvlan bridge"]
     end
-    
+
     subgraph "其他虚拟网卡"
         VETH["veth pair"]
         IPV["ipvlan"]
         TAP["tap/tun"]
     end
-    
+
     PHY --> MV_P
     PHY --> MV_PU
     PHY --> MV_VEPA
@@ -72,17 +72,17 @@ graph LR
     subgraph "物理网卡 eth0"
         PHY["eth0<br/>MAC: aa:bb:cc:dd:ee:00"]
     end
-    
+
     subgraph "MACVLAN 虚拟接口"
         MV1["macvlan0<br/>MAC: aa:bb:cc:dd:ee:01<br/>IP: 192.168.1.10"]
         MV2["macvlan1<br/>MAC: aa:bb:cc:dd:ee:02<br/>IP: 192.168.1.11"]
         MV3["macvlan2<br/>MAC: aa:bb:cc:dd:ee:03<br/>IP: 192.168.1.12"]
     end
-    
+
     PHY <--> MV1
     PHY <--> MV2
     PHY <--> MV3
-    
+
     style PHY fill:#666,stroke:#333
     style MV1 fill:#f59f00,stroke:#333
     style MV2 fill:#f59f00,stroke:#333
@@ -98,24 +98,24 @@ struct macvlan_dev {
     struct net_device       *dev;           // MACVLAN 设备自身
     struct net_device       *lowerdev;      // 父物理设备
     struct macvlan_port    *port;           // MACVLAN 端口
-    
+
     // MACVLAN 模式
     unsigned char           mode;            // MACVLAN_MODE_*
-    
+
     // MAC 地址
     unsigned char           addr[ETH_ALEN];
-    
+
     // 标志位
     unsigned long           flags;
-    
+
     // 统计
     struct macvlan_stats   __percpu *stats;
-    
+
     // 下游接收回调
     void                    (*receive)(struct sk_buff *skb);
     void                    (*forward)(struct net_device *dev,
                                       struct sk_buff *skb);
-    
+
     struct rcu_head         rcu;
 };
 
@@ -124,10 +124,10 @@ struct macvlan_port {
     struct list_head        vlans;           // 关联的 MACVLAN 设备列表
     unsigned long           flags;
     u16                     nr_vlan_mc;     // 组播地址数量
-    
+
     // 接收队列
     struct napi_struct      *napi;
-    
+
     bool                    bc_queue;
     struct sk_buff_head     bc_queue;
 };
@@ -146,13 +146,13 @@ enum macvlan_mode {
 };
 ```
 
-| 模式 | 说明 | MACVLAN 间通信 | 与父接口通信 |
-|------|------|---------------|-------------|
-| **private** | 隔离模式 | 否 | 否 |
-| **vepa** | 发送到外部 | 否 | 是（通过外部交换机） |
-| **bridge** | 内部桥接 | 是 | 是（通过父接口） |
-| **passthru** | 单个 MACVLAN | N/A | 完全接管父接口 |
-| **source** | 源 MAC 过滤 | 基于配置 | 基于配置 |
+| 模式         | 说明         | MACVLAN 间通信 | 与父接口通信         |
+| ------------ | ------------ | -------------- | -------------------- |
+| **private**  | 隔离模式     | 否             | 否                   |
+| **vepa**     | 发送到外部   | 否             | 是（通过外部交换机） |
+| **bridge**   | 内部桥接     | 是             | 是（通过父接口）     |
+| **passthru** | 单个 MACVLAN | N/A            | 完全接管父接口       |
+| **source**   | 源 MAC 过滤  | 基于配置       | 基于配置             |
 
 ### 2.4 MACVLAN 接收流程
 
@@ -164,18 +164,18 @@ static rx_handler_result_t macvlan_handle_frame(struct sk_buff **pskb)
     struct macvlan_port *port;
     struct net_device *dev;
     unsigned char *dest;
-    
+
     // 1. 获取 macvlan_port
     port = rcu_dereference(skb->dev->macvlan_port);
     if (!port)
         return RX_HANDLER_PASS;
-    
+
     // 2. 根据模式处理
     if (port->flags & MACVLAN_FLAG_VEPA) {
         // VEPA 模式：所有流量发送到外部
         return macvlan_dev_queue_xmit(skb, port->dev);
     }
-    
+
     // 3. 查找目标 MAC 对应的 macvlan 设备
     dest = eth_hdr(skb)->h_dest;
     list_for_each_entry(dev, &port->vlans, macvlan.list) {
@@ -185,14 +185,14 @@ static rx_handler_result_t macvlan_handle_frame(struct sk_buff **pskb)
             return RX_HANDLER_PASS;  // 传递给目标设备的协议栈
         }
     }
-    
+
     // 4. 未找到——广播或丢弃
     if (is_multicast_ether_addr(dest)) {
-        return macvlan_broadcast_ok(skb, port) 
-            ? macvlan_broadcast() 
+        return macvlan_broadcast_ok(skb, port)
+            ? macvlan_broadcast()
             : RX_HANDLER_PASS;
     }
-    
+
     // 未知单播
     return RX_HANDLER_PASS;
 }
@@ -211,15 +211,15 @@ TAP 设备是工作在二层的虚拟网卡，数据包通过字符设备 `/dev/
 struct tun_struct {
     struct net_device      *dev;           // tun 设备
     struct file            *file;          // 关联的文件描述符
-    
+
     // 队列
     struct tun_file        *tfile;
     struct ptr_ring        tx_ring;        // 发送队列
-    
+
     // 标志
     unsigned int           flags;          // IFF_TAP, IFF_TUN 等
     char                   name[IFNAMSIZ];
-    
+
     // 统计
     struct pcpu_sw_netstats __percpu *stats;
 };
@@ -234,23 +234,23 @@ graph LR
     subgraph "KVM/QEMU"
         VM["虚拟机"]
     end
-    
+
     subgraph "TAP 设备"
         TAP["tap0"]
     end
-    
+
     subgraph "MACVTAP"
         MACTAP["macvtap0"]
     end
-    
+
     subgraph "物理网络"
         ETH["eth0"]
     end
-    
+
     VM <--> TAP
     TAP <--> MACTAP
     MACTAP <--> ETH
-    
+
     style MACTAP fill:#f59f00,stroke:#333
 ```
 
@@ -281,17 +281,17 @@ graph LR
     subgraph "物理网卡 eth0"
         PHY["eth0<br/>MAC: aa:bb:cc:dd:ee:00"]
     end
-    
+
     subgraph "IPVLAN 虚拟接口"
         IPV1["ipvlan0<br/>MAC: aa:bb:cc:dd:ee:00 (共享)<br/>IP: 192.168.1.10"]
         IPV2["ipvlan1<br/>MAC: aa:bb:cc:dd:ee:00 (共享)<br/>IP: 192.168.1.11"]
         IPV3["ipvlan2<br/>MAC: aa:bb:cc:dd:ee:00 (共享)<br/>IP: 192.168.1.12"]
     end
-    
+
     PHY <--> IPV1
     PHY <--> IPV2
     PHY <--> IPV3
-    
+
     style PHY fill:#666,stroke:#333
     style IPV1 fill:#f59f00,stroke:#333
     style IPV2 fill:#f59f00,stroke:#333
@@ -315,10 +315,10 @@ enum ipvl_mode {
 };
 ```
 
-| 模式 | MAC | IP | 隔离级别 |
-|------|-----|-----|---------|
-| **L2** | 共享 | 独立 | 二层隔离 |
-| **L3** | 共享 | 独立 | 三层隔离（需路由） |
+| 模式    | MAC  | IP   | 隔离级别            |
+| ------- | ---- | ---- | ------------------- |
+| **L2**  | 共享 | 独立 | 二层隔离            |
+| **L3**  | 共享 | 独立 | 三层隔离（需路由）  |
 | **L3S** | 共享 | 独立 | L3 + conntrack 兼容 |
 
 ### 4.3 IPVLAN 数据结构
@@ -330,14 +330,14 @@ struct ipvl_dev {
     struct net_device       *phy_dev;       // 父设备
     struct ipvl_port        *port;          // 端口
     void                    *priv;          // 私有数据
-    
+
     // IP 地址
     struct in_ifaddr         *ip4addr;      // IPv4 主地址
     struct inet6_ifaddr      *ip6addr;       // IPv6 主地址
-    
+
     // 模式
     unsigned char            mode;
-    
+
     struct list_head         adj_list;       // L3 模式的 ARP 表
 };
 
@@ -345,9 +345,9 @@ struct ipvl_port {
     struct net_device       *dev;           // 物理设备
     struct ipvl_dev          *master;       // L3S 模式的 master
     unsigned int             dev_cnt;       // ipvlan 设备数量
-    
+
     struct list_head        head;           // ipvlan 设备链表
-    
+
     unsigned int             mode;
 };
 ```
@@ -362,7 +362,7 @@ static rx_handler_result_t ipvlan_rcv_frame(struct ipvl_buf *buf,
     struct sk_buff *skb = buf->skb;
     struct ipvl_dev *ipvlan;
     union inet_addr *saddr, *daddr;
-    
+
     // L2 模式：基于 MAC 查找
     if (port->mode == IPVLAN_MODE_L2) {
         list_for_each_entry(ipvlan, &port->head, pnode) {
@@ -373,17 +373,17 @@ static rx_handler_result_t ipvlan_rcv_frame(struct ipvl_buf *buf,
         }
         return RX_HANDLER_PASS;
     }
-    
+
     // L3 模式：基于 IP 查找
     saddr = inet_ifa_match(buf->iphdr->saddr, ...);
     daddr = inet_ifa_match(buf->iphdr->daddr, ...);
-    
+
     list_for_each_entry(ipvlan, &port->head, pnode) {
         if (ipvlan_addr_match(ipvlan, daddr)) {
             return ipvlan_deliver_skb(buf, ipvlan);
         }
     }
-    
+
     return RX_HANDLER_PASS;
 }
 ```
@@ -443,7 +443,7 @@ static netdev_tx_t veth_xmit(struct sk_buff *skb, struct net_device *dev)
     struct veth_priv *priv = netdev_priv(dev);
     struct net_device *rcv;
     struct sk_buff *skb_out;
-    
+
     // 1. 获取配对设备
     rcu_read_lock();
     rcv = rcu_dereference(priv->peer);
@@ -451,28 +451,28 @@ static netdev_tx_t veth_xmit(struct sk_buff *skb, struct net_device *dev)
         rcu_read_unlock();
         goto drop;
     }
-    
+
     // 2. 检查配额
     if (likely(!pskb_expand_head(skb, 0, 0, GFP_ATOMIC))) {
         skb_out = skb;
     } else {
         goto drop;
     }
-    
+
     // 3. 统计
     dev->stats.tx_packets++;
     dev->stats.tx_bytes += skb_out->len;
-    
+
     // 4. 设置目标设备
     skb_out->dev = rcv;
     skb_out->queue_mapping = 0;
-    
+
     // 5. 发送到配对设备（直接调用对方接收）
     netif_rx(skb_out);
-    
+
     rcu_read_unlock();
     return NETDEV_TX_OK;
-    
+
 drop:
     rcu_read_unlock();
     dev->stats.tx_dropped++;
@@ -495,12 +495,12 @@ graph LR
         subgraph "bridge0 网桥"
             VETH_HOST["vethxxx<br/>连接到容器"]
         end
-        
+
         BRIDGE["docker0<br/>172.17.0.0/16"]
-        
+
         VETH_HOST --> BRIDGE
     end
-    
+
     subgraph "Container"
         VETH_CON["eth0<br/>172.17.0.2"]
         VETH_CON --> VETH_HOST
@@ -545,25 +545,25 @@ cat /etc/calico/felix.cfg
 
 ### 7.1 技术对比
 
-| 特性 | macvlan | ipvlan | veth | bridge |
-|------|---------|--------|------|--------|
-| MAC 地址 | 独立/共享 | 共享 | 各自独立 | 透明 |
-| 需要的 MAC 数 | 多 | 1 | 各自独立 | 透明 |
-| 二层通信 | 可直接互连 | 需外部交换 | 通过 pair | 通过 bridge |
-| 三层通信 | 正常路由 | 正常路由 | 正常路由 | 正常路由 |
-| 连接外部网络 | 可以 | 可以 | 需要 bridge | 需要 bridge |
-| Netfilter 支持 | 完整 | 有限 | 完整 | 完整 |
+| 特性           | macvlan    | ipvlan     | veth        | bridge      |
+| -------------- | ---------- | ---------- | ----------- | ----------- |
+| MAC 地址       | 独立/共享  | 共享       | 各自独立    | 透明        |
+| 需要的 MAC 数  | 多         | 1          | 各自独立    | 透明        |
+| 二层通信       | 可直接互连 | 需外部交换 | 通过 pair   | 通过 bridge |
+| 三层通信       | 正常路由   | 正常路由   | 正常路由    | 正常路由    |
+| 连接外部网络   | 可以       | 可以       | 需要 bridge | 需要 bridge |
+| Netfilter 支持 | 完整       | 有限       | 完整        | 完整        |
 
 ### 7.2 使用场景
 
-| 场景 | 推荐技术 | 原因 |
-|------|---------|------|
-| KVM 虚拟机 | macvtap | 支持 TAP，直接读写数据包 |
-| Docker 容器 | veth pair + bridge | 成熟稳定，生态完善 |
-| K8s Pod | veth + CNI | 灵活的 CNI 插件支持 |
-| 高密度容器 | ipvlan L3 | 节省 MAC，减少广播 |
-| 网络隔离测试 | macvlan | 完全的二层隔离 |
-| 简单点对点连接 | veth pair | 最简单，无额外开销 |
+| 场景           | 推荐技术           | 原因                     |
+| -------------- | ------------------ | ------------------------ |
+| KVM 虚拟机     | macvtap            | 支持 TAP，直接读写数据包 |
+| Docker 容器    | veth pair + bridge | 成熟稳定，生态完善       |
+| K8s Pod        | veth + CNI         | 灵活的 CNI 插件支持      |
+| 高密度容器     | ipvlan L3          | 节省 MAC，减少广播       |
+| 网络隔离测试   | macvlan            | 完全的二层隔离           |
+| 简单点对点连接 | veth pair          | 最简单，无额外开销       |
 
 ---
 
@@ -625,31 +625,31 @@ graph TD
     subgraph "应用层"
         APP["用户态应用"]
     end
-    
+
     subgraph "Socket 层"
         SKT["sock"]
     end
-    
+
     subgraph "协议栈"
         L4["TCP/UDP"]
         L3["IP"]
     end
-    
+
     subgraph "虚拟网卡层"
         MV["MACVLAN/IPVLAN<br/>veth/tap"]
         BRIDGE["Bridge"]
     end
-    
+
     subgraph "物理层"
         PHY["物理网卡"]
     end
-    
+
     APP --> SKT --> L4 --> L3
     L3 --> MV
     L3 --> BRIDGE
     MV --> PHY
     BRIDGE --> PHY
-    
+
     style MV fill:#f59f00,stroke:#333
 ```
 

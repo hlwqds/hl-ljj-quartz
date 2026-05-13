@@ -5,8 +5,8 @@ tags: [vpn, series, future, post-quantum, cloud-native, zero-trust, wireguard, t
 description: "VPN 未来趋势深度解析——后量子密码、量子安全 VPN、云原生 VPN、零信任演进、协议标准化、隐私计算"
 ---
 
-> [!info] VPN 技术深度探索系列
-> 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+> [!info] VPN 技术深度探索系列 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-vpn-deep-dive-ch49-vpn-benchmark|第四十九章：VPN 基准测试]]
 > 2. **第五十章：VPN 未来趋势**
 > 3. [[2026-04-13-vpn-deep-dive-series-index|返回：系列索引]]
@@ -280,21 +280,21 @@ metadata:
   namespace: networking
 spec:
   interface:
-    privateKey: ${WG_PRIVATE_KEY}  # 从 Vault 注入
+    privateKey: ${WG_PRIVATE_KEY} # 从 Vault 注入
     address: 10.244.0.1/16
   peers:
     - name: cluster-2
       publicKey: ${CLUSTER2_PUBLIC_KEY}
       endpoint: cluster-2.example.com:51820
       allowedIPs:
-        - 10.244.1.0/16  # Cluster 2 Pod CIDR
+        - 10.244.1.0/16 # Cluster 2 Pod CIDR
       persistentKeepalive: 25s
   encryption:
     type: WireGuard
     algorithm: ChaCha20-Poly1305
   autoUpdate:
     enabled: true
-    schedule: "0 2 * * *"  # 每日密钥轮换
+    schedule: "0 2 * * *" # 每日密钥轮换
 ```
 
 ---
@@ -537,7 +537,7 @@ spec:
   riskAssessment:
     enabled: true
     model: "transformer-vpn-anomaly-v3"
-    threshold: 0.85  # 高风险阈值
+    threshold: 0.85 # 高风险阈值
     updateInterval: 24h
 
   # 动态策略规则
@@ -671,6 +671,7 @@ VPN 技术仍在快速演进：
 ---
 
 > [!info] 系列导航
+>
 > - [[2026-04-13-vpn-deep-dive-series-index|返回：系列索引]]
 > - [[2026-04-13-vpn-deep-dive-ch1-vpn-fundamentals|第一章：VPN 基础]]
 > - [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|Kernel Protocol Stack 系列]]
@@ -679,7 +680,9 @@ VPN 技术仍在快速演进：
 ---
 
 > [!tip] 延伸阅读
+>
 > - NIST PQC 标准化：https://csrc.nist.gov/projects/post-quantum-cryptography
 > - WireGuard IETF Draft：https://datatracker.ietf.org/doc/html/draft-klaussner-wireguard
 > - SASE Framework：https://www.gartner.com/en/networking/technologies/sase
+
 - Cloudflare One：https://developers.cloudflare.com/cloudflare-one/

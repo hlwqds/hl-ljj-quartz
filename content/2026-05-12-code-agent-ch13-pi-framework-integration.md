@@ -43,17 +43,17 @@ Pi.ai 遵循以下设计原则：
 
 作为目前最流行的 Agent 开发框架，LangChain 提供了强大的chains和agents能力，但两者在设计目标和使用场景上有显著差异。以下对比表整理了关键维度：
 
-| 维度 | Pi.ai Framework | LangChain |
-|------|-----------------|-----------|
-| **设计目标** | Personal AI / 私人陪伴式 Agent | 通用 LLM 应用开发框架 |
-| **核心抽象** | Personal AI / Agent / Memory / Tool | Chain / Agent / Tool / Memory |
-| **记忆机制** | 内置分级记忆（短期/长期/偏好） | 可选组件（ConversationBufferMemory 等） |
-| **Tool 生态** | 标准化 Tool Registry，内置审批流 | 丰富的 Tool 接口，但偏重 LangChain 生态 |
-| **部署形态** | 面向终端用户（个人/企业） | 面向开发者（库/SDK） |
-| **多租户支持** | 原生多租户，数据隔离 | 需自行实现 |
-| **审计日志** | 内置完整操作审计 | 需自行集成 |
-| **学习曲线** | 较平缓，专注场景 | 陡峭，概念众多 |
-| **适用场景** | 个人助手、企业客服、私人顾问 | RAG 系统、自动化工作流、通用 AI 应用 |
+| 维度           | Pi.ai Framework                     | LangChain                               |
+| -------------- | ----------------------------------- | --------------------------------------- |
+| **设计目标**   | Personal AI / 私人陪伴式 Agent      | 通用 LLM 应用开发框架                   |
+| **核心抽象**   | Personal AI / Agent / Memory / Tool | Chain / Agent / Tool / Memory           |
+| **记忆机制**   | 内置分级记忆（短期/长期/偏好）      | 可选组件（ConversationBufferMemory 等） |
+| **Tool 生态**  | 标准化 Tool Registry，内置审批流    | 丰富的 Tool 接口，但偏重 LangChain 生态 |
+| **部署形态**   | 面向终端用户（个人/企业）           | 面向开发者（库/SDK）                    |
+| **多租户支持** | 原生多租户，数据隔离                | 需自行实现                              |
+| **审计日志**   | 内置完整操作审计                    | 需自行集成                              |
+| **学习曲线**   | 较平缓，专注场景                    | 陡峭，概念众多                          |
+| **适用场景**   | 个人助手、企业客服、私人顾问        | RAG 系统、自动化工作流、通用 AI 应用    |
 
 LangChain 的优势在于灵活性和社区生态——你可以用 LangChain 构建几乎任何 LLM 应用。但代价是大量底层设计需要开发者自己完成（记忆管理、多租户隔离、审计日志等）。Pi.ai 则在框架层面替你做好了这些"苦活累活"，代价是框架约束更强、定制化空间更小。
 
@@ -73,20 +73,20 @@ graph TB
         MM[Memory<br/>记忆存储层]
         TL[Tool<br/>能力扩展层]
     end
-    
+
     subgraph External
         LLM[LLM Provider<br/>GPT-4/Claude/本地模型]
         DB[(Vector DB<br/>向量数据库)]
         EXT[External Services<br/>外部服务]
     end
-    
+
     PA --> AG
     AG --> MM
     AG --> TL
     AG --> LLM
     MM --> DB
     TL --> EXT
-    
+
     style PA fill:#e1f5fe
     style AG fill:#fff3e0
     style MM fill:#e8f5e9
@@ -113,15 +113,15 @@ graph TB
         CTX[Context Manager<br/>上下文管理]
         ACL[Access Control<br/>访问控制]
     end
-    
+
     subgraph 关联关系
         ID --> CTX
         CFG --> CTX
         ACL --> CTX
     end
-    
+
     CTX --> AG[Agent]
-    
+
     style ID fill:#bbdefb
     style CFG fill:#bbdefb
     style CTX fill:#90caf9
@@ -180,13 +180,13 @@ graph TB
         LM[Long-Term Memory<br/>长期记忆<br/>持久化知识]
         PM[Preference Memory<br/>偏好记忆<br/>用户偏好模型]
     end
-    
+
     subgraph Memory Operations
         EN[Encoder<br/>编码器]
         RT[Retriever<br/>检索器]
         CS[Consolidator<br/>整理器]
     end
-    
+
     EN --> SM
     SM --> CS
     CS --> MM
@@ -194,9 +194,9 @@ graph TB
     CS --> LM
     LM --> RT
     PM --> RT
-    
+
     RT --> AG[Agent Context]
-    
+
     style SM fill:#c8e6c9
     style MM fill:#a5d6a7
     style LM fill:#81c784
@@ -229,19 +229,19 @@ graph TB
         TE[Tool Executor<br/>工具执行器]
         TA[Tool Auth<br/>工具授权]
     end
-    
+
     subgraph Tool Lifecycle
         REG[Register<br/>注册]
         DSC[Discover<br/>发现]
         EXE[Execute<br/>执行]
         AUD[Audit<br/>审计]
     end
-    
+
     TR --> TS --> TE --> TA --> REG
     TE --> AUD
     AG[Agent] --> TR
     AG --> TE
-    
+
     style TR fill:#fff9c4
     style TS fill:#fff59d
     style TE fill:#fff176
@@ -255,6 +255,7 @@ graph TB
 **Tool Executor** 负责实际执行 Tool 逻辑。Executor 支持同步和异步两种执行模式，支持超时控制和重试策略。Executor 还负责执行环境的管理——某些 Tool 可能需要独立的执行容器或凭据管理。
 
 **Tool Auth** 实现 Tool 级别的访问控制。不同的 Tool 可以配置不同的授权级别：
+
 - **Auto-Trusted**：信任执行，无需用户确认
 - **Confirm-Once**：首次执行需要用户确认，确认后记住所选
 - **Confirm-Always**：每次执行都需要用户确认
@@ -274,9 +275,9 @@ graph LR
         DP[Deploy<br/>部署]
         MN[Monitor<br/>监控]
     end
-    
+
     DF --> CF --> DP --> MN --> DF
-    
+
     style DF fill:#e3f2fd
     style CF fill:#e1f5fe
     style DP fill:#bbdefb
@@ -415,12 +416,12 @@ print(f"Endpoint: {deployment.endpoint}")
 
 Pi.ai 支持多种部署目标：
 
-| 部署目标 | 适用场景 | 特点 |
-|---------|---------|------|
-| **Kubernetes** | 企业级生产部署 | 高可用、自动扩缩、细粒度资源控制 |
-| **Lambda** | 边缘计算、低频场景 | 按调用计费、冷启动延迟 |
-| **On-Premise** | 数据主权敏感场景 | 完全控制、数据不离场 |
-| **Hybrid** | 混合云架构 | 敏感数据本地处理、通用推理云端 |
+| 部署目标       | 适用场景           | 特点                             |
+| -------------- | ------------------ | -------------------------------- |
+| **Kubernetes** | 企业级生产部署     | 高可用、自动扩缩、细粒度资源控制 |
+| **Lambda**     | 边缘计算、低频场景 | 按调用计费、冷启动延迟           |
+| **On-Premise** | 数据主权敏感场景   | 完全控制、数据不离场             |
+| **Hybrid**     | 混合云架构         | 敏感数据本地处理、通用推理云端   |
 
 ### 3.5 Monitor：监控 Agent
 
@@ -469,7 +470,7 @@ sequenceDiagram
     participant Registry as Tool Registry
     participant Agent as Agent Definition
     participant Executor as Tool Executor
-    
+
     Dev->>Registry: Register Tool (Schema + Handler)
     Registry-->>Dev: Tool ID + Version
     Dev->>Agent: Reference Tool by ID
@@ -488,7 +489,7 @@ class EBPFTracerTool(Tool):
     name = "ebpf_tracer"
     description = "在运行中的 Linux 系统上跟踪 eBPF 程序事件"
     version = "1.0.0"
-    
+
     parameters = [
         Parameter(
             name="program_name",
@@ -522,24 +523,24 @@ class EBPFTracerTool(Tool):
             default="json",
         ),
     ]
-    
+
     auth_config = {
         "level": "auto_trusted",  # eBPF 操作需要 root 权限
         "requires": ["sudo_capability"],
     }
-    
+
     def execute(self, **params):
         # Tool 实现逻辑
         program_name = params["program_name"]
         duration = params.get("duration_seconds", 10)
         output_format = params.get("output_format", "json")
-        
+
         result = run_bpftrace(
             program=program_name,
             duration=duration,
             output=output_format,
         )
-        
+
         return {
             "success": True,
             "events": result.events,
@@ -567,63 +568,70 @@ Schema 是 Tool 的接口契约，良好的 Schema 定义能显著提升 Agent �
 
 ```typescript
 // TypeScript SDK 中的 Schema 定义示例
-import { Tool, Schema, Parameter } from '@pi/sdk';
+import { Tool, Schema, Parameter } from "@pi/sdk"
 
 export class PacketCaptureTool implements Tool {
-  name = 'packet_capture';
-  description = 'Captures network packets from specified interface with optional BPF filtering';
-  version = '1.2.0';
-  category = 'network-analysis';
+  name = "packet_capture"
+  description = "Captures network packets from specified interface with optional BPF filtering"
+  version = "1.2.0"
+  category = "network-analysis"
 
   parameters: Schema = {
-    type: 'object',
+    type: "object",
     properties: {
       interface: {
-        type: 'string',
-        description: 'Network interface name (e.g., eth0, any)',
-        enum: ['eth0', 'eth1', 'any', 'lo'],
+        type: "string",
+        description: "Network interface name (e.g., eth0, any)",
+        enum: ["eth0", "eth1", "any", "lo"],
       },
       filter_expression: {
-        type: 'string',
-        description: 'BPF filter expression (e.g., tcp port 80)',
+        type: "string",
+        description: "BPF filter expression (e.g., tcp port 80)",
       },
       snaplen: {
-        type: 'integer',
-        description: 'Maximum number of bytes to capture per packet',
+        type: "integer",
+        description: "Maximum number of bytes to capture per packet",
         default: 65535,
         minimum: 68,
         maximum: 65535,
       },
       count: {
-        type: 'integer',
-        description: 'Number of packets to capture (0 = unlimited)',
+        type: "integer",
+        description: "Number of packets to capture (0 = unlimited)",
         default: 0,
       },
       timeout_seconds: {
-        type: 'integer',
-        description: 'Capture timeout in seconds',
+        type: "integer",
+        description: "Capture timeout in seconds",
         default: 30,
         minimum: 1,
         maximum: 300,
       },
       output_path: {
-        type: 'string',
-        description: 'Output file path (pcap format)',
+        type: "string",
+        description: "Output file path (pcap format)",
       },
     },
-    required: ['interface'],
-  };
+    required: ["interface"],
+  }
 
   authConfig = {
-    level: 'confirm_once',
-    requiresCapabilities: ['packet_socket_cap'],
-  };
+    level: "confirm_once",
+    requiresCapabilities: ["packet_socket_cap"],
+  }
 
   async execute(params: Record<string, any>): Promise<ToolResult> {
-    const { interface: iface, filter_expression, snaplen, count, timeout_seconds, output_path } = params;
+    const {
+      interface: iface,
+      filter_expression,
+      snaplen,
+      count,
+      timeout_seconds,
+      output_path,
+    } = params
 
     // 权限检查
-    await this.checkCapabilities(['packet_socket_cap']);
+    await this.checkCapabilities(["packet_socket_cap"])
 
     // 执行抓包
     const captureResult = await this.runCapture({
@@ -633,7 +641,7 @@ export class PacketCaptureTool implements Tool {
       count: count || 0,
       timeout: timeout_seconds || 30,
       output: output_path,
-    });
+    })
 
     return {
       success: true,
@@ -643,7 +651,7 @@ export class PacketCaptureTool implements Tool {
         output_file: captureResult.output_path,
         size_bytes: captureResult.size,
       },
-    };
+    }
   }
 }
 ```
@@ -689,12 +697,12 @@ auth_config_critical = {
 
 权限级别定义：
 
-| 级别 | 值 | 行为 |
-|-----|-----|------|
-| **Auto-Trusted** | `AUTH_LEVEL_AUTO` | 无需确认，直接执行 |
-| **Confirm-Once** | `AUTH_LEVEL_CONFIRM_ONCE` | 首次执行需确认，之后自动执行 |
-| **Confirm-Always** | `AUTH_LEVEL_CONFIRM_ALWAYS` | 每次执行都需要确认 |
-| **Denied** | `AUTH_LEVEL_DENIED` | 完全禁用 |
+| 级别               | 值                          | 行为                         |
+| ------------------ | --------------------------- | ---------------------------- |
+| **Auto-Trusted**   | `AUTH_LEVEL_AUTO`           | 无需确认，直接执行           |
+| **Confirm-Once**   | `AUTH_LEVEL_CONFIRM_ONCE`   | 首次执行需确认，之后自动执行 |
+| **Confirm-Always** | `AUTH_LEVEL_CONFIRM_ALWAYS` | 每次执行都需要确认           |
+| **Denied**         | `AUTH_LEVEL_DENIED`         | 完全禁用                     |
 
 对于 gsd2 这类安全场景，`CONFIRM_ALWAYS` 是大多数网络操作工具的推荐设置——毕竟 "ip link set eth0 down" 这类操作是不可逆的。
 
@@ -745,28 +753,28 @@ def calculate_importance(message: dict) -> float:
     评估单条消息的重要性，返回 [0, 1] 之间的分数
     """
     content = message["content"].lower()
-    
+
     # 高重要性指示词
     high_importance_keywords = [
         "分析", "诊断", "问题", "错误", "异常", "性能",
         "帮我", "请", "需要", "重要", "紧急",
     ]
-    
+
     # 低重要性指示词
     low_importance_keywords = [
         "好的", "收到", "了解", "嗯", "哈哈", "好吧",
     ]
-    
+
     score = 0.5  # 默认分数
-    
+
     for kw in high_importance_keywords:
         if kw in content:
             score += 0.1
-    
+
     for kw in low_importance_keywords:
         if kw in content:
             score -= 0.1
-    
+
     return max(0.0, min(1.0, score))
 ```
 
@@ -827,12 +835,12 @@ for result in results:
 
 **知识来源类型**支持多种格式：
 
-| 类型 | 说明 | 适用场景 |
-|-----|------|---------|
-| **document** | PDF、Markdown、HTML 等文档 | 技术手册、架构文档 |
-| **structured** | 数据库表或查询结果 | 配置库、知识库 |
-| **web** | 网页内容（实时抓取） | 最新技术博客、官方文档 |
-| **api** | API 返回的结构化数据 | 第三方服务数据 |
+| 类型           | 说明                       | 适用场景               |
+| -------------- | -------------------------- | ---------------------- |
+| **document**   | PDF、Markdown、HTML 等文档 | 技术手册、架构文档     |
+| **structured** | 数据库表或查询结果         | 配置库、知识库         |
+| **web**        | 网页内容（实时抓取）       | 最新技术博客、官方文档 |
+| **api**        | API 返回的结构化数据       | 第三方服务数据         |
 
 ### 5.3 用户偏好记忆
 
@@ -853,7 +861,7 @@ preference_memory = PreferenceMemory(
 class UserPreference:
     def __init__(self):
         self.preferences: dict[PreferenceType, any] = {}
-    
+
     # 响应风格偏好
     def track_response_style(self, signal: PreferenceSignal):
         """追踪用户偏好的响应风格"""
@@ -864,14 +872,14 @@ class UserPreference:
             "include_code": style.include_code,   # 是否包含代码
             "include_diagrams": style.include_diagrams,
         }
-    
+
     # Tool 使用偏好
     def track_tool_preference(self, tool_name: str, usage_count: int, feedback: float):
         """追踪用户对特定 Tool 的偏好"""
         # 如果一个 Tool 被频繁使用且反馈为正，说明用户依赖它
         if usage_count > 10 and feedback > 0.8:
             self.preferences[PreferenceType.TOOL_DEPENDENCY] = tool_name
-    
+
     # 时间偏好
     def track_time_preference(self, active_hours: list[int], timezone: str):
         """追踪用户活跃时间偏好"""
@@ -918,7 +926,7 @@ sequenceDiagram
     participant MTM as 中期记忆
     participant LTM as 长期记忆
     participant AG as Agent
-    
+
     User->>STM: 用户消息
     STM->>MTM: 评估是否需要晋升
     MTM->>LTM: 定期整理
@@ -946,17 +954,17 @@ def retrieve_all_context(query: str, user_id: str) -> Context:
         ltm_weight=0.2,   # 长期记忆权重（背景知识）
         pref_weight=0.1,  # 偏好记忆权重（个性化适配）
     )
-    
+
     # 并行检索各层记忆
     results = memory_manager.retrieve(
         query=query,
         user_id=user_id,
         config=config,
     )
-    
+
     # 智能组装：去重、排序、截断
     context = memory_manager.assemble(results)
-    
+
     return context
 
 # 结果示例
@@ -1067,20 +1075,20 @@ npm install @pi/sdk@^2.0.0
 **初始化与认证**：
 
 ```typescript
-import { PiClient, PersonalAI } from '@pi/sdk';
+import { PiClient, PersonalAI } from "@pi/sdk"
 
 // 初始化客户端
 const client = new PiClient({
   apiKey: process.env.PI_API_KEY,
-  apiBase: 'https://api.pi.ai/v2',
+  apiBase: "https://api.pi.ai/v2",
   timeout: 30000,
   retries: 3,
-});
+})
 
 // 获取 Personal AI 实例
 const pai: PersonalAI = await client.getPersonalAI({
-  userId: 'engineer_wang',
-});
+  userId: "engineer_wang",
+})
 ```
 
 **对话 API**：
@@ -1088,28 +1096,28 @@ const pai: PersonalAI = await client.getPersonalAI({
 ```typescript
 // 同步对话
 const response = await pai.chat({
-  message: '帮我分析一下这个 eBPF 程序的性能瓶颈',
+  message: "帮我分析一下这个 eBPF 程序的性能瓶颈",
   context: {
-    code: fs.readFileSync('bpf_program.c', 'utf-8'),
-    traceData: '/tmp/trace.json',
+    code: fs.readFileSync("bpf_program.c", "utf-8"),
+    traceData: "/tmp/trace.json",
   },
-});
+})
 
-console.log(`Response: ${response.message}`);
-console.log(`Tools used: ${response.toolsUsed}`);
-console.log(`Token usage: ${response.usage}`);
+console.log(`Response: ${response.message}`)
+console.log(`Tools used: ${response.toolsUsed}`)
+console.log(`Token usage: ${response.usage}`)
 
 // 流式对话
 async function streamChat() {
   const stream = pai.chatStream({
-    message: 'eBPF map 的类型有哪些？各适用什么场景？',
-    systemPrompt: '你是一名 eBPF 专家，用简洁专业的语言回答',
-  });
+    message: "eBPF map 的类型有哪些？各适用什么场景？",
+    systemPrompt: "你是一名 eBPF 专家，用简洁专业的语言回答",
+  })
 
   for await (const chunk of stream) {
-    process.stdout.write(chunk.content);
+    process.stdout.write(chunk.content)
   }
-  console.log('\n');
+  console.log("\n")
 }
 ```
 
@@ -1204,18 +1212,18 @@ export class DPDKAnalyzerTool implements Tool {
 
 以下是 Python SDK 和 TypeScript SDK 的核心 API 对照：
 
-| 功能 | Python SDK | TypeScript SDK |
-|------|-----------|---------------|
-| 初始化客户端 | `PiClient(api_key, api_base)` | `new PiClient({apiKey, apiBase})` |
-| 获取 PAI 实例 | `client.get_personal_ai(user_id)` | `client.getPersonalAI({userId})` |
-| 同步对话 | `pai.chat(message, context)` | `pai.chat({message, context})` |
-| 流式对话 | `pai.chat_stream(message)` | `pai.chatStream({message})` |
-| 注册 Tool | `@pai.tool(name, description)` | `class MyTool implements Tool` |
-| 执行 Tool | `pai.execute_tool(name, params)` | `pai.executeTool({name, params})` |
-| 列出 Tools | `pai.list_tools()` | `pai.listTools()` |
-| 查询记忆 | `pai.retrieve_memory(query)` | `pai.retrieveMemory({query})` |
-| 导入知识 | `pai.ingest_knowledge(sources)` | `pai.ingestKnowledge({sources})` |
-| 监控指标 | `pai.get_metrics(time_range)` | `pai.getMetrics({timeRange})` |
+| 功能          | Python SDK                        | TypeScript SDK                    |
+| ------------- | --------------------------------- | --------------------------------- |
+| 初始化客户端  | `PiClient(api_key, api_base)`     | `new PiClient({apiKey, apiBase})` |
+| 获取 PAI 实例 | `client.get_personal_ai(user_id)` | `client.getPersonalAI({userId})`  |
+| 同步对话      | `pai.chat(message, context)`      | `pai.chat({message, context})`    |
+| 流式对话      | `pai.chat_stream(message)`        | `pai.chatStream({message})`       |
+| 注册 Tool     | `@pai.tool(name, description)`    | `class MyTool implements Tool`    |
+| 执行 Tool     | `pai.execute_tool(name, params)`  | `pai.executeTool({name, params})` |
+| 列出 Tools    | `pai.list_tools()`                | `pai.listTools()`                 |
+| 查询记忆      | `pai.retrieve_memory(query)`      | `pai.retrieveMemory({query})`     |
+| 导入知识      | `pai.ingest_knowledge(sources)`   | `pai.ingestKnowledge({sources})`  |
+| 监控指标      | `pai.get_metrics(time_range)`     | `pai.getMetrics({timeRange})`     |
 
 ## 7. 企业级功能
 
@@ -1251,11 +1259,11 @@ print(f"Tenant created: {gsd2_tenant.id}")
 
 **隔离策略**：
 
-| 策略 | 说明 | 适用场景 |
-|-----|------|---------|
-| **STRICT** | 完全隔离，租户间无任何数据共享 | 金融、医疗等敏感数据 |
-| **SHARED_KB** | 隔离用户数据，但共享知识库 | 跨团队知识共享场景 |
-| **COLLABORATIVE** | 允许指定范围内的数据共享 | 紧密协作的团队 |
+| 策略              | 说明                           | 适用场景             |
+| ----------------- | ------------------------------ | -------------------- |
+| **STRICT**        | 完全隔离，租户间无任何数据共享 | 金融、医疗等敏感数据 |
+| **SHARED_KB**     | 隔离用户数据，但共享知识库     | 跨团队知识共享场景   |
+| **COLLABORATIVE** | 允许指定范围内的数据共享       | 紧密协作的团队       |
 
 ### 7.2 审计日志
 
@@ -1297,14 +1305,14 @@ for event in events:
 
 **审计事件类型**：
 
-| 事件类型 | 说明 | 记录内容 |
-|---------|------|---------|
-| **user_login** | 用户登录 | 用户ID、IP、认证方式 |
-| **tool_execution** | Tool 执行 | 工具名、参数、执行结果 |
-| **memory_access** | 记忆访问 | 访问的记忆ID、操作类型 |
-| **knowledge_ingest** | 知识导入 | 知识源、数据量、操作者 |
-| **config_change** | 配置变更 | 变更的配置项、旧值→新值 |
-| **budget_exceeded** | 预算超限 | 预算类型、当前用量、限制值 |
+| 事件类型             | 说明      | 记录内容                   |
+| -------------------- | --------- | -------------------------- |
+| **user_login**       | 用户登录  | 用户ID、IP、认证方式       |
+| **tool_execution**   | Tool 执行 | 工具名、参数、执行结果     |
+| **memory_access**    | 记忆访问  | 访问的记忆ID、操作类型     |
+| **knowledge_ingest** | 知识导入  | 知识源、数据量、操作者     |
+| **config_change**    | 配置变更  | 变更的配置项、旧值→新值    |
+| **budget_exceeded**  | 预算超限  | 预算类型、当前用量、限制值 |
 
 ### 7.3 合规功能
 
@@ -1403,12 +1411,12 @@ on_premise_config = OnPremiseDeployment(
 )
 ```
 
-| 部署方式 | 适用场景 | 优势 | 劣势 |
-|---------|---------|------|------|
-| **Managed Cloud** | 快速启动、无运维能力 | 零运维、自动扩缩 | 数据在第三方 |
-| **Kubernetes** | 中大型企业、有 K8s 能力 | 高可用、可控资源 | 需要运维 K8s |
-| **On-Premise** | 金融/政务、数据主权 | 完全可控 | 运维成本高 |
-| **Hybrid** | 混合需求 | 灵活分配工作负载 | 架构复杂 |
+| 部署方式          | 适用场景                | 优势             | 劣势         |
+| ----------------- | ----------------------- | ---------------- | ------------ |
+| **Managed Cloud** | 快速启动、无运维能力    | 零运维、自动扩缩 | 数据在第三方 |
+| **Kubernetes**    | 中大型企业、有 K8s 能力 | 高可用、可控资源 | 需要运维 K8s |
+| **On-Premise**    | 金融/政务、数据主权     | 完全可控         | 运维成本高   |
+| **Hybrid**        | 混合需求                | 灵活分配工作负载 | 架构复杂     |
 
 ## 8. Pi 与 gsd2 集成
 
@@ -1424,20 +1432,20 @@ graph TB
         SK[Security Knowledge<br/>安全知识库]
         ST[Security Tools<br/>安全工具集]
     end
-    
+
     subgraph Pi.ai Framework
         PA[Personal AI]
         MEM[Memory]
         TR[Tool Registry]
         CFG[Configuration]
     end
-    
+
     GW --> PA
     AG --> MEM
     AG --> TR
     ST --> TR
     SK --> MEM
-    
+
     style GW fill:#e3f2fd
     style AG fill:#e1f5fe
     style SK fill:#e8f5e9
@@ -1561,7 +1569,7 @@ class GSD2AuthProvider(AuthProvider):
             roles=payload["roles"],
             exp=payload["exp"],
         )
-    
+
     def refresh_token(self, refresh_token: str) -> str:
         # 调用 gsd2 的 token refresh 端点
         return gsd2_auth.refresh(refresh_token)
@@ -1683,11 +1691,11 @@ class KernelSymbolResolverTool(Tool):
     内核符号解析 Tool
     通过 bpftrace 解析内核符号对应的内存地址
     """
-    
+
     name = "kernel_symbol_resolver"
     description = "Resolve kernel symbol to memory address using bpftrace"
     version = "1.0.0"
-    
+
     parameters_schema = {
         "type": "object",
         "properties": {
@@ -1703,16 +1711,16 @@ class KernelSymbolResolverTool(Tool):
         },
         "required": ["symbol_name"],
     }
-    
+
     auth_config = {
         "level": "confirm_once",
         "requires_capabilities": ["bpftrace_cap"],
     }
-    
+
     def execute(self, params: dict) -> ToolResult:
         symbol = params["symbol_name"]
         kernel_version = params.get("kernel_version", "current")
-        
+
         try:
             # 调用 bpftrace 解析符号
             result = subprocess.run(
@@ -1721,7 +1729,7 @@ class KernelSymbolResolverTool(Tool):
                 text=True,
                 timeout=10,
             )
-            
+
             if result.returncode == 0:
                 return ToolResult(
                     success=True,
@@ -1739,7 +1747,7 @@ class KernelSymbolResolverTool(Tool):
                         "message": result.stderr or "Unable to resolve symbol",
                     },
                 )
-                
+
         except subprocess.TimeoutExpired:
             return ToolResult(
                 success=False,
@@ -1774,11 +1782,11 @@ class ExternalThreatIntelTool(AsyncTool):
     """
     集成外部威胁情报服务
     """
-    
+
     name = "threat_intel_lookup"
     description = "Look up IP/domain reputation from external threat intelligence"
     version = "1.0.0"
-    
+
     parameters_schema = {
         "type": "object",
         "properties": {
@@ -1800,14 +1808,14 @@ class ExternalThreatIntelTool(AsyncTool):
         },
         "required": ["indicator", "indicator_type"],
     }
-    
+
     async def execute(self, params: dict) -> ToolResult:
         indicator = params["indicator"]
         indicator_type = params["indicator_type"]
         providers = params.get("providers", ["virustotal", "abuseipdb"])
-        
+
         results = {}
-        
+
         async with aiohttp.ClientSession() as session:
             # 并行查询多个威胁情报源
             tasks = []
@@ -1816,21 +1824,21 @@ class ExternalThreatIntelTool(AsyncTool):
                     tasks.append(self.query_virustotal(session, indicator, indicator_type))
                 elif provider == "abuseipdb":
                     tasks.append(self.query_abuseipdb(session, indicator))
-            
+
             provider_results = await asyncio.gather(*tasks, return_exceptions=True)
-            
+
             for provider, result in zip(providers, provider_results):
                 if isinstance(result, Exception):
                     results[provider] = {"error": str(result)}
                 else:
                     results[provider] = result
-        
+
         return ToolResult(success=True, data=results)
-    
+
     async def query_virustotal(self, session: aiohttp.ClientSession, indicator: str, itype: str) -> dict:
         url = f"https://www.virustotal.com/api/v3/{itype}s/{indicator}"
         headers = {"x-apikey": self.config["virustotal_api_key"]}
-        
+
         async with session.get(url, headers=headers) as resp:
             if resp.status == 200:
                 data = await resp.json()
@@ -1840,12 +1848,12 @@ class ExternalThreatIntelTool(AsyncTool):
                 }
             else:
                 return {"error": f"API returned {resp.status}"}
-    
+
     async def query_abuseipdb(self, session: aiohttp.ClientSession, ip: str) -> dict:
         url = "https://api.abuseipdb.com/api/v2/check"
         headers = {"Key": self.config["abuseipdb_api_key"], "Accept": "application/json"}
         params = {"ipAddress": ip, "maxAgeInDays": 90}
-        
+
         async with session.get(url, headers=headers, params=params) as resp:
             if resp.status == 200:
                 data = await resp.json()
@@ -1885,13 +1893,13 @@ class SecurityAlertHandler(WebhookHandler):
             alert = self.format_alert(event)
             self.send_to_siem(alert)
             return WebhookResponse(status="acknowledged", action_taken="alert_sent_to_siem")
-        
+
         elif event.event_type == EventType.CONVERSATION_COMPLETED:
             # 生成会话摘要
             summary = self.generate_summary(event)
             self.log_to_audit(summary)
             return WebhookResponse(status="logged", action_taken="summary_logged")
-    
+
     def format_alert(self, event: WebhookEvent) -> dict:
         return {
             "alert_id": event.id,
@@ -1901,12 +1909,12 @@ class SecurityAlertHandler(WebhookHandler):
             "user_id": event.data.get("user_id"),
             "summary": event.data.get("summary"),
         }
-    
+
     def send_to_siem(self, alert: dict):
         # 发送到 SIEM 系统（如 Splunk、ElasticSearch）
         es_client = self.config["elasticsearch_client"]
         es_client.index(index="gsd2-alerts", document=alert)
-    
+
     def generate_summary(self, event: WebhookEvent) -> dict:
         return {
             "session_id": event.data.get("session_id"),
@@ -1915,7 +1923,7 @@ class SecurityAlertHandler(WebhookHandler):
             "tools_used": event.data.get("tools_used"),
             "token_usage": event.data.get("token_usage"),
         }
-    
+
     def log_to_audit(self, summary: dict):
         audit_logger = self.config["audit_logger"]
         audit_logger.log(event_type="conversation_summary", data=summary)
@@ -2122,16 +2130,19 @@ ops.refresh_memory(
 本文深入解析了 Pi.ai Framework 的核心架构与企业级能力，涵盖了从框架概述到监控运维的完整技术栈。核心要点总结如下：
 
 **架构优势**：
+
 - Memory-First 设计使 Agent 具备真正的"记忆"能力，而非每次交互都是独立上下文
 - 分层记忆（短/中/长期 + 偏好）实现了智能的记忆管理和个性化服务
 - 标准化的 Tool 接口和完整的生命周期管理，使能力扩展变得规范可控
 
 **与 gsd2 的集成价值**：
+
 - 多租户内置支持，使 gsd2 可以服务多个独立团队而无需额外开发
 - 企业级审计和合规功能，满足安全行业的监管要求
 - 灵活的部署方式，支持从托管云到纯内网的多种场景
 
 **扩展方向**：
+
 - 自定义 Tool 可接入 gsd2 的 eBPF/DPDK 安全分析能力
 - Webhook 机制支持与 SIEM、SOC 系统的事件驱动集成
 - Memory 层面可接入 gsd2 的漏洞库、规则库，形成垂直领域的知识增强
@@ -2140,4 +2151,4 @@ Pi.ai Framework 不是一个通用的 LLM 应用框架，而是为"AI 陪伴用�
 
 ---
 
-*本文属于 Code Agent 系列，以 gsd2 项目为案例探讨 AI Agent 的工程实践。相关代码示例基于 Pi.ai Framework v2.0 API。如有疑问或需要深入讨论某个主题，欢迎在项目 Issue 中交流。*
+_本文属于 Code Agent 系列，以 gsd2 项目为案例探讨 AI Agent 的工程实践。相关代码示例基于 Pi.ai Framework v2.0 API。如有疑问或需要深入讨论某个主题，欢迎在项目 Issue 中交流。_

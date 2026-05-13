@@ -1,7 +1,26 @@
 ---
 title: WireGuard 内核深度探索 Ch2：加密引擎与 Key 管理
 date: 2026-05-02 09:00:00
-tags: [WireGuard, Kernel, Crypto, Noise, ChaCha20, Poly1305, AEAD, DH, Key Management, Key Rotation, Handshake, Cookie, Authentication, Cipher, Security, RFC 7539, RFC 7746]
+tags:
+  [
+    WireGuard,
+    Kernel,
+    Crypto,
+    Noise,
+    ChaCha20,
+    Poly1305,
+    AEAD,
+    DH,
+    Key Management,
+    Key Rotation,
+    Handshake,
+    Cookie,
+    Authentication,
+    Cipher,
+    Security,
+    RFC 7539,
+    RFC 7746,
+  ]
 description: WireGuard 内核源码深度解析 Ch2：Noise 握手协议实现、ChaCha20-Poly1305 AEAD 加密引擎、密钥生成与销毁、密钥轮换机制、Cookie 验证器的完整流程。
 ---
 

@@ -11,14 +11,8 @@ tags:
   - operations
 ---
 
-> [!info] Cilium 2026 深度探索系列
-> 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
-> ...
-> 38. [[2026-04-14-cilium-deep-dive-ch38-sockmap|第三十八章：Sockmap]]
-> 39. [[2026-04-14-cilium-deep-dive-ch39-install|第三十九章：生产级安装指南]]
-> 40. [[2026-04-14-cilium-deep-dive-ch40-upgrade|第四十章：升级策略]]
-> 41. **第四十一章：故障诊断与排查** ←
-> 42. [[2026-04-14-cilium-deep-dive-ch42-performance|第四十二章：性能调优]]
+> [!info] Cilium 2026 深度探索系列 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+> ... 38. [[2026-04-14-cilium-deep-dive-ch38-sockmap|第三十八章：Sockmap]] 39. [[2026-04-14-cilium-deep-dive-ch39-install|第三十九章：生产级安装指南]] 40. [[2026-04-14-cilium-deep-dive-ch40-upgrade|第四十章：升级策略]] 41. **第四十一章：故障诊断与排查** ← 42. [[2026-04-14-cilium-deep-dive-ch42-performance|第四十二章：性能调优]]
 
 ---
 
@@ -583,24 +577,24 @@ cilium global-service list
 
 ### 11.1 Hubble Verdict
 
-| Verdict | 含义 | 可能原因 |
-|:---|:---|:---|
-| **FORWARDED** | 正常转发 | - |
-| **DROPPED** | 丢包 | 策略拒绝、资源不足 |
-| **DENIED** | 被拒绝 | NetworkPolicy 拒绝 |
-| **ERROR** | 错误 | 解析失败、程序错误 |
-| **TRACED** | 被追踪 | 符合策略规则 |
-| **TRANSLATED** | 地址转换 | NAT/Proxy 处理 |
+| Verdict        | 含义     | 可能原因           |
+| :------------- | :------- | :----------------- |
+| **FORWARDED**  | 正常转发 | -                  |
+| **DROPPED**    | 丢包     | 策略拒绝、资源不足 |
+| **DENIED**     | 被拒绝   | NetworkPolicy 拒绝 |
+| **ERROR**      | 错误     | 解析失败、程序错误 |
+| **TRACED**     | 被追踪   | 符合策略规则       |
+| **TRANSLATED** | 地址转换 | NAT/Proxy 处理     |
 
 ### 11.2 端点状态
 
-| 状态 | 含义 |
-|:---|:---|
-| **ready** | 正常运行 |
+| 状态                     | 含义         |
+| :----------------------- | :----------- |
+| **ready**                | 正常运行     |
 | **waiting-for-identity** | 等待身份分配 |
-| **init** | 初始化中 |
-| **regenerating** | 重建策略 |
-| **unhealthy** | 健康检查失败 |
+| **init**                 | 初始化中     |
+| **regenerating**         | 重建策略     |
+| **unhealthy**            | 健康检查失败 |
 
 ---
 

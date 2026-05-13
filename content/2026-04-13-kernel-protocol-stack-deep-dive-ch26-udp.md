@@ -1,12 +1,13 @@
 ---
 title: "Kernel Protocol Stack 深度探索 (二十六)：UDP 协议实现"
 date: 2026-04-13
-tags: [linux, kernel, networking, series, udp, datagram, multicast, broadcast, checksum, pseudo-header]
+tags:
+  [linux, kernel, networking, series, udp, datagram, multicast, broadcast, checksum, pseudo-header]
 description: "深入解析 UDP 协议实现——UDP 头部结构、校验和计算、multicast/broadcast、udp_sock 结构、 fragmentation"
 ---
 
-> [!info] Kernel Protocol Stack 深度探索系列
-> 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Kernel Protocol Stack 深度探索系列 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-kernel-protocol-stack-deep-dive-ch1-skbuff|第一章：sk_buff 与数据包生命周期]]
 > 2. [[2026-04-13-kernel-protocol-stack-deep-dive-ch2-netdevice|第二章：Netdevice 与网卡抽象]]
 > 3. [[2026-04-13-kernel-protocol-stack-deep-dive-ch3-ring-buffer|第三章：Ring Buffer 与 DMA]]
@@ -39,12 +40,14 @@ description: "深入解析 UDP 协议实现——UDP 头部结构、校验和计
 ## 1. 概述：UDP 协议
 
 UDP（User Datagram Protocol，用户数据报协议）是无连接的不可靠传输协议，与 TCP 相比：
+
 - 无连接：无需三次握手直接发送数据
 - 不可靠：不保证交付，不重传
 - 无流量控制：无滑动窗口
 - 无拥塞控制：无 cwnd/ssthresh
 
 适用场景：
+
 - DNS 查询（短请求/响应）
 - VoIP/视频流（容忍丢包，注重低延迟）
 - SNMP、DHCP
@@ -69,12 +72,12 @@ UDP（User Datagram Protocol，用户数据报协议）是无连接的不可靠�
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 ```
 
-| 字段 | 位宽 | 说明 |
-|------|------|------|
-| Source Port | 16 | 源端口（可选，0=无） |
-| Destination Port | 16 | 目的端口（必填） |
-| Length | 16 | UDP 头+数据长度（字节） |
-| Checksum | 16 | 校验和（0=未使用） |
+| 字段             | 位宽 | 说明                    |
+| ---------------- | ---- | ----------------------- |
+| Source Port      | 16   | 源端口（可选，0=无）    |
+| Destination Port | 16   | 目的端口（必填）        |
+| Length           | 16   | UDP 头+数据长度（字节） |
+| Checksum         | 16   | 校验和（0=未使用）      |
 
 ### 2.2 内核结构体
 
@@ -98,11 +101,11 @@ struct udphdr {
 // include/net/udp.h
 struct udp_sock {
     struct inet_connection_sock   inet;
-    
+
     // 接收队列
     struct udp_table __rcu       *udptable;  // 全局 hash 表
     struct sk_buff_head    gorqueue;          // 接收队列（general receive queue）
-    
+
     // 发送队列
     struct sk_buff_head   write_queue;       // 发送队列
 
@@ -112,7 +115,7 @@ struct udp_sock {
     u8              no_check6_rx:1;          // IPv6 不接收校验和
     u8              encap_type:2;            // 封装类型（GTP/UWP）
     u8              pf_after_bind:1;         // 绑定后的协议族
-    
+
     // multicast
     struct ip_mc_socklist __rcu *mc_list;    // 多播组列表
     struct inet_reuseport *bind_ini;          // reuseport 端口复用
@@ -150,7 +153,7 @@ int udp_sendmsg(struct sock *sk, struct msghdr *msg, size_t len)
         ipc.sockaddr = (union sockaddr *)&usin;
         ipc.addr = inet->inet_saddr;
         ipc.opt = rcu_dereference(inet->inet_opt);
-        
+
         err = ip_route_output_flow(sock_net(sk), &fl4, sk);
         if (err)
             goto out;
@@ -256,7 +259,7 @@ int udp_rcv(struct sock *sk, struct sk_buff *skb)
     // 进入 socket 接收路径
     skb_drop_dst(skb);
     skb->dev = NULL;
-    
+
     return __udp4_lib_rcv(sk, skb, uh->len, udp_table);
 }
 ```
@@ -322,11 +325,11 @@ setsockopt(sock, SOL_SOCKET, SO_NO_CHECK, &val, sizeof(val));
 
 ### 7.1 广播类型
 
-| 类型 | 地址 | 说明 |
-|------|------|------|
-| Limited Broadcast | 255.255.255.255 | 只在同一 LAN 传播 |
-| Directed Broadcast | NetworkID.255.255.255 | 发送到特定网络 |
-| Subnet Broadcast | SubnetID + 全1 | 只在子网内传播 |
+| 类型               | 地址                  | 说明              |
+| ------------------ | --------------------- | ----------------- |
+| Limited Broadcast  | 255.255.255.255       | 只在同一 LAN 传播 |
+| Directed Broadcast | NetworkID.255.255.255 | 发送到特定网络    |
+| Subnet Broadcast   | SubnetID + 全1        | 只在子网内传播    |
 
 ### 7.2 绑定广播地址
 
@@ -488,6 +491,7 @@ int udplite_sendmsg(struct sock *sk, struct msghdr *msg, size_t len)
 ### 10.1 UDP 封装类型
 
 UDP 常用于隧道协议的传输层：
+
 - VXLAN（UDP 端口 4789）
 - Geneve（UDP 端口 6081）
 - GENEVE（UDP 封装）
@@ -576,14 +580,14 @@ cat /proc/net/udp
 
 ## 13. 总结
 
-| 特性 | 说明 |
-|------|------|
-| 无连接 | 直接发送，无需握手 |
-| 不可靠 | 无 ACK、无重传 |
-| 无流量控制 | 可能丢包、重复 |
-| 校验和 | IPv4 可选，IPv6 必选 |
-| Broadcast | 255.255.255.255 |
-| Multicast | 224.0.0.0/4 组播地址 |
-| 封装 | VXLAN/Geneve/GTP |
+| 特性       | 说明                 |
+| ---------- | -------------------- |
+| 无连接     | 直接发送，无需握手   |
+| 不可靠     | 无 ACK、无重传       |
+| 无流量控制 | 可能丢包、重复       |
+| 校验和     | IPv4 可选，IPv6 必选 |
+| Broadcast  | 255.255.255.255      |
+| Multicast  | 224.0.0.0/4 组播地址 |
+| 封装       | VXLAN/Geneve/GTP     |
 
 UDP 是许多重要协议的基础（DNS、QUIC、视频流），在内核网络栈中扮演关键角色。

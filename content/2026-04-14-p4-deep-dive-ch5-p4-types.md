@@ -5,8 +5,8 @@ tags: [p4, series, type-system, bit, varbit, enum, header, struct, tuple, match-
 description: "P4 类型系统深度解析——bit 与 varbit 定长/变长整数、enum 与 error 类型、header 类型的状态语义、struct 与 tuple 的区别、match kind (exact/lpm/ternary) 的底层原理与硬件实现"
 ---
 
-> [!info] P4 深度探索系列
-> 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+> [!info] P4 深度探索系列 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-14-p4-deep-dive-ch1-p4-overview|第一章：P4 概述——诞生背景与协议无关包处理]]
 > 2. [[2026-04-14-p4-deep-dive-ch2-p4-architecture|第二章：P4 架构模型——PSA/V1Model、Ingress/Egress]]
 > 3. [[2026-04-14-p4-deep-dive-ch3-p4-vs-ebpf|第三章：P4 vs eBPF——适用场景与硬件/软件对比]]
@@ -23,6 +23,7 @@ P4 的类型系统是理解 P4 程序行为和硬件映射的关键。与传统�
 2. **Match Kind 不只是类型**：匹配类型（exact/lpm/ternary）虽然写在字段声明中，但它们不属于类型系统，而是属于"匹配语义"，决定表的查找算法
 
 理解类型系统有助于：
+
 - 编写**正确**的 P4 程序（类型不匹配会编译失败）
 - 理解**硬件资源分配**（TCAM/RAM 的使用）
 - 避免**隐蔽的语义错误**（如 `enum` 和 `bit` 的区别）
@@ -44,6 +45,7 @@ bit<1>  flag;       // 单比特标志
 ```
 
 **特点**：
+
 - N 可以是任意正整数，无平台限制
 - 无符号（unsigned），范围 `[0, 2^N - 1]`
 - 支持按位操作：`&`, `|`, `^`, `~`, `<<`, `>>`
@@ -59,6 +61,7 @@ varbit<1024> custom_payload; // 自定义变长负载
 ```
 
 **关键约束**：
+
 - `varbit<N>` **只能在 Header 类型内部使用**，不能作为独立变量
 - 实际有效位数由解析时动态确定
 - 必须在 `packet.extract()` 时显式指定提取长度
@@ -108,6 +111,7 @@ enum tcp_flag_t {
 ```
 
 **特点**：
+
 - 默认从 0 开始递增，也可显式赋值
 - `enum` 底层是 `bit<N>` 整数，可以隐式转换为 `bit<N>`
 - 编译器不强制枚举值在有效范围内（与 C 不同）
@@ -197,6 +201,7 @@ header ipv4_t {
 ```
 
 Header 类型的实例在内存中包含：
+
 1. **状态位**：一个隐藏的 Valid/Invalid 标志
 2. **字段值**：每个 `bit<N>` 字段的值
 
@@ -280,12 +285,12 @@ struct metadata_t {
 
 **与 Header 的关键区别**：
 
-| 维度 | Header | Struct |
-|------|--------|--------|
-| Valid/Invalid 状态 | ✅ 有 | ❌ 无 |
-| 序列化到数据包 | ✅ 可以 (`packet.emit`) | ❌ 不可以 |
-| 默认值 | Invalid | 全零 |
-| 通常用途 | 网络协议头 | 元数据、上下文 |
+| 维度               | Header                  | Struct         |
+| ------------------ | ----------------------- | -------------- |
+| Valid/Invalid 状态 | ✅ 有                   | ❌ 无          |
+| 序列化到数据包     | ✅ 可以 (`packet.emit`) | ❌ 不可以      |
+| 默认值             | Invalid                 | 全零           |
+| 通常用途           | 网络协议头              | 元数据、上下文 |
 
 ### 5.2 Struct 的嵌套
 
@@ -383,6 +388,7 @@ bit<48> b;
 ```
 
 **用途**：
+
 - 防止意外的类型混淆（如 `mac_addr_t` 和 `bit<48>`）
 - 增加类型安全性
 - 编译器/硬件可能基于新类型做优化（视实现而定）
@@ -408,6 +414,7 @@ type bit<16> packet_count_t; // 包计数
 ```
 
 **硬件实现**：
+
 - 大型精确匹配表：使用 Hash + CAM（内容寻址存储器）
 - Hash 将 Key 散列到索引，CAM 存储实际值用于冲突检测
 - 典型实现：DRAM + TCAM 混合，DRAM 存储数据，TCAM 存储 Key（仅用于精确匹配场景的某些实现）
@@ -440,6 +447,7 @@ table acl_permit {
 ```
 
 **硬件实现**：
+
 - TCAM（LPM 模式）：TCAM 支持前缀匹配，按从长到短的顺序存储表项，硬件返回第一个匹配项
 - Patricia Tree + DRAM：软件交换机常用，硬件效率较低
 
@@ -487,6 +495,7 @@ const entries = {
 ```
 
 **TCAM 实现**：
+
 - TCAM 天生支持 ternary，每个表项有一个 Associated Data（存储对应的值/动作）
 - 表项按优先级顺序匹配（需要管理员合理规划顺序）
 - TCAM 深度通常 128K-512K 条，远小于 DRAM
@@ -522,12 +531,12 @@ const entries = {
 
 ### 8.5 Match Kind 对比表
 
-| Match Kind | 语义 | 典型应用 | 硬件实现 | 资源消耗 |
-|------------|------|---------|---------|---------|
-| exact | 完全相等 | ACL 源/目的 IP | Hash + CAM | 低 |
-| lpm | 最长前缀匹配 | IP 路由表 (FIB) | TCAM / Patricia | 中 |
-| ternary | 位掩码匹配 | 策略路由、ACL | TCAM | 高 (功耗大) |
-| range | 范围包含 | 端口过滤 | Range Matcher / TCAM 拆分 | 高 |
+| Match Kind | 语义         | 典型应用        | 硬件实现                  | 资源消耗    |
+| ---------- | ------------ | --------------- | ------------------------- | ----------- |
+| exact      | 完全相等     | ACL 源/目的 IP  | Hash + CAM                | 低          |
+| lpm        | 最长前缀匹配 | IP 路由表 (FIB) | TCAM / Patricia           | 中          |
+| ternary    | 位掩码匹配   | 策略路由、ACL   | TCAM                      | 高 (功耗大) |
+| range      | 范围包含     | 端口过滤        | Range Matcher / TCAM 拆分 | 高          |
 
 ---
 
@@ -537,14 +546,14 @@ const entries = {
 
 P4 中未显式初始化的变量有默认值：
 
-| 类型 | 默认值 |
-|------|-------|
-| `bit<N>` | 全 0 |
-| `int<N>` | 全 0 (即 0) |
-| `bool` | `false` |
-| `enum` | 第一个枚举值 |
+| 类型               | 默认值                 |
+| ------------------ | ---------------------- |
+| `bit<N>`           | 全 0                   |
+| `int<N>`           | 全 0 (即 0)            |
+| `bool`             | `false`                |
+| `enum`             | 第一个枚举值           |
 | `header` (Invalid) | Invalid (所有字段无效) |
-| `struct` | 每个字段递归取默认值 |
+| `struct`           | 每个字段递归取默认值   |
 
 ### 9.2 初始化的实际影响
 
@@ -579,6 +588,7 @@ packet.extract(eth);  // eth.isValid() = true, 字段有值
 ---
 
 > [!tip] 延伸阅读
+>
 > - P4-16 Language Specification, Section 4 (Types): https://p4.org/p4-spec/docs/P4-16-language.html
 > - P4-16 Language Specification, Section 11 (Match Kind): https://p4.org/p4-spec/docs/P4-16-language.html
 > - TCAM vs CAM: Understanding the difference: https://en.wikipedia.org/wiki/Content-addressable_memory

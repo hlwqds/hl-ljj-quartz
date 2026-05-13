@@ -11,8 +11,8 @@ tags:
   - observability
 ---
 
-> [!info] eBPF 2026 深度探索系列
-> 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+> [!info] eBPF 2026 深度探索系列 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+>
 > 1. [[2026-04-08-ebpf-deep-dive-ch1-registers-and-instructions|第一章：寄存器与指令集]]
 > 2. [[2026-04-08-ebpf-deep-dive-ch1-5-function-calls|第一.五章：四种函数调用与动态内存]]
 > 3. [[2026-04-08-ebpf-deep-dive-ch1-6-the-verifier|第一.六章：验证器 (Verifier) 的底层逻辑]]
@@ -64,6 +64,7 @@ tags:
 > 49. [[2026-04-09-ebpf-deep-dive-ch40-network-protocols-deep-dive|第四十章：网络协议深度解析——TCP/UDP/QUIC 的 eBPF 视角]]
 > 50. [[2026-04-09-ebpf-deep-dive-ch41-memory-safety-and-vulnerabilities|第四十一章：eBPF 内存安全与漏洞分析]]
 > 51. [[2026-04-09-ebpf-deep-dive-ch42-service-mesh-integration|第四十二章：eBPF 与 Service Mesh 深度集成]]
+
 ---
 
 ## 1. 概述：为什么需要动态语言感知？
@@ -93,13 +94,13 @@ graph TB
 
 ### 1.2 支持的语言与提取场景
 
-| 语言 | 运行时 | 可提取对象 | 技术手段 |
-|:---|:---|:---|:---|
-| **Python** | CPython 3.8+ | SQLAlchemy Query, Django Request, Pydantic Model | uprobe + PyObject 遍历 |
-| **Java** | JVM (HotSpot) | JDBC SQL, HttpServletRequest, Dubbo Args | uprobe + JNI 反射 |
-| **Go** | Go Runtime | database/sql Query, net/http Request, gRPC | uprobe + 运行时符号表 |
-| **Node.js** | V8 | SQL Queries, HTTP Request/Response | uprobe + V8 API |
-| **Ruby** | CRuby | ActiveRecord Query, Rack Env | uprobe + Ractor/VM 结构 |
+| 语言        | 运行时        | 可提取对象                                       | 技术手段                |
+| :---------- | :------------ | :----------------------------------------------- | :---------------------- |
+| **Python**  | CPython 3.8+  | SQLAlchemy Query, Django Request, Pydantic Model | uprobe + PyObject 遍历  |
+| **Java**    | JVM (HotSpot) | JDBC SQL, HttpServletRequest, Dubbo Args         | uprobe + JNI 反射       |
+| **Go**      | Go Runtime    | database/sql Query, net/http Request, gRPC       | uprobe + 运行时符号表   |
+| **Node.js** | V8            | SQL Queries, HTTP Request/Response               | uprobe + V8 API         |
+| **Ruby**    | CRuby         | ActiveRecord Query, Rack Env                     | uprobe + Ractor/VM 结构 |
 
 ---
 
@@ -121,6 +122,7 @@ typedef struct _object {
 ```
 
 关键点：
+
 - `ob_type` 指向类型对象，类型对象包含 `tp_name`（如 `"str"`, `"dict"`）
 - `ob_refcnt` 是引用计数，通过追踪它可以分析对象生命周期
 - 字符串对象的 `ob_sval` 存储实际字符数据
@@ -189,6 +191,7 @@ int BPF_KPROBE(sqla_query_str, void *self) {
 ### 3.1 JVM 对象布局概述
 
 JVM 堆中的对象布局分为：
+
 - **普通对象**: 对象头 (Mark Word + Klass Pointer) + 实例字段
 - **数组对象**: 对象头 + 数组长度 + 元素数据
 
@@ -503,7 +506,7 @@ spec:
     encoding: utf-8
   # 采样率
   sampling:
-    rate: 0.01  # 1% 采样
+    rate: 0.01 # 1% 采样
     burst: 10
   # 过滤条件
   filter:
@@ -552,11 +555,11 @@ int BPF_KPROBE(extract_trace_context, char *header_value) {
 
 ### 7.1 追踪点选择原则
 
-| 策略 | 适用场景 | 开销 | 示例 |
-|:---|:---|:---|:---|
-| **高频追踪** | 入口/出口点 | 低 | `__enter__`, 函数入口 |
-| **中频追踪** | 关键业务点 | 中 | SQL 执行, HTTP 请求 |
-| **低频追踪** | 异常/慢请求 | 低 | 错误日志, >1s 请求 |
+| 策略         | 适用场景    | 开销 | 示例                  |
+| :----------- | :---------- | :--- | :-------------------- |
+| **高频追踪** | 入口/出口点 | 低   | `__enter__`, 函数入口 |
+| **中频追踪** | 关键业务点  | 中   | SQL 执行, HTTP 请求   |
+| **低频追踪** | 异常/慢请求 | 低   | 错误日志, >1s 请求    |
 
 ### 7.2 采样策略
 
@@ -608,4 +611,4 @@ A：会。如果 Go 编译器判断一个对象会逃逸到堆上，它会分配
 
 **Q5：eBPF 语言感知与语言自带的 APM 探针有什么优势？**
 
-A：优势：1) **零代码修改** - 无需在业务代码中添加任何探针；2) **统一视图** - 跨越 Python/Java/Go/Node.js 的统一追踪；3) **内核级性能** - 不占用语言运行时的线程资源。劣势：1) 无法访问语言内部的高层抽象（如 Python 的类实例字段需手动遍历 PyObject*）；2) 依赖语言版本的内部结构，版本升级可能失效。
+A：优势：1) **零代码修改** - 无需在业务代码中添加任何探针；2) **统一视图** - 跨越 Python/Java/Go/Node.js 的统一追踪；3) **内核级性能** - 不占用语言运行时的线程资源。劣势：1) 无法访问语言内部的高层抽象（如 Python 的类实例字段需手动遍历 PyObject\*）；2) 依赖语言版本的内部结构，版本升级可能失效。

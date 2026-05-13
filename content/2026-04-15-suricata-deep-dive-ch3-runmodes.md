@@ -11,8 +11,8 @@ tags:
 description: "深入解析 Suricata 的运行模式：auto/worker/autofp/pcap/nfq 模式配置与源码实现，以及各模式适用场景"
 ---
 
-> [!info] Suricata 2026 深度探索系列
-> 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Suricata 2026 深度探索系列 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-15-suricata-deep-dive-ch1-overview|第一章：Suricata 概述]]
 > 2. [[2026-04-15-suricata-deep-dive-ch2-config|第二章：Suricata 配置系统]]
 > 3. **第三章：Runmodes 运行模式**
@@ -27,7 +27,7 @@ Suricata 支持多种 **Runmode**（运行模式），决定数据包如何被�
 
 ```yaml
 # suricata.yaml — 模式配置
-runmode: auto  # 可选：auto/worker/autofp/pcap/nfq/netmap/ipfw/dpdk
+runmode: auto # 可选：auto/worker/autofp/pcap/nfq/netmap/ipfw/dpdk
 ```
 
 || 模式 | 说明 | 适用场景 |
@@ -105,22 +105,22 @@ runmode: auto
 const char *RunModeAutoConf(void)
 {
     /* 根据网卡类型和数量自动选择 */
-    
+
     /* 如果是 NFQ 模式（iptables 集成） */
     if (RunmodeIsNFQ()) {
         return "nfq";
     }
-    
+
     /* 如果有多个网卡且支持 AF-PACKET */
     if (NicHasAFPacket() && NicCount() > 1) {
         return "autofp";  // 多网卡用 autofp
     }
-    
+
     /* 如果是 DPDK 环境 */
     if (DPDKEnabled()) {
         return "dpdk";
     }
-    
+
     /* 默认使用 worker 模式 */
     return "worker";
 }
@@ -167,7 +167,7 @@ const char *RunModeAutoConf(void)
 runmode: worker
 af-packet:
   - interface: eth0
-    threads: 4           # 每个接口 4 个线程
+    threads: 4 # 每个接口 4 个线程
     use-structs: yes
     ring-size: 2048
 ```
@@ -189,27 +189,27 @@ static int RunModeSetIPSAutoFp(..., DetectEngineCtx *de_ctx)
         "packetpool", "packetpool",
         "FlowManager",
         "flow-manager");
-    
+
     /* 2. 设置抓包模块（AF-PACKET）*/
     TmVarSlotSetFunc(tv_capture, "RxAFPacket",
                      TmModuleGetByName("AF_PACKET"));
-    
+
     /* 3. 设置分发队列 */
     tv_capture->outq = CommonCommitStage("flow.auto.1");
-    
+
     /* 4. 启动抓包线程 */
     TmThreadSpawn(tv_capture);
-    
+
     /* 5. 创建 Worker 线程池 */
     for (int i = 0; i < thread_count; i++) {
         ThreadVars *tv_worker = TmThreadCreatePacketHandler(
             "Worker#", "flow.recycler", ...);
-        
+
         /* 每个 Worker 都有自己的 DetectEngine */
         TmVarSlotSetFunc(tv_worker, "RespondReject", ...);
         TmThreadSpawn(tv_worker);
     }
-    
+
     return 0;
 }
 ```
@@ -235,7 +235,7 @@ static int RunModeSetIPSAutoFp(..., DetectEngineCtx *de_ctx)
 # suricata.yaml — NFQ IPS 模式
 runmode: nfq
 nfq:
-  mode: accept          # accept=放行, drop=丢弃
+  mode: accept # accept=放行, drop=丢弃
   repeat-mark: 1
   repeat-delay: 10
   bypass-mark: 1
@@ -269,12 +269,12 @@ static TmEcode ReceiveNFQ(ThreadVars *tv, Packet *p)
 {
     /* 从 NFQ 队列读取数据包 */
     int fd = NFQGetFD();
-    
+
     ssize_t len = recv(fd, &buf, sizeof(buf), 0);
     if (len > 0) {
         /* 解析 NFQ 元数据（mark, ifindex, verdict）*/
         NFQParsePacket(tv, p, &buf);
-        
+
         /* 发送给后续处理模块 */
         if (TmModules[TMM_RECEIVENFQ].func(tv, p) == TM_ECODE_OK) {
             /* 调用 verdict 模块 */
@@ -325,18 +325,18 @@ pcap:
 static TmEcode ReceivePcap(ThreadVars *tv, Packet *p)
 {
     pcap_t *pd = pcap_open_live(iface, snaplen, promisc, 100);
-    
+
     while (1) {
         /* 阻塞读取 */
         struct pcap_pkthdr *h;
         const u_char *data;
         int rc = pcap_next_ex(pd, &h, &data);
-        
+
         if (rc == 1) {
             /* 解析为 Packet 结构 */
             PacketCopyData(p, data, h->len);
             p->ts = h->ts;
-            
+
             /* 分发到处理链 */
             TmSlotFunc(p);
         }
@@ -357,10 +357,10 @@ graph TD
     E -->|Yes| F["AutoFP"]
     E -->|No| G["Worker"]
     D -->|No| H["PCAP (调试)"]
-    
+
     C -->|Linux| I["NFQ"]
     C -->|DPDK网卡| J["AF-PACKET / DPDK"]
-    
+
     style F fill:#f9f,color:#000
     style G fill:#f9f,color:#000
     style I fill:#9f9,color:#000

@@ -11,8 +11,8 @@ tags:
 description: "深入解析 Suricata 的 Flow 超时机制：超时配置、超时状态机、TCP 状态超时、UDP/ICMP 超时、以及超时淘汰源码实现"
 ---
 
-> [!info] Suricata 2026 深度探索系列
-> 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Suricata 2026 深度探索系列 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-15-suricata-deep-dive-ch1-overview|第一章：Suricata 概述]]
 > 2. [[2026-04-15-suricata-deep-dive-ch2-config|第二章：Suricata 配置系统]]
 > 3. [[2026-04-15-suricata-deep-dive-ch3-runmodes|第三章：Runmodes 运行模式]]
@@ -72,34 +72,34 @@ flow:
   timeout:
     # 默认超时（所有协议）
     default: 30
-    
+
     # TCP 分阶段超时
-    tcp: 300           # TCP 通用超时
-    tcp_syn: 10         # SYN 已发送，等待 SYN-ACK
-    tcp_syn_ack: 10     # SYN-ACK 已发送，等待 ACK
-    tcp_established: 3600  # TCP 已建立连接
-    tcp_fin_wait: 30    # FIN_WAIT 状态
-    tcp_close_wait: 30  # CLOSE_WAIT 状态
-    tcp_last_ack: 30    # LAST_ACK 状态
-    
+    tcp: 300 # TCP 通用超时
+    tcp_syn: 10 # SYN 已发送，等待 SYN-ACK
+    tcp_syn_ack: 10 # SYN-ACK 已发送，等待 ACK
+    tcp_established: 3600 # TCP 已建立连接
+    tcp_fin_wait: 30 # FIN_WAIT 状态
+    tcp_close_wait: 30 # CLOSE_WAIT 状态
+    tcp_last_ack: 30 # LAST_ACK 状态
+
     # UDP 超时
     udp: 30
-    
+
     # ICMP 超时
     icmp: 30
-    
+
     # SCTP 超时
     sctp: 30
 ```
 
 ### 1.2 超时 vs Snort
 
-| 超时策略 | Suricata | Snort |
-|:---|:---|:---|
-| **TCP 状态机** | 完整状态跟踪 | 简化 |
-| **超时粒度** | 协议 + 状态级别 | 固定值 |
-| **应用层超时** | AppLayer 独立超时 | 无 |
-| **自适应超时** | 支持 | 无 |
+| 超时策略       | Suricata          | Snort  |
+| :------------- | :---------------- | :----- |
+| **TCP 状态机** | 完整状态跟踪      | 简化   |
+| **超时粒度**   | 协议 + 状态级别   | 固定值 |
+| **应用层超时** | AppLayer 独立超时 | 无     |
+| **自适应超时** | 支持              | 无     |
 
 ---
 
@@ -121,7 +121,7 @@ typedef struct FlowTimeoutCounters_ {
     uint32_t esp;
     uint32_t user_timeout;
     uint32_t default_timeout;
-    
+
 } FlowTimeoutCounters;
 
 // src/flow-timeout.h — Flow 超时上下文
@@ -129,19 +129,19 @@ typedef struct FlowTimeoutContext_ {
     /* 超时链表（按超时时间排序） */
     Flow *list_head;
     Flow *list_tail;
-    
+
     /* 当前时间 */
     struct timeval current_time;
-    
+
     /* 超时计数 */
     FlowTimeoutCounters timeouts;
-    
+
     /* 淘汰计数 */
     FlowTimeoutCounters prune_count;
-    
+
     /* 锁 */
     STMtx m;
-    
+
 } FlowTimeoutContext;
 ```
 
@@ -185,7 +185,7 @@ typedef struct FlowTimeoutContext_ {
 static inline uint32_t FlowGetTimeout(Flow *f)
 {
     /* 根据协议和状态计算超时时间 */
-    
+
     switch (f->proto) {
         case IPPROTO_TCP:
             return FlowGetTcpTimeout(f);
@@ -210,10 +210,10 @@ static inline uint32_t FlowGetTcpTimeout(Flow *f)
     switch (f->tcp_state) {
         case TCP_STATE_SYN_SENT:
             return flow_timeouts[FLOW_TCP_SYN];
-            
+
         case TCP_STATE_SYN_RECV:
             return flow_timeouts[FLOW_TCP_SYN_ACK];
-            
+
         case TCP_STATE_ESTABLISHED:
             /* 检查是否有一段时间无活动 */
             if (f->lastts != 0) {
@@ -223,22 +223,22 @@ static inline uint32_t FlowGetTcpTimeout(Flow *f)
                 }
             }
             return flow_timeouts[FLOW_TCP_ESTABLISHED];
-            
+
         case TCP_STATE_FIN_WAIT:
             return flow_timeouts[FLOW_TCP_FIN_WAIT];
-            
+
         case TCP_STATE_CLOSE_WAIT:
             return flow_timeouts[FLOW_TCP_CLOSE_WAIT];
-            
+
         case TCP_STATE_LAST_ACK:
             return flow_timeouts[FLOW_TCP_LAST_ACK];
-            
+
         case TCP_STATE_TIME_WAIT:
             return flow_timeouts[FLOW_TCP_TIME_WAIT];
-            
+
         case TCP_STATE_CLOSED:
             return flow_timeouts[FLOW_TCP_CLOSED];
-            
+
         default:
             return flow_timeouts[FLOW_TCP_GENERAL];
     }
@@ -248,10 +248,10 @@ static inline uint32_t FlowGetTcpTimeout(Flow *f)
 static inline int FlowIsTimedOut(Flow *f, struct timeval *ts)
 {
     uint32_t timeout = FlowGetTimeout(f);
-    
+
     /* 计算自最后活动以来的时间 */
     uint32_t elapsed = (ts->tv_sec - f->ts.tv_sec);
-    
+
     return (elapsed >= timeout);
 }
 ```
@@ -265,7 +265,7 @@ typedef struct FlowTimeoutNode_ {
     uint32_t expire_at;      // 超时时间戳
     struct FlowTimeoutNode_ *next;
     struct FlowTimeoutNode_ *prev;
-    
+
 } FlowTimeoutNode;
 
 // src/flow-timeout.c — 插入超时队列
@@ -273,26 +273,26 @@ static inline void FlowTimeoutInsert(FlowTimeoutContext *ctx, Flow *f)
 {
     uint32_t expire_at = f->ts.tv_sec + FlowGetTimeout(f);
     f->timeout_at = expire_at;
-    
+
     /* 链表按 expire_at 排序 */
     Flow *prev = NULL;
     Flow *curr = ctx->list_head;
-    
+
     while (curr != NULL && curr->timeout_at < expire_at) {
         prev = curr;
         curr = curr->tnext;
     }
-    
+
     /* 插入节点 */
     f->tnext = curr;
     f->tprev = prev;
-    
+
     if (prev != NULL) {
         prev->tnext = f;
     } else {
         ctx->list_head = f;
     }
-    
+
     if (curr != NULL) {
         curr->tprev = f;
     } else {
@@ -314,13 +314,13 @@ int FlowHandleTimeout(FlowTimeoutContext *ctx)
     struct timeval ts;
     gettimeofday(&ts, NULL);
     ctx->current_time = ts;
-    
+
     Flow *f = ctx->list_head;
     uint32_t now = ts.tv_sec;
-    
+
     while (f != NULL) {
         Flow *next = f->tnext;
-        
+
         /* 检查是否超时 */
         if (f->timeout_at <= now) {
             /* 从超时队列移除 */
@@ -329,27 +329,27 @@ int FlowHandleTimeout(FlowTimeoutContext *ctx)
             } else {
                 ctx->list_head = f->tnext;
             }
-            
+
             if (f->tnext != NULL) {
                 f->tnext->tprev = f->tprev;
             } else {
                 ctx->list_tail = f->tprev;
             }
-            
+
             /* 记录统计 */
             ctx->timeouts.default_timeout++;
-            
+
             /* 处理超时 Flow */
             FlowTimeout(f, ctx);
-            
+
         } else {
             /* 链表已排序，后续都不会超时 */
             break;
         }
-        
+
         f = next;
     }
-    
+
     return 0;
 }
 
@@ -358,7 +358,7 @@ static int FlowTimeout(Flow *f, FlowTimeoutContext *ctx)
 {
     /* 获取 Flow 锁 */
     FLOWLOCK_WRLOCK(f);
-    
+
     /* 再次检查（可能已被其他线程处理） */
     if (SC_ATOMIC_LOAD(f->use_cnt) == 0) {
         /* 可以直接释放 */
@@ -368,12 +368,12 @@ static int FlowTimeout(Flow *f, FlowTimeoutContext *ctx)
     } else {
         /* 标记为超时状态 */
         f->flow_end_flags |= FLOW_END_FLAG_TIMEOUT;
-        
+
         /* 如果是 TCP，尝试完成关闭 */
         if (f->proto == IPPROTO_TCP) {
             FlowTcpClose(f);
         }
-        
+
         /* 如果引用计数为 0，释放 */
         if (SC_ATOMIC_LOAD(f->use_cnt) == 0) {
             FlowRemoveFromHash(f);
@@ -381,9 +381,9 @@ static int FlowTimeout(Flow *f, FlowTimeoutContext *ctx)
             ctx->prune_count.default_timeout++;
         }
     }
-    
+
     FLOWLOCK_UNLOCK(f);
-    
+
     return 0;
 }
 ```
@@ -399,36 +399,36 @@ static int FlowTcpTimeout(Flow *f, FlowTimeoutContext *ctx)
             /* SYN 未收到响应 */
             ctx->timeouts.tcp_syn++;
             break;
-            
+
         case TCP_STATE_SYN_RECV:
             /* 三次握手未完成 */
             ctx->timeouts.tcp_syn_ack++;
             break;
-            
+
         case TCP_STATE_ESTABLISHED:
             /* 连接空闲超时 */
             ctx->timeouts.tcp_established++;
             break;
-            
+
         case TCP_STATE_FIN_WAIT:
             /* 对方未响应 FIN */
             ctx->timeouts.tcp_fin_wait++;
             break;
-            
+
         case TCP_STATE_CLOSE_WAIT:
             /* 本地未发送 FIN */
             ctx->timeouts.tcp_close_wait++;
             break;
-            
+
         case TCP_STATE_LAST_ACK:
             /* 最后 ACK 未确认 */
             ctx->timeouts.tcp_last_ack++;
             break;
-            
+
         default:
             break;
     }
-    
+
     return FlowTimeout(f, ctx);
 }
 ```
@@ -445,14 +445,14 @@ typedef struct AppLayerTimeouts_ {
     uint32_t tcp;
     uint32_t udp;
     uint32_t icmp;
-    
+
     /* 协议特定超时 */
     uint32_t http_timeout;
     uint32_t dns_timeout;
     uint32_t smb_timeout;
     uint32_t ssh_timeout;
     uint32_t tls_timeout;
-    
+
 } AppLayerTimeouts;
 
 // src/app-layer-parser.h — AppLayer 注册超时回调
@@ -466,26 +466,26 @@ typedef int (*AppLayerRegisterTimeoutFunc)(
 typedef struct AppLayerParserState_ {
     /* 协议状态 */
     uint8_t state;
-    
+
     /* 探测状态 */
     uint8_t探测:1;
     uint8_t相:1;
     uint8_t complete:1;
-    
+
     /* 事务计数 */
     uint64_t tx_cnt;
-    
+
     /* 当前 TX ID */
     uint64_t curr_tx_id;
-    
+
     /* 超时回调 */
     AppLayerRegisterTimeoutFunc timeout_func;
     void *timeout_userdata;
-    
+
     /* 日志回调 */
     AppLayerRegisterTxLogFunc log_func;
     void *log_userdata;
-    
+
 } AppLayerParserState;
 ```
 
@@ -499,26 +499,26 @@ static int DNSTimeout(Flow *f, struct timeval *ts)
     if (dns_state == NULL) {
         return 0;
     }
-    
+
     /* DNS 请求超时（通常是 5-10 秒） */
     DNSTransaction *tx = dns_state->pending_first;
-    
+
     while (tx != NULL) {
         DNSTransaction *next = tx->next;
-        
+
         uint32_t elapsed = ts->tv_sec - tx->ts.tv_sec;
-        
+
         if (elapsed > DNS_REQUEST_TIMEOUT) {
             /* DNS 请求超时 */
             dns_state->stats.timeouts++;
-            
+
             /* 清理事务 */
             DNSTransactionFree(tx);
         }
-        
+
         tx = next;
     }
-    
+
     return 0;
 }
 ```
@@ -534,61 +534,61 @@ static int DNSTimeout(Flow *f, struct timeval *ts)
 int FlowTimeoutInit(void)
 {
     const char *conf_val;
-    
+
     /* 加载各协议超时配置 */
-    
+
     /* TCP 超时 */
     if (SCConfGetInt("flow.timeout.tcp", &conf_val) == 1) {
         flow_timeouts[FLOW_TCP_GENERAL] = atoi(conf_val);
     } else {
         flow_timeouts[FLOW_TCP_GENERAL] = 300;
     }
-    
+
     if (SCConfGetInt("flow.timeout.tcp_syn", &conf_val) == 1) {
         flow_timeouts[FLOW_TCP_SYN] = atoi(conf_val);
     } else {
         flow_timeouts[FLOW_TCP_SYN] = 10;
     }
-    
+
     if (SCConfGetInt("flow.timeout.tcp_syn_ack", &conf_val) == 1) {
         flow_timeouts[FLOW_TCP_SYN_ACK] = atoi(conf_val);
     } else {
         flow_timeouts[FLOW_TCP_SYN_ACK] = 10;
     }
-    
+
     if (SCConfGetInt("flow.timeout.tcp_established", &conf_val) == 1) {
         flow_timeouts[FLOW_TCP_ESTABLISHED] = atoi(conf_val);
     } else {
         flow_timeouts[FLOW_TCP_ESTABLISHED] = 3600;
     }
-    
+
     if (SCConfGetInt("flow.timeout.tcp_fin_wait", &conf_val) == 1) {
         flow_timeouts[FLOW_TCP_FIN_WAIT] = atoi(conf_val);
     } else {
         flow_timeouts[FLOW_TCP_FIN_WAIT] = 30;
     }
-    
+
     /* UDP 超时 */
     if (SCConfGetInt("flow.timeout.udp", &conf_val) == 1) {
         flow_timeouts[FLOW_PROTO_UDP] = atoi(conf_val);
     } else {
         flow_timeouts[FLOW_PROTO_UDP] = 30;
     }
-    
+
     /* ICMP 超时 */
     if (SCConfGetInt("flow.timeout.icmp", &conf_val) == 1) {
         flow_timeouts[FLOW_PROTO_ICMP] = atoi(conf_val);
     } else {
         flow_timeouts[FLOW_PROTO_ICMP] = 30;
     }
-    
+
     /* 默认超时 */
     if (SCConfGetInt("flow.timeout.default", &conf_val) == 1) {
         flow_timeouts[FLOW_PROTO_DEFAULT] = atoi(conf_val);
     } else {
         flow_timeouts[FLOW_PROTO_DEFAULT] = 30;
     }
-    
+
     return 0;
 }
 ```
@@ -605,23 +605,23 @@ void FlowPruneForHash(void)
 {
     struct timeval ts;
     gettimeofday(&ts, NULL);
-    
+
     Flow *f = flow_hash.list_tail;
-    
+
     while (f != NULL && SC_ATOMIC_LOAD(flow_config.memcap) > flow_config.memcap) {
         Flow *prev = f->hprev;
-        
+
         /* 优先淘汰超时 Flow */
         if (FlowIsTimedOut(f, &ts)) {
             FlowRemoveFromHash(f);
-            
+
             if (SC_ATOMIC_LOAD(f->use_cnt) == 0) {
                 FlowFree(f);
                 flow_config.flow_count--;
                 SC_ATOMIC_SUB(flow_config.memcap, sizeof(Flow));
             }
         }
-        
+
         f = prev;
     }
 }
@@ -631,18 +631,18 @@ void FlowPruneEmergency(void)
 {
     struct timeval ts;
     gettimeofday(&ts, NULL);
-    
+
     /* 紧急模式下，使用更短的超时时间 */
     uint32_t emergency_timeout = flow_config.prune_timeout;
-    
+
     Flow *f = flow_hash.list_head;  // 最老的先淘汰
     Flow *prev = NULL;
-    
+
     while (f != NULL) {
         Flow *next = f->hnext;
-        
+
         uint32_t elapsed = ts.tv_sec - f->ts.tv_sec;
-        
+
         if (elapsed >= emergency_timeout) {
             /* 从哈希表移除 */
             if (f->hprev != NULL) {
@@ -650,18 +650,18 @@ void FlowPruneEmergency(void)
             } else {
                 flow_hash.buckets[FlowGetHash(f)] = f->hnext;
             }
-            
+
             if (f->hnext != NULL) {
                 f->hnext->hprev = f->hprev;
             }
-            
+
             /* 释放 */
             if (SC_ATOMIC_LOAD(f->use_cnt) == 0) {
                 FlowFree(f);
                 flow_config.flow_count--;
             }
         }
-        
+
         prev = f;
         f = next;
     }

@@ -10,18 +10,18 @@ tags:
 description: "深入解析 Suricata IP 信誉系统：reputation 配置、IP 信誉数据库格式、分类器（IPCartridge）、SReputation 引擎、动态更新机制、以及与规则系统的集成"
 ---
 
-> [!info] Suricata 2026 深度探索系列
-> 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Suricata 2026 深度探索系列 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-15-suricata-deep-dive-ch1-overview|第一章：Suricata 概述]]
 > 2. [[2026-04-15-suricata-deep-dive-ch2-config|第二章：Suricata 配置系统]]
-> ...
-> 39. [[2026-04-15-suricata-deep-dive-ch39-memory|第三十九章：内存管理]]
-> 40. [[2026-04-15-suricata-deep-dive-ch40-hyperscan|第四十章：Hyperscan MPM]]
-> 41. **第四十一章：IP 信誉系统**
-> 42. [[2026-04-15-suricata-deep-dive-ch42-dataset|第四十二章：Dataset 与动态列表]]
-> 43. [[2026-04-15-suricata-deep-dive-ch43-app-layer-register|第四十三章：自定义 Parser]]
-> 44. [[2026-04-15-suricata-deep-dive-ch44-rust|第四十四章：Rust 扩展]]
-> 45. [[2026-04-15-suricata-deep-dive-ch45-cluster|第四十五章：集群模式]]
+>    ...
+> 3. [[2026-04-15-suricata-deep-dive-ch39-memory|第三十九章：内存管理]]
+> 4. [[2026-04-15-suricata-deep-dive-ch40-hyperscan|第四十章：Hyperscan MPM]]
+> 5. **第四十一章：IP 信誉系统**
+> 6. [[2026-04-15-suricata-deep-dive-ch42-dataset|第四十二章：Dataset 与动态列表]]
+> 7. [[2026-04-15-suricata-deep-dive-ch43-app-layer-register|第四十三章：自定义 Parser]]
+> 8. [[2026-04-15-suricata-deep-dive-ch44-rust|第四十四章：Rust 扩展]]
+> 9. [[2026-04-15-suricata-deep-dive-ch45-cluster|第四十五章：集群模式]]
 
 ---
 
@@ -47,12 +47,12 @@ graph TD
 
 ### 1.1 IPREP vs 传统规则
 
-| 特性 | 传统 IP 规则 | IPREP 系统 |
-|:---|:---|:---|
-| 数据来源 | 规则文件 (sidmsg.map) | 外部数据库 (iprep.dat) |
-| 更新方式 | 规则更新 | 动态增量更新 |
-| 粒度 | 二元（匹配/不匹配） | 分类 + 置信度 |
-| 适用场景 |已知攻击 | 恶意 IP、僵尸网络、Tor 出口节点 |
+| 特性     | 传统 IP 规则          | IPREP 系统                      |
+| :------- | :-------------------- | :------------------------------ |
+| 数据来源 | 规则文件 (sidmsg.map) | 外部数据库 (iprep.dat)          |
+| 更新方式 | 规则更新              | 动态增量更新                    |
+| 粒度     | 二元（匹配/不匹配）   | 分类 + 置信度                   |
+| 适用场景 | 已知攻击              | 恶意 IP、僵尸网络、Tor 出口节点 |
 
 ### 1.2 信誉分类
 
@@ -116,7 +116,7 @@ reputation:
     shards: 10
 
   # 刷新间隔
-  update-interval: 300          # 5 分钟检查更新
+  update-interval: 300 # 5 分钟检查更新
 ```
 
 ### 2.2 完整配置示例
@@ -134,18 +134,18 @@ reputation:
   data:
     - file: /var/lib/suricata/iprep/malware.dat
       ver: 1
-      cats: [4, 9]               # malware + malicious
+      cats: [4, 9] # malware + malicious
     - file: /var/lib/suricata/iprep/bot.dat
       ver: 1
-      cats: [8]                  # bot
+      cats: [8] # bot
     - file: /var/lib/suricata/iprep/tor.dat
       ver: 1
-      cats: [10]                 # tor
+      cats: [10] # tor
 
   # 自动更新
   auto-update:
     enabled: yes
-    interval: 3600               # 每小时检查一次
+    interval: 3600 # 每小时检查一次
     url: "https://feeds.example.com/suricata-update.yaml"
 ```
 
@@ -565,11 +565,11 @@ suricata-update
 reputation:
   auto-update:
     enabled: yes
-    interval: 3600               # 每小时检查
+    interval: 3600 # 每小时检查
 
     # 本地缓存
     cache-dir: /var/lib/suricata/update/
-    cache-size: 1024             # MB
+    cache-size: 1024 # MB
 
     # 源配置
     sources:
@@ -675,7 +675,7 @@ outputs:
             reputation: yes
         - http:
             # HTTP 日志也包含信誉
-           强盗: yes
+            强盗: yes
 ```
 
 ---

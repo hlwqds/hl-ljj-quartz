@@ -183,7 +183,7 @@ global memory_samples: vector of count;
 event memory_profile() {
     local usage = memory_usage();
     memory_samples += usage$total;
-    
+
     if (|memory_samples| > 60) {
         local avg = 0;
         for (s in memory_samples) {
@@ -192,7 +192,7 @@ event memory_profile() {
         avg = avg / |memory_samples|;
         print fmt("Average memory: %s MB", avg / 1024 / 1024);
     }
-    
+
     schedule 60 secs { memory_profile() };
 }
 
@@ -303,7 +303,7 @@ global sample_rate = 100;  # 每100个包采样1个
 
 event packet(c: connection) {
     packet_count += 1;
-    
+
     if (packet_count % sample_rate == 0) {
         process_packet(c);
     }

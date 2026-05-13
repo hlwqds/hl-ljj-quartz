@@ -11,8 +11,8 @@ tags:
 description: "深入解析 Zeek 脚本组织机制——@load 指令、脚本路径（zeek_path）、ZKG（Zeek Package Manager）、Package 结构、__load__.zeek、模块（Module）概念"
 ---
 
-> [!info] Zeek 2026 深度探索系列
-> 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Zeek 2026 深度探索系列 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-15-zeek-deep-dive-ch1-overview|第一章：Zeek 概述]]
 > 2. [[2026-04-15-zeek-deep-dive-ch2-installation|第二章：安装部署]]
 > 3. [[2026-04-15-zeek-deep-dive-ch3-config|第三章：配置系统]]
@@ -212,7 +212,7 @@ zeek-my-package/
 └── README.md               # 文档
 ```
 
-### 4.2 __load__.zeek
+### 4.2 **load**.zeek
 
 `__load__.zeek` 是 Package 的**入口脚本**，当 Package 被 `@load` 时自动执行：
 
@@ -238,15 +238,15 @@ print "zeek-my-detector loaded";
 
 ```json
 {
-    "name": "zeek/my-detector",
-    "version": "1.0.0",
-    "description": "Custom detection package for Zeek",
-    "main": "__load__.zeek",
-    "dependencies": {
-        "zeek/intel": ">=1.0.0"
-    },
-    "author": "Your Name",
-    "license": "BSD-3-Clause"
+  "name": "zeek/my-detector",
+  "version": "1.0.0",
+  "description": "Custom detection package for Zeek",
+  "main": "__load__.zeek",
+  "dependencies": {
+    "zeek/intel": ">=1.0.0"
+  },
+  "author": "Your Name",
+  "license": "BSD-3-Clause"
 }
 ```
 
@@ -550,15 +550,15 @@ touch my-zeek-package/{__load__.zeek,scripts/main.zeek}
 
 ```json
 {
-    "name": "zeek/my-zeek-package",
-    "version": "0.1.0",
-    "description": "My custom Zeek analysis package",
-    "main": "__load__.zeek",
-    "dependencies": {},
-    "scripts": {
-        "test": "zeek -b test.zeek"
-    },
-    "license": "BSD-3-Clause"
+  "name": "zeek/my-zeek-package",
+  "version": "0.1.0",
+  "description": "My custom Zeek analysis package",
+  "main": "__load__.zeek",
+  "dependencies": {},
+  "scripts": {
+    "test": "zeek -b test.zeek"
+  },
+  "license": "BSD-3-Clause"
 }
 ```
 
@@ -603,7 +603,7 @@ zeek-suspicious-detector/
     └── test.zeek
 ```
 
-### 11.2 __load__.zeek
+### 11.2 **load**.zeek
 
 ```zeek
 @load base/frameworks/sumstats
@@ -693,6 +693,7 @@ export {
 **下一章**将介绍 **调试**——如何调试 Zeek 脚本，包括 `zeek -b` 调试模式、`print` 语句、`printf` 格式化、以及 script coverage 分析。
 
 > [!tip] 延伸阅读
+>
 > - [Zeek Package Manager](https://docs.zeek.org/en/stable/packages/)
 > - [ZKG GitHub Repository](https://github.com/zeek/packages)
 > - [Zeek Script Loading](https://docs.zeek.org/en/stable/scripts/base/init.zeek)

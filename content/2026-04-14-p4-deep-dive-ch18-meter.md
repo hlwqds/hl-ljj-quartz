@@ -5,8 +5,8 @@ tags: [p4, series, meter, traffic-manager, qos, rate-limiting, psa, shaping, sch
 description: "P4 Meter 与 Traffic Manager 深度解析——Meter 双速率三色算法 (RFC 2697/2698)、单速率三色算法、Direct/Indirect Meter、Traffic Manager 队列管理、QoS 调度、Packet 着色与处理"
 ---
 
-> [!info] P4 深度探索系列
-> 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+> [!info] P4 深度探索系列 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-14-p4-deep-dive-ch1-p4-overview|第一章：P4 概述——诞生背景与协议无关包处理]]
 > 2. [[2026-04-14-p4-deep-dive-ch2-p4-architecture|第二章：P4 架构模型——PSA/V1Model、Ingress/Egress]]
 > 3. [[2026-04-14-p4-deep-dive-ch3-p4-vs-ebpf|第三章：P4 vs eBPF——适用场景与硬件/软件对比]]
@@ -63,11 +63,11 @@ Packet 进入 Traffic Manager 的完整流程:
 
 Meter 根据**时间窗口**和**包/字节计数**对流量进行**着色**：
 
-| 颜色 | 含义 | 通常处理 |
-|------|------|---------|
-| **Green** (0) | 符合承诺速率 (CIR) | 正常转发 |
+| 颜色           | 含义                           | 通常处理       |
+| -------------- | ------------------------------ | -------------- |
+| **Green** (0)  | 符合承诺速率 (CIR)             | 正常转发       |
 | **Yellow** (1) | 超过 CIR，但符合峰值速率 (PIR) | 降级转发或标记 |
-| **Red** (2) | 超过 PIR | 丢弃或重标记 |
+| **Red** (2)    | 超过 PIR                       | 丢弃或重标记   |
 
 ---
 
@@ -730,16 +730,15 @@ Egress:
 
 本章介绍了 P4 中的 **Meter** 和 **Traffic Manager**：
 
-| 组件 | 功能 |
-|------|------|
-| **Meter** | 流量速率计量，三色算法 (srTCM/trTCM) |
-| **Direct Meter** | 直接绑定到 Table Entry |
-| **Indirect Meter** | 通过 Table 配置不同流的 Meter 参数 |
-| **Traffic Manager** | Packet Buffer、队列管理、调度、整形 |
-| **Queue** | 队列，入队/出队/深度查询 |
-| **Scheduler** | 严格优先级、DRR、WFQ |
-| **Shaper** | PIR/CIR 速率限制 |
-| **ECN** | 显式拥塞通知 |
+| 组件                | 功能                                 |
+| ------------------- | ------------------------------------ |
+| **Meter**           | 流量速率计量，三色算法 (srTCM/trTCM) |
+| **Direct Meter**    | 直接绑定到 Table Entry               |
+| **Indirect Meter**  | 通过 Table 配置不同流的 Meter 参数   |
+| **Traffic Manager** | Packet Buffer、队列管理、调度、整形  |
+| **Queue**           | 队列，入队/出队/深度查询             |
+| **Scheduler**       | 严格优先级、DRR、WFQ                 |
+| **Shaper**          | PIR/CIR 速率限制                     |
+| **ECN**             | 显式拥塞通知                         |
 
 Meter 和 Traffic Manager 是实现**网络 QoS** 的核心——它们共同决定了数据包何时被转发、丢弃或标记，从而保障关键业务的网络性能。
-

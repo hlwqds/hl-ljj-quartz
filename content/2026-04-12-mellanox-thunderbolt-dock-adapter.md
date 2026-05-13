@@ -13,23 +13,23 @@ description: 使用雷电拓展坞在笔记本上测试迈洛思(Mellanox)网卡
 
 ## 硬件清单
 
-| 设备 | 型号/说明 |
-|------|-----------|
-| 笔记本 | ThinkPad T14p (21RU0000CD)，Intel Arrow Lake，Thunderbolt 4 |
-| 雷电拓展坞 | 超算存储 · Thunderbolt 3/4 转 PCIe 扩展坞（~40Gbps） |
+| 设备          | 型号/说明                                                        |
+| ------------- | ---------------------------------------------------------------- |
+| 笔记本        | ThinkPad T14p (21RU0000CD)，Intel Arrow Lake，Thunderbolt 4      |
+| 雷电拓展坞    | 超算存储 · Thunderbolt 3/4 转 PCIe 扩展坞（~40Gbps）             |
 | Mellanox 网卡 | MCX4121A-ACAT（ConnectX-4 Lx EN，双口 25GbE SFP28，PCIe 3.0 x8） |
-| 光模块 | 待确认 |
+| 光模块        | 待确认                                                           |
 
 ### 带宽限制说明
 
 MCX4121A 原生 PCIe 3.0 x8 带宽约 **64Gbps**，雷电拓展坞实测提供 PCIe 3.0 x4 带宽约 **32Gbps**（Thunderbolt 3/4 上限）。双口均从 x8 降级为 x4：
 
-| | `52:00.0` (enp82s0f0np0) | `52:00.1` (enp82s0f1np1) |
-|--|--|--|
-| PCIe 链路 | 8GT/s x4 (downgraded from x8) | 8GT/s x4 (downgraded from x8) |
-| PCIe 带宽 | ~32Gbps | ~32Gbps |
-| 以太网速率 | 25Gbps | 25Gbps |
-| Equalization | Phase1 完成 | Phase1 未完成（不影响功能） |
+|              | `52:00.0` (enp82s0f0np0)      | `52:00.1` (enp82s0f1np1)      |
+| ------------ | ----------------------------- | ----------------------------- |
+| PCIe 链路    | 8GT/s x4 (downgraded from x8) | 8GT/s x4 (downgraded from x8) |
+| PCIe 带宽    | ~32Gbps                       | ~32Gbps                       |
+| 以太网速率   | 25Gbps                        | 25Gbps                        |
+| Equalization | Phase1 完成                   | Phase1 未完成（不影响功能）   |
 
 25GbE 单口跑满约 25Gbps，x4 带宽足够覆盖。双口同时满载（50Gbps）会超过 32Gbps 上限，可能出现拥塞。
 
@@ -63,12 +63,12 @@ sudo dnf install mft
 sudo dnf install ethtool pciutils
 ```
 
-| 包名 | 用途 |
-|------|------|
-| bolt | Thunderbolt 设备管理和授权 |
-| mft | Mellanox Firmware Tools，固件升级和网卡诊断 |
-| ethtool | 网卡参数查看和调整 |
-| pciutils | lspci 等 PCIe 设备查看工具 |
+| 包名     | 用途                                        |
+| -------- | ------------------------------------------- |
+| bolt     | Thunderbolt 设备管理和授权                  |
+| mft      | Mellanox Firmware Tools，固件升级和网卡诊断 |
+| ethtool  | 网卡参数查看和调整                          |
+| pciutils | lspci 等 PCIe 设备查看工具                  |
 
 ## 适配过程
 
@@ -127,6 +127,7 @@ mlx5_core 0000:52:00.1: 2.000 Gb/s available PCIe bandwidth, limited by 2.5 GT/s
 ```
 
 **识别结果：**
+
 - 固件版本：14.29.1016
 - 双口均 Link up，25Gbps
 - 网卡接口：`enp82s0f0np0`（52:00.0）、`enp82s0f1np1`（52:00.1）
@@ -148,6 +149,7 @@ mlx5_core 0000:52:00.1: 2.000 Gb/s available PCIe bandwidth, limited by 2.5 GT/s
 **现象：** 连接拓展坞后约 10 秒，Thunderbolt retimer 断开，Mellanox 网卡完全不可见。
 
 **日志特征：**
+
 ```
 thunderbolt 0-0:1.1: retimer disconnected
 thunderbolt 0-1: device disconnected
@@ -163,14 +165,15 @@ thunderbolt 0-1: device disconnected
 
 **Thunderbolt 安全级别说明：**
 
-| 级别 | 行为 | 适用场景 |
-|------|------|----------|
-| `none` | 所有设备自动授权 | 服务器、受控环境 |
-| `user` | 新设备需手动授权 | 笔记本（默认） |
-| `secure` | 需授权 + 安全连接验证 | 高安全要求 |
-| `dponly` | 仅 Display Port，禁用 PCIe | 最严格 |
+| 级别     | 行为                       | 适用场景         |
+| -------- | -------------------------- | ---------------- |
+| `none`   | 所有设备自动授权           | 服务器、受控环境 |
+| `user`   | 新设备需手动授权           | 笔记本（默认）   |
+| `secure` | 需授权 + 安全连接验证      | 高安全要求       |
+| `dponly` | 仅 Display Port，禁用 PCIe | 最严格           |
 
 **检查命令：**
+
 ```bash
 cat /sys/bus/thunderbolt/devices/domain*/security
 boltctl list
@@ -203,6 +206,7 @@ sudo bash /tmp/tb-enroll.sh
 ```
 
 **enroll 成功后：**
+
 ```
  * USB4_TBT SSD Enclosure
    |- status:        authorized
@@ -213,12 +217,14 @@ sudo bash /tmp/tb-enroll.sh
 设备被永久信任后，以后插拔不需要再授权， Mellanox 网卡直接被识别。
 
 **备选方案（降低全局安全级别）：**
+
 ```bash
 # 持久化内核参数，所有 Thunderbolt 设备免授权（安全性较低，不推荐）
 sudo grubby --update-kernel=ALL --args="thunderbolt.security=none"
 ```
 
 **注意：** 如果需要移除已信任的设备：
+
 ```bash
 boltctl forget \<uuid\>
 ```
@@ -229,11 +235,11 @@ GNOME 和 KDE 各自内置了 Thunderbolt 授权代理（弹窗确认），niri 
 
 **可用方案对比：**
 
-| 方案 | 安全性 | 操作复杂度 | 说明 |
-|------|--------|------------|------|
-| 手动 `boltctl enroll` | 高（按设备信任） | 中 | 每个新设备手动跑一次 |
-| systemd 自动 enroll 服务 | 中（自动信任新设备） | 低（一次配置） | 后台轮询，新设备自动 enroll |
-| `thunderbolt.security=none` | 低（免授权） | 低 | 内核参数，全局生效，服务器常用 |
+| 方案                        | 安全性               | 操作复杂度     | 说明                           |
+| --------------------------- | -------------------- | -------------- | ------------------------------ |
+| 手动 `boltctl enroll`       | 高（按设备信任）     | 中             | 每个新设备手动跑一次           |
+| systemd 自动 enroll 服务    | 中（自动信任新设备） | 低（一次配置） | 后台轮询，新设备自动 enroll    |
+| `thunderbolt.security=none` | 低（免授权）         | 低             | 内核参数，全局生效，服务器常用 |
 
 #### 方案 1：手动 enroll（推荐，已采用）
 
@@ -249,6 +255,7 @@ sudo bash /tmp/tb-enroll.sh
 适用于经常接入不同雷电设备的场景，配置一次全自动：
 
 **`/etc/systemd/system/bolt-auto-enroll.service`**
+
 ```ini
 [Unit]
 Description=Auto-enroll Thunderbolt devices with policy=auto
@@ -265,6 +272,7 @@ WantedBy=multi-user.target
 ```
 
 **`/usr/local/bin/bolt-auto-enroll.sh`**
+
 ```bash
 #!/bin/bash
 # Watch boltctl and auto-enroll any new Thunderbolt device with policy=auto

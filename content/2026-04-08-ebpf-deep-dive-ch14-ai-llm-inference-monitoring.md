@@ -9,8 +9,8 @@ tags:
   - observability
 ---
 
-> [!info] eBPF 2026 深度探索系列
-> 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+> [!info] eBPF 2026 深度探索系列 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+>
 > 1. [[2026-04-08-ebpf-deep-dive-ch1-registers-and-instructions|第一章：寄存器与指令集]]
 > 2. [[2026-04-08-ebpf-deep-dive-ch1-5-function-calls|第一.五章：四种函数调用与动态内存]]
 > 3. [[2026-04-08-ebpf-deep-dive-ch1-6-the-verifier|第一.六章：验证器 (Verifier) 的底层逻辑]]
@@ -62,6 +62,7 @@ tags:
 > 49. [[2026-04-09-ebpf-deep-dive-ch40-network-protocols-deep-dive|第四十章：网络协议深度解析——TCP/UDP/QUIC 的 eBPF 视角]]
 > 50. [[2026-04-09-ebpf-deep-dive-ch41-memory-safety-and-vulnerabilities|第四十一章：eBPF 内存安全与漏洞分析]]
 > 51. [[2026-04-09-ebpf-deep-dive-ch42-service-mesh-integration|第四十二章：eBPF 与 Service Mesh 深度集成]]
+
 ---
 
 # 第十四章：AI 推理与大模型监控前沿
@@ -407,12 +408,12 @@ int BPF_UPROBE(kv_alloc, void *block_id, u32 num_blocks) {
 
 ### 4.2 KV Cache 利用率仪表盘指标
 
-| 指标 | 说明 | 告警阈值 |
-|:---|:---|:---|
-| `kv_cache_usage_ratio` | 已用缓存 / 总缓存 | > 90% |
-| `kv_cache_blocks_allocated` | 累计分配块数 | 持续增长 |
-| `kv_cache_hit_rate` | 缓存命中率 | < 70% |
-| `avg_prefix_length` | 平均前缀长度 | > 模型上下文窗口 80% |
+| 指标                        | 说明              | 告警阈值             |
+| :-------------------------- | :---------------- | :------------------- |
+| `kv_cache_usage_ratio`      | 已用缓存 / 总缓存 | > 90%                |
+| `kv_cache_blocks_allocated` | 累计分配块数      | 持续增长             |
+| `kv_cache_hit_rate`         | 缓存命中率        | < 70%                |
+| `avg_prefix_length`         | 平均前缀长度      | > 模型上下文窗口 80% |
 
 ---
 
@@ -490,13 +491,13 @@ graph TB
 
 ### 6.1 主流推理框架探针点
 
-| 框架 | 探针目标 | 可捕获指标 |
-|:---|:---|:---|
-| **vLLM** | `SSL_write/read`, `cudaLaunchKernel`, `allocate_kv_block` | TTFT, TBT, GPU 算子, KV Cache |
-| **TGI (HuggingFace)** | `SSL_write/read`, `onnxruntime::Run` | TTFT, TBT, ONNX 算子延迟 |
-| **Ollama** | `llama_decode_internal`, `ggml_mul_mat` | Token 生成延迟, GGML 算子 |
-| **Triton Inference** | `TRITONBACKEND_Execute`, `cudaLaunchKernel` | 模型推理延迟, GPU 算子 |
-| **TensorRT-LLM** | `nvinfer1::execute`, `cudaLaunchKernel` | 推理延迟, GPU 算子 |
+| 框架                  | 探针目标                                                  | 可捕获指标                    |
+| :-------------------- | :-------------------------------------------------------- | :---------------------------- |
+| **vLLM**              | `SSL_write/read`, `cudaLaunchKernel`, `allocate_kv_block` | TTFT, TBT, GPU 算子, KV Cache |
+| **TGI (HuggingFace)** | `SSL_write/read`, `onnxruntime::Run`                      | TTFT, TBT, ONNX 算子延迟      |
+| **Ollama**            | `llama_decode_internal`, `ggml_mul_mat`                   | Token 生成延迟, GGML 算子     |
+| **Triton Inference**  | `TRITONBACKEND_Execute`, `cudaLaunchKernel`               | 模型推理延迟, GPU 算子        |
+| **TensorRT-LLM**      | `nvinfer1::execute`, `cudaLaunchKernel`                   | 推理延迟, GPU 算子            |
 
 ### 6.2 Ollama (llama.cpp) 追踪
 
@@ -540,12 +541,12 @@ int BPF_URETPROBE(llama_decode_ret, int ret) {
 
 ### 7.1 探针对推理吞吐的影响
 
-| 探针组合 | TPS 影响 | CPU 开销 | 适用场景 |
-|:---|:---|:---|:---|
-| 仅 SSL_write/read | <1% | <2% | 生产环境 |
-| + cudaLaunchKernel | <3% | <5% | 性能调优 |
-| + NCCL 通信 | <5% | <8% | 多 GPU 诊断 |
-| 全量探针 | <8% | <12% | 深度 profiling |
+| 探针组合           | TPS 影响 | CPU 开销 | 适用场景       |
+| :----------------- | :------- | :------- | :------------- |
+| 仅 SSL_write/read  | <1%      | <2%      | 生产环境       |
+| + cudaLaunchKernel | <3%      | <5%      | 性能调优       |
+| + NCCL 通信        | <5%      | <8%      | 多 GPU 诊断    |
+| 全量探针           | <8%      | <12%     | 深度 profiling |
 
 ### 7.2 降低开销的策略
 

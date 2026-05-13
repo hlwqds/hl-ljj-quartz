@@ -9,8 +9,8 @@ tags:
   - ops
 ---
 
-> [!info] eBPF 2026 深度探索系列
-> 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+> [!info] eBPF 2026 深度探索系列 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+>
 > 1. [[2026-04-08-ebpf-deep-dive-ch1-registers-and-instructions|第一章：寄存器与指令集]]
 > 2. [[2026-04-08-ebpf-deep-dive-ch1-5-function-calls|第一.五章：四种函数调用与动态内存]]
 > 3. [[2026-04-08-ebpf-deep-dive-ch1-6-the-verifier|第一.六章：验证器 (Verifier) 的底层逻辑]]
@@ -62,6 +62,7 @@ tags:
 > 49. [[2026-04-09-ebpf-deep-dive-ch40-network-protocols-deep-dive|第四十章：网络协议深度解析——TCP/UDP/QUIC 的 eBPF 视角]]
 > 50. [[2026-04-09-ebpf-deep-dive-ch41-memory-safety-and-vulnerabilities|第四十一章：eBPF 内存安全与漏洞分析]]
 > 51. [[2026-04-09-ebpf-deep-dive-ch42-service-mesh-integration|第四十二章：eBPF 与 Service Mesh 深度集成]]
+
 ---
 
 ## 1. 概述：谁来监控监控者？
@@ -111,12 +112,12 @@ $ sudo bpftool prog show id 42
 
 关键字段解读：
 
-| 字段 | 含义 | 告警阈值参考 |
-|------|------|-------------|
-| `run_cnt` | 总执行次数 | 用于计算 QPS |
-| `run_time_ns` | 总执行时间 (ns) | 结合 run_cnt 计算平均延迟 |
-| `recursion_misses` | 递归调用被拒绝次数 | > 0 即需关注，说明存在循环依赖风险 |
-| `jited` | JIT 编译后的机器码大小 | 用于评估内存占用 |
+| 字段               | 含义                   | 告警阈值参考                       |
+| ------------------ | ---------------------- | ---------------------------------- |
+| `run_cnt`          | 总执行次数             | 用于计算 QPS                       |
+| `run_time_ns`      | 总执行时间 (ns)        | 结合 run_cnt 计算平均延迟          |
+| `recursion_misses` | 递归调用被拒绝次数     | > 0 即需关注，说明存在循环依赖风险 |
+| `jited`            | JIT 编译后的机器码大小 | 用于评估内存占用                   |
 
 ### 2.2 通过 BPF syscall 编程读取
 
@@ -182,6 +183,7 @@ bpf_prog_load    bpf_map_create  bpf_obj_get     bpf_map_delete_elem
 ## 3. Map 健康度度量
 
 Map 是 eBPF 的"内存"。监控 Map 是预防故障的第一线：
+
 - **Hash Map 冲突率**：高填充率下的性能指标。
 - **LRU Map 淘汰率**：观察热点数据是否因为 Map 过小而被频繁踢出。
 - **内存占用**：实时监控所有 BPF Maps 消耗的物理内存总量。
@@ -190,13 +192,13 @@ Map 是 eBPF 的"内存"。监控 Map 是预防故障的第一线：
 
 不同的 Map 类型有不同的"病灶"和监控重点：
 
-| Map 类型 | 典型故障模式 | 关键监控指标 | 推荐阈值 |
-|----------|-------------|-------------|---------|
-| `BPF_MAP_TYPE_HASH` | 填充率过高导致冲突链变长 | 填充率、元素计数 | 填充率 < 75% |
-| `BPF_MAP_TYPE_LRU_HASH` | 热点数据被频繁淘汰 | 淘汰计数 | 淘汰率 < 10%/min |
-| `BPF_MAP_TYPE_RINGBUF` | 消费不及时导致数据丢失 | 丢弃计数 (`dropped`) | dropped == 0 |
-| `BPF_MAP_TYPE_PERCPU_ARRAY` | CPU 间负载不均 | 每个元素的值差异 | 差异 < 3x |
-| `BPF_MAP_TYPE_STACK_TRACE` | 栈深度不够被截断 | 截断计数 | truncation == 0 |
+| Map 类型                    | 典型故障模式             | 关键监控指标         | 推荐阈值         |
+| --------------------------- | ------------------------ | -------------------- | ---------------- |
+| `BPF_MAP_TYPE_HASH`         | 填充率过高导致冲突链变长 | 填充率、元素计数     | 填充率 < 75%     |
+| `BPF_MAP_TYPE_LRU_HASH`     | 热点数据被频繁淘汰       | 淘汰计数             | 淘汰率 < 10%/min |
+| `BPF_MAP_TYPE_RINGBUF`      | 消费不及时导致数据丢失   | 丢弃计数 (`dropped`) | dropped == 0     |
+| `BPF_MAP_TYPE_PERCPU_ARRAY` | CPU 间负载不均           | 每个元素的值差异     | 差异 < 3x        |
+| `BPF_MAP_TYPE_STACK_TRACE`  | 栈深度不够被截断         | 截断计数             | truncation == 0  |
 
 ### 3.2 读取 Map 统计信息
 
@@ -829,13 +831,13 @@ echo "=== Check Complete ==="
 
 ### 7.2 健康检查与告警矩阵
 
-| 故障模式 | 检测层级 | 检测方式 | 自愈策略 | 恢复时间目标 |
-|---------|---------|---------|---------|------------|
-| XDP 延迟飙升 | L1 | 内核态耗时检测 | 熔断降级 | < 1ms |
-| Map 填充率过高 | L2 | 用户态巡检 | 自动扩容或清理 | < 30s |
-| Ringbuf 数据丢弃 | L2 | 丢弃计数监控 | 增大 buffer 或降频 | < 60s |
-| 程序加载失败 | L2 | tracepoint 监听 | 回滚到已知版本 | < 60s |
-| 节点指标异常 | L3 | 聚合对比分析 | 隔离节点 + 负载迁移 | < 5min |
+| 故障模式         | 检测层级 | 检测方式        | 自愈策略            | 恢复时间目标 |
+| ---------------- | -------- | --------------- | ------------------- | ------------ |
+| XDP 延迟飙升     | L1       | 内核态耗时检测  | 熔断降级            | < 1ms        |
+| Map 填充率过高   | L2       | 用户态巡检      | 自动扩容或清理      | < 30s        |
+| Ringbuf 数据丢弃 | L2       | 丢弃计数监控    | 增大 buffer 或降频  | < 60s        |
+| 程序加载失败     | L2       | tracepoint 监听 | 回滚到已知版本      | < 60s        |
+| 节点指标异常     | L3       | 聚合对比分析    | 隔离节点 + 负载迁移 | < 5min       |
 
 ---
 
@@ -910,19 +912,19 @@ self_healing:
   enabled: true
   rules:
     - name: xdp_latency_breaker
-      condition: "avg_latency_ns > 20000"  # 20us
+      condition: "avg_latency_ns > 20000" # 20us
       action: circuit_break
       cooldown_seconds: 30
       notification: [pagerduty, slack]
 
     - name: lru_map_overflow
-      condition: "lru_evict_rate > 10000"  # 10k/s
+      condition: "lru_evict_rate > 10000" # 10k/s
       action: dynamic_resize
       max_scale_factor: 4
       notification: [slack]
 
     - name: program_not_loaded
-      condition: "prog_id == 0"            # 程序丢失
+      condition: "prog_id == 0" # 程序丢失
       action: immediate_reload
       fallback_version: "katran-stable-v3.2"
       notification: [pagerduty]
@@ -1004,17 +1006,17 @@ graph TD
 
 ### 10.2 最佳实践清单
 
-| 实践 | 说明 | 优先级 |
-|------|------|--------|
-| 为每个 BPF 程序设置性能预算 | 明确执行延迟上限和内存上限 | P0 |
-| 实现熔断机制 | 防止单个 BPF 程序拖垮整个系统 | P0 |
-| 启用 Watchdog 心跳 | 及时发现程序失联 | P0 |
-| 监控 Ringbuf 丢弃数 | 确保事件传递的可靠性 | P0 |
-| 定期审计 Map 大小 | 预防内存泄漏 | P1 |
-| 实现版本回滚能力 | 保证可以快速恢复到已知稳定版本 | P1 |
-| 配置告警规则 | 将关键指标接入告警系统 | P1 |
-| 编写故障演练手册 | 定期验证自愈链路的有效性 | P2 |
-| 实现分布式指标聚合 | 在集群环境中进行全局健康评估 | P2 |
+| 实践                        | 说明                           | 优先级 |
+| --------------------------- | ------------------------------ | ------ |
+| 为每个 BPF 程序设置性能预算 | 明确执行延迟上限和内存上限     | P0     |
+| 实现熔断机制                | 防止单个 BPF 程序拖垮整个系统  | P0     |
+| 启用 Watchdog 心跳          | 及时发现程序失联               | P0     |
+| 监控 Ringbuf 丢弃数         | 确保事件传递的可靠性           | P0     |
+| 定期审计 Map 大小           | 预防内存泄漏                   | P1     |
+| 实现版本回滚能力            | 保证可以快速恢复到已知稳定版本 | P1     |
+| 配置告警规则                | 将关键指标接入告警系统         | P1     |
+| 编写故障演练手册            | 定期验证自愈链路的有效性       | P2     |
+| 实现分布式指标聚合          | 在集群环境中进行全局健康评估   | P2     |
 
 ---
 
@@ -1069,13 +1071,13 @@ metadata:
 spec:
   template:
     spec:
-      hostPID: true        # 需要访问宿主机的 PID namespace
-      hostNetwork: true    # 需要访问宿主机的网络 namespace
+      hostPID: true # 需要访问宿主机的 PID namespace
+      hostNetwork: true # 需要访问宿主机的网络 namespace
       containers:
         - name: monitor
           image: bpf-monitor:latest
           securityContext:
-            privileged: true  # BPF 程序加载需要 CAP_BPF / CAP_SYS_ADMIN
+            privileged: true # BPF 程序加载需要 CAP_BPF / CAP_SYS_ADMIN
           volumeMounts:
             - name: bpf-fs
               mountPath: /sys/fs/bpf

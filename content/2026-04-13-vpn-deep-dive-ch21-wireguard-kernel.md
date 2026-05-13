@@ -5,8 +5,8 @@ tags: [vpn, series, wireguard, kernel, linux, device-driver]
 description: "WireGuard Linux 内核实现深度解析——device.c 设备管理、peer.c 对等体管理、timers.c 定时器机制、allowedips.c 路由查找、noise.c 握手协议、queueing.c 数据包队列"
 ---
 
-> [!info] VPN 技术深度探索系列
-> 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+> [!info] VPN 技术深度探索系列 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-vpn-deep-dive-ch1-vpn-fundamentals|VPN 基础概念]]
 > 2. [[2026-04-13-vpn-deep-dive-ch18-ipsec-troubleshooting|第十八章：IPSec 排错]]
 > 3. [[2026-04-13-vpn-deep-dive-ch19-wireguard-protocol|第十九章：WireGuard 协议详解]]
@@ -104,18 +104,18 @@ WireGuard 在 Linux 中注册为网络设备驱动：
 static int __init wg_init(void)
 {
     int ret;
-    
+
     // 初始化各子系统
     wg_noise_init();           // Noise 协议
     wg_allowedips_slab_init(); // AllowedIPs Slab 缓存
     wg_packet_queue_init();    // 数据包队列
     wg_peer_slab_init();       // Peer Slab 缓存
     wg_cookie_slab_init();     // Cookie Slab 缓存
-    
+
     // 注册网络设备驱动
     ret = register_netdevice_notifier(&wg_netdevice_notifier);
     ret = register_pernet_subsys(&wg_net_ops);
-    
+
     return 0;
 }
 ```
@@ -129,32 +129,32 @@ struct wg_device {
     struct crypt_queue encrypt_queue,           // 加密队列
                       decrypt_queue,           // 解密队列
                       handshake_queue;         // 握手队列
-    
+
     struct sock __rcu *sock4, *sock6;          // UDP 套接字 (IPv4/IPv6)
-    
+
     struct noise_static_identity static_identity; // 本机静态密钥
-    
+
     // 工作队列
     struct workqueue_struct *packet_crypt_wq;     // 数据包加密
     struct workqueue_struct *handshake_receive_wq; // 握手接收
     struct workqueue_struct *handshake_send_wq;   // 握手发送
-    
+
     struct cookie_checker cookie_checker;       // Cookie 检查器
-    
+
     // 哈希表
     struct pubkey_hashtable *peer_hashtable;    // 公钥 → Peer
     struct index_hashtable *index_hashtable;    // 索引 → Peer
-    
+
     // AllowedIPs 路由表
     struct allowedips peer_allowedips;
-    
+
     // 锁
     struct mutex device_update_lock;     // 设备更新锁
     struct mutex socket_update_lock;     // 套接字更新锁
-    
+
     struct list_head device_list;        // 设备链表
     struct list_head peer_list;          // Peer 链表
-    
+
     atomic_t handshake_queue_len;        // 握手队列长度
     u32 fwmark;                         // fwmark 标记
 };
@@ -209,32 +209,32 @@ struct wg_peer *wg_peer_create(struct wg_device *wg,
                                const u8 preshared_key[NOISE_SYMMETRIC_KEY_LEN])
 {
     struct wg_peer *peer = wg_peer_slab_alloc();
-    
+
     // 初始化字段
     peer->device = wg;
     peer->internal_id = atomic64_inc_return(&wg->device_peer_id);
-    
+
     // 初始化握手
     wg_noise_handshake_init(&peer->handshake, &wg->static_identity,
                            public_key, preshared_key, peer);
-    
+
     // 初始化密钥对
     wg_noise_keypairs_init(&peer->keypairs);
-    
+
     // 初始化队列
     skb_queue_head_init(&peer->staged_packet_queue);
-    
+
     // 初始化定时器
     timer_setup(&peer->timer_retransmit_handshake, ...);
     timer_setup(&peer->timer_send_keepalive, ...);
     timer_setup(&peer->timer_new_handshake, ...);
     timer_setup(&peer->timer_zero_key_material, ...);
     timer_setup(&peer->timer_persistent_keepalive, ...);
-    
+
     // 添加到设备列表和哈希表
     list_add_tail(&peer->peer_list, &wg->peer_list);
     pubkey_hashtable_add(wg->peer_hashtable, peer);
-    
+
     return peer;
 }
 ```
@@ -269,26 +269,26 @@ void wg_peer_put(struct wg_peer *peer)
 static void wg_peer_destroy(struct kref *refcount)
 {
     struct wg_peer *peer = container_of(refcount, struct wg_peer, refcount);
-    
+
     // 清除握手
     wg_noise_handshake_clear(&peer->handshake);
-    
+
     // 清除密钥对
     wg_noise_keypairs_clear(&peer->keypairs);
-    
+
     // 移除定时器
     del_timer_sync(&peer->timer_retransmit_handshake);
     del_timer_sync(&peer->timer_send_keepalive);
     del_timer_sync(&peer->timer_new_handshake);
     del_timer_sync(&peer->timer_zero_key_material);
     del_timer_sync(&peer->timer_persistent_keepalive);
-    
+
     // 移除出哈希表
     pubkey_hashtable_remove(peer->device->peer_hashtable, peer);
-    
+
     // 从 AllowedIPs 移除
     wg_allowedips_remove_by_peer(&peer->device->peer_allowedips, peer);
-    
+
     // 释放内存
     wg_peer_slab_free(peer);
 }
@@ -351,31 +351,31 @@ bool wg_noise_handshake_create_initiation(
     curve25519_generate_secret(handshake->ephemeral_private);
     curve25519_mult(handshake->ephemeral_public,
                    handshake->ephemeral_private, curve25519_basepoint);
-    
+
     // 2. 计算 DH
     u8 dh_result[32];
     curve25519_mult(dh_result, handshake->ephemeral_private,
                    handshake->remote_static);
     // → DH1 = e_i * R
-    
+
     // 3. 派生中间密钥
     u8 chaining_key[32], hash[32];
     blake2s_init(chaining_key, 32);
     blake2s_update(chaining_key, ...);  // 初始化
     // KDF(DH1) → chaining_key, hash
-    
+
     // 4. 加密静态公钥
     struct chacha20poly1305_ctx ctx;
     chacha20poly1305_setkey(&ctx, chaining_key, ...);
     chacha20poly1305_encrypt(dst->encrypted_static,
                             &ctx,
                             handshake->static_identity->static_public);
-    
+
     // 5. 填充消息
     dst->header.type = MESSAGE_HANDSHAKE_INITIATION;
     dst->ephemeral = handshake->ephemeral_public;
     // ...
-    
+
     return true;
 }
 ```
@@ -386,16 +386,16 @@ bool wg_noise_handshake_create_initiation(
 // noise.h - 密钥对结构
 struct noise_keypair {
     struct index_hashtable_entry entry;
-    
+
     struct noise_symmetric_key sending;   // 发送密钥
     atomic64_t sending_counter;           // 发送计数器
-    
+
     struct noise_symmetric_key receiving; // 接收密钥
     struct noise_replay_counter receiving_counter; // 防重放
-    
+
     __le32 remote_index;      // 对方索引
     bool i_am_the_initiator;  // 是否为发起方
-    
+
     struct kref refcount;     // 引用计数
     struct rcu_head rcu;
 };
@@ -446,7 +446,7 @@ struct allowedips_node {
     u8 bit_at_a, bit_at_b;          // 位位置
     u8 bitlen;                      // IP 长度 (4 或 16)
     u8 bits[16] __aligned(__alignof(u64)); // IP 地址/前缀
-    
+
     union {
         struct list_head peer_list; // 在 Peer 的链表中的节点
         struct rcu_head rcu;        // RCU 释放
@@ -521,7 +521,7 @@ int wg_allowedips_insert_v4(struct allowedips *table,
 {
     // 1. 锁定
     mutex_lock(lock);
-    
+
     // 2. 遍历/创建路径
     struct allowedips_node **pos = &table->root4;
     for (int i = 0; i < cidr; ++i) {
@@ -533,16 +533,16 @@ int wg_allowedips_insert_v4(struct allowedips *table,
         }
         pos = &(*pos)->bit[bit];
     }
-    
+
     // 3. 设置叶子节点
     if (*pos == NULL)
         *pos = kzalloc(...);
     (*pos)->peer = wg_peer_get(peer);
     (*pos)->cidr = cidr;
-    
+
     // 4. 解锁
     mutex_unlock(lock);
-    
+
     return 0;
 }
 ```
@@ -564,7 +564,7 @@ struct wg_peer {
     struct timer_list timer_new_handshake;          // 新握手
     struct timer_list timer_zero_key_material;       // 清除密钥材料
     struct timer_list timer_persistent_keepalive;    // 持久 keepalive
-    
+
     u16 persistent_keepalive_interval;  // keepalive 间隔
     // ...
 };
@@ -614,31 +614,31 @@ static void wg_expired_retransmit_handshake(struct timer_list *timer)
 {
     struct wg_peer *peer = from_timer(peer, timer,
                                       timer_retransmit_handshake);
-    
+
     if (peer->timer_handshake_attempts > MAX_TIMER_HANDSHAKES) {
         // 重试次数用尽
         pr_debug("Handshake failed after %d attempts\n",
                 MAX_TIMER_HANDSHAKES);
-        
+
         // 清除待发送数据包
         wg_packet_purge_staged_packets(peer);
-        
+
         // 设置清除密钥材料的定时器
         if (!timer_pending(&peer->timer_zero_key_material))
             mod_timer(&peer->timer_zero_key_material,
                       jiffies + REJECT_AFTER_TIME * 3 * HZ);
         return;
     }
-    
+
     // 重试握手
     wg_peer_get(peer);
     if (!queue_work(peer->device->handshake_send_wq,
                     &peer->transmit_handshake_work))
         wg_peer_put(peer);
-    
+
     // 更新重试计数
     peer->timer_handshake_attempts++;
-    
+
     // 调度下一次重传 (5s + 随机抖动)
     mod_peer_timer(peer, timer,
                   jiffies + REKEY_TIMEOUT +

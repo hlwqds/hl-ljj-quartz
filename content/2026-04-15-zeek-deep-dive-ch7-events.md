@@ -11,8 +11,8 @@ tags:
 description: "深入解析 Zeek 事件驱动模型——事件定义、事件队列调度机制、事件处理程序编写、BRO_EVENT 宏、事件优先级、异步事件处理"
 ---
 
-> [!info] Zeek 2026 深度探索系列
-> 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Zeek 2026 深度探索系列 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-15-zeek-deep-dive-ch1-overview|第一章：Zeek 概述]]
 > 2. [[2026-04-15-zeek-deep-dive-ch2-installation|第二章：安装部署]]
 > 3. [[2026-04-15-zeek-deep-dive-ch3-config|第三章：配置系统]]
@@ -43,12 +43,12 @@ Zeek 的核心执行模型是**事件驱动（Event-driven）**。与传统的�
                                    └──→ Handler C
 ```
 
-| 特性 | 函数调用 | 事件处理 |
-| :--- | :--- | :--- |
-| 调用方式 | 同步，直接调用 | 异步，通过事件引擎分发 |
-| 执行顺序 | 严格顺序 | 不确定（取决于注册顺序） |
-| 返回值 | 可直接获取 | 无法直接获取（异步） |
-| 耦合度 | 高（直接依赖） | 低（松耦合） |
+| 特性     | 函数调用       | 事件处理                 |
+| :------- | :------------- | :----------------------- |
+| 调用方式 | 同步，直接调用 | 异步，通过事件引擎分发   |
+| 执行顺序 | 严格顺序       | 不确定（取决于注册顺序） |
+| 返回值   | 可直接获取     | 无法直接获取（异步）     |
+| 耦合度   | 高（直接依赖） | 低（松耦合）             |
 
 ### 1.2 事件在 Zeek 中的角色
 
@@ -709,5 +709,6 @@ event file_state_remove(f: fa_file) {
 **下一章**将介绍 **Hooks**——另一种与事件类似的机制，但提供**短路求值**和**条件触发**的能力。
 
 > [!tip] 延伸阅读
+>
 > - [Zeek Events Reference](https://docs.zeek.org/en/stable/scripts/base/frameworks/reporter/)
 > - [Event API Documentation](https://docs.zeek.org/en/stable/script-reference/types/event)

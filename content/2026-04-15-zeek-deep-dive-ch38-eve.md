@@ -12,13 +12,8 @@ tags:
 description: "深入解析 Zeek EVE-JSON 格式——与 Suricata EVE 格式对比、字段映射、日志归一化、timestamp 同步、多格式输出配置"
 ---
 
-> [!info] Zeek 2026 深度探索系列
-> 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
-> ...
-> 37. [[2026-04-15-zeek-deep-dive-ch37-tuning|第三十七章：Tuning 清单]]
-> 38. **第三十八章：EVE 格式**
-> 39. [[2026-04-15-zeek-deep-dive-ch39-hunting|第三十九章：威胁狩猎]]
-> 40. [[2026-04-15-zeek-deep-dive-ch40-siem|第四十章：SIEM 集成]]
+> [!info] Zeek 2026 深度探索系列 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
+> ... 37. [[2026-04-15-zeek-deep-dive-ch37-tuning|第三十七章：Tuning 清单]] 38. **第三十八章：EVE 格式** 39. [[2026-04-15-zeek-deep-dive-ch39-hunting|第三十九章：威胁狩猎]] 40. [[2026-04-15-zeek-deep-dive-ch40-siem|第四十章：SIEM 集成]]
 
 ---
 
@@ -58,13 +53,13 @@ EVE（Extensible Event Format）是 Zeek 和 Suricata 共用的**统一日志 JS
 
 EVE 格式最初由 Suricata 提出并推广，Zeek 在 5.0+ 版本中增加了 `EVE_JSON` writer 以实现格式兼容。
 
-| 特性 | Suricata EVE | Zeek EVE |
-| :--- | :--- | :--- |
-| 标准化程度 | 原生 EVE | 通过 `EVE_JSON` writer 兼容 |
-| 事件类型 | `event_type` 字段区分 | 同 Suricata |
-| 归一化字段 | `src_ip/dest_ip` 等 | 同 Suricata |
-| 原始数据 | 嵌入 `alert`/`http` 等子对象 | 嵌入 `zeek` 子对象 |
-| 输出方式 | 单文件多事件流 | 单文件多事件流 |
+| 特性       | Suricata EVE                 | Zeek EVE                    |
+| :--------- | :--------------------------- | :-------------------------- |
+| 标准化程度 | 原生 EVE                     | 通过 `EVE_JSON` writer 兼容 |
+| 事件类型   | `event_type` 字段区分        | 同 Suricata                 |
+| 归一化字段 | `src_ip/dest_ip` 等          | 同 Suricata                 |
+| 原始数据   | 嵌入 `alert`/`http` 等子对象 | 嵌入 `zeek` 子对象          |
+| 输出方式   | 单文件多事件流               | 单文件多事件流              |
 
 ---
 
@@ -146,18 +141,18 @@ use_compression = true
 
 EVE 格式通过 `event_type` 字段区分不同事件：
 
-| event_type | 说明 | Suricata | Zeek |
-| :--- | :--- | :---: | :---: |
-| `conn` | 连接记录 | ✅ | ✅ |
-| `http` | HTTP 请求 | ✅ | ✅ |
-| `dns` | DNS 查询 | ✅ | ✅ |
-| `tls` | TLS 会话 | ✅ | ✅ |
-| `ssh` | SSH 握手 | ✅ | ✅ |
-| `smtp` | SMTP 会话 | ✅ | ✅ |
-| `file` | 文件传输 | ✅ | ✅ |
-| `alert` | 告警 | ✅ | - |
-| `netflow` | NetFlow | ✅ | - |
-| `统计` | 统计信息 | ✅ | - |
+| event_type | 说明      | Suricata | Zeek |
+| :--------- | :-------- | :------: | :--: |
+| `conn`     | 连接记录  |    ✅    |  ✅  |
+| `http`     | HTTP 请求 |    ✅    |  ✅  |
+| `dns`      | DNS 查询  |    ✅    |  ✅  |
+| `tls`      | TLS 会话  |    ✅    |  ✅  |
+| `ssh`      | SSH 握手  |    ✅    |  ✅  |
+| `smtp`     | SMTP 会话 |    ✅    |  ✅  |
+| `file`     | 文件传输  |    ✅    |  ✅  |
+| `alert`    | 告警      |    ✅    |  -   |
+| `netflow`  | NetFlow   |    ✅    |  -   |
+| `统计`     | 统计信息  |    ✅    |  -   |
 
 ### 3.2 归一化字段
 
@@ -167,17 +162,17 @@ EVE 格式定义了一套**统一字段**，无论来源工具是什么：
 {
   "timestamp": "2026-04-15T10:30:00.123456Z",
   "event_type": "conn",
-  
+
   "src_ip": "192.168.1.100",
   "src_port": 54321,
   "dest_ip": "93.184.216.34",
   "dest_port": 443,
   "proto": "tcp",
-  
+
   "app_proto": "http",
-  
+
   "flow_id": 1234567890,
-  
+
   "zeek": {
     "uid": "ChhnUs4ev9k2",
     "id.orig_h": "192.168.1.100",
@@ -190,18 +185,18 @@ EVE 格式定义了一套**统一字段**，无论来源工具是什么：
 
 **核心归一化字段**：
 
-| 字段 | 类型 | 说明 |
-| :--- | :--- | :--- |
-| `timestamp` | string | ISO8601 时间戳 |
-| `event_type` | string | 事件类型 |
-| `src_ip` | string | 源 IP |
-| `src_port` | integer | 源端口 |
-| `dest_ip` | string | 目的 IP |
-| `dest_port` | integer | 目的端口 |
-| `proto` | string | 传输层协议 (tcp/udp) |
-| `app_proto` | string | 应用层协议 |
-| `flow_id` | integer | 流 ID (Suricata) |
-| `in_iface` | string | 入接口 |
+| 字段         | 类型    | 说明                 |
+| :----------- | :------ | :------------------- |
+| `timestamp`  | string  | ISO8601 时间戳       |
+| `event_type` | string  | 事件类型             |
+| `src_ip`     | string  | 源 IP                |
+| `src_port`   | integer | 源端口               |
+| `dest_ip`    | string  | 目的 IP              |
+| `dest_port`  | integer | 目的端口             |
+| `proto`      | string  | 传输层协议 (tcp/udp) |
+| `app_proto`  | string  | 应用层协议           |
+| `flow_id`    | integer | 流 ID (Suricata)     |
+| `in_iface`   | string  | 入接口               |
 
 ### 3.3 conn 事件详解
 
@@ -297,39 +292,39 @@ EVE 格式定义了一套**统一字段**，无论来源工具是什么：
 
 ### 4.1 连接日志映射
 
-| Suricata EVE | Zeek EVE | 说明 |
-| :--- | :--- | :--- |
-| `src_ip` | `src_ip` | 源 IP |
-| `src_port` | `src_port` | 源端口 |
-| `dest_ip` | `dest_ip` | 目的 IP |
-| `dest_port` | `dest_port` | 目的端口 |
-| `proto` | `proto` | 协议 |
-| `app_proto` | `app_proto` | 应用层协议 |
-| `flow_id` | - | Suricata 流 ID |
-| - | `zeek.uid` | Zeek 连接 UID |
-| `tcp_flags` | `zeek.history` | TCP 标志/历史 |
-| `flowalerted` | - | 流是否触发告警 |
+| Suricata EVE  | Zeek EVE       | 说明           |
+| :------------ | :------------- | :------------- |
+| `src_ip`      | `src_ip`       | 源 IP          |
+| `src_port`    | `src_port`     | 源端口         |
+| `dest_ip`     | `dest_ip`      | 目的 IP        |
+| `dest_port`   | `dest_port`    | 目的端口       |
+| `proto`       | `proto`        | 协议           |
+| `app_proto`   | `app_proto`    | 应用层协议     |
+| `flow_id`     | -              | Suricata 流 ID |
+| -             | `zeek.uid`     | Zeek 连接 UID  |
+| `tcp_flags`   | `zeek.history` | TCP 标志/历史  |
+| `flowalerted` | -              | 流是否触发告警 |
 
 ### 4.2 HTTP 日志映射
 
-| Suricata EVE | Zeek EVE | 说明 |
-| :--- | :--- | :--- |
-| `http.method` | `zeek.method` | HTTP 方法 |
-| `http.url` | `zeek.uri` | 请求 URI |
-| `http.hostname` | `zeek.host` | Host 头 |
-| `http.user_agent` | `zeek.user_agent` | User-Agent |
-| `http.status_code` | `zeek.status_code` | 状态码 |
-| `http.protocol` | `zeek.version` | HTTP 版本 |
+| Suricata EVE       | Zeek EVE           | 说明       |
+| :----------------- | :----------------- | :--------- |
+| `http.method`      | `zeek.method`      | HTTP 方法  |
+| `http.url`         | `zeek.uri`         | 请求 URI   |
+| `http.hostname`    | `zeek.host`        | Host 头    |
+| `http.user_agent`  | `zeek.user_agent`  | User-Agent |
+| `http.status_code` | `zeek.status_code` | 状态码     |
+| `http.protocol`    | `zeek.version`     | HTTP 版本  |
 
 ### 4.3 DNS 日志映射
 
-| Suricata EVE | Zeek EVE | 说明 |
-| :--- | :--- | :--- |
-| `dns.type` | `zeek.qtype` | 查询类型 |
-| `dns.id` | - | DNS 事务 ID |
-| `dns.rcode` | `zeek.rcode` | 响应码 |
-| `dns.rrname` | `zeek.query` | 查询域名 |
-| `dns.rdata` | `zeek.answers` | 响应数据 |
+| Suricata EVE | Zeek EVE       | 说明        |
+| :----------- | :------------- | :---------- |
+| `dns.type`   | `zeek.qtype`   | 查询类型    |
+| `dns.id`     | -              | DNS 事务 ID |
+| `dns.rcode`  | `zeek.rcode`   | 响应码      |
+| `dns.rrname` | `zeek.query`   | 查询域名    |
+| `dns.rdata`  | `zeek.answers` | 响应数据    |
 
 ---
 
@@ -401,7 +396,7 @@ event zeek_init() {
     # 为每个日志流添加 EVE 过滤器
     for ( id in Log::active_streams() ) {
         local filter_name = fmt("eve-%s", id);
-        
+
         Log::add_filter(id, [
             $name=filter_name,
             $path=fmt("eve/%s", id),
@@ -427,14 +422,14 @@ event zeek_init() {
         $path="eve/http",
         $writer=Log::EVE_JSON
     ]);
-    
+
     # DNS 日志 -> EVE
     Log::add_filter(DNS::LOG, [
         $name="eve-dns",
         $path="eve/dns",
         $writer=Log::EVE_JSON
     ]);
-    
+
     # TLS 日志 -> EVE
     Log::add_filter(SSL::LOG, [
         $name="eve-tls",
@@ -457,7 +452,7 @@ event zeek_init() {
     if ( Cluster::node == "logger" ) {
         redef Log::default_writer = Log::EVE_JSON;
         redef Log::default_log_dir = "/var/log/zeek/eve";
-        
+
         # 启用压缩
         redef Log::log_compression = "gzip";
     }
@@ -518,9 +513,9 @@ Zeek 使用自己的 UID 系统，与 Suricata 的 `flow_id` 不同。合并分�
 ```json
 {
   "zeek": {
-    "uid": "ChhnUs4ev9k2"    // Zeek UID
+    "uid": "ChhnUs4ev9k2" // Zeek UID
   },
-  "flow_id": 1234567890      // Suricata flow_id
+  "flow_id": 1234567890 // Suricata flow_id
 }
 ```
 
@@ -601,7 +596,7 @@ event zeek_init() {
         SSH::LOG,
         CONN::LOG
     );
-    
+
     for ( id in eve_streams ) {
         Log::add_filter(id, [
             $name="eve",

@@ -12,17 +12,8 @@ tags:
   - opentelemetry
 ---
 
-> [!info] Cilium 2026 深度探索系列
-> 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
-> ...
-> 39. [[2026-04-14-cilium-deep-dive-ch39-install|第三十九章：生产级安装指南]]
-> 40. [[2026-04-14-cilium-deep-dive-ch40-upgrade|第四十章：升级策略]]
-> 41. [[2026-04-14-cilium-deep-dive-ch41-debug|第四十一章：故障诊断]]
-> 42. [[2026-04-14-cilium-deep-dive-ch42-performance|第四十二章：性能调优]]
-> 43. **第四十三章：Cilium 生态概述** ←
-> 44. [[2026-04-14-cilium-deep-dive-ch44-bgp|第四十四章：BGP 网络集成]]
-> 45. [[2026-04-14-cilium-deep-dive-ch45-security|第四十五章：安全生态集成]]
-> 46. [[2026-04-14-cilium-deep-dive-ch46-operator|第四十六章：扩展与 Operator]]
+> [!info] Cilium 2026 深度探索系列 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+> ... 39. [[2026-04-14-cilium-deep-dive-ch39-install|第三十九章：生产级安装指南]] 40. [[2026-04-14-cilium-deep-dive-ch40-upgrade|第四十章：升级策略]] 41. [[2026-04-14-cilium-deep-dive-ch41-debug|第四十一章：故障诊断]] 42. [[2026-04-14-cilium-deep-dive-ch42-performance|第四十二章：性能调优]] 43. **第四十三章：Cilium 生态概述** ← 44. [[2026-04-14-cilium-deep-dive-ch44-bgp|第四十四章：BGP 网络集成]] 45. [[2026-04-14-cilium-deep-dive-ch45-security|第四十五章：安全生态集成]] 46. [[2026-04-14-cilium-deep-dive-ch46-operator|第四十六章：扩展与 Operator]]
 
 ---
 
@@ -145,7 +136,7 @@ kubectl get svc -n kube-system cilium-adminmeric
 ```yaml
 # Prometheus Scrape Config
 scrape_configs:
-  - job_name: 'cilium'
+  - job_name: "cilium"
     kubernetes_sd_configs:
       - role: endpoints
         namespaces:
@@ -156,7 +147,7 @@ scrape_configs:
         action: keep
         regex: cilium-adminmetric
 
-  - job_name: 'hubble'
+  - job_name: "hubble"
     kubernetes_sd_configs:
       - role: endpoints
         namespaces:
@@ -546,15 +537,15 @@ cilium policy get
 
 ## 8. 生态组件版本兼容性
 
-| 组件 | 最低版本 | 推荐版本 | 说明 |
-|:---|:---|:---|:---|
-| Kubernetes | 1.16 | 1.25+ | Gateway API 需要 1.19+ |
-| Linux Kernel | 5.10 | 5.15+ | Host Routing 需要 5.10+ |
-| Helm | 3.6 | 3.10+ | |
-| Cilium CLI | 0.12 | 最新 | |
-| Hubble CLI | 0.11 | 最新 | |
-| Prometheus | 2.40 | 2.45+ | |
-| Grafana | 8.5 | 9.0+ | Dashboard 需 v8.5+ |
+| 组件         | 最低版本 | 推荐版本 | 说明                    |
+| :----------- | :------- | :------- | :---------------------- |
+| Kubernetes   | 1.16     | 1.25+    | Gateway API 需要 1.19+  |
+| Linux Kernel | 5.10     | 5.15+    | Host Routing 需要 5.10+ |
+| Helm         | 3.6      | 3.10+    |                         |
+| Cilium CLI   | 0.12     | 最新     |                         |
+| Hubble CLI   | 0.11     | 最新     |                         |
+| Prometheus   | 2.40     | 2.45+    |                         |
+| Grafana      | 8.5      | 9.0+     | Dashboard 需 v8.5+      |
 
 ---
 

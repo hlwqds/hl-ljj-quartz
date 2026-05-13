@@ -538,13 +538,13 @@ vhost-user 数据流：
 
 与 vhost-net 对比：
 
-| 特性 | vhost-net | vhost-user |
-|------|-----------|------------|
-| **Backend** | Kernel module | Userspace (DPDK) |
-| **上下文切换** | Kernel ↔ User | 仅 User |
-| **延迟** | ~50-80μs | ~20-30μs |
-| **吞吐量** | ~8 Gbps | ~15 Gbps |
-| **灵活性** | 低 | 高 |
+| 特性           | vhost-net     | vhost-user       |
+| -------------- | ------------- | ---------------- |
+| **Backend**    | Kernel module | Userspace (DPDK) |
+| **上下文切换** | Kernel ↔ User | 仅 User          |
+| **延迟**       | ~50-80μs      | ~20-30μs         |
+| **吞吐量**     | ~8 Gbps       | ~15 Gbps         |
+| **灵活性**     | 低            | 高               |
 
 ---
 

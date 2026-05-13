@@ -481,14 +481,14 @@ Plugin 生命周期：
 
 关键宏：
 
-| 宏 | 用途 |
-|----|------|
-| `VLIB_PLUGIN_REGISTER()` | 注册插件 |
-| `VLIB_INIT_FUNCTION()` | 初始化函数 |
-| `VLIB_EXIT_FUNCTION()` | 退出函数 |
-| `VLIB_REGISTER_NODE()` | 注册节点 |
-| `__clib_export` | 导出符号 |
-| `__clib_import` | 导入符号 |
+| 宏                       | 用途       |
+| ------------------------ | ---------- |
+| `VLIB_PLUGIN_REGISTER()` | 注册插件   |
+| `VLIB_INIT_FUNCTION()`   | 初始化函数 |
+| `VLIB_EXIT_FUNCTION()`   | 退出函数   |
+| `VLIB_REGISTER_NODE()`   | 注册节点   |
+| `__clib_export`          | 导出符号   |
+| `__clib_import`          | 导入符号   |
 
 ---
 

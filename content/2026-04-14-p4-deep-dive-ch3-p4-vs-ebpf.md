@@ -5,8 +5,8 @@ tags: [p4, series, ebpf, xdp, comparison, programmable, data-plane]
 description: "深入对比 P4 与 eBPF/XDP 的设计理念、适用场景、架构差异——P4 面向硬件 ASIC 的协议无关流水线，eBPF 面向 Linux 内核的动态 HOOK，硬件可编程 vs 内核可编程的选择"
 ---
 
-> [!info] P4 深度探索系列
-> 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+> [!info] P4 深度探索系列 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-14-p4-deep-dive-ch1-p4-overview|第一章：P4 概述——诞生背景与协议无关包处理]]
 > 2. [[2026-04-14-p4-deep-dive-ch2-p4-architecture|第二章：P4 架构模型——PSA/V1Model、Ingress/Egress]]
 > 3. **第三章：P4 vs eBPF——适用场景与硬件/软件对比**
@@ -109,13 +109,13 @@ eBPF 的 HOOK 点分布在**内核网络栈的各个层级**，从驱动层（XD
 
 ### 4.1 性能与吞吐量
 
-| 维度 | P4 (Tofino) | eBPF (XDP) |
-|------|------------|-------------|
-| 理论线速 | 5Tbps (Tofino 2) | 受限于内核和驱动 |
-| 每秒包处理 (PPS) | 数十亿 PPS | 数千万 PPS (取决于路径) |
-| 延迟 | 纳秒级 (芯片直转发) | 微秒~毫秒级 (取决于 HOOK 点) |
-| 资源 | TCAM/RAM (芯片内置) | Maps (内核内存) |
-| 批处理 | 硬件流水线批处理 | 软中断批处理 |
+| 维度             | P4 (Tofino)         | eBPF (XDP)                   |
+| ---------------- | ------------------- | ---------------------------- |
+| 理论线速         | 5Tbps (Tofino 2)    | 受限于内核和驱动             |
+| 每秒包处理 (PPS) | 数十亿 PPS          | 数千万 PPS (取决于路径)      |
+| 延迟             | 纳秒级 (芯片直转发) | 微秒~毫秒级 (取决于 HOOK 点) |
+| 资源             | TCAM/RAM (芯片内置) | Maps (内核内存)              |
+| 批处理           | 硬件流水线批处理    | 软中断批处理                 |
 
 **量化对比**（以 100G 网卡为例）：
 
@@ -126,34 +126,34 @@ eBPF (XDP):  100G 线速 ≈ 148Mpps，但 XDP_REDIRECT 路径上每包有 1-5us
 
 ### 4.2 可表达性与灵活性
 
-| 维度 | P4 | eBPF |
-|------|-----|------|
-| 自定义协议解析 | ✅ 完整 Parser FSM | ❌ 依赖已解析的 skb |
-| 完整流水线 | ✅ Ingress → Egress 完整路径 | ❌ 单点 HOOK，无法串联 |
-| 状态管理 | ✅ Register/Counter/Meter | ✅ Map (但不支持复杂状态机) |
-| 动态运行时更新 | ✅ P4Runtime / 动态表项 | ✅ bpf() 系统调用热更新 |
-| 任意内存访问 | ❌ 受限于 Header/Memory 模型 | ✅ 受限于 Verifier，但更灵活 |
-| 循环控制 | ❌ 有限循环（P4-16） | ✅ 有界循环（Verifier 验证） |
+| 维度           | P4                           | eBPF                         |
+| -------------- | ---------------------------- | ---------------------------- |
+| 自定义协议解析 | ✅ 完整 Parser FSM           | ❌ 依赖已解析的 skb          |
+| 完整流水线     | ✅ Ingress → Egress 完整路径 | ❌ 单点 HOOK，无法串联       |
+| 状态管理       | ✅ Register/Counter/Meter    | ✅ Map (但不支持复杂状态机)  |
+| 动态运行时更新 | ✅ P4Runtime / 动态表项      | ✅ bpf() 系统调用热更新      |
+| 任意内存访问   | ❌ 受限于 Header/Memory 模型 | ✅ 受限于 Verifier，但更灵活 |
+| 循环控制       | ❌ 有限循环（P4-16）         | ✅ 有界循环（Verifier 验证） |
 
 ### 4.3 部署场景
 
-| 维度 | P4 | eBPF |
-|------|-----|------|
-| 适用位置 | 交换机/路由器 ASIC | 主机/服务器 |
-| 典型厂商 | Intel/Broadcom/Cisco | Linux 生态、云厂商 |
-| 部署模式 | 编译后固件加载到设备 | 内核模块加载（无需重启） |
-| 目标用户 | 芯片商、交换机厂商、云网络 | 云厂商、基础设施团队 |
-| 调试工具 | pdump、Wireshark、BMI | bpftrace、bpftool、perf |
+| 维度     | P4                         | eBPF                     |
+| -------- | -------------------------- | ------------------------ |
+| 适用位置 | 交换机/路由器 ASIC         | 主机/服务器              |
+| 典型厂商 | Intel/Broadcom/Cisco       | Linux 生态、云厂商       |
+| 部署模式 | 编译后固件加载到设备       | 内核模块加载（无需重启） |
+| 目标用户 | 芯片商、交换机厂商、云网络 | 云厂商、基础设施团队     |
+| 调试工具 | pdump、Wireshark、BMI      | bpftrace、bpftool、perf  |
 
 ### 4.4 生态与社区
 
-| 维度 | P4 | eBPF |
-|------|-----|------|
-| 主导组织 | ONF (Open Networking Foundation) | Linux Kernel Community (Meta/Google/Microsoft) |
-| 开源编译器 | p4c (P4 Compiler) | LLVM + Clang |
-| 标准架构 | PSA / V1Model / TNA | XDP / TC / sockmap (内核 API) |
-| 主要应用 | 交换芯片编程、云网络 | 网络观测、安全、加速 |
-| 学习曲线 | 较陡（语言 + 架构 + 硬件） | 中等（需要理解内核网络路径） |
+| 维度       | P4                               | eBPF                                           |
+| ---------- | -------------------------------- | ---------------------------------------------- |
+| 主导组织   | ONF (Open Networking Foundation) | Linux Kernel Community (Meta/Google/Microsoft) |
+| 开源编译器 | p4c (P4 Compiler)                | LLVM + Clang                                   |
+| 标准架构   | PSA / V1Model / TNA              | XDP / TC / sockmap (内核 API)                  |
+| 主要应用   | 交换芯片编程、云网络             | 网络观测、安全、加速                           |
+| 学习曲线   | 较陡（语言 + 架构 + 硬件）       | 中等（需要理解内核网络路径）                   |
 
 ---
 
@@ -322,6 +322,7 @@ p4c-ebpf --target ebpf feed.p4 -o output.o
 ```
 
 这意味着 **P4 程序可以编译为 eBPF 程序**，在 Linux 内核中运行（而非硬件交换机）。适合：
+
 - P4 程序在 XDP/TC HOOK 点执行
 - 快速验证 P4 程序逻辑（无需 Tofino 硬件）
 - 在服务器上实现 P4 语义的网络功能
@@ -357,6 +358,7 @@ Cilium 项目就是典型例子：Cilium 使用 eBPF 实现 Kubernetes CNI，同
 ---
 
 > [!tip] 延伸阅读
+>
 > - P4 + eBPF: Cilium and P4 in the same network: https://cilium.io/blog
 > - P4 EBPF backend: https://github.com/p4lang/p4c/tree/main/backends/ebpf
 > - Bosshart et al., "P4: Programming Protocol-Independent Packet Processors," ACM SIGCOMM CCR, 2014

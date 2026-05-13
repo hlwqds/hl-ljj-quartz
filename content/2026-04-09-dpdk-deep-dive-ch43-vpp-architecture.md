@@ -15,6 +15,7 @@ description: "深入解析 VPP 架构：vector packet processing、node 图调�
 ### 1.1 传统 Scalar vs Vector Processing
 
 **Scalar Processing (传统 DPDK)**：
+
 ```
 Packet 1 → [Parse] → [Lookup] → [Modify] → [Send] → Done
 Packet 2 → [Parse] → [Lookup] → [Modify] → [Send] → Done
@@ -25,6 +26,7 @@ CPU:     |████░░░░|████░░░░|████░░�
 ```
 
 **Vector Processing (VPP)**：
+
 ```
 [Packet 1, Packet 2, Packet 3, ..., Packet N] → [Batch Parse] → [Batch Lookup] → [Batch Modify] → [Batch Send]
          (向量处理，利用 SIMD 和缓存局部性)
@@ -34,12 +36,12 @@ CPU:     |████████████|  ← 一次循环处理多个包
 
 ### 1.2 VPP 性能优势
 
-| 指标 | Scalar | Vector | 提升 |
-|------|--------|--------|------|
-| **每包开销** | ~100 cycles | ~10 cycles | 10x |
-| **分支预测** | 每包一次 | 每向量一次 | 10x |
-| **Cache 效率** | 差 | 高 | 5-10x |
-| **吞吐** | ~10 Mpps/core | ~50 Mpps/core | 5x |
+| 指标           | Scalar        | Vector        | 提升  |
+| -------------- | ------------- | ------------- | ----- |
+| **每包开销**   | ~100 cycles   | ~10 cycles    | 10x   |
+| **分支预测**   | 每包一次      | 每向量一次    | 10x   |
+| **Cache 效率** | 差            | 高            | 5-10x |
+| **吞吐**       | ~10 Mpps/core | ~50 Mpps/core | 5x    |
 
 ### 1.3 VPP 在 FD.io 的位置
 
@@ -369,12 +371,12 @@ dpdk {
 
 ### 5.2 VPP 节点 vs DPDK PMD
 
-| 组件 | VPP | DPDK PMD |
-|------|-----|-----------|
-| **线程模型** | per-thread lcore | per-thread lcore |
-| **发包方式** | vlib_frame | rte_mbuf |
-| **Buffer 管理** | vlib_buffer pool | rte_mempool |
-| **接口抽象** | vnet_sw_interface | rte_ethdev |
+| 组件            | VPP               | DPDK PMD         |
+| --------------- | ----------------- | ---------------- |
+| **线程模型**    | per-thread lcore  | per-thread lcore |
+| **发包方式**    | vlib_frame        | rte_mbuf         |
+| **Buffer 管理** | vlib_buffer pool  | rte_mempool      |
+| **接口抽象**    | vnet_sw_interface | rte_ethdev       |
 
 ### 5.3 内存管理
 

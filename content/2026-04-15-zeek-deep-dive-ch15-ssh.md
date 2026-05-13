@@ -11,8 +11,8 @@ tags:
 description: "深入解析 Zeek SSH 分析器——SSH::Info record、认证日志、客户端/服务器指纹、暴力破解检测、SSH 隧道"
 ---
 
-> [!info] Zeek 2026 深度探索系列
-> 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Zeek 2026 深度探索系列 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-15-zeek-deep-dive-ch1-overview|第一章：Zeek 概述]]
 > 2. [[2026-04-15-zeek-deep-dive-ch2-installation|第二章：安装部署]]
 > 3. [[2026-04-15-zeek-deep-dive-ch3-config|第三章：配置系统]]
@@ -500,16 +500,17 @@ event ssh_server_version(c: connection, version: string)
 
 本章介绍了 Zeek SSH 分析器的核心能力：
 
-| 组件 | 说明 |
-|------|------|
-| **SSH::Info** | SSH 日志核心 record，包含认证、指纹、隧道信息 |
-| **ssh_auth_successful** | 认证成功事件 |
-| **ssh_auth_failed** | 认证失败事件 |
-| **ssh_server_version** | 服务器版本事件 |
-| **暴力破解检测** | 基于失败次数的检测 |
-| **SSH 隧道检测** | 检测端口转发隧道 |
+| 组件                    | 说明                                          |
+| ----------------------- | --------------------------------------------- |
+| **SSH::Info**           | SSH 日志核心 record，包含认证、指纹、隧道信息 |
+| **ssh_auth_successful** | 认证成功事件                                  |
+| **ssh_auth_failed**     | 认证失败事件                                  |
+| **ssh_server_version**  | 服务器版本事件                                |
+| **暴力破解检测**        | 基于失败次数的检测                            |
+| **SSH 隧道检测**        | 检测端口转发隧道                              |
 
 SSH 日志对于检测：
+
 - SSH 暴力破解
 - 异常登录（root/非工作时段）
 - SSH 攻击工具

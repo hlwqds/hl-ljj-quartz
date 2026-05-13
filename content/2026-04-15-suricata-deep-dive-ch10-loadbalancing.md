@@ -12,8 +12,8 @@ tags:
 description: "Suricata 的高性能核心在于多线程抓包与负载均衡。本章解析 Worker/AutoFP 模式、TmThread 管道、Flow 负载均衡、以及 Capture-Worker 协作机制"
 ---
 
-> [!info] Suricata 2026 深度探索系列
-> 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Suricata 2026 深度探索系列 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-15-suricata-deep-dive-ch1-overview|第一章：Suricata 概述]]
 > 2. [[2026-04-15-suricata-deep-dive-ch2-config|第二章：Suricata 配置系统]]
 > 3. [[2026-04-15-suricata-deep-dive-ch3-runmodes|第三章：Runmodes 运行模式]]
@@ -38,25 +38,25 @@ flowchart TB
         NIC1["eth0"] --> RT["Rx Thread 1"]
         NIC2["eth1"] --> RT2["Rx Thread 2"]
         NIC3["eth2"] --> RT3["Rx Thread 3"]
-        
+
         RT --> DE1["Detect Thread 1"]
         RT2 --> DE2["Detect Thread 2"]
         RT3 --> DE3["Detect Thread 3"]
-        
+
         DE1 --> Q1["Queue"]
         DE2 --> Q2["Queue"]
         DE3 --> Q3["Queue"]
     end
-    
+
     subgraph AUTOFP["AutoFP 模式 (Flow 均衡)"]
         direction TB
         NIC["Multiple NICs"] --> RX["Rx Threads (N)"]
-        
+
         RX --> LB["Flow Load Balancer"]
         LB --> DT1["Detect T1"]
         LB --> DT2["Detect T2"]
         LB --> DT3["Detect T3"]
-        
+
         DT1 --> Q1A["Queue"]
         DT2 --> Q2A["Queue"]
         DT3 --> Q3A["Queue"]
@@ -65,13 +65,13 @@ flowchart TB
 
 ### 1.1 Worker vs AutoFP
 
-| 特性 | Worker | AutoFP |
-| :--- | :--- | :--- |
-| **抓包线程** | 1:1 绑定 NIC | 独立 Rx 线程池 |
-| **分发方式** | 直接 | Flow 哈希均衡 |
+| 特性         | Worker            | AutoFP            |
+| :----------- | :---------------- | :---------------- |
+| **抓包线程** | 1:1 绑定 NIC      | 独立 Rx 线程池    |
+| **分发方式** | 直接              | Flow 哈希均衡     |
 | **CPU 效率** | 较高 (无额外分发) | 中等 (有分发开销) |
-| **延迟** | 低 | 中 |
-| **适用场景** | 单 NIC 高吞吐 | 多 NIC 复杂分流 |
+| **延迟**     | 低                | 中                |
+| **适用场景** | 单 NIC 高吞吐     | 多 NIC 复杂分流   |
 
 ---
 
@@ -104,15 +104,15 @@ const char *RunModeAutoConf(void)
     /* 检查是否指定了接口 */
     const char *pcap_intf = NULL;
     (void)ConfGet("pcap.interface", &pcap_intf);
-    
+
     /* 检查 AF-PACKET */
     const char *afp_intf = NULL;
     (void)ConfGet("af-packet.interface", &afp_intf);
-    
+
     /* 检查 DPDK */
     int dpdk_enabled = 0;
     (void)ConfGetBool("dpdk.enabled", &dpdk_enabled);
-    
+
     /* 根据优先级选择 */
     if (pcap_intf != NULL) {
         return "pcap";
@@ -123,7 +123,7 @@ const char *RunModeAutoConf(void)
     } else if (ConfigRunModeGet() == RUNMODE_NFQ) {
         return "nfq";
     }
-    
+
     /* 默认使用 AF-PACKET */
     return "af-packet";
 }
@@ -144,10 +144,10 @@ int RunModeAFPWorker(DetectEngineCtx *de_ctx)
     if (ConfGet("af-packet.interface", &iface) != 1) {
         iface = "default";
     }
-    
+
     /* 2. 获取线程数 */
     int thread_count = AFPGetDefaultThreadCount();
-    
+
     /* 3. 创建 Capture 线程 */
     for (int i = 0; i < thread_count; i++) {
         ThreadVars *tv = TmThreadCreatePacketHandler(
@@ -157,29 +157,29 @@ int RunModeAFPWorker(DetectEngineCtx *de_ctx)
             "FlowManager",             // 管理线程
             "AFPacketDissect"         // 处理函数
         );
-        
+
         /* 设置 Capture 模块 */
         TmVarSlotSetFunc(tv, TmModuleGetByName("ReceiveAFPPacket"));
-        
+
         /* 设置 Verdict 模块 */
         TmVarSlotAppendFunc(tv, TmModuleGetByName("VerdictAFPPacket"));
-        
+
         /* 设置 Decode 模块 */
         TmVarSlotAppendFunc(tv, TmModuleGetByName("DecodeAFPacket"));
-        
+
         /* 设置 Detect 模块 */
         TmVarSlotAppendFunc(tv, TmModuleGetByName("Detect"));
-        
+
         /* 设置 Stream 重组 */
         TmVarSlotAppendFunc(tv, TmModuleGetByName("StreamTcp"));
-        
+
         /* 设置输出 */
         TmVarSlotAppendFunc(tv, TmModuleGetByName("LogRecycler"));
-        
+
         /* 启动线程 */
         TmThreadSpawn(tv);
     }
-    
+
     return 0;
 }
 ```
@@ -194,7 +194,7 @@ sequenceDiagram
     participant DE as Detect
     participant ST as Stream
     participant OT as Output
-    
+
     NIC->>RT: AF-PACKET 数据包
     RT->>RT: PacketGetFromQueueOrAlloc()
     RT->>DC: DecodeEthernet()
@@ -215,21 +215,21 @@ typedef struct ThreadVars_ {
     int id;                       // 线程 ID
     thread_type type;             // 线程类型
     int cpu;                      // CPU 亲和性
-    
+
     /* TM 模块管道 */
     TmSlot *tm_slots;            // 模块槽位链表
     int tm_id;                   // 当前执行到的槽位
-    
+
     /* 输入/输出队列 */
     const char *inq_name;         // 输入队列名
     const char *outq_name;       // 输出队列名
     Tmq *inq;                    // 输入队列
     Tmq *outq;                   // 输出队列
-    
+
     /* 状态 */
     SCSofa icq;                  // 输入消息队列
     SCSofa ocq;                  // 输出消息队列
-    
+
     void *data;                  // 模块私有数据
     void *ctx;                   // 线程上下文
 } ThreadVars;
@@ -256,7 +256,7 @@ int RunModeAFPAutoFp(DetectEngineCtx *de_ctx)
     /* 1. 获取线程数 */
     int capture_thread_count = AFPGetDefaultThreadCount();
     int detect_thread_count = UtilCpuGetNumProcessors();
-    
+
     /* 2. 创建 Capture 线程 (Rx) */
     ThreadVars *tv_rx[capture_thread_count];
     for (int i = 0; i < capture_thread_count; i++) {
@@ -267,14 +267,14 @@ int RunModeAFPAutoFp(DetectEngineCtx *de_ctx)
             "FlowManager",
             "AFPacketDissect"
         );
-        
+
         TmVarSlotSetFunc(tv_rx[i], TmModuleGetByName("ReceiveAFPPacket"));
         TmVarSlotAppendFunc(tv_rx[i], TmModuleGetByName("DecodeAFPacket"));
         TmVarSlotAppendFunc(tv_rx[i], TmModuleGetByName("FlowWorker"));
-        
+
         TmThreadSpawn(tv_rx[i]);
     }
-    
+
     /* 3. 创建 Detect 线程池 */
     ThreadVars *tv_detect[detect_thread_count];
     for (int i = 0; i < detect_thread_count; i++) {
@@ -285,17 +285,17 @@ int RunModeAFPAutoFp(DetectEngineCtx *de_ctx)
             NULL,
             "DetectReloadTemplate"
         );
-        
+
         TmVarSlotSetFunc(tv_detect[i], TmModuleGetByName("Detect"));
         TmVarSlotAppendFunc(tv_detect[i], TmModuleGetByName("StreamTcp"));
         TmVarSlotAppendFunc(tv_detect[i], TmModuleGetByName("RespondReject"));
-        
+
         TmThreadSpawn(tv_detect[i]);
     }
-    
+
     /* 4. 设置 Flow Load Balancer */
     FlowLoadBalancingSetup(capture_thread_count, detect_thread_count);
-    
+
     return 0;
 }
 ```
@@ -307,11 +307,11 @@ int RunModeAFPAutoFp(DetectEngineCtx *de_ctx)
 typedef struct FlowLB_ {
     /* 一致性哈希环 */
     rte_ring *buckets[FlowBucketCount];  // 1024 个桶
-    
+
     /* 线程映射 */
     int thread_count;           // 检测线程数
     int8_t *thread_map;         // 线程映射表
-    
+
     /* 统计 */
     uint64_t total_flows;       // 总 Flow 数
     uint64_t drops;              // 丢弃数
@@ -321,26 +321,26 @@ static uint32_t FlowGetHash(Packet *p)
 {
     /* 计算 Flow 哈希 (5-tuple) */
     uint32_t hash = 0;
-    
+
     /* Source IP */
     hash ^= p->src.addr_data32[0];
     hash ^= p->src.addr_data32[1];
-    
+
     /* Destination IP */
     hash ^= p->dst.addr_data32[0];
     hash ^= p->dst.addr_data32[1];
-    
+
     /* Ports */
     hash ^= (p->sp << 16) ^ p->dp;
-    
+
     /* Protocol */
     hash ^= p->proto;
-    
+
     /* VLAN */
     if (p->vlan_id) {
         hash ^= p->vlan_id;
     }
-    
+
     return hash;
 }
 
@@ -348,13 +348,13 @@ static int FlowLoadBalance(FlowLB *lb, Packet *p)
 {
     /* 计算哈希 */
     uint32_t hash = FlowGetHash(p);
-    
+
     /* 映射到桶 */
     uint32_t bucket = hash % FlowBucketCount;
-    
+
     /* 获取目标检测线程 */
     int thread_id = lb->thread_map[bucket];
-    
+
     return thread_id;
 }
 ```
@@ -370,31 +370,31 @@ static TmEcode FlowWorker(ThreadVars *tv, Packet *p)
     if (f == NULL) {
         return TM_ECODE_OK;
     }
-    
+
     /* 关联 Packet 和 Flow */
     f->flowflags |= FLOW_PKT_TOSERVER_FIRST;
     p->flow = f;
-    
+
     /* 添加到 Flow */
     if (!FlowSetStorage(p, f)) {
         FlowDecrUsecnt(f);
         return TM_ECODE_OK;
     }
-    
+
     /* 更新 Flow 统计 */
     FlowUpdateState(f, p);
-    
+
     /* 分发到 Detect 线程 */
     int thread_id = FlowLoadBalance(lb, p);
     Tmq *outq = lb->output_queues[thread_id];
-    
+
     /* 入队 */
     if (TmQueueSend(outq, p) != 0) {
         /* 队列满，丢包 */
         FlowDecrUsecnt(f);
         return TM_ECODE_FAILED;
     }
-    
+
     return TM_ECODE_OK;
 }
 ```
@@ -410,15 +410,15 @@ static TmEcode FlowWorker(ThreadVars *tv, Packet *p)
 typedef struct Tmq_ {
     char *name;                  // 队列名
     SCSofa *q;                  // Sofa 消息队列
-    
+
     /* 生产者/消费者 */
     uint16_t producer_cnt;      // 生产者数量
     uint16_t consumer_cnt;      // 消费者数量
-    
+
     /* 队列参数 */
     uint32_t q_len;             // 队列长度
     uint32_t elems;            // 当前元素数
-    
+
     /* 统计 */
     uint64_t enqs;             // 入队次数
     uint64_t discards;         // 丢弃次数
@@ -430,18 +430,18 @@ typedef struct Tmq_ {
 ```yaml
 # suricata.yaml
 threading:
-  stack-size: 4MB              # 线程栈大小
+  stack-size: 4MB # 线程栈大小
   cpu-affinity:
-    - cpu: [0, 1]              # 管理线程
-    - cpu: [2, 3, 4, 5]        # Capture 线程
+    - cpu: [0, 1] # 管理线程
+    - cpu: [2, 3, 4, 5] # Capture 线程
     - cpu: [6, 7, 8, 9, 10, 11] # Detect 线程
-    
+
 # Flow 队列配置
 flow:
-  heap-size: 16MB              # Flow 哈希表内存
+  heap-size: 16MB # Flow 哈希表内存
   queues:
-    - size: 1024               # Flow 队列大小
-      count: 8                 # 队列数量
+    - size: 1024 # Flow 队列大小
+      count: 8 # 队列数量
 ```
 
 ---
@@ -454,14 +454,14 @@ flow:
 # suricata.yaml — CPU 亲和性
 threading:
   stack-size: 4MB
-  
+
   cpu-affinity:
     - management:
-        cpu: [0]               # 管理线程 (FlowManager)
-      
+        cpu: [0] # 管理线程 (FlowManager)
+
     - worker-cpu:
         cpu: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
-      
+
     # 或详细指定每种线程
     - receive-cpu: [1, 2, 3, 4]
     - decode-cpu: [5, 6, 7, 8]
@@ -477,24 +477,24 @@ threading:
 af-packet:
   - interface: eth0
     threads: 8
-    use-per-node-hash: yes    # 按 NUMA 节点分布
+    use-per-node-hash: yes # 按 NUMA 节点分布
     # 或
-    numa-mbere: yes            # NUMA 感知
+    numa-mbere: yes # NUMA 感知
 ```
 
 ---
 
 ## 7. 配置 → 源码映射表
 
-| YAML 配置 | C 变量 | 源文件 | 说明 |
-| :--- | :--- | :--- | :--- |
-| `runmode` | `RunModeSet()` | `runmode.c` | 运行模式 |
-| `capture.threads` | `thread_count` | `runmode-*.c` | 抓包线程数 |
-| `threading.stack-size` | `pthread_attr_setstacksize()` | `tm-threads.c` | 栈大小 |
-| `threading.cpu-affinity` | `sched_setaffinity()` | `tm-threads.c` | CPU 亲和性 |
-| `af-packet.use-per-node-hash` | `rte_lcore_to_socket_id()` | `source-af-packet.c` | NUMA 分布 |
-| `flow.queues` | `TmqCreate()` | `flow.c` | Flow 队列 |
-| `flow.heap-size` | `FlowHashInit()` | `flow.c` | Flow 哈希表 |
+| YAML 配置                     | C 变量                        | 源文件               | 说明        |
+| :---------------------------- | :---------------------------- | :------------------- | :---------- |
+| `runmode`                     | `RunModeSet()`                | `runmode.c`          | 运行模式    |
+| `capture.threads`             | `thread_count`                | `runmode-*.c`        | 抓包线程数  |
+| `threading.stack-size`        | `pthread_attr_setstacksize()` | `tm-threads.c`       | 栈大小      |
+| `threading.cpu-affinity`      | `sched_setaffinity()`         | `tm-threads.c`       | CPU 亲和性  |
+| `af-packet.use-per-node-hash` | `rte_lcore_to_socket_id()`    | `source-af-packet.c` | NUMA 分布   |
+| `flow.queues`                 | `TmqCreate()`                 | `flow.c`             | Flow 队列   |
+| `flow.heap-size`              | `FlowHashInit()`              | `flow.c`             | Flow 哈希表 |
 
 ---
 
@@ -533,7 +533,7 @@ threading:
 
 af-packet:
   - interface: eth0
-    threads: 4                  # 与 receive-cpu 匹配
+    threads: 4 # 与 receive-cpu 匹配
     ring-size: 8192
     buffer-size: 4096
     tpacket-v3: yes
@@ -547,7 +547,7 @@ flow:
 stream:
   memcap: 256MB
   reassembly:
-    depth: 1048576              # 1MB
+    depth: 1048576 # 1MB
     chunk-prealloc: 256
 ```
 
@@ -572,13 +572,13 @@ perf top -p $(pidof suricata)
 
 ### 9.1 常见问题
 
-| 问题 | 原因 | 解决方案 |
-| :--- | :--- | :--- |
-| 线程饥饿 | 队列太小 | 增大队列长度 |
-| CPU 利用率低 | 线程绑定冲突 | 调整 cpu-affinity |
-| Flow 丢包 | 哈希表太小 | 增大 flow.heap-size |
-| 延迟高 | AutoFP 模式过多分发 | 改用 Worker 模式 |
-| 内存占用高 | Flow 未超时 | 调整 flow-timeout |
+| 问题         | 原因                | 解决方案            |
+| :----------- | :------------------ | :------------------ |
+| 线程饥饿     | 队列太小            | 增大队列长度        |
+| CPU 利用率低 | 线程绑定冲突        | 调整 cpu-affinity   |
+| Flow 丢包    | 哈希表太小          | 增大 flow.heap-size |
+| 延迟高       | AutoFP 模式过多分发 | 改用 Worker 模式    |
+| 内存占用高   | Flow 未超时         | 调整 flow-timeout   |
 
 ### 9.2 调试方法
 

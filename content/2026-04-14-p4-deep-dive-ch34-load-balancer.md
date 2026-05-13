@@ -5,17 +5,17 @@ tags: [p4, series, load-balancer, ecmp, flowlet, atp, network, hashing, p4-16]
 description: "P4 负载均衡编程深度解析——ECMP 等价多路径哈希、Flowlet 检测与调度、ATP (Application Transparent Proxy) 保序感知负载均衡、会话保持、Maglev 一致性哈希"
 ---
 
-> [!info] P4 深度探索系列
-> 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+> [!info] P4 深度探索系列 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-14-p4-deep-dive-ch1-p4-overview|第一章：P4 概述——诞生背景与协议无关包处理]]
 > 2. [[2026-04-14-p4-deep-dive-ch2-p4-architecture|第二章：P4 架构模型——PSA/V1Model、Ingress/Egress]]
 > 3. [[2026-04-14-p4-deep-dive-ch3-p4-vs-ebpf|第三章：P4 vs eBPF——适用场景与硬件/软件对比]]
-> ...
-> 30. [[2026-04-14-p4-deep-dive-ch30-p4-control-plane-advanced|第三十章：P4 控制面高级主题]]
-> 31. [[2026-04-14-p4-deep-dive-ch31-basic-routing|第三十一章：P4 基础路由编程]]
-> 32. [[2026-04-14-p4-deep-dive-ch32-access-list|第三十二章：P4 ACL 编程]]
-> 33. [[2026-04-14-p4-deep-dive-ch33-vlan-vxlan|第三十三章：P4 VLAN/VXLAN 编程]]
-> 34. **第三十四章：P4 负载均衡编程——ECMP、Flowlet 负载均衡、ATP 保序感知负载均衡**
+>    ...
+> 4. [[2026-04-14-p4-deep-dive-ch30-p4-control-plane-advanced|第三十章：P4 控制面高级主题]]
+> 5. [[2026-04-14-p4-deep-dive-ch31-basic-routing|第三十一章：P4 基础路由编程]]
+> 6. [[2026-04-14-p4-deep-dive-ch32-access-list|第三十二章：P4 ACL 编程]]
+> 7. [[2026-04-14-p4-deep-dive-ch33-vlan-vxlan|第三十三章：P4 VLAN/VXLAN 编程]]
+> 8. **第三十四章：P4 负载均衡编程——ECMP、Flowlet 负载均衡、ATP 保序感知负载均衡**
 
 ---
 
@@ -49,12 +49,12 @@ description: "P4 负载均衡编程深度解析——ECMP 等价多路径哈希�
 
 ### 1.1 负载均衡类型对比
 
-| 类型 | 说明 | 保序性 | 适用场景 |
-|------|------|--------|---------|
-| **ECMP** | 基于 5-tuple 哈希 | 同一 Flow 内保序 | L3 链路负载均衡 |
-| **Flowlet** | 基于流间隙检测 | 流内可能乱序 | 短流场景 |
-| **ATP** | 代理层保序 | 完全保序 | TCP 应用 |
-| **Least-Connection** | 动态计数 | 保序 | HTTP 长连接 |
+| 类型                 | 说明              | 保序性           | 适用场景        |
+| -------------------- | ----------------- | ---------------- | --------------- |
+| **ECMP**             | 基于 5-tuple 哈希 | 同一 Flow 内保序 | L3 链路负载均衡 |
+| **Flowlet**          | 基于流间隙检测    | 流内可能乱序     | 短流场景        |
+| **ATP**              | 代理层保序        | 完全保序         | TCP 应用        |
+| **Least-Connection** | 动态计数          | 保序             | HTTP 长连接     |
 
 ---
 

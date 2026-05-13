@@ -9,13 +9,13 @@ description: 用 Rust 编写的安全多线程数据包嗅探工具，支持 pca
 
 ## 项目概览
 
-| 属性 | 值 |
-|------|-----|
-| **GitHub** | [kpcyrd/sniffglue](https://github.com/kpcyrd/sniffglue) |
-| **Stars** | 1.2k |
-| **语言** | Rust |
-| **最新更新** | 2025-01-24（约2个月前）|
-| **License** | GPL-3.0 |
+| 属性         | 值                                                      |
+| ------------ | ------------------------------------------------------- |
+| **GitHub**   | [kpcyrd/sniffglue](https://github.com/kpcyrd/sniffglue) |
+| **Stars**    | 1.2k                                                    |
+| **语言**     | Rust                                                    |
+| **最新更新** | 2025-01-24（约2个月前）                                 |
+| **License**  | GPL-3.0                                                 |
 
 ## 核心定位
 
@@ -93,14 +93,14 @@ sniffglue em0 -p
 
 ## 与 tcpdump 对比
 
-| 维度 | tcpdump | sniffglue |
-|------|--------|----------|
-| 语言 | C | Rust |
-| 内存安全 | 不安全 | 安全 |
-| 多线程 | 有限 | 原生支持 |
-| 沙箱 | 不支持 | OpenBSD 支持 |
-| 性能 | 高 | 高 |
-| 生态 | 成熟 | 较小 |
+| 维度     | tcpdump | sniffglue    |
+| -------- | ------- | ------------ |
+| 语言     | C       | Rust         |
+| 内存安全 | 不安全  | 安全         |
+| 多线程   | 有限    | 原生支持     |
+| 沙箱     | 不支持  | OpenBSD 支持 |
+| 性能     | 高      | 高           |
+| 生态     | 成熟    | 较小         |
 
 ## 安全考虑
 
@@ -141,5 +141,6 @@ sudo ./target/release/sniffglue em0
 ---
 
 **相关项目**：
+
 - [tcpdump](https://github.com/the-tcpdump-group/tcpdump) - 经典网络抓包工具
 - [eCapture](https://github.com/gojue/ecapture) - eBPF 无 CA 证书抓取 TLS 明文

@@ -5,10 +5,8 @@ tags: [dpdk, series, tcp, connection, state-machine, sliding-window, congestion-
 description: "深入理解 DPDK 中的 TCP 处理——三次握手、连接状态机、滑动窗口、拥塞控制、TCP 选项解析、以及 socket API 封装"
 ---
 
-> [!info] DPDK 深度探索系列
-> 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
-> 1-11. 前十一章已完成
-> 12. **第十二章：TCP 协议栈实现与连接管理**
+> [!info] DPDK 深度探索系列 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
+> 1-11. 前十一章已完成 12. **第十二章：TCP 协议栈实现与连接管理**
 
 ---
 
@@ -16,14 +14,14 @@ description: "深入理解 DPDK 中的 TCP 处理——三次握手、连接状�
 
 DPDK 本身**不提供完整的 TCP 协议栈**，但提供了构建 TCP 应用所需的基础设施：
 
-| 组件                      | 说明                    |
-| ----------------------- | --------------------- |
-| **mbuf**                | 存储 TCP 段（segment）     |
-| **Flow Classification** | 识别 TCP 连接，进行会话分发      |
+| 组件                    | 说明                          |
+| ----------------------- | ----------------------------- |
+| **mbuf**                | 存储 TCP 段（segment）        |
+| **Flow Classification** | 识别 TCP 连接，进行会话分发   |
 | **rte_ring**            | 存储待发送/接收的 TCP segment |
-| **rte_timer**           | RTT 定时器、重传定时器         |
-| **cryptodev**           | TLS/DTLS 硬件卸载         |
-| **KNI**                 | 与内核 TCP 栈交互           |
+| **rte_timer**           | RTT 定时器、重传定时器        |
+| **cryptodev**           | TLS/DTLS 硬件卸载             |
+| **KNI**                 | 与内核 TCP 栈交互             |
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -1308,9 +1306,9 @@ lookup_conn(struct rte_hash *tbl, struct rte_ipv4_hdr *ip, struct rte_tcp_hdr *t
 
 5. **滑动窗口**：SND.UNA/SND.NXT/SND.WND 跟踪发送状态，RCV.NXT/RCV.WND 跟踪接收状态。
 
-6. **拥塞控制**：慢启动（cwnd += MSS）、拥塞避免（cwnd += MSS*MSS/cwnd）、快速重传（3 dup ACKs）、超时回退。
+6. **拥塞控制**：慢启动（cwnd += MSS）、拥塞避免（cwnd += MSS\*MSS/cwnd）、快速重传（3 dup ACKs）、超时回退。
 
-7. **RTT 测量**：使用时间戳选项精确测量，RTO = SRTT + 4*RTTVAR。
+7. **RTT 测量**：使用时间戳选项精确测量，RTO = SRTT + 4\*RTTVAR。
 
 8. **四次挥手**：FIN_WAIT1 → FIN_WAIT2 → TIME_WAIT → CLOSED。
 
@@ -1323,6 +1321,7 @@ lookup_conn(struct rte_hash *tbl, struct rte_ipv4_hdr *ip, struct rte_tcp_hdr *t
 ---
 
 > [!tip] 参考文献
+>
 > - RFC 793, "Transmission Control Protocol"
 > - RFC 2581, "TCP Congestion Control"
 > - RFC 7323, "TCP Extensions for High Speed"

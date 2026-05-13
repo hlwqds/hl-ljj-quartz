@@ -5,8 +5,8 @@ tags: [p4, series, checksum, ipv4, tcp, udp, verification, p4-16, psa, hdrChecks
 description: "P4 Checksum 深度解析——Checksum 验证与重新计算原理、IPv4/TCP/UDP/ICMP Checksum 算法、Header 验证、packet_in/out、Deparser 中的 Checksum 重新计算"
 ---
 
-> [!info] P4 深度探索系列
-> 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+> [!info] P4 深度探索系列 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-14-p4-deep-dive-ch1-p4-overview|第一章：P4 概述——诞生背景与协议无关包处理]]
 > 2. [[2026-04-14-p4-deep-dive-ch2-p4-architecture|第二章：P4 架构模型——PSA/V1Model、Ingress/Egress]]
 > 3. [[2026-04-14-p4-deep-dive-ch3-p4-vs-ebpf|第三章：P4 vs eBPF——适用场景与硬件/软件对比]]
@@ -33,13 +33,13 @@ P4 提供了专门的 **Checksum Unit** 在硬件中执行这些计算。
 
 ### 1.1 常见协议的 Checksum
 
-| 协议 | Checksum 位置 | 覆盖范围 |
-|------|---------------|----------|
-| IPv4 | Header `hdrChecksum` | 仅 IPv4 Header |
-| TCP | Header `checksum` | Pseudo-header + TCP Header + Data |
-| UDP | Header `checksum` | Pseudo-header + UDP Header + Data |
-| ICMP | Header `checksum` | ICMP Header + Data |
-| VXLAN | Header `flags` | VXLAN Header + RTRs |
+| 协议  | Checksum 位置        | 覆盖范围                          |
+| ----- | -------------------- | --------------------------------- |
+| IPv4  | Header `hdrChecksum` | 仅 IPv4 Header                    |
+| TCP   | Header `checksum`    | Pseudo-header + TCP Header + Data |
+| UDP   | Header `checksum`    | Pseudo-header + UDP Header + Data |
+| ICMP  | Header `checksum`    | ICMP Header + Data                |
+| VXLAN | Header `flags`       | VXLAN Header + RTRs               |
 
 ---
 
@@ -103,11 +103,11 @@ P4 架构定义了 **Checksum Unit** 作为 Extern：
 extern Checksum<W> {
     // 构造函数
     Checksum();
-    
+
     // 添加数据到 Checksum 计算
     void clear();           // 清零
     void add<T>(in T data); // 添加数据 (可以是任何类型)
-    
+
     // 获取结果
     W get();                // 返回当前 Checksum 值
 }
@@ -120,11 +120,11 @@ Parser 中可以验证 Checksum：
 ```c
 // Checksum 验证
 parser ParserImpl(...) {
-    
+
     state parse_ipv4 {
         // 提取 IPv4 Header
         extract(h.ipv4);
-        
+
         // 验证 Checksum
         verify_checksum(
             h.ipv4.isValid(),
@@ -144,7 +144,7 @@ parser ParserImpl(...) {
             h.ipv4.hdrChecksum,
             HashAlgorithm.csum16
         );
-        
+
         transition select(h.ipv4.protocol) {
             6: parse_tcp;
             17: parse_udp;
@@ -162,7 +162,7 @@ Deparser 中重新计算 Checksum：
 ```c
 // Deparser 中的 Checksum 重新计算
 control DeparserImpl(packet_out packet, in headers_t h) {
-    
+
     apply {
         // 重新计算 IPv4 Checksum
         update_checksum(
@@ -183,7 +183,7 @@ control DeparserImpl(packet_out packet, in headers_t h) {
             h.ipv4.hdrChecksum,
             HashAlgorithm.csum16
         );
-        
+
         // 发射 Headers
         packet.emit(h.ethernet);
         packet.emit(h.ipv4);
@@ -227,10 +227,10 @@ Checksum 覆盖: 从 Version 到 Destination Address (20 bytes)
 ```c
 // IPv4 Checksum 重新计算
 control Ingress(...) {
-    
+
     action decrement_ttl() {
         h.ipv4.ttl = h.ipv4.ttl - 1;
-        
+
         // 重新计算 Checksum
         // TTL 变化会影响 Checksum
         update_checksum(
@@ -252,7 +252,7 @@ control Ingress(...) {
             HashAlgorithm.csum16
         );
     }
-    
+
     apply {
         if (h.ipv4.isValid()) {
             decrement_ttl();
@@ -292,13 +292,13 @@ TCP/UDP Checksum 计算需要 Pseudo Header:
 ```c
 // TCP Checksum 计算
 control Ingress(...) {
-    
+
     action recalc_tcp_checksum() {
         // TCP Checksum 需要覆盖:
         // 1. Pseudo Header (srcIP, dstIP, zero, protocol, TCP len)
         // 2. TCP Header (不含 checksum 字段)
         // 3. TCP Data
-        
+
         update_checksum_with_payload(
             h.tcp.isValid(),
             {
@@ -313,7 +313,7 @@ control Ingress(...) {
             HashAlgorithm.csum16
         );
     }
-    
+
     apply {
         if (h.tcp.isValid()) {
             recalc_tcp_checksum();
@@ -329,11 +329,11 @@ UDP Checksum 是**可选的** (checksum 为 0 表示未使用)：
 ```c
 // UDP Checksum 重新计算 (可选)
 control Ingress(...) {
-    
+
     action recalc_udp_checksum() {
         // UDP 长度
         bit<16> udp_len = h.udp.length;
-        
+
         // 如果 UDP Checksum 为 0，保持为 0 (允许校验和为 0 表示未用)
         if (h.udp.checksum != 0) {
             update_checksum_with_payload(
@@ -350,7 +350,7 @@ control Ingress(...) {
             );
         }
     }
-    
+
     apply {
         if (h.udp.isValid()) {
             recalc_udp_checksum();
@@ -369,7 +369,7 @@ Deparser 中必须按照**反向依赖**顺序重新计算 Checksum：
 
 ```c
 control DeparserImpl(packet_out packet, in headers_t h) {
-    
+
     apply {
         // 1. 首先处理内层 Checksum (先计算的依赖后计算)
         if (h.tcp.isValid()) {
@@ -381,7 +381,7 @@ control DeparserImpl(packet_out packet, in headers_t h) {
                 HashAlgorithm.csum16
             );
         }
-        
+
         if (h.udp.isValid()) {
             // UDP Checksum 依赖 IPv4 地址
             update_checksum_with_payload(
@@ -391,7 +391,7 @@ control DeparserImpl(packet_out packet, in headers_t h) {
                 HashAlgorithm.csum16
             );
         }
-        
+
         // 2. 最后处理 IPv4 Header Checksum
         // (因为 TTL 等字段可能已修改)
         if (h.ipv4.isValid()) {
@@ -408,7 +408,7 @@ control DeparserImpl(packet_out packet, in headers_t h) {
                 HashAlgorithm.csum16
             );
         }
-        
+
         // 3. 最后发射数据包
         packet.emit(h.ethernet);
         packet.emit(h.ipv4);
@@ -421,9 +421,9 @@ control DeparserImpl(packet_out packet, in headers_t h) {
 
 ### 6.2 update_checksum vs update_checksum_with_payload
 
-| 方法 | 适用场景 |
-|------|----------|
-| `update_checksum` | Checksum 完全覆盖 Header，Header 在 packet_in 中 |
+| 方法                           | 适用场景                                             |
+| ------------------------------ | ---------------------------------------------------- |
+| `update_checksum`              | Checksum 完全覆盖 Header，Header 在 packet_in 中     |
 | `update_checksum_with_payload` | Checksum 覆盖 Header + Payload，Payload 需要额外引用 |
 
 ```c
@@ -451,7 +451,7 @@ update_checksum_with_payload(
 action modify_src_ip(bit<32> new_src) {
     if (h.ipv4.srcAddr != new_src) {
         h.ipv4.srcAddr = new_src;
-        
+
         // 只在源地址改变时重新计算 Checksum
         update_ipv4_checksum();
         update_tcp_checksum();  // TCP 也依赖源地址
@@ -474,7 +474,7 @@ NewChecksum = OldChecksum + ~OldField + NewField
 Example:
   Old TTL = 64, New TTL = 63
   Old Checksum = 0x1234
-  
+
   NewChecksum = 0x1234 + ~64 + 63
               = 0x1234 + 0xFFBF + 0x003F
               = 0x1234 + 0xFFFE
@@ -559,11 +559,11 @@ header vxlan_t {
 
 // VXLAN 内部包的 Checksum 处理
 control Ingress(...) {
-    
+
     action decapsulate_vxlan() {
         // 删除 VXLAN Header
         // ... 省略 decapsulate 逻辑
-        
+
         // 重新计算内部包的 Checksum
         if (h.inner_ipv4.isValid()) {
             // 内部 IPv4 Checksum
@@ -582,7 +582,7 @@ control Ingress(...) {
             );
         }
     }
-    
+
     apply {
         decapsulate_vxlan();
     }

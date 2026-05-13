@@ -1,12 +1,24 @@
 ---
 title: "Kernel Protocol Stack 深度探索 (二十九)：Inet Socket 实现"
 date: 2026-04-13
-tags: [linux, kernel, networking, series, inet_sock, inet_connection_sock, struct sock, port-binding, reuseport, hash-table]
+tags:
+  [
+    linux,
+    kernel,
+    networking,
+    series,
+    inet_sock,
+    inet_connection_sock,
+    struct sock,
+    port-binding,
+    reuseport,
+    hash-table,
+  ]
 description: "深入解析 Inet Socket 内核实现——inet_sock 结构、inet_connection_sock、端口绑定、reuseport、ehash/bhash/ioremap hash 表"
 ---
 
-> [!info] Kernel Protocol Stack 深度探索系列
-> 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Kernel Protocol Stack 深度探索系列 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-kernel-protocol-stack-deep-dive-ch1-skbuff|第一章：sk_buff 与数据包生命周期]]
 > 2. [[2026-04-13-kernel-protocol-stack-deep-dive-ch2-netdevice|第二章：Netdevice 与网卡抽象]]
 > 3. [[2026-04-13-kernel-protocol-stack-deep-dive-ch3-ring-buffer|第三章：Ring Buffer 与 DMA]]
@@ -348,7 +360,7 @@ static inline struct sock *__udp4_lib_lookup(...)
             continue;
         if (sk->sk_rcv_saddr && sk->sk_rcv_saddr != daddr)
             continue;
-        if (sk->sk_family == AF_INET && 
+        if (sk->sk_family == AF_INET &&
             inet_rcv_saddr(sk, saddr))
             return sk;
     }
@@ -375,7 +387,7 @@ int inet_csk_get_port(struct sock *sk, unsigned short snum)
     if (!snum) {
         int low = sysctl_local_port_range[0];
         int high = sysctl_local_port_range[1];
-        
+
         for (snum = low; snum <= high; snum++) {
             if (inet_is_local_reserved_port(snum))
                 continue;
@@ -443,12 +455,12 @@ ss -t state established
 
 ## 8. 总结
 
-| 结构 | 说明 |
-|------|------|
-| struct sock | 基础 socket 结构 |
-| struct inet_sock | IPv4 特定字段 |
+| 结构                        | 说明             |
+| --------------------------- | ---------------- |
+| struct sock                 | 基础 socket 结构 |
+| struct inet_sock            | IPv4 特定字段    |
 | struct inet_connection_sock | TCP 面向连接扩展 |
-| struct tcp_sock | TCP 具体实现 |
-| struct udp_sock | UDP 具体实现 |
+| struct tcp_sock             | TCP 具体实现     |
+| struct udp_sock             | UDP 具体实现     |
 
 端口绑定通过 hash 表高效查找，SO_REUSEADDR 和 SO_REUSEPORT 提供了灵活的端口复用机制。

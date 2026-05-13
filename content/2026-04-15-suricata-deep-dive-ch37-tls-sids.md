@@ -13,12 +13,8 @@ tags:
 description: "深入解析 Suricata TLS 检测规则：tls.* 关键字体系、证书检测、SNI 匹配、TLS 版本指纹、日志字段与检测引擎源码映射"
 ---
 
-> [!info] Suricata 2026 深度探索系列
-> 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
-> ...
-> 34. [[2026-04-15-suricata-deep-dive-ch34-rules|第三十四章：规则语法]]
-> 35. [[2026-04-15-suricata-deep-dive-ch35-http-sids|第三十五章：HTTP 规则]]
-> 36. [[2026-04-15-suricata-deep-dive-ch36-dns-sids|第三十六章：DNS 规则]]
+> [!info] Suricata 2026 深度探索系列 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+> ... 34. [[2026-04-15-suricata-deep-dive-ch34-rules|第三十四章：规则语法]] 35. [[2026-04-15-suricata-deep-dive-ch35-http-sids|第三十五章：HTTP 规则]] 36. [[2026-04-15-suricata-deep-dive-ch36-dns-sids|第三十六章：DNS 规则]]
 > **37. 当前章节：TLS 规则**
 
 ---
@@ -43,21 +39,21 @@ alert tls any any -> any any (
 
 ### 1.1 TLS 关键字列表
 
-| 关键字 | 匹配位置 | 说明 |
-|:---|:---|:---|
-| `tls.subject` | 证书主题 | 证书持有者信息 |
-| `tls.issuerdn` | 颁发者 | CA 证书信息 |
-| `tls.fingerprint` | 证书指纹 | SHA1/SPKI 指纹 |
-| `tls.sni` | SNI 扩展 | 服务器名称指示 |
-| `tls.sni.raw` | 原始 SNI | 未规范化的 SNI |
-| `tls.version` | TLS 版本 | TLS/SSL 版本 |
-| `tls.store` | 存储的证书 | 已存储证书 |
-| `tls.cert` | 证书数据 | 完整证书信息 |
-| `tls.cert.issuer` | 颁发者信息 | 证书颁发者 |
-| `tls.cert.subject` | 主题信息 | 证书主题 |
-| `tls.session.resumed` | 会话恢复 | 是否恢复会话 |
-| `tls.ja3` | JA3 指纹 | TLS 客户端指纹 |
-| `tls.ja3s` | JA3S 指纹 | TLS 服务端指纹 |
+| 关键字                | 匹配位置   | 说明           |
+| :-------------------- | :--------- | :------------- |
+| `tls.subject`         | 证书主题   | 证书持有者信息 |
+| `tls.issuerdn`        | 颁发者     | CA 证书信息    |
+| `tls.fingerprint`     | 证书指纹   | SHA1/SPKI 指纹 |
+| `tls.sni`             | SNI 扩展   | 服务器名称指示 |
+| `tls.sni.raw`         | 原始 SNI   | 未规范化的 SNI |
+| `tls.version`         | TLS 版本   | TLS/SSL 版本   |
+| `tls.store`           | 存储的证书 | 已存储证书     |
+| `tls.cert`            | 证书数据   | 完整证书信息   |
+| `tls.cert.issuer`     | 颁发者信息 | 证书颁发者     |
+| `tls.cert.subject`    | 主题信息   | 证书主题       |
+| `tls.session.resumed` | 会话恢复   | 是否恢复会话   |
+| `tls.ja3`             | JA3 指纹   | TLS 客户端指纹 |
+| `tls.ja3s`            | JA3S 指纹  | TLS 服务端指纹 |
 
 ---
 
@@ -93,18 +89,18 @@ typedef struct DetectTlsCertData_ {
 static int DetectTlsSubjectSetup(char *optstr, Signature *sig)
 {
     DetectTlsCertData *data = SCCalloc(1, sizeof(DetectTlsCertData));
-    
+
     /* 查找关联的 content */
     DetectContentData *cd = GetLastContent(sig);
     if (cd == NULL) {
         SCLogError("tls.subject requires preceding content match");
         return -1;
     }
-    
+
     /* 标记为证书主题匹配 */
     cd->flags |= CONTENT_TLS_SUBJECT;
     data->flags |= TLS_CERT_SUBJECT;
-    
+
     return 0;
 }
 
@@ -112,22 +108,22 @@ static int DetectTlsSubjectMatch(void *tx, void *data)
 {
     SSLState *ssl_state = (SSLState *)tx;
     DetectTlsCertData *cert_data = (DetectTlsCertData *)data;
-    
+
     /* 获取证书 */
     SSLCertsChain *cert = ssl_state->server_certs;
     if (cert == NULL) {
         return 0;
     }
-    
+
     /* 获取证书主题 */
     char *subject = X509GetSubject(cert->peer_cert);
     if (subject == NULL) {
         return 0;
     }
-    
+
     /* 匹配内容 */
     int result = DetectContentMatch(subject, strlen(subject), cert_data);
-    
+
     SCFree(subject);
     return result;
 }
@@ -136,16 +132,16 @@ static int DetectTlsSubjectMatch(void *tx, void *data)
 char *X509GetSubject(X509 *cert)
 {
     char *subject = SCStackCalloc(256, sizeof(char));
-    
+
     /* 获取主题字段 */
     X509_NAME *name = X509_get_subject_name(cert);
     if (name == NULL) {
         return NULL;
     }
-    
+
     /* 格式化为字符串 */
     X509_NAME_oneline(name, subject, 256);
-    
+
     return subject;
 }
 ```
@@ -207,30 +203,30 @@ typedef struct DetectTlsSniData_ {
 static int DetectTlsSniSetup(char *optstr, Signature *sig)
 {
     DetectTlsSniData *data = SCCalloc(1, sizeof(DetectTlsSniData));
-    
+
     /* 解析 tls.sni; 选项 */
     if (strncmp(optstr, "tls.sni", 7) == 0) {
         if (strstr(optstr, ".raw") != NULL) {
             data->flags |= TLS_SNI_RAW;
         }
     }
-    
+
     /* 查找 content 关键字 */
     DetectContentData *cd = GetLastContent(sig);
     if (cd == NULL) {
         SCLogError("tls.sni requires preceding content match");
         return -1;
     }
-    
+
     cd->flags |= CONTENT_TLS_SNI;
-    
+
     return 0;
 }
 
 static int DetectTlsSniMatch(SSLState *ssl_state, void *data)
 {
     DetectTlsSniData *sni_data = (DetectTlsSniData *)data;
-    
+
     /* 获取 SNI 值 */
     char *sni = ssl_state->sni;
     if (sni == NULL) {
@@ -240,16 +236,16 @@ static int DetectTlsSniMatch(SSLState *ssl_state, void *data)
             return 0;
         }
     }
-    
+
     /* 规范化 SNI */
     if (!(sni_data->flags & TLS_SNI_RAW)) {
         /* 转小写 */
         sni = StrToLower(sni);
     }
-    
+
     /* 内容匹配 */
     int result = DetectContentMatch(sni, strlen(sni), sni_data);
-    
+
     return result;
 }
 ```
@@ -279,13 +275,13 @@ alert tls any any -> any any (
 
 ### 4.2 TLS 版本标识
 
-| 版本 | 十六进制 | 说明 |
-|:---|:---:|:---|
-| SSL 3.0 | 0x0300 | 已废弃 |
-| TLS 1.0 | 0x0301 | 已废弃 |
-| TLS 1.1 | 0x0302 | 已废弃 |
-| TLS 1.2 | 0x0303 | 当前推荐 |
-| TLS 1.3 | 0x0304 | 最新标准 |
+| 版本    | 十六进制 | 说明     |
+| :------ | :------: | :------- |
+| SSL 3.0 |  0x0300  | 已废弃   |
+| TLS 1.0 |  0x0301  | 已废弃   |
+| TLS 1.1 |  0x0302  | 已废弃   |
+| TLS 1.2 |  0x0303  | 当前推荐 |
+| TLS 1.3 |  0x0304  | 最新标准 |
 
 ```c
 // src/detect-tls-version.c — 版本检测
@@ -297,15 +293,15 @@ typedef struct DetectTlsVersionData_ {
 static int DetectTlsVersionMatch(SSLState *ssl_state, void *data)
 {
     DetectTlsVersionData *ver_data = (DetectTlsVersionData *)data;
-    
+
     /* 获取 TLS 版本 */
     uint16_t version = ssl_state->version;
-    
+
     /* 版本比较 */
     if (ver_data->version == version) {
         return 1;
     }
-    
+
     return 0;
 }
 ```
@@ -353,24 +349,24 @@ char *SSLComputeJA3(SSLState *ssl_state)
 {
     /* JA3 字符串构建 */
     char ja3_str[512] = {0};
-    
+
     /* TLS 版本 */
     snprintf(ja3_str, sizeof(ja3_str), "%02x", ssl_state->client_version);
-    
+
     /* 加密算法套件 */
     for (int i = 0; i < ssl_state->client_ciphers_count; i++) {
-        snprintf(ja3_str + strlen(ja3_str), 
+        snprintf(ja3_str + strlen(ja3_str),
                  sizeof(ja3_str) - strlen(ja3_str),
                  ",%04x", ssl_state->client_ciphers[i]);
     }
-    
+
     /* 扩展 */
     for (int i = 0; i < ssl_state->extensions_count; i++) {
         snprintf(ja3_str + strlen(ja3_str),
                  sizeof(ja3_str) - strlen(ja3_str),
                  ",%u", ssl_state->extensions[i]);
     }
-    
+
     /* 计算 MD5 哈希 */
     return MD5Hash(ja3_str);
 }
@@ -379,25 +375,25 @@ char *SSLComputeJA3(SSLState *ssl_state)
 static int DetectTlsJa3Setup(char *optstr, Signature *sig)
 {
     DetectTlsJa3Data *data = SCCalloc(1, sizeof(DetectTlsJa3Data));
-    
+
     /* 解析 JA3 指纹 */
     const char *ja3_hash = ExtractHash(optstr);
     data->ja3_hash = SCStrdup(ja3_hash);
-    
+
     return 0;
 }
 
 static int DetectTlsJa3Match(SSLState *ssl_state, void *data)
 {
     DetectTlsJa3Data *ja3_data = (DetectTlsJa3Data *)data;
-    
+
     /* 获取 JA3 指纹 */
     char *ja3 = ssl_state->ja3_hash;
     if (ja3 == NULL) {
         ja3 = SSLComputeJA3(ssl_state);
         ssl_state->ja3_hash = ja3;
     }
-    
+
     /* 指纹比较 */
     return (strcmp(ja3, ja3_data->ja3_hash) == 0) ? 1 : 0;
 }
@@ -542,9 +538,9 @@ int SSLRegister(void)
         .Init = TLSInit,
         .Deinit = TLSDeinit,
     };
-    
+
     AppLayerRegister(&proto);
-    
+
     /* 注册关键字 */
     RegisterTlsSubject();
     RegisterTlsIssuerdn();
@@ -555,7 +551,7 @@ int SSLRegister(void)
     RegisterTlsJa3S();
     RegisterTlsSessionResumed();
     RegisterTlsCert();
-    
+
     return 0;
 }
 ```
@@ -569,32 +565,32 @@ typedef struct SSLState_ {
     uint8_t state;                // 握手状态
     uint16_t version;             // TLS 版本
     uint8_t flags;
-    
+
     /* SNI */
     char *sni;                    // Server Name Indication
     bool sni_raw;                 // 原始 SNI
-    
+
     /* 证书 */
     SSLCertsChain *client_certs;  // 客户端证书链
     SSLCertsChain *server_certs;  // 服务端证书链
-    
+
     /* JA3 指纹 */
     char *ja3_hash;               // JA3 客户端指纹
     char *ja3s_hash;             // JA3S 服务端指纹
-    
+
     /* 会话信息 */
     uint8_t session_state;        // 会话状态
     uint8_t *session_id;         // Session ID
     uint16_t session_id_len;
-    
+
     /* 加密套件 */
     uint16_t *client_ciphers;
     uint16_t client_ciphers_count;
-    
+
     /* 扩展 */
     SSLExtension *extensions;
     uint16_t extensions_count;
-    
+
     /* 随机数 */
     uint8_t client_random[32];
     uint8_t server_random[32];

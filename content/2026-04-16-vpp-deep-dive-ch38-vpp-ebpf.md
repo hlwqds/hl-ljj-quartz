@@ -37,14 +37,14 @@ description: "深入解析 VPP 与 eBPF 协同工作：XDP 集成、TC 流量控
 
 ### 1.2 互补性分析
 
-|| 特性 | eBPF | VPP |
-|------|------|-----|
-| **运行位置** | 内核态 | 用户态 |
-| **延迟** | 极低 (<1μs) | 低 (~10μs) |
-| **吞吐** | 极高 | 极高 |
-| **协议栈** | 有限 | 完整 (L2-L7) |
-| **可编程性** | 有限 (辅助函数) | 灵活 (C/Go) |
-| **生态** | 工具丰富 | 协议丰富 |
+|              | 特性            | eBPF         | VPP |
+| ------------ | --------------- | ------------ | --- |
+| **运行位置** | 内核态          | 用户态       |
+| **延迟**     | 极低 (<1μs)     | 低 (~10μs)   |
+| **吞吐**     | 极高            | 极高         |
+| **协议栈**   | 有限            | 完整 (L2-L7) |
+| **可编程性** | 有限 (辅助函数) | 灵活 (C/Go)  |
+| **生态**     | 工具丰富        | 协议丰富     |
 
 ### 1.3 协同场景
 
@@ -161,33 +161,33 @@ int xdp_vpp_filter(struct xdp_md *ctx)
 {
     void *data = (void *)(long)ctx->data;
     void *data_end = (void *)(long)ctx->data_end;
-    
+
     struct ethhdr *eth = data;
     if ((void *)(eth + 1) > data_end)
         return XDP_PASS;
-    
+
     /* 只处理 IPv4 */
     if (eth->h_proto != htons(ETH_P_IP))
         return XDP_PASS;
-    
+
     struct iphdr *ip = data + sizeof(*eth);
     if ((void *)(ip + 1) > data_end)
         return XDP_PASS;
-    
+
     __u32 src_ip = ip->saddr;
-    
+
     /* 检查是否在允许列表 */
     __u8 *allowed = bpf_map_lookup_elem(&allowed_ips, &src_ip);
     if (allowed && *allowed == 1) {
         /* 允许的流量: 重定向到 VPP */
         return XDP_REDIRECT;
     }
-    
+
     /* DDoS 防护: 速率限制 */
     if (bpf_map_lookup_elem(&packet_stats, &ip->protocol)) {
         return XDP_DROP;
     }
-    
+
     /* 默认: 传给内核网络栈 */
     return XDP_PASS;
 }
@@ -250,20 +250,20 @@ int tc_mark(struct __sk_buff *skb)
 {
     __u8 *cursor = 0;
     struct ethhdr *eth = bpf_hdr_pointer(skb, ETH_HLEN, sizeof(*eth));
-    
+
     if (!eth || eth->h_proto != htons(ETH_P_IP))
         return TC_ACT_OK;
-    
+
     struct iphdr *ip = (struct iphdr *)(eth + 1);
     __u32 dst = ip->daddr;
-    
+
     /* 标记流量用于 VPP 处理 */
-    bpf_skb_store_bytes(skb, offsetof(struct iphdr, protocol), 
+    bpf_skb_store_bytes(skb, offsetof(struct iphdr, protocol),
                         &ip->protocol, sizeof(__u8), 0);
-    
+
     /* 设置 mark 用于后续分类 */
     bpf_skb_mark(skb, 0x1234);
-    
+
     return TC_ACT_OK;
 }
 EOF
@@ -334,23 +334,23 @@ int create_af_xdp_socket(const char *ifname, int queue_id)
 {
     int sock, fd;
     struct sockaddr_xdp addr;
-    
+
     /* 创建 XSK socket */
     sock = socket(AF_XDP, SOCK_RAW, 0);
-    
+
     /* 设置 UMEM */
     struct xdp_mmap_offsets off;
     socklen_t len = sizeof(off);
     getsockopt(sock, SOL_XDP, XDP_MMAP_OFFSETS, &off, &len);
-    
+
     /* 绑定到接口和队列 */
     memset(&addr, 0, sizeof(addr));
     addr.sxdp_family = AF_XDP;
     addr.sxdp_ifindex = if_nametoindex(ifname);
     addr.sxdp_queue_id = queue_id;
-    
+
     bind(sock, (struct sockaddr *)&addr, sizeof(addr));
-    
+
     return sock;
 }
 EOF
@@ -362,13 +362,13 @@ vpp# set interface state af-xdp-0 up
 
 ### 4.3 性能对比
 
-|| 路径 | 延迟 | 吞吐 | CPU 使用 |
-|------|------|------|---------|
-| **内核协议栈** | ~100μs | 1 Gbps | 高 |
-| **DPDK** | ~5μs | 10 Gbps | 中 |
-| **XDP_PASS** | ~10μs | 8 Gbps | 中 |
-| **AF_XDP** | ~3μs | 10 Gbps | 低 |
-| **VPP (AF_XDP)** | ~5μs | 15 Gbps | 低 |
+|                  | 路径   | 延迟    | 吞吐 | CPU 使用 |
+| ---------------- | ------ | ------- | ---- | -------- |
+| **内核协议栈**   | ~100μs | 1 Gbps  | 高   |
+| **DPDK**         | ~5μs   | 10 Gbps | 中   |
+| **XDP_PASS**     | ~10μs  | 8 Gbps  | 中   |
+| **AF_XDP**       | ~3μs   | 10 Gbps | 低   |
+| **VPP (AF_XDP)** | ~5μs   | 15 Gbps | 低   |
 
 ## 5. eBPF 辅助 VPP 卸载
 
@@ -443,7 +443,7 @@ int xdp_conntrack(struct xdp_md *ctx)
     struct ethhdr *eth = data;
     struct iphdr *ip = (struct iphdr *)(eth + 1);
     struct tcphdr *tcp = (struct tcphdr *)(ip + 1);
-    
+
     struct tuple key = {
         .src_ip = ip->saddr,
         .dst_ip = ip->daddr,
@@ -451,20 +451,20 @@ int xdp_conntrack(struct xdp_md *ctx)
         .dst_port = tcp->dest,
         .protocol = ip->protocol
     };
-    
+
     /* 查找连接 */
     struct conntrack_entry *ct = bpf_map_lookup_elem(&ct_map, &key);
     if (ct) {
         ct->packets++;
         ct->bytes += ctx->data_end - ctx->data;
         ct->last_seen = bpf_ktime_get_ns();
-        
+
         /* 已建立的连接: 快速路径 */
         if (ct->status == ESTABLISHED) {
             return XDP_REDIRECT;
         }
     }
-    
+
     /* 新连接: 传给 VPP 处理 */
     return XDP_PASS;
 }
@@ -558,7 +558,7 @@ int xdp_classify(struct xdp_md *ctx)
     struct ethhdr *eth = data;
     struct iphdr *ip = (struct iphdr *)(eth + 1);
     struct tcphdr *tcp = (struct tcphdr *)(ip + 1);
-    
+
     /* HTTP/HTTPS 流量: port 80 or 443 */
     if (ip->protocol == IPPROTO_TCP) {
         if (tcp->dest == 80 || tcp->dest == 443) {
@@ -567,7 +567,7 @@ int xdp_classify(struct xdp_md *ctx)
             return XDP_REDIRECT;
         }
     }
-    
+
     /* 其他流量: 正常处理 */
     return XDP_PASS;
 }

@@ -5,8 +5,8 @@ tags: [vpn, series, networking, security, tunnel, l2tp, lac, lns, l2tpv3, ipsec,
 description: "L2TP 深度解析——L2TP 控制消息、控制连接建立、会话建立、LAC/LNS 架构、L2TPv3、IPSec 配合封装、隧道复用、典型配置"
 ---
 
-> [!info] VPN 技术深度探索系列
-> 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+> [!info] VPN 技术深度探索系列 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-vpn-deep-dive-ch1-vpn-fundamentals|VPN 基础概念]]
 > 2. [[2026-04-13-vpn-deep-dive-ch2-tunnel-basics|第二章：隧道技术基础]]
 > 3. [[2026-04-13-vpn-deep-dive-ch3-crypto-fundamentals|第三章：密码学基础]]
@@ -32,32 +32,32 @@ graph TB
             PPP["PPP 帧"]
             UDP["UDP 1701"]
         end
-        
+
         subgraph L2TPv3["L2TPv3 (RFC 3931)"]
             ETH["Ethernet 帧"]
             IP["IP 封装 (直接)"]
         end
     end
-    
+
     subgraph Usage["典型用途"]
         Remote["远程访问 VPN"]
         Site["站点到站点 L2VPN"]
     end
-    
+
     PPP --> Remote
     UDP --> Remote
     ETH --> Site
     IP --> Site
 ```
 
-| 属性 | L2TPv2 | L2TPv3 |
-|------|---------|---------|
-| **RFC** | RFC 2661 | RFC 3931 |
-| **传输层** | UDP 1701 | IP (Protocol 115) 或 UDP |
-| **封装层次** | PPP → L2TP → UDP → IP | L2 帧 → L2TP → IP |
+| 属性         | L2TPv2                | L2TPv3                                    |
+| ------------ | --------------------- | ----------------------------------------- |
+| **RFC**      | RFC 2661              | RFC 3931                                  |
+| **传输层**   | UDP 1701              | IP (Protocol 115) 或 UDP                  |
+| **封装层次** | PPP → L2TP → UDP → IP | L2 帧 → L2TP → IP                         |
 | **控制平面** | 可靠 (Retransmission) | 可靠 (Differentiated Services Code Point) |
-| **会话类型** | PPP (仅 IP) | 任意 L2 帧 |
-| **典型场景** | 远程访问 VPN | L2VPN (伪线服务) |
+| **会话类型** | PPP (仅 IP)           | 任意 L2 帧                                |
+| **典型场景** | 远程访问 VPN          | L2VPN (伪线服务)                          |
 
 ---
 
@@ -67,10 +67,10 @@ graph TB
 
 L2TP 有两个核心角色：
 
-| 角色 | 全称 | 说明 |
-|------|------|------|
+| 角色                               | 全称            | 说明                                             |
+| ---------------------------------- | --------------- | ------------------------------------------------ |
 | **LAC (L2TP Access Concentrator)** | L2TP 访问集中器 | 客户端或靠近客户端的网络设备，负责发起 L2TP 隧道 |
-| **LNS (L2TP Network Server)** | L2TP 网络服务器 | 服务端，负责接收隧道并处理流量 |
+| **LNS (L2TP Network Server)**      | L2TP 网络服务器 | 服务端，负责接收隧道并处理流量                   |
 
 ```
 L2TP 远程访问架构：
@@ -599,35 +599,36 @@ cat /var/log/auth.log  # L2TP/xl2tpd 日志
 
 ## 9. L2TP vs PPTP vs L2TPv3
 
-| 维度 | PPTP | L2TPv2 | L2TPv3 |
-|------|------|---------|--------|
-| **隧道协议** | GRE (TCP 1723) | UDP 1701 | UDP 1701 / IP 115 |
-| **加密** | MPPE (RC4) | 无（靠 IPSec） | 无（靠 IPSec） |
-| **NAT 穿透** | 差 | 好（NAT-T） | 好 |
-| **隧道复用** | 单会话 | 多会话 | 多会话 |
-| **L2 封装** | 仅 PPP | 仅 PPP | Ethernet/ATM/FR |
-| **控制可靠性** | 无序列号 | 有序列号 | 有序列号 |
-| **Windows 支持** | 原生 | 原生 | 需第三方 |
-| **安全等级** | 低 | 中（+IPSec） | 中（+IPSec） |
+| 维度             | PPTP           | L2TPv2         | L2TPv3            |
+| ---------------- | -------------- | -------------- | ----------------- |
+| **隧道协议**     | GRE (TCP 1723) | UDP 1701       | UDP 1701 / IP 115 |
+| **加密**         | MPPE (RC4)     | 无（靠 IPSec） | 无（靠 IPSec）    |
+| **NAT 穿透**     | 差             | 好（NAT-T）    | 好                |
+| **隧道复用**     | 单会话         | 多会话         | 多会话            |
+| **L2 封装**      | 仅 PPP         | 仅 PPP         | Ethernet/ATM/FR   |
+| **控制可靠性**   | 无序列号       | 有序列号       | 有序列号          |
+| **Windows 支持** | 原生           | 原生           | 需第三方          |
+| **安全等级**     | 低             | 中（+IPSec）   | 中（+IPSec）      |
 
 ---
 
 ## 10. 总结
 
-| 维度 | 结论 |
-|------|------|
-| **协议定位** | L2 层隧道协议，传输 PPP/L2 帧 |
-| **核心价值** | 隧道封装 + 可选 IPSec 加密 |
-| **与 PPTP 区别** | L2TP 无内置加密，通过 IPSec 弥补 |
-| **L2TPv3** | 通用 L2 帧传输，支持 Ethernet 伪线 |
-| **NAT 穿透** | 好（NAT-T UDP 4500） |
-| **当前状态** | L2TP/IPSec 仍在企业使用，但逐步被 IKEv2/WireGuard 替代 |
+| 维度             | 结论                                                   |
+| ---------------- | ------------------------------------------------------ |
+| **协议定位**     | L2 层隧道协议，传输 PPP/L2 帧                          |
+| **核心价值**     | 隧道封装 + 可选 IPSec 加密                             |
+| **与 PPTP 区别** | L2TP 无内置加密，通过 IPSec 弥补                       |
+| **L2TPv3**       | 通用 L2 帧传输，支持 Ethernet 伪线                     |
+| **NAT 穿透**     | 好（NAT-T UDP 4500）                                   |
+| **当前状态**     | L2TP/IPSec 仍在企业使用，但逐步被 IKEv2/WireGuard 替代 |
 
 **下一章预告：** [[2026-04-13-vpn-deep-dive-ch11-openvpn|OpenVPN 基础]] — SSL VPN、TUN/TAP 模式、OpenSSL 加密、easy-rsa 证书、客户端配置。
 
 ---
 
 > [!quote] 参考文献
+>
 > - RFC 2661 - L2TP Version 2
 > - RFC 3931 - L2TP Version 3
 > - RFC 3193 - L2TP/IPSec

@@ -19,29 +19,29 @@ MCP 的核心设计哲学是：**将 AI 应用与工具提供者之间的通信�
 
 MCP 协议在设计时有以下核心目标：
 
-| 目标 | 说明 |
-|------|------|
+| 目标           | 说明                                                                |
+| -------------- | ------------------------------------------------------------------- |
 | **标准化接口** | 定义统一的工具（Tools）、资源（Resources）、提示（Prompts）接口规范 |
-| **可扩展架构** | 通过 Server/Client 模式，支持任意数量的工具提供者 |
-| **传输层无关** | 核心协议与传输层解耦，可基于 stdio、WebSocket、SSE 等传输 |
-| **类型安全** | 使用 JSON Schema 定义接口契约，工具输入输出有强类型约束 |
-| **双向通信** | 支持 Server 向 Client 主动推送（Notifications） |
-| **安全隔离** | 支持认证、授权、输入验证等安全机制 |
+| **可扩展架构** | 通过 Server/Client 模式，支持任意数量的工具提供者                   |
+| **传输层无关** | 核心协议与传输层解耦，可基于 stdio、WebSocket、SSE 等传输           |
+| **类型安全**   | 使用 JSON Schema 定义接口契约，工具输入输出有强类型约束             |
+| **双向通信**   | 支持 Server 向 Client 主动推送（Notifications）                     |
+| **安全隔离**   | 支持认证、授权、输入验证等安全机制                                  |
 
 ### 1.3 与其他协议对比
 
 MCP 并非唯一的 AI 工具调用协议。业界还有 OpenAI Functions、Tool Use (GPT-4v)、LangChain Tools 等方案。以下是横向对比：
 
-| 特性 | MCP | OpenAI Functions | LangChain Tools | Tool Use (Anthropic) |
-|------|-----|-----------------|-----------------|----------------------|
-| **标准化程度** | 开放标准 (Apache 2.0) | OpenAI 专有 | 社区驱动 | Anthropic 专有 |
-| **架构模式** | Host/Client/Server 三层 | 单点集成 | Chain/RAgent 模式 | Agent/Tool 直连 |
-| **传输层** | 传输无关 (stdio/WS/SSE) | REST API | 库调用 | REST API |
-| **资源抽象** | 原生支持 Resources | 不支持 | 需自行实现 | 不支持 |
-| **提示模板** | 原生支持 Prompts | 不支持 | 需自行实现 | 不支持 |
-| **SDK 多语言** | TypeScript/Python/其他 | 仅 OpenAI API | Python/JS | 仅 Anthropic API |
-| **Server 发现** | 通过初始化握手发现 | N/A | 手动注册 | N/A |
-| **双向推送** | 支持 (Notifications) | 不支持 | 有限支持 | 不支持 |
+| 特性            | MCP                     | OpenAI Functions | LangChain Tools   | Tool Use (Anthropic) |
+| --------------- | ----------------------- | ---------------- | ----------------- | -------------------- |
+| **标准化程度**  | 开放标准 (Apache 2.0)   | OpenAI 专有      | 社区驱动          | Anthropic 专有       |
+| **架构模式**    | Host/Client/Server 三层 | 单点集成         | Chain/RAgent 模式 | Agent/Tool 直连      |
+| **传输层**      | 传输无关 (stdio/WS/SSE) | REST API         | 库调用            | REST API             |
+| **资源抽象**    | 原生支持 Resources      | 不支持           | 需自行实现        | 不支持               |
+| **提示模板**    | 原生支持 Prompts        | 不支持           | 需自行实现        | 不支持               |
+| **SDK 多语言**  | TypeScript/Python/其他  | 仅 OpenAI API    | Python/JS         | 仅 Anthropic API     |
+| **Server 发现** | 通过初始化握手发现      | N/A              | 手动注册          | N/A                  |
+| **双向推送**    | 支持 (Notifications)    | 不支持           | 有限支持          | 不支持               |
 
 从对比可以看出，MCP 的最大优势在于其**完整的协议设计**——它不仅定义了工具调用，还定义了资源访问和提示模板，并且设计了清晰的三层架构（Host/Client/Server），使得协议可以在多种传输层上运行，同时支持双向通信。
 
@@ -125,31 +125,31 @@ MCP 在初始化阶段使用**能力协商（Capability Negotiation）**机制�
 // Client 声明的能力
 interface ClientCapabilities {
   tools?: {
-    listChanged?: boolean;  // 是否支持 tools/list 变更通知
-  };
+    listChanged?: boolean // 是否支持 tools/list 变更通知
+  }
   resources?: {
-    subscribe?: boolean;   // 是否支持资源订阅
-    listChanged?: boolean; // 是否支持资源列表变更通知
-  };
+    subscribe?: boolean // 是否支持资源订阅
+    listChanged?: boolean // 是否支持资源列表变更通知
+  }
   prompts?: {
-    listChanged?: boolean; // 是否支持 prompts 变更通知
-  };
-  experimental?: Record<string, unknown>;
+    listChanged?: boolean // 是否支持 prompts 变更通知
+  }
+  experimental?: Record<string, unknown>
 }
 
 // Server 声明的能力
 interface ServerCapabilities {
   tools?: {
-    listChanged?: boolean;
-  };
+    listChanged?: boolean
+  }
   resources?: {
-    subscribe?: boolean;
-    listChanged?: boolean;
-  };
+    subscribe?: boolean
+    listChanged?: boolean
+  }
   prompts?: {
-    listChanged?: boolean;
-  };
-  experimental?: Record<string, unknown>;
+    listChanged?: boolean
+  }
+  experimental?: Record<string, unknown>
 }
 ```
 
@@ -222,25 +222,25 @@ JSON-RPC 2.0 的请求格式如下：
 
 JSON-RPC 2.0 定义了一组标准错误码：
 
-| 错误码 | 含义 |
-|--------|------|
-| -32700 | Parse error - 无效的 JSON |
-| -32600 | Invalid Request - 请求格式错误 |
-| -32601 | Method not found - 方法不存在 |
-| -32602 | Invalid params - 参数无效 |
-| -32603 | Internal error - 内部错误 |
-| -32000 到 -32099 | 保留供 MCP 自定义错误 |
+| 错误码           | 含义                           |
+| ---------------- | ------------------------------ |
+| -32700           | Parse error - 无效的 JSON      |
+| -32600           | Invalid Request - 请求格式错误 |
+| -32601           | Method not found - 方法不存在  |
+| -32602           | Invalid params - 参数无效      |
+| -32603           | Internal error - 内部错误      |
+| -32000 到 -32099 | 保留供 MCP 自定义错误          |
 
 MCP 还定义了自己的错误码范围：
 
-| 错误码 | 含义 |
-|--------|------|
-| -32000 | **Resource not found** - 资源不存在 |
-| -32001 | **Resource already exists** - 资源已存在 |
+| 错误码 | 含义                                       |
+| ------ | ------------------------------------------ |
+| -32000 | **Resource not found** - 资源不存在        |
+| -32001 | **Resource already exists** - 资源已存在   |
 | -32002 | **Resource not accessible** - 资源不可访问 |
-| -32003 | **Tool execution failed** - 工具执行失败 |
-| -32004 | **Tool not found** - 工具不存在 |
-| -32005 | **Prompt not found** - 提示模板不存在 |
+| -32003 | **Tool execution failed** - 工具执行失败   |
+| -32004 | **Tool not found** - 工具不存在            |
+| -32005 | **Prompt not found** - 提示模板不存在      |
 
 ### 3.5 请求 ID 的类型
 
@@ -266,11 +266,11 @@ MCP 协议定义了三类核心原语：**Tools**（工具）、**Resources**（
 
 Tools 是 AI Agent 执行实际操作的核心机制。它使 Server 能够向 Client 提供可调用函数。
 
-| 方法 | 方向 | 说明 |
-|------|------|------|
-| `tools/list` | Client → Server | 获取所有可用工具的清单 |
-| `tools/call` | Client → Server | 调用指定工具并获取结果 |
-| `notifications/tools/list_changed` | Server → Client | 工具列表变更通知（推送）|
+| 方法                               | 方向            | 说明                     |
+| ---------------------------------- | --------------- | ------------------------ |
+| `tools/list`                       | Client → Server | 获取所有可用工具的清单   |
+| `tools/call`                       | Client → Server | 调用指定工具并获取结果   |
+| `notifications/tools/list_changed` | Server → Client | 工具列表变更通知（推送） |
 
 `tools/list` 的响应结构：
 
@@ -309,13 +309,13 @@ Tools 是 AI Agent 执行实际操作的核心机制。它使 Server 能够向 C
 
 Resources 是 MCP 中用于向 AI 提供**只读数据**的机制。与 Tools 不同，Resources 代表的是信息源（如文件内容、配置项），而不是可执行的操作。
 
-| 方法 | 方向 | 说明 |
-|------|------|------|
-| `resources/list` | Client → Server | 获取所有可用资源的清单 |
-| `resources/read` | Client → Server | 读取指定资源的内容 |
-| `resources/subscribe` | Client → Server | 订阅资源变更通知 |
-| `resources/unsubscribe` | Client → Server | 取消订阅 |
-| `notifications/resources/updated` | Server → Client | 资源变更推送 |
+| 方法                              | 方向            | 说明                   |
+| --------------------------------- | --------------- | ---------------------- |
+| `resources/list`                  | Client → Server | 获取所有可用资源的清单 |
+| `resources/read`                  | Client → Server | 读取指定资源的内容     |
+| `resources/subscribe`             | Client → Server | 订阅资源变更通知       |
+| `resources/unsubscribe`           | Client → Server | 取消订阅               |
+| `notifications/resources/updated` | Server → Client | 资源变更推送           |
 
 `resources/list` 的响应结构：
 
@@ -339,6 +339,7 @@ Resources 是 MCP 中用于向 AI 提供**只读数据**的机制。与 Tools �
 ```
 
 Resources 的 URI 使用类 URL 的格式：
+
 - `file://` - 文件系统资源
 - `config://` - 配置资源
 - `memory://` - 内存中的临时资源
@@ -347,11 +348,11 @@ Resources 的 URI 使用类 URL 的格式：
 
 Prompts 允许 Server 向 Client 提供**可复用的提示模板**。这对于构建领域特定的 Agent 非常有用。
 
-| 方法 | 方向 | 说明 |
-|------|------|------|
-| `prompts/list` | Client → Server | 获取所有可用提示模板 |
-| `prompts/get` | Client → Server | 获取指定提示模板（支持变量插值）|
-| `notifications/prompts/list_changed` | Server → Client | 提示列表变更通知 |
+| 方法                                 | 方向            | 说明                             |
+| ------------------------------------ | --------------- | -------------------------------- |
+| `prompts/list`                       | Client → Server | 获取所有可用提示模板             |
+| `prompts/get`                        | Client → Server | 获取指定提示模板（支持变量插值） |
+| `notifications/prompts/list_changed` | Server → Client | 提示列表变更通知                 |
 
 `prompts/list` 的响应结构：
 
@@ -392,7 +393,7 @@ Prompts 允许 Server 向 Client 提供**可复用的提示模板**。这对于�
 
 响应：
 
-```json
+````json
 {
   "messages": [
     {
@@ -401,7 +402,7 @@ Prompts 允许 Server 向 Client 提供**可复用的提示模板**。这对于�
     }
   ]
 }
-```
+````
 
 ### 4.4 Roots 和 Sampling（高级特性）
 
@@ -411,9 +412,7 @@ Prompts 允许 Server 向 Client 提供**可复用的提示模板**。这对于�
 
 ```json
 {
-  "roots": [
-    { "uri": "file:///home/user/project", "name": "工作区" }
-  ]
+  "roots": [{ "uri": "file:///home/user/project", "name": "工作区" }]
 }
 ```
 
@@ -438,28 +437,29 @@ Prompts 允许 Server 向 Client 提供**可复用的提示模板**。这对于�
 ```typescript
 // TypeScript 类型定义
 interface Tool {
-  name: string;           // 工具唯一标识符
-  description: string;   // 人类可读的描述（LLM 会看到）
-  inputSchema: {         // JSON Schema，定义输入参数
-    type: "object";
+  name: string // 工具唯一标识符
+  description: string // 人类可读的描述（LLM 会看到）
+  inputSchema: {
+    // JSON Schema，定义输入参数
+    type: "object"
     properties: {
       path: {
-        type: "string";
-        description: "目录路径";
-      };
+        type: "string"
+        description: "目录路径"
+      }
       maxDepth: {
-        type: "integer";
-        description: "最大递归深度";
-        default: 3;
-      };
+        type: "integer"
+        description: "最大递归深度"
+        default: 3
+      }
       includeHidden: {
-        type: "boolean";
-        description: "是否包含隐藏文件";
-        default: false;
-      };
-    };
-    required: ["path"];
-  };
+        type: "boolean"
+        description: "是否包含隐藏文件"
+        default: false
+      }
+    }
+    required: ["path"]
+  }
 }
 
 // MCP Server 返回的 tools/list 结果
@@ -473,21 +473,21 @@ const toolsListResult = {
         properties: {
           path: {
             type: "string",
-            description: "目录路径"
+            description: "目录路径",
           },
           maxDepth: {
             type: "integer",
             description: "最大递归深度 (默认 3)",
-            default: 3
+            default: 3,
           },
           includeHidden: {
-            type: "boolean", 
+            type: "boolean",
             description: "是否包含隐藏文件 (默认 false)",
-            default: false
-          }
+            default: false,
+          },
         },
-        required: ["path"]
-      }
+        required: ["path"],
+      },
     },
     {
       name: "grep_search",
@@ -497,28 +497,28 @@ const toolsListResult = {
         properties: {
           pattern: {
             type: "string",
-            description: "正则表达式模式"
+            description: "正则表达式模式",
           },
           paths: {
             type: "array",
             items: { type: "string" },
-            description: "要搜索的文件路径列表"
+            description: "要搜索的文件路径列表",
           },
           caseSensitive: {
             type: "boolean",
-            default: false
+            default: false,
           },
           contextLines: {
             type: "integer",
             description: "结果周围包含的行数",
-            default: 0
-          }
+            default: 0,
+          },
         },
-        required: ["pattern", "paths"]
-      }
-    }
-  ]
-};
+        required: ["pattern", "paths"],
+      },
+    },
+  ],
+}
 ```
 
 ### 5.2 工具调用
@@ -608,12 +608,12 @@ class ToolError(Enum):
     NOT_FOUND = ("ToolNotFoundError", -32004, "工具不存在")
     EXECUTION_FAILED = ("ToolExecutionError", -32003, "工具执行失败")
     ACCESS_DENIED = ("AccessDeniedError", -32002, "访问被拒绝")
-    
+
     def __init__(self, name: str, code: int, message: str):
         self.name = name
         self.code = code
         self.message = message
-    
+
     def to_jsonrpc_error(self, data: Any = None) -> dict:
         return {
             "jsonrpc": "2.0",
@@ -780,25 +780,28 @@ TypeScript/Node.js 是 MCP 官方推荐的 Server 开发语言。官方提供了
 ```typescript
 // 安装：npm install @modelcontextprotocol/sdk
 
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { z } from "zod";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
+import { z } from "zod"
 
 // 创建 Server 实例
-const server = new McpServer({
-  name: "filesystem-server",
-  version: "1.0.0",
-}, {
-  capabilities: {
-    tools: {
-      listChanged: true,
-    },
-    resources: {
-      subscribe: true,
-      listChanged: true,
+const server = new McpServer(
+  {
+    name: "filesystem-server",
+    version: "1.0.0",
+  },
+  {
+    capabilities: {
+      tools: {
+        listChanged: true,
+      },
+      resources: {
+        subscribe: true,
+        listChanged: true,
+      },
     },
   },
-});
+)
 
 // 注册工具处理器
 server.setRequestHandler("tools/list", async () => {
@@ -837,15 +840,15 @@ server.setRequestHandler("tools/list", async () => {
         },
       },
     ],
-  };
-});
+  }
+})
 
 server.setRequestHandler("tools/call", async (request) => {
-  const { name, arguments: args } = request.params;
+  const { name, arguments: args } = request.params
 
   if (name === "read_file") {
-    const fs = await import("fs/promises");
-    const content = await fs.readFile(args.path, "utf-8");
+    const fs = await import("fs/promises")
+    const content = await fs.readFile(args.path, "utf-8")
     return {
       content: [
         {
@@ -853,12 +856,12 @@ server.setRequestHandler("tools/call", async (request) => {
           text: content,
         },
       ],
-    };
+    }
   }
 
   if (name === "write_file") {
-    const fs = await import("fs/promises");
-    await fs.writeFile(args.path, args.content);
+    const fs = await import("fs/promises")
+    await fs.writeFile(args.path, args.content)
     return {
       content: [
         {
@@ -866,11 +869,11 @@ server.setRequestHandler("tools/call", async (request) => {
           text: `Successfully wrote to ${args.path}`,
         },
       ],
-    };
+    }
   }
 
-  throw new Error(`Unknown tool: ${name}`);
-});
+  throw new Error(`Unknown tool: ${name}`)
+})
 
 // 注册资源处理器
 server.setRequestHandler("resources/list", async () => {
@@ -883,18 +886,18 @@ server.setRequestHandler("resources/list", async () => {
         mimeType: "text/markdown",
       },
     ],
-  };
-});
+  }
+})
 
 server.setRequestHandler("resources/read", async (request) => {
-  const { uri } = request.params;
-  
+  const { uri } = request.params
+
   if (uri.startsWith("file://")) {
-    const fs = await import("fs/promises");
-    const filePath = uri.replace("file://", "");
-    const content = await fs.readFile(filePath, "utf-8");
-    const mimeType = getMimeType(filePath);
-    
+    const fs = await import("fs/promises")
+    const filePath = uri.replace("file://", "")
+    const content = await fs.readFile(filePath, "utf-8")
+    const mimeType = getMimeType(filePath)
+
     return {
       contents: [
         {
@@ -903,20 +906,20 @@ server.setRequestHandler("resources/read", async (request) => {
           text: content,
         },
       ],
-    };
+    }
   }
-  
-  throw new Error(`Unsupported URI scheme: ${uri}`);
-});
+
+  throw new Error(`Unsupported URI scheme: ${uri}`)
+})
 
 // 启动服务器
 async function main() {
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
-  console.error("Filesystem MCP Server started");
+  const transport = new StdioServerTransport()
+  await server.connect(transport)
+  console.error("Filesystem MCP Server started")
 }
 
-main().catch(console.error);
+main().catch(console.error)
 ```
 
 ### 7.2 Python SDK
@@ -1028,13 +1031,13 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
         import os
         path = arguments["path"]
         include_hidden = arguments.get("include_hidden", False)
-        
+
         try:
             entries = os.listdir(path)
             if not include_hidden:
                 entries = [e for e in entries if not e.startswith(".")]
             entries.sort()
-            
+
             result = "\n".join(entries)
             return [TextContent(type="text", text=result)]
         except Exception as e:
@@ -1129,14 +1132,14 @@ classDiagram
 
 ```typescript
 // git-server.ts
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { SimpleGit, simpleGit } from "simple-git";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
+import { SimpleGit, simpleGit } from "simple-git"
 
 const server = new McpServer({
   name: "git-server",
   version: "1.0.0",
-});
+})
 
 server.setRequestHandler("tools/list", async () => ({
   tools: [
@@ -1178,14 +1181,14 @@ server.setRequestHandler("tools/list", async () => ({
       },
     },
   ],
-}));
+}))
 
 server.setRequestHandler("tools/call", async (request) => {
-  const { name, arguments: args } = request.params;
-  const git: SimpleGit = simpleGit(args.repoPath);
+  const { name, arguments: args } = request.params
+  const git: SimpleGit = simpleGit(args.repoPath)
 
   if (name === "git_status") {
-    const status = await git.status();
+    const status = await git.status()
     return {
       content: [
         {
@@ -1193,14 +1196,14 @@ server.setRequestHandler("tools/call", async (request) => {
           text: JSON.stringify(status, null, 2),
         },
       ],
-    };
+    }
   }
 
   if (name === "git_log") {
     const log = await git.log({
       maxCount: args.maxCount || 20,
       file: args.file,
-    });
+    })
     return {
       content: [
         {
@@ -1208,12 +1211,12 @@ server.setRequestHandler("tools/call", async (request) => {
           text: log.all
             .map(
               (commit) =>
-                `${commit.hash.slice(0, 7)} | ${commit.date} | ${commit.message} (${commit.author_name})`
+                `${commit.hash.slice(0, 7)} | ${commit.date} | ${commit.message} (${commit.author_name})`,
             )
             .join("\n"),
         },
       ],
-    };
+    }
   }
 
   if (name === "git_diff") {
@@ -1221,21 +1224,21 @@ server.setRequestHandler("tools/call", async (request) => {
       ? await git.diff(["--cached"])
       : args.file
         ? await git.diff(["--", args.file])
-        : await git.diff();
+        : await git.diff()
     return {
       content: [{ type: "text", text: diff || "(no changes)" }],
-    };
+    }
   }
 
-  throw new Error(`Unknown tool: ${name}`);
-});
+  throw new Error(`Unknown tool: ${name}`)
+})
 
 async function main() {
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
+  const transport = new StdioServerTransport()
+  await server.connect(transport)
 }
 
-main().catch(console.error);
+main().catch(console.error)
 ```
 
 ## 8. MCP Security
@@ -1244,20 +1247,21 @@ main().catch(console.error);
 
 MCP 作为 AI Agent 访问外部资源的桥梁，面临以下安全威胁：
 
-| 威胁类型 | 描述 | 示例 |
-|---------|------|------|
-| **工具注入** | 恶意构造的工具调用请求 | 通过 `path: "../../../etc/passwd"` 遍历目录 |
-| **资源泄露** | 未授权访问敏感资源 | 读取 `/home/user/.ssh/id_rsa` |
-| **权限提升** | 工具调用超出授权范围 | 读取配置的工具尝试执行写操作 |
-| **提示注入** | 恶意内容注入 AI 上下文 | 在文件内容中注入恶意提示 |
-| **供应链攻击** | 不可信的 MCP Server 包含恶意代码 | 使用来路不明的 Server |
-| **通信窃听** | 传输层数据被窃取 | stdio 在某些环境下可能被日志记录 |
+| 威胁类型       | 描述                             | 示例                                        |
+| -------------- | -------------------------------- | ------------------------------------------- |
+| **工具注入**   | 恶意构造的工具调用请求           | 通过 `path: "../../../etc/passwd"` 遍历目录 |
+| **资源泄露**   | 未授权访问敏感资源               | 读取 `/home/user/.ssh/id_rsa`               |
+| **权限提升**   | 工具调用超出授权范围             | 读取配置的工具尝试执行写操作                |
+| **提示注入**   | 恶意内容注入 AI 上下文           | 在文件内容中注入恶意提示                    |
+| **供应链攻击** | 不可信的 MCP Server 包含恶意代码 | 使用来路不明的 Server                       |
+| **通信窃听**   | 传输层数据被窃取                 | stdio 在某些环境下可能被日志记录            |
 
 ### 8.2 认证机制
 
 MCP 协议本身不强制规定认证方式，但推荐使用以下机制：
 
 **MCP 握手认证**：
+
 ```typescript
 // 在初始化阶段交换认证信息
 const initRequest = {
@@ -1277,10 +1281,11 @@ const initRequest = {
       token: process.env.MCP_AUTH_TOKEN,
     },
   },
-};
+}
 ```
 
 **OAuth 2.0 认证流程**（适用于远程 MCP Server）：
+
 ```mermaid
 sequenceDiagram
     participant Host
@@ -1302,19 +1307,19 @@ MCP 建议实现基于** Capabilities 的授权模型**：
 // 权限策略定义
 interface PermissionPolicy {
   // 工具调用权限
-  allowTools?: string[];       // 允许调用的工具（glob 模式）
-  denyTools?: string[];        // 明确拒绝的工具
-  
+  allowTools?: string[] // 允许调用的工具（glob 模式）
+  denyTools?: string[] // 明确拒绝的工具
+
   // 资源访问权限
-  allowResources?: string[];   // 允许访问的资源 URI（glob 模式）
-  denyResources?: string[];    // 明确拒绝的资源 URI
-  
+  allowResources?: string[] // 允许访问的资源 URI（glob 模式）
+  denyResources?: string[] // 明确拒绝的资源 URI
+
   // 操作类型权限
-  readOnly?: boolean;          // 只读模式（禁止写操作）
-  
+  readOnly?: boolean // 只读模式（禁止写操作）
+
   // 路径限制（文件系统场景）
-  allowedPaths?: string[];     // 允许操作的路径前缀
-  deniedPaths?: string[];      // 明确拒绝的路径
+  allowedPaths?: string[] // 允许操作的路径前缀
+  deniedPaths?: string[] // 明确拒绝的路径
 }
 
 // 示例：只读文件系统策略
@@ -1324,38 +1329,34 @@ const readonlyPolicy: PermissionPolicy = {
   denyTools: ["write_file", "delete_file", "execute_command"],
   allowedPaths: ["/home/user/project"],
   deniedPaths: ["/etc", "/root", "/home/*/.ssh"],
-};
+}
 
 // 权限检查实现
 function checkPermission(policy: PermissionPolicy, tool: string, args: any): boolean {
   // 检查工具是否在拒绝列表中
   if (policy.denyTools?.some((pattern) => globMatch(pattern, tool))) {
-    return false;
+    return false
   }
-  
+
   // 检查工具是否在允许列表中
   if (policy.allowTools && !policy.allowTools.some((pattern) => globMatch(pattern, tool))) {
-    return false;
+    return false
   }
-  
+
   // 路径检查（针对文件系统工具）
   if (args.path && policy.allowedPaths) {
-    const normalizedPath = path.normalize(args.path);
-    const isAllowed = policy.allowedPaths.some((prefix) =>
-      normalizedPath.startsWith(prefix)
-    );
-    if (!isAllowed) return false;
+    const normalizedPath = path.normalize(args.path)
+    const isAllowed = policy.allowedPaths.some((prefix) => normalizedPath.startsWith(prefix))
+    if (!isAllowed) return false
   }
-  
+
   if (args.path && policy.deniedPaths) {
-    const normalizedPath = path.normalize(args.path);
-    const isDenied = policy.deniedPaths.some((prefix) =>
-      normalizedPath.startsWith(prefix)
-    );
-    if (isDenied) return false;
+    const normalizedPath = path.normalize(args.path)
+    const isDenied = policy.deniedPaths.some((prefix) => normalizedPath.startsWith(prefix))
+    if (isDenied) return false
   }
-  
-  return true;
+
+  return true
 }
 ```
 
@@ -1364,68 +1365,65 @@ function checkPermission(policy: PermissionPolicy, tool: string, args: any): boo
 所有来自 AI 的输入都必须经过严格验证。MCP 使用 JSON Schema 进行参数验证：
 
 ```typescript
-import { z } from "zod";
+import { z } from "zod"
 
 // 使用 Zod 定义更严格的验证
 const ReadFileSchema = z.object({
-  path: z.string()
+  path: z
+    .string()
     .min(1, "路径不能为空")
-    .refine(
-      (p) => !p.includes(".."),
-      "禁止使用 .. 路径遍历"
-    )
-    .refine(
-      (p) => !p.startsWith("/etc") && !p.startsWith("/root"),
-      "禁止访问系统敏感目录"
-    ),
+    .refine((p) => !p.includes(".."), "禁止使用 .. 路径遍历")
+    .refine((p) => !p.startsWith("/etc") && !p.startsWith("/root"), "禁止访问系统敏感目录"),
   offset: z.number().int().min(0).default(0),
-  limit: z.number().int().min(1).max(1024 * 1024).default(65536),
-});
+  limit: z
+    .number()
+    .int()
+    .min(1)
+    .max(1024 * 1024)
+    .default(65536),
+})
 
 const WriteFileSchema = z.object({
-  path: z.string()
+  path: z
+    .string()
     .min(1)
-    .refine(
-      (p) => !p.includes(".."),
-      "禁止路径遍历"
-    )
+    .refine((p) => !p.includes(".."), "禁止路径遍历")
     .refine(
       (p) => !p.startsWith("/etc") && !p.startsWith("/root") && !p.startsWith("/usr"),
-      "禁止写入系统目录"
+      "禁止写入系统目录",
     ),
-  content: z.string()
-    .max(10 * 1024 * 1024, "文件大小不能超过 10MB"),
+  content: z.string().max(10 * 1024 * 1024, "文件大小不能超过 10MB"),
   mode: z.enum(["overwrite", "append"]).default("overwrite"),
-});
+})
 
 // 在工具处理器中使用
 server.setRequestHandler("tools/call", async (request) => {
-  const { name, arguments: args } = request.params;
-  
+  const { name, arguments: args } = request.params
+
   if (name === "read_file") {
-    const parsed = ReadFileSchema.safeParse(args);
+    const parsed = ReadFileSchema.safeParse(args)
     if (!parsed.success) {
       return {
         content: [{ type: "text", text: `Validation error: ${parsed.error.message}` }],
         isError: true,
-      };
+      }
     }
     // 执行实际读取...
   }
-  
+
   if (name === "write_file") {
-    const parsed = WriteFileSchema.safeParse(args);
+    const parsed = WriteFileSchema.safeParse(args)
     if (!parsed.success) {
       return {
         content: [{ type: "text", text: `Validation error: ${parsed.error.message}` }],
         isError: true,
-      };
+      }
     }
     // 执行实际写入...
   }
-  
-  throw new Error(`Unknown tool: ${name}`);
-});
+
+  throw new Error(`Unknown tool: ${name}`)
+})
 ```
 
 ### 8.5 安全最佳实践
@@ -1454,23 +1452,24 @@ server.setRequestHandler("tools/call", async (request) => {
 
 截至 2026 年初，MCP 生态已形成相当规模的 Server 库。以下是主要分类：
 
-| 分类 | 代表 Server | 说明 |
-|------|------------|------|
-| **文件系统** | `filesystem`, `mcp-local-filesystem` | 本地文件读写、目录操作 |
-| **Git** | `git`, `github`, `gitlab` | Git 操作、GitHub API |
-| **数据库** | `postgres`, `mysql`, `sqlite` | 数据库查询和操作 |
-| **Slack** | `slack` | Slack 消息发送、频道管理 |
-| **GitHub** | `github` | PR、Issue、Actions 管理 |
-| **搜索** | `google-search`, `duckduckgo` | Web 搜索 |
-| **向量数据库** | `pinecone`, `qdrant`, `chroma` | 语义搜索、RAG |
-| **S3** | `s3` | AWS S3 对象存储操作 |
-| **Postman** | `postman` | API 测试 |
-| **EverArt** | `everart` | AI 图像生成 |
-| **AWS** | `aws-kb-retrieval` | AWS 知识库检索 |
+| 分类           | 代表 Server                          | 说明                     |
+| -------------- | ------------------------------------ | ------------------------ |
+| **文件系统**   | `filesystem`, `mcp-local-filesystem` | 本地文件读写、目录操作   |
+| **Git**        | `git`, `github`, `gitlab`            | Git 操作、GitHub API     |
+| **数据库**     | `postgres`, `mysql`, `sqlite`        | 数据库查询和操作         |
+| **Slack**      | `slack`                              | Slack 消息发送、频道管理 |
+| **GitHub**     | `github`                             | PR、Issue、Actions 管理  |
+| **搜索**       | `google-search`, `duckduckgo`        | Web 搜索                 |
+| **向量数据库** | `pinecone`, `qdrant`, `chroma`       | 语义搜索、RAG            |
+| **S3**         | `s3`                                 | AWS S3 对象存储操作      |
+| **Postman**    | `postman`                            | API 测试                 |
+| **EverArt**    | `everart`                            | AI 图像生成              |
+| **AWS**        | `aws-kb-retrieval`                   | AWS 知识库检索           |
 
 ### 9.2 典型 Server 实现示例
 
 **filesystem-server**（文件系统操作）：
+
 ```json
 {
   "name": "filesystem",
@@ -1488,6 +1487,7 @@ server.setRequestHandler("tools/call", async (request) => {
 ```
 
 **github-server**（GitHub API 集成）：
+
 ```json
 {
   "name": "github",
@@ -1506,17 +1506,22 @@ server.setRequestHandler("tools/call", async (request) => {
 ```
 
 **postgres-server**（PostgreSQL 数据库）：
+
 ```json
 {
   "name": "postgres",
   "description": "PostgreSQL 数据库操作",
   "tools": [
-    { "name": "query", "description": "执行 SQL 查询", "inputSchema": {
-      "properties": {
-        "sql": { "type": "string", "description": "SQL 查询语句" }
-      },
-      "required": ["sql"]
-    }},
+    {
+      "name": "query",
+      "description": "执行 SQL 查询",
+      "inputSchema": {
+        "properties": {
+          "sql": { "type": "string", "description": "SQL 查询语句" }
+        },
+        "required": ["sql"]
+      }
+    },
     { "name": "list_tables", "description": "列出所有表" },
     { "name": "describe_table", "description": "描述表结构" }
   ]
@@ -1564,14 +1569,14 @@ MCP 没有中心化的 Server 注册中心，而是通过本地配置文件发�
 
 ### 9.4 Server 生态对比
 
-| Server | 语言 | 传输层 | 维护方 | 成熟度 |
-|--------|------|--------|--------|--------|
-| `server-filesystem` | TypeScript | stdio | Anthropic (官方) | ⭐⭐⭐⭐⭐ |
-| `server-github` | TypeScript | stdio | Anthropic (官方) | ⭐⭐⭐⭐⭐ |
-| `server-postgres` | Python | stdio |社区 | ⭐⭐⭐⭐ |
-| `server-slack` | Python | stdio | 社区 | ⭐⭐⭐ |
-| `server-aws-kb` | Python | stdio | AWS (官方) | ⭐⭐⭐⭐ |
-| `server-gitlab` | TypeScript | stdio | 社区 | ⭐⭐⭐ |
+| Server              | 语言       | 传输层 | 维护方           | 成熟度     |
+| ------------------- | ---------- | ------ | ---------------- | ---------- |
+| `server-filesystem` | TypeScript | stdio  | Anthropic (官方) | ⭐⭐⭐⭐⭐ |
+| `server-github`     | TypeScript | stdio  | Anthropic (官方) | ⭐⭐⭐⭐⭐ |
+| `server-postgres`   | Python     | stdio  | 社区             | ⭐⭐⭐⭐   |
+| `server-slack`      | Python     | stdio  | 社区             | ⭐⭐⭐     |
+| `server-aws-kb`     | Python     | stdio  | AWS (官方)       | ⭐⭐⭐⭐   |
+| `server-gitlab`     | TypeScript | stdio  | 社区             | ⭐⭐⭐     |
 
 ## 10. MCP 集成到 gsd2 的方案
 
@@ -1663,61 +1668,61 @@ gsd2 集成 MCP 的目标：
 ```typescript
 // gsd2-mcp/src/client/manager.ts
 
-import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
-import { EventEmitter } from "events";
+import { Client } from "@modelcontextprotocol/sdk/client/index.js"
+import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js"
+import { EventEmitter } from "events"
 
 interface ServerConfig {
-  name: string;
-  command: string;
-  args: string[];
-  env?: Record<string, string>;
-  enabled?: boolean;
+  name: string
+  command: string
+  args: string[]
+  env?: Record<string, string>
+  enabled?: boolean
 }
 
 interface ToolDefinition {
-  name: string;
-  serverName: string;
-  description: string;
-  inputSchema: object;
+  name: string
+  serverName: string
+  description: string
+  inputSchema: object
 }
 
 class McpClientManager extends EventEmitter {
-  private clients: Map<string, Client> = new Map();
-  private servers: Map<string, ServerConfig> = new Map();
-  private tools: Map<string, ToolDefinition> = new Map();
+  private clients: Map<string, Client> = new Map()
+  private servers: Map<string, ServerConfig> = new Map()
+  private tools: Map<string, ToolDefinition> = new Map()
 
   // 注册 MCP Server
   async registerServer(config: ServerConfig): Promise<void> {
-    this.servers.set(config.name, config);
+    this.servers.set(config.name, config)
   }
 
   // 启动所有已注册的 Server
   async startAll(): Promise<void> {
     for (const [name, config] of this.servers) {
       if (config.enabled !== false) {
-        await this.startServer(name);
+        await this.startServer(name)
       }
     }
   }
 
   // 启动单个 Server
   async startServer(name: string): Promise<void> {
-    const config = this.servers.get(name);
+    const config = this.servers.get(name)
     if (!config) {
-      throw new Error(`Server not found: ${name}`);
+      throw new Error(`Server not found: ${name}`)
     }
 
     if (this.clients.has(name)) {
-      console.log(`Server ${name} already running`);
-      return;
+      console.log(`Server ${name} already running`)
+      return
     }
 
     const transport = new StdioClientTransport({
       command: config.command,
       args: config.args,
       env: config.env,
-    });
+    })
 
     const client = new Client(
       {
@@ -1729,43 +1734,40 @@ class McpClientManager extends EventEmitter {
           tools: {},
           resources: {},
         },
-      }
-    );
+      },
+    )
 
-    await client.connect(transport);
-    this.clients.set(name, client);
+    await client.connect(transport)
+    this.clients.set(name, client)
 
     // 订阅工具列表变更
-    await this.syncTools(name, client);
+    await this.syncTools(name, client)
 
     // 监听变更通知
-    client.setNotificationHandler(
-      "notifications/tools/list_changed",
-      async () => {
-        await this.syncTools(name, client);
-        this.emit("tools-changed");
-      }
-    );
+    client.setNotificationHandler("notifications/tools/list_changed", async () => {
+      await this.syncTools(name, client)
+      this.emit("tools-changed")
+    })
 
-    this.emit("server-started", name);
-    console.log(`MCP Server ${name} started`);
+    this.emit("server-started", name)
+    console.log(`MCP Server ${name} started`)
   }
 
   // 同步工具列表
   private async syncTools(serverName: string, client: Client): Promise<void> {
     const response = await client.request(
       { method: "tools/list" },
-      { method: "tools/list", params: {} }
-    );
+      { method: "tools/list", params: {} },
+    )
 
     for (const tool of response.tools) {
-      const key = `${serverName}:${tool.name}`;
+      const key = `${serverName}:${tool.name}`
       this.tools.set(key, {
         name: tool.name,
         serverName,
         description: tool.description,
         inputSchema: tool.inputSchema,
-      });
+      })
     }
   }
 
@@ -1773,11 +1775,11 @@ class McpClientManager extends EventEmitter {
   async callTool(
     serverName: string,
     toolName: string,
-    arguments_: Record<string, unknown>
+    arguments_: Record<string, unknown>,
   ): Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }> {
-    const client = this.clients.get(serverName);
+    const client = this.clients.get(serverName)
     if (!client) {
-      throw new Error(`Server not running: ${serverName}`);
+      throw new Error(`Server not running: ${serverName}`)
     }
 
     const response = await client.request(
@@ -1796,44 +1798,44 @@ class McpClientManager extends EventEmitter {
           name: toolName,
           arguments: arguments_,
         },
-      }
-    );
+      },
+    )
 
-    return response as { content: Array<{ type: string; text: string }>; isError?: boolean };
+    return response as { content: Array<{ type: string; text: string }>; isError?: boolean }
   }
 
   // 获取所有工具
   listTools(): ToolDefinition[] {
-    return Array.from(this.tools.values());
+    return Array.from(this.tools.values())
   }
 
   // 停止 Server
   async stopServer(name: string): Promise<void> {
-    const client = this.clients.get(name);
+    const client = this.clients.get(name)
     if (client) {
-      await client.close();
-      this.clients.delete(name);
-      
+      await client.close()
+      this.clients.delete(name)
+
       // 清理该 Server 的工具
       for (const [key, tool] of this.tools) {
         if (tool.serverName === name) {
-          this.tools.delete(key);
+          this.tools.delete(key)
         }
       }
-      
-      this.emit("server-stopped", name);
+
+      this.emit("server-stopped", name)
     }
   }
 
   // 停止所有 Server
   async stopAll(): Promise<void> {
     for (const name of this.clients.keys()) {
-      await this.stopServer(name);
+      await this.stopServer(name)
     }
   }
 }
 
-export { McpClientManager, ServerConfig, ToolDefinition };
+export { McpClientManager, ServerConfig, ToolDefinition }
 ```
 
 **gsd2 内置 MCP Server 实现**：
@@ -1841,18 +1843,18 @@ export { McpClientManager, ServerConfig, ToolDefinition };
 ```typescript
 // gsd2-mcp/src/server/builtin.ts
 
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { exec } from "child_process";
-import { promisify } from "util";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
+import { exec } from "child_process"
+import { promisify } from "util"
 
-const execAsync = promisify(exec);
+const execAsync = promisify(exec)
 
 export function createBuiltinServer(workspacePath: string): McpServer {
   const server = new McpServer({
     name: "gsd2-builtin",
     version: "1.0.0",
-  });
+  })
 
   // Shell 执行工具
   server.setRequestHandler("tools/list", async () => ({
@@ -1908,17 +1910,17 @@ export function createBuiltinServer(workspacePath: string): McpServer {
         },
       },
     ],
-  }));
+  }))
 
   server.setRequestHandler("tools/call", async (request) => {
-    const { name, arguments: args } = request.params;
+    const { name, arguments: args } = request.params
 
     if (name === "shell") {
       try {
         const { stdout, stderr } = await execAsync(args.command, {
           cwd: args.cwd || workspacePath,
           timeout: args.timeout || 30000,
-        });
+        })
 
         return {
           content: [
@@ -1927,47 +1929,47 @@ export function createBuiltinServer(workspacePath: string): McpServer {
               text: stdout + (stderr ? `\nSTDERR:\n${stderr}` : ""),
             },
           ],
-        };
+        }
       } catch (error: any) {
         return {
           content: [{ type: "text", text: `Error: ${error.message}` }],
           isError: true,
-        };
+        }
       }
     }
 
     if (name === "read_file") {
-      const fs = await import("fs/promises");
-      const content = await fs.readFile(args.path, "utf-8");
+      const fs = await import("fs/promises")
+      const content = await fs.readFile(args.path, "utf-8")
       return {
         content: [{ type: "text", text: content }],
-      };
+      }
     }
 
     if (name === "write_file") {
-      const fs = await import("fs/promises");
-      const mode = args.mode || "overwrite";
+      const fs = await import("fs/promises")
+      const mode = args.mode || "overwrite"
       if (mode === "append") {
-        await fs.appendFile(args.path, args.content);
+        await fs.appendFile(args.path, args.content)
       } else {
-        await fs.writeFile(args.path, args.content);
+        await fs.writeFile(args.path, args.content)
       }
       return {
         content: [{ type: "text", text: `Written to ${args.path}` }],
-      };
+      }
     }
 
-    throw new Error(`Unknown tool: ${name}`);
-  });
+    throw new Error(`Unknown tool: ${name}`)
+  })
 
-  return server;
+  return server
 }
 
 // 启动内置 Server
 export async function startBuiltinServer(workspacePath: string): Promise<void> {
-  const server = createBuiltinServer(workspacePath);
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
+  const server = createBuiltinServer(workspacePath)
+  const transport = new StdioServerTransport()
+  await server.connect(transport)
 }
 ```
 
@@ -2038,13 +2040,13 @@ export async function startBuiltinServer(workspacePath: string): Promise<void> {
 
 ### 10.6 注意事项与已知限制
 
-| 问题 | 说明 | 应对方案 |
-|------|------|----------|
-| **stdio 调试困难** | stdio 传输难以在运行时调试 | 使用 MCP Inspector 或添加 debug 日志 |
-| **Server 进程管理** | stdio Server 崩溃不会自动重启 | 在 Client Manager 中实现进程监控 |
-| **版本兼容性** | 不同版本的 MCP 协议可能不兼容 | 严格锁定 protocolVersion |
-| **工具数量膨胀** | 接入过多 Server 导致工具爆炸 | 实施按需加载和工具分组 |
-| **资源竞争** | 多个 Server 同时访问同一文件 | 依赖底层文件系统权限控制 |
+| 问题                | 说明                          | 应对方案                             |
+| ------------------- | ----------------------------- | ------------------------------------ |
+| **stdio 调试困难**  | stdio 传输难以在运行时调试    | 使用 MCP Inspector 或添加 debug 日志 |
+| **Server 进程管理** | stdio Server 崩溃不会自动重启 | 在 Client Manager 中实现进程监控     |
+| **版本兼容性**      | 不同版本的 MCP 协议可能不兼容 | 严格锁定 protocolVersion             |
+| **工具数量膨胀**    | 接入过多 Server 导致工具爆炸  | 实施按需加载和工具分组               |
+| **资源竞争**        | 多个 Server 同时访问同一文件  | 依赖底层文件系统权限控制             |
 
 ## 总结
 
@@ -2055,6 +2057,7 @@ gsd2 作为 Code Agent 领域的探索者，通过渐进式集成 MCP，可以�
 ---
 
 **相关资源**：
+
 - MCP 官方规范：https://modelcontextprotocol.io
 - MCP SDK (TypeScript)：https://github.com/modelcontextprotocol/typescript-sdk
 - MCP SDK (Python)：https://github.com/modelcontextprotocol/python-sdk

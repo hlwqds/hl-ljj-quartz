@@ -12,14 +12,8 @@ tags:
 description: "深入解析 Zeek 脚本性能优化——事件处理开销分析、profile.log、script profiling、热点函数识别、脚本执行效率提升"
 ---
 
-> [!info] Zeek 2026 深度探索系列
-> 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
-> ...
-> 33. [[2026-04-08-zeek-deep-dive-ch33-performance-tuning|第三十三章：性能调优与高级配置]]
-> 34. [[2026-04-15-zeek-deep-dive-ch34-memory|第三十四章：内存调优]]
-> 35. **第三十五章：脚本优化**
-> 36. [[2026-04-15-zeek-deep-dive-ch36-hardware|第三十六章：硬件加速]]
-> 37. [[2026-04-15-zeek-deep-dive-ch37-tuning|第三十七章：Tuning 清单]]
+> [!info] Zeek 2026 深度探索系列 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
+> ... 33. [[2026-04-08-zeek-deep-dive-ch33-performance-tuning|第三十三章：性能调优与高级配置]] 34. [[2026-04-15-zeek-deep-dive-ch34-memory|第三十四章：内存调优]] 35. **第三十五章：脚本优化** 36. [[2026-04-15-zeek-deep-dive-ch36-hardware|第三十六章：硬件加速]] 37. [[2026-04-15-zeek-deep-dive-ch37-tuning|第三十七章：Tuning 清单]]
 
 ---
 
@@ -57,14 +51,14 @@ ZeekScript 是 Zeek 的事件驱动脚本语言，虽然设计为人类可读和
 
 ### 1.1 脚本性能影响因素
 
-| 因素 | 影响程度 | 优化难度 |
-|:---|:---|:---|
-| 事件处理频率 | 高 | 中 |
-| 正则表达式执行 | 高 | 中 |
-| 字符串操作 | 中 | 易 |
-| 表/集合查找 | 中 | 易 |
-| 定时器数量 | 中 | 易 |
-| 日志输出量 | 高 | 易 |
+| 因素           | 影响程度 | 优化难度 |
+| :------------- | :------- | :------- |
+| 事件处理频率   | 高       | 中       |
+| 正则表达式执行 | 高       | 中       |
+| 字符串操作     | 中       | 易       |
+| 表/集合查找    | 中       | 易       |
+| 定时器数量     | 中       | 易       |
+| 日志输出量     | 高       | 易       |
 
 ---
 
@@ -100,14 +94,14 @@ zeek -p profiling /path/to/scripts
 1637845562.123  60.5     1234567     10         500           1048576
 ```
 
-| 字段 | 类型 | 说明 |
-|:---|:---|:---|
-| `ts` | time | 时间戳 |
-| `elapsed` | count | 自上次输出经过的秒数 |
-| `events` | count | 处理的事件总数 |
-| `max_depth` | count | 事件队列最大深度 |
-| `event_queue` | count | 当前事件队列长度 |
-| `script_mem` | count | 脚本层内存使用（字节） |
+| 字段          | 类型  | 说明                   |
+| :------------ | :---- | :--------------------- |
+| `ts`          | time  | 时间戳                 |
+| `elapsed`     | count | 自上次输出经过的秒数   |
+| `events`      | count | 处理的事件总数         |
+| `max_depth`   | count | 事件队列最大深度       |
+| `event_queue` | count | 当前事件队列长度       |
+| `script_mem`  | count | 脚本层内存使用（字节） |
 
 ### 2.3 详细函数 profiling 输出
 
@@ -119,12 +113,12 @@ Function profiling:
   87654    0.654    0.054   0.000001 zeek_base__misc__load_signatures
 ```
 
-| 字段 | 说明 |
-|:---|:---|
-| `count` | 函数调用次数 |
-| `total` | 总执行时间（秒） |
-| `self` | 自身代码执行时间（不含调用子函数） |
-| `per` | 每次调用平均时间 |
+| 字段    | 说明                               |
+| :------ | :--------------------------------- |
+| `count` | 函数调用次数                       |
+| `total` | 总执行时间（秒）                   |
+| `self`  | 自身代码执行时间（不含调用子函数） |
+| `per`   | 每次调用平均时间                   |
 
 ---
 
@@ -149,7 +143,7 @@ event connection_established(c: connection) {
     local start = current_time();
     # ... 处理逻辑 ...
     local elapsed = current_time() - start;
-    
+
     if ( c$id$orig_h !in event_times ) {
         event_times[c$id$orig_h] = vector();
     }
@@ -165,7 +159,7 @@ event zeek_done() {
             total += t;
         }
         local avg = total / |times|;
-        print fmt("Host %s: %d events, avg %.6f sec", 
+        print fmt("Host %s: %d events, avg %.6f sec",
             h, |times|, avg);
     }
 }
@@ -293,7 +287,7 @@ event http_request(c: connection, method: string, uri: string) {
         c$uri_checked = T;
         c$uri_suspicious = suspicious_uri_pattern in uri;
     }
-    
+
     if ( c$uri_suspicious ) {
         NOTICE::weird("Admin access", c);
     }
@@ -369,7 +363,7 @@ global seen_strings: set[string];
 event new_connection(c: connection) {
     if ( c$http?$host ) {
         local host = c$http$host;
-        
+
         # 检测新 host
         if ( host !in seen_strings ) {
             add seen_strings[host];
@@ -424,14 +418,14 @@ event zeek_init() {
 
 event cleanup_timer() {
     local now = network_time();
-    
+
     # 清理 known_hosts
     for ( h in known_hosts ) {
         if ( now - known_hosts[h]$last_seen > entry_ttl ) {
             delete known_hosts[h];
         }
     }
-    
+
     # 继续调度
     schedule cleanup_interval { cleanup_timer() };
 }
@@ -536,7 +530,7 @@ event zeek_done() {
         local count = hot_functions[func];
         print fmt("%s: called %d times", func, count);
     }
-    
+
     # 排序输出
     print "\n=== Top 10 Hotspots ===";
     local sorted = topk_create(10);
@@ -546,7 +540,7 @@ event zeek_done() {
     for ( i = 0; i < 10; i++ ) {
         local entry = topk_next(sorted);
         if ( entry$value != "" ) {
-            print fmt("%d. %s: %d calls", 
+            print fmt("%d. %s: %d calls",
                 i+1, entry$value, entry$count);
         }
     }
@@ -559,13 +553,13 @@ event zeek_done() {
 
 ### 8.1 问题诊断表
 
-| 问题 | 症状 | 解决方案 |
-|:---|:---|:---|
+| 问题         | 症状                 | 解决方案                      |
+| :----------- | :------------------- | :---------------------------- |
 | 事件队列积压 | `max_depth` 持续增长 | 优化事件处理函数、增加 worker |
-| 正则回溯 | CPU 100% | 简化正则、使用 re2 |
-| 内存泄漏 | RSS 持续增长 | 检查全局表、定期清理 |
-| 定时器过多 | 事件处理延迟 | 合并定时器、使用批量处理 |
-| 日志过多 | I/O 瓶颈 | 调整日志级别、使用日志过滤 |
+| 正则回溯     | CPU 100%             | 简化正则、使用 re2            |
+| 内存泄漏     | RSS 持续增长         | 检查全局表、定期清理          |
+| 定时器过多   | 事件处理延迟         | 合并定时器、使用批量处理      |
+| 日志过多     | I/O 瓶颈             | 调整日志级别、使用日志过滤    |
 
 ### 8.2 性能优化检查清单
 
@@ -589,7 +583,7 @@ event every_1_sec() {
         local elapsed = network_time() - last_check;
         local events = event_queue_size();
         processing_rate = double(events) / elapsed;
-        
+
         if ( processing_rate > 100000 ) {
             Reporter::warning("High event processing rate");
         }
@@ -619,7 +613,7 @@ event print_stats() {
 
 ```zeek
 # 原始脚本：每个请求都处理
-event http_request(c: connection, method: string, uri: string, 
+event http_request(c: connection, method: string, uri: string,
                   version: string, request_line: string) {
     Log::write(HTTP::LOG, [
         $ts=network_time(),
@@ -638,7 +632,7 @@ const flush_interval = 5secs;
 global pending_logs: vector of HTTP::Info;
 global last_flush = 0.0;
 
-event http_request(c: connection, method: string, uri: string, 
+event http_request(c: connection, method: string, uri: string,
                   version: string, request_line: string) {
     add pending_logs[
         pending_logs|] = [

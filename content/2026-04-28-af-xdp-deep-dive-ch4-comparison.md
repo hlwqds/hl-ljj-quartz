@@ -1,7 +1,26 @@
 ---
 title: AF_XDP 深度探索 Ch4：AF_XDP vs DPDK vs io_uring 对比
 date: 2026-04-28 09:00:00
-tags: [AF_XDP, DPDK, io_uring, Comparison, Performance, Latency, Architecture, Kernel Bypass, Zero Copy, NUMA, Poll Mode, Use Cases, Selection Guide, SPDK, OpenOnload, Solarflare, High Performance Networking]
+tags:
+  [
+    AF_XDP,
+    DPDK,
+    io_uring,
+    Comparison,
+    Performance,
+    Latency,
+    Architecture,
+    Kernel Bypass,
+    Zero Copy,
+    NUMA,
+    Poll Mode,
+    Use Cases,
+    Selection Guide,
+    SPDK,
+    OpenOnload,
+    Solarflare,
+    High Performance Networking,
+  ]
 description: 深入对比 AF_XDP、DPDK、io_uring 三大高性能网络方案：架构差异、性能数据、延迟分解、适用场景、选型指南。
 ---
 

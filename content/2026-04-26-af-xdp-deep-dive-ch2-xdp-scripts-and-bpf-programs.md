@@ -1,7 +1,24 @@
 ---
 title: AF_XDP 深度探索 Ch2：XDP 脚本与 BPF 程序
 date: 2026-04-26 09:00:00
-tags: [AF_XDP, XDP, eBPF, BPF CO-RE, libbpf, clang, iproute2, Packet Filtering, Load Balancer, DDoS Protection, Traffic Control, XDP Programs, BTF, Map, Tail Call]
+tags:
+  [
+    AF_XDP,
+    XDP,
+    eBPF,
+    BPF CO-RE,
+    libbpf,
+    clang,
+    iproute2,
+    Packet Filtering,
+    Load Balancer,
+    DDoS Protection,
+    Traffic Control,
+    XDP Programs,
+    BTF,
+    Map,
+    Tail Call,
+  ]
 description: 深入实战 XDP BPF 程序：开发环境搭建、程序结构、Map 使用、Tail Call、libbpf 骨架、加载与调试，以及典型应用场景（防火墙/负载均衡/DDoS防御）。
 ---
 

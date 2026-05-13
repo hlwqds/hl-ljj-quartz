@@ -32,6 +32,7 @@ tags:
 ```
 
 每次数据包经过内核时：
+
 1. **上下文切换**: 用户态 → 内核态 (~100-500ns)
 2. **内存复制**: skb_copy 到内核缓冲区
 3. **中断处理**: NIC 中断 → CPU 中断处理程序
@@ -40,6 +41,7 @@ tags:
 ### 1.2 DPDK 带来的改变
 
 DPDK（Data Plane Development Kit）提供：
+
 - **用户态驱动**: 绕过内核，直接访问 NIC
 - **大页内存**: 减少 TLB miss
 - **轮询模式**: 无中断，CPU 持续轮询
@@ -54,13 +56,13 @@ DPDK + QUIC 数据路径：
 
 ### 1.3 性能对比
 
-| 指标 | 内核 QUIC | DPDK + QUIC | 提升 |
-|------|-----------|-------------|------|
-| 单向延迟 (P50) | 85 μs | 12 μs | 7x |
-| 单向延迟 (P99) | 142 μs | 25 μs | 5.7x |
-| 吞吐量 | 95 Gbps | 148 Gbps | 1.5x |
-| CPU 利用率 | 35% | 18% | 1.9x |
-| 包处理效率 | ~30 ns/pkt | ~5 ns/pkt | 6x |
+| 指标           | 内核 QUIC  | DPDK + QUIC | 提升 |
+| -------------- | ---------- | ----------- | ---- |
+| 单向延迟 (P50) | 85 μs      | 12 μs       | 7x   |
+| 单向延迟 (P99) | 142 μs     | 25 μs       | 5.7x |
+| 吞吐量         | 95 Gbps    | 148 Gbps    | 1.5x |
+| CPU 利用率     | 35%        | 18%         | 1.9x |
+| 包处理效率     | ~30 ns/pkt | ~5 ns/pkt   | 6x   |
 
 ---
 
@@ -199,11 +201,11 @@ struct quic_connection {
 
 ### 4.1 DPDK QUIC 项目
 
-| 项目 | 开发方 | 语言 | 状态 | 特点 |
-|------|--------|------|------|------|
-| [dpdk-quic](https://github.com/Cloudflare/dpdk-quic) | Cloudflare | C | 实验性 | 基于 quiche + DPDK |
-| [ngtcp2-dpdk](https://github.com/ngtcp2/ngtcp2) | ngtcp2 | C | 规划中 | ngtcp2 + DPDK |
-| [quiche-dpdk](https://github.com/cloudflare/quiche) | Cloudflare | Rust | 实验性 | quiche 扩展 |
+| 项目                                                 | 开发方     | 语言 | 状态   | 特点               |
+| ---------------------------------------------------- | ---------- | ---- | ------ | ------------------ |
+| [dpdk-quic](https://github.com/Cloudflare/dpdk-quic) | Cloudflare | C    | 实验性 | 基于 quiche + DPDK |
+| [ngtcp2-dpdk](https://github.com/ngtcp2/ngtcp2)      | ngtcp2     | C    | 规划中 | ngtcp2 + DPDK      |
+| [quiche-dpdk](https://github.com/cloudflare/quiche)  | Cloudflare | Rust | 实验性 | quiche 扩展        |
 
 ### 4.2 Cloudflare dpdk-quic 架构
 
@@ -446,12 +448,12 @@ echo 0 > /proc/sys/kernel/randomize_va_space
 
 ## 8. 适用场景
 
-| 场景 | 推荐配置 | 说明 |
-|------|----------|------|
-| CDN 边缘节点 | 纯 DPDK 旁路 | 极致性能 |
-| 游戏服务器 | 混合模式 | 需要部分内核功能 |
-| 金融交易 | 纯 DPDK | 最低延迟 |
-| 5G UPF | DPDK + AF_XDP | 折中性能与兼容性 |
+| 场景         | 推荐配置      | 说明             |
+| ------------ | ------------- | ---------------- |
+| CDN 边缘节点 | 纯 DPDK 旁路  | 极致性能         |
+| 游戏服务器   | 混合模式      | 需要部分内核功能 |
+| 金融交易     | 纯 DPDK       | 最低延迟         |
+| 5G UPF       | DPDK + AF_XDP | 折中性能与兼容性 |
 
 ---
 
@@ -460,16 +462,19 @@ echo 0 > /proc/sys/kernel/randomize_va_space
 DPDK + QUIC 将 QUIC 的协议优势（0-RTT、多路复用、连接迁移）与 DPDK 的数据平面优势（用户态驱动、零拷贝、轮询模式）结合，实现极致性能：
 
 **核心优势**：
+
 - 单向延迟从 ~85μs 降低到 ~12μs
 - 吞吐量从 ~95Gbps 提升到 ~148Gbps
 - CPU 利用率从 35% 降低到 18%
 
 **实现挑战**：
+
 - 需要完整的网络功能重新实现
 - 加密运算仍是主要 CPU 消耗
 - 调试和诊断比内核方案复杂
 
 **未来趋势**：
+
 - Cloudflare dpdk-quic 项目持续推进
 - ngtcp2 正在规划 DPDK 集成
 - AF_XDP 提供更简单的过渡方案

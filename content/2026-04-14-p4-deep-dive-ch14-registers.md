@@ -5,8 +5,8 @@ tags: [p4, series, register, counter, gauge, state, direct, indirect, p4-16, psa
 description: "P4 Register 与状态管理深度解析——Register、Counter、Gauge、Direct/Indirect 资源、原子操作、状态同步、Packet 和 Byte 计数、PSA 中的状态管理机制"
 ---
 
-> [!info] P4 深度探索系列
-> 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+> [!info] P4 深度探索系列 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-14-p4-deep-dive-ch1-p4-overview|第一章：P4 概述——诞生背景与协议无关包处理]]
 > 2. [[2026-04-14-p4-deep-dive-ch2-p4-architecture|第二章：P4 架构模型——PSA/V1Model、Ingress/Egress]]
 > 3. [[2026-04-14-p4-deep-dive-ch3-p4-vs-ebpf|第三章：P4 vs eBPF——适用场景与硬件/软件对比]]
@@ -29,6 +29,7 @@ description: "P4 Register 与状态管理深度解析——Register、Counter、
 P4 是一种**无状态**的数据包处理语言，但实际网络设备需要**维护动态状态**——如流量统计、会话信息、策略状态等。P4 通过 **Extern 机制**和**状态资源**来实现这些功能。
 
 本章聚焦于三种核心状态管理机制：
+
 - **Register**：通用读写存储
 - **Counter**：只增计数
 - **Gauge**：可增可减计量
@@ -47,11 +48,11 @@ extern Register<W> {
     // 构造函数：指定大小和初始值
     Register(bit<32> size);
     Register(bit<32> size, W initial_data);
-    
+
     // 读取操作
     @atomic
     W read(bit<32> index);
-    
+
     // 写入操作
     @atomic
     void write(bit<32> index, W value);
@@ -62,10 +63,10 @@ extern Register<W> {
 
 ```c
 control Ingress(...) {
-    
+
     // 定义一个 Register: 1024 个 entry，每个 entry 48 bits
     Register<bit<48>, _>(1024) last_seen_time;
-    
+
     // 读取
     action record_arrival() {
         bit<48> current_time;
@@ -73,7 +74,7 @@ control Ingress(...) {
         // ... 处理逻辑
         last_seen_time.write((bit<32>)h.ethernet.srcAddr, current_time);
     }
-    
+
     apply {
         record_arrival();
     }
@@ -105,14 +106,14 @@ Read-Modify-Write (对于增量操作):
 
 ### 2.4 Register 典型应用
 
-| 应用场景 | 描述 |
-|----------|------|
-| **MAC 学习** | 记录 MAC 地址最后出现的时间/端口 |
-| **流量统计** | 记录每个流的包数/字节数 |
-| **时间戳** | 记录数据包到达/离开的时间 |
-| **会话管理** | TCP 状态跟踪 |
-| **限速** | Token Bucket 状态 |
-| **Bloom Filter** | 布隆过滤器的位向量 |
+| 应用场景         | 描述                             |
+| ---------------- | -------------------------------- |
+| **MAC 学习**     | 记录 MAC 地址最后出现的时间/端口 |
+| **流量统计**     | 记录每个流的包数/字节数          |
+| **时间戳**       | 记录数据包到达/离开的时间        |
+| **会话管理**     | TCP 状态跟踪                     |
+| **限速**         | Token Bucket 状态                |
+| **Bloom Filter** | 布隆过滤器的位向量               |
 
 ---
 
@@ -133,7 +134,7 @@ enum PSA_CounterType_t {
 // Counter 定义
 extern Counter<W, PSA_CounterType_t> {
     Counter(bit<32> n, PSA_CounterType_t type);
-    
+
     // 计数操作
     void count();  // 使用默认索引 0
     void count(bit<32> index);
@@ -144,34 +145,34 @@ extern Counter<W, PSA_CounterType_t> {
 
 ```c
 control Ingress(...) {
-    
+
     // 方式 1: 简单全局计数器
     Counter<bit<64>, PSA_CounterType_t>(1, PSA_CounterType_t.PACKETS) total_packets;
-    
+
     // 方式 2: Per-flow 计数器 (间接)
     Counter<bit<64>, PSA_CounterType_t>(16384, PSA_CounterType_t.PACKETS_AND_BYTES) flow_counters;
-    
+
     // 方式 3: Direct Counter (与表绑定)
     direct counter<bit<64>>(PSA_CounterType_t.PACKETS_AND_BYTES) ip_counter;
-    
+
     table ipv4_fib {
         key = { h.ipv4.dstAddr : lpm; }
         actions = { forward; }
         default_action = forward;
-        
+
         // 绑定 direct counter
         @pdml("counter", "bytes")
         @pdml("counter", "packets")
         counters = ip_counter;
     }
-    
+
     apply {
         // 手动计数
         total_packets.count(0);
-        
+
         // 表查找会自动更新 direct counter
         ipv4_fib.apply();
-        
+
         // Per-flow 计数
         flow_counters.count(hash(srcAddr + dstAddr));
     }
@@ -180,12 +181,12 @@ control Ingress(...) {
 
 ### 3.3 Direct vs Indirect Counter
 
-| 特性 | Direct Counter | Indirect Counter |
-|------|---------------|------------------|
-| 索引方式 | 表项自动索引 | 手动指定索引 |
-| 存储位置 | 与表项一起存储 | 独立 Register |
-| 资源效率 | 高 (表项少时) | 高 (表项多时) |
-| 灵活性 | 低 (绑定到特定表) | 高 (任何地方使用) |
+| 特性     | Direct Counter    | Indirect Counter  |
+| -------- | ----------------- | ----------------- |
+| 索引方式 | 表项自动索引      | 手动指定索引      |
+| 存储位置 | 与表项一起存储    | 独立 Register     |
+| 资源效率 | 高 (表项少时)     | 高 (表项多时)     |
+| 灵活性   | 低 (绑定到特定表) | 高 (任何地方使用) |
 
 ```c
 // Direct Counter 示例 (绑定到表)
@@ -223,7 +224,7 @@ enum PSA_GaugeType_t {
 
 extern Gauge<W, PSA_GaugeType_t> {
     Gauge(bit<32> n, PSA_GaugeType_t type);
-    
+
     void count(bit<32> index);        // +1
     void count(bit<32> index, W n);   // +n
     void count(bit<32> index, W n, GaugeOp op);
@@ -240,25 +241,25 @@ enum GaugeOp {
 
 ```c
 control Ingress(...) {
-    
+
     // 流量整形: 跟踪每个队列的深度
     Gauge<bit<32>, PSA_GaugeType_t>(1024, PSA_GaugeType_t.PACKETS) queue_depth;
-    
+
     // 统计当前活跃连接数
     Gauge<bit<32>, PSA_GaugeType_t>(1, PSA_GaugeType_t.PACKETS) active_connections;
-    
+
     action track_queue() {
         queue_depth.count((bit<32>)metadata.queue_id);
     }
-    
+
     action connection_opened() {
         active_connections.count(0, 1, GaugeOp.INCREMENT);
     }
-    
+
     action connection_closed() {
         active_connections.count(0, 1, GaugeOp.DECREMENT);
     }
-    
+
     apply {
         // ...
     }
@@ -267,12 +268,12 @@ control Ingress(...) {
 
 ### 4.3 Gauge vs Counter
 
-| 特性 | Counter | Gauge |
-|------|---------|-------|
-| 操作 | 只增 | 可增可减 |
-| 用途 | 累积统计 | 瞬时测量 |
+| 特性     | Counter        | Gauge            |
+| -------- | -------------- | ---------------- |
+| 操作     | 只增           | 可增可减         |
+| 用途     | 累积统计       | 瞬时测量         |
 | 典型场景 | 总流量、会话数 | 队列深度、连接数 |
-| 数据导出 | 适合历史分析 | 适合监控告警 |
+| 数据导出 | 适合历史分析   | 适合监控告警     |
 
 ---
 
@@ -295,17 +296,17 @@ Register<bit<64>, _>(1024) timestamp_table;
 
 ```c
 control Ingress(...) {
-    
+
     hash<bit<32>>(hash_input, HashAlgorithm.identity)
         (h.ipv4.srcAddr, h.ipv4.dstAddr);
-    
+
     Register<bit<48>, _>(4096) flow_timer;
-    
+
     action get_timer() {
         bit<48> last_time = flow_timer.read(hash_input);
         // ...
     }
-    
+
     apply {
         get_timer();
     }
@@ -318,20 +319,20 @@ Register 常用于实现布隆过滤器：
 
 ```c
 control Ingress(...) {
-    
+
     // 多个 Hash 函数 + 多个 Register Bit Arrays
     Register<bit<1>, _>(16384) bf_hash0;
     Register<bit<1>, _>(16384) bf_hash1;
     Register<bit<1>, _>(16384) bf_hash2;
-    
+
     action bloom_check() {
         bit<32> idx0, idx1, idx2;
-        
+
         // 计算 3 个 Hash
         hash<bit<32>>(idx0, HashAlgorithm.hash) (h.ipv4.srcAddr);
         hash<bit<32>>(idx1, HashAlgorithm.hash) (h.ipv4.srcAddr, h.ipv4.dstAddr);
         hash<bit<32>>(idx2, HashAlgorithm.hash) (h.ipv4.srcAddr, h.tcp.srcPort);
-        
+
         // 检查所有 bit 是否为 1
         if (bf_hash0.read(idx0) == 1 &&
             bf_hash1.read(idx1) == 1 &&
@@ -339,14 +340,14 @@ control Ingress(...) {
             // 可能存在
         }
     }
-    
+
     action bloom_add() {
         // 设置 bit
         bf_hash0.write(idx0, 1);
         bf_hash1.write(idx1, 1);
         bf_hash2.write(idx2, 1);
     }
-    
+
     apply {
         bloom_check();
     }
@@ -366,11 +367,11 @@ control Ingress(...) {
 def read_counters():
     req = p4runtime_pb2.ReadRequest()
     entity = req.entities.add()
-    
+
     # 读取 Direct Counter
     counter_entry = entity.counter_entry
     counter_entry.table_entry.entry_id = table_entry_id
-    
+
     for resp in stub.Read(req):
         for entity in resp.entities:
             print(f"Counter: {entity.counter_entry.data.packet_count}")
@@ -385,12 +386,12 @@ def read_counters():
 def write_register(index, value):
     req = p4runtime_pb2.WriteRequest()
     entity = req.entities.add()
-    
+
     register_entry = entity.register_entry
     register_entry.register_id = register_id
     register_entry.index.index = index
     register_entry.data.bit_string = struct.pack('!Q', value)
-    
+
     stub.Write(req)
 ```
 
@@ -401,16 +402,16 @@ def write_register(index, value):
 ```c
 // P4 程序生成 Digest
 control Ingress(...) {
-    
+
     digest<mac_learn_digest_t>(1) mac_learn_digest;
-    
+
     action mac_learn() {
         mac_learn_digest.pack({
             srcMac: h.ethernet.srcAddr,
             port: ismd.ingress_port
         });
     }
-    
+
     apply {
         mac_learn();
     }
@@ -435,12 +436,12 @@ def receive_digest():
 
 硬件必须保证状态更新的原子性：
 
-| 机制 | 描述 | 适用场景 |
-|------|------|----------|
-| **双端口 SRAM** | 同时支持读写 | 简单读写 |
-| **读-修改-写** | 原子执行 RMW | 增量更新 |
+| 机制                | 描述           | 适用场景     |
+| ------------------- | -------------- | ------------ |
+| **双端口 SRAM**     | 同时支持读写   | 简单读写     |
+| **读-修改-写**      | 原子执行 RMW   | 增量更新     |
 | **比较-交换 (CAS)** | 原子比较并交换 | 锁-free 算法 |
-| **队列串行化** | 所有更新经队列 | 复杂状态 |
+| **队列串行化**      | 所有更新经队列 | 复杂状态     |
 
 ### 7.2 原子操作语义
 
@@ -477,11 +478,11 @@ Core 1 ──> Read[Reg[5]]=100 ──> +1 ──> Write[Reg[5]]=101
 
 ### 8.1 资源规划
 
-| 资源类型 | 容量限制 | 规划建议 |
-|----------|----------|----------|
+| 资源类型 | 容量限制         | 规划建议              |
+| -------- | ---------------- | --------------------- |
 | Register | 受限于 BRAM/DRAM | 估算: entries × width |
-| Counter | 受限于 BRAM | 合并低频计数器 |
-| Gauge | 受限于 BRAM | 按需创建 |
+| Counter  | 受限于 BRAM      | 合并低频计数器        |
+| Gauge    | 受限于 BRAM      | 按需创建              |
 
 ### 8.2 性能优化
 
@@ -513,10 +514,10 @@ def sync_state_periodically():
         for flow_id in flows:
             count = read_counter(flow_id)
             store_to_database(flow_id, count)
-        
+
         # 清零 (如果需要)
         reset_counters()
-        
+
         sleep(sync_interval)
 ```
 
@@ -541,21 +542,21 @@ struct psa_egress_input_metadata_t {
 
 ```c
 control Ingress(...) {
-    
+
     // 使用队列深度做动态限速
     Register<bit<32>, _>(256) queue_limit;
-    
+
     action dynamic_throttle() {
         bit<9> qid = (bit<9>)ismd.enq_qid;
         bit<32> limit = queue_limit.read(qid);
         bit<19> depth = (bit<19>)esm.deq_qdepth;  // 来自 egress metadata
-        
+
         if (depth > limit) {
             // 超限丢包
             drop();
         }
     }
-    
+
     apply {
         dynamic_throttle();
     }
@@ -573,6 +574,7 @@ Register、Counter 和 Gauge 是 P4 中管理状态的三大核心机制：
 3. **Gauge**：可增可减，适用于瞬时值测量，如队列深度、连接数
 
 状态管理涉及：
+
 - **原子性保证**：硬件确保并发更新的正确性
 - **控制面同步**：通过 P4Runtime 读写状态
 - **资源规划**：合理估算所需资源

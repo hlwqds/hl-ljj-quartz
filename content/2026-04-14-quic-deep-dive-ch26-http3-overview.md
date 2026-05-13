@@ -75,6 +75,7 @@ Client → Server:
 ```
 
 After the QUIC handshake completes, both endpoints have:
+
 - Agreed on cryptographic keys
 - Validated each other's addresses
 - Exchanged transport parameters
@@ -107,12 +108,12 @@ Stream 0 is the **control stream** -- a bidirectional stream used for protocol c
 
 QUIC provides independent, bidirectional streams. HTTP/3 assigns specific meaning to certain streams:
 
-| Stream Type | Stream ID | Use |
-|---|---|---|
-| Control Stream | 0 (client-initiated bidirectional) | SETTINGS, GOAWAY |
-| Push Streams | Server-initiated odd IDs | Server push (Chapter 29) |
-| Request Streams | Client-initiated even IDs | HTTP requests/responses |
-| Reserved | Certain ID ranges | Protocol extensibility |
+| Stream Type     | Stream ID                          | Use                      |
+| --------------- | ---------------------------------- | ------------------------ |
+| Control Stream  | 0 (client-initiated bidirectional) | SETTINGS, GOAWAY         |
+| Push Streams    | Server-initiated odd IDs           | Server push (Chapter 29) |
+| Request Streams | Client-initiated even IDs          | HTTP requests/responses  |
+| Reserved        | Certain ID ranges                  | Protocol extensibility   |
 
 ### 26.4.1 Request Stream Flow
 
@@ -164,6 +165,7 @@ HTTP/3 Connection:
 ### 26.6.1 Stream Errors
 
 Stream errors are handled at the QUIC layer:
+
 - Stream receiving `STOP_SENDING`: no more data will be accepted
 - Stream receiving `RESET_STREAM`: stream cancelled entirely
 - Stream error codes defined in the HTTP/3 specification
@@ -220,6 +222,7 @@ New SETTINGS parameters can be defined to negotiate capabilities. Unrecognized S
 ### 26.7.3 WebTransport
 
 WebTransport (RFC 9298) runs atop HTTP/3 and provides:
+
 - Bidirectional streams
 - Datagrams (unordered, unreliable message delivery)
 - Session termination signaling

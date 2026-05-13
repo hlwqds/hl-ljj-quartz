@@ -5,8 +5,8 @@ tags: [vpn, series, wireguard, subnet-router, boringtun, routing, userspace]
 description: "WireGuard Subnet Router 模式深度解析——AllowedIPs 路由机制、路由模式与接口模式对比、boringtun 用户空间实现、路由表管理"
 ---
 
-> [!info] VPN 技术深度探索系列
-> 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+> [!info] VPN 技术深度探索系列 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-vpn-deep-dive-ch42-cilium-encryption|第四十二章：Cilium 流量加密]]
 > 2. **第四十三章：Subnet Router 模式**
 > 3. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|Kernel Protocol Stack 系列]]

@@ -11,8 +11,8 @@ tags:
   - networking
 ---
 
-> [!info] Cilium 2026 深度探索系列
-> 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+> [!info] Cilium 2026 深度探索系列 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+>
 > 1. [[2026-04-14-cilium-deep-dive-ch1-cilium-overview|第一章：Cilium 概述]]
 > 2. [[2026-04-14-cilium-deep-dive-ch2-architecture|第二章：Cilium 架构]]
 > 3. [[2026-04-14-cilium-deep-dive-ch3-ebpf-datapath|第三章：eBPF 数据面]]
@@ -46,33 +46,33 @@ spec:
       app: api
   # 入口规则
   ingress:
-  - from:
-    - podSelector:
-        matchLabels:
-          app: frontend
-    ports:
-    - port: 8080
-      protocol: TCP
+    - from:
+        - podSelector:
+            matchLabels:
+              app: frontend
+      ports:
+        - port: 8080
+          protocol: TCP
   # 出口规则
   egress:
-  - to:
-    - podSelector:
-        matchLabels:
-          app: database
-    ports:
-    - port: 5432
-      protocol: TCP
+    - to:
+        - podSelector:
+            matchLabels:
+              app: database
+      ports:
+        - port: 5432
+          protocol: TCP
 ```
 
 ### 1.1 NetworkPolicy 核心概念
 
-| 概念 | 说明 |
-|:---|:---|
-| **podSelector** | 选择受策略影响的目标 Pod |
-| **ingress.from** | 允许访问目标 Pod 的来源 |
-| **egress.to** | 目标 Pod 允许访问的目的地 |
-| **ports** | 协议和端口规范 |
-| **policyTypes** | 声明策略类型（INGRESS/EGRESS） |
+| 概念             | 说明                           |
+| :--------------- | :----------------------------- |
+| **podSelector**  | 选择受策略影响的目标 Pod       |
+| **ingress.from** | 允许访问目标 Pod 的来源        |
+| **egress.to**    | 目标 Pod 允许访问的目的地      |
+| **ports**        | 协议和端口规范                 |
+| **policyTypes**  | 声明策略类型（INGRESS/EGRESS） |
 
 ### 1.2 默认行为
 
@@ -95,55 +95,55 @@ metadata:
 spec:
   # 策略类型（可选，K8s 会自动推断）
   policyTypes:
-  - Ingress
-  - Egress
-  
+    - Ingress
+    - Egress
+
   # 目标 Pod 选择器
   podSelector:
     matchLabels:
       app: backend
-  
+
   # 入口规则
   ingress:
-  # 规则1: 允许前端 Pod 访问
-  - from:
-    - podSelector:
-        matchLabels:
-          app: frontend
-    ports:
-    - port: 8080
-      protocol: TCP
-  
-  # 规则2: 允许特定命名空间的 Pod
-  - from:
-    - namespaceSelector:
-        matchLabels:
-          environment: production
-  
-  # 规则3: 允许特定 IP 范围（K8s 1.16+）
-  - from:
-    - ipBlock:
-        cidr: 192.168.0.0/16
-        except:
-        - 192.168.1.0/24
-  
+    # 规则1: 允许前端 Pod 访问
+    - from:
+        - podSelector:
+            matchLabels:
+              app: frontend
+      ports:
+        - port: 8080
+          protocol: TCP
+
+    # 规则2: 允许特定命名空间的 Pod
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              environment: production
+
+    # 规则3: 允许特定 IP 范围（K8s 1.16+）
+    - from:
+        - ipBlock:
+            cidr: 192.168.0.0/16
+            except:
+              - 192.168.1.0/24
+
   # 出口规则
   egress:
-  # 规则1: 允许访问数据库
-  - to:
-    - podSelector:
-        matchLabels:
-          app: database
-    ports:
-    - port: 5432
-      protocol: TCP
-  
-  # 规则2: 允许 DNS
-  - to:
-    - namespaceSelector: {}
-    ports:
-    - port: 53
-      protocol: UDP
+    # 规则1: 允许访问数据库
+    - to:
+        - podSelector:
+            matchLabels:
+              app: database
+      ports:
+        - port: 5432
+          protocol: TCP
+
+    # 规则2: 允许 DNS
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - port: 53
+          protocol: UDP
 ```
 
 ### 2.2 规则评估逻辑
@@ -176,16 +176,16 @@ Cilium 不仅支持原生 NetworkPolicy，还通过 eBPF 提供了大量增强�
 
 ### 3.1 增强功能对比
 
-| 特性 | K8s NetworkPolicy | Cilium 增强 |
-|:---|:---|:---|
-| **L3 CIDR** | ✅ 支持 | ✅ + FQDN |
-| **L4 协议** | TCP/UDP | + SCTP/ICMP/ANY |
-| **L7 策略** | ❌ | ✅ HTTP/gRPC/DNS/SQL/Kafka |
-| **默认拒绝** | 部分支持 | ✅ 完整支持 |
-| **策略优先级** | 基础 | 高级优先级机制 |
-| **审计日志** | ❌ | ✅ Hubble 集成 |
-| **性能** | iptables O(n) | eBPF O(1) |
-| **加密** | ❌ | ✅ WireGuard/IPsec |
+| 特性           | K8s NetworkPolicy | Cilium 增强                |
+| :------------- | :---------------- | :------------------------- |
+| **L3 CIDR**    | ✅ 支持           | ✅ + FQDN                  |
+| **L4 协议**    | TCP/UDP           | + SCTP/ICMP/ANY            |
+| **L7 策略**    | ❌                | ✅ HTTP/gRPC/DNS/SQL/Kafka |
+| **默认拒绝**   | 部分支持          | ✅ 完整支持                |
+| **策略优先级** | 基础              | 高级优先级机制             |
+| **审计日志**   | ❌                | ✅ Hubble 集成             |
+| **性能**       | iptables O(n)     | eBPF O(1)                  |
+| **加密**       | ❌                | ✅ WireGuard/IPsec         |
 
 ### 3.2 Cilium 对 NetworkPolicy 的转换
 
@@ -228,15 +228,15 @@ spec:
     matchLabels:
       app: webserver
   ingress:
-  # 允许特定 IP 范围
-  - from:
-    - ipBlock:
-        cidr: 10.0.0.0/8
-        except:
-        - 10.0.1.0/24   # 排除管理网段
-    ports:
-    - port: 80
-      protocol: TCP
+    # 允许特定 IP 范围
+    - from:
+        - ipBlock:
+            cidr: 10.0.0.0/8
+            except:
+              - 10.0.1.0/24 # 排除管理网段
+      ports:
+        - port: 80
+          protocol: TCP
 ```
 
 ### 4.2 Cilium 扩展的 CIDR 策略
@@ -254,19 +254,19 @@ spec:
     matchLabels:
       app: secure-service
   egress:
-  # 允许访问特定 IP 范围
-  - toCidrs:
-    - "192.168.1.0/24"
-    - "10.0.0.0/8"
-    toPorts:
-    - port: "443"
-      protocol: TCP
-  # 拒绝特定 IP
-  - toCidrs:
-    - "!192.168.100.0/24"
-    toPorts:
-    - port: "80"
-      protocol: TCP
+    # 允许访问特定 IP 范围
+    - toCidrs:
+        - "192.168.1.0/24"
+        - "10.0.0.0/8"
+      toPorts:
+        - port: "443"
+          protocol: TCP
+    # 拒绝特定 IP
+    - toCidrs:
+        - "!192.168.100.0/24"
+      toPorts:
+        - port: "80"
+          protocol: TCP
 ```
 
 ### 4.3 FQDN 策略（出口流量）
@@ -284,13 +284,13 @@ spec:
     matchLabels:
       app: webserver
   egress:
-  # 允许访问外部 API
-  - toFQDNs:
-    - matchPattern: "*.api.example.com"
-    - matchPattern: "github.com"
-    toPorts:
-    - port: "443"
-      protocol: TCP
+    # 允许访问外部 API
+    - toFQDNs:
+        - matchPattern: "*.api.example.com"
+        - matchPattern: "github.com"
+      toPorts:
+        - port: "443"
+          protocol: TCP
 ```
 
 ---
@@ -311,14 +311,14 @@ spec:
     matchLabels:
       app: database
   ingress:
-  # 只允许 production 命名空间的 Pod
-  - from:
-    - namespaceSelector:
-        matchLabels:
-          name: production
-    ports:
-    - port: 5432
-      protocol: TCP
+    # 只允许 production 命名空间的 Pod
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: production
+      ports:
+        - port: 5432
+          protocol: TCP
 ```
 
 ### 5.2 组合选择器
@@ -328,20 +328,20 @@ spec:
 ```yaml
 # 组合选择器示例
 ingress:
-# 规则1: production 命名空间中的前端 Pod
-- from:
-  - namespaceSelector:
-      matchLabels:
-        name: production
-    podSelector:
-      matchLabels:
-        app: frontend
+  # 规则1: production 命名空间中的前端 Pod
+  - from:
+      - namespaceSelector:
+          matchLabels:
+            name: production
+        podSelector:
+          matchLabels:
+            app: frontend
 
-# 规则2: 任何命名空间的监控服务
-- from:
-  - podSelector:
-      matchLabels:
-        app: monitoring
+  # 规则2: 任何命名空间的监控服务
+  - from:
+      - podSelector:
+          matchLabels:
+            app: monitoring
 ```
 
 ---
@@ -362,7 +362,7 @@ spec:
   # 空 selector = 匹配所有 Pod
   podSelector: {}
   policyTypes:
-  - Ingress
+    - Ingress
 ```
 
 ```yaml
@@ -374,7 +374,7 @@ metadata:
 spec:
   podSelector: {}
   policyTypes:
-  - Egress
+    - Egress
 ```
 
 ### 6.2 命名空间默认策略组合
@@ -388,22 +388,22 @@ metadata:
 spec:
   podSelector: {}
   policyTypes:
-  - Egress
+    - Egress
   egress:
-  # 允许 DNS
-  - to:
-    - namespaceSelector: {}
-    ports:
-    - port: 53
-      protocol: UDP
-  # 允许 API Server
-  - to:
-    - namespaceSelector:
-        matchLabels:
-          kubernetes.io/metadata.name: default
-    ports:
-    - port: 443
-      protocol: TCP
+    # 允许 DNS
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - port: 53
+          protocol: UDP
+    # 允许 API Server
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: default
+      ports:
+        - port: 443
+          protocol: TCP
 ```
 
 ---
@@ -422,16 +422,16 @@ spec:
     matchLabels:
       app: backend
   policyTypes:
-  - Egress
+    - Egress
   egress:
-  # 允许访问数据库
-  - to:
-    - podSelector:
-        matchLabels:
-          app: postgres
-    ports:
-    - port: 5432
-      protocol: TCP
+    # 允许访问数据库
+    - to:
+        - podSelector:
+            matchLabels:
+              app: postgres
+      ports:
+        - port: 5432
+          protocol: TCP
 ```
 
 ### 7.2 完整出口控制示例
@@ -447,44 +447,44 @@ spec:
     matchLabels:
       app: microservice
   policyTypes:
-  - Egress
+    - Egress
   egress:
-  # 规则1: DNS 查询
-  - ports:
-    - port: 53
-      protocol: UDP
-    to:
-    - namespaceSelector: {}
-  
-  # 规则2: Kubernetes API
-  - ports:
-    - port: 443
-      protocol: TCP
-    to:
-    - namespaceSelector:
-        matchLabels:
-          kubernetes.io/metadata.name: default
-  
-  # 规则3: 数据库
-  - to:
-    - podSelector:
-        matchLabels:
-          app: postgresql
-    ports:
-    - port: 5432
-      protocol: TCP
-  
-  # 规则4: 外部 HTTPS
-  - to:
-    - ipBlock:
-        cidr: 0.0.0.0/0
-        except:
-        - 10.0.0.0/8
-        - 172.16.0.0/12
-        - 192.168.0.0/16
-    ports:
-    - port: 443
-      protocol: TCP
+    # 规则1: DNS 查询
+    - ports:
+        - port: 53
+          protocol: UDP
+      to:
+        - namespaceSelector: {}
+
+    # 规则2: Kubernetes API
+    - ports:
+        - port: 443
+          protocol: TCP
+      to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: default
+
+    # 规则3: 数据库
+    - to:
+        - podSelector:
+            matchLabels:
+              app: postgresql
+      ports:
+        - port: 5432
+          protocol: TCP
+
+    # 规则4: 外部 HTTPS
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+      ports:
+        - port: 443
+          protocol: TCP
 ```
 
 ---
@@ -529,11 +529,11 @@ spec:
     matchLabels:
       app: critical-service
   ingress:
-  - fromCidrs:
-    - "10.0.0.0/8"
-    toPorts:
-    - port: "443"
-      protocol: TCP
+    - fromCidrs:
+        - "10.0.0.0/8"
+      toPorts:
+        - port: "443"
+          protocol: TCP
 ```
 
 ---
@@ -556,15 +556,15 @@ spec:
     matchLabels:
       app: frontend
   policyTypes:
-  - Egress
+    - Egress
   egress:
-  - to:
-    - podSelector:
-        matchLabels:
-          app: backend
-    ports:
-    - port: 8080
-      protocol: TCP
+    - to:
+        - podSelector:
+            matchLabels:
+              app: backend
+      ports:
+        - port: 8080
+          protocol: TCP
 
 ---
 # Backend NetworkPolicy
@@ -578,24 +578,24 @@ spec:
     matchLabels:
       app: backend
   policyTypes:
-  - Ingress
-  - Egress
+    - Ingress
+    - Egress
   ingress:
-  - from:
-    - podSelector:
-        matchLabels:
-          app: frontend
-    ports:
-    - port: 8080
-      protocol: TCP
+    - from:
+        - podSelector:
+            matchLabels:
+              app: frontend
+      ports:
+        - port: 8080
+          protocol: TCP
   egress:
-  - to:
-    - podSelector:
-        matchLabels:
-          app: database
-    ports:
-    - port: 5432
-      protocol: TCP
+    - to:
+        - podSelector:
+            matchLabels:
+              app: database
+      ports:
+        - port: 5432
+          protocol: TCP
 
 ---
 # Database NetworkPolicy (默认拒绝所有)
@@ -609,15 +609,15 @@ spec:
     matchLabels:
       app: database
   policyTypes:
-  - Ingress
+    - Ingress
   ingress:
-  - from:
-    - podSelector:
-        matchLabels:
-          app: backend
-    ports:
-    - port: 5432
-      protocol: TCP
+    - from:
+        - podSelector:
+            matchLabels:
+              app: backend
+      ports:
+        - port: 5432
+          protocol: TCP
 ```
 
 ### 9.2 多租户隔离策略
@@ -631,22 +631,22 @@ metadata:
 spec:
   podSelector: {}
   policyTypes:
-  - Ingress
-  - Egress
+    - Ingress
+    - Egress
   ingress:
-  # 允许同命名空间内的 Pod 互相访问
-  - from:
-    - podSelector: {}
+    # 允许同命名空间内的 Pod 互相访问
+    - from:
+        - podSelector: {}
   egress:
-  # 允许 DNS
-  - ports:
-    - port: 53
-      protocol: UDP
-    to:
-    - namespaceSelector: {}
-  # 允许同一命名空间内的 Pod
-  - to:
-    - podSelector: {}
+    # 允许 DNS
+    - ports:
+        - port: 53
+          protocol: UDP
+      to:
+        - namespaceSelector: {}
+    # 允许同一命名空间内的 Pod
+    - to:
+        - podSelector: {}
 ```
 
 ---
@@ -695,12 +695,12 @@ kubectl exec -it <source-pod> -n <namespace> -- \
 
 ## 11. 总结
 
-| 特性 | 说明 |
-|:---|:---|
-| **K8s NetworkPolicy** | K8s 原生资源，命名空间级别 |
-| **Cilium 增强** | eBPF 实现，性能更高，支持更多协议 |
-| **CIDR 支持** | ipBlock + Cilium FQDN 扩展 |
-| **默认行为** | 匹配策略的允许，未匹配的拒绝 |
-| **最佳实践** | 命名空间级别默认拒绝 + 精确允许 |
+| 特性                  | 说明                              |
+| :-------------------- | :-------------------------------- |
+| **K8s NetworkPolicy** | K8s 原生资源，命名空间级别        |
+| **Cilium 增强**       | eBPF 实现，性能更高，支持更多协议 |
+| **CIDR 支持**         | ipBlock + Cilium FQDN 扩展        |
+| **默认行为**          | 匹配策略的允许，未匹配的拒绝      |
+| **最佳实践**          | 命名空间级别默认拒绝 + 精确允许   |
 
 下一章我们将深入探讨 L7 策略，了解 Cilium 如何实现 HTTP/gRPC 等应用层协议的网络策略控制。

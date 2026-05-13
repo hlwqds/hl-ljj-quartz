@@ -451,13 +451,13 @@ vpp# show acl hw offload
 
 VPP ACL 核心设计：
 
-| 组件 | 功能 | 实现 |
-|------|------|------|
-| **ACL Entry** | 单条规则 | L2-L4 字段匹配 |
-| **ACL Table** | 规则集合 | rte_acl 或线性查找 |
-| **ACL Lookup** | 包分类 | DPDK ACL 库 |
-| **MACIP ACL** | L2 安全 | MAC + IP 组合 |
-| **Hardware Offload** | TCAM | 硬件加速 |
+| 组件                 | 功能     | 实现               |
+| -------------------- | -------- | ------------------ |
+| **ACL Entry**        | 单条规则 | L2-L4 字段匹配     |
+| **ACL Table**        | 规则集合 | rte_acl 或线性查找 |
+| **ACL Lookup**       | 包分类   | DPDK ACL 库        |
+| **MACIP ACL**        | L2 安全  | MAC + IP 组合      |
+| **Hardware Offload** | TCAM     | 硬件加速           |
 
 查找流程：
 

@@ -28,21 +28,21 @@ RDMA：
 
 ### 1.2 RDMA 核心优势
 
-| 特性 | 传统 Socket | RDMA |
-|------|-------------|------|
-| **CPU 开销** | 高（内核协议栈） | 极低（0% 理想情况） |
-| **延迟** | ~10-100us | ~1-5us |
-| **吞吐量** | 受限于 CPU | 线速 (100/200/400GbE) |
-| **数据复制** | 多次复制 | 零拷贝 |
-| **中断** | 需要 | 可轮询（避免中断） |
+| 特性         | 传统 Socket      | RDMA                  |
+| ------------ | ---------------- | --------------------- |
+| **CPU 开销** | 高（内核协议栈） | 极低（0% 理想情况）   |
+| **延迟**     | ~10-100us        | ~1-5us                |
+| **吞吐量**   | 受限于 CPU       | 线速 (100/200/400GbE) |
+| **数据复制** | 多次复制         | 零拷贝                |
+| **中断**     | 需要             | 可轮询（避免中断）    |
 
 ### 1.3 RDMA 协议
 
-| 协议 | 全称 | 底层网络 | 厂商 |
-|------|------|----------|------|
-| **InfiniBand** | - | IB 网络 | Mellanox/Intel |
-| **RoCE** | RDMA over Converged Ethernet | Ethernet | Mellanox |
-| **iWARP** | internet Wide Area RDMA Protocol | Ethernet | Intel/Chelsio |
+| 协议           | 全称                             | 底层网络 | 厂商           |
+| -------------- | -------------------------------- | -------- | -------------- |
+| **InfiniBand** | -                                | IB 网络  | Mellanox/Intel |
+| **RoCE**       | RDMA over Converged Ethernet     | Ethernet | Mellanox       |
+| **iWARP**      | internet Wide Area RDMA Protocol | Ethernet | Intel/Chelsio  |
 
 ## 2. RoCE vs iWARP
 
@@ -73,6 +73,7 @@ RDMA：
 ```
 
 **版本**：
+
 - **RoCE v1**：Ethernet 链路层，无路由能力
 - **RoCE v2**：UDP/IP 层，支持路由（端口 4791）
 
@@ -99,15 +100,15 @@ RDMA：
 
 ### 2.3 关键对比
 
-| 特性 | RoCE v2 | iWARP |
-|------|---------|-------|
-| **可靠性** | 需要 PFC (Priority Flow Control) | TCP 本身可靠 |
-| **网络要求** | DCB 交换机 | 标准以太网 |
-| **路由支持** | 支持 | 支持 |
-| **CPU 开销** | 低 | 中（TCP 处理） |
-| **硬件支持** | Mellanox ConnectX | Intel/Chelsio |
-| **拥塞控制** | ECN + PFC | DCTCP |
-| **性能** | 更高 | 略低 |
+| 特性         | RoCE v2                          | iWARP          |
+| ------------ | -------------------------------- | -------------- |
+| **可靠性**   | 需要 PFC (Priority Flow Control) | TCP 本身可靠   |
+| **网络要求** | DCB 交换机                       | 标准以太网     |
+| **路由支持** | 支持                             | 支持           |
+| **CPU 开销** | 低                               | 中（TCP 处理） |
+| **硬件支持** | Mellanox ConnectX                | Intel/Chelsio  |
+| **拥塞控制** | ECN + PFC                        | DCTCP          |
+| **性能**     | 更高                             | 略低           |
 
 ### 2.4 RDMA 硬件架构
 
@@ -139,13 +140,13 @@ RDMA：
 
 ### 3.1 核心概念
 
-| 概念 | 说明 |
-|------|------|
-| **PD (Protection Domain)** | 隔离的内存区域 |
-| **QP (Queue Pair)** | 发送/接收队列对 |
-| **CQ (Completion Queue)** | 操作完成通知 |
-| **MR (Memory Region)** | 注册的内存区域 |
-| **AH (Address Handle)** | 远程地址信息 |
+| 概念                       | 说明            |
+| -------------------------- | --------------- |
+| **PD (Protection Domain)** | 隔离的内存区域  |
+| **QP (Queue Pair)**        | 发送/接收队列对 |
+| **CQ (Completion Queue)**  | 操作完成通知    |
+| **MR (Memory Region)**     | 注册的内存区域  |
+| **AH (Address Handle)**    | 远程地址信息    |
 
 ### 3.2 RDMA Verbs 示例
 
@@ -221,13 +222,13 @@ RDMA：
 
 ### 4.2 性能对比
 
-| 指标 | DPDK | RDMA (RoCEv2) |
-|------|------|---------------|
-| **延迟 (single core)** | ~10-20us | ~1-5us |
-| **吞吐量** | 100GbE 线速 | 100GbE 线速 |
-| **CPU 开销 (pkt)** | ~50 cycles | ~10 cycles |
-| **内存带宽** | 高 | 极高 |
-| **适用场景** | 包处理、NAT | 存储、AI |
+| 指标                   | DPDK        | RDMA (RoCEv2) |
+| ---------------------- | ----------- | ------------- |
+| **延迟 (single core)** | ~10-20us    | ~1-5us        |
+| **吞吐量**             | 100GbE 线速 | 100GbE 线速   |
+| **CPU 开销 (pkt)**     | ~50 cycles  | ~10 cycles    |
+| **内存带宽**           | 高          | 极高          |
+| **适用场景**           | 包处理、NAT | 存储、AI      |
 
 ### 4.3 延迟分解
 
@@ -352,18 +353,18 @@ metadata:
   name: hyperconverged-node
 spec:
   containers:
-  - name: network-vnf
-    image: dpdk-vnf:latest
-    resources:
-      limits:
-        hugepages-2Mi: 2Gi
-        memory: 4Gi
-        cpu: "4"
-        nvidia.com/rdma: "1"  # 请求 RDMA 设备
+    - name: network-vnf
+      image: dpdk-vnf:latest
+      resources:
+        limits:
+          hugepages-2Mi: 2Gi
+          memory: 4Gi
+          cpu: "4"
+          nvidia.com/rdma: "1" # 请求 RDMA 设备
   volumes:
-  - name: hugepgs
-    emptyDir:
-      medium: HugePages
+    - name: hugepgs
+      emptyDir:
+        medium: HugePages
 ```
 
 ## 6. RDMA 网络配置
@@ -441,15 +442,16 @@ ibtracert  # 跟踪 RDMA 路径
 
 ## 8. 总结
 
-| 维度 | DPDK | RDMA |
-|------|------|------|
-| **范式** | 包处理 | 内存访问 |
-| **CPU 参与** | 应用控制 | 零参与 |
-| **延迟** | ~10us | ~1-5us |
-| **吞吐** | 线速 | 线速 |
-| **成本** | 软件免费 | 需要专用 HCA |
+| 维度         | DPDK     | RDMA         |
+| ------------ | -------- | ------------ |
+| **范式**     | 包处理   | 内存访问     |
+| **CPU 参与** | 应用控制 | 零参与       |
+| **延迟**     | ~10us    | ~1-5us       |
+| **吞吐**     | 线速     | 线速         |
+| **成本**     | 软件免费 | 需要专用 HCA |
 
 **融合建议**：
+
 - **网络功能**：DPDK（灵活、可编程）
 - **存储传输**：RDMA（极致性能）
 - **超融合**：两者结合

@@ -513,13 +513,13 @@ vpp# show mpls traffic-eng lsp
 
 MPLS 核心概念：
 
-| 组件 | 功能 | 关键点 |
-|------|------|--------|
-| **LFIB** | 标签转发表 | O(1) hash 查找 |
-| **LDP** | 标签分发 | UDP hello + TCP session |
-| **BGP EVPN** | EVPN 控制平面 | MAC 通过 BGP 学习 |
-| **VPLS** | 模拟 LAN | LDP 信令 + MAC 学习 |
-| **RSVP-TE** | 流量工程 | 带约束的 LSP |
+| 组件         | 功能          | 关键点                  |
+| ------------ | ------------- | ----------------------- |
+| **LFIB**     | 标签转发表    | O(1) hash 查找          |
+| **LDP**      | 标签分发      | UDP hello + TCP session |
+| **BGP EVPN** | EVPN 控制平面 | MAC 通过 BGP 学习       |
+| **VPLS**     | 模拟 LAN      | LDP 信令 + MAC 学习     |
+| **RSVP-TE**  | 流量工程      | 带约束的 LSP            |
 
 标签操作：
 

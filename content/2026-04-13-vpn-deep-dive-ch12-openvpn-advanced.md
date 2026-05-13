@@ -1,12 +1,26 @@
 ---
 title: "VPN 技术深度探索 (十二)：OpenVPN 高级特性"
 date: 2026-04-13
-tags: [vpn, series, networking, security, tunnel, openvpn, tls-auth, compression, redirect-gateway, multi-client, cd, client-config-dir]
+tags:
+  [
+    vpn,
+    series,
+    networking,
+    security,
+    tunnel,
+    openvpn,
+    tls-auth,
+    compression,
+    redirect-gateway,
+    multi-client,
+    cd,
+    client-config-dir,
+  ]
 description: "OpenVPN 高级特性深度解析——tls-auth HMAC 防御、Compression 压缩、redirect-gateway 全路由、iroute/CCD 客户端分流、ifconfig-pool-persist、CBCD、自定义脚本"
 ---
 
-> [!info] VPN 技术深度探索系列
-> 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+> [!info] VPN 技术深度探索系列 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-vpn-deep-dive-ch1-vpn-fundamentals|VPN 基础概念]]
 > 2. [[2026-04-13-vpn-deep-dive-ch2-tunnel-basics|第二章：隧道技术基础]]
 > 3. [[2026-04-13-vpn-deep-dive-ch3-crypto-fundamentals|第三章：密码学基础]]
@@ -88,11 +102,11 @@ key-direction 1
 
 OpenVPN 支持 LZO 和 LZ4 (v2) 压缩：
 
-| 算法 | 说明 | 风险 |
-|------|------|------|
-| **LZO** | Lempel-Ziv-Oberhumer，快速，无认证 | CRIME/BREACH 攻击风险 |
-| **LZ4-v2** | LZ4 第二版，性能更好 | CRIME/BREACH 攻击风险 |
-| **禁用** | `--compress none` 或不配置 | 推荐生产使用 |
+| 算法       | 说明                               | 风险                  |
+| ---------- | ---------------------------------- | --------------------- |
+| **LZO**    | Lempel-Ziv-Oberhumer，快速，无认证 | CRIME/BREACH 攻击风险 |
+| **LZ4-v2** | LZ4 第二版，性能更好               | CRIME/BREACH 攻击风险 |
+| **禁用**   | `--compress none` 或不配置         | 推荐生产使用          |
 
 > [!danger]
 > **CRIME/BREACH 攻击**：压缩与加密并用时，攻击者可通过观测密文长度推断明文内容。所有启用压缩的 TLS/OpenVPN 都受此影响。生产环境建议禁用压缩或使用 TLS 1.3。
@@ -604,22 +618,23 @@ remote random
 
 ## 10. 总结
 
-| 高级特性 | 功能 | 备注 |
-|----------|------|------|
-| **tls-auth** | HMAC 签名防御 DoS/扫描 | 推荐开启 |
-| **Compression** | 压缩流量 | 生产环境建议禁用 |
-| **redirect-gateway** | 全流量 VPN | 注意 DNS 泄漏 |
-| **CCD** | 客户端独立配置 | 固定 IP/路由 |
-| **iroute** | OpenVPN 内部路由 | 配合 route 使用 |
-| **client-to-client** | 客户端互访 | 模拟 L2 交换机 |
-| **Management Interface** | 运行时管理 | 连接控制/调试 |
-| **Plugins/Scripts** | 扩展认证/DNS | PAM/LDAP/RADIUS |
+| 高级特性                 | 功能                   | 备注             |
+| ------------------------ | ---------------------- | ---------------- |
+| **tls-auth**             | HMAC 签名防御 DoS/扫描 | 推荐开启         |
+| **Compression**          | 压缩流量               | 生产环境建议禁用 |
+| **redirect-gateway**     | 全流量 VPN             | 注意 DNS 泄漏    |
+| **CCD**                  | 客户端独立配置         | 固定 IP/路由     |
+| **iroute**               | OpenVPN 内部路由       | 配合 route 使用  |
+| **client-to-client**     | 客户端互访             | 模拟 L2 交换机   |
+| **Management Interface** | 运行时管理             | 连接控制/调试    |
+| **Plugins/Scripts**      | 扩展认证/DNS           | PAM/LDAP/RADIUS  |
 
 **下一章预告：** [[2026-04-13-vpn-deep-dive-ch13-ssl-vpn|SSL VPN 技术]] — SSL VPN 全路由/反向代理/端口转发模式、OpenConnect、AnyConnect、企业 SSL VPN 方案。
 
 ---
 
 > [!quote] 参考文献
+>
 > - OpenVPN Community Documentation - https://community.openvpn.net/OpenVPN
 > - [[2026-04-13-vpn-deep-dive-ch11-openvpn|OpenVPN 基础 (本系列)]] — 基础配置与证书
 > - [[2026-04-13-vpn-deep-dive-ch3-crypto-fundamentals|密码学基础 (本系列)]] — HMAC/压缩攻击

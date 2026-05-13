@@ -5,8 +5,8 @@ tags: [rdma, series, multicast, multicast-group, UD, ibv_attach_mc, multicast-rd
 description: "详解 RDMA 多播机制、Multicast QP、Join/Leave 组播组、UD 多播实现，以及一对多通信的最佳实践"
 ---
 
-> [!info] RDMA 深度探索系列
-> 0. [[2026-04-13-rdma-deep-dive-series-index|全栈学习路径总览]]
+> [!info] RDMA 深度探索系列 0. [[2026-04-13-rdma-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-rdma-deep-dive-ch1-rdma-overview|第一章：RDMA 概述]]
 > 2. [[2026-04-13-rdma-deep-dive-ch2-rdma-architecture|第二章：RDMA 架构]]
 > 3. [[2026-04-13-rdma-deep-dive-ch3-infiniband|第三章：InfiniBand 架构]]
@@ -59,23 +59,23 @@ RDMA 多播允许用一个 QP 同时向多个目标节点发送数据，类似�
 
 RDMA 多播有以下限制：
 
-| 限制 | 说明 |
-|------|------|
-| 仅 UD QP | 多播只能在 Unreliable Datagram (UD) QP 上使用 |
-| 仅 Send/Recv | UD 不支持 RDMA Read/Write，只能 Send/Recv |
-| 无可靠性保证 | UD 本身不可靠，丢包不重传 |
-| GID/LID 寻址 | 使用多播组 GID（IPv6 格式） |
-| 硬件支持 | 需要交换机支持多播路由 |
+| 限制         | 说明                                          |
+| ------------ | --------------------------------------------- |
+| 仅 UD QP     | 多播只能在 Unreliable Datagram (UD) QP 上使用 |
+| 仅 Send/Recv | UD 不支持 RDMA Read/Write，只能 Send/Recv     |
+| 无可靠性保证 | UD 本身不可靠，丢包不重传                     |
+| GID/LID 寻址 | 使用多播组 GID（IPv6 格式）                   |
+| 硬件支持     | 需要交换机支持多播路由                        |
 
 ### 1.3 典型应用场景
 
-| 场景 | 说明 |
-|------|------|
-| 分布式键值存储 |广播节点变更、路由更新 |
-| MPI AllReduce | 广播部分和、集合通信 |
-| 集群发现 | 新节点加入时广播公告 |
-| 分布式 Barrier | 同步点广播 |
-| AI 训练 | 多 GPU AllGather 通信 |
+| 场景           | 说明                   |
+| -------------- | ---------------------- |
+| 分布式键值存储 | 广播节点变更、路由更新 |
+| MPI AllReduce  | 广播部分和、集合通信   |
+| 集群发现       | 新节点加入时广播公告   |
+| 分布式 Barrier | 同步点广播             |
+| AI 训练        | 多 GPU AllGather 通信  |
 
 ---
 
@@ -714,11 +714,11 @@ int main() {
 
 UD 多播本身是不可靠的：
 
-| 问题 | 影响 |
-|------|------|
-| 丢包不重传 | 消息可能丢失 |
-| 无序到达 | 可能乱序 |
-| 无连接 | 任何发送者都可以发 |
+| 问题       | 影响               |
+| ---------- | ------------------ |
+| 丢包不重传 | 消息可能丢失       |
+| 无序到达   | 可能乱序           |
+| 无连接     | 任何发送者都可以发 |
 
 ### 5.2 提高可靠性的方法
 

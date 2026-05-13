@@ -1,7 +1,19 @@
 ---
 title: "RDMA 第三十九章：RoCE v3——RRoCE、扩展拥塞管理与下一代无损网络"
 date: 2026-04-14
-tags: [rdma, roce, roce-v3, rroce, extended-congestion-management, ecn, pfc, lossless, roce-ng, infiniband]
+tags:
+  [
+    rdma,
+    roce,
+    roce-v3,
+    rroce,
+    extended-congestion-management,
+    ecn,
+    pfc,
+    lossless,
+    roce-ng,
+    infiniband,
+  ]
 description: "详解 RoCE v3（RRoCE）协议：与 v2 的区别、扩展拥塞管理（ECM）、数据包格式变化、IP 头Extension、部署配置、以及 RoCE v3 在 AI 网络中的最佳实践。"
 ---
 
@@ -201,14 +213,14 @@ ECM 扩展拥塞管理：
 
 ### 3.3 ECM vs 传统 ECN
 
-| 特性 | 传统 ECN | ECM (Extended) |
-|------|---------|----------------|
-| 拥塞通知 | 端到端 | Hop-by-hop + 端到端 |
-| 多路径支持 | 有限 | 完整支持 |
-| 拥塞源定位 | 不可 | 可以定位 |
-| 收敛时间 | 较慢 | 更快 |
-| 复杂性 | 较低 | 较高 |
-| 硬件要求 | 基本 | 需要 ECM 支持 |
+| 特性       | 传统 ECN | ECM (Extended)      |
+| ---------- | -------- | ------------------- |
+| 拥塞通知   | 端到端   | Hop-by-hop + 端到端 |
+| 多路径支持 | 有限     | 完整支持            |
+| 拥塞源定位 | 不可     | 可以定位            |
+| 收敛时间   | 较慢     | 更快                |
+| 复杂性     | 较低     | 较高                |
+| 硬件要求   | 基本     | 需要 ECM 支持       |
 
 ---
 
@@ -377,16 +389,16 @@ DGX H200 / GH200 网络架构：
 
 ### 6.3 RoCE v3 vs InfiniBand for AI
 
-| 特性 | RoCE v3 | InfiniBand HDR |
-|------|---------|----------------|
-| 带宽 | 400 Gb/s | 400 Gb/s |
-| 延迟 | 1.1 us | 0.6 us |
-| 拥塞管理 | ECM + ECN | 信用控制 |
-| 多路径 | Flowlet | 自适应路由 |
-| 生态 | 以太网 | InfiniBand |
-| 成本 | 较低 | 较高 |
-| 运维 | 统一网络 | 独立网络 |
-| 适用场景 | 通用 AI | 极致性能 AI |
+| 特性     | RoCE v3   | InfiniBand HDR |
+| -------- | --------- | -------------- |
+| 带宽     | 400 Gb/s  | 400 Gb/s       |
+| 延迟     | 1.1 us    | 0.6 us         |
+| 拥塞管理 | ECM + ECN | 信用控制       |
+| 多路径   | Flowlet   | 自适应路由     |
+| 生态     | 以太网    | InfiniBand     |
+| 成本     | 较低      | 较高           |
+| 运维     | 统一网络  | 独立网络       |
+| 适用场景 | 通用 AI   | 极致性能 AI    |
 
 ---
 
@@ -460,6 +472,7 @@ switch# show congestion-control roce v3
 ---
 
 > [!tip] 延伸阅读
+>
 > - [[2026-04-13-rdma-deep-dive-ch4-roce|第四章：RoCE v1/v2]] —— RoCE 协议基础
 > - [[2026-04-13-rdma-deep-dive-ch17-ecn|第十七章：ECN 拥塞通知]] —— ECN 机制详解
 > - [[2026-04-13-rdma-deep-dive-ch16-pfc|第十六章：PFC 流量控制]] —— PFC 机制详解

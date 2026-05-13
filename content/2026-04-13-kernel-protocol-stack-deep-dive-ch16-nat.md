@@ -5,8 +5,8 @@ tags: [linux, kernel, networking, series, nat, snat, dnat, masquerade, conntrack
 description: "深入解析 Linux NAT 技术——NAT 类型（SNAT/DNAT）、连接跟踪中的 NAT、端口冲突解决、Full Cone NAT/端口复用、以及 conntrack 与 NAT 的协同工作"
 ---
 
-> [!info] Kernel Protocol Stack 深度探索系列
-> 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Kernel Protocol Stack 深度探索系列 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-kernel-protocol-stack-deep-dive-ch1-skbuff|第一章：sk_buff 与数据包生命周期]]
 > 2. [[2026-04-13-kernel-protocol-stack-deep-dive-ch2-netdevice|第二章：Netdevice 与网卡抽象]]
 > 3. [[2026-04-13-kernel-protocol-stack-deep-dive-ch3-ring-buffer|第三章：Ring Buffer 与 DMA]]
@@ -44,23 +44,23 @@ graph LR
         H2["192.168.1.20:6000"]
         H3["192.168.1.30:7000"]
     end
-    
+
     subgraph "NAT 路由器"
         NAT["Linux Router<br/>NAT"]
     end
-    
+
     subgraph "公网"
         WEB["8.8.8.8:80"]
     end
-    
+
     H1 -->|"192.168.1.10:5000 -> 8.8.8.8:80"| NAT
     H2 -->|"192.168.1.20:6000 -> 8.8.8.8:80"| NAT
     H3 -->|"192.168.1.30:7000 -> 8.8.8.8:80"| NAT
-    
+
     NAT -->|"1.2.3.4:10001 -> 8.8.8.8:80"| WEB
     NAT -->|"1.2.3.4:10002 -> 8.8.8.8:80"| WEB
     NAT -->|"1.2.3.4:10003 -> 8.8.8.8:80"| WEB
-    
+
     style NAT fill:#f59f00,stroke:#333
 ```
 
@@ -72,11 +72,11 @@ graph LR
 
 修改数据包的**源 IP 和/或源端口**：
 
-| 类型 | 说明 |
-|------|------|
-| 基础 SNAT | 固定源 IP（1:1 映射） |
-| IP 伪装 (Masquerade) | 自动使用出口接口 IP |
-| 端口伪装 | 同时修改源端口（端口复用） |
+| 类型                 | 说明                       |
+| -------------------- | -------------------------- |
+| 基础 SNAT            | 固定源 IP（1:1 映射）      |
+| IP 伪装 (Masquerade) | 自动使用出口接口 IP        |
+| 端口伪装             | 同时修改源端口（端口复用） |
 
 ```bash
 # 基础 SNAT
@@ -93,11 +93,11 @@ iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
 
 修改数据包的**目的 IP 和/或目的端口**：
 
-| 类型 | 说明 |
-|------|------|
-| 基础 DNAT | 固定目的 IP（端口映射） |
-| 端口转发 | 将外部端口映射到内部主机 |
-| 负载均衡 | 一对多 DNAT |
+| 类型      | 说明                     |
+| --------- | ------------------------ |
+| 基础 DNAT | 固定目的 IP（端口映射）  |
+| 端口转发  | 将外部端口映射到内部主机 |
+| 负载均衡  | 一对多 DNAT              |
 
 ```bash
 # 基础 DNAT
@@ -112,12 +112,12 @@ iptables -t nat -A PREROUTING -p tcp --dport 80 -j DNAT --to-destination 192.168
 
 ### 2.3 Full Cone vs Restricted Cone
 
-| NAT 类型 | 说明 | 连接限制 |
-|---------|------|---------|
-| **Full Cone** | 任何外部主机都可以通过映射端口连接 | 无限制 |
-| **Restricted Cone** | 只有映射时访问过的外部主机可以连接 | 限制源 IP |
-| **Port Restricted Cone** | 只有映射时访问过的 (IP,Port) 可以连接 | 限制源 IP:Port |
-| **Symmetric** | 每个 (源IP, 源端口, 目的IP, 目的端口) 有独立映射 | 最严格 |
+| NAT 类型                 | 说明                                             | 连接限制       |
+| ------------------------ | ------------------------------------------------ | -------------- |
+| **Full Cone**            | 任何外部主机都可以通过映射端口连接               | 无限制         |
+| **Restricted Cone**      | 只有映射时访问过的外部主机可以连接               | 限制源 IP      |
+| **Port Restricted Cone** | 只有映射时访问过的 (IP,Port) 可以连接            | 限制源 IP:Port |
+| **Symmetric**            | 每个 (源IP, 源端口, 目的IP, 目的端口) 有独立映射 | 最严格         |
 
 ---
 
@@ -130,10 +130,10 @@ iptables -t nat -A PREROUTING -p tcp --dport 80 -j DNAT --to-destination 192.168
 struct nf_conn_nat {
     // NAT 方向
     enum nf_nat_manip_type maniptype;
-    
+
     // NAT 信息
     struct nf_conn_nat_info info;
-    
+
     // 关联的 conntrack
     struct nf_conn          *ct;
 };
@@ -141,10 +141,10 @@ struct nf_conn_nat {
 // NAT 协议特定信息
 struct nf_nat_l4proto {
     __u16 protonum;           // IPPROTO_TCP/UDP/ICMP
-    
+
     // 端口范围
     int (*nlat_to_protonum)(struct nf_conntrack_tuple *);
-    
+
     // 范围初始化
     void (*nlat_to_range)(struct nf_conntrack_tuple *,
                          struct nf_nat_range2 *);
@@ -190,13 +190,13 @@ enum nf_nat_flags {
 // include/net/netfilter/nf_conntrack.h
 struct nf_conn {
     // ... 其他字段 ...
-    
+
     /* NAT 状态 */
     union {
         struct nf_conn_nat     *nat;
         struct nf_conntrack_nat_extension *nat_ext;
     }NAT;
-    
+
     /* status 中的 NAT 标志 */
     // IPS_SRC_NAT, IPS_DST_NAT, IPS_SRC_NAT_DONE, IPS_DST_NAT_DONE
 };
@@ -213,27 +213,27 @@ flowchart TD
     subgraph "本地生成数据包"
         LOC["本地进程"]
     end
-    
+
     subgraph "Netfilter"
         RAW["raw OUTPUT<br/>NOTRACK?"]
         MANGLE["mangle OUTPUT"]
         NAT_OUT["nat OUTPUT<br/>DNAT"]
         FILTER["filter OUTPUT"]
     end
-    
+
     subgraph "路由决策"
         ROUTE["ip_route_output"]
     end
-    
+
     subgraph "Postrouting"
         MANGLE_POST["mangle POSTROUTING"]
         NAT_POST["nat POSTROUTING<br/>SNAT/MASQUERADE"]
     end
-    
+
     LOC --> RAW --> MANGLE --> NAT_OUT --> FILTER --> ROUTE --> MANGLE_POST --> NAT_POST --> TX["NIC TX"]
-    
+
     NAT_POST -.->|"修改 src IP/Port"| NAT_POST
-    
+
     style NAT_POST fill:#f59f00,stroke:#333
 ```
 
@@ -244,28 +244,28 @@ flowchart TD
     subgraph "数据包接收"
         RX["NIC RX"]
     end
-    
+
     subgraph "Netfilter"
         RAW["raw PREROUTING<br/>NOTRACK?"]
         MANGLE["mangle PREROUTING"]
         NAT_PRE["nat PREROUTING<br/>DNAT"]
     end
-    
+
     subgraph "路由决策"
         ROUTE["ip_route_input"]
     end
-    
+
     subgraph "分发"
         LOCAL["LOCAL_IN"]
         FWD["FORWARD"]
     end
-    
+
     RX --> RAW --> MANGLE --> NAT_PRE --> ROUTE
     ROUTE -->|"目的为本机"| LOCAL
     ROUTE -->|"需要转发"| FWD
-    
+
     NAT_PRE -.->|"修改 dst IP/Port"| NAT_PRE
-    
+
     style NAT_PRE fill:#f59f00,stroke:#333
 ```
 
@@ -279,22 +279,22 @@ static unsigned int nf_nat_fn(void *priv, struct sk_buff *skb,
     struct nf_conn *ct;
     enum ip_conntrack_info ctinfo;
     enum nf_nat_manip_type maniptype = HOOK2MANIP(state->hook);
-    
+
     // 1. 连接跟踪查找
     ct = nf_ct_get(skb, &ctinfo);
     if (!ct)
         return NF_ACCEPT;
-    
+
     // 2. 跳过已 NAT 的包
     if (ct->status & IPS_SRC_NAT_DONE && ct->status & IPS_DST_NAT_DONE)
         return NF_ACCEPT;
-    
+
     // 3. 应用 NAT 规则
     if (maniptype == NF_NAT_MANIP_SRC)
         nf_ip_snat(skb, state, ct, ctinfo);
     else
         nf_ip_dnat(skb, state, ct, ctinfo);
-    
+
     return NF_ACCEPT;
 }
 
@@ -305,16 +305,16 @@ static void nf_nat_l4proto_snat(struct sk_buff *skb,
 {
     struct tcphdr *tcph;
     __be16 *portptr;
-    
+
     if (skb_ensure_writable(skb, skb->transport_header + sizeof(*tcph)))
         return;
-    
+
     tcph = tcp_hdr(skb);
-    
+
     // 修改源端口
     portptr = &tcph->source;
     *portptr = ct->tuplehash[IP_CT_DIR_ORIGINAL].tuple.src.u.tcp.port;
-    
+
     // 重新计算校验和
     inet_proto_csum_replace4(&tcph->check, skb,
                             ct->tuplehash[IP_CT_DIR_REPLY].tuple.src.u.tcp.port,
@@ -392,26 +392,26 @@ echo 300 > /proc/sys/net/netfilter/nf_conntrack_udp_timeout
 
 ```c
 // net/netfilter/nf_nat_core.c
-static bool nf_nat_find_port(struct nf_conntrack_tuple *tuple, 
+static bool nf_nat_find_port(struct nf_conntrack_tuple *tuple,
                               struct nf_nat_l4proto *l4proto)
 {
     // 端口分配算法：
     // 1. 首先尝试保留原始端口
     // 2. 如果冲突，尝试端口范围
     // 3. 随机选择可用端口
-    
+
     unsigned int i, min, max;
-    
+
     min = l4proto->nlat_to_range.min;
     max = l4proto->nlat_to_range.max;
-    
+
     for (i = 0; i < max - min + 1; i++) {
         port = htons(min + (i + atomic_read(&nf_conntrack_count) % (max - min + 1)));
         if (!nf_nat_used_ports(port, ...)) {
             return port;
         }
     }
-    
+
     return 0;  // 没有可用端口
 }
 ```
@@ -481,13 +481,13 @@ iptables -t nat -A POSTROUTING -s 192.168.1.100 -o eth0 \
 
 某些应用程序需要了解自己的公网 IP/端口：
 
-| 应用 | 问题 | 解决方案 |
-|------|------|---------|
-| FTP | 控制通道携带 IP 信息 | FTP Helper |
-| SIP | SIP 头携带私有 IP | SIP Helper |
-| H.323 | 携带 IP 地址 | H.323 Helper |
-| IRC | DCC 携带 IP 信息 | IRC Helper |
-| BitTorrent | Tracker 通信 | 应用层代理 |
+| 应用       | 问题                 | 解决方案     |
+| ---------- | -------------------- | ------------ |
+| FTP        | 控制通道携带 IP 信息 | FTP Helper   |
+| SIP        | SIP 头携带私有 IP    | SIP Helper   |
+| H.323      | 携带 IP 地址         | H.323 Helper |
+| IRC        | DCC 携带 IP 信息     | IRC Helper   |
+| BitTorrent | Tracker 通信         | 应用层代理   |
 
 ### 8.2 NAT 穿透技术
 
@@ -578,22 +578,22 @@ graph TD
     subgraph "内部主机"
         H["192.168.1.10:5000"]
     end
-    
+
     subgraph "NAT 路由器"
         NAT["iptables NAT<br/>Conntrack"]
     end
-    
+
     subgraph "外部服务器"
         WEB["8.8.8.8:80"]
     end
-    
+
     H -->|"src: 192.168.1.10:5000\ndst: 8.8.8.8:80"| NAT
     NAT -->|"conntrack 跟踪"| NAT
     NAT -->|"src: 1.2.3.4:10001\ndst: 8.8.8.8:80"| WEB
     WEB -->|"src: 8.8.8.8:80\ndst: 1.2.3.4:10001"| NAT
     NAT -->|"反向查找 conntrack"| NAT
     NAT -->|"src: 8.8.8.8:80\ndst: 192.168.1.10:5000"| H
-    
+
     style NAT fill:#f59f00,stroke:#333
 ```
 

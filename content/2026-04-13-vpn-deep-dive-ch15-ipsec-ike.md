@@ -1,22 +1,34 @@
 ---
 title: "VPN 技术深度探索 (十五)：IKE 密钥交换协议"
 date: 2026-04-13
-tags: [vpn, series, networking, security, ipsec, ike, ikev1, ikev2, dpd, xauth, eap, main-mode, aggressive-mode]
+tags:
+  [
+    vpn,
+    series,
+    networking,
+    security,
+    ipsec,
+    ike,
+    ikev1,
+    ikev2,
+    dpd,
+    xauth,
+    eap,
+    main-mode,
+    aggressive-mode,
+  ]
 description: "IKE 协议深度解析——IKEv1 主模式/野蛮模式报文交换过程、IKEv2 简化流程与新特性、DPD 死亡对等体检测、XAUTH/EAP 扩展认证、NAT 穿透（NAT-T）详解"
 ---
 
-> [!info] VPN 技术深度探索系列
-> 14. [[2026-04-13-vpn-deep-dive-ch14-ipsec-overview|IPSec 体系概述]]
-> **15. IKE 密钥交换（本章）**
-> 16. [[2026-04-13-vpn-deep-dive-ch16-ipsec-esp|AH 与 ESP 协议]]
-> 17. [[2026-04-13-vpn-deep-dive-ch17-ipsec-policy|IPSec 策略配置]]
-> 18. [[2026-04-13-vpn-deep-dive-ch18-ipsec-troubleshooting|IPSec 排错]]
+> [!info] VPN 技术深度探索系列 14. [[2026-04-13-vpn-deep-dive-ch14-ipsec-overview|IPSec 体系概述]]
+> **15. IKE 密钥交换（本章）** 16. [[2026-04-13-vpn-deep-dive-ch16-ipsec-esp|AH 与 ESP 协议]] 17. [[2026-04-13-vpn-deep-dive-ch17-ipsec-policy|IPSec 策略配置]] 18. [[2026-04-13-vpn-deep-dive-ch18-ipsec-troubleshooting|IPSec 排错]]
 
 ---
 
 ## 1. 为什么需要 IKE
 
 IPSec 的 SA（安全关联）需要共享密钥才能工作。手工配置密钥在大规模部署时不现实：
+
 - 密钥管理复杂，难以定期轮换
 - 无法实现完美前向保密（PFS）
 - 无法自动协商算法参数
@@ -94,6 +106,7 @@ Initiator                           Responder
 ```
 
 > [!warning] 野蛮模式的安全风险
+>
 > 1. **身份 IDi 以明文传输**（主模式中加密），可被嗅探
 > 2. **容易受到离线字典攻击**：攻击者可捕获消息 1-2，然后离线暴力破解 PSK
 > 3. 不支持身份保护
@@ -116,6 +129,7 @@ Initiator                           Responder
 ```
 
 可选字段：
+
 - **KE（Key Exchange）**：若启用 PFS，则每次 Phase 2 都进行新的 DH 交换
 - **ID（Identity）**：指定受保护的流量选择符（Traffic Selector）
 
@@ -135,16 +149,16 @@ IKEv2（RFC 7296）完全重新设计，解决了 IKEv1 的诸多问题。
 
 ### 3.1 IKEv2 核心改进
 
-| 特性 | IKEv1 | IKEv2 |
-|------|-------|-------|
-| 协议复杂度 | ISAKMP + Oakley + SKEME 三部分拼接 | 统一规范 |
-| 初始交换消息数 | 主模式 6 条 + 快速模式 3 条 | 最少 4 条完成 SA 建立 |
-| NAT 穿透 | 扩展（RFC 3947） | 内置 |
-| 移动性支持 | 无 | MOBIKE（RFC 4555） |
-| 扩展认证 | XAUTH（非标准扩展） | EAP（内置，RFC 4306） |
-| 可靠传输 | 无内置重传 | 内置请求/响应重传 |
-| 多宿主 | 无 | MOBIKE 支持 |
-| 流量选择符 | 单一 | 多个 TS（Traffic Selectors） |
+| 特性           | IKEv1                              | IKEv2                        |
+| -------------- | ---------------------------------- | ---------------------------- |
+| 协议复杂度     | ISAKMP + Oakley + SKEME 三部分拼接 | 统一规范                     |
+| 初始交换消息数 | 主模式 6 条 + 快速模式 3 条        | 最少 4 条完成 SA 建立        |
+| NAT 穿透       | 扩展（RFC 3947）                   | 内置                         |
+| 移动性支持     | 无                                 | MOBIKE（RFC 4555）           |
+| 扩展认证       | XAUTH（非标准扩展）                | EAP（内置，RFC 4306）        |
+| 可靠传输       | 无内置重传                         | 内置请求/响应重传            |
+| 多宿主         | 无                                 | MOBIKE 支持                  |
+| 流量选择符     | 单一                               | 多个 TS（Traffic Selectors） |
 
 ### 3.2 IKEv2 初始交换（Initial Exchange）
 
@@ -170,6 +184,7 @@ Initiator                           Responder
 ```
 
 消息说明：
+
 - **IKE_SA_INIT**：协商 IKE SA 加密/认证算法，完成 DH 密钥交换，交换随机数（Nonce）
 - **IKE_AUTH**：在加密信道内完成身份认证（PSK、证书、EAP），同时建立第一对 Child SA（即 IPSec SA）
 
@@ -226,6 +241,7 @@ IKEv2 PSK：
 ```
 
 strongSwan 配置：
+
 ```
 connections {
   site-a-to-b {
@@ -262,6 +278,7 @@ IKEv2 证书认证：
 ```
 
 strongSwan 配置：
+
 ```
 connections {
   corp-vpn {
@@ -295,11 +312,13 @@ Initiator                           Responder
 ```
 
 常见 EAP 类型：
+
 - EAP-MSCHAPv2：微软挑战握手认证协议，Windows 原生 IKEv2 客户端使用
 - EAP-TLS：基于客户端证书的 EAP
 - EAP-RADIUS：转发给 RADIUS 服务器认证
 
 strongSwan EAP 配置：
+
 ```
 connections {
   roadwarrior {
@@ -331,6 +350,7 @@ connections {
 ### 5.1 为什么需要 DPD
 
 网络中对等体可能因以下原因消失，而没有正常关闭 IKE SA：
+
 - 网络故障
 - 对等体崩溃重启
 - 中间防火墙超时删除 NAT 条目
@@ -358,13 +378,14 @@ IKEv2 DPD：
 
 当检测到对等体死亡后：
 
-| 动作 | 描述 |
-|------|------|
-| clear | 清除相关 SA，不重连 |
-| hold | 清除 SA，但保留 SPD 策略，等待触发重连 |
-| restart | 清除 SA 并立即重新发起 IKE 协商 |
+| 动作    | 描述                                   |
+| ------- | -------------------------------------- |
+| clear   | 清除相关 SA，不重连                    |
+| hold    | 清除 SA，但保留 SPD 策略，等待触发重连 |
+| restart | 清除 SA 并立即重新发起 IKE 协商        |
 
 strongSwan 配置：
+
 ```
 connections {
   site-vpn {
@@ -383,6 +404,7 @@ connections {
 ### 6.1 问题背景
 
 IPSec ESP（IP 协议号 50）不是 TCP/UDP，普通 NAT 设备无法处理端口映射，会导致：
+
 - ESP 报文在 NAT 设备被丢弃
 - AH 报文因 IP 头修改导致认证失败
 
@@ -456,19 +478,20 @@ REDIRECT Notify，客户端重新连接到指定地址
 
 ## 8. IKEv1 vs IKEv2 总结
 
-| 对比项 | IKEv1 | IKEv2 |
-|--------|-------|-------|
-| 规范 | RFC 2409 + ISAKMP/Oakley | RFC 7296 |
-| 初始协商消息数 | 主模式 9 条，野蛮模式 6 条 | 最少 4 条 |
-| NAT-T | RFC 3947 扩展 | 内置 |
-| 可靠性 | 无内置重传保证 | 请求/响应模型，内置重传 |
-| 扩展认证 | XAUTH（非标准） | EAP（内置） |
-| 移动性 | 无 | MOBIKE |
-| 流量选择符 | 单一 proxy ID | 多个 TS |
-| 密码套件协商 | 分散在 ISAKMP/Transform | 统一 SA payload |
-| DoS 防护 | 无 | Cookie 机制（COOKIE Notify） |
+| 对比项         | IKEv1                      | IKEv2                        |
+| -------------- | -------------------------- | ---------------------------- |
+| 规范           | RFC 2409 + ISAKMP/Oakley   | RFC 7296                     |
+| 初始协商消息数 | 主模式 9 条，野蛮模式 6 条 | 最少 4 条                    |
+| NAT-T          | RFC 3947 扩展              | 内置                         |
+| 可靠性         | 无内置重传保证             | 请求/响应模型，内置重传      |
+| 扩展认证       | XAUTH（非标准）            | EAP（内置）                  |
+| 移动性         | 无                         | MOBIKE                       |
+| 流量选择符     | 单一 proxy ID              | 多个 TS                      |
+| 密码套件协商   | 分散在 ISAKMP/Transform    | 统一 SA payload              |
+| DoS 防护       | 无                         | Cookie 机制（COOKIE Notify） |
 
 > [!important] 部署建议
+>
 > - **新部署一律使用 IKEv2**
 > - 旧系统兼容性需求才使用 IKEv1
 > - 禁用 IKEv1 野蛮模式（除非确有需要 + 充分了解风险）

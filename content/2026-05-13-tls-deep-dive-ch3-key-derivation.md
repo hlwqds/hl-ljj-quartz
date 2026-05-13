@@ -160,6 +160,7 @@ print(f"PBKDF2 derived key: {key.hex()}")
 Argon2（RFC 9106）是 2015 年密码哈希竞赛的冠军算法，被设计为**内存硬**（Memory-hard）函数。相较于 PBKDF2，Argon2 对 ASIC/FPGA 攻击具有更强的抵抗能力，因为它需要大量内存才能计算。
 
 Argon2 有三个变体：
+
 - **Argon2d**：对内存访问与密码相关，适合没有侧信道威胁的场景
 - **Argon2i**：对内存访问与密码无关，适合有侧信道威胁的场景
 - **Argon2id**：混合模式，结合两者优点
@@ -191,15 +192,15 @@ except VerifyMismatchError:
 
 ### 1.5 各 KDF 算法对比
 
-| 特性 | HKDF | PBKDF2 | Argon2 |
-|------|------|--------|--------|
-| 输入类型 | 高熵密钥材料 | 低熵密码 | 低熵密码 |
-| 设计目标 | 密钥扩展/隔离 | 密码拉伸 | 内存硬拉伸 |
-| 计算复杂度 | 低 | 中（可调迭代次数） | 高（可调时间/内存） |
-| 内存需求 | 低 | 低 | 高（可配置） |
-| GPU/ASIC 抵抗 | 弱 | 中 | 强 |
-| 标准年份 | 2010 | 2000（RFC 2898） | 2015 |
-| TLS 使用 | TLS 1.3 | 不用于 TLS | 不用于 TLS |
+| 特性          | HKDF          | PBKDF2             | Argon2              |
+| ------------- | ------------- | ------------------ | ------------------- |
+| 输入类型      | 高熵密钥材料  | 低熵密码           | 低熵密码            |
+| 设计目标      | 密钥扩展/隔离 | 密码拉伸           | 内存硬拉伸          |
+| 计算复杂度    | 低            | 中（可调迭代次数） | 高（可调时间/内存） |
+| 内存需求      | 低            | 低                 | 高（可配置）        |
+| GPU/ASIC 抵抗 | 弱            | 中                 | 强                  |
+| 标准年份      | 2010          | 2000（RFC 2898）   | 2015                |
+| TLS 使用      | TLS 1.3       | 不用于 TLS         | 不用于 TLS          |
 
 ## 2. TLS 1.2 密钥派生
 
@@ -230,12 +231,14 @@ graph LR
 TLS 1.2 支持两种密钥交换方式：**RSA 密钥交换**和**DH/ECDH 密钥交换**。
 
 **RSA 密钥交换**（已废弃）：
+
 ```
 pre_master_secret = encrypted_pre_master_secret
                    (from ClientKeyExchange, encrypted with server's RSA public key)
 ```
 
 **DH/ECDH 密钥交换**：
+
 ```
 pre_master_secret = DH_result
                   (shared secret computed from DH/ECDH handshake)
@@ -292,6 +295,7 @@ print(f"Master Secret: {master_secret.hex()}")
 ### 2.4 密钥块（Key Block）的派生
 
 从 Master Secret 派生出完整的密钥材料（Key Block），包括：
+
 - client_write_MAC_key
 - server_write_MAC_key
 - client_write_key
@@ -443,11 +447,13 @@ binder_key    early_exporter   client_handshake   server_handshake   client_appl
 TLS 1.3 定义了 HKDF-Extract 和 HKDF-Expand 的包装函数，使其符合 TLS 1.3 的语义。
 
 **TLS 1.3 HKDF-Extract**：
+
 ```
 Extract(Salt, IKM) = HKDF-Extract(Salt, IKM)
 ```
 
 **TLS 1.3 HKDF-Expand-Label**：
+
 ```python
 def hkdf_expand_label(secret: bytes, label: bytes, context: bytes,
                       length: int, hash_func=hashlib.sha256) -> bytes:
@@ -466,6 +472,7 @@ def hkdf_expand_label(secret: bytes, label: bytes, context: bytes,
 ```
 
 **TLS 1.3 Derive-Secret**：
+
 ```python
 def derive_secret(secret: bytes, label: bytes, transcript: bytes,
                   hash_func=hashlib.sha256) -> bytes:
@@ -577,17 +584,17 @@ for name, value in secrets.items():
 
 ### 3.5 TLS 1.2 与 TLS 1.3 密钥派生对比
 
-| 特性 | TLS 1.2 | TLS 1.3 |
-|------|---------|---------|
-| KDF 算法 | PRF (基于 HMAC-MD5/SHA) | HKDF (RFC 5869) |
-| 密钥交换依赖 | RSA 或 (EC)DHE | 仅 (EC)DHE |
-| Master Secret 计算 | PRF(pre_master_secret, ...) | HKDF-Extract(early_secret, ...) |
-| 密钥隔离 | 通过 Key Block 分离 | 通过 HKDF-Label 隔离 |
-| 0-RTT 支持 | 无 | 支持（Early Secret） |
-| 1-RTT 握手 | 1-RTT | 1-RTT（优化后） |
-| 前向保密 | 可选 | 必须 |
-| 静态 RSA | 支持 | 不支持 |
-| 密钥层级 | 2 层（Master → Key Block） | 4 层（Early → Handshake → Master → Application） |
+| 特性               | TLS 1.2                     | TLS 1.3                                          |
+| ------------------ | --------------------------- | ------------------------------------------------ |
+| KDF 算法           | PRF (基于 HMAC-MD5/SHA)     | HKDF (RFC 5869)                                  |
+| 密钥交换依赖       | RSA 或 (EC)DHE              | 仅 (EC)DHE                                       |
+| Master Secret 计算 | PRF(pre_master_secret, ...) | HKDF-Extract(early_secret, ...)                  |
+| 密钥隔离           | 通过 Key Block 分离         | 通过 HKDF-Label 隔离                             |
+| 0-RTT 支持         | 无                          | 支持（Early Secret）                             |
+| 1-RTT 握手         | 1-RTT                       | 1-RTT（优化后）                                  |
+| 前向保密           | 可选                        | 必须                                             |
+| 静态 RSA           | 支持                        | 不支持                                           |
+| 密钥层级           | 2 层（Master → Key Block）  | 4 层（Early → Handshake → Master → Application） |
 
 ## 4. 前向保密（Perfect Forward Secrecy）
 
@@ -596,11 +603,13 @@ for name, value in secrets.items():
 **前向保密**（Perfect Forward Secrecy，PFS）是一种安全属性，确保即使攻击者长期窃取了某个会话的长期密钥（如服务器的 RSA 私钥），也无法解密之前截获的加密通信。
 
 没有 PFS 的情况：
+
 - 攻击者记录加密流量
 - 某天服务器被入侵，私钥泄露
 - 攻击者用私钥解密之前记录的所有流量
 
 有 PFS 的情况：
+
 - 攻击者记录加密流量
 - 服务器被入侵，攻击者获得服务器的私钥
 - 但每次会话使用临时 DH/ECDH 密钥，私钥无法解密之前的流量
@@ -677,6 +686,7 @@ sequenceDiagram
 ```
 
 RSA 密钥交换的致命缺陷：pre_master_secret 由客户端生成，用服务器的公钥加密后发送。如果攻击者获得了服务器的私钥，他可以：
+
 1. 解密 ClientKeyExchange 中的 encrypted_pms
 2. 计算 master_secret
 3. 推导所有会话密钥
@@ -702,15 +712,15 @@ graph LR
 
 ### 4.5 不同密钥交换方式的对比
 
-| 特性 | RSA Key Exchange | DHE | ECDHE |
-|------|------------------|-----|-------|
-| 前向保密 | ❌ | ✅ | ✅ |
-| 密钥交换类型 | 静态 | 临时 | 临时 |
-| 计算成本 | 高（RSA 解密） | 中（DH 运算） | 低（EC 运算） |
-| 密钥长度 | 2048-4096 位 | 2048-4096 位 | 256-521 位 |
-| 兼容性 | 旧版客户端 | 现代客户端 | 现代客户端 |
-| TLS 1.3 支持 | ❌ | ✅ | ✅ |
-| 已知风险 | 私钥泄露 = 历史泄露 | 安全 | 安全 + 高效 |
+| 特性         | RSA Key Exchange    | DHE           | ECDHE         |
+| ------------ | ------------------- | ------------- | ------------- |
+| 前向保密     | ❌                  | ✅            | ✅            |
+| 密钥交换类型 | 静态                | 临时          | 临时          |
+| 计算成本     | 高（RSA 解密）      | 中（DH 运算） | 低（EC 运算） |
+| 密钥长度     | 2048-4096 位        | 2048-4096 位  | 256-521 位    |
+| 兼容性       | 旧版客户端          | 现代客户端    | 现代客户端    |
+| TLS 1.3 支持 | ❌                  | ✅            | ✅            |
+| 已知风险     | 私钥泄露 = 历史泄露 | 安全          | 安全 + 高效   |
 
 ## 5. TLS 1.3 加密套件
 
@@ -920,16 +930,16 @@ print(f"Decrypted: {decrypted.decode()}")
 
 ### 5.5 AEAD 算法对比
 
-| 特性 | AES-128-GCM | AES-256-GCM | ChaCha20-Poly1305 | AES-128-CCM |
-|------|-------------|-------------|-------------------|-------------|
-| 密钥长度 | 128 位 | 256 位 | 256 位 | 128 位 |
-| Nonce 长度 | 96 位 | 96 位 | 96 位 | 104 位 |
-| Tag 长度 | 128 位 | 128 位 | 128 位 | 128 位 |
-| 硬件加速 | 是 | 是 | 否 | 是 |
-| 软件性能 | 中（无 AES-NI 慢） | 中（无 AES-NI 慢） | 高 | 中 |
-| TLS 1.3 支持 | ✅ | ✅ | ✅ | ✅ |
-| 适用场景 | 通用 | 高安全需求 | 移动/IoT | IoT/受限环境 |
-| 侧信道风险 | 中（定时攻击） | 中（定时攻击） | 低 | 低 |
+| 特性         | AES-128-GCM        | AES-256-GCM        | ChaCha20-Poly1305 | AES-128-CCM  |
+| ------------ | ------------------ | ------------------ | ----------------- | ------------ |
+| 密钥长度     | 128 位             | 256 位             | 256 位            | 128 位       |
+| Nonce 长度   | 96 位              | 96 位              | 96 位             | 104 位       |
+| Tag 长度     | 128 位             | 128 位             | 128 位            | 128 位       |
+| 硬件加速     | 是                 | 是                 | 否                | 是           |
+| 软件性能     | 中（无 AES-NI 慢） | 中（无 AES-NI 慢） | 高                | 中           |
+| TLS 1.3 支持 | ✅                 | ✅                 | ✅                | ✅           |
+| 适用场景     | 通用               | 高安全需求         | 移动/IoT          | IoT/受限环境 |
+| 侧信道风险   | 中（定时攻击）     | 中（定时攻击）     | 低                | 低           |
 
 ## 6. 加密套件格式与 IANA 注册
 
@@ -942,15 +952,18 @@ TLS_<密钥交换>_<加密算法>_<模式>_<MAC/PRF>_<TLS版本?>
 ```
 
 例如：
+
 - `TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256`
 - `TLS_AES_256_GCM_SHA384`
 
 TLS 1.3 的简化命名（RFC 8446）：
+
 ```
 TLS_<加密算法>_<MAC>  或  TLS_<加密算法>
 ```
 
 例如：
+
 - `TLS_AES_128_GCM_SHA256`
 - `TLS_CHACHA20_POLY1305_SHA256`
 - `TLS_AES_128_GCM`
@@ -964,25 +977,25 @@ Cipher Suite 值 = 0xTTNN
 其中 TT 是第 1 字节，NN 是第 2 字节
 ```
 
-| IANA ID | Cipher Suite Name | KX | AEAD | Mac |
-|---------|-------------------|-----|------|-----|
-| 0x1301 | TLS_AES_128_GCM_SHA256 | ANY | AES-128-GCM | SHA256 |
-| 0x1302 | TLS_AES_256_GCM_SHA384 | ANY | AES-256-GCM | SHA384 |
-| 0x1303 | TLS_CHACHA20_POLY1305_SHA256 | ANY | ChaCha20-Poly1305 | SHA256 |
-| 0x1304 | TLS_AES_128_CCM_SHA256 | ANY | AES-128-CCM | SHA256 |
-| 0x1305 | TLS_AES_128_CCM_8_SHA256 | ANY | AES-128-CCM-8 | SHA256 |
+| IANA ID | Cipher Suite Name            | KX  | AEAD              | Mac    |
+| ------- | ---------------------------- | --- | ----------------- | ------ |
+| 0x1301  | TLS_AES_128_GCM_SHA256       | ANY | AES-128-GCM       | SHA256 |
+| 0x1302  | TLS_AES_256_GCM_SHA384       | ANY | AES-256-GCM       | SHA384 |
+| 0x1303  | TLS_CHACHA20_POLY1305_SHA256 | ANY | ChaCha20-Poly1305 | SHA256 |
+| 0x1304  | TLS_AES_128_CCM_SHA256       | ANY | AES-128-CCM       | SHA256 |
+| 0x1305  | TLS_AES_128_CCM_8_SHA256     | ANY | AES-128-CCM-8     | SHA256 |
 
 TLS 1.2 遗留的 Cipher Suite（部分）：
 
-| IANA ID | Cipher Suite Name | KX | Enc | Mac |
-|---------|-------------------|-----|-----|-----|
-| 0x002F | TLS_RSA_WITH_AES_128_CBC_SHA | RSA | AES-128-CBC | SHA1 |
-| 0x0035 | TLS_RSA_WITH_AES_256_CBC_SHA | RSA | AES-256-CBC | SHA1 |
-| 0x003C | TLS_RSA_WITH_AES_128_CBC_SHA256 | RSA | AES-128-CBC | SHA256 |
-| 0x009C | TLS_RSA_WITH_AES_128_GCM_SHA256 | RSA | AES-128-GCM | SHA256 |
-| 0x009D | TLS_RSA_WITH_AES_256_GCM_SHA384 | RSA | AES-256-GCM | SHA384 |
-| 0xC02F | TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256 | ECDHE | AES-128-GCM | SHA256 |
-| 0xC02C | TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 | ECDHE | AES-256-GCM | SHA384 |
+| IANA ID | Cipher Suite Name                       | KX    | Enc         | Mac    |
+| ------- | --------------------------------------- | ----- | ----------- | ------ |
+| 0x002F  | TLS_RSA_WITH_AES_128_CBC_SHA            | RSA   | AES-128-CBC | SHA1   |
+| 0x0035  | TLS_RSA_WITH_AES_256_CBC_SHA            | RSA   | AES-256-CBC | SHA1   |
+| 0x003C  | TLS_RSA_WITH_AES_128_CBC_SHA256         | RSA   | AES-128-CBC | SHA256 |
+| 0x009C  | TLS_RSA_WITH_AES_128_GCM_SHA256         | RSA   | AES-128-GCM | SHA256 |
+| 0x009D  | TLS_RSA_WITH_AES_256_GCM_SHA384         | RSA   | AES-256-GCM | SHA384 |
+| 0xC02F  | TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256   | ECDHE | AES-128-GCM | SHA256 |
+| 0xC02C  | TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 | ECDHE | AES-256-GCM | SHA384 |
 
 ### 6.3 Go 语言解析 Cipher Suite
 
@@ -1045,11 +1058,13 @@ graph TD
 TLS 协议中，IV（初始化向量）的唯一性至关重要。CBC 模式使用 IV 来确保相同明文产生不同密文；GCM/ChaCha20 等 AEAD 模式使用 Nonce 来防止重放攻击。
 
 **CBC 模式下的 IV**：
+
 - 如果使用相同的 IV 加密相同的明文，会产生相同的密文
 - 攻击者可以判断是否有重复的明文
 - CBC 的 IV 必须是不可预测的（TLS 1.0/1.1 曾因 IV 预测漏洞被攻击）
 
 **AEAD 模式下的 Nonce**：
+
 - AEAD 的 Nonce 可以是计数器或随机数
 - 关键：同一个 Nonce 绝对不能用于两个不同的明文
 - 如果 Nonce 重复，攻击者可以恢复第二个密文的明文
@@ -1113,14 +1128,15 @@ print(f"Different explicit -> Different nonce: {nonce != nonce3}")
 
 TLS 协议严格隔离不同方向的密钥和 IV：
 
-| 参数 | 客户端 → 服务器 | 服务器 → 客户端 |
-|------|-----------------|-----------------|
-| MAC Key | client_write_MAC_key | server_write_MAC_key |
-| Encryption Key | client_write_key | server_write_key |
-| IV | client_write_IV | server_write_IV |
-| Sequence | client_sequence | server_sequence |
+| 参数           | 客户端 → 服务器      | 服务器 → 客户端      |
+| -------------- | -------------------- | -------------------- |
+| MAC Key        | client_write_MAC_key | server_write_MAC_key |
+| Encryption Key | client_write_key     | server_write_key     |
+| IV             | client_write_IV      | server_write_IV      |
+| Sequence       | client_sequence      | server_sequence      |
 
 这种隔离确保：
+
 - 双向通信使用不同的密钥
 - 即使一个方向的密钥泄露，另一个方向仍然安全
 - 序列号独立维护，防止重放攻击
@@ -1130,6 +1146,7 @@ TLS 协议严格隔离不同方向的密钥和 IV：
 ### 8.1 认证加密的定义
 
 认证加密（Authenticated Encryption）同时提供：
+
 - **机密性**：只有持有密钥的人能读取明文
 - **完整性**：能够检测密文是否被篡改
 - **认证性**：能够确认密文来自持有密钥的人
@@ -1139,11 +1156,13 @@ TLS 协议严格隔离不同方向的密钥和 IV：
 ### 8.2 Encrypt-then-MAC vs MAC-then-Encrypt
 
 **MAC-then-Encrypt**（TLS 1.2 CBC 模式）：
+
 1. 计算明文的 MAC
 2. 附加 MAC 到明文
 3. 加密整个数据
 
 **Encrypt-then-MAC**（更安全）：
+
 1. 加密明文
 2. 计算密文的 MAC
 3. 附加 MAC 到密文
@@ -1178,6 +1197,7 @@ graph TB
 ### 8.4 AAD（关联数据）的作用
 
 AEAD 的额外数据（AAD）用于认证但不加密。在 TLS 中，AAD 通常包括：
+
 - 序列号（防止重放）
 - 协议版本
 - 握手消息的部分内容
@@ -1599,6 +1619,7 @@ server_write_iv: aabbccddEEFF...
 ### 10.1 量子计算威胁
 
 Shor 算法证明了量子计算机可以在多项式时间内分解大整数，这意味着：
+
 - **RSA 密钥交换**：可以被量子计算机破解
 - **ECDHE 密钥交换**：可以被量子计算机破解（基于椭圆曲线离散对数）
 
@@ -1637,11 +1658,11 @@ TLS 1.3 draft 已经开始支持 ML-KEM，草案名称为 `TLS 1.3 with ML-KEM`�
 
 IANA 已经注册了多个 TLS 1.3 后量子加密套件：
 
-| IANA ID | Cipher Suite Name | 安全级别 | 状态 |
-|---------|-------------------|---------|------|
-| 0x6399 | TLS_ML_KEM_768_SHA256 | Level 1（约 128 位） | Draft |
-| 0x639A | TLS_ML_KEM_768_SHA384 | Level 1（约 128 位） | Draft |
-| 0x639B | TLS_ML_KEM_1024_SHA512 | Level 5（约 256 位） | Draft |
+| IANA ID | Cipher Suite Name      | 安全级别             | 状态  |
+| ------- | ---------------------- | -------------------- | ----- |
+| 0x6399  | TLS_ML_KEM_768_SHA256  | Level 1（约 128 位） | Draft |
+| 0x639A  | TLS_ML_KEM_768_SHA384  | Level 1（约 128 位） | Draft |
+| 0x639B  | TLS_ML_KEM_1024_SHA512 | Level 5（约 256 位） | Draft |
 
 ### 10.4 混合密钥交换
 
@@ -1652,6 +1673,7 @@ hybrid_secret = HKDF-Extract(ecdh_secret, ml_kem_secret)
 ```
 
 这种方案确保：
+
 - 即使 ECDH 被量子计算机破解，ML-KEM 仍然提供安全保护
 - 即使 ML-KEM 被破解，ECDHE 仍然提供安全保护
 - 攻击者需要同时破解两个系统
@@ -1701,13 +1723,13 @@ def hybrid_key_derivation(ecdh_secret: bytes, ml_kem_secret: bytes,
 
 ### 10.6 加密套件安全级别对比
 
-| 加密套件 | 基础算法 | 密钥长度 | 经典安全 | 量子安全 | TLS 1.3 支持 |
-|----------|----------|----------|----------|----------|--------------|
-| TLS_AES_128_GCM_SHA256 | AES-128-GCM | 128 | 128 | 64 | ✅ |
-| TLS_AES_256_GCM_SHA384 | AES-256-GCM | 256 | 256 | 128 | ✅ |
-| TLS_CHACHA20_POLY1305_SHA256 | ChaCha20-Poly1305 | 256 | 256 | 128 | ✅ |
-| TLS_ML_KEM_768_SHA256 | ML-KEM-768 | 128 | 128 | 128 | Draft |
-| TLS_AES_256_GCM_ML_KEM_768 | Hybrid | 256+128 | 256 | 256 | Draft |
+| 加密套件                     | 基础算法          | 密钥长度 | 经典安全 | 量子安全 | TLS 1.3 支持 |
+| ---------------------------- | ----------------- | -------- | -------- | -------- | ------------ |
+| TLS_AES_128_GCM_SHA256       | AES-128-GCM       | 128      | 128      | 64       | ✅           |
+| TLS_AES_256_GCM_SHA384       | AES-256-GCM       | 256      | 256      | 128      | ✅           |
+| TLS_CHACHA20_POLY1305_SHA256 | ChaCha20-Poly1305 | 256      | 256      | 128      | ✅           |
+| TLS_ML_KEM_768_SHA256        | ML-KEM-768        | 128      | 128      | 128      | Draft        |
+| TLS_AES_256_GCM_ML_KEM_768   | Hybrid            | 256+128  | 256      | 256      | Draft        |
 
 ## 总结
 
@@ -1724,6 +1746,7 @@ AEAD 算法（AES-GCM、ChaCha20-Poly1305、AES-CCM）将加密和认证统一�
 ---
 
 **参考标准**：
+
 - RFC 8446: TLS 1.3
 - RFC 5246: TLS 1.2
 - RFC 5869: HKDF

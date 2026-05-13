@@ -1,7 +1,25 @@
 ---
 title: WireGuard 内核深度探索 Ch1：内核架构与初始化
 date: 2026-05-01 09:00:00
-tags: [WireGuard, Kernel, Linux, Source Code, Architecture, Device, Peer, Cryptokey, Queue, Init, Noise Protocol, Encryption, UDP, Netdev, Workqueue, Timer]
+tags:
+  [
+    WireGuard,
+    Kernel,
+    Linux,
+    Source Code,
+    Architecture,
+    Device,
+    Peer,
+    Cryptokey,
+    Queue,
+    Init,
+    Noise Protocol,
+    Encryption,
+    UDP,
+    Netdev,
+    Workqueue,
+    Timer,
+  ]
 description: WireGuard 内核源码深度解析 Ch1：内核模块架构、核心数据结构、设备初始化、Peer 管理、Socket 绑定、加密队列与工作队列的完整流程。
 ---
 

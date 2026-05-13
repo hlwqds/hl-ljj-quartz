@@ -5,8 +5,8 @@ tags: [p4, series, pipeline, mau, match-action, logical-stage, physical-stage, c
 description: "P4 Pipeline 设计深度解析——Match-Action 流水线架构、逻辑阶段 (Logical Stage) 与物理阶段 (Physical Stage) 映射、p4c 编译器优化、Resource Allocation、Table Placement、流水线平衡"
 ---
 
-> [!info] P4 深度探索系列
-> 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+> [!info] P4 深度探索系列 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-14-p4-deep-dive-ch1-p4-overview|第一章：P4 概述——诞生背景与协议无关包处理]]
 > 2. [[2026-04-14-p4-deep-dive-ch2-p4-architecture|第二章：P4 架构模型——PSA/V1Model、Ingress/Egress]]
 > 3. [[2026-04-14-p4-deep-dive-ch3-p4-vs-ebpf|第三章：P4 vs eBPF——适用场景与硬件/软件对比]]
@@ -26,6 +26,7 @@ description: "P4 Pipeline 设计深度解析——Match-Action 流水线架构�
 ## 1. 概述：Pipeline 是 P4 程序到硬件的桥梁
 
 **Pipeline** 是 P4 编译器将 P4 程序转换为可在硬件上执行的指令序列的过程。它涉及：
+
 - **逻辑阶段 (Logical Stage)**：P4 程序中的 Control 顺序
 - **物理阶段 (Physical Stage)**：硬件实际执行单元（MAU Stage、Pipeline Stage）
 - **资源分配 (Resource Allocation)**：TCAM/SRAM/ALU 的映射
@@ -66,6 +67,7 @@ Stage 0          Stage 1          Stage 2     ...    Stage N
 ### 2.2 流水线的并行性
 
 每个 Stage 内可以并行执行：
+
 - **多个 Table 查找**：同一 Stage 内，多个表可同时查找
 - **多个 Action 执行**：同一 Stage 内，多个动作可同时执行
 
@@ -94,11 +96,11 @@ Stage 0:
 
 ```c
 control Ingress(...) {
-    
+
     table mac_learn { /* ... */ }
     table ipv4_fib { /* ... */ }
     table acl { /* ... */ }
-    
+
     apply {
         // 逻辑上这是三个阶段
         mac_learn.apply();  // 逻辑阶段 0
@@ -112,23 +114,23 @@ control Ingress(...) {
 
 编译器分析表之间的数据依赖：
 
-| 依赖类型 | 描述 | 结果 |
-|----------|------|------|
-| **RAW (Read After Write)** | 表 B 读取表 A 写入的字段 | 必须串行 |
-| **WAR (Write After Read)** | 表 B 写入表 A 读取的字段 | 可能重排序 |
+| 依赖类型                    | 描述                     | 结果       |
+| --------------------------- | ------------------------ | ---------- |
+| **RAW (Read After Write)**  | 表 B 读取表 A 写入的字段 | 必须串行   |
+| **WAR (Write After Read)**  | 表 B 写入表 A 读取的字段 | 可能重排序 |
 | **WAW (Write After Write)** | 表 B 写入表 A 写入的字段 | 可能重排序 |
-| **无依赖** | 读写字段无交集 | 可并行 |
+| **无依赖**                  | 读写字段无交集           | 可并行     |
 
 ```c
 // 数据依赖示例
 apply {
     // 阶段 0: MAC 学习 (写入 srcMac)
     mac_learn.apply();
-    
+
     // 阶段 1: L3 查找 (读取 dstMac 作为 Key 的一部分)
     // RAW 依赖: ipv4_fib 读取 mac_learn 写入的字段
     ipv4_fib.apply();
-    
+
     // 阶段 2: ACL 检查 (读取 srcIp, dstIp)
     // 无依赖: acl 读取的字段与前两个表无交集
     acl.apply();
@@ -165,14 +167,14 @@ Logical Stages ──> p4c Compiler ──> Physical Stages
 
 ### 4.3 物理阶段限制
 
-| 资源 | Tofino 1 | Tofino 2 | Tofino 3 |
-|------|----------|----------|----------|
-| MAU Stages (Ingress) | 32 | 32 | 32 |
-| MAU Stages (Egress) | 32 | 32 | 32 |
-| SRAM (per stage) | 4K | 8K | 16K |
-| TCAM (per stage) | 1K | 2K | 4K |
-| Hash Units (per stage) | 2 | 4 | 4 |
-| ALUs (per stage) | 4 | 4 | 4 |
+| 资源                   | Tofino 1 | Tofino 2 | Tofino 3 |
+| ---------------------- | -------- | -------- | -------- |
+| MAU Stages (Ingress)   | 32       | 32       | 32       |
+| MAU Stages (Egress)    | 32       | 32       | 32       |
+| SRAM (per stage)       | 4K       | 8K       | 16K      |
+| TCAM (per stage)       | 1K       | 2K       | 4K       |
+| Hash Units (per stage) | 2        | 4        | 4        |
+| ALUs (per stage)       | 4        | 4        | 4        |
 
 ---
 
@@ -249,10 +251,10 @@ action mac_rewrite(dmac, smac) {
 
 根据表的大小和访问频率决定放置位置：
 
-| 放置策略 | 描述 |
-|----------|------|
-| **早放置 (Early Placement)** | 小表、高频表放在前面的 Stage |
-| **晚放置 (Late Placement)** | 大表、低频表放在后面的 Stage |
+| 放置策略                        | 描述                               |
+| ------------------------------- | ---------------------------------- |
+| **早放置 (Early Placement)**    | 小表、高频表放在前面的 Stage       |
+| **晚放置 (Late Placement)**     | 大表、低频表放在后面的 Stage       |
 | **共享放置 (Shared Placement)** | 共享 Hash 计算单元的表放同一 Stage |
 
 ---
@@ -261,14 +263,14 @@ action mac_rewrite(dmac, smac) {
 
 ### 6.1 TCAM vs SRAM 选择
 
-| 特性 | TCAM | SRAM (Exact) | SRAM (LPM) |
-|------|------|-------------|------------|
-| Match 类型 | Ternary (任意掩码) | Exact | LPM (前缀匹配) |
-| 查找速度 | O(1) | O(1) | O(1) |
-| 容量 | 较小 (1-4K/stage) | 大 (16K+/stage) | 中等 |
-| 功耗 | 高 | 低 | 低 |
-| 成本 | 高 | 低 | 中 |
-| 典型用途 | ACL, Route (var-length) | MAC, Next-hop | FIB (路由表) |
+| 特性       | TCAM                    | SRAM (Exact)    | SRAM (LPM)     |
+| ---------- | ----------------------- | --------------- | -------------- |
+| Match 类型 | Ternary (任意掩码)      | Exact           | LPM (前缀匹配) |
+| 查找速度   | O(1)                    | O(1)            | O(1)           |
+| 容量       | 较小 (1-4K/stage)       | 大 (16K+/stage) | 中等           |
+| 功耗       | 高                      | 低              | 低             |
+| 成本       | 高                      | 低              | 中             |
+| 典型用途   | ACL, Route (var-length) | MAC, Next-hop   | FIB (路由表)   |
 
 ### 6.2 Direct vs Indirect Resources
 
@@ -281,11 +283,11 @@ Direct 资源与**单个表**绑定：
 table my_table {
     key = { h.ipv4.dstAddr : lpm; }
     actions = { forward; drop; }
-    
+
     // Direct Counter: 每个表项一个计数器
     @pdml("counter", "bytes")
     direct counter<bit<64>>(PSA_CounterType_t.BYTES) ip_bytes;
-    
+
     // Direct Meter: 每个表项一个 meter
     @pdml("meter", "packets")
     direct meter<bit<32>>(PSA_MeterType_t.PACKETS) pkts_meter;
@@ -314,12 +316,12 @@ control Ingress(...) {
 
 ### 6.3 资源分配策略
 
-| 策略 | 适用场景 |
-|------|----------|
+| 策略         | 适用场景           |
+| ------------ | ------------------ |
 | **容量优先** | 大表放在 BRAM/DRAM |
 | **延迟优先** | 热表放在 SRAM/TCAM |
 | **负载均衡** | 均匀分布到各 Stage |
-| **资源共享** | 小表合并共享资源 |
+| **资源共享** | 小表合并共享资源   |
 
 ---
 
@@ -443,14 +445,14 @@ Egress:
 
 ### 8.2 流水线各阶段资源估算
 
-| Stage | 表项数量 | 资源类型 | 资源估算 |
-|-------|----------|----------|----------|
-| MAC Table | 128K | SRAM Exact | 128K |
-| VLAN Table | 4K | SRAM Exact | 4K |
-| L3 FIB | 512K | TCAM+LPM | 512K |
-| ACL | 64K | TCAM Ternary | 64K |
-| Next-hop | 64K | SRAM Exact | 64K |
-| QoS | 4K | SRAM Exact | 4K |
+| Stage      | 表项数量 | 资源类型     | 资源估算 |
+| ---------- | -------- | ------------ | -------- |
+| MAC Table  | 128K     | SRAM Exact   | 128K     |
+| VLAN Table | 4K       | SRAM Exact   | 4K       |
+| L3 FIB     | 512K     | TCAM+LPM     | 512K     |
+| ACL        | 64K      | TCAM Ternary | 64K      |
+| Next-hop   | 64K      | SRAM Exact   | 64K      |
+| QoS        | 4K       | SRAM Exact   | 4K       |
 
 ---
 

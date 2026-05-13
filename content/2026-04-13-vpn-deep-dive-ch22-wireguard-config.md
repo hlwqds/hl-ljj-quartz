@@ -5,8 +5,8 @@ tags: [vpn, series, wireguard, configuration, wg-quick, deployment]
 description: "WireGuard 配置与部署实战——wg-quick 工具链、配置文件详解、wg show 状态查看、NAT 穿透与 Endpoint 配置、进阶路由（split-tunnel/full-tunnel）、多 Peer 管理"
 ---
 
-> [!info] VPN 技术深度探索系列
-> 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+> [!info] VPN 技术深度探索系列 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-vpn-deep-dive-ch1-vpn-fundamentals|VPN 基础概念]]
 > 2. [[2026-04-13-vpn-deep-dive-ch18-ipsec-troubleshooting|第十八章：IPSec 排错]]
 > 3. [[2026-04-13-vpn-deep-dive-ch19-wireguard-protocol|第十九章：WireGuard 协议详解]]

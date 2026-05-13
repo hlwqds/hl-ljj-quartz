@@ -373,17 +373,17 @@ Benefit:
 
 ### 17.7.1 Feature Comparison
 
-| Feature | VPLS | EVPN |
-|---------|------|------|
-| MAC Learning | Data plane (flood-and-learn) | Control plane (BGP) |
-| Multi-homing | Limited (no native) | Native (ESI, DF election) |
-| Optimal forwarding | Only after learning | Always optimal |
-| Unknown unicast | Flood entire VPLS | BGP分布式, selective |
-| BUM handling | Flood | Per-ES DF forwarding |
-| Scaling | Poor for large MAC spaces | Better (no flooding) |
-| PW signaling | LDP or BGP | BGP only |
-| Operational complexity | Lower | Higher |
-| Deployment maturity | Mature | Modern |
+| Feature                | VPLS                         | EVPN                      |
+| ---------------------- | ---------------------------- | ------------------------- |
+| MAC Learning           | Data plane (flood-and-learn) | Control plane (BGP)       |
+| Multi-homing           | Limited (no native)          | Native (ESI, DF election) |
+| Optimal forwarding     | Only after learning          | Always optimal            |
+| Unknown unicast        | Flood entire VPLS            | BGP分布式, selective      |
+| BUM handling           | Flood                        | Per-ES DF forwarding      |
+| Scaling                | Poor for large MAC spaces    | Better (no flooding)      |
+| PW signaling           | LDP or BGP                   | BGP only                  |
+| Operational complexity | Lower                        | Higher                    |
+| Deployment maturity    | Mature                       | Modern                    |
 
 ### 17.7.2 Migration Considerations
 

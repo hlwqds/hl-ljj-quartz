@@ -10,8 +10,8 @@ tags:
 description: "深入解析 Suricata 的线程模型：TmThread 线程结构、TmModule 模块定义、TM (Thread Module) 流水线、Packet 处理流程、CPU 亲和配置"
 ---
 
-> [!info] Suricata 2026 深度探索系列
-> 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Suricata 2026 深度探索系列 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-15-suricata-deep-dive-ch1-overview|第一章：Suricata 概述]]
 > 2. [[2026-04-15-suricata-deep-dive-ch2-config|第二章：Suricata 配置系统]]
 > 3. [[2026-04-15-suricata-deep-dive-ch3-runmodes|第三章：Runmodes 运行模式]]
@@ -76,7 +76,7 @@ typedef struct ThreadVars_ {
     TmSlot *tmr;                // 接收槽位
     TmSlot *tmd;                // 解码槽位
     TmSlot *tmm;                // 主处理槽位
-    
+
     /* 队列连接 */
     PacketQueue *inq;            // 输入队列
     PacketQueue *outq;           // 输出队列
@@ -87,7 +87,7 @@ typedef struct ThreadVars_ {
     uint8_t status;             // 线程状态
     bool quit;                  // 退出标志
     bool capsule_state;         // 线程状态
-    
+
     /* 统计 */
     uint16_t tm_id;             // TmModule ID
     uint64_t pkts;              // 处理包数
@@ -101,7 +101,7 @@ typedef struct ThreadVars_ {
 typedef struct TmModule_ {
     int id;                      // 模块 ID
     const char *name;            // 模块名称
-    
+
     /* 模块能力标志 */
     uint8_t flags;              // TM_FLAG_* 组合
 #define TM_FLAG_RECEIVE_TM      0x01   // 接收模块
@@ -109,13 +109,13 @@ typedef struct TmModule_ {
 #define TM_FLAG_DETECT_TM        0x04   // 检测模块
 #define TM_FLAG_LOG_TM           0x08   // 日志模块
 #define TM_FLAG_CAPONE_TM        0x10   // 独占 CPU
-    
+
     /* 核心接口 */
     TmEcode (*ThreadInit)(ThreadVars *, const void *, void **);
     TmEcode (*ThreadDeinit)(ThreadVars *, void *);
     TmEcode (*Management)(ThreadVars *);  // 管理函数
     TmEcode (*Func)(ThreadVars *, Packet *);  // 包处理函数
-    
+
     /* 下一模块 */
     struct TmModule_ *next;
 } TmModule;
@@ -128,16 +128,16 @@ typedef struct TmModule_ {
 typedef struct TmSlot_ {
     /* 槽位 ID */
     int slot_id;
-    
+
     /* 指向的 TmModule */
     TmModule *tm;
-    
+
     /* 槽位数据 */
     void *slot_data;             // 模块私有数据
-    
+
     /* 下一槽位 */
     struct TmSlot_ *slot_next;
-    
+
     /* 槽位配置 */
     struct {
         int threads;             // 槽位线程数
@@ -160,25 +160,25 @@ TmModule TmModules[] = {
     { TM_MODULE_RECEIVE, "ReceivePcap", TM_FLAG_RECEIVE_TM, ... },
     { TM_MODULE_RECEIVE, "ReceiveNFQ", TM_FLAG_RECEIVE_TM, ... },
     { TM_MODULE_RECEIVE, "ReceiveDPDK", TM_FLAG_RECEIVE_TM, ... },
-    
+
     /* 解码模块 (Decode) */
     { TM_MODULE_DECODE, "DecodeEthernet", TM_FLAG_DECODE_TM, ... },
     { TM_MODULE_DECODE, "DecodeIP", TM_FLAG_DECODE_TM, ... },
     { TM_MODULE_DECODE, "DecodeTCP", TM_FLAG_DECODE_TM, ... },
     { TM_MODULE_DECODE, "DecodeUDP", TM_FLAG_DECODE_TM, ... },
-    
+
     /* 检测模块 (Detect) */
     { TM_MODULE_DETECT, "Detect", TM_FLAG_DETECT_TM, ... },
-    
+
     /* 日志模块 (Log) */
     { TM_MODULE_LOG, "LogFile", TM_FLAG_LOG_TM, ... },
     { TM_MODULE_LOG, "LogEve", TM_FLAG_LOG_TM, ... },
     { TM_MODULE_LOG, "LogAlert", TM_FLAG_LOG_TM, ... },
-    
+
     /* Verdict 模块 */
     { TM_VERDICT, "VerdictNFQ", TM_FLAG_VERDICT_TM, ... },
     { TM_VERDICT, "VerdictIPFW", TM_FLAG_VERDICT_TM, ... },
-    
+
     { {0}, NULL, 0, NULL }
 };
 ```
@@ -199,20 +199,20 @@ ThreadVars *TmThreadCreatePacketHandler(
     const char *management_name)
 {
     ThreadVars *tv = SCCalloc(1, sizeof(ThreadVars));
-    
+
     /* 设置线程名称 */
     tv->name = name;
-    
+
     /* 创建输入队列 */
     if (strcmp(inq_name, "packetpool") == 0) {
         tv->inq = &packet_pool;
     } else {
         tv->inq = CreateQueue(inq_name);
     }
-    
+
     /* 分配槽位数组 */
     tv->tmr = SCCalloc(1, sizeof(TmSlot));
-    
+
     return tv;
 }
 ```
@@ -226,7 +226,7 @@ TmEcode TmThreadSpawn(ThreadVars *tv)
     /* 设置线程属性 */
     pthread_attr_t attr;
     pthread_attr_init(&attr);
-    
+
     /* 设置 CPU 亲和（如果配置了）*/
     if (tv->thread_priority > 0) {
         cpu_set_t cpuset;
@@ -234,36 +234,36 @@ TmEcode TmThreadSpawn(ThreadVars *tv)
         CPU_SET(tv->id % GetCPUCount(), &cpuset);  // 简单亲和策略
         pthread_attr_setaffinity_np(&attr, sizeof(cpu_set_t), &cpuset);
     }
-    
+
     /* 创建线程 */
     if (pthread_create(&tv->t, &attr, ThreadWrapper, tv) != 0) {
         return TM_ECODE_FAILED;
     }
-    
+
     return TM_ECODE_OK;
 }
 
 static void *ThreadWrapper(void *arg)
 {
     ThreadVars *tv = (ThreadVars *)arg;
-    
+
     /* 初始化模块 */
     if (tv->ThreadInit) {
         void *init_data = NULL;
         tv->ThreadInit(tv, tv->initdata, &init_data);
         tv->slot_data = init_data;
     }
-    
+
     /* 执行主循环 */
     while (!tv->quit) {
         TmThreadsSlotVarRun(tv, NULL);
     }
-    
+
     /* 清理 */
     if (tv->ThreadDeinit) {
         tv->ThreadDeinit(tv, tv->slot_data);
     }
-    
+
     pthread_exit(NULL);
 }
 ```
@@ -279,10 +279,10 @@ static void *ThreadWrapper(void *arg)
 TmEcode TmThreadsSlotVarRun(ThreadVars *tv, Packet *p)
 {
     TmSlot *s = tv->slots;
-    
+
     while (s != NULL) {
         TmModule *tm = s->tm;
-        
+
         /* 执行槽位处理函数 */
         if (tm->Func) {
             /* 从输入队列取包（如果是接收槽位，p=NULL）*/
@@ -302,10 +302,10 @@ TmEcode TmThreadsSlotVarRun(ThreadVars *tv, Packet *p)
                 }
             }
         }
-        
+
         s = s->slot_next;
     }
-    
+
     return TM_ECODE_OK;
 }
 ```
@@ -318,20 +318,20 @@ static int CreateWorkerThread(int i)
 {
     ThreadVars *tv_worker = TmThreadCreatePacketHandler(
         "Worker#i", "packetpool", "packetpool", NULL, NULL);
-    
+
     /* 设置模块槽位 */
     TmSlot *slot_decode = TmSlotAdd(tv_worker, "DecodeEthernet",
                                     TM_FLAG_DECODE_TM, NULL);
     TmSlotLink(slot_decode, "DecodeIP");
     TmSlotLink(slot_decode, "DecodeTCP");
     TmSlotLink(slot_decode, "DecodeUDP");
-    
+
     TmSlot *slot_detect = TmSlotAdd(tv_worker, "Detect",
                                     TM_FLAG_DETECT_TM, NULL);
-    
+
     TmSlot *slot_log = TmSlotAdd(tv_worker, "LogEve",
                                   TM_FLAG_LOG_TM, NULL);
-    
+
     TmThreadSpawn(tv_worker);
 }
 ```
@@ -346,13 +346,13 @@ static int CreateWorkerThread(int i)
 # suricata.yaml
 threading:
   cpu-affinity:
-    - cpu: [0, 1, 2, 3]           # 管理线程
+    - cpu: [0, 1, 2, 3] # 管理线程
       mode: "exclusive"
       threads: 1
-    - cpu: [4, 5, 6, 7]           # Worker 线程
+    - cpu: [4, 5, 6, 7] # Worker 线程
       mode: "exclusive"
       threads: 4
-    - cpu: [8, 9]                # 流管理线程
+    - cpu: [8, 9] # 流管理线程
       mode: "exclusive"
       threads: 2
 ```
@@ -375,7 +375,7 @@ int TmThreadSetCPU(ThreadVars *tv, CPUAffinity *ca)
 {
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
-    
+
     if (ca->mode == EXCLUSIVE) {
         /* 独占模式：每个线程绑定一个 CPU */
         int cpu_id = tv->id % ca->cpu_max;
@@ -386,7 +386,7 @@ int TmThreadSetCPU(ThreadVars *tv, CPUAffinity *ca)
             CPU_SET(ca->cpu[i], &cpuset);
         }
     }
-    
+
     pthread_setaffinity_np(tv->t, sizeof(cpu_set_t), &cpuset);
     return 0;
 }
@@ -403,15 +403,15 @@ int TmThreadSetCPU(ThreadVars *tv, CPUAffinity *ca)
 typedef struct PacketQueue_ {
     /* 队列锁 */
     SCSpinlock lock;
-    
+
     /* 队列头尾 */
     Packet *head;
     Packet *tail;
-    
+
     /* 计数 */
     uint32_t len;                // 当前长度
     uint32_t max_len;            // 最大长度
-    
+
     /* 等待条件 */
     SCCtrlCondT cond;
     SCCtrlMutexT mtx;
@@ -436,11 +436,11 @@ Packet *PacketGetFromQueueOrAlloc(void)
     /* 先尝试从本地池取 */
     Packet *p = PacketDequeue(&tv->pq->local);
     if (p != NULL) return p;
-    
+
     /* 本地池空，尝试全局池 */
     p = PacketDequeue(&packet_pool.global);
     if (p != NULL) return p;
-    
+
     /* 池也空，分配新包 */
     return PacketAlloc();
 }
@@ -473,15 +473,15 @@ extern __thread StreamReassembly *t_stream_reasm;
 static void *ThreadManagement(void *arg)
 {
     ThreadVars *tv = (ThreadVars *)arg;
-    
+
     /* 流管理循环 */
     while (!tv->quit) {
         /* 处理超时 Flow */
         FlowManagerTimeoutHandler();
-        
+
         /* 处理超时 Stream */
         StreamReassemblyTimeoutHandler();
-        
+
         /* 休眠 */
         sleep(1);
     }

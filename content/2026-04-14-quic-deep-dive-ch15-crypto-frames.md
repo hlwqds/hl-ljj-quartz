@@ -84,12 +84,12 @@ CRYPTO 帧格式（RFC 9000 §19.6）：
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 ```
 
-| 字段 | 说明 |
-|------|------|
-| Type | 0x06（固定） |
-| Offset | 此帧携带的 TLS 数据在 CRYPTO 流中的起始字节偏移（从 0 开始） |
-| Length | Crypto Data 的字节数（不包括帧头） |
-| Crypto Data | TLS 握手消息的原始字节（不含 TLS Record Layer 头） |
+| 字段        | 说明                                                         |
+| ----------- | ------------------------------------------------------------ |
+| Type        | 0x06（固定）                                                 |
+| Offset      | 此帧携带的 TLS 数据在 CRYPTO 流中的起始字节偏移（从 0 开始） |
+| Length      | Crypto Data 的字节数（不包括帧头）                           |
+| Crypto Data | TLS 握手消息的原始字节（不含 TLS Record Layer 头）           |
 
 ### 2.2 CRYPTO 帧与 STREAM 帧的格式对比
 
@@ -259,7 +259,7 @@ CRYPTO 帧的确认机制：
 
   发送方：每个含 CRYPTO 帧的包有独立的 Packet Number
   接收方：对包的 ACK 就是对 CRYPTO 帧的确认
-  
+
   发送方维护：
     crypto_offset_sent：已发送到的 CRYPTO 流字节偏移
     crypto_offset_acked：已被 ACK 确认的最大字节偏移
@@ -317,10 +317,10 @@ CRYPTO 流的缓存约束：
 NewSessionTicket 传输流程：
 
   客户端发送 HANDSHAKE_DONE ACK 后：
-  
+
   服务端 1-RTT 包：
     CRYPTO(offset=0, len=350, data=NewSessionTicket)
-    
+
   NewSessionTicket TLS 消息内容：
     ├── ticket_lifetime：票据有效期（秒）
     ├── ticket_age_add：混淆时间偏移
@@ -340,10 +340,10 @@ NewSessionTicket 传输流程：
 KeyUpdate（密钥更新）的 CRYPTO 帧传输：
 
   注意：QUIC 不使用 TLS KeyUpdate 消息进行密钥更新！
-  
+
   QUIC 的密钥更新通过 Key Phase bit 翻转实现（见 ch11），
   不通过 CRYPTO 帧中的 TLS KeyUpdate 消息。
-  
+
   如果接收到 TLS KeyUpdate 消息 → 必须关闭连接（PROTOCOL_VIOLATION）
 ```
 
@@ -364,7 +364,7 @@ Initial 包安全性分析：
     ✓ 服务器名（SNI，通过 TLS Extension）
     ✓ 支持的密码套件
     ✓ 客户端随机数
-    
+
   QUIC 的缓解：ECH（Encrypted Client Hello，RFC draft）
     → 将真实 ClientHello 加密在外层 ClientHello 中
     → 只有支持 ECH 的服务器能解密
@@ -413,28 +413,28 @@ Initial 包中的 CRYPTO 帧（ClientHello 片段）：
 ```python
 class CryptoStream:
     """CRYPTO 数据流的接收缓冲区"""
-    
+
     def __init__(self):
         self.buffer = {}          # offset → bytes
         self.next_offset = 0      # 下一个期望的 offset
         self.assembled = bytearray()  # 已重组的连续数据
-    
+
     def receive_frame(self, offset: int, data: bytes):
         """接收一个 CRYPTO 帧"""
         if offset < self.next_offset:
             # 重复数据，忽略（幂等）
             return
-        
+
         self.buffer[offset] = data
         self._reassemble()
-    
+
     def _reassemble(self):
         """尝试重组连续的 TLS 握手数据"""
         while self.next_offset in self.buffer:
             chunk = self.buffer.pop(self.next_offset)
             self.assembled.extend(chunk)
             self.next_offset += len(chunk)
-    
+
     def get_complete_messages(self):
         """提取完整的 TLS 消息（通过 TLS 消息头的 Length 字段）"""
         messages = []
@@ -447,7 +447,7 @@ class CryptoStream:
                 break  # 消息未完整接收
             messages.append(bytes(self.assembled[pos:pos+total_len]))
             pos += total_len
-        
+
         # 移除已提取的消息
         del self.assembled[:pos]
         return messages

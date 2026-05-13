@@ -103,7 +103,7 @@ ACK Ranges 编码原理：
 
   间隔计算（RFC 9000 §19.3.1）：
     smallest_in_range = largest - first_ack_range
-    
+
     for each (Gap, AckRangeLen) in ack_ranges:
         largest = smallest_in_range - Gap - 2
         smallest = largest - AckRangeLen
@@ -117,19 +117,19 @@ ACK Ranges 编码原理：
 
   Packet Numbers: 0 1 2 . . 5 6 . . 9
                   ↑ ↑ ↑     ↑ ↑     ↑
-  
+
   编码过程（从最大 PN=9 向下）：
     Largest Acknowledged = 9
     First ACK Range = 0         → 确认 [9, 9]（只有 9 一个包）
-    
+
     第一个 ACK Range：
       Gap = 1                   → 跳过 7, 8（Gap=1 表示 Gap+2=3 个中间 PN：7, 8 + 边界）
       ACK Range Length = 1      → 确认 [5, 6]（Length+1=2 个包）
-    
+
     第二个 ACK Range：
       Gap = 1                   → 跳过 3, 4
       ACK Range Length = 2      → 确认 [0, 2]（Length+1=3 个包）
-    
+
     ACK Range Count = 2
 
   最终 ACK 帧字段：
@@ -147,21 +147,21 @@ ACK Ranges 编码原理：
 def decode_ack_ranges(largest, first_ack_range, ack_ranges):
     """返回所有已确认的 Packet Number 集合"""
     acked = set()
-    
+
     # First ACK Range：[largest - first_ack_range, largest]
     for pn in range(largest - first_ack_range, largest + 1):
         acked.add(pn)
-    
+
     smallest = largest - first_ack_range
-    
+
     for gap, ack_range_len in ack_ranges:
         # 跳过 gap + 2 个 PN（+2 是因为边界不含在 gap 内）
         largest = smallest - gap - 2
         smallest = largest - ack_range_len
-        
+
         for pn in range(smallest, largest + 1):
             acked.add(pn)
-    
+
     return acked
 ```
 
@@ -172,9 +172,9 @@ ACK Range 数量优化：
 
   ① 维持最大 ACK Range 数量限制（避免 ACK 帧过大）
      → 建议最多 64 个 Range（约 500 字节）
-  
+
   ② 旧的 ACK Range 可以逐步删除（已确认的就不需要重复 ACK）
-  
+
   ③ ACK 帧本身不需要重传（Packet Number 单调递增，新 ACK 隐含历史信息）
 ```
 
@@ -186,7 +186,7 @@ ACK Range 数量优化：
 Largest Acknowledged 含义：
 
   接收方目前收到的最大 Packet Number。
-  
+
   注意：
     ① 这是 PN 空间中实际收到的最大值，不是期望序号
     ② 对应 ACK 的包类型：
@@ -209,9 +209,9 @@ ACK Delay 测量：
 
   t_recv  = 收到 PN=L 对应数据包的时间
   t_send  = 发出此 ACK 帧的时间
-  
+
   ACK Delay（原始微秒值）= t_send - t_recv
-  
+
   编码为帧中的值：
     ACK Delay（字段值）= ACK_Delay_raw / (2 ^ ack_delay_exponent)
     （ack_delay_exponent 是 transport parameter，默认为 3，即除以 8）
@@ -230,7 +230,7 @@ RTT 估算（RFC 9002 §5.1）：
   但 latest_rtt 包含了接收方的 ACK 处理延迟，需要扣除：
 
   adjusted_rtt = latest_rtt - ack_delay   （如果 ack_delay 合法）
-  
+
   smoothed_rtt = (7/8) * smoothed_rtt + (1/8) * adjusted_rtt
   rttvar = (3/4) * rttvar + (1/4) * |smoothed_rtt - adjusted_rtt|
 
@@ -318,7 +318,7 @@ QUIC 的三个 Packet Number 空间：
   PN Space 3：Application Data / 1-RTT（Packet Number 从 0 开始）
 
   ★ 每个空间的 ACK 完全独立！
-  
+
   示例：
     收到 Initial Packet PN=5 → 发 ACK 在 Initial 包中，Largest Acked=5
     收到 Handshake Packet PN=3 → 发 ACK 在 Handshake 包中，Largest Acked=3
@@ -442,7 +442,7 @@ PN 截断安全性：
   ACK Range [0]：
   02          → Gap = 2（跳过 PN 6, 7 两个包，+2 所以实际跨越 PN 6, 7）
   02          → ACK Range Length = 2（确认 3 个包）
-              → 从 9 - 0 - 2 - 2 - 1 = 4 开始，到 4 + 2 = 6... 
+              → 从 9 - 0 - 2 - 2 - 1 = 4 开始，到 4 + 2 = 6...
 
   等等，让我重新计算：
   smallest_in_prev_range = 9 - 0 = 9

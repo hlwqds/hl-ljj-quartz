@@ -11,8 +11,8 @@ tags:
 description: "深入解析 Zeek Notice 框架——Notice::Info、告警处理、notice.log、Notice 策略、通知动作"
 ---
 
-> [!info] Zeek 2026 深度探索系列
-> 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Zeek 2026 深度探索系列 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-15-zeek-deep-dive-ch1-overview|第一章：Zeek 概述]]
 > 2. [[2026-04-15-zeek-deep-dive-ch2-installation|第二章：安装部署]]
 > 3. [[2026-04-15-zeek-deep-dive-ch3-config|第三章：配置系统]]
@@ -138,19 +138,19 @@ type Notice::Info = record {
 
 ### 2.3 主要字段说明
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `ts` | time | 时间戳 |
-| `uid` | string | 关联连接 UID |
-| `id` | conn_id | 关联连接 4-tuple |
-| `note` | Notice::Type | Notice 类型 |
-| `msg` | string | 主消息 |
-| `sub` | string | 子消息 |
-| `src` | addr | 源地址 |
-| `dst` | addr | 目标地址 |
-| `actions` | set[Notice::Action] | 执行的动作 |
-| `identifier` | string | 去重标识符 |
-| `suppress_for` | interval | 抑制时长 |
+| 字段           | 类型                | 说明             |
+| -------------- | ------------------- | ---------------- |
+| `ts`           | time                | 时间戳           |
+| `uid`          | string              | 关联连接 UID     |
+| `id`           | conn_id             | 关联连接 4-tuple |
+| `note`         | Notice::Type        | Notice 类型      |
+| `msg`          | string              | 主消息           |
+| `sub`          | string              | 子消息           |
+| `src`          | addr                | 源地址           |
+| `dst`          | addr                | 目标地址         |
+| `actions`      | set[Notice::Action] | 执行的动作       |
+| `identifier`   | string              | 去重标识符       |
+| `suppress_for` | interval            | 抑制时长         |
 
 ---
 
@@ -241,6 +241,7 @@ type Notice::Action: enum {
 ### 4.2 动作优先级
 
 当多个动作应用于一个 Notice 时：
+
 1. `ACTION_DROP` 优先
 2. `ACTION_ALARM` 其次
 3. `ACTION_EMAIL` 再次
@@ -676,29 +677,32 @@ event Notice::notice(n: Notice::Info)
 
 本章介绍了 Zeek Notice 框架的核心能力：
 
-| 组件 | 说明 |
-|------|------|
-| **notice.log** | 安全告警主日志 |
-| **Notice::Info** | Notice 信息的 record 类型 |
-| **NOTICE()** | 触发 Notice 的主要函数 |
-| **Notice::policy** | Notice 处理策略表 |
+| 组件               | 说明                            |
+| ------------------ | ------------------------------- |
+| **notice.log**     | 安全告警主日志                  |
+| **Notice::Info**   | Notice 信息的 record 类型       |
+| **NOTICE()**       | 触发 Notice 的主要函数          |
+| **Notice::policy** | Notice 处理策略表               |
 | **Notice::Action** | 动作类型 (LOG/ALARM/EMAIL/DROP) |
-| **suppress_for** | 抑制时长，防止重复告警 |
+| **suppress_for**   | 抑制时长，防止重复告警          |
 
 Notice 类型分类：
-- 连接类 (Connection::*)
-- SSH 类 (SSH::*)
-- HTTP 类 (HTTP::*)
-- SSL 类 (SSL::*)
-- 文件类 (Files::*)
+
+- 连接类 (Connection::\*)
+- SSH 类 (SSH::\*)
+- HTTP 类 (HTTP::\*)
+- SSL 类 (SSL::\*)
+- 文件类 (Files::\*)
 
 Notice 框架的价值：
+
 - 统一的安全告警系统
 - 灵活的策略配置
 - 支持多种输出方式
 - 与 Zeek 其他框架深度集成
 
 Notice 最佳实践：
+
 - 为不同 Notice 类型设置合适的 suppress_for
 - 使用 identifier 进行去重
 - 合理配置 Notice::policy

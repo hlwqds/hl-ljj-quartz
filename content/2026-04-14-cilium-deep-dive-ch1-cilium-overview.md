@@ -10,8 +10,8 @@ tags:
   - cloud-native
 ---
 
-> [!info] Cilium 2026 深度探索系列
-> 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+> [!info] Cilium 2026 深度探索系列 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+>
 > 1. **第一章：Cilium 概述** ←
 > 2. [[2026-04-14-cilium-deep-dive-ch2-architecture|第二章：Cilium 架构]]
 > 3. [[2026-04-14-cilium-deep-dive-ch3-ebpf-datapath|第三章：eBPF 数据面]]
@@ -26,14 +26,14 @@ Kubernetes 网络的核心挑战是：**如何在不给内核增加负担的情�
 
 传统方案（如 kube-proxy + iptables/nftables）存在以下根本性缺陷：
 
-| 维度 | kube-proxy + iptables | Cilium |
-|:---|:---|:---|
-| **复杂度** | O(n) 规则遍历 | O(1) 哈希查找 |
-| **延迟** | 每次转发数十条 iptables 链 | 直接 eBPF 映射查找 |
-| **扩展性** | 节点 >1000 Service 时性能急剧下降 | 线性扩展，支持百万级 Endpoint |
-| **可观测性** | 无原生 Flow 日志 | Hubble 原生 L7 Flow 可视化 |
-| **策略粒度** | L3/L4 | 可到 L7（HTTP/gRPC/Kafka） |
-| **加密** | 依赖外部方案 | 原生 WireGuard/IPsec |
+| 维度         | kube-proxy + iptables             | Cilium                        |
+| :----------- | :-------------------------------- | :---------------------------- |
+| **复杂度**   | O(n) 规则遍历                     | O(1) 哈希查找                 |
+| **延迟**     | 每次转发数十条 iptables 链        | 直接 eBPF 映射查找            |
+| **扩展性**   | 节点 >1000 Service 时性能急剧下降 | 线性扩展，支持百万级 Endpoint |
+| **可观测性** | 无原生 Flow 日志                  | Hubble 原生 L7 Flow 可视化    |
+| **策略粒度** | L3/L4                             | 可到 L7（HTTP/gRPC/Kafka）    |
+| **加密**     | 依赖外部方案                      | 原生 WireGuard/IPsec          |
 
 Cilium 诞生于 2016 年，由 Google 工程师 Thomas Graf 创立，2019 年进入 CNCF 孵化项目，2021 年毕业为 CNCF 顶级项目。其核心创新是：**用 eBPF（Extended Berkeley Packet Filter）重新实现 Kubernetes 网络的所有功能**，绕过 iptables，在内核中实现高性能、可编程的数据面。
 
@@ -45,7 +45,7 @@ eBPF 允许在 Linux 内核中运行沙箱化的字节码程序，无需修改�
 
 ```
 传统路径（iptables）：
-  Packet → Netfilter (PREROUTING) → iptables (nat table) → iptables (filter table) 
+  Packet → Netfilter (PREROUTING) → iptables (nat table) → iptables (filter table)
          → ... 数十条规则遍历 ... → Routing Decision → Netfilter (POSTROUTING)
 
 Cilium 路径（eBPF）：
@@ -90,7 +90,7 @@ Cilium 用 **eBPF Service 映射**替代 iptables，查找复杂度降为 O(1)�
 ```
 传统 Sidecar 模式：
   Pod → Sidecar（Envoy）→ 策略检查 → 实际服务
-  
+
 Cilium Ambient 模式：
   Pod → Waypoint Proxy（per-namespace）→ 策略检查 → 实际服务
 ```
@@ -210,13 +210,13 @@ cilium hubble ui &
 
 本章介绍了 Cilium 的诞生背景和核心价值：
 
-| 概念 | 说明 |
-|:---|:---|
-| **eBPF** | Cilium 的技术基石，内核中运行的安全沙箱程序 |
-| **Identity** | 基于标签的身份，替代 IP 作为策略主体 |
+| 概念                | 说明                                                |
+| :------------------ | :-------------------------------------------------- |
+| **eBPF**            | Cilium 的技术基石，内核中运行的安全沙箱程序         |
+| **Identity**        | 基于标签的身份，替代 IP 作为策略主体                |
 | **kube-proxy 替代** | eBPF Service 映射，O(1) 查找替代 iptables O(n) 遍历 |
-| **Hubble** | Cilium 内置的可观测性平台，L3-L7 Flow 可视化 |
-| **Ambient Mode** | 无 Sidecar 的 Service Mesh，大幅降低资源开销 |
+| **Hubble**          | Cilium 内置的可观测性平台，L3-L7 Flow 可视化        |
+| **Ambient Mode**    | 无 Sidecar 的 Service Mesh，大幅降低资源开销        |
 
 **下一章**：深入 Cilium 架构，理解 CCN/CNCM/eBPF Datapath/控制面的设计与协作。
 

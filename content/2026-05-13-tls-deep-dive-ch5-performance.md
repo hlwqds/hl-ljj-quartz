@@ -1,7 +1,19 @@
 ---
 title: "TLS 深度探索 Ch5: TLS 性能优化实战"
 date: "2026-05-13"
-tags: ["TLS", "性能优化", "网络安全", "HTTPS", "1-RTT", "0-RTT", "Session Resumption", "OCSP Stapling", "HTTP/2", "CDN"]
+tags:
+  [
+    "TLS",
+    "性能优化",
+    "网络安全",
+    "HTTPS",
+    "1-RTT",
+    "0-RTT",
+    "Session Resumption",
+    "OCSP Stapling",
+    "HTTP/2",
+    "CDN",
+  ]
 description: "深入剖析 TLS 性能开销来源、TLS 1.3 相比 1.2 的性能优势、硬件加速方案、Session Resumption 机制、证书链优化、HTTP/2 协同优化、CDN 架构下的 TLS Termination、连接复用策略以及监控指标体系，并提供 Nginx、Caddy、Envoy 的生产级配置调优实战指南。"
 ---
 
@@ -35,13 +47,13 @@ Client                                        Server
 
 延迟的构成可以细分为：
 
-| 阶段 | TLS 1.2 Full Handshake | TLS 1.3 Full Handshake | TLS 1.3 0-RTT |
-|------|------------------------|------------------------|---------------|
-| 网络 RTT | 2-RTT | 1-RTT | 0-RTT |
-| 证书验证（CPU） | ~5-15ms | ~5-15ms | ~5-15ms |
-| 密钥交换（CPU） | ~2-5ms | ~1-3ms | ~1-3ms |
-| 对称加密（per-RTT） | ~0.5ms | ~0.5ms | ~0.5ms |
-| 总延迟（50ms RTT） | ~125ms | ~75ms | ~25ms |
+| 阶段                | TLS 1.2 Full Handshake | TLS 1.3 Full Handshake | TLS 1.3 0-RTT |
+| ------------------- | ---------------------- | ---------------------- | ------------- |
+| 网络 RTT            | 2-RTT                  | 1-RTT                  | 0-RTT         |
+| 证书验证（CPU）     | ~5-15ms                | ~5-15ms                | ~5-15ms       |
+| 密钥交换（CPU）     | ~2-5ms                 | ~1-3ms                 | ~1-3ms        |
+| 对称加密（per-RTT） | ~0.5ms                 | ~0.5ms                 | ~0.5ms        |
+| 总延迟（50ms RTT）  | ~125ms                 | ~75ms                  | ~25ms         |
 
 ### 1.2 CPU 消耗
 
@@ -150,7 +162,7 @@ TLS 1.3 的 0-RTT（Early Data）机制允许客户端在首次握手时就开�
 sequenceDiagram
     participant C as Client
     participant S as Server
-    
+
     Note over C,S: TLS 1.3 首次握手 (1-RTT)
     C->>S: ClientHello + Key Share
     S->>C: ServerHello + Key Share
@@ -159,7 +171,7 @@ sequenceDiagram
     S->>C: CertificateVerify
     S->>C: Finished
     C->>S: Finished
-    
+
     Note over C,S: TLS 1.3 0-RTT 重连
     C->>S: ClientHello + Early Data + PSK Key Share
     S->>C: ServerHello + Handshake Traffic
@@ -167,7 +179,7 @@ sequenceDiagram
     S->>C: Finished
     C->>S: End Of Early Data
     C->>S: Application Data
-    
+
     Note over C,S: TLS 1.2 Session Resumption
     C->>S: ClientHello + Session ID
     S->>C: ServerHello + New Session Ticket
@@ -204,13 +216,13 @@ config := &tls.Config{
 
 TLS 1.3 只定义了 5 种加密套件，移除了所有不满足现代安全标准的算法：
 
-| TLS 1.3 加密套件 | 密钥交换 | 对称加密 | MAC |
-|-----------------|---------|---------|-----|
-| TLS_AES_128_GCM_SHA256 | ECDHE | AES-128-GCM | HMAC-SHA256 |
-| TLS_AES_256_GCM_SHA384 | ECDHE | AES-256-GCM | HMAC-SHA384 |
-| TLS_CHACHA20_POLY1305_SHA256 | ECDHE | ChaCha20-Poly1305 | HMAC-SHA256 |
-| TLS_AES_128_CCM_SHA256 | ECDHE | AES-128-CCM | HMAC-SHA256 |
-| TLS_AES_128_CCM_8_SHA256 | ECDHE | AES-128-CCM-8 | HMAC-SHA256 |
+| TLS 1.3 加密套件             | 密钥交换 | 对称加密          | MAC         |
+| ---------------------------- | -------- | ----------------- | ----------- |
+| TLS_AES_128_GCM_SHA256       | ECDHE    | AES-128-GCM       | HMAC-SHA256 |
+| TLS_AES_256_GCM_SHA384       | ECDHE    | AES-256-GCM       | HMAC-SHA384 |
+| TLS_CHACHA20_POLY1305_SHA256 | ECDHE    | ChaCha20-Poly1305 | HMAC-SHA256 |
+| TLS_AES_128_CCM_SHA256       | ECDHE    | AES-128-CCM       | HMAC-SHA256 |
+| TLS_AES_128_CCM_8_SHA256     | ECDHE    | AES-128-CCM-8     | HMAC-SHA256 |
 
 相比 TLS 1.2 的 300+ 种加密套件，精简后的套件列表显著降低了配置错误的安全风险。
 
@@ -233,6 +245,7 @@ lscpu | grep aes
 ```
 
 输出示例：
+
 ```
 flags           : ... aes apic clfsh cx8 sep ...
                  # 包含 'aes' 即表示支持 AES-NI
@@ -276,12 +289,12 @@ graph TB
         A[Application] -->|OpenSSL| B[QAT Engine]
         B -->|PCIe| C[QAT Card]
     end
-    
+
     subgraph "QAT Card"
         C --> D[Crypto Accelerator]
         D --> E[Hardware Key Store]
     end
-    
+
     C -->|Results| B
     B -->|Encrypted Data| F[Network]
 ```
@@ -300,11 +313,11 @@ ls -la /sys/class/qat/
 
 TLS Offload Card（如 Solarflare, Chelsio, Napatech）将完整的 TLS 栈卸载到网卡上，实现真正的零 CPU TLS 处理。
 
-| 方案 | 加速内容 | CPU 节省 | 延迟降低 |
-|------|---------|---------|---------|
-| AES-NI | 对称加密 | 50-70% | 10-20% |
-| QAT | 全量加密 | 70-85% | 15-30% |
-| TLS Offload Card | 完整 TLS 栈 | 90-98% | 30-50% |
+| 方案             | 加速内容    | CPU 节省 | 延迟降低 |
+| ---------------- | ----------- | -------- | -------- |
+| AES-NI           | 对称加密    | 50-70%   | 10-20%   |
+| QAT              | 全量加密    | 70-85%   | 15-30%   |
+| TLS Offload Card | 完整 TLS 栈 | 90-98%   | 30-50%   |
 
 ```nginx
 # nginx 启用 AES-NI 自动检测
@@ -361,14 +374,14 @@ TLS Session Ticket（RFC 5077）允许服务器将会话状态加密后发送给
 sequenceDiagram
     participant C as Client
     participant S as Server
-    
+
     Note over C,S: 首次完整握手
     C->>S: ClientHello
     S->>C: ServerHello + New Session Ticket
     S->>C: Finished
     C->>S: Finished
     Note over C,S: 会话状态存储在客户端（加密的Ticket）
-    
+
     Note over C,S: 恢复会话（1-RTT）
     C->>S: ClientHello + Session Ticket
     S->>C: ServerHello + Finished
@@ -411,7 +424,7 @@ func main() {
             },
         },
     }
-    
+
     _ = tr
 }
 ```
@@ -430,10 +443,10 @@ TLS 1.3 的 0-RTT 数据机制依赖 PSK，客户端使用 PSK 派生的密钥�
 sequenceDiagram
     participant C as Client
     participant S as Server
-    
+
     Note over C,S: TLS 1.3 1-RTT 握手完成
     Note over C: PSK_0 派生完成
-    
+
     Note over C,S: 后续连接使用 0-RTT
     C->>S: ClientHello + early_data + PSK_0
     Note over S: 验证 PSK_0，解密 early_data
@@ -459,21 +472,21 @@ http {
     ssl_session_cache shared:SSL:50m;      # 50MB 共享内存缓存
     ssl_session_timeout 1d;               # Ticket 有效期
     ssl_session_tickets on;               # 启用 Session Ticket
-    
+
     # PSK 配置（TLS 1.3）
     ssl_protocols TLSv1.2 TLSv1.3;
-    
+
     # 推荐加密套件（TLS 1.3 优先）
     ssl_ciphers 'TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:ECDHE-ECDSA-AES256-GCM-SHA384';
     ssl_prefer_server_ciphers off;        # 客户端优先（TLS 1.3 要求）
-    
+
     server {
         listen 443 ssl;
         server_name example.com;
-        
+
         ssl_certificate /path/to/cert.pem;
         ssl_certificate_key /path/to/key.pem;
-        
+
         # OCSP Stapling（后续章节详述）
         ssl_stapling on;
         ssl_stapling_verify on;
@@ -483,13 +496,13 @@ http {
 
 ### 4.5 Session Resumption 性能对比
 
-| 方案 | RTT | CPU 开销 | 内存占用 | 安全性 |
-|------|-----|---------|---------|--------|
-| Full Handshake (TLS 1.2) | 2-RTT | 100% | 高 | RSA 无前向保密 |
-| Full Handshake (TLS 1.3) | 1-RTT | 85% | 高 | ECDHE 前向保密 |
-| Session Ticket (TLS 1.2) | 1-RTT | 40% | 低 | RSA 前向保密 |
-| Session Ticket (TLS 1.3) | 1-RTT | 35% | 低 | ECDHE 前向保密 |
-| PSK + 0-RTT (TLS 1.3) | 0-RTT | 25% | 极低 | 无前向保密（重放风险） |
+| 方案                     | RTT   | CPU 开销 | 内存占用 | 安全性                 |
+| ------------------------ | ----- | -------- | -------- | ---------------------- |
+| Full Handshake (TLS 1.2) | 2-RTT | 100%     | 高       | RSA 无前向保密         |
+| Full Handshake (TLS 1.3) | 1-RTT | 85%      | 高       | ECDHE 前向保密         |
+| Session Ticket (TLS 1.2) | 1-RTT | 40%      | 低       | RSA 前向保密           |
+| Session Ticket (TLS 1.3) | 1-RTT | 35%      | 低       | ECDHE 前向保密         |
+| PSK + 0-RTT (TLS 1.3)    | 0-RTT | 25%      | 极低     | 无前向保密（重放风险） |
 
 ---
 
@@ -515,7 +528,7 @@ Certificate Chain
 │
 └── Intermediate Certificate 2 (可选)
     └── 某些老设备需要额外的交叉签名证书
-    
+
 (Optional) Root Certificate
 └── 通常由客户端操作系统/浏览器内置
 ```
@@ -545,12 +558,12 @@ openssl s_client -showcerts -connect example.com:443 </dev/null
 
 典型证书链大小对比：
 
-| CA | 证书数量 | 总大小（DER） | PEM 大小 |
-|----|---------|-------------|---------|
-| Let's Encrypt | 3 | ~2.5KB | ~4KB |
-| DigiCert | 2 | ~1.8KB | ~3KB |
-| Google Trust Services | 2 | ~1.5KB | ~2.5KB |
-| GlobalSign | 2 | ~1.6KB | ~2.7KB |
+| CA                    | 证书数量 | 总大小（DER） | PEM 大小 |
+| --------------------- | -------- | ------------- | -------- |
+| Let's Encrypt         | 3        | ~2.5KB        | ~4KB     |
+| DigiCert              | 2        | ~1.8KB        | ~3KB     |
+| Google Trust Services | 2        | ~1.5KB        | ~2.5KB   |
+| GlobalSign            | 2        | ~1.6KB        | ~2.7KB   |
 
 ### 5.3 OCSP Stapling 原理与配置
 
@@ -564,7 +577,7 @@ Client                              CA Server
   |<-- OCSP Response -----------------|
   |                                    |
   |=========== HTTPS Request =========>|
-  
+
   总延迟：额外 50-200ms
 
 With OCSP Stapling（无额外 RTT）
@@ -573,7 +586,7 @@ Client                              Server
   |<======== Certificate + OCSP =======|
   |                                    |
   |=========== HTTPS Request =========>|
-  
+
   总延迟：无额外开销
 ```
 
@@ -584,20 +597,20 @@ OCSP Stapling 配置示例：
 server {
     listen 443 ssl;
     server_name example.com;
-    
+
     ssl_certificate /path/to/fullchain.pem;  # 包含完整证书链
     ssl_certificate_key /path/to/key.pem;
-    
+
     # 启用 OCSP Stapling
     ssl_stapling on;
     ssl_stapling_verify on;
-    
+
     # CA 证书（用于验证 OCSP 响应签名）
     ssl_trusted_certificate /path/to/ca-bundle.crt;
-    
+
     # OCSP 响应缓存时间
     ssl_stapling_file /var/cache/nginx/ocsp_response.pem;
-    
+
     # resolver 用于验证 OCSP 时查询 DNS
     resolver 8.8.8.8 8.8.4.4 valid=300s;
     resolver_timeout 5s;
@@ -614,7 +627,7 @@ server {
         # 证书路径
         certificate /path/to/cert.pem
         key /path/to/key.pem
-        
+
         # 手动设置 OCSP staple
         staple_ocsp on
     }
@@ -657,13 +670,13 @@ openssl s_client -connect example.com:443 -status 2>&1 | \
 
 ### 5.5 证书链优化检查清单
 
-| 检查项 | 工具 | 标准 |
-|--------|------|------|
-| 证书链长度 | `openssl s_client` | ≤3 个中间证书 |
-| 证书链顺序 | `openssl verify` | 正确排序 |
-| OCSP Stapling | SSL Labs | 启用且有效 |
-| 证书兼容性 | 测试老设备 | 无 SNI 降级 |
-| 证书大小 | Base64 编码 | <8KB 总链 |
+| 检查项        | 工具               | 标准          |
+| ------------- | ------------------ | ------------- |
+| 证书链长度    | `openssl s_client` | ≤3 个中间证书 |
+| 证书链顺序    | `openssl verify`   | 正确排序      |
+| OCSP Stapling | SSL Labs           | 启用且有效    |
+| 证书兼容性    | 测试老设备         | 无 SNI 降级   |
+| 证书大小      | Base64 编码        | <8KB 总链     |
 
 ---
 
@@ -679,7 +692,7 @@ ALPN（Application-Layer Protocol Negotiation）允许 TLS 握手时协商应用
 sequenceDiagram
     participant C as Client
     participant S as Server
-    
+
     Note over C,S: TLS 握手中的 ALPN 协商
     C->>S: ClientHello
     Note right of C: ALPN: h2, http/1.1
@@ -700,7 +713,7 @@ struct {
  * 06  // 长度 6 字节
  * 02  // 第一个协议名长度
  * 'h' '2'           // HTTP/2
- * 08  // 第二个协议名长度  
+ * 08  // 第二个协议名长度
  * 'h' 't' 't' 'p' '/' '1' '.' '1'  // HTTP/1.1
  */
 ```
@@ -711,11 +724,11 @@ nginx ALPN 配置：
 server {
     listen 443 ssl http2;
     server_name example.com;
-    
+
     # HTTP/2 必须启用 TLS
     ssl_certificate /path/to/cert.pem;
     ssl_certificate_key /path/to/key.pem;
-    
+
     # ALPN 配置（默认 nginx 自动协商 h2）
     # 可以通过 ssl_conf_command 调整
 }
@@ -748,11 +761,11 @@ HTTP/2 连接模型
 
 **连接数对比**：
 
-| 场景 | HTTP/1.1 连接数 | HTTP/2 连接数 | 减少比例 |
-|------|----------------|--------------|---------|
-| 首屏 20 个资源 | 20+ | 1-2 | 90%+ |
-| 动态 API 请求 | 6-8 并发 | 1 | 85%+ |
-| WebSocket 长连接 | 1 | 1 | 无变化 |
+| 场景             | HTTP/1.1 连接数 | HTTP/2 连接数 | 减少比例 |
+| ---------------- | --------------- | ------------- | -------- |
+| 首屏 20 个资源   | 20+             | 1-2           | 90%+     |
+| 动态 API 请求    | 6-8 并发        | 1             | 85%+     |
+| WebSocket 长连接 | 1               | 1             | 无变化   |
 
 ### 6.3 HTTP/2 帧结构与 TLS
 
@@ -801,10 +814,10 @@ struct http2_frame_header {
 # nginx HTTP/2 Server Push 配置
 server {
     listen 443 ssl http2;
-    
+
     # 预加载关键资源
     http2_push_preload on;
-    
+
     location / {
         # 手动推送关键 CSS/JS
         add_header Link "</style.css>; rel=preload; as=style";
@@ -944,15 +957,15 @@ Anycast 的优势：
 server {
     listen 443 ssl;
     server_name origin.example.com;
-    
+
     # 源站证书（可以是自签名）
     ssl_certificate /path/to/origin-cert.pem;
     ssl_certificate_key /path/to/origin-key.pem;
-    
+
     # 验证 CDN 的客户端证书（mTLS）
     ssl_client_certificate /path/to/cdn-ca.crt;
     ssl_verify_client on;
-    
+
     # CDN IP 白名单（可选）
     allow 103.21.244.0/22;
     allow 103.22.200.0/22;
@@ -962,11 +975,11 @@ server {
 
 CDN 回源选项对比：
 
-| 模式 | 客户端- CDN | CDN - 源站 | 适用场景 |
-|------|------------|-----------|---------|
-| Flexible | TLS | HTTP | 测试/旧系统 |
-| Full | TLS | TLS | 生产环境 |
-| Full (strict) | TLS | TLS (验证) | 高安全要求 |
+| 模式          | 客户端- CDN | CDN - 源站 | 适用场景    |
+| ------------- | ----------- | ---------- | ----------- |
+| Flexible      | TLS         | HTTP       | 测试/旧系统 |
+| Full          | TLS         | TLS        | 生产环境    |
+| Full (strict) | TLS         | TLS (验证) | 高安全要求  |
 
 ---
 
@@ -997,17 +1010,17 @@ http {
     # Upstream  Keep-Alive 配置
     upstream backend {
         server 127.0.0.1:8080;
-        
+
         # 启用连接池
         keepalive 32;          # 保持的空闲连接数
         keepalive_timeout 60s; # 空闲超时
         keepalive_requests 1000; # 每个连接最大请求数
     }
-    
+
     server {
         location /api/ {
             proxy_pass http://backend;
-            
+
             # HTTP Keep-Alive 到 upstream
             proxy_http_version 1.1;
             proxy_set_header Connection "";
@@ -1028,7 +1041,7 @@ graph LR
         D[Stream 3] --> B
         E[Stream N] --> B
     end
-    
+
     B --> F[TLS 1.3 Encrypted]
     F --> G[TCP Connection]
 ```
@@ -1038,12 +1051,12 @@ nginx HTTP/2 连接优化：
 ```nginx
 server {
     listen 443 ssl http2;
-    
+
     # HTTP/2 连接参数
     http2_max_concurrent_streams 128;  # 单连接最大并发流
     http2_idle_timeout 60s;            # 空闲超时
     http2_recv_timeout 30s;            # 接收超时
-    
+
     # 客户端连接保持
     keepalive_timeout 65s;
     keepalive_requests 1000;
@@ -1093,7 +1106,7 @@ class ConnectionMetrics:
     reading: int
     writing: int
     waiting: int
-    
+
     @property
     def reuse_rate(self) -> float:
         """连接复用率：handled/accepts，越接近1越好"""
@@ -1104,21 +1117,21 @@ class ConnectionMetrics:
 def get_nginx_status(url: str = "http://localhost/nginx_status") -> ConnectionMetrics:
     result = subprocess.run(['curl', '-s', url], capture_output=True, text=True)
     lines = result.stdout.strip().split('\n')
-    
+
     # 解析 Active connections: 291
     active_match = re.search(r'Active connections: (\d+)', lines[0])
     active = int(active_match.group(1)) if active_match else 0
-    
+
     # 解析 "accepts handled requests" 行
     # "16630948 16630948 31070465"
     stats = lines[2].split()
     accepts, handled, requests = int(stats[0]), int(stats[1]), int(stats[2])
-    
+
     # 解析 "Reading: 6 Writing: 179 Waiting: 106"
     reading_match = re.search(r'Reading: (\d+)', lines[3])
     writing_match = re.search(r'Writing: (\d+)', lines[3])
     waiting_match = re.search(r'Waiting: (\d+)', lines[3])
-    
+
     return ConnectionMetrics(
         active=active,
         accepts=accepts,
@@ -1132,21 +1145,21 @@ def get_nginx_status(url: str = "http://localhost/nginx_status") -> ConnectionMe
 def monitor_loop(interval: int = 10):
     """定期监控连接复用率"""
     prev_metrics = None
-    
+
     while True:
         metrics = get_nginx_status()
-        
+
         if prev_metrics:
             # 计算增量
             accepts_delta = metrics.accepts - prev_metrics.accepts
             handled_delta = metrics.handled - prev_metrics.handled
             requests_delta = metrics.requests - prev_metrics.requests
-            
+
             if accepts_delta > 0:
                 reuse = handled_delta / accepts_delta
                 print(f"连接复用率: {reuse:.4f}")
                 print(f"新建连接: {accepts_delta}, 处理: {handled_delta}, 请求: {requests_delta}")
-        
+
         prev_metrics = metrics
         time.sleep(interval)
 
@@ -1163,15 +1176,15 @@ TCP Keep-Alive 维护空闲连接的存活状态，避免被 NAT 设备或防火
 server {
     # TCP 层面
     listen 443 ssl;
-    
+
     # 客户端连接保活
     keepalive_timeout 65s;
-    
+
     # upstream 连接保活
     proxy_connect_timeout 60s;
     proxy_send_timeout 60s;
     proxy_read_timeout 60s;
-    
+
     # 发送 keepalive探测前的最大空闲连接数
     tcp_nodelay on;       # 禁用 Nagle 算法
     tcp_nopush on;        # 等待缓冲区填满再发送
@@ -1198,26 +1211,26 @@ import ssl
 import time
 import statistics
 
-def measure_handshake_duration(host: str, port: int = 443, 
+def measure_handshake_duration(host: str, port: int = 443,
                                sample_count: int = 10) -> dict:
     """测量 TLS 握手耗时"""
     durations = []
     errors = []
-    
+
     for _ in range(sample_count):
         start = time.perf_counter()
         try:
             context = ssl.create_default_context()
             context.check_hostname = False
             context.verify_mode = ssl.CERT_NONE
-            
+
             with socket.create_connection((host, port), timeout=5) as sock:
                 with context.wrap_socket(sock, server_hostname=host) as ssock:
                     end = time.perf_counter()
                     durations.append((end - start) * 1000)  # 转换为毫秒
         except Exception as e:
             errors.append(str(e))
-    
+
     if durations:
         return {
             'host': host,
@@ -1238,14 +1251,14 @@ def measure_handshake_duration(host: str, port: int = 443,
 
 if __name__ == "__main__":
     import json
-    
+
     # 测试多个目标
     targets = [
         'example.com',
-        'google.com', 
+        'google.com',
         'cloudflare.com'
     ]
-    
+
     results = []
     for target in targets:
         result = measure_handshake_duration(target, sample_count=5)
@@ -1286,18 +1299,18 @@ def get_cert_info(host: str, port: int = 443) -> CertInfo:
     context = ssl.create_default_context()
     context.check_hostname = False
     context.verify_mode = ssl.CERT_NONE
-    
+
     with socket.create_connection((host, port), timeout=10) as sock:
         with context.wrap_socket(sock, server_hostname=host) as ssock:
             cert = ssock.getpeercert(binary_form=True)
-            
+
             # 解析证书（使用 OpenSSL 解析）
             # 实际生产环境建议使用 cryptography 库
             from cryptography import x509
             from cryptography.hazmat.backends import default_backend
-            
+
             cert_obj = x509.load_der_x509_certificate(cert, default_backend())
-            
+
             subject = cert_obj.subject.rfc4514_string()
             issuer = cert_obj.issuer.rfc4514_string()
             not_before = cert_obj.not_valid_before_utc
@@ -1305,7 +1318,7 @@ def get_cert_info(host: str, port: int = 443) -> CertInfo:
             days_until_expiry = (not_after - datetime.now(not_after.tzinfo)).days
             serial = format(cert_obj.serial_number, 'x')
             sig_algo = cert_obj.signature_algorithm_oid._name
-            
+
             return CertInfo(
                 host=host,
                 port=port,
@@ -1318,7 +1331,7 @@ def get_cert_info(host: str, port: int = 443) -> CertInfo:
                 signature_algorithm=sig_algo
             )
 
-def check_cert_expiry(hosts: List[str], warning_days: int = 30, 
+def check_cert_expiry(hosts: List[str], warning_days: int = 30,
                       critical_days: int = 7) -> dict:
     """检查证书过期状态"""
     results = {
@@ -1328,11 +1341,11 @@ def check_cert_expiry(hosts: List[str], warning_days: int = 30,
         'expired': [],
         'errors': []
     }
-    
+
     for host in hosts:
         try:
             cert_info = get_cert_info(host)
-            
+
             if cert_info.days_until_expiry < 0:
                 results['expired'].append(cert_info)
             elif cert_info.days_until_expiry <= critical_days:
@@ -1341,10 +1354,10 @@ def check_cert_expiry(hosts: List[str], warning_days: int = 30,
                 results['warning'].append(cert_info)
             else:
                 results['ok'].append(cert_info)
-                
+
         except Exception as e:
             results['errors'].append({'host': host, 'error': str(e)})
-    
+
     return results
 
 # Prometheus AlertManager 规则格式
@@ -1405,7 +1418,7 @@ echo | openssl s_client -connect "$TARGET" -tls1_2 2>&1 | \
 echo ""
 echo "--- 协议版本 ---"
 echo | openssl s_client -connect "$TARGET" 2>&1 | \
-    grep "Protocol" 
+    grep "Protocol"
 
 echo ""
 echo "--- 支持的 TLS 版本 ---"
@@ -1464,7 +1477,7 @@ cert_expiry_days = meter.create_observable_gauge(
 )
 
 # 使用示例
-def on_tls_handshake_complete(duration_ms: float, cipher_suite: str, 
+def on_tls_handshake_complete(duration_ms: float, cipher_suite: str,
                                tls_version: str):
     tls_handshake_duration.record(duration_ms, {
         "cipher_suite": cipher_suite,
@@ -1474,15 +1487,15 @@ def on_tls_handshake_complete(duration_ms: float, cipher_suite: str,
 
 ### 9.5 监控指标汇总表
 
-| 指标名称 | 类型 | 说明 | 告警阈值 |
-|---------|------|------|---------|
-| tls_handshake_duration | Histogram | 握手延迟（ms） | P99 > 200ms |
-| tls_active_connections | Gauge | 活动连接数 | > 容量 80% |
-| tls_connections_total | Counter | 新建连接总数 | - |
-| tls_session_cache_hits | Counter | Session Cache 命中 | 命中率 < 50% |
-| tls_cert_expiry_days | Gauge | 证书剩余天数 | < 30 天 |
-| tls_cipher_suite_used | Label | 当前加密套件 | 含弱算法 |
-| tls_protocol_version | Label | TLS 版本 | TLS 1.0/1.1 |
+| 指标名称               | 类型      | 说明               | 告警阈值     |
+| ---------------------- | --------- | ------------------ | ------------ |
+| tls_handshake_duration | Histogram | 握手延迟（ms）     | P99 > 200ms  |
+| tls_active_connections | Gauge     | 活动连接数         | > 容量 80%   |
+| tls_connections_total  | Counter   | 新建连接总数       | -            |
+| tls_session_cache_hits | Counter   | Session Cache 命中 | 命中率 < 50% |
+| tls_cert_expiry_days   | Gauge     | 证书剩余天数       | < 30 天      |
+| tls_cipher_suite_used  | Label     | 当前加密套件       | 含弱算法     |
+| tls_protocol_version   | Label     | TLS 版本           | TLS 1.0/1.1  |
 
 ---
 
@@ -1536,7 +1549,7 @@ http {
     gzip_vary on;
     gzip_proxied any;
     gzip_comp_level 6;
-    gzip_types text/plain text/css text/xml application/json 
+    gzip_types text/plain text/css text/xml application/json
                application/javascript application/xml application/xml+rss;
 
     # SSL Session 配置
@@ -1570,7 +1583,7 @@ http {
     upstream backend_servers {
         server 127.0.0.1:8080 weight=5;
         server 127.0.0.1:8081 weight=3;
-        
+
         keepalive 64;
         keepalive_timeout 60s;
         keepalive_requests 1000;
@@ -1580,14 +1593,14 @@ http {
     server {
         listen 443 ssl http2;
         server_name example.com www.example.com;
-        
+
         # 证书配置
         ssl_certificate /etc/nginx/ssl/fullchain.pem;
         ssl_certificate_key /etc/nginx/ssl/privkey.pem;
         ssl_trusted_certificate /etc/nginx/ssl/chain.pem;
 
         # 安全头
-        add_header Strict-Transport-Security "max-age=31536000; 
+        add_header Strict-Transport-Security "max-age=31536000;
                includeSubDomains; preload" always;
         add_header X-Frame-Options DENY always;
         add_header X-Content-Type-Options nosniff always;
@@ -1603,7 +1616,7 @@ http {
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
             proxy_set_header X-Forwarded-Proto $scheme;
-            
+
             # 超时配置
             proxy_connect_timeout 30s;
             proxy_send_timeout 60s;
@@ -1635,7 +1648,7 @@ Caddy 以自动 HTTPS 和简洁配置著称：
 {
     # 全局 TLS 配置
     admin off                    # 禁用管理接口（生产环境）
-    
+
     # 日志配置
     log {
         level INFO
@@ -1645,7 +1658,7 @@ Caddy 以自动 HTTPS 和简洁配置著称：
             roll_keep 10
         }
     }
-    
+
     # HTTP/3（QUIC）配置
     servers {
         # 默认服务器（443）
@@ -1653,7 +1666,7 @@ Caddy 以自动 HTTPS 和简洁配置著称：
             http3
         }
     }
-    
+
     # TLS 自动配置（默认行为）
     # - 从 Let's Encrypt 自动获取证书
     # - 自动 OCSP Stapling
@@ -1666,24 +1679,24 @@ example.com {
         # 使用自定义证书（可选）
         # certificate /etc/caddy/certs/example.com.crt
         # key /etc/caddy/keys/example.com.key
-        
+
         # 协议与加密套件
         protocols tls1.2 tls1.3
         ciphers TLS_AES_256_GCM_SHA384 TLS_CHACHA20_POLY1305_SHA256
-        
+
         # 客户端证书验证（mTLS）
         # client_auth {
         #     mode require_and_verify
         #     trusted_ca_cert_file /etc/caddy/ca.crt
         # }
-        
+
         # 证书压缩
         compression on
-        
+
         # 收集的域名（多域名）
         # alternative_cnnames www.example.com, api.example.com
     }
-    
+
     # 安全头（通过 directive）
     header {
         Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
@@ -1691,28 +1704,28 @@ example.com {
         X-Content-Type-Options nosniff
         X-XSS-Protection "1; mode=block"
         Referrer-Policy "strict-origin-when-cross-origin"
-        
+
         # 移除敏感头
         -Server
         -X-Powered-By
     }
-    
+
     # 压缩
     encode gzip zstd
-    
+
     # 反向代理
     reverse_proxy /api/* backend:8080 {
         transport http {
             tls
             tls_insecure_skip_verify false
         }
-        
+
         header_up Host {host}
         header_up X-Real-IP {remote}
         header_up X-Forwarded-For {proxy_add_x_forwarded_for}
         header_up X-Forwarded-Proto {scheme}
     }
-    
+
     # 静态文件
     handle /static/* {
         root * /var/www/static
@@ -1723,15 +1736,15 @@ example.com {
             max_age 1y
         }
     }
-    
+
     # 负载均衡（多后端）
     reverse_proxy /service/* {
         loadbalancer round_robin
-        
+
         to http://backend1:8080
                http://backend2:8080
                http://backend3:8080
-        
+
         health_uri /health
         health_interval 10s
         health_timeout 5s
@@ -1743,22 +1756,22 @@ example.com {
 :443 {
     tls {
         protocols tls1.3
-        
+
         # 启用 0-RTT（需应用层处理重放）
         # 谨慎使用
         early_data true
-        
+
         # Session Ticket 配置
         session_tickets off  # 某些场景下禁用以增强安全性
     }
-    
+
     # HTTP/3 配置
     servers {
         protocol {
             experimental_http3
         }
     }
-    
+
     handle /* {
         reverse_proxy localhost:8080
     }
@@ -1819,7 +1832,7 @@ static_resources:
                     - ECDHE-RSA-AES256-GCM-SHA384
                     - ECDHE-ECDSA-CHACHA20-POLY1305
                     - ECDHE-RSA-CHACHA20-POLY1305
-                
+
                 # 证书配置
                 tls_certificates:
                   - certificate_chain:
@@ -1829,23 +1842,23 @@ static_resources:
                     # OCSP Stapling
                     ocsp_staple:
                       filename: /etc/envoy/certs/ocsp.der
-                
+
                 # Session Ticket（用于 Session Resumption）
                 session_ticket_keys:
                   filename: /etc/envoy/session-ticket-keys.yaml
-                
+
                 # ALPN（HTTP/2 支持）
                 alpn_protocols:
                   - h2
                   - http/1.1
-                
+
                 # 客户端证书验证（mTLS）
                 # validation_context:
                 #   trusted_ca:
                 #     filename: /etc/envoy/ca.crt
                 #   verify_certificate_spki:
                 #     - sha256:xxxxxxxxxxxx
-                
+
                 # 客户端证书吊销检查
                 # validation_context_sds_secret_config:
                 #   name: file_override:validation_context
@@ -1883,26 +1896,28 @@ Session Ticket 密钥配置（用于 Session Resumption）：
 ```yaml
 # /etc/envoy/session-ticket-keys.yaml
 keys:
-  - secret: "MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTI="
+  - secret:
+      "MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTI="
       # 32 字节密钥，base64 编码
       # 生产环境应使用真正的随机密钥
       # 推荐 80 字节（64 字节 AES 密钥 + 16 字节 IV）
-  - secret: "YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXoxMjM0NTY="
+  - secret:
+      "YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXoxMjM0NTY="
       # 可以配置多个密钥用于 key rotation
       # Envoy 按顺序尝试解密
 ```
 
 ### 10.4 配置对比表
 
-| 配置项 | Nginx | Caddy | Envoy |
-|--------|-------|-------|-------|
-| TLS 1.3 | `ssl_protocols TLSv1.2 TLSv1.3` | 默认启用 | `tls_maximum_protocol_version: TLSv1_3` |
-| HTTP/2 | `http2` in listen | 默认启用 | `http2_protocol_options` |
-| OCSP Stapling | `ssl_stapling on` | 默认启用 | `ocsp_staple` |
-| Session Resumption | `ssl_session_cache` | 自动 | `session_ticket_keys` |
-| 安全头 | `add_header` | `header` directive | `lua` 或 extension |
-| 0-RTT | 需要应用层支持 | `early_data true` | 通过 ALPN 协商 |
-| mTLS | `ssl_client_certificate` | `client_auth` | `validation_context` |
+| 配置项             | Nginx                           | Caddy              | Envoy                                   |
+| ------------------ | ------------------------------- | ------------------ | --------------------------------------- |
+| TLS 1.3            | `ssl_protocols TLSv1.2 TLSv1.3` | 默认启用           | `tls_maximum_protocol_version: TLSv1_3` |
+| HTTP/2             | `http2` in listen               | 默认启用           | `http2_protocol_options`                |
+| OCSP Stapling      | `ssl_stapling on`               | 默认启用           | `ocsp_staple`                           |
+| Session Resumption | `ssl_session_cache`             | 自动               | `session_ticket_keys`                   |
+| 安全头             | `add_header`                    | `header` directive | `lua` 或 extension                      |
+| 0-RTT              | 需要应用层支持                  | `early_data true`  | 通过 ALPN 协商                          |
+| mTLS               | `ssl_client_certificate`        | `client_auth`      | `validation_context`                    |
 
 ### 10.5 性能调优建议
 
@@ -1958,17 +1973,17 @@ while true; do
     # 测量握手延迟
     duration=$(echo | openssl s_time -connect example.com:443 -new 2>&1 | \
         grep "handshake" | awk '{print $NF}')
-    
+
     # 记录指标
     echo "$(date +%s),$duration" >> /var/log/tls_latency.csv
-    
+
     # 检查异常
     if (( $(echo "$duration > 500" | bc -l) )); then
         # 发送告警
         curl -X POST "https://alert.example.com/webhook" \
             -d "alert=TLS handshake too slow: ${duration}ms"
     fi
-    
+
     sleep 60
 done
 ```
@@ -1988,14 +2003,14 @@ TLS 性能优化是一个系统工程，需要从多个层面协同优化：
 
 实际生产环境中，建议按照以下优先级实施优化：
 
-| 优先级 | 优化项 | 预期收益 | 实施难度 |
-|-------|-------|---------|---------|
-| P0 | 升级到 TLS 1.3 | 50% 延迟降低 | 低 |
-| P0 | 启用 Session Resumption | 70% CPU 降低 | 低 |
-| P1 | 启用 OCSP Stapling | 消除额外 RTT | 低 |
-| P1 | HTTP/2 多路复用 | 减少连接数 | 中 |
-| P2 | CDN 部署 | 全局延迟优化 | 中 |
-| P2 | 证书链优化 | 减少握手数据量 | 低 |
-| P3 | 硬件加速 | 高并发场景优化 | 高 |
+| 优先级 | 优化项                  | 预期收益       | 实施难度 |
+| ------ | ----------------------- | -------------- | -------- |
+| P0     | 升级到 TLS 1.3          | 50% 延迟降低   | 低       |
+| P0     | 启用 Session Resumption | 70% CPU 降低   | 低       |
+| P1     | 启用 OCSP Stapling      | 消除额外 RTT   | 低       |
+| P1     | HTTP/2 多路复用         | 减少连接数     | 中       |
+| P2     | CDN 部署                | 全局延迟优化   | 中       |
+| P2     | 证书链优化              | 减少握手数据量 | 低       |
+| P3     | 硬件加速                | 高并发场景优化 | 高       |
 
 TLS 性能优化不是一次性工作，而是持续的过程。建议建立监控仪表盘，定期审计配置，跟踪加密套件分布变化，及时更新证书和配置，以保持最优的安全性和性能平衡。

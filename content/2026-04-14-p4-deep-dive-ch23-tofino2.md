@@ -5,8 +5,8 @@ tags: [p4, series, tofino2, intel, tofino, architecture, flex-pipe, mau-split, 1
 description: "Intel Tofino 2 深度解析——12.8Tbps P4-16 交换芯片、Flex Pipes 灵活管道、MAU Split、Packet Cryo、Secure Vector Processing、Extended Pipeline"
 ---
 
-> [!info] P4 深度探索系列
-> 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+> [!info] P4 深度探索系列 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-14-p4-deep-dive-ch1-p4-overview|第一章：P4 概述——诞生背景与协议无关包处理]]
 > 2. [[2026-04-14-p4-deep-dive-ch2-p4-architecture|第二章：P4 架构模型——PSA/V1Model、Ingress/Egress]]
 > 3. [[2026-04-14-p4-deep-dive-ch3-p4-vs-ebpf|第三章：P4 vs eBPF——适用场景与硬件/软件对比]]
@@ -61,16 +61,16 @@ Tofino 1 (2016)          Tofino 2 (2019)          Tofino 3 (2022)
 
 ### 1.1 Tofino 2 的关键升级
 
-| 特性 | Tofino 1 | Tofino 2 | 提升 |
-|------|-----------|-----------|------|
-| **带宽** | 6.5 Tbps | 12.8 Tbps | **2x** |
-| **端口密度** | 64 x 100G | 128 x 100G | **2x** |
-| **MAU Stages** | 32 | 48 (32+16 MAU Split) | **1.5x** |
-| **TCAM** | 64 Mb | 128 Mb | **2x** |
-| **SRAM** | 128 MB | 256 MB | **2x** |
-| **P4 支持** | P4-14 主要 | P4-16 Full | **完整** |
-| **架构** | Fixed | Flex Pipes | **灵活** |
-| **Secure Vector** | No | Yes | **新增** |
+| 特性              | Tofino 1   | Tofino 2             | 提升     |
+| ----------------- | ---------- | -------------------- | -------- |
+| **带宽**          | 6.5 Tbps   | 12.8 Tbps            | **2x**   |
+| **端口密度**      | 64 x 100G  | 128 x 100G           | **2x**   |
+| **MAU Stages**    | 32         | 48 (32+16 MAU Split) | **1.5x** |
+| **TCAM**          | 64 Mb      | 128 Mb               | **2x**   |
+| **SRAM**          | 128 MB     | 256 MB               | **2x**   |
+| **P4 支持**       | P4-14 主要 | P4-16 Full           | **完整** |
+| **架构**          | Fixed      | Flex Pipes           | **灵活** |
+| **Secure Vector** | No         | Yes                  | **新增** |
 
 ---
 
@@ -259,13 +259,13 @@ Ports
 
 ### 4.2 Flex Pipes 使用场景
 
-| 场景 | Pipe 0 | Pipe 1 | Pipe 2 | Pipe 3 |
-|------|--------|--------|--------|--------|
+| 场景             | Pipe 0    | Pipe 1    | Pipe 2    | Pipe 3    |
+| ---------------- | --------- | --------- | --------- | --------- |
 | **Spine Switch** | L3 Fabric | L3 Fabric | L3 Fabric | L3 Fabric |
-| **Leaf Switch** | L2/VXLAN | L3 | | |
-| **Storage** | NVMe-oF | iSCSI | | |
-| **Telemetry** | Normal | INT | sFlow | |
-| **Security** | Firewall | IDS | DPI | |
+| **Leaf Switch**  | L2/VXLAN  | L3        |           |           |
+| **Storage**      | NVMe-oF   | iSCSI     |           |           |
+| **Telemetry**    | Normal    | INT       | sFlow     |           |
+| **Security**     | Firewall  | IDS       | DPI       |           |
 
 ### 4.3 Flex Pipes 配置
 
@@ -277,11 +277,11 @@ class FlexPipesConfig:
     def __init__(self, device='tofino2'):
         self.device = device
         self.pipes = {}
-        
+
     def create_pipe(self, pipe_id, pipeline_type, ports):
         """
         创建 Flex Pipe
-        
+
         Args:
             pipe_id: 0-3
             pipeline_type: 'l2', 'l3', 'storage', 'telemetry', 'security'
@@ -293,7 +293,7 @@ class FlexPipesConfig:
             'ingress_stages': self._get_stage_count(pipeline_type),
             'egress_stages': 16,  # Default
         }
-        
+
     def _get_stage_count(self, pipe_type):
         """根据类型确定 ingress stages"""
         stage_map = {
@@ -304,7 +304,7 @@ class FlexPipesConfig:
             'security': 16,
         }
         return stage_map.get(pipe_type, 24)
-    
+
     def generate_config(self):
         """生成 SDE 配置文件"""
         config = f"""
@@ -331,15 +331,15 @@ egress_stages = {pipe['egress_stages']}
 # 使用示例
 if __name__ == '__main__':
     config = FlexPipesConfig('tofino2-12.8t')
-    
+
     # Leaf switch: L2/VXLAN on first 32 ports, L3 on rest
     config.create_pipe(0, 'l2', list(range(0, 32)))
     config.create_pipe(1, 'l3', list(range(32, 64)))
-    
+
     # 生成配置文件
     with open('flex_pipes.cfg', 'w') as f:
         f.write(config.generate_config())
-    
+
     print("Flex Pipes config generated: flex_pipes.cfg")
 ```
 
@@ -532,10 +532,10 @@ action hash_for_ipsec(bit<32> src_ip, bit<32> dst_ip) {
 action enhanced_bit_operations() {
     // Tofino 2 新增: popcount
     bit<8> count = popcount(h.ipv4.srcAddr ^ h.ipv4.dstAddr);
-    
+
     // Tofino 2 新增: find_first_one
     bit<8> index = find_first_one(h.tcp.flags);
-    
+
     // Tofino 2 新增: bit_reverse
     bit<32> reversed = bit_reverse(h.ipv4.srcAddr);
 }
@@ -559,17 +559,17 @@ action enhanced_checksum() {
 
 ### 7.1 资源对比表
 
-| 资源 | Tofino 1 | Tofino 2 | 说明 |
-|------|----------|-----------|------|
-| **TCAM** | 64 Mb | 128 Mb | 2x, per chip |
-| **SRAM** | 128 MB | 256 MB | 2x, per chip |
-| **Hash Units** | 64 (2/stage) | 128 (4/stage) | 2x |
-| **Packet Buffer** | 128 MB | 256 MB | 2x |
-| **Queues** | 16K | 32K | 2x |
-| **MC Groups** | 1K | 4K | 4x |
-| **Clone Sessions** | 128 | 512 | 4x |
-| **Meter** | 64K | 128K | 2x |
-| **INT Stages** | 8 | 16 | 2x |
+| 资源               | Tofino 1     | Tofino 2      | 说明         |
+| ------------------ | ------------ | ------------- | ------------ |
+| **TCAM**           | 64 Mb        | 128 Mb        | 2x, per chip |
+| **SRAM**           | 128 MB       | 256 MB        | 2x, per chip |
+| **Hash Units**     | 64 (2/stage) | 128 (4/stage) | 2x           |
+| **Packet Buffer**  | 128 MB       | 256 MB        | 2x           |
+| **Queues**         | 16K          | 32K           | 2x           |
+| **MC Groups**      | 1K           | 4K            | 4x           |
+| **Clone Sessions** | 128          | 512           | 4x           |
+| **Meter**          | 64K          | 128K          | 2x           |
+| **INT Stages**     | 8            | 16            | 2x           |
 
 ### 7.2 Tofino 2 新增资源
 
@@ -605,7 +605,7 @@ def estimate_tofino2(p4_program):
     """
     估算 P4 程序在 Tofino 2 上的资源使用
     """
-    
+
     print("""
 Tofino 2 资源估算工具:
 =====================
@@ -620,7 +620,7 @@ Table: ipv4_fib (LPM, 128K entries)
   - Hash: 1 unit
 
 Table: mac_table (Exact, 64K entries)
-  - SRAM: 64K entries  
+  - SRAM: 64K entries
   - Hash: 1 unit
 
 Table: acl (Ternary, 32K entries)
@@ -771,7 +771,7 @@ parser IngressParser(packet_in packet,
             default: accept;
         }
     }
-    
+
     state parse_ipv4 {
         packet.extract(h.ipv4);
         transition accept;
@@ -783,20 +783,20 @@ control Ingress(inout headers h,
                 inout metadata m,
                 in PSA_ParserInputMetadata_t istd,
                 inout PSA_ingress_output_metadata_t ostd) {
-    
+
     // Tofino 2 增强: 使用新增的 Hash 算法
     action ipv4_forward(PortId_t port, bit<8> ttl_val) {
         h.ipv4.ttl = ttl_val;
         ostd.egress_port = port;
     }
-    
+
     table ipv4_lpm {
         key = { h.ipv4.dstAddr: lpm; }
         actions = { ipv4_forward; drop; }
         default_action = drop();
         size = 128K;
     }
-    
+
     // Tofino 2 增强: QoS 表
     table qos_table {
         key = {
@@ -811,7 +811,7 @@ control Ingress(inout headers h,
             0x00: set_tc(0);  // BE
         }
     }
-    
+
     apply {
         ipv4_lpm.apply();
         qos_table.apply();

@@ -11,8 +11,8 @@ tags:
 description: "深入解析 Zeek Weird 日志——Weird 事件、异常流量检测、weird.log 结构、自定义 weird、异常分析"
 ---
 
-> [!info] Zeek 2026 深度探索系列
-> 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Zeek 2026 深度探索系列 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-15-zeek-deep-dive-ch1-overview|第一章：Zeek 概述]]
 > 2. [[2026-04-15-zeek-deep-dive-ch2-installation|第二章：安装部署]]
 > 3. [[2026-04-15-zeek-deep-dive-ch3-config|第三章：配置系统]]
@@ -44,6 +44,7 @@ description: "深入解析 Zeek Weird 日志——Weird 事件、异常流量检
 ### 1.1 什么是 Weird
 
 Weird 事件表示 Zeek 观察到流量中不符合"正常"或"预期"的行为。这可能是：
+
 - 协议违规（如 TCP 选项组合无效）
 - 异常模式（如短时间内大量连接）
 - 潜在攻击前兆（如 SYN 超时）
@@ -124,15 +125,15 @@ type Weird::Info = record {
 
 ### 2.3 主要字段说明
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `ts` | time | 时间戳 |
-| `uid` | string | 关联连接 UID |
-| `id` | conn_id | 关联连接的 4-tuple |
-| `name` | string | Weird 类型名称 |
-| `addl` | string | 附加描述信息 |
-| `source` | string | 来源 (analyzer/reporter/protocol) |
-| `evidence` | bool | 是否为证据模式 |
+| 字段       | 类型    | 说明                              |
+| ---------- | ------- | --------------------------------- |
+| `ts`       | time    | 时间戳                            |
+| `uid`      | string  | 关联连接 UID                      |
+| `id`       | conn_id | 关联连接的 4-tuple                |
+| `name`     | string  | Weird 类型名称                    |
+| `addl`     | string  | 附加描述信息                      |
+| `source`   | string  | 来源 (analyzer/reporter/protocol) |
+| `evidence` | bool    | 是否为证据模式                    |
 
 ---
 
@@ -140,54 +141,54 @@ type Weird::Info = record {
 
 ### 3.1 TCP 相关 Weird
 
-| Weird 名称 | 说明 | 可能原因 |
-|------------|------|----------|
-| `bad_TCP_checksum` | TCP 校验和错误 | 网络丢包、网卡 offload、攻击 |
-| `bad_TCP_options` | TCP 选项格式错误 | 协议实现错误、攻击 |
-| `TCP_challenge_ack` | Challenge ACK | 对端不理解某些特性 |
-| `TCP_opt_NAK_count` | NAK 计数异常 | 丢包或攻击 |
-| `unsolicited_TCP_RST` | 无请求的 RST | 攻击、端口扫描 |
-| `TCP_reuse_of_endpoint` | 端点重用 | 正常复用或攻击 |
-| `bad_TCP_lifetime_of_MSL_timer` | MSL 计时器异常 | 协议错误 |
+| Weird 名称                      | 说明             | 可能原因                     |
+| ------------------------------- | ---------------- | ---------------------------- |
+| `bad_TCP_checksum`              | TCP 校验和错误   | 网络丢包、网卡 offload、攻击 |
+| `bad_TCP_options`               | TCP 选项格式错误 | 协议实现错误、攻击           |
+| `TCP_challenge_ack`             | Challenge ACK    | 对端不理解某些特性           |
+| `TCP_opt_NAK_count`             | NAK 计数异常     | 丢包或攻击                   |
+| `unsolicited_TCP_RST`           | 无请求的 RST     | 攻击、端口扫描               |
+| `TCP_reuse_of_endpoint`         | 端点重用         | 正常复用或攻击               |
+| `bad_TCP_lifetime_of_MSL_timer` | MSL 计时器异常   | 协议错误                     |
 
 ### 3.2 HTTP 相关 Weird
 
-| Weird 名称 | 说明 | 可能原因 |
-|------------|------|----------|
-| `bad_HTTP_request` | 畸形 HTTP 请求 | 攻击、扫描器 |
-| `bad_HTTP_reply` | 畸形 HTTP 响应 | 服务器错误、攻击 |
-| `HTTP_masked_proxy_reply` | 代理响应伪装 | 代理配置错误 |
-| `multiple_HTTP_requests` | 多个 HTTP 请求 | 流水线请求 |
-| `overlapping_HTTP_requests` | 重叠 HTTP 请求 | 并发请求错误 |
+| Weird 名称                  | 说明           | 可能原因         |
+| --------------------------- | -------------- | ---------------- |
+| `bad_HTTP_request`          | 畸形 HTTP 请求 | 攻击、扫描器     |
+| `bad_HTTP_reply`            | 畸形 HTTP 响应 | 服务器错误、攻击 |
+| `HTTP_masked_proxy_reply`   | 代理响应伪装   | 代理配置错误     |
+| `multiple_HTTP_requests`    | 多个 HTTP 请求 | 流水线请求       |
+| `overlapping_HTTP_requests` | 重叠 HTTP 请求 | 并发请求错误     |
 
 ### 3.3 DNS 相关 Weird
 
-| Weird 名称 | 说明 | 可能原因 |
-|------------|------|----------|
-| `truncated_dns_message` | 截断的 DNS 消息 | 攻击、MTU 问题 |
-| `dns_arpa_lookup` | DNS ARPA 查询 | 扫描行为 |
-| `excessive_dns_queries` | 过多 DNS 查询 | DNS 隧道、放大攻击 |
-| `long_dns_query` | 过长的 DNS 查询 | DNS 隧道 |
-| `unmatched_dns_reply` | 不匹配的 DNS 响应 | 缓存污染攻击 |
+| Weird 名称              | 说明              | 可能原因           |
+| ----------------------- | ----------------- | ------------------ |
+| `truncated_dns_message` | 截断的 DNS 消息   | 攻击、MTU 问题     |
+| `dns_arpa_lookup`       | DNS ARPA 查询     | 扫描行为           |
+| `excessive_dns_queries` | 过多 DNS 查询     | DNS 隧道、放大攻击 |
+| `long_dns_query`        | 过长的 DNS 查询   | DNS 隧道           |
+| `unmatched_dns_reply`   | 不匹配的 DNS 响应 | 缓存污染攻击       |
 
 ### 3.4 SSL/TLS 相关 Weird
 
-| Weird 名称 | 说明 | 可能原因 |
-|------------|------|----------|
-| `ssl_cert_inconsistent` | 证书不一致 | MITM 攻击 |
-| `ssl_established_but_not_observed` | SSL 建立但未观察到 | 加密分流 |
-| `unknown_ssl_version` | 未知 SSL 版本 | 旧客户端或攻击 |
-| `ssl_error_too_many_alerts` | 过多 SSL 警告 | 攻击或错误实现 |
+| Weird 名称                         | 说明               | 可能原因       |
+| ---------------------------------- | ------------------ | -------------- |
+| `ssl_cert_inconsistent`            | 证书不一致         | MITM 攻击      |
+| `ssl_established_but_not_observed` | SSL 建立但未观察到 | 加密分流       |
+| `unknown_ssl_version`              | 未知 SSL 版本      | 旧客户端或攻击 |
+| `ssl_error_too_many_alerts`        | 过多 SSL 警告      | 攻击或错误实现 |
 
 ### 3.5 连接相关 Weird
 
-| Weird 名称 | 说明 | 可能原因 |
-|------------|------|----------|
-| `connection_originator_timed_out` | 连接 originator 超时 | 扫描、SYN 洪泛 |
-| `connection_reused` | 连接重用 | 正常或异常 |
-| `inappropriate_protocol` | 不适当的协议 | 协议混淆 |
-| `payload_ 部分_smaller_than_content_length` | payload 小于 Content-Length | 攻击或错误 |
-| `pending_socket_exception` | 挂起的 socket 异常 | 实现错误 |
+| Weird 名称                                  | 说明                        | 可能原因       |
+| ------------------------------------------- | --------------------------- | -------------- |
+| `connection_originator_timed_out`           | 连接 originator 超时        | 扫描、SYN 洪泛 |
+| `connection_reused`                         | 连接重用                    | 正常或异常     |
+| `inappropriate_protocol`                    | 不适当的协议                | 协议混淆       |
+| `payload_ 部分_smaller_than_content_length` | payload 小于 Content-Length | 攻击或错误     |
+| `pending_socket_exception`                  | 挂起的 socket 异常          | 实现错误       |
 
 ---
 
@@ -584,21 +585,23 @@ grep -E "bad_HTTP_request|path_traversal|command_injection|ssl_cert" "$LOG_FILE"
 
 本章介绍了 Zeek Weird 日志系统：
 
-| 组件 | 说明 |
-|------|------|
-| **weird.log** | 记录所有异常流量，包含 weird 类型、连接上下文、附加信息 |
-| **Weird::Info** | Weird 日志的 record 类型 |
-| **Reporter::weird()** | 触发 weird 的主要函数 |
-| **weird_with_conn** | 关联连接的 weird 事件 |
-| **节流/去重** | 防止 weird 日志过多 |
+| 组件                  | 说明                                                    |
+| --------------------- | ------------------------------------------------------- |
+| **weird.log**         | 记录所有异常流量，包含 weird 类型、连接上下文、附加信息 |
+| **Weird::Info**       | Weird 日志的 record 类型                                |
+| **Reporter::weird()** | 触发 weird 的主要函数                                   |
+| **weird_with_conn**   | 关联连接的 weird 事件                                   |
+| **节流/去重**         | 防止 weird 日志过多                                     |
 
 Weird 日志的价值：
+
 - 检测潜在攻击前兆
 - 发现配置错误或协议违规
 - 识别恶意流量模式
 - 与 Notice 联动实现告警
 
 通过分析 weird.log，可以：
+
 - 识别网络中的异常行为
 - 检测扫描和探测活动
 - 发现数据泄露或隧道

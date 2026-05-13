@@ -10,8 +10,8 @@ tags:
 description: "深入解析 Zeek 脚本调试技术——zeek -b 调试模式、print/printf 输出、dump_*, script coverage、profiling、常见错误分析"
 ---
 
-> [!info] Zeek 2026 深度探索系列
-> 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Zeek 2026 深度探索系列 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-15-zeek-deep-dive-ch1-overview|第一章：Zeek 概述]]
 > 2. [[2026-04-15-zeek-deep-dive-ch2-installation|第二章：安装部署]]
 > 3. [[2026-04-15-zeek-deep-dive-ch3-config|第三章：配置系统]]
@@ -93,6 +93,7 @@ event zeek_init() {
 ```
 
 输出：
+
 ```
 Zeek starting...
 42
@@ -129,20 +130,20 @@ event connection_established(c: connection) {
 
 ### 2.3 格式说明符
 
-| 说明符 | 含义 | 示例 |
-| :--- | :--- | :--- |
-| `%s` | 字符串 | `"hello"` |
-| `%d` / `%i` | 有符号整数 | `-42` |
-| `%u` | 无符号整数 | `42` |
-| `%x` | 十六进制 | `0x2A` |
-| `%f` | 浮点数 | `3.140000` |
-| `%.2f` | 浮点数（2位小数） | `3.14` |
-| `%c` | 字符 | `'A'` |
-| `%%` | 字面 `%` | `%` |
+| 说明符      | 含义              | 示例       |
+| :---------- | :---------------- | :--------- |
+| `%s`        | 字符串            | `"hello"`  |
+| `%d` / `%i` | 有符号整数        | `-42`      |
+| `%u`        | 无符号整数        | `42`       |
+| `%x`        | 十六进制          | `0x2A`     |
+| `%f`        | 浮点数            | `3.140000` |
+| `%.2f`      | 浮点数（2位小数） | `3.14`     |
+| `%c`        | 字符              | `'A'`      |
+| `%%`        | 字面 `%`          | `%`        |
 
 ---
 
-## 3. dump_* 调试函数
+## 3. dump\_\* 调试函数
 
 ### 3.1 dump当前网络连接
 
@@ -411,13 +412,13 @@ Weird 日志记录非正常/意外的流量：
 
 ### 8.3 常用 weird 类型
 
-| 类型 | 含义 |
-| :--- | :--- |
-| `line_terminated_with_risk` | 可疑行终止 |
-| `above_hole_data_without_any_acks` | 可能的空扫描 |
-| `connection_originator_SYN_ack` | 异常 SYN/ACK |
-| `DNS_Binary_exfiltration` | DNS 二进制隧道 |
-| `PASSWORD_GRAB_attempt` | 密码抓取尝试 |
+| 类型                               | 含义           |
+| :--------------------------------- | :------------- |
+| `line_terminated_with_risk`        | 可疑行终止     |
+| `above_hole_data_without_any_acks` | 可能的空扫描   |
+| `connection_originator_SYN_ack`    | 异常 SYN/ACK   |
+| `DNS_Binary_exfiltration`          | DNS 二进制隧道 |
+| `PASSWORD_GRAB_attempt`            | 密码抓取尝试   |
 
 ---
 
@@ -614,7 +615,7 @@ event zeek_init() {
 本章介绍了 Zeek 脚本调试和诊断技术：
 
 1. **print / printf**：最基本的调试输出，支持基本类型和复合类型
-2. **dump_*** 函数：结构化数据导出（table、vector、connection）
+2. **dump\_\*** 函数：结构化数据导出（table、vector、connection）
 3. **zeek -b 调试模式**：详细的事件和脚本执行日志
 4. **--script-debug**：脚本加载和执行过程的完整追踪
 5. **常见错误**：类型错误、未定义变量、record 访问、table 键访问
@@ -627,5 +628,6 @@ event zeek_init() {
 **下一章（Part III：协议分析）** 将深入讲解 **HTTP 分析器**——分析器的注册、HTTP::Info record、请求/响应日志字段解析。
 
 > [!tip] 延伸阅读
+>
 > - [Zeek Debugging](https://docs.zeek.org/en/stable/media/script-debugging.gif)
 > - [Zeek Troubleshooting](https://docs.zeek.org/en/stable/troubleshooting/)

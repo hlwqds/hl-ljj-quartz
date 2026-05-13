@@ -5,13 +5,13 @@ tags: [p4, series, aws, cloud, ena, network, programmable, nitro, elastic]
 description: "AWS P4 可编程网络深度解析——Elastic Network Adapter (ENA) 架构、ENA Express 与 SR-IOV、Nitro Hypervisor、Custom P4 Pipeline、Spectral2 智能网卡、网络虚拟化与 AWS Nitro 系统"
 ---
 
-> [!info] P4 深度探索系列
-> 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+> [!info] P4 深度探索系列 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-14-p4-deep-dive-ch1-p4-overview|第一章：P4 概述]]
-> ...
-> 34. [[2026-04-14-p4-deep-dive-ch34-load-balancer|第三十四章：P4 负载均衡编程]]
-> 35. [[2026-04-14-p4-deep-dive-ch35-telemetry|第三十五章：P4 网络测量编程]]
-> 36. **第三十六章：AWS 网络可编程实践——Elastic Network Adapter、ENA Express、Spectral2**
+>    ...
+> 2. [[2026-04-14-p4-deep-dive-ch34-load-balancer|第三十四章：P4 负载均衡编程]]
+> 3. [[2026-04-14-p4-deep-dive-ch35-telemetry|第三十五章：P4 网络测量编程]]
+> 4. **第三十六章：AWS 网络可编程实践——Elastic Network Adapter、ENA Express、Spectral2**
 
 ---
 
@@ -62,6 +62,7 @@ Nitro 系统架构:
 ```
 
 Nitro Card 包含多个组件：
+
 - **Nitro Hypervisor**：轻量级管理程序
 - **ENI (Elastic Network Interface)**：虚拟网络接口
 - **ENA (Elastic Network Adapter)**：网络数据面
@@ -743,11 +744,11 @@ net.core.xps_ident_mask = 0xFFFF
 
 AWS 的 P4 可编程网络实践体现在多个层面：
 
-| 组件 | 技术 | 可编程性 | 用途 |
-|------|------|---------|------|
-| **ENA** | SR-IOV | 有限 | 基础网络卸载 |
-| **ENA Express** | P4 Pipeline | 完全 | Flow 调度、QoS |
-| **Spectral2** | P4-16 | 完全 | 400Gbps 高速网络 |
-| **Nitro** | Custom ASIC | 部分 | 虚拟化、安全 |
+| 组件            | 技术        | 可编程性 | 用途             |
+| --------------- | ----------- | -------- | ---------------- |
+| **ENA**         | SR-IOV      | 有限     | 基础网络卸载     |
+| **ENA Express** | P4 Pipeline | 完全     | Flow 调度、QoS   |
+| **Spectral2**   | P4-16       | 完全     | 400Gbps 高速网络 |
+| **Nitro**       | Custom ASIC | 部分     | 虚拟化、安全     |
 
 AWS 通过不断迭代的网络硬件，为云实例提供越来越高的网络性能和更灵活的可编程能力。

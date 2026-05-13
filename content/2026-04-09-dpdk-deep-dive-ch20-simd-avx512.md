@@ -5,11 +5,9 @@ tags: [dpdk, series, simd, avx512, sse, neon, vectorization, packet-processing, 
 description: "深入理解 SIMD 向量化在 DPDK 中的应用——AVX512/SSE/NEON 指令集、数据包批量处理、校验和计算、查找表、RSS 散列向量化"
 ---
 
-> [!info] DPDK 深度探索系列
-> 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
+> [!info] DPDK 深度探索系列 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
 > 1-19. 前十九章已完成
-> 19b. [[2026-04-09-dpdk-deep-dive-ch19b-dpu-smartnic|第十九章补充：DPU/SmartNIC 基础]]
-> 20. **第二十章：AVX512/SIMD 数据包处理向量化**
+> 19b. [[2026-04-09-dpdk-deep-dive-ch19b-dpu-smartnic|第十九章补充：DPU/SmartNIC 基础]] 20. **第二十章：AVX512/SIMD 数据包处理向量化**
 
 ---
 
@@ -108,16 +106,16 @@ description: "深入理解 SIMD 向量化在 DPDK 中的应用——AVX512/SSE/N
 
 ### 1.3 SIMD 指令集发展
 
-| 指令集 | 位宽 | 数据类型 | 典型应用 |
-|--------|------|----------|----------|
-| **MMX** | 64-bit | 整数 | 早期多媒体 |
-| **SSE** | 128-bit | 单精度浮点、整数 | 包处理 (x86) |
-| **SSE2/3/4** | 128-bit | 扩展类型 | 校验和、CRC32 指令 |
-| **AVX** | 256-bit | 浮点 | 浮点计算 |
-| **AVX2** | 256-bit | 整数+浮点 | 包处理、查找 |
-| **AVX-512** | 512-bit | 全部类型 + mask | 高性能包处理 |
-| **NEON** | 128-bit | ARM 向量 | ARM 包处理 |
-| **SVE/SVE2** | 可变 (128-2048-bit) | ARM 向量 | HPC、网络 |
+| 指令集       | 位宽                | 数据类型         | 典型应用           |
+| ------------ | ------------------- | ---------------- | ------------------ |
+| **MMX**      | 64-bit              | 整数             | 早期多媒体         |
+| **SSE**      | 128-bit             | 单精度浮点、整数 | 包处理 (x86)       |
+| **SSE2/3/4** | 128-bit             | 扩展类型         | 校验和、CRC32 指令 |
+| **AVX**      | 256-bit             | 浮点             | 浮点计算           |
+| **AVX2**     | 256-bit             | 整数+浮点        | 包处理、查找       |
+| **AVX-512**  | 512-bit             | 全部类型 + mask  | 高性能包处理       |
+| **NEON**     | 128-bit             | ARM 向量         | ARM 包处理         |
+| **SVE/SVE2** | 可变 (128-2048-bit) | ARM 向量         | HPC、网络          |
 
 ---
 
@@ -155,6 +153,7 @@ __mmask64 k3;  // 64-bit mask (用于 64 个 8-bit 元素)
 
 > [!note] `_mm512_set_epi32` 参数逆序
 > Intel intrinsic 中所有 `set` 函数的参数都是**逆序**的：第一个参数是最高位元素（element 15），最后一个参数是最低位元素（element 0）。例如：
+>
 > ```c
 > __m512i v = _mm512_set_epi32(15, 14, 13, ..., 1, 0);
 > // element[0] = 0, element[1] = 1, ..., element[15] = 15
@@ -857,6 +856,7 @@ uint32_t crc = __crc32w(initial, value);    // CRC-32  (ISO 3309)
 ```
 
 > [!note] NEON vs AVX512 的关键差异
+>
 > - NEON 没有 mask 寄存器，比较结果是全宽向量（0xFF/0x00），不是位掩码
 > - NEON 最大 128-bit，吞吐约为 AVX512 的 1/4
 > - ARMv8 的 CRC32 是独立指令，不是 NEON 的一部分
@@ -989,6 +989,7 @@ CFLAGS="-O3 -flto -march=native"
 ---
 
 > [!tip] 参考文献
+>
 > - Intel, "Intel Intrinsics Guide", https://www.intel.com/content/www/us/en/docs/intrinsics-guide/
 > - Intel, "Intel Architecture Instruction Set Extensions Programming Reference"
 > - DPDK, "rte_vect.h", https://doc.dpdk.org/api/rte__vect_8h.html

@@ -141,15 +141,15 @@ The ST trailer enables in-band telemetry, path tracing, and operations measureme
 
 The flavor flags can be combined, though not all combinations are sensible:
 
-| PSP | USP | ST | Behavior |
-|-----|-----|-----|----------|
-| 0 | 0 | 0 | Normal - endpoint processes SRH |
-| 1 | 0 | 0 | PSP - penultimate pops SRH |
-| 0 | 1 | 0 | USP - final keeps SRH |
-| 1 | 1 | 0 | Invalid combination (mutually exclusive) |
-| 0 | 0 | 1 | ST present - trailer follows payload |
-| 1 | 0 | 1 | PSP + ST |
-| 0 | 1 | 1 | USP + ST |
+| PSP | USP | ST  | Behavior                                 |
+| --- | --- | --- | ---------------------------------------- |
+| 0   | 0   | 0   | Normal - endpoint processes SRH          |
+| 1   | 0   | 0   | PSP - penultimate pops SRH               |
+| 0   | 1   | 0   | USP - final keeps SRH                    |
+| 1   | 1   | 0   | Invalid combination (mutually exclusive) |
+| 0   | 0   | 1   | ST present - trailer follows payload     |
+| 1   | 0   | 1   | PSP + ST                                 |
+| 0   | 1   | 1   | USP + ST                                 |
 
 The PSP and USP flags are mutually exclusive in the SRH flags field. Deployment typically selects either PSP (for efficiency) or neither (for simplicity), with USP reserved for specialized OAM scenarios.
 

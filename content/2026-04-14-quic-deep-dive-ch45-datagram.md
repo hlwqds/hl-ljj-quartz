@@ -69,6 +69,7 @@ Here's the tricky part: QUIC's connection-level and stream-level flow control do
 ```
 
 Datagrams are subject to:
+
 1. **Connection-level congestion control** - They share the congestion window with streams
 2. **Application-level flow control** - via the `DATAGRAM_GIVE_CRE` frame (if supported)
 
@@ -122,6 +123,7 @@ Client                                          Server
 ```
 
 Benefits:
+
 - **0-RTT potential** on repeat queries
 - **Better encryption** than classic DNS over UDP
 - **No head-of-line blocking** with other DNS queries
@@ -136,16 +138,19 @@ However, datagrams in flight during migration may be lost, since they were sent 
 ## 45.9 Implementation Considerations
 
 ### Sending Side
+
 - Buffer datagrams for retransmission only if reliability is needed
 - Track datagrams in flight for congestion control
 - Apply per-packet pacing
 
 ### Receiving Side
+
 - Deliver datagrams immediately to the application (no reordering)
 - Handle datagrams that arrive after connection migration
 - Apply congestion control feedback via `ACK` frames
 
 ### Application Layer
+
 - Don't assume delivery (design for loss)
 - Size datagrams to fit in a single QUIC packet (MTU considerations)
 - Use datagram IDs for correlation if needed

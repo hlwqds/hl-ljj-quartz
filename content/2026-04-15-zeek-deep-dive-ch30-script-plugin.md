@@ -8,14 +8,8 @@ tags:
   - extension
 ---
 
-> [!info] Zeek 2026 深度探索系列
-> 0. [[zeek-deep-dive-overview|全栈学习路径总览]]
-> ...
-> 29. [[zeek-deep-dive-ch29-logging-frameworks|第二十九章：日志框架与输出机制]]
-> 30. **第三十章：第三方插件与脚本扩展体系**
-> 31. [[zeek-deep-dive-ch31-custom-protocol-parsers|第三十一章：自定义协议解析器开发]]
-> 32. [[zeek-deep-dive-ch32-event-engine-customization|第三十二章：事件引擎与日志定制]]
-> 33. [[zeek-deep-dive-ch33-performance-tuning|第三十三章：性能调优与高级配置]]
+> [!info] Zeek 2026 深度探索系列 0. [[zeek-deep-dive-overview|全栈学习路径总览]]
+> ... 29. [[zeek-deep-dive-ch29-logging-frameworks|第二十九章：日志框架与输出机制]] 30. **第三十章：第三方插件与脚本扩展体系** 31. [[zeek-deep-dive-ch31-custom-protocol-parsers|第三十一章：自定义协议解析器开发]] 32. [[zeek-deep-dive-ch32-event-engine-customization|第三十二章：事件引擎与日志定制]] 33. [[zeek-deep-dive-ch33-performance-tuning|第三十三章：性能调优与高级配置]]
 
 ---
 
@@ -30,11 +24,11 @@ graph TB
         S["Script Layer<br/>(ZeekScript)"]
         A["Analysis Scripts<br/>(.zeek files)"]
     end
-    
+
     P -->|generate events| S
     S -->|handle events| A
     A -->|call built-ins| S
-    
+
     P -->|packet processing| N["Network Framework"]
     S -->|log output| L["Logging Framework"]
 ```
@@ -85,10 +79,10 @@ public:
     zeek::plugin::Configuration Configure() override {
         // 向 Zeek 声明本插件提供的功能
         AddComponent(new zeek::analyzer::Analyzer("example", "example", "Example Protocol"));
-        return zeek::plugin::Configuration("Example Plugin", "0.1.0", 
+        return zeek::plugin::Configuration("Example Plugin", "0.1.0",
             "An example Zeek plugin demonstrating plugin architecture");
     }
-    
+
     // 初始化完成时被调用
     void InitPostScriptLoading() override {
         // 注册自定义事件类型、初始化状态等
@@ -119,15 +113,15 @@ public:
     {
         // 构造函数
     }
-    
+
     // 数据到达时的处理
     void DeliverStream(int len, const u_char* data, bool is_orig) override {
         // 处理应用层数据
         // is_orig: true=客户端到服务器，false=服务器到客户端
-        
+
         // 将数据传递给脚本层
         ProtocolConfirmation();
-        
+
         // 生成脚本层事件（供 .zeek 脚本处理）
         zeek::eventMgr.Enqueue(
             "example_data",
@@ -135,11 +129,11 @@ public:
             zeek::make_intrusive<zeek::StringVal>(zeek::String(data, len)),
             is_orig ? zeek::val_mgr->True() : zeek::val_mgr->False()
         );
-        
+
         // 继续传递给下一个分析器
         TCP_ApplicationAnalyzer::DeliverStream(len, data, is_orig);
     }
-    
+
     // TCP 连接结束时
     void EndOfData(bool is_orig) override {
         // 清理状态
@@ -151,7 +145,7 @@ public:
 class ExampleAnalyzerRegistrar : public zeek::analyzer::tcp::TCP_ApplicationAnalyzer::Registrar {
 public:
     ExampleAnalyzerRegistrar() : Registrar("example") {}
-    
+
     zeek::analyzer::Analyzer* Instantiate(zeek::Connection* c) override {
         return new ExampleAnalyzer(c);
     }
@@ -174,7 +168,7 @@ ZeekScript 允许在 `.zeek` 文件中定义新的事件处理函数和内置函
 event example_data(c: connection, data: string, is_orig: bool) {
     # 记录日志
     Log::write(Example::LOG, [$ts=network_time(), $c=c, $data=data, $dir=is_orig?"ORIG":"RESP"]);
-    
+
     # 提取关键信息
     if ( /magic-pattern/ in data ) {
         # 触发告警
@@ -197,7 +191,7 @@ event connection_state_remove(c: connection) {
         local duration = network_time() - c$example_state$first_seen;
         if ( duration > 10min ) {
             # 长时间连接，生成统计信息
-            Log::write(Example::CONN_STATS, 
+            Log::write(Example::CONN_STATS,
                 [$id=c$id, $duration=duration, $orig_bytes=c?$orig?$size?$num_bytes:0]);
         }
     }
@@ -212,7 +206,7 @@ module Example;
 
 export {
     redef enum Log::ID += { LOG, CONN_STATS };
-    
+
     type Info: record {
         ts: time          &log;
         uid: string       &log;
@@ -220,7 +214,7 @@ export {
         data: string      &log &optional;
         dir: string       &log &optional;
     };
-    
+
     type ConnStats: record {
         ts: time           &log;
         id: conn_id        &log;
@@ -253,13 +247,13 @@ zeek_dev -g example.zeek
 
 ### 4.1 主流插件仓库
 
-| 插件名称 | 功能描述 | 链接 |
-| :--- | :--- | :--- |
-| **zeek-agent** | 主机端点可见性集成 | github.com/zeek/zeek-agent |
-| **brolysis** | 增强协议解析 | github.com/zeek/brolysis |
-| **zeek-spicy** | Spicy 协议生成器 | github.com/zeek/spicy |
-| **zeek-pkts** | Packet-level 访问 | github.com/RootNamed/zeek-pkts |
-| **zeek-http2** | HTTP/2 分析 | github.com/zeek/zeek-http2 |
+| 插件名称       | 功能描述           | 链接                           |
+| :------------- | :----------------- | :----------------------------- |
+| **zeek-agent** | 主机端点可见性集成 | github.com/zeek/zeek-agent     |
+| **brolysis**   | 增强协议解析       | github.com/zeek/brolysis       |
+| **zeek-spicy** | Spicy 协议生成器   | github.com/zeek/spicy          |
+| **zeek-pkts**  | Packet-level 访问  | github.com/RootNamed/zeek-pkts |
+| **zeek-http2** | HTTP/2 分析        | github.com/zeek/zeek-http2     |
 
 ### 4.2 Spicy 插件：自动化协议解析器生成
 
@@ -348,7 +342,7 @@ cd custom-proto
 ```cmake
 zeek_plugin_begin(CustomProto)
     # 添加 C++ 源文件
-    add_zeek_plugin(CustomProto 
+    add_zeek_plugin(CustomProto
         src/Plugin.cc
         src/ProtoAnalyzer.cc
     )
@@ -388,20 +382,20 @@ public:
             if ( magic == MAGIC ) {
                 validated_ = true;
                 ProtocolConfirmation();  // 通知 Zeek 协议已确认
-                
+
                 // 解析 header
                 if ( len >= 8 ) {
                     header_len_ = ntohs(*(uint16_t*)(data + 4));
                     // 生成脚本层事件
                     EnqueueEvent("custom_proto::header",
-                        c_, 
+                        c_,
                         zeek::val_mgr->Bool(is_orig),
                         zeek::make_intrusive<zeek::Val>(header_len_, zeek::TYPE_COUNT)
                     );
                 }
             }
         }
-        
+
         if ( validated_ ) {
             // 协议已确认，传递数据
             ForwardStream(len, data, is_orig);
@@ -414,7 +408,7 @@ private:
 };
 
 // Factory
-class CustomProtoAnalyzerRegistrar 
+class CustomProtoAnalyzerRegistrar
     : public TCP_ApplicationAnalyzer::Registrar {
 public:
     CustomProtoAnalyzerRegistrar() : Registrar(PROTOCOL_NAME) {}
@@ -433,7 +427,7 @@ module CustomProto;
 
 export {
     redef enum Log::ID += { LOG };
-    
+
     type Info: record {
         ts: time      &log;
         uid: string   &log;
@@ -479,10 +473,10 @@ zeek -N | grep CustomProto
 
 本章介绍了 Zeek 的两大扩展机制：
 
-| 扩展方式 | 适用场景 | 复杂度 |
-| :--- | :--- | :--- |
-| **Plugin (C++)** | 高性能需求、新协议解析、修改核心行为 | 高 |
-| **ZeekScript (.zeek)** | 事件处理、日志定制、业务逻辑 | 中 |
+| 扩展方式               | 适用场景                             | 复杂度 |
+| :--------------------- | :----------------------------------- | :----- |
+| **Plugin (C++)**       | 高性能需求、新协议解析、修改核心行为 | 高     |
+| **ZeekScript (.zeek)** | 事件处理、日志定制、业务逻辑         | 中     |
 
 **关键要点**：
 

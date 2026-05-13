@@ -13,14 +13,14 @@ description: 在 Thunderbolt 拓展坞上跑 DPDK + Mellanox 25GbE 的完整方�
 
 ## 环境
 
-| 项目 | 值 |
-|------|-----|
-| 系统 | Fedora 43，内核 6.19.11 |
-| 网卡 | Mellanox ConnectX-4 Lx MCX4121A（双口 25GbE SFP28） |
-| 拓展坞 | Thunderbolt 4，ASMedia ASM2464PD 桥接 |
-| PCIe 链路 | 3.0 x4，共享双口上行 |
-| DPDK | 24.11.4，Python 3.12 编译 |
-| 连接 | SFP28 DAC 直连铜缆（双口互连） |
+| 项目      | 值                                                  |
+| --------- | --------------------------------------------------- |
+| 系统      | Fedora 43，内核 6.19.11                             |
+| 网卡      | Mellanox ConnectX-4 Lx MCX4121A（双口 25GbE SFP28） |
+| 拓展坞    | Thunderbolt 4，ASMedia ASM2464PD 桥接               |
+| PCIe 链路 | 3.0 x4，共享双口上行                                |
+| DPDK      | 24.11.4，Python 3.12 编译                           |
+| 连接      | SFP28 DAC 直连铜缆（双口互连）                      |
 
 ## 核心问题：Linux 拒绝让 Thunderbolt 设备做 DMA
 
@@ -117,26 +117,26 @@ sudo dpdk-testpmd -l 0-3 -n 4 \
 
 ### 其他踩坑
 
-| 问题 | 原因 | 解决 |
-|------|------|------|
-| mlx5 要求 PA 模式但 noiommu 只有 VA | mlx5 PMD 需要 IOMMU 物理地址映射 | 启用 `intel_iommu=on` |
-| 绑定 vfio-pci 后 Verbs 设备丢失 | mlx5 依赖 mlx5_core 内核驱动 | 不绑 vfio-pci，保持 mlx5_core |
-| Python 3.14 编译 DPDK 失败 | pmdinfogen.py 不兼容 3.14 | 用 Python 3.12 编译 |
-| kernel-devel 版本不匹配 | vermagic 检查 | `rpm -q kernel-devel-$(uname -r)` 确认一致 |
+| 问题                                | 原因                             | 解决                                       |
+| ----------------------------------- | -------------------------------- | ------------------------------------------ |
+| mlx5 要求 PA 模式但 noiommu 只有 VA | mlx5 PMD 需要 IOMMU 物理地址映射 | 启用 `intel_iommu=on`                      |
+| 绑定 vfio-pci 后 Verbs 设备丢失     | mlx5 依赖 mlx5_core 内核驱动     | 不绑 vfio-pci，保持 mlx5_core              |
+| Python 3.14 编译 DPDK 失败          | pmdinfogen.py 不兼容 3.14        | 用 Python 3.12 编译                        |
+| kernel-devel 版本不匹配             | vermagic 检查                    | `rpm -q kernel-devel-$(uname -r)` 确认一致 |
 
 ## 性能实测
 
 flowgen 模式，双口 DAC 直连，3 个转发核心，每个包长跑 30s 取稳定值：
 
-| 包长 | 实测 pps | 实测 Gbps | pps 达标率 | bps 达标率 |
-|------|----------|-----------|-----------|-----------|
-| 64B | 2.99 Mpps | 1.44 | 10.1% | 9.4% |
-| 128B | 2.74 Mpps | 2.72 | 17.9% | 14.4% |
-| 256B | 2.37 Mpps | 4.78 | 30.1% | 22.1% |
-| 512B | 1.71 Mpps | 6.95 | 42.3% | 28.8% |
-| 1024B | 1.06 Mpps | 8.61 | 51.5% | 34.2% |
-| 1280B | 0.90 Mpps | 9.20 | 55.0% | 36.5% |
-| 1518B | 0.76 Mpps | 9.18 | 54.5% | 36.4% |
+| 包长  | 实测 pps  | 实测 Gbps | pps 达标率 | bps 达标率 |
+| ----- | --------- | --------- | ---------- | ---------- |
+| 64B   | 2.99 Mpps | 1.44      | 10.1%      | 9.4%       |
+| 128B  | 2.74 Mpps | 2.72      | 17.9%      | 14.4%      |
+| 256B  | 2.37 Mpps | 4.78      | 30.1%      | 22.1%      |
+| 512B  | 1.71 Mpps | 6.95      | 42.3%      | 28.8%      |
+| 1024B | 1.06 Mpps | 8.61      | 51.5%      | 34.2%      |
+| 1280B | 0.90 Mpps | 9.20      | 55.0%      | 36.5%      |
+| 1518B | 0.76 Mpps | 9.18      | 54.5%      | 36.4%      |
 
 ### 关键数据
 

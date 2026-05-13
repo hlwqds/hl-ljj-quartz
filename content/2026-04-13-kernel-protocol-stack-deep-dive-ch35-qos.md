@@ -1,19 +1,27 @@
 ---
 title: "Kernel Protocol Stack 深度探索 (三十九)：Linux QoS 与流量控制"
 date: 2026-04-13
-tags: [linux, kernel, networking, series, qos, tc, qdisc, htb, hfsc, fq-codel, cake, tbf, traffic-shaping, bandwidth]
+tags:
+  [
+    linux,
+    kernel,
+    networking,
+    series,
+    qos,
+    tc,
+    qdisc,
+    htb,
+    hfsc,
+    fq-codel,
+    cake,
+    tbf,
+    traffic-shaping,
+    bandwidth,
+  ]
 description: "深入解析 Linux QoS 框架——tc（Traffic Control）架构、qdisc 队列规则、class 与 filter 体系、HTB/HFSC 带宽整形、FQ-CoDel/CAKE 缓冲膨胀控制、以及 Kubernetes/容器网络的 QoS 实现"
 ---
 
-> [!info] Kernel Protocol Stack 深度探索系列
-> 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
-> 33. [[2026-04-13-kernel-protocol-stack-deep-dive-ch33-netfilter-hook|第三十三章：Netfilter 框架详解]]
-> 34. [[2026-04-13-kernel-protocol-stack-deep-dive-ch34-iptables-ext|第三十四章：iptables 扩展模块]]
-> 35. [[2026-04-13-kernel-protocol-stack-deep-dive-ch36-nftables|第三十五章：nftables]]
-> 36. [[2026-04-13-kernel-protocol-stack-deep-dive-ch37-conntrack-internals|第三十六章：Conntrack 内部机制]]
-> 37. [[2026-04-13-kernel-protocol-stack-deep-dive-ch38-nat-deep|第三十七章：NAT 深度解析]]
-> 38. [[2026-04-13-kernel-protocol-stack-deep-dive-ch39-xdp-integration|第三十八章：XDP 与高性能网络处理]]
-> 39. **第三十九章：Linux QoS 与流量控制**
+> [!info] Kernel Protocol Stack 深度探索系列 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]] 33. [[2026-04-13-kernel-protocol-stack-deep-dive-ch33-netfilter-hook|第三十三章：Netfilter 框架详解]] 34. [[2026-04-13-kernel-protocol-stack-deep-dive-ch34-iptables-ext|第三十四章：iptables 扩展模块]] 35. [[2026-04-13-kernel-protocol-stack-deep-dive-ch36-nftables|第三十五章：nftables]] 36. [[2026-04-13-kernel-protocol-stack-deep-dive-ch37-conntrack-internals|第三十六章：Conntrack 内部机制]] 37. [[2026-04-13-kernel-protocol-stack-deep-dive-ch38-nat-deep|第三十七章：NAT 深度解析]] 38. [[2026-04-13-kernel-protocol-stack-deep-dive-ch39-xdp-integration|第三十八章：XDP 与高性能网络处理]] 39. **第三十九章：Linux QoS 与流量控制**
 
 ---
 
@@ -22,6 +30,7 @@ description: "深入解析 Linux QoS 框架——tc（Traffic Control）架构�
 QoS（Quality of Service，服务质量）是网络中保证不同流量的带宽、延迟和丢包率的机制。Linux 的 QoS 框架称为 **tc（Traffic Control）**，是内核中最复杂的子系统之一。
 
 tc 的核心功能：
+
 1. **流量整形（Shaping）**：限制出向流量速率（避免突发导致队列堆积）
 2. **流量调度（Scheduling）**：决定多个流的发送顺序（优先级/公平性）
 3. **流量管控（Policing）**：对超速流量直接丢弃（入向）
@@ -396,17 +405,17 @@ tc filter add dev eth0 parent 1: protocol ip \
 
 ### 9.1 常见 DSCP 值
 
-| DSCP 类别 | 数值 | 用途 |
-|-----------|------|------|
-| CS0 / BE | 0 | 默认（Best Effort） |
-| AF11 | 10 | 低优先级数据 |
-| AF21 | 18 | 普通数据 |
-| AF31 | 26 | 流媒体 |
-| AF41 | 34 | 视频会议 |
-| CS5 | 40 | 语音信令 |
-| EF | 46 | 语音/低延迟（Expedited Forwarding） |
-| CS6 | 48 | 网络控制（BGP/OSPF） |
-| CS7 | 56 | 最高优先级（网络管理） |
+| DSCP 类别 | 数值 | 用途                                |
+| --------- | ---- | ----------------------------------- |
+| CS0 / BE  | 0    | 默认（Best Effort）                 |
+| AF11      | 10   | 低优先级数据                        |
+| AF21      | 18   | 普通数据                            |
+| AF31      | 26   | 流媒体                              |
+| AF41      | 34   | 视频会议                            |
+| CS5       | 40   | 语音信令                            |
+| EF        | 46   | 语音/低延迟（Expedited Forwarding） |
+| CS6       | 48   | 网络控制（BGP/OSPF）                |
+| CS7       | 56   | 最高优先级（网络管理）              |
 
 ---
 
@@ -450,10 +459,10 @@ Kubernetes QoS 类别影响 OOM Kill 顺序（BestEffort 最先被杀），但**
     },
     {
       "type": "bandwidth",
-      "ingressRate": 104857600,    // 100Mbit 入向限速
-      "ingressBurst": 20971520,    // 20MB 突发
-      "egressRate": 52428800,      // 50Mbit 出向限速
-      "egressBurst": 10485760      // 10MB 突发
+      "ingressRate": 104857600, // 100Mbit 入向限速
+      "ingressBurst": 20971520, // 20MB 突发
+      "egressRate": 52428800, // 50Mbit 出向限速
+      "egressBurst": 10485760 // 10MB 突发
     }
   ]
 }

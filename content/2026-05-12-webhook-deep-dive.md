@@ -100,15 +100,15 @@ Webhook 是什么？
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
-| 特性 | Polling | WebSocket | Webhook |
-|------|---------|-----------|---------|
-| 延迟 | 高 (秒-分钟) | 极低 (毫秒) | 低 (秒) |
-| 复杂度 | 低 | 高 | 低 |
-| 资源消耗 | 高 (频繁轮询) | 中 (持久连接) | 低 (按需) |
-| 双向通信 | 否 | 是 | 否 |
-| 断线重连 | N/A | 需要 | 自动 (重试) |
-| 扩展性 | 差 | 中 | 好 |
-| 公网需求 | 否 | 否 | 是 |
+| 特性     | Polling            | WebSocket            | Webhook       |
+| -------- | ------------------ | -------------------- | ------------- |
+| 延迟     | 高 (秒-分钟)       | 极低 (毫秒)          | 低 (秒)       |
+| 复杂度   | 低                 | 高                   | 低            |
+| 资源消耗 | 高 (频繁轮询)      | 中 (持久连接)        | 低 (按需)     |
+| 双向通信 | 否                 | 是                   | 否            |
+| 断线重连 | N/A                | 需要                 | 自动 (重试)   |
+| 扩展性   | 差                 | 中                   | 好            |
+| 公网需求 | 否                 | 否                   | 是            |
 | 适用场景 | 低频、低实时性需求 | 聊天、游戏，金十数据 | SaaS 事件通知 |
 
 ### 2.3 Webhook 的工作流程
@@ -431,72 +431,66 @@ class WebhookVerifier:
 
 ```typescript
 // TypeScript 签名验证实现
-import crypto from 'crypto';
+import crypto from "crypto"
 
 interface VerifyOptions {
-  secret: string;
-  timestampTolerance?: number; // 秒
+  secret: string
+  timestampTolerance?: number // 秒
 }
 
 class WebhookVerifierTS {
-  private secret: Buffer;
-  private timestampTolerance: number;
+  private secret: Buffer
+  private timestampTolerance: number
 
   constructor(options: VerifyOptions) {
-    this.secret = Buffer.from(options.secret, 'utf-8');
-    this.timestampTolerance = options.timestampTolerance ?? 300;
+    this.secret = Buffer.from(options.secret, "utf-8")
+    this.timestampTolerance = options.timestampTolerance ?? 300
   }
 
   verify(payload: Buffer, header: string): boolean {
-    if (header.startsWith('sha256=')) {
-      return this.verifySha256(payload, header);
-    } else if (header.includes(',')) {
-      return this.verifyWithTimestamp(payload, header);
+    if (header.startsWith("sha256=")) {
+      return this.verifySha256(payload, header)
+    } else if (header.includes(",")) {
+      return this.verifyWithTimestamp(payload, header)
     }
-    return false;
+    return false
   }
 
   private verifySha256(payload: Buffer, header: string): boolean {
-    const signature = header.slice(7); // 去掉 "sha256="
-    const expected = crypto
-      .createHmac('sha256', this.secret)
-      .update(payload)
-      .digest('hex');
-    return crypto.timingSafeEqual(
-      Buffer.from(signature),
-      Buffer.from(expected)
-    );
+    const signature = header.slice(7) // 去掉 "sha256="
+    const expected = crypto.createHmac("sha256", this.secret).update(payload).digest("hex")
+    return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))
   }
 
   private verifyWithTimestamp(payload: Buffer, header: string): boolean {
-    const parts = header.split(',').reduce((acc, p) => {
-      const [k, v] = p.split('=', 2);
-      acc[k.trim()] = v.trim();
-      return acc;
-    }, {} as Record<string, string>);
+    const parts = header.split(",").reduce(
+      (acc, p) => {
+        const [k, v] = p.split("=", 2)
+        acc[k.trim()] = v.trim()
+        return acc
+      },
+      {} as Record<string, string>,
+    )
 
-    const timestamp = parseInt(parts['t'], 10);
-    const signature = parts['v1'];
+    const timestamp = parseInt(parts["t"], 10)
+    const signature = parts["v1"]
 
-    if (!timestamp || !signature) return false;
+    if (!timestamp || !signature) return false
 
     // 重放攻击检查
-    const now = Math.floor(Date.now() / 1000);
+    const now = Math.floor(Date.now() / 1000)
     if (Math.abs(now - timestamp) > this.timestampTolerance) {
-      return false;
+      return false
     }
 
     // Stripe 签名格式: HMAC-SHA256(timestamp + "." + payload)
-    const signedPayload = `${timestamp}.${payload.toString('utf-8')}`;
+    const signedPayload = `${timestamp}.${payload.toString("utf-8")}`
     const expected = crypto
-      .createHmac('sha256', this.secret)
-      .update(signedPayload, 'utf-8')
-      .digest('hex');
+      .createHmac("sha256", this.secret)
+      .update(signedPayload, "utf-8")
+      .digest("hex")
 
-    return crypto.timingSafeEqual(
-      Buffer.from(signature),
-      Buffer.from(expected)
-    );
+    return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))
   }
 }
 ```
@@ -1504,7 +1498,7 @@ Please triage and label this issue." \
 # 返回:
 # Webhook URL: https://your-gateway:8644/webhook/github-issue-triage
 # Secret: whsec_abc123...
-# 
+#
 # 配置到 GitHub: Settings → Webhooks → Add webhook
 # Payload URL: https://your-gateway:8644/webhook/github-issue-triage
 # Secret: whsec_abc123...
@@ -1553,12 +1547,14 @@ hermes webhook remove github-issue-triage
 ## 延伸阅读
 
 ### 文档
+
 - GitHub Webhooks: https://docs.github.com/en/webhooks
 - Stripe Webhooks: https://stripe.com/docs/webhooks
 - Slack Events API: https://api.slack.com/apis/connections/events-api
 - MCP Webhook (Anthropic): https://modelcontextprotocol.io
 
 ### 工具
+
 - ngrok: https://ngrok.com
 - Stripe CLI: https://stripe.com/docs/stripe-cli
 - mitmproxy: https://mitmproxy.org

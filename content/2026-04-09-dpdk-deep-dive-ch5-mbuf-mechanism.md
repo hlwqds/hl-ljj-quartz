@@ -5,8 +5,8 @@ tags: [dpdk, series, mbuf, dynfield, dynflag, packet, offload]
 description: "深入理解 DPDK 数据包的核心——rte_mbuf 完整字段解析、Dynfield 动态字段机制、Dynflag 卸载标志、mbuf 在收发包流程中的生命周期，以及 CRC 卸载和校验和计算"
 ---
 
-> [!info] DPDK 深度探索系列
-> 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
+> [!info] DPDK 深度探索系列 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-09-dpdk-deep-dive-ch1-architecture-overview|第一章：架构概述——kernel bypass 原理与 DPDK 定位]]
 > 2. [[2026-04-09-dpdk-deep-dive-ch2-uio-vfio-iommu|第二章：UIO/VFIO/IOMMU 用户态驱动框架]]
 > 3. [[2026-04-09-dpdk-deep-dive-ch3-eal-initialization|第三章：EAL 初始化与 lcore 模型]]
@@ -50,11 +50,11 @@ struct sk_buff {
 
 ### 1.2 DPDK mbuf 设计目标
 
-| 目标 | 实现 | 效果 |
-|------|------|------|
-| **零拷贝** | 数据区与描述符分离 | 避免不必要的数据复制 |
-| **最小开销** | 固定头部 + 动态字段 | 减少 cache miss |
-| **批量操作** | 预分配 + 从 mempool 获取 | O(1) 分配 ~10ns |
+| 目标         | 实现                       | 效果                    |
+| ------------ | -------------------------- | ----------------------- |
+| **零拷贝**   | 数据区与描述符分离         | 避免不必要的数据复制    |
+| **最小开销** | 固定头部 + 动态字段        | 减少 cache miss         |
+| **批量操作** | 预分配 + 从 mempool 获取   | O(1) 分配 ~10ns         |
 | **硬件卸载** | ol_flags 标记 offload 需求 | 网卡自动计算 CRC/校验和 |
 
 ---
@@ -300,19 +300,19 @@ graph LR
     subgraph "固定字段 (所有人都用)"
         A["pool/buf_addr/ol_flags..."]
     end
-    
+
     subgraph "Dynfield 注册表"
         B["Dynfield 0: rte_flow_color"]
         C["Dynfield 1: app_specific"]
         D["Dynfield 2: timestamp"]
     end
-    
+
     subgraph "应用程序"
         E["App A 使用 Dynfield 0"]
         F["App B 使用 Dynfield 1"]
         G["App C 使用 Dynfield 2"]
     end
-    
+
     A --> B
     A --> C
     A --> D
@@ -782,12 +782,12 @@ handle_packet(struct rte_mbuf *m)
         // IP checksum 错误，丢弃或记录
         return DROP;
     }
-    
+
     // 检查 L4 checksum
     if (m->ol_flags & PKT_RX_L4_CKSUM_BAD) {
         return DROP;
     }
-    
+
     // checksum 正确，快速路径
     return FORWARD;
 }
@@ -848,13 +848,13 @@ printf("\n");
 
 ### 7.2 常见错误
 
-| 错误 | 原因 | 解决 |
-|------|------|------|
-| `mbuf allocation failed` | mempool 耗尽 | 增加 pool size 或检查泄漏 |
-| `Assertion ... refcnt == 1 failed` | debug 模式下 refcnt > 1 时执行了 free/prepend | 检查 clone/refcnt 管理，必要时先 rte_pktmbuf_copy 深拷贝 |
-| `mbuf has no room for headroom` | data_off 被用尽，无法 prepend | 分配新 mbuf 或使用 rte_pktmbuf_copy |
-| `packet length exceeds mbuf bufsize` | 数据超过单 segment 容量 | 使用 multi-segment mbuf 或更大的 pool |
-| `cannot free mbuf` | refcnt > 1，最后一个引用未释放 | 确保每个 clone 都有对应的 free |
+| 错误                                 | 原因                                          | 解决                                                     |
+| ------------------------------------ | --------------------------------------------- | -------------------------------------------------------- |
+| `mbuf allocation failed`             | mempool 耗尽                                  | 增加 pool size 或检查泄漏                                |
+| `Assertion ... refcnt == 1 failed`   | debug 模式下 refcnt > 1 时执行了 free/prepend | 检查 clone/refcnt 管理，必要时先 rte_pktmbuf_copy 深拷贝 |
+| `mbuf has no room for headroom`      | data_off 被用尽，无法 prepend                 | 分配新 mbuf 或使用 rte_pktmbuf_copy                      |
+| `packet length exceeds mbuf bufsize` | 数据超过单 segment 容量                       | 使用 multi-segment mbuf 或更大的 pool                    |
+| `cannot free mbuf`                   | refcnt > 1，最后一个引用未释放                | 确保每个 clone 都有对应的 free                           |
 
 ### 7.3 mbuf 完整性检查
 
@@ -866,15 +866,15 @@ validate_mbuf(struct rte_mbuf *m)
     // 检查所属 pool 有效
     if (m->pool == NULL)
         return -1;
-    
+
     // 检查 refcnt
     if (rte_mbuf_refcnt_read(m) == 0)
         return -2;
-    
+
     // 检查数据长度（data 不能超出缓冲区）
     if (m->data_off + m->data_len > m->buf_len)
         return -3;
-    
+
     // 检查 multi-segment
     if (m->nb_segs > 1) {
         struct rte_mbuf *s = m->next;
@@ -884,7 +884,7 @@ validate_mbuf(struct rte_mbuf *m)
             s = s->next;
         }
     }
-    
+
     return 0;
 }
 ```
@@ -914,6 +914,7 @@ validate_mbuf(struct rte_mbuf *m)
 ---
 
 > [!tip] 参考文献
+>
 > - Intel, "DPDK Mbuf Library", https://doc.dpdk.org/guides/prog_guide/mbuf_lib.html
 > - Intel, "Mbuf One", https://doc.dpdk.org/rte__mbuf_8h.html
 > - "rte_mbuf Dynfield and Dynflag", https://doc.dpdk.org/guides/prog_guide/mbuf_lib.html#dynamic-fields-and-flags

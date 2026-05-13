@@ -1,14 +1,24 @@
 ---
 title: "DPDK 深度探索 (二十九)：Profiling——dpdk-procinfo、perf、火焰图"
 date: 2026-04-09
-tags: [dpdk, series, profiling, perf, flamegraph, dpdk-procinfo, benchmark, hotspot, latency, throughput]
+tags:
+  [
+    dpdk,
+    series,
+    profiling,
+    perf,
+    flamegraph,
+    dpdk-procinfo,
+    benchmark,
+    hotspot,
+    latency,
+    throughput,
+  ]
 description: "深入理解 DPDK 性能分析——dpdk-procinfo、perf、火焰图、热点分析、延迟分布、吞吐量瓶颈定位"
 ---
 
-> [!info] DPDK 深度探索系列
-> 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
-> 1-28. 前二十八章已完成
-> 29. **第二十九章：Profiling——dpdk-procinfo、perf、火焰图**
+> [!info] DPDK 深度探索系列 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
+> 1-28. 前二十八章已完成 29. **第二十九章：Profiling——dpdk-procinfo、perf、火焰图**
 
 ---
 
@@ -1266,6 +1276,7 @@ clear port stats all
 ---
 
 > [!tip] 参考文献
+>
 > - Brendan Gregg, "Systems Performance: Enterprise and the Cloud", 2nd Edition
 > - Brendan Gregg, "BPF Performance Tools" (火焰图章节)
 > - Intel, "Intel VTune Profiler User Guide"

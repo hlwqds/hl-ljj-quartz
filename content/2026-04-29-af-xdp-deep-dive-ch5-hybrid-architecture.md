@@ -1,7 +1,23 @@
 ---
 title: AF_XDP 深度探索 Ch5：AF_XDP + io_uring 融合架构
 date: 2026-04-29 09:00:00
-tags: [AF_XDP, io_uring, Hybrid Architecture, Zero Copy, Async I/O, Ring Buffer, High Performance, Event-Driven, Reactor Pattern, Proactor Pattern, SPDK, Edge Computing, Low Latency, High Throughput]
+tags:
+  [
+    AF_XDP,
+    io_uring,
+    Hybrid Architecture,
+    Zero Copy,
+    Async I/O,
+    Ring Buffer,
+    High Performance,
+    Event-Driven,
+    Reactor Pattern,
+    Proactor Pattern,
+    SPDK,
+    Edge Computing,
+    Low Latency,
+    High Throughput,
+  ]
 description: 深入实战 AF_XDP + io_uring 融合架构：设计理念、异步模型、零拷贝协同、epoll 集成、proactor/reactor 模式、代码实现与性能数据。
 ---
 
@@ -1335,6 +1351,5 @@ Linux 版本要求：
 - LWN: "io_uring and XDP": https://lwn.net/Articles/825071/
 - Facebook: "io_uring for networking": https://facebookmicrosites.github.io/
 - NVIDIA: "AF_XDP integration with io_uring": https://developer.nvidia.com/blog/
-- Cloudflare: "io_uring in production": https://blog.cloudflare.com/tag/io_uring/
--字节跳动: "高性能网络架构": https://github.com/bytedance/
+- Cloudflare: "io_uring in production": https://blog.cloudflare.com/tag/io_uring/ -字节跳动: "高性能网络架构": https://github.com/bytedance/
 - 美团: "融合架构实践": https://tech.meituan.com/

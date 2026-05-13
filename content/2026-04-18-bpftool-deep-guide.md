@@ -154,14 +154,14 @@ bpftool prog show | awk '{print $2}' | sort | uniq -c
 
 ### 3.2 字段详解
 
-| 字段 | 含义 |
-|------|------|
-| `xlated` | BPF 字节码大小（内核验证器输出） |
-| `jited` | JIT 编译后机器码大小（x86/arm 等） |
-| `memlock` | mlock() 锁定的内存（防止 swap） |
-| `btf_id` | BTF 信息（用于调试/objdump） |
-| `map_ids` | 程序引用的 Map ID |
-| `pids` | 加载进程的 PID+名字 |
+| 字段      | 含义                               |
+| --------- | ---------------------------------- |
+| `xlated`  | BPF 字节码大小（内核验证器输出）   |
+| `jited`   | JIT 编译后机器码大小（x86/arm 等） |
+| `memlock` | mlock() 锁定的内存（防止 swap）    |
+| `btf_id`  | BTF 信息（用于调试/objdump）       |
+| `map_ids` | 程序引用的 Map ID                  |
+| `pids`    | 加载进程的 PID+名字                |
 
 ### 3.3 dump BPF 字节码
 

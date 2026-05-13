@@ -1,7 +1,31 @@
 ---
 title: AF_XDP 深度探索 Ch6：生产环境实战与调优
 date: 2026-04-30 09:00:00
-tags: [AF_XDP, Production, Deployment, Tuning, Monitoring, Troubleshooting, Performance, Kernel, NIC, RSS, NUMA, Hugepage, BPF, iproute2, ethtool, Systemd, Docker, Kubernetes, Cilium, High Availability, Security, Hardening]
+tags:
+  [
+    AF_XDP,
+    Production,
+    Deployment,
+    Tuning,
+    Monitoring,
+    Troubleshooting,
+    Performance,
+    Kernel,
+    NIC,
+    RSS,
+    NUMA,
+    Hugepage,
+    BPF,
+    iproute2,
+    ethtool,
+    Systemd,
+    Docker,
+    Kubernetes,
+    Cilium,
+    High Availability,
+    Security,
+    Hardening,
+  ]
 description: AF_XDP 生产环境实战指南：环境配置、部署方案、监控排错、调优参数、HA设计、安全加固，以及在 Kubernetes/DPDK 环境中的最佳实践。
 ---
 
@@ -512,7 +536,7 @@ CMD ["xdp-proxy", "--config", "/etc/xdp-proxy/config.yaml"]
 ```yaml
 # docker-compose.yml — XDP 应用编排
 
-version: '3.8'
+version: "3.8"
 
 services:
   xdp-proxy:
@@ -601,7 +625,7 @@ metadata:
 data:
   # XDP 加速
   enable-xdp: "true"
-  xdp-mode: "native"  # native/driver/generic
+  xdp-mode: "native" # native/driver/generic
 
   # BPF
   bpf-map-growth-size: "65536"
@@ -610,7 +634,7 @@ data:
   # 性能
   enable-ipv4-fragmentation: "false"
   enable-ipv6-fragmentation: "false"
-  enable-l7-proxy: "false"  # 禁用 L7 代理以提升性能
+  enable-l7-proxy: "false" # 禁用 L7 代理以提升性能
 
   # 连接跟踪
   bpf-ct-global-max-entries: "1000000"
@@ -619,7 +643,7 @@ data:
   # 负载均衡
   enable-nodePort: "true"
   enable-external-LoadBalancer: "true"
-  loadbalancer-mode: "dsr"  # 直接服务器返回
+  loadbalancer-mode: "dsr" # 直接服务器返回
 ---
 apiVersion: apps/v1
 kind: DaemonSet
@@ -633,37 +657,37 @@ spec:
   template:
     spec:
       containers:
-      - name: cilium-agent
-        image: cilium/cilium:v1.14.0
-        env:
-        - name: K8S_NODE_NAME
-          valueFrom:
-            fieldRef:
-              fieldPath: spec.nodeName
-        securityContext:
-          privileged: true
-        resources:
-          requests:
-            cpu: 500m
-            memory: 512Mi
-          limits:
-            cpu: "4"
-            memory: 4Gi
-        volumeMounts:
-        - name: bpffs
-          mountPath: /sys/fs/bpf
-          mountPropagation: Bidirectional
-        - name: lib-modules
-          mountPath: /lib/modules
-          readOnly: true
+        - name: cilium-agent
+          image: cilium/cilium:v1.14.0
+          env:
+            - name: K8S_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              cpu: 500m
+              memory: 512Mi
+            limits:
+              cpu: "4"
+              memory: 4Gi
+          volumeMounts:
+            - name: bpffs
+              mountPath: /sys/fs/bpf
+              mountPropagation: Bidirectional
+            - name: lib-modules
+              mountPath: /lib/modules
+              readOnly: true
       volumes:
-      - name: bpffs
-        hostPath:
-          path: /sys/fs/bpf
-          type: DirectoryOrCreate
-      - name: lib-modules
-        hostPath:
-          path: /lib/modules
+        - name: bpffs
+          hostPath:
+            path: /sys/fs/bpf
+            type: DirectoryOrCreate
+        - name: lib-modules
+          hostPath:
+            path: /lib/modules
 ```
 
 ---
@@ -784,12 +808,12 @@ disable_existing_loggers: false
 
 formatters:
   default:
-    format: '%(asctime)s [%(levelname)s] %(name)s: %(message)s'
-    datefmt: '%Y-%m-%d %H:%M:%S'
+    format: "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+    datefmt: "%Y-%m-%d %H:%M:%S"
 
   json:
     class: pythonjsonlogger.jsonlogger.JsonFormatter
-    format: '%(asctime)s %(name)s %(levelname)s %(message)s'
+    format: "%(asctime)s %(name)s %(levelname)s %(message)s"
 
 handlers:
   console:
@@ -803,7 +827,7 @@ handlers:
     level: DEBUG
     formatter: json
     filename: /var/log/xdp-proxy/app.log
-    maxBytes: 104857600  # 100MB
+    maxBytes: 104857600 # 100MB
     backupCount: 10
 
   syslog:
@@ -1137,71 +1161,40 @@ echo "=== 安全加固完成 ==="
 // seccomp_xdp.json — seccomp 过滤规则
 
 {
-    "defaultAction": "SCMP_ACT_KILL",
-    "syscalls": [
+  "defaultAction": "SCMP_ACT_KILL",
+  "syscalls": [
+    {
+      "names": ["read", "write", "close", "recvfrom", "sendto", "poll", "epoll_wait", "epoll_ctl"],
+      "action": "SCMP_ACT_ALLOW"
+    },
+    {
+      "names": ["socket", "bind", "listen", "accept", "accept4", "connect", "shutdown"],
+      "action": "SCMP_ACT_ALLOW",
+      "args": [
         {
-            "names": [
-                "read",
-                "write",
-                "close",
-                "recvfrom",
-                "sendto",
-                "poll",
-                "epoll_wait",
-                "epoll_ctl"
-            ],
-            "action": "SCMP_ACT_ALLOW"
-        },
-        {
-            "names": [
-                "socket",
-                "bind",
-                "listen",
-                "accept",
-                "accept4",
-                "connect",
-                "shutdown"
-            ],
-            "action": "SCMP_ACT_ALLOW",
-            "args": [
-                {
-                    "index": 0,
-                    "value": 43,  // AF_XDP
-                    "op": "SCMP_CMP_EQ"
-                }
-            ]
-        },
-        {
-            "names": [
-                "mmap",
-                "mprotect",
-                "munmap",
-                "brk"
-            ],
-            "action": "SCMP_ACT_ALLOW"
-        },
-        {
-            "names": [
-                "clock_gettime",
-                "gettimeofday"
-            ],
-            "action": "SCMP_ACT_ALLOW"
-        },
-        {
-            "names": [
-                "exit",
-                "exit_group"
-            ],
-            "action": "SCMP_ACT_ALLOW"
-        },
-        {
-            "names": [
-                "getuid",
-                "getgid"
-            ],
-            "action": "SCMP_ACT_ALLOW"
+          "index": 0,
+          "value": 43, // AF_XDP
+          "op": "SCMP_CMP_EQ"
         }
-    ]
+      ]
+    },
+    {
+      "names": ["mmap", "mprotect", "munmap", "brk"],
+      "action": "SCMP_ACT_ALLOW"
+    },
+    {
+      "names": ["clock_gettime", "gettimeofday"],
+      "action": "SCMP_ACT_ALLOW"
+    },
+    {
+      "names": ["exit", "exit_group"],
+      "action": "SCMP_ACT_ALLOW"
+    },
+    {
+      "names": ["getuid", "getgid"],
+      "action": "SCMP_ACT_ALLOW"
+    }
+  ]
 }
 ```
 

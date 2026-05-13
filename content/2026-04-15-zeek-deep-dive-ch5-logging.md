@@ -12,8 +12,8 @@ tags:
 description: "深入解析 Zeek 日志系统——ASCII/JSON/CSV 输出格式、Log Writer 框架、日志轮转机制、核心日志字段、Writer 配置"
 ---
 
-> [!info] Zeek 2026 深度探索系列
-> 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Zeek 2026 深度探索系列 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-15-zeek-deep-dive-ch1-overview|第一章：Zeek 概述]]
 > 2. [[2026-04-15-zeek-deep-dive-ch2-installation|第二章：安装部署]]
 > 3. [[2026-04-15-zeek-deep-dive-ch3-config|第三章：配置系统]]
@@ -30,20 +30,20 @@ Zeek 的日志系统是 NSM 框架的**核心输出**，与 Suricata 的 EVE JSO
 
 Zeek 默认生成的日志文件：
 
-| 日志文件 | 内容 | 核心字段 |
-| :--- | :--- | :--- |
-| `conn.log` | 网络连接记录 | uid, id, orig/resp bytes, duration |
-| `http.log` | HTTP 请求/响应 | method, uri, status_code, user_agent |
-| `dns.log` | DNS 查询/响应 | query, qtype, rcode, answers |
-| `ssl.log` | TLS 会话信息 | version, cipher, client_cert, server_cert |
-| `ssh.log` | SSH 握手信息 | client, server, version |
-| `smtp.log` | SMTP 会话 | from, to, subject, emails |
-| `files.log` | 文件传输记录 | fid, mime_type, size, md5/sha1 |
-| `weird.log` | 非正常流量 | name, addl |
-| `notice.log` | 告警/通知 | note, msg, actions |
-| `signatures.log` | 签名匹配 | sig_id, sig_name, action |
-| `intel.log` | 威胁情报命中 | indicator, indicator_type, matched |
-| `software.log` | 软件指纹 | software, version |
+| 日志文件         | 内容           | 核心字段                                  |
+| :--------------- | :------------- | :---------------------------------------- |
+| `conn.log`       | 网络连接记录   | uid, id, orig/resp bytes, duration        |
+| `http.log`       | HTTP 请求/响应 | method, uri, status_code, user_agent      |
+| `dns.log`        | DNS 查询/响应  | query, qtype, rcode, answers              |
+| `ssl.log`        | TLS 会话信息   | version, cipher, client_cert, server_cert |
+| `ssh.log`        | SSH 握手信息   | client, server, version                   |
+| `smtp.log`       | SMTP 会话      | from, to, subject, emails                 |
+| `files.log`      | 文件传输记录   | fid, mime_type, size, md5/sha1            |
+| `weird.log`      | 非正常流量     | name, addl                                |
+| `notice.log`     | 告警/通知      | note, msg, actions                        |
+| `signatures.log` | 签名匹配       | sig_id, sig_name, action                  |
+| `intel.log`      | 威胁情报命中   | indicator, indicator_type, matched        |
+| `software.log`   | 软件指纹       | software, version                         |
 
 ### 1.2 日志框架架构
 
@@ -94,13 +94,13 @@ public:
 
 ### 2.2 可用 Writer
 
-| Writer | 说明 | 源码 | 依赖 |
-| :--- | :--- | :--- | :--- |
-| **ASCII** | 默认，人类可读 | `src/logging/writers/ASCII.cc` | 无 |
-| **JSON** | 结构化 JSON | `src/logging/writers/JSON.cc` | 无 |
-| **CSV** | 逗号分隔 | `src/logging/writes/CSV.cc` | 无 |
-| **Redis** | Redis Stream | `src/logging/writers/Redis.cc` | hiredis |
-| **Null** | 丢弃日志 | `src/logging/writers/Null.cc` | 无 |
+| Writer    | 说明           | 源码                           | 依赖    |
+| :-------- | :------------- | :----------------------------- | :------ |
+| **ASCII** | 默认，人类可读 | `src/logging/writers/ASCII.cc` | 无      |
+| **JSON**  | 结构化 JSON    | `src/logging/writers/JSON.cc`  | 无      |
+| **CSV**   | 逗号分隔       | `src/logging/writes/CSV.cc`    | 无      |
+| **Redis** | Redis Stream   | `src/logging/writers/Redis.cc` | hiredis |
+| **Null**  | 丢弃日志       | `src/logging/writers/Null.cc`  | 无      |
 
 ---
 
@@ -122,18 +122,18 @@ ASCII Writer 是 Zeek 的**默认日志格式**：
 
 ### 3.2 核心字段类型
 
-| 类型前缀 | 说明 | 示例值 |
-| :--- | :--- | :--- |
-| `time` | Unix 时间戳（秒） | `1713206400.123` |
-| `string` | 字符串 | `"hello"` |
-| `addr` | IP 地址 | `192.168.1.1` |
-| `port` | 端口（带协议） | `443/tcp` |
-| `count` | 无符号整数 | `1234` |
-| `interval` | 时间间隔（秒） | `12.345` |
-| `bool` | 布尔值 | `T` / `F` |
-| `enum` | 枚举值 | `tcp` / `udp` |
-| `set[string]` | 字符串集合 | `{a,b,c}` |
-| `vector[string]` | 字符串向量 | `[a,b,c]` |
+| 类型前缀         | 说明              | 示例值           |
+| :--------------- | :---------------- | :--------------- |
+| `time`           | Unix 时间戳（秒） | `1713206400.123` |
+| `string`         | 字符串            | `"hello"`        |
+| `addr`           | IP 地址           | `192.168.1.1`    |
+| `port`           | 端口（带协议）    | `443/tcp`        |
+| `count`          | 无符号整数        | `1234`           |
+| `interval`       | 时间间隔（秒）    | `12.345`         |
+| `bool`           | 布尔值            | `T` / `F`        |
+| `enum`           | 枚举值            | `tcp` / `udp`    |
+| `set[string]`    | 字符串集合        | `{a,b,c}`        |
+| `vector[string]` | 字符串向量        | `[a,b,c]`        |
 
 ### 3.3 conn.log 详解
 
@@ -159,17 +159,17 @@ history                 连接历史标志（S/SA/F/R/...）
 
 **连接状态码**：
 
-| 状态 | 说明 | 触发条件 |
-| :--- | :--- | :--- |
-| `S0` | 连接建立中 | 发送 SYN，未收到 SYN-ACK |
-| `S1` | 半开连接 | 收到 SYN-SK |
-| `S2` | 关闭中（主动） | FIN 发送后收到响应 |
-| `S3` | 关闭中（被动） | FIN 收到后发送响应 |
-| `SF` | 正常关闭 | 完整握手 + 双方 FIN |
-| `REJ` | 连接拒绝 | SYN 被拒绝 |
-| `RSTO` | rst 发送方 | 发送 RST |
-| `RSTOS0` | RST 后重连 | RST 后重新 SYN |
-| `SH` | 半开 | 客户端 SH（仅 SYN） |
+| 状态     | 说明           | 触发条件                 |
+| :------- | :------------- | :----------------------- |
+| `S0`     | 连接建立中     | 发送 SYN，未收到 SYN-ACK |
+| `S1`     | 半开连接       | 收到 SYN-SK              |
+| `S2`     | 关闭中（主动） | FIN 发送后收到响应       |
+| `S3`     | 关闭中（被动） | FIN 收到后发送响应       |
+| `SF`     | 正常关闭       | 完整握手 + 双方 FIN      |
+| `REJ`    | 连接拒绝       | SYN 被拒绝               |
+| `RSTO`   | rst 发送方     | 发送 RST                 |
+| `RSTOS0` | RST 后重连     | RST 后重新 SYN           |
+| `SH`     | 半开           | 客户端 SH（仅 SYN）      |
 
 ---
 

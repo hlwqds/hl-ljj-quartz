@@ -5,8 +5,8 @@ tags: [linux, kernel, networking, series, fib, routing, rules, ip-rule, policy-r
 description: "深入解析 Linux FIB Rules 转发规则库——策略路由、多表查询、ip rule 命令、fwmark 标记、u32 匹配、以及 FIB 规则与路由的协同工作"
 ---
 
-> [!info] Kernel Protocol Stack 深度探索系列
-> 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Kernel Protocol Stack 深度探索系列 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-kernel-protocol-stack-deep-dive-ch1-skbuff|第一章：sk_buff 与数据包生命周期]]
 > 2. [[2026-04-13-kernel-protocol-stack-deep-dive-ch2-netdevice|第二章：Netdevice 与网卡抽象]]
 > 3. [[2026-04-13-kernel-protocol-stack-deep-dive-ch3-ring-buffer|第三章：Ring Buffer 与 DMA]]
@@ -35,6 +35,7 @@ description: "深入解析 Linux FIB Rules 转发规则库——策略路由、�
 ### 1.1 传统路由 vs 策略路由
 
 **传统路由（基于目的地址）：**
+
 ```
 数据包目的 IP -> 查找路由表 -> 选择出口
 
@@ -42,6 +43,7 @@ description: "深入解析 Linux FIB Rules 转发规则库——策略路由、�
 ```
 
 **策略路由（基于 FIB Rules）：**
+
 ```
 数据包 -> 匹配规则（源地址/接口/fwmark/...) -> 选择路由表 -> 选择出口
 
@@ -50,13 +52,13 @@ description: "深入解析 Linux FIB Rules 转发规则库——策略路由、�
 
 ### 1.2 典型应用场景
 
-| 场景 | 问题 | 解决方案 |
-|------|------|----------|
+| 场景       | 问题                    | 解决方案             |
+| ---------- | ----------------------- | -------------------- |
 | 多链路 ISP | 不同 ISP 使用不同路由表 | 基于源地址选择路由表 |
-| 防火墙标记 | iptables 标记决定路由 | fwmark + ip rule |
-| 流量工程 | 按协议/端口选择路径 | 基于 L4 信息选路 |
-| VPN 分离 | 特定流量走 VPN | 基于目的地址规则 |
-| QoS | 不同流量不同带宽 | 分类 + 策略路由 |
+| 防火墙标记 | iptables 标记决定路由   | fwmark + ip rule     |
+| 流量工程   | 按协议/端口选择路径     | 基于 L4 信息选路     |
+| VPN 分离   | 特定流量走 VPN          | 基于目的地址规则     |
+| QoS        | 不同流量不同带宽        | 分类 + 策略路由      |
 
 ### 1.3 规则优先级
 
@@ -92,7 +94,7 @@ struct fib_rule {
     unsigned char   dst_len;         // 目的地址掩码长度
     unsigned char   src_len;         // 源地址掩码长度
     unsigned char   tos;             // TOS 值
-    
+
     __be32          fwmark;          // fwmark 标记
     __u32           fwmask;          // fwmark 掩码
     __u32           priority;       // 规则优先级
@@ -101,7 +103,7 @@ struct fib_rule {
     __be32          dst;             // 目的地址
     char            ifname[IFNAMSIZ]; // 入接口名称
     char            oifname[IFNAMSIZ]; // 出接口名称
-    
+
     unsigned char   action;          // 动作
     unsigned char   flags;           // 标志
     unsigned char   table_id;         // 路由表 ID
@@ -140,13 +142,13 @@ int fib_lookup(struct net *net, const struct flowi4 *flp,
               struct fib_result *res)
 {
     struct fib_table *tb;
-    
+
     // 1. 遍历规则链
     tb = fib_rules_lookup(net->ipv4.fib_rules_ops,
                           flowi4_to_flowi(flp), 0, &res->r);
     if (!tb)
         return -ENETUNREACH;
-    
+
     // 2. 在目标表中查找路由
     return fib_table_lookup(tb, flp->fl4_dst, &res->fi, ...);
 }
@@ -159,7 +161,7 @@ struct fib_table *fib_rules_lookup(struct net *net,
                                    struct fib_lookup_arg *arg)
 {
     struct fib_rule *rule;
-    
+
     rcu_read_lock();
     list_for_each_entry_rcu(rule, &ops->rules_list, list) {
         // 按优先级排序，先处理小优先级
@@ -170,7 +172,7 @@ struct fib_table *fib_rules_lookup(struct net *net,
         }
     }
     rcu_read_unlock();
-    
+
     return NULL;
 }
 ```
@@ -189,30 +191,30 @@ static int fib_rule_match(struct fib_rule *rule,
                                 rule->src, rule->src_len))
             return 0;
     }
-    
+
     // 2. 目的地址匹配
     if (rule->dst_len) {
         if (!inet_addr_mask_test(fl->nl_u.ip4_dst,
                                 rule->dst, rule->dst_len))
             return 0;
     }
-    
+
     // 3. TOS 匹配
     if (rule->tos && (fl->flowi_tos & rule->tos) != rule->tos)
         return 0;
-    
+
     // 4. fwmark 匹配
     if (rule->fwmark) {
         if ((fl->flowi_mark & rule->fwmask) != rule->fwmark)
             return 0;
     }
-    
+
     // 5. 入接口匹配
     if (rule->ifname[0]) {
         if (fl->iif == 0 || strcmp(rule->ifname, fl->iif_name) != 0)
             return 0;
     }
-    
+
     return 1;  // 所有条件满足
 }
 ```
@@ -339,11 +341,11 @@ cat /etc/iproute2/rt_tables
 
 ### 5.2 常用路由表
 
-| 表名 | ID | 说明 |
-|------|-----|------|
-| local | 255 | 系统保留，本地路由（本地 IP、广播） |
-| main | 254 | 默认路由表，`ip route show` 显示的就是这个 |
-| default | 253 | 默认备用表，空闲时使用 |
+| 表名    | ID  | 说明                                       |
+| ------- | --- | ------------------------------------------ |
+| local   | 255 | 系统保留，本地路由（本地 IP、广播）        |
+| main    | 254 | 默认路由表，`ip route show` 显示的就是这个 |
+| default | 253 | 默认备用表，空闲时使用                     |
 
 ### 5.3 自定义路由表
 
@@ -502,22 +504,22 @@ flowchart TD
     subgraph "数据包接收"
         SKB["sk_buff"]
     end
-    
+
     subgraph "规则匹配"
         RULE1["Rule 0: fwmark=0x100 -> table 100"]
         RULE2["Rule 100: from 10.0.0.0/8 -> table 200"]
         RULE3["Rule 32766: default -> table main"]
     end
-    
+
     subgraph "路由查找"
         ROUTE["在选定表中查找路由"]
         NEXTHOP["选择下一跳"]
     end
-    
+
     subgraph "出接口"
         DEV["网络设备"]
     end
-    
+
     SKB --> RULE1
     RULE1 -->|"fwmark 不匹配"| RULE2
     RULE2 -->|"匹配"| ROUTE
@@ -535,7 +537,7 @@ struct rtable *ip_route_output_fast(struct net *net, struct flowi4 *fl4)
     // 直接使用路由缓存
     if (rt_cache_route(net, &fl4->flowi4_mark, ...))
         return ...;
-    
+
     // 缓存未命中，走完整查找
     return ip_route_output_key_slow(net, fl4);
 }
@@ -548,6 +550,7 @@ struct rtable *ip_route_output_fast(struct net *net, struct flowi4 *fl4)
 FIB Rules 是 Linux 策略路由的核心：
 
 **关键要点：**
+
 1. 支持基于源地址、目的地址、fwmark、接口、TOS 等多维度匹配
 2. 规则按优先级顺序匹配（数值越小优先级越高）
 3. 每个规则指向一个路由表
@@ -555,6 +558,7 @@ FIB Rules 是 Linux 策略路由的核心：
 5. 支持多表查询实现复杂的流量工程
 
 **常见使用模式：**
+
 1. **多 ISP 出口**：基于源地址选择 ISP
 2. **VPN 分离**：基于目的地址分流
 3. **QoS 分类**：iptables 标记 + 路由选择
@@ -562,6 +566,7 @@ FIB Rules 是 Linux 策略路由的核心：
 5. **流量监控**：特定流量走监控端口
 
 **配置建议：**
+
 - 规则越少性能越好
 - 避免规则冲突
 - 定期检查规则顺序

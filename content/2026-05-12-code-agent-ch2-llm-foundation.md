@@ -24,25 +24,25 @@ graph LR
         x2["Token 2"] --> emb2["Embedding"]
         xN["Token N"] --> embN["Embedding"]
     end
-    
+
     emb1 --> pos1["+ Positional Encoding"]
     emb2 --> pos2["+ Positional Encoding"]
     embN --> posN["+ Positional Encoding"]
-    
+
     pos1 --> attn1["Multi-Head Self-Attention"]
     pos2 --> attn1
     posN --> attn1
-    
+
     pos1 --> attn2["Multi-Head Self-Attention"]
     pos2 --> attn2
     posN --> attn2
-    
+
     attn1 --> ffn1["Feed-Forward Network"]
     attn2 --> ffn2["Feed-Forward Network"]
-    
+
     ffn1 --> norm1["Layer Norm"]
     ffn2 --> norm2["Layer Norm"]
-    
+
     norm1 --> out1["Output Layer"]
     norm2 --> out2["Output Layer"]
 ```
@@ -72,10 +72,10 @@ def self_attention(Q: torch.Tensor, K: torch.Tensor, V: torch.Tensor, mask: torc
     d_k = Q.shape[-1]
     # 点积注意力分数
     scores = torch.matmul(Q, K.transpose(-2, -1)) / math.sqrt(d_k)
-    
+
     if mask is not None:
         scores = scores.masked_fill(mask == 0, float('-inf'))
-    
+
     # softmax 归一化
     attn_weights = F.softmax(scores, dim=-1)
     # 加权求和
@@ -113,25 +113,25 @@ class MultiHeadAttention(torch.nn.Module):
         self.d_model = d_model
         self.num_heads = num_heads
         self.head_dim = d_model // num_heads
-        
+
         # Q, K, V 投影
         self.W_q = torch.nn.Linear(d_model, d_model, bias=False)
         self.W_k = torch.nn.Linear(d_model, d_model, bias=False)
         self.W_v = torch.nn.Linear(d_model, d_model, bias=False)
         self.W_o = torch.nn.Linear(d_model, d_model, bias=False)
-    
+
     def split_heads(self, x: torch.Tensor) -> torch.Tensor:
         """(batch, seq_len, d_model) -> (batch, num_heads, seq_len, head_dim)"""
         batch, seq_len, _ = x.shape
         return x.view(batch, seq_len, self.num_heads, self.head_dim).transpose(1, 2)
-    
+
     def forward(self, Q: torch.Tensor, K: torch.Tensor, V: torch.Tensor, mask: torch.Tensor = None):
         Q = self.split_heads(self.W_q(Q))
         K = self.split_heads(self.W_k(K))
         V = self.split_heads(self.W_v(V))
-        
+
         attn_output, _ = self_attention(Q, K, V, mask)
-        
+
         # 拼接多个头
         batch, _, seq_len, _ = attn_output.shape
         concat = attn_output.transpose(1, 2).contiguous().view(batch, seq_len, self.d_model)
@@ -155,7 +155,7 @@ class FeedForward(torch.nn.Module):
         self.w1 = torch.nn.Linear(d_model, d_ff)
         self.w2 = torch.nn.Linear(d_ff, d_model)
         self.activation = torch.nn.GELU()
-    
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.w2(self.activation(self.w1(x)))
 ```
@@ -193,7 +193,7 @@ graph TD
         stack1 --> lm_head1["LM Head"]
         lm_head1 --> out1["Next Token"]
     end
-    
+
     subgraph "Encoder-Decoder (T5/BERT 系列)"
         dir2["Input Tokens"] --> enc["Encoder Stack"]
         enc --> enc_out["Encoder Output"]
@@ -212,14 +212,14 @@ graph TD
 
 ### 2.2 训练目标对比
 
-| 特性 | Decoder-only (GPT) | Encoder-Decoder (T5) | Encoder-only (BERT) |
-|------|---------------------|----------------------|---------------------|
-| **训练目标** | 下一个 token 预测（CLM） | 序列到序列（Seq2Seq） | 掩码语言建模（MLM） |
-| **输入/输出** | 单向输入，自回归输出 | 双向输入，自回归输出 | 双向输入，词级别输出 |
-| **典型任务** | 代码生成、文本续写 | 翻译、摘要、问答 | 分类、NER、填空 |
-| **注意力** | Causal Mask | Causal Mask + Cross Attn | Bidirectional |
-| **参数量效率** | 高（所有参数用于生成） | 中等 | 低 |
-| **代表模型** | GPT-4, Llama, Claude | T5, FLAN-T5, Bart | BERT, RoBERTa |
+| 特性           | Decoder-only (GPT)       | Encoder-Decoder (T5)     | Encoder-only (BERT)  |
+| -------------- | ------------------------ | ------------------------ | -------------------- |
+| **训练目标**   | 下一个 token 预测（CLM） | 序列到序列（Seq2Seq）    | 掩码语言建模（MLM）  |
+| **输入/输出**  | 单向输入，自回归输出     | 双向输入，自回归输出     | 双向输入，词级别输出 |
+| **典型任务**   | 代码生成、文本续写       | 翻译、摘要、问答         | 分类、NER、填空      |
+| **注意力**     | Causal Mask              | Causal Mask + Cross Attn | Bidirectional        |
+| **参数量效率** | 高（所有参数用于生成）   | 中等                     | 低                   |
+| **代表模型**   | GPT-4, Llama, Claude     | T5, FLAN-T5, Bart        | BERT, RoBERTa        |
 
 **为什么 Code Agent 普遍选择 Decoder-only？**
 
@@ -243,7 +243,7 @@ class TransformerBlock:
     def __init__(self):
         self.k_cache = []  # 存储 K
         self.v_cache = []  # 存储 V
-    
+
     def forward_with_kvcache(self, x: torch.Tensor, start_pos: int):
         """
         x: (batch, 1, d_model) - 只有一个新 token
@@ -253,20 +253,20 @@ class TransformerBlock:
         q = self.W_q(x)
         k = self.W_k(x)
         v = self.W_v(x)
-        
+
         # 应用 RoPE 位置编码
         q = self.apply_rotary_emb(q, start_pos)
         k = self.apply_rotary_emb(k, start_pos)
-        
+
         # 拼接历史 cache
         if len(self.k_cache) > 0:
             k = torch.cat([self.k_cache, k], dim=2)
             v = torch.cat([self.v_cache, v], dim=2)
-        
+
         # 更新 cache
         self.k_cache = k
         self.v_cache = v
-        
+
         # 注意力计算：Q 是 (1, seq_len)，K/V 是 (1, seq_len+1)
         attn_output = self.attention(q, k, v)
         return self.ffn(attn_output)
@@ -313,18 +313,19 @@ graph LR
         pg3["Page 2: [32-47]"]
         pg4["Page N: [...]"]
     end
-    
+
     subgraph "Logical Sequence"
         seq1["Prefix: def hello():..."]
         seq2["Cursor pos: 48"]
     end
-    
+
     seq1 -->|maps to| pg1
     seq1 -->|maps to| pg2
     seq1 -->|maps to| pg3
 ```
 
 关键优势：
+
 - **内存共享**：多个共享相同 system prompt 的请求可以共享 KV cache 页
 - **动态分配**：避免预分配整个 max_seq_len 的内存
 - **连续生成**：在同一 sequence 的不同生成步骤间保持引用关系
@@ -335,15 +336,15 @@ graph LR
 
 除了 KV Cache 和 Flash Attention，还有几种重要的推理优化技术：
 
-| 技术 | 核心思想 | 加速比 | 质量损失 | 适用场景 |
-|------|----------|--------|----------|----------|
-| **KV Cache** | 缓存 K/V 避免重算 | ~10x (@ L=1K) | 无 | 所有自回归生成 |
-| **Flash Attention** | 分块计算 + 重计算 | ~3-5x | 无 | 长序列 |
-| **Paged Attention** | 虚拟内存分页管理 KV | ~2x (吞吐) | 无 | 高并发场景 |
-| **Speculative Decoding** | 小模型预测 + 大模型验证 | ~2-3x | 无 | 延迟敏感场景 |
-| **Quantization (INT8/INT4)** | 降低权重精度 | ~2x | <1% | 推理优化 |
-| **Tensor Parallelism** | 多卡分片 | ~N x (N=GPU数) | 无 | 大模型部署 |
-| **Continuous Batching** | 动态 batch 调度 | ~5-10x (吞吐) | 无 | 高并发服务 |
+| 技术                         | 核心思想                | 加速比         | 质量损失 | 适用场景       |
+| ---------------------------- | ----------------------- | -------------- | -------- | -------------- |
+| **KV Cache**                 | 缓存 K/V 避免重算       | ~10x (@ L=1K)  | 无       | 所有自回归生成 |
+| **Flash Attention**          | 分块计算 + 重计算       | ~3-5x          | 无       | 长序列         |
+| **Paged Attention**          | 虚拟内存分页管理 KV     | ~2x (吞吐)     | 无       | 高并发场景     |
+| **Speculative Decoding**     | 小模型预测 + 大模型验证 | ~2-3x          | 无       | 延迟敏感场景   |
+| **Quantization (INT8/INT4)** | 降低权重精度            | ~2x            | <1%      | 推理优化       |
+| **Tensor Parallelism**       | 多卡分片                | ~N x (N=GPU数) | 无       | 大模型部署     |
+| **Continuous Batching**      | 动态 batch 调度         | ~5-10x (吞吐)  | 无       | 高并发服务     |
 
 **Speculative Decoding（投机解码）** 是一个值得深入了解的技术。它的核心思想是：
 
@@ -373,11 +374,11 @@ def speculative_decoding(
             draft_tokens.append(draft_token)
             if draft_token == EOS:
                 break
-        
+
         # Step 2: 大模型并行验证
         # 注意：大模型接收的是 [tokens..., draft_token_0, draft_token_1, ...]
         large_out = large_model.forward(tokens + draft_tokens[1:])
-        
+
         # Step 3: 找到第一个不一致的位置
         accepted = 0
         for i, draft_tok in enumerate(draft_tokens[1:]):
@@ -387,13 +388,13 @@ def speculative_decoding(
                 accepted += 1
             else:
                 break
-        
+
         # Step 4: 接受前 accepted 个 token，用大模型的预测替换剩余的
         tokens.extend(draft_tokens[1:1+accepted])
         if accepted < len(draft_tokens) - 1:
             # 大模型在拒绝位置重新采样
             tokens.append(sample(large_out.distributions[len(tokens)]))
-    
+
     return tokens
 ```
 
@@ -408,7 +409,7 @@ def continuous_batching_example():
     """
     # 初始化引擎
     llm = LLM(model="deepseek-ai/deepseek-coder-33b-instruct")
-    
+
     # 提交大量请求
     prompts = [
         "def quicksort(arr):",
@@ -416,17 +417,17 @@ def continuous_batching_example():
         "func main() {",
         # ... 可以是数百个不同的 prompt
     ]
-    
+
     sampling_params = SamplingParams(
         temperature=0.8,
         top_p=0.95,
         max_tokens=256,
     )
-    
+
     # vLLM 自动进行 continuous batching
     # 不需要手动管理批次
     outputs = llm.generate(prompts, sampling_params)
-    
+
     for output in outputs:
         print(output.outputs[0].text)
 ```
@@ -435,12 +436,12 @@ def continuous_batching_example():
 
 量化（Quantization）通过降低模型权重和计算的精度来减少内存占用和加速推理。主流方案：
 
-| 量化方法 | 精度 | 加速比 | 内存压缩 | 质量损失 | 工具 |
-|----------|------|--------|----------|----------|------|
-| **FP16** | 16-bit | 1x | 1x | 基准 | BF16 更好 |
-| **INT8** | 8-bit 整数 | ~1.5-2x | ~2x | <0.5% | GPTQ, AWQ |
-| **INT4** | 4-bit 整数 | ~2-4x | ~4x | 1-3% | GPTQ, QLoRA |
-| **NF4** | 4-bit 浮点 | ~2-4x | ~4x | <2% | bitsandbytes |
+| 量化方法 | 精度       | 加速比  | 内存压缩 | 质量损失 | 工具         |
+| -------- | ---------- | ------- | -------- | -------- | ------------ |
+| **FP16** | 16-bit     | 1x      | 1x       | 基准     | BF16 更好    |
+| **INT8** | 8-bit 整数 | ~1.5-2x | ~2x      | <0.5%    | GPTQ, AWQ    |
+| **INT4** | 4-bit 整数 | ~2-4x   | ~4x      | 1-3%     | GPTQ, QLoRA  |
+| **NF4**  | 4-bit 浮点 | ~2-4x   | ~4x      | <2%      | bitsandbytes |
 
 ```python
 # 使用 AutoGPTQ 进行 INT8 量化
@@ -452,24 +453,24 @@ def quantize_model():
     """
     # 原始模型
     model_path = "deepseek-ai/deepseek-coder-33b-instruct"
-    
+
     # 量化配置
     quantization_config = BaseQuantizeConfig(
         bits=8,
         group_size=128,  # 每 128 个 channel 共享一个 scale
         desc_act=True,   # 按激活顺序量化（效果更好但更慢）
     )
-    
+
     # 量化（需要校准数据）
     model = AutoGPTQForCausalLM.from_pretrained(
         model_path,
         quantization_config
     )
-    
+
     # 校准：用少量数据（通常 512-1024 个样本）校准量化参数
     calibration_data = [...]  # 你的代码数据集
     model.quantize(calibration_data)
-    
+
     # 保存量化后的模型
     model.save_pretrained("deepseek-coder-33b-int8")
 ```
@@ -480,16 +481,17 @@ def quantize_model():
 
 ### 4.1 训练数据的差异
 
-| 维度 | 通用文本 | 代码 |
-|------|----------|------|
-| **结构** | 自然语言，树状语义 | 严格语法树，缩进敏感 |
-| **确定性** | 近似重复/同义表述常见 | 相同输入必须有相同输出 |
-| **依赖** | 隐式上下文 | 显式 import/include |
-| **长度分布** | 中等长度 | 极端分布：大量短片段 + 少量超长文件 |
-| **版本演化** | 缓慢 | 快速（语言/框架版本迭代） |
-| **Token 密度** | ~0.75 tokens/字符 (英文) | ~0.35 tokens/字符 (Python) |
+| 维度           | 通用文本                 | 代码                                |
+| -------------- | ------------------------ | ----------------------------------- |
+| **结构**       | 自然语言，树状语义       | 严格语法树，缩进敏感                |
+| **确定性**     | 近似重复/同义表述常见    | 相同输入必须有相同输出              |
+| **依赖**       | 隐式上下文               | 显式 import/include                 |
+| **长度分布**   | 中等长度                 | 极端分布：大量短片段 + 少量超长文件 |
+| **版本演化**   | 缓慢                     | 快速（语言/框架版本迭代）           |
+| **Token 密度** | ~0.75 tokens/字符 (英文) | ~0.35 tokens/字符 (Python)          |
 
 Code LLM 的训练语料通常包括：
+
 - **GitHub 公开代码**：StarCoder 使用 GitHub 上 86 种语言的代码
 - **The Stack**：BigCode 项目的大规模代码数据集，包含许可代码
 - **代码相关文档**：README、API 文档、Stack Overflow
@@ -503,12 +505,12 @@ DeepSeek-Coder 更是采用了**Fill in the Middle（FIM）**训练策略：在�
 
 **词汇表大小与代码压缩率**：
 
-| Tokenizer | 词汇表大小 | Python 压缩率（tokens/字符） |
-|-----------|------------|------------------------------|
-| GPT-4 (cl100k_base) | 100,256 | ~0.58 |
-| CodeLlama (p50k_base) | 99,317 | ~0.55 |
-| StarCoder (BigCode) | 491,520 | ~0.35 |
-| DeepSeek (BPE) | 322,406 | ~0.38 |
+| Tokenizer             | 词汇表大小 | Python 压缩率（tokens/字符） |
+| --------------------- | ---------- | ---------------------------- |
+| GPT-4 (cl100k_base)   | 100,256    | ~0.58                        |
+| CodeLlama (p50k_base) | 99,317     | ~0.55                        |
+| StarCoder (BigCode)   | 491,520    | ~0.35                        |
+| DeepSeek (BPE)        | 322,406    | ~0.38                        |
 
 **StarCoder 的词汇表为什么这么大？** 因为它包含了大量的**字节级 n-gram**（最长 16 个字符的字节序列），能够精确处理各种编程语言中的特殊 token（如不同语言的变量命名规则）。
 
@@ -529,14 +531,14 @@ code = "def calculate_sum(arr: list[int]) -> int:"
 
 通用 LLM 用 MMLU、HumanEval 等基准评估，但 Code LLM 需要专门的评估体系：
 
-| 基准 | 描述 | 指标 |
-|------|------|------|
-| **HumanEval** | OpenAI 发布的 164 道 Python 编程题 | Pass@1, Pass@10, Pass@100 |
-| **MBPP** | 974 道 Python 基础编程题 | Pass@1 |
-| **MultiPL-E** | HumanEval 的多语言版本（18种语言） | Pass@1 |
-| **DS-1000** | Data Science 编程题（pandas/numpy/matplotlib） | Pass@1 |
-| **BigCodeBench** | 1,115 道真实编程任务 | Pass@1, Pass@10 |
-| **SWE-bench** | 真实 GitHub Issue 修复任务 | Pass@1 |
+| 基准             | 描述                                           | 指标                      |
+| ---------------- | ---------------------------------------------- | ------------------------- |
+| **HumanEval**    | OpenAI 发布的 164 道 Python 编程题             | Pass@1, Pass@10, Pass@100 |
+| **MBPP**         | 974 道 Python 基础编程题                       | Pass@1                    |
+| **MultiPL-E**    | HumanEval 的多语言版本（18种语言）             | Pass@1                    |
+| **DS-1000**      | Data Science 编程题（pandas/numpy/matplotlib） | Pass@1                    |
+| **BigCodeBench** | 1,115 道真实编程任务                           | Pass@1, Pass@10           |
+| **SWE-bench**    | 真实 GitHub Issue 修复任务                     | Pass@1                    |
 
 **Pass@k 的计算**：对于每个问题，生成 k 个候选解答，只要任意一个通过测试用例即为成功。
 
@@ -552,39 +554,41 @@ $$
 
 ### 5.1 模型总览
 
-| 模型 | 开发者 | 参数量 | 上下文 | 许可 | 训练数据截止 |
-|------|--------|--------|--------|------|-------------|
-| GPT-4o | OpenAI | 未公开 | 128K | Proprietary | 2023-12 |
-| Claude 3.5 Sonnet | Anthropic | 未公开 | 200K | Proprietary | 2024-04 |
-| CodeLlama 70B | Meta | 70B | 100K | Llama 3 License | 2023-06 |
-| DeepSeek-Coder 33B | DeepSeek | 33B | 128K | DeepSeek License | 2024-01 |
-| StarCoder2 15B | BigCode | 15B | 16K | Apache 2.0 | 2023-09 |
-| GitHub Copilot | GitHub/OpenAI | 未公开 | 128K | Proprietary | 2023-06 |
+| 模型               | 开发者        | 参数量 | 上下文 | 许可             | 训练数据截止 |
+| ------------------ | ------------- | ------ | ------ | ---------------- | ------------ |
+| GPT-4o             | OpenAI        | 未公开 | 128K   | Proprietary      | 2023-12      |
+| Claude 3.5 Sonnet  | Anthropic     | 未公开 | 200K   | Proprietary      | 2024-04      |
+| CodeLlama 70B      | Meta          | 70B    | 100K   | Llama 3 License  | 2023-06      |
+| DeepSeek-Coder 33B | DeepSeek      | 33B    | 128K   | DeepSeek License | 2024-01      |
+| StarCoder2 15B     | BigCode       | 15B    | 16K    | Apache 2.0       | 2023-09      |
+| GitHub Copilot     | GitHub/OpenAI | 未公开 | 128K   | Proprietary      | 2023-06      |
 
 ### 5.2 性能对比（HumanEval Pass@1）
 
 > 数据来源：各模型官方发布报告及第三方评测。数字仅供参考，实际性能因任务类型差异较大。
 
-| 模型 | Python | JavaScript | Java | Go | 整体 |
-|------|--------|------------|------|-----|------|
-| GPT-4o | 90.2% | 88.7% | 85.1% | 82.3% | ~87% |
-| Claude 3.5 Sonnet | 92.0% | 89.4% | 86.8% | 83.1% | ~88% |
-| CodeLlama 70B | 67.1% | 64.2% | 58.9% | 55.3% | ~61% |
-| DeepSeek-Coder 33B | 85.2% | 81.3% | 78.4% | 74.2% | ~80% |
-| StarCoder2 15B | 72.3% | 68.1% | 61.4% | 58.7% | ~65% |
-| Copilot | 73.5% | 75.2% | 67.8% | 62.1% | ~69% |
+| 模型               | Python | JavaScript | Java  | Go    | 整体 |
+| ------------------ | ------ | ---------- | ----- | ----- | ---- |
+| GPT-4o             | 90.2%  | 88.7%      | 85.1% | 82.3% | ~87% |
+| Claude 3.5 Sonnet  | 92.0%  | 89.4%      | 86.8% | 83.1% | ~88% |
+| CodeLlama 70B      | 67.1%  | 64.2%      | 58.9% | 55.3% | ~61% |
+| DeepSeek-Coder 33B | 85.2%  | 81.3%      | 78.4% | 74.2% | ~80% |
+| StarCoder2 15B     | 72.3%  | 68.1%      | 61.4% | 58.7% | ~65% |
+| Copilot            | 73.5%  | 75.2%      | 67.8% | 62.1% | ~69% |
 
 ### 5.3 各模型深度解析
 
 **GPT-4o / Claude 3.5**
 
 这两者是闭源模型的巅峰代表。它们的共同优势是：
+
 - 超长上下文窗口（128K-200K）
 - 强大的指令遵循能力
 - 完善的多模态支持
 - 持续迭代更新
 
 差异在于：
+
 - Claude 3.5 在代码解释和重构任务上略胜一筹（Anthropic 的 RLHF 策略更侧重有用性）
 - GPT-4o 在处理模糊需求时表现更稳定（更强的问题理解和澄清能力）
 - Claude 3.5 的上下文缓存功能更成熟，成本控制更好
@@ -592,6 +596,7 @@ $$
 **CodeLlama 70B**
 
 Meta 推出的开源 Code LLM，是目前开源社区最强大的基座模型之一。但需要注意：
+
 - 70B 参数对推理硬件要求高（至少需要 4×A100 80GB）
 - 推理速度慢，不适合实时 autocomplete 场景
 - 适合作为**本地 fine-tuning 基座**，而非直接部署使用
@@ -599,6 +604,7 @@ Meta 推出的开源 Code LLM，是目前开源社区最强大的基座模型之
 **DeepSeek-Coder 33B**
 
 DeepSeek 团队的开源力作，在 33B 规模实现了接近 GPT-4 的代码能力：
+
 - **FIM 训练**：天然适合 IDE autocomplete 场景
 - **128K 上下文**：可以处理完整的大型代码仓库
 - **多语言支持**：覆盖 主流编程语言
@@ -607,6 +613,7 @@ DeepSeek 团队的开源力作，在 33B 规模实现了接近 GPT-4 的代码�
 **StarCoder2 15B**
 
 BigCode 项目的旗舰模型，以 Apache 2.0 许可证开源：
+
 - **超大专有词汇表**：代码压缩率高
 - **GitHub 授权数据**：训练数据质量较高
 - **16K 上下文**：相对较短，但对于大多数单文件任务足够
@@ -615,6 +622,7 @@ BigCode 项目的旗舰模型，以 Apache 2.0 许可证开源：
 **GitHub Copilot**
 
 虽然底层模型能力不如 GPT-4o，但 Copilot 的优势在于**深度 IDE 集成**：
+
 - 与 VS Code、JetBrains IDE 的无缝集成
 - 多光标编辑、代码片断生成
 - 直接访问 GitHub 生态系统（代码引用、PR 描述生成）
@@ -622,15 +630,16 @@ BigCode 项目的旗舰模型，以 Apache 2.0 许可证开源：
 
 ### 5.4 成本对比
 
-| 模型 | 输入 ($/1M tokens) | 输出 ($/1M tokens) | 备注 |
-|------|-------------------|-------------------|------|
-| GPT-4o | $2.50 | $10.00 | 128K 上下文 |
-| Claude 3.5 Sonnet | $3.00 | $15.00 | 含上下文缓存折扣 |
-| Claude 3.5 Haiku | $0.25 | $1.25 | 低成本替代 |
-| DeepSeek-Coder 33B | **$0.27** | $0.54 | OpenAI 兼容 API |
-| StarCoder2 15B | **免费** | **免费** | 开源自托管 |
+| 模型               | 输入 ($/1M tokens) | 输出 ($/1M tokens) | 备注             |
+| ------------------ | ------------------ | ------------------ | ---------------- |
+| GPT-4o             | $2.50              | $10.00             | 128K 上下文      |
+| Claude 3.5 Sonnet  | $3.00              | $15.00             | 含上下文缓存折扣 |
+| Claude 3.5 Haiku   | $0.25              | $1.25              | 低成本替代       |
+| DeepSeek-Coder 33B | **$0.27**          | $0.54              | OpenAI 兼容 API  |
+| StarCoder2 15B     | **免费**           | **免费**           | 开源自托管       |
 
 **自托管成本估算**（以 DeepSeek-Coder 33B 为例）：
+
 - 硬件：单台 8×A100 80GB ≈ $15,000/月（按需）
 - 每小时推理成本 ≈ $0.5（电力+折旧）
 - 相比 API 调用：每月生成超过 100 万 tokens 时，自托管开始经济合理
@@ -654,16 +663,16 @@ graph TD
 
 ### 6.2 多维度对比
 
-| 场景 | 推荐模型 | 理由 |
-|------|----------|------|
-| **IDE Autocomplete** | StarCoder2 15B / CodeLlama 7B | 延迟敏感，需要本地部署 |
-| **代码审查** | Claude 3.5 Sonnet | 长上下文 + 分析能力 |
-| **代码生成（高质量）** | GPT-4o / Claude 3.5 | 复杂逻辑理解能力强 |
-| **代码生成（成本敏感）** | DeepSeek-Coder 33B | 开源高性能 + 低成本 API |
-| **多语言代码转换** | GPT-4o | 多语言训练更均衡 |
-| **Bug 修复** | Claude 3.5 | 解释能力强 |
-| **大型项目分析** | Claude 3.5 200K | 超长上下文 |
-| **离线/私有部署** | DeepSeek-Coder / StarCoder2 | 开源许可友好 |
+| 场景                     | 推荐模型                      | 理由                    |
+| ------------------------ | ----------------------------- | ----------------------- |
+| **IDE Autocomplete**     | StarCoder2 15B / CodeLlama 7B | 延迟敏感，需要本地部署  |
+| **代码审查**             | Claude 3.5 Sonnet             | 长上下文 + 分析能力     |
+| **代码生成（高质量）**   | GPT-4o / Claude 3.5           | 复杂逻辑理解能力强      |
+| **代码生成（成本敏感）** | DeepSeek-Coder 33B            | 开源高性能 + 低成本 API |
+| **多语言代码转换**       | GPT-4o                        | 多语言训练更均衡        |
+| **Bug 修复**             | Claude 3.5                    | 解释能力强              |
+| **大型项目分析**         | Claude 3.5 200K               | 超长上下文              |
+| **离线/私有部署**        | DeepSeek-Coder / StarCoder2   | 开源许可友好            |
 
 ### 6.3 延迟与吞吐权衡
 
@@ -739,7 +748,7 @@ def stream_complete(prompt: str, model: str = "gpt-4o"):
         max_tokens=2048,
         stream=True,  # 关键：启用流式
     )
-    
+
     for chunk in stream:
         if chunk.choices[0].delta.content:
             yield chunk.choices[0].delta.content
@@ -774,19 +783,19 @@ def batch_complete(prompts: list[str], model: str = "gpt-4o") -> list[str]:
         }
         for i, prompt in enumerate(prompts)
     ]
-    
+
     # 提交批量任务
     batch = openai.batches.create(
         input_file=requests,
         endpoint="/v1/chat/completions",
         completion_window="24h",
     )
-    
+
     # 轮询任务状态
     while batch.status not in ["completed", "failed", "expired"]:
         batch = openai.batches.retrieve(batch.id)
         import time; time.sleep(10)
-    
+
     # 获取结果
     result_file = openai.files.content(batch.output_file_id)
     return result_file.text  # JSONL 格式
@@ -812,35 +821,35 @@ class RateLimiter:
         self.request_bucket = deque()
         self.token_bucket = deque()
         self.last_update = time.time()
-    
+
     async def acquire(self, estimated_tokens: int = 0):
         """获取调用许可"""
         now = time.time()
         elapsed = now - self.last_update
-        
+
         # 重新填充令牌
         self.rpm = min(self.rpm, self.rpm + elapsed * self.rpm / 60)
         if self.tpm:
             self.tpm = min(self.tpm, self.tpm + elapsed * self.tpm / 60)
-        
+
         # 检查请求数限制
         while self.request_bucket and self.request_bucket[0] < now - 60:
             self.request_bucket.popleft()
-        
+
         if len(self.request_bucket) >= self.rpm:
             wait_time = 60 - (now - self.request_bucket[0])
             await asyncio.sleep(wait_time)
-        
+
         # 检查 token 限制
         if self.tpm and estimated_tokens > 0:
             while self.token_bucket and self.token_bucket[0] < now - 60:
                 self.token_bucket.popleft()
-            
+
             total_tokens = sum(self.token_bucket)
             if total_tokens + estimated_tokens > self.tpm:
                 wait_time = 60 - (now - self.token_bucket[0])
                 await asyncio.sleep(wait_time)
-        
+
         self.request_bucket.append(now)
         if estimated_tokens > 0:
             self.token_bucket.append(estimated_tokens)
@@ -855,7 +864,7 @@ class LLMClient:
         self.base_url = base_url or "https://api.openai.com/v1"
         self.rate_limiter = RateLimiter(requests_per_minute=500)
         self.semaphore = asyncio.Semaphore(10)  # 最多 10 个并发请求
-    
+
     async def complete_async(
         self,
         prompt: str,
@@ -867,7 +876,7 @@ class LLMClient:
             try:
                 async with self.semaphore:  # 并发控制
                     await self.rate_limiter.acquire()
-                    
+
                     async with aiohttp.ClientSession() as session:
                         async with session.post(
                             f"{self.base_url}/chat/completions",
@@ -887,15 +896,15 @@ class LLMClient:
                                 continue
                             if resp.status != 200:
                                 raise Exception(f"API error: {resp.status}")
-                            
+
                             data = await resp.json()
                             return data["choices"][0]["message"]["content"]
-            
+
             except Exception as e:
                 if attempt == max_retries - 1:
                     raise
                 await asyncio.sleep(2 ** attempt)  # 指数退避
-        
+
         raise RuntimeError("Max retries exceeded")
 ```
 
@@ -924,7 +933,7 @@ class LLMResponse:
 def handle_llm_error(error: Exception, response: aiohttp.ClientResponse = None) -> LLMError:
     """将异常映射到 LLMError 枚举"""
     error_str = str(error).lower()
-    
+
     if "rate limit" in error_str:
         return LLMError.RATE_LIMIT
     if "timeout" in error_str:
@@ -950,19 +959,19 @@ gsd2 项目从 Claude Code 插件演进到基于 Pi.ai 框架的独立 Code Agen
 graph TD
     subgraph "Tier 1: 实时补全 (< 200ms)"
         tier1["StarCoder2-15B-Q5_K_M"]
-        tier1 -->|"GPU: RTX 3090 ×1"| 
+        tier1 -->|"GPU: RTX 3090 ×1"|
     end
-    
+
     subgraph "Tier 2: 任务规划 (1-5s)"
         tier2["DeepSeek-Coder-33B-Instruct"]
         tier2 -->|"GPU: A100 40GB ×1"|
     end
-    
+
     subgraph "Tier 3: 深度分析 (> 5s)"
         tier3["Claude 3.5 Sonnet"]
         tier3 -->|"API 调用"|
     end
-    
+
     user_input --> tier1
     tier1 -->|补全建议不足| tier2
     tier2 -->|需要深度推理| tier3
@@ -974,166 +983,162 @@ graph TD
 
 ```typescript
 // types/model.ts
-export type ModelTier = 'fast' | 'medium' | 'deep';
+export type ModelTier = "fast" | "medium" | "deep"
 
 export interface LLMConfig {
-  provider: 'openai' | 'anthropic' | 'local';
-  model: string;
-  maxTokens: number;
-  temperature: number;
-  timeout: number;
+  provider: "openai" | "anthropic" | "local"
+  model: string
+  maxTokens: number
+  temperature: number
+  timeout: number
 }
 
 export interface ModelRouterConfig {
-  fast: LLMConfig;      // StarCoder2-15B 本地
-  medium: LLMConfig;    // DeepSeek-Coder-33B 本地
-  deep: LLMConfig;      // Claude 3.5 API
+  fast: LLMConfig // StarCoder2-15B 本地
+  medium: LLMConfig // DeepSeek-Coder-33B 本地
+  deep: LLMConfig // Claude 3.5 API
 }
 
 // 配置文件
 export const modelConfig: ModelRouterConfig = {
   fast: {
-    provider: 'local',
-    model: 'starcoder2-15b-q5',
+    provider: "local",
+    model: "starcoder2-15b-q5",
     maxTokens: 256,
     temperature: 0.2,
-    timeout: 2000,  // 2秒超时
+    timeout: 2000, // 2秒超时
   },
   medium: {
-    provider: 'local',
-    model: 'deepseek-coder-33b',
+    provider: "local",
+    model: "deepseek-coder-33b",
     maxTokens: 2048,
     temperature: 0.6,
     timeout: 10000, // 10秒超时
   },
   deep: {
-    provider: 'anthropic',
-    model: 'claude-3-5-sonnet-20241022',
+    provider: "anthropic",
+    model: "claude-3-5-sonnet-20241022",
     maxTokens: 8192,
     temperature: 0.7,
     timeout: 60000, // 60秒超时
   },
-};
+}
 ```
 
 ```typescript
 // services/modelRouter.ts
-import { ModelTier, LLMConfig, modelConfig } from '../types/model';
-import { createLocalLLMClient } from './localLLM';
-import { createAPILLMClient } from './apiLLM';
+import { ModelTier, LLMConfig, modelConfig } from "../types/model"
+import { createLocalLLMClient } from "./localLLM"
+import { createAPILLMClient } from "./apiLLM"
 
 interface RouteContext {
-  task: 'autocomplete' | 'refactor' | 'debug' | 'explain' | 'generate';
-  language?: string;
-  contextLength: number;
-  urgency: 'high' | 'normal' | 'low';
+  task: "autocomplete" | "refactor" | "debug" | "explain" | "generate"
+  language?: string
+  contextLength: number
+  urgency: "high" | "normal" | "low"
 }
 
 class ModelRouter {
-  private localClient = createLocalLLMClient();
-  private apiClient = createAPILLMClient();
-  
+  private localClient = createLocalLLMClient()
+  private apiClient = createAPILLMClient()
+
   /**
    * 根据任务上下文选择合适的模型层级
    */
   selectTier(ctx: RouteContext): ModelTier {
     // 实时补全：必须用 fast tier
-    if (ctx.task === 'autocomplete' || ctx.urgency === 'high') {
-      return 'fast';
+    if (ctx.task === "autocomplete" || ctx.urgency === "high") {
+      return "fast"
     }
-    
+
     // 深度分析：使用 deep tier
-    if (ctx.task === 'explain' || ctx.contextLength > 10000) {
-      return 'deep';
+    if (ctx.task === "explain" || ctx.contextLength > 10000) {
+      return "deep"
     }
-    
+
     // 调试和重构：优先 medium
-    if (ctx.task === 'debug' || ctx.task === 'refactor') {
-      return ctx.urgency === 'low' ? 'deep' : 'medium';
+    if (ctx.task === "debug" || ctx.task === "refactor") {
+      return ctx.urgency === "low" ? "deep" : "medium"
     }
-    
+
     // 默认使用 medium
-    return 'medium';
+    return "medium"
   }
-  
+
   /**
    * 根据选定的 tier 和上下文获取模型配置
    */
   getConfig(tier: ModelTier, ctx: RouteContext): LLMConfig {
-    const base = modelConfig[tier];
-    
+    const base = modelConfig[tier]
+
     // 根据语言和任务调整参数
     return {
       ...base,
       maxTokens: this.adjustMaxTokens(base.maxTokens, ctx),
       temperature: this.adjustTemperature(base.temperature, ctx),
-    };
+    }
   }
-  
+
   /**
    * 执行 LLM 调用
    */
-  async complete(
-    prompt: string,
-    tier: ModelTier,
-    config: LLMConfig
-  ): Promise<string> {
-    const fullConfig = modelConfig[tier];
-    
-    if (fullConfig.provider === 'local') {
-      return this.localClient.complete(prompt, config);
+  async complete(prompt: string, tier: ModelTier, config: LLMConfig): Promise<string> {
+    const fullConfig = modelConfig[tier]
+
+    if (fullConfig.provider === "local") {
+      return this.localClient.complete(prompt, config)
     } else {
-      return this.apiClient.complete(prompt, config);
+      return this.apiClient.complete(prompt, config)
     }
   }
-  
+
   private adjustMaxTokens(base: number, ctx: RouteContext): number {
     // 短上下文场景减少 maxTokens
-    if (ctx.contextLength < 1000 && ctx.task === 'autocomplete') {
-      return Math.min(base, 128);
+    if (ctx.contextLength < 1000 && ctx.task === "autocomplete") {
+      return Math.min(base, 128)
     }
-    return base;
+    return base
   }
-  
+
   private adjustTemperature(base: number, ctx: RouteContext): number {
     // 代码生成需要较低的 temperature
-    if (ctx.task === 'generate') {
-      return 0.3;
+    if (ctx.task === "generate") {
+      return 0.3
     }
     // 调试和解释可以用较高的 temperature
-    if (ctx.task === 'explain' || ctx.task === 'debug') {
-      return 0.8;
+    if (ctx.task === "explain" || ctx.task === "debug") {
+      return 0.8
     }
-    return base;
+    return base
   }
 }
 
-export const modelRouter = new ModelRouter();
+export const modelRouter = new ModelRouter()
 ```
 
 ```typescript
 // services/localLLM.ts
-import { LLMConfig } from '../types/model';
-import { RateLimiter } from './rateLimiter';
+import { LLMConfig } from "../types/model"
+import { RateLimiter } from "./rateLimiter"
 
 interface LocalLLMOptions {
-  baseUrl: string;
-  maxConcurrent: number;
+  baseUrl: string
+  maxConcurrent: number
 }
 
 export function createLocalLLMClient(options: LocalLLMOptions) {
-  const limiter = new RateLimiter(options.maxConcurrent);
-  
+  const limiter = new RateLimiter(options.maxConcurrent)
+
   return {
     async complete(prompt: string, config: LLMConfig): Promise<string> {
       return limiter.run(async () => {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), config.timeout);
-        
+        const controller = new AbortController()
+        const timeout = setTimeout(() => controller.abort(), config.timeout)
+
         try {
           const response = await fetch(`${options.baseUrl}/v1/completions`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               model: config.model,
               prompt,
@@ -1141,28 +1146,25 @@ export function createLocalLLMClient(options: LocalLLMOptions) {
               temperature: config.temperature,
             }),
             signal: controller.signal,
-          });
-          
+          })
+
           if (!response.ok) {
-            throw new Error(`Local LLM error: ${response.status}`);
+            throw new Error(`Local LLM error: ${response.status}`)
           }
-          
-          const data = await response.json();
-          return data.choices[0].text;
+
+          const data = await response.json()
+          return data.choices[0].text
         } finally {
-          clearTimeout(timeout);
+          clearTimeout(timeout)
         }
-      });
+      })
     },
-    
+
     // 流式输出支持
-    async *completeStream(
-      prompt: string,
-      config: LLMConfig
-    ): AsyncGenerator<string> {
+    async *completeStream(prompt: string, config: LLMConfig): AsyncGenerator<string> {
       const response = await fetch(`${options.baseUrl}/v1/completions`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           model: config.model,
           prompt,
@@ -1170,37 +1172,37 @@ export function createLocalLLMClient(options: LocalLLMOptions) {
           temperature: config.temperature,
           stream: true,
         }),
-      });
-      
+      })
+
       if (!response.ok) {
-        throw new Error(`Local LLM error: ${response.status}`);
+        throw new Error(`Local LLM error: ${response.status}`)
       }
-      
-      const reader = response.body?.getReader();
-      if (!reader) throw new Error('No response body');
-      
-      const decoder = new TextDecoder();
-      let buffer = '';
-      
+
+      const reader = response.body?.getReader()
+      if (!reader) throw new Error("No response body")
+
+      const decoder = new TextDecoder()
+      let buffer = ""
+
       while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
-        
+        const { done, value } = await reader.read()
+        if (done) break
+
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split("\n")
+        buffer = lines.pop() || ""
+
         for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = JSON.parse(line.slice(6));
+          if (line.startsWith("data: ")) {
+            const data = JSON.parse(line.slice(6))
             if (data.choices[0].text) {
-              yield data.choices[0].text;
+              yield data.choices[0].text
             }
           }
         }
       }
     },
-  };
+  }
 }
 ```
 
@@ -1213,16 +1215,16 @@ graph TD
     start["任务分析"] --> q1{"是否需要实时响应?"}
     q1 -->|是, < 200ms| tier1["Tier 1: StarCoder2 15B"]
     q1 -->|否| q2{"任务复杂度"}
-    
+
     q2 -->|简单-中等| q3{"是否涉及隐私代码?"}
     q2 -->|复杂/创意| tier3["Tier 3: Claude 3.5"]
-    
+
     q3 -->|是| tier2m["Tier 2: DeepSeek-Coder 本地"]
     q3 -->|否| q4{"调用频率"}
-    
+
     q4 -->|高 (> 1000次/天)| tier2m
     q4 -->|低| tier2a["Tier 2: DeepSeek API"]
-    
+
     tier1 --> end1["延迟优先"]
     tier2m --> end2["成本+隐私优先"]
     tier2a --> end3["灵活性优先"]
@@ -1259,7 +1261,7 @@ def calculate_monthly_cost(
         "claude-3.5-haiku": {"input": 0.25, "output": 1.25},
         "deepseek-coder": {"input": 0.27, "output": 0.54},
     }
-    
+
     if use_local:
         # 本地部署成本估算
         gpu_cost_per_hour = 3.50  # A100 80GB 租赁价格
@@ -1274,7 +1276,7 @@ def calculate_monthly_cost(
             monthly_tokens_out * pricing["output"]
         )
         monthly_gpu_cost = 0
-    
+
     return {
         "api_cost": monthly_api_cost,
         "gpu_cost": monthly_gpu_cost,
@@ -1294,7 +1296,7 @@ if __name__ == "__main__":
             use_local=False,
         )
         print(f"{model}: ${result['total_cost']:.2f}/月")
-    
+
     # 本地部署对比
     result_local = calculate_monthly_cost(
         daily_requests=500,
@@ -1309,12 +1311,12 @@ if __name__ == "__main__":
 
 典型场景的成本对比：
 
-| 场景 | 日请求量 | 月 API 成本 (GPT-4o) | 月 API 成本 (DeepSeek) | 月本地成本 |
-|------|----------|---------------------|----------------------|-------------|
-| 个人开发者 | 50 | $180 | $15 | - |
-| 小团队 | 500 | $1,800 | $150 | ~$840 |
-| 中型团队 | 5000 | $18,000 | $1,500 | ~$840 |
-| 大型团队 | 50000 | $180,000 | $15,000 | ~$840 |
+| 场景       | 日请求量 | 月 API 成本 (GPT-4o) | 月 API 成本 (DeepSeek) | 月本地成本 |
+| ---------- | -------- | -------------------- | ---------------------- | ---------- |
+| 个人开发者 | 50       | $180                 | $15                    | -          |
+| 小团队     | 500      | $1,800               | $150                   | ~$840      |
+| 中型团队   | 5000     | $18,000              | $1,500                 | ~$840      |
+| 大型团队   | 50000    | $180,000             | $15,000                | ~$840      |
 
 **结论**：日请求量超过 500 后，本地部署 DeepSeek-Coder 33B 的成本优势开始显现。
 
@@ -1349,19 +1351,19 @@ if __name__ == "__main__":
 graph TD
     subgraph "Tier 1: 实时补全 (< 200ms)"
         tier1["StarCoder2-15B-Q5_K_M"]
-        tier1 -->|"GPU: RTX 3090 ×1"| 
+        tier1 -->|"GPU: RTX 3090 ×1"|
     end
-    
+
     subgraph "Tier 2: 任务规划 (1-5s)"
         tier2["DeepSeek-Coder-33B-Instruct"]
         tier2 -->|"GPU: A100 40GB ×1"|
     end
-    
+
     subgraph "Tier 3: 深度分析 (> 5s)"
         tier3["Claude 3.5 Sonnet"]
         tier3 -->|"API 调用"|
     end
-    
+
     user_input --> tier1
     tier1 -->|补全建议不足| tier2
     tier2 -->|需要深度推理| tier3
@@ -1394,22 +1396,24 @@ savings_per_request = sum(CONTEXT_CACHE_SAVINGS.values())
 ```
 
 通过将 system prompt 和项目上下文缓存在服务端：
+
 - **成本降低**：API 调用成本减少约 90%
 - **延迟降低**：首 token 时间（TTFT）减少约 70%（无需重新处理 prefix）
 - **吞吐量提升**：服务器处理能力提升约 10 倍
 
 ### 8.3 本地部署 vs API 调用
 
-| 因素 | 本地部署 | API 调用 |
-|------|----------|----------|
-| **隐私** | 完全可控，适合私有代码 | 数据需上传到第三方 |
-| **成本模型** | 固定硬件成本，边际成本趋零 | 按量付费，规模效应差 |
-| **延迟** | 低（无网络开销） | 较高（取决于地理位置） |
-| **维护成本** | 高（需要运维 GPU 集群） | 低（服务商负责） |
-| **模型更新** | 需手动升级 | 自动更新 |
-| **适合场景** | 固定、高频的补全任务 | 灵活、低频的分析任务 |
+| 因素         | 本地部署                   | API 调用               |
+| ------------ | -------------------------- | ---------------------- |
+| **隐私**     | 完全可控，适合私有代码     | 数据需上传到第三方     |
+| **成本模型** | 固定硬件成本，边际成本趋零 | 按量付费，规模效应差   |
+| **延迟**     | 低（无网络开销）           | 较高（取决于地理位置） |
+| **维护成本** | 高（需要运维 GPU 集群）    | 低（服务商负责）       |
+| **模型更新** | 需手动升级                 | 自动更新               |
+| **适合场景** | 固定、高频的补全任务       | 灵活、低频的分析任务   |
 
 **gsd2 的最终建议**：
+
 - **Autocomplete 层**：必须本地部署（延迟敏感 + 隐私要求）
 - **Planning 层**：推荐本地部署（成本敏感 + 响应时间可接受）
 - **Analysis 层**：API 调用（质量优先 + 灵活性要求高）
@@ -1437,7 +1441,7 @@ def fine_tune_codellama(model, training_data):
         bias="none",
         task_type="CAUSAL_LM",
     )
-    
+
     model = get_peft_model(model, lora_config)
     # 可训练参数：约 41M (0.06% of 70B)
     model.print_trainable_parameters()
@@ -1445,6 +1449,7 @@ def fine_tune_codellama(model, training_data):
 ```
 
 **gsd2 暂未进行 fine-tuning**，原因是：
+
 1. 维护训练 pipeline 的成本高
 2. 快速迭代阶段，基座模型能力提升更快
 3. LoRA fine-tuning 需要大量高质量的领域数据
@@ -1467,26 +1472,31 @@ def fine_tune_codellama(model, training_data):
 以下是本章涉及的核心公式，便于快速回顾：
 
 **Attention 机制**：
+
 $$
 \text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V
 $$
 
 **Multi-Head Attention**：
+
 $$
 \text{MultiHead}(Q, K, V) = \text{Concat}(\text{head}_1, \ldots, \text{head}_h)W^O
 $$
 
 **FFN 变换**：
+
 $$
 \text{FFN}(x) = \text{GELU}(xW_1 + b_1)W_2 + b_2
 $$
 
 **RoPE 旋转**：
+
 $$
 \text{RoPE}(q_m, k_n) = \langle R_{\Theta,m} q_m, R_{\Theta,n} k_n \rangle
 $$
 
 **Pass@k 估计**：
+
 $$
 \text{Pass@}k = \mathbb{E}_{\text{problems}}\left[1 - \frac{\binom{n-c}{k}}{\binom{n}{k}}\right]
 $$
@@ -1508,6 +1518,7 @@ A: 虽然 Decoder-only 在结构上是单向的，但可以通过 prompt enginee
 
 **Q: KV Cache 的内存占用有多大？**
 A: 以 70B 模型为例，对于 4096 长度的上下文：
+
 - 每个 token 的 K/V 向量大小 = 2 × num_layers × 2 × d_model × 2 bytes (FP16)
 - ≈ 2 × 80 × 2 × 8192 × 2 = ~20.5 MB per token
 - 4096 tokens 约需 80 GB——这正是 KV Cache 成为长序列瓶颈的原因。
@@ -1517,6 +1528,7 @@ A: 英文文本中常见 "the", "and", "is" 等短词，编码效率高。而代
 
 **Q: 应该选择哪个开源模型作为基座？**
 A: 取决于你的场景：
+
 - 需要长上下文（>32K）：选 DeepSeek-Coder 33B（128K）
 - 主要是 Python 补全：选 StarCoder2 15B（词表大，Python 训练数据多）
 - 需要本地部署、资源有限：选 CodeLlama 7B Q5 量化
@@ -1536,9 +1548,9 @@ gsd2 项目使用 Pi.ai 框架的 MCP（Model Context Protocol）作为工具调
 
 ---
 
-*gsd2 项目地址：https://github.com/your-org/gsd2*
+_gsd2 项目地址：https://github.com/your-org/gsd2_
 
-*系列文章目录：*
-*[Ch1: Code Agent 概述](../2026-05-05-code-agent-ch1-overview/)*
-*| Ch2: LLM 基础与 Code LLM*
-*| [Ch3: 工具调用系统](../2026-05-19-code-agent-ch3-tool-use/)*
+_系列文章目录：_
+_[Ch1: Code Agent 概述](../2026-05-05-code-agent-ch1-overview/)_
+_| Ch2: LLM 基础与 Code LLM_
+_| [Ch3: 工具调用系统](../2026-05-19-code-agent-ch3-tool-use/)_

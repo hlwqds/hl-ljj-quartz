@@ -50,12 +50,12 @@ description: "深入解析 VPP 性能剖析工具：trace、profile、benchmark�
 
 ### 1.2 性能指标层次
 
-| 层次 | 指标 | 工具来源 |
-|------|------|----------|
-| **包级别** | latency, jitter, drops | trace + capture |
-| **节点级别** | packets/sec, cycles/packet | CLI + stats |
-| **线程级别** | utilization, queue depth | show threads |
-| **系统级别** | CPU%, cache miss | perf + top |
+| 层次         | 指标                       | 工具来源        |
+| ------------ | -------------------------- | --------------- |
+| **包级别**   | latency, jitter, drops     | trace + capture |
+| **节点级别** | packets/sec, cycles/packet | CLI + stats     |
+| **线程级别** | utilization, queue depth   | show threads    |
+| **系统级别** | CPU%, cache miss           | perf + top      |
 
 ## 2. Trace 系统
 
@@ -128,10 +128,10 @@ vlib_trace_packet (vlib_main_t *vm, vlib_node_runtime_t *node,
                    vlib_buffer_t *b, u32 next_node_index)
 {
     vlib_trace_main_t *tm = &vm->trace_main;
-    
+
     if (!tm->enabled)
         return;
-    
+
     vlib_trace_node_t *t = &tm->nodes[tm->current++ % tm->max_nodes];
     t->prev_node_index = node->node_index;
     t->next_node_index = next_node_index;
@@ -225,13 +225,13 @@ static u64
 get_node_cycles (vlib_main_t *vm, u32 node_index)
 {
     u64 start = clib_cpu_time_now();
-    
+
     // 执行节点
-    vlib_node_runtime_t *node = 
+    vlib_node_runtime_t *node =
         vlib_get_node_runtime(vm, node_index);
-    
+
     u64 end = clib_cpu_time_now();
-    
+
     return end - start;
 }
 
@@ -241,17 +241,17 @@ my_custom_node_fn (vlib_main_t *vm, vlib_node_runtime_t *node,
                    vlib_buffer_t **b, n_next_nodes)
 {
     u64 start_cycles = clib_cpu_time_now();
-    
+
     // ... 执行逻辑 ...
-    
+
     u64 end_cycles = clib_cpu_time_now();
     u64 cycles = end_cycles - start_cycles;
-    
+
     // 更新统计
     vlib_node_stats_t *stats = &node->stats;
     stats->total_cycles += cycles;
     stats->invocations++;
-    
+
     return next_node;
 }
 ```
@@ -266,7 +266,7 @@ vppctl show hardware
 # node0:
 #   CPU-0: Intel(R) Xeon(R) Gold 6248 @ 2.5GHz
 #   CPU features: aes,sse4_2,avx,avx2,avx512f,avx512dq
-#   
+#
 #   Performance counters:
 #   Instructions: 1234567890
 #   Cycles:        9876543210
@@ -397,17 +397,17 @@ static_always_inline u64
 benchmark_node (vlib_main_t *vm, u32 node_index, u32 n_packets)
 {
     vlib_node_runtime_t *node = vlib_get_node_runtime(vm, node_index);
-    
+
     u64 start = clib_cycles_now();
-    
+
     // 执行节点 n_packets 次
     for (u32 i = 0; i < n_packets; i++) {
         vlib_buffer_t *b = vlib_get_buffer(vm, i);
         vlib_dispatch_node(vm, node, VLIB_NEXT_SINGLE_NODE, &b, 1);
     }
-    
+
     u64 end = clib_cycles_now();
-    
+
     return end - start;
 }
 
@@ -416,16 +416,16 @@ void run_benchmark(vlib_main_t *vm)
 {
     u32 node_index = ip4_lookup_node.index;
     u32 n_packets = 1000000;
-    
+
     // Warm up
     benchmark_node(vm, node_index, 10000);
-    
+
     // 正式测试
     u64 cycles = benchmark_node(vm, node_index, n_packets);
-    
+
     fformat(stdout, "Cycles: %lu\n", cycles);
     fformat(stdout, "Cycles/packet: %lu\n", cycles / n_packets);
-    fformat(stdout, "Packets/sec: %lu\n", 
+    fformat(stdout, "Packets/sec: %lu\n",
             (n_packets * CLIB_HZ) / cycles);
 }
 ```
@@ -508,10 +508,10 @@ perf stat -e dTLB-loads,dTLB-misses -p <pid>
 
 # 示例输出：
 #  Performance counter stats for 'vpp' process:
-#  
+#
 #     1,234,567    cache-references       # 123.45 M/sec
 #        12,345    cache-misses           #   1.00% of all cache refs
-#  
+#
 #     5,678,901    branch-instructions    # 567.89 M/sec
 #        56,789    branch-misses          #   1.00% mispred rate
 ```
@@ -595,10 +595,10 @@ my_plugin_get_stats (vlib_main_t *vm, api_main_t *am)
 {
     // 遍历所有节点统计
     vlib_node_main_t *nm = &vm->node_main;
-    
+
     fformat(stdout, "Node Statistics:\n");
     fformat(stdout, "Node              Packets    Bytes      Drops\n");
-    
+
     vec_foreach(node, nm->nodes)
     {
         if (node->type == VLIB_NODE_TYPE_INTERNAL)
@@ -610,7 +610,7 @@ my_plugin_get_stats (vlib_main_t *vm, api_main_t *am)
                     node->total_drops);
         }
     }
-    
+
     return 0;
 }
 ```
@@ -639,13 +639,13 @@ my_plugin_get_stats (vlib_main_t *vm, api_main_t *am)
 
 ### 7.2 常见热点场景
 
-| 场景 | 热点位置 | 优化方法 |
-|------|----------|----------|
-| **路由查找** | ip4_lookup | 启用快速查找，批量查 |
+| 场景         | 热点位置   | 优化方法                  |
+| ------------ | ---------- | ------------------------- |
+| **路由查找** | ip4_lookup | 启用快速查找，批量查      |
 | **ACL 匹配** | acl_plugin | 使用 ACL 索引，减少规则数 |
-| **加密** | ipsec esp | 使用 crypto engine 加速 |
-| **NAT** | nat44 | 连接表优化，批量操作 |
-| **QOS** | qos标记 | 简化队列层级 |
+| **加密**     | ipsec esp  | 使用 crypto engine 加速   |
+| **NAT**      | nat44      | 连接表优化，批量操作      |
+| **QOS**      | qos标记    | 简化队列层级              |
 
 ### 7.3 优化示例
 
@@ -674,34 +674,34 @@ optimized_ip4_lookup (vlib_main_t *vm, vlib_node_runtime_t *node,
 {
     u32 *next = vlib_next_args(vm, node);
     u32 *from = vlib_buffer_args(b);
-    
+
     // 批量处理 - 减少函数调用开销
     u32 n_left = n_buffers;
     u32 processed = 0;
-    
+
     while (n_left > 0) {
         // 每次处理一批，减少循环开销
         u32 batch_size = clib_min(n_left, 256);
-        
+
         // 批量路由查找
         for (u32 i = 0; i < batch_size; i++) {
             // 单个包处理
             vlib_buffer_t *buf = vlib_get_buffer(vm, from[i]);
             ip4_header_t *ip = vlib_buffer_get_current(buf);
-            
+
             // 快速查找（使用缓存）
             fib_lookup_t lookup = ip4_fib_lookup_fast(ip->dst_address);
-            
+
             next[i] = lookup.next_node_index;
         }
-        
+
         // 批量分发
         vlib_dispatch_batch(vm, node, next, batch_size);
-        
+
         processed += batch_size;
         n_left -= batch_size;
     }
-    
+
     return processed;
 }
 ```
@@ -796,12 +796,14 @@ vppctl show interface TenGigabitEthernet0/0/0
 ---
 
 > [!tip] 最佳实践
+>
 > 1. 日常监控使用 Telemetry，异常时启用 Trace
 > 2. perf 用于深度热点分析，配合火焰图直观展示
 > 3. 定期运行 benchmark 建立性能基准，便于回归检测
 > 4. 多核测试时，确保 CPU affinity 正确配置
 
 > [!warning] 注意事项
+>
 > - Trace 会显著影响性能，仅在排查问题时启用
 > - perf 采样需要 root 权限
 > - 高频率采样可能引入测量误差

@@ -448,14 +448,14 @@ func decodeHeaders(data []byte) map[string]string {
 
 ### 5.1 quic-go vs quicly
 
-| 指标 | quic-go | quicly |
-|------|---------|--------|
-| 语言 | 纯 Go | Go + C (nGTcp2) |
-| 吞吐量 | 中等 | 高 |
-| 延迟 | 低 | 极低 |
-| 跨平台 | 优秀 | 良好（需要 CGO） |
-| 依赖 | 无 | OpenSSL |
-| 维护 | 活跃 | 活跃 |
+| 指标   | quic-go | quicly           |
+| ------ | ------- | ---------------- |
+| 语言   | 纯 Go   | Go + C (nGTcp2)  |
+| 吞吐量 | 中等    | 高               |
+| 延迟   | 低      | 极低             |
+| 跨平台 | 优秀    | 良好（需要 CGO） |
+| 依赖   | 无      | OpenSSL          |
+| 维护   | 活跃    | 活跃             |
 
 ### 5.2 性能测试结果（参考值）
 
@@ -606,14 +606,14 @@ func (s *Server) Shutdown(ctx context.Context) error {
 
 ## 9. 选型建议
 
-| 场景 | 推荐实现 |
-|------|---------|
-| 纯 Go 生态 | quic-go |
-| 高性能需求 | quicly |
-| HTTP/3 客户端 | quic-go |
-| 高并发服务器 | quicly |
-| 嵌入式/移动端 | quic-go |
-| 边缘计算 | quicly |
+| 场景          | 推荐实现 |
+| ------------- | -------- |
+| 纯 Go 生态    | quic-go  |
+| 高性能需求    | quicly   |
+| HTTP/3 客户端 | quic-go  |
+| 高并发服务器  | quicly   |
+| 嵌入式/移动端 | quic-go  |
+| 边缘计算      | quicly   |
 
 ---
 

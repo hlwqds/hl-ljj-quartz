@@ -1,12 +1,23 @@
 ---
 title: "Kernel Protocol Stack 深度探索 (三十三)：Netfilter 框架详解"
 date: 2026-04-13
-tags: [linux, kernel, networking, series, netfilter, nf-hook, iptables, nf_register_net_hook, packet-filter]
+tags:
+  [
+    linux,
+    kernel,
+    networking,
+    series,
+    netfilter,
+    nf-hook,
+    iptables,
+    nf_register_net_hook,
+    packet-filter,
+  ]
 description: "深入解析 Netfilter 框架——5 个钩子点、NF_HOOK 宏展开、优先级机制、钩子注册/注销流程、verdict 处理，以及 Netfilter 与 iptables/nftables/conntrack 的协同关系"
 ---
 
-> [!info] Kernel Protocol Stack 深度探索系列
-> 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Kernel Protocol Stack 深度探索系列 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-kernel-protocol-stack-deep-dive-ch1-skbuff|第一章：sk_buff 与数据包生命周期]]
 > 2. [[2026-04-13-kernel-protocol-stack-deep-dive-ch2-netdevice|第二章：Netdevice 与网卡抽象]]
 > 3. [[2026-04-13-kernel-protocol-stack-deep-dive-ch3-ring-buffer|第三章：Ring Buffer 与 DMA]]
@@ -48,6 +59,7 @@ description: "深入解析 Netfilter 框架——5 个钩子点、NF_HOOK 宏展
 Netfilter 是 Linux 内核内置的包处理框架，诞生于 1998 年（Rusty Russell），自内核 2.3 起成为标准组件。它通过在协议栈关键位置插入**钩子（hook）**，允许内核模块对数据包执行检查、修改、丢弃、重定向等操作。
 
 Netfilter 是以下功能的基础：
+
 - iptables / ip6tables / arptables / ebtables
 - nftables（下一代防火墙框架）
 - conntrack（连接跟踪）
@@ -123,13 +135,13 @@ ip_output()                                                  │  │
 
 ### 2.3 各钩子点的典型用途
 
-| Hook 点 | 典型模块 | 典型操作 |
-|---------|---------|---------|
-| PRE_ROUTING | conntrack, DNAT, raw | 连接跟踪初始化, DNAT 目标地址转换 |
-| LOCAL_IN | filter, mangle, security | 防火墙过滤, SELinux 检查 |
-| FORWARD | filter, mangle, security | 转发包过滤, QoS 标记 |
-| LOCAL_OUT | filter, nat, mangle, raw | 本机发出包过滤, OUTPUT DNAT |
-| POST_ROUTING | SNAT, mangle | 源地址转换, 出口 mangle |
+| Hook 点      | 典型模块                 | 典型操作                          |
+| ------------ | ------------------------ | --------------------------------- |
+| PRE_ROUTING  | conntrack, DNAT, raw     | 连接跟踪初始化, DNAT 目标地址转换 |
+| LOCAL_IN     | filter, mangle, security | 防火墙过滤, SELinux 检查          |
+| FORWARD      | filter, mangle, security | 转发包过滤, QoS 标记              |
+| LOCAL_OUT    | filter, nat, mangle, raw | 本机发出包过滤, OUTPUT DNAT       |
+| POST_ROUTING | SNAT, mangle             | 源地址转换, 出口 mangle           |
 
 ---
 
@@ -468,11 +480,11 @@ eBPF 路径（绕过 Netfilter）：
 
 性能对比（10GbE 转发，单核）：
 
-| 框架 | 包转发速率 | 延迟 |
-|------|-----------|------|
-| iptables (规则 1000 条) | ~1.2 Mpps | ~800ns |
-| nftables (等效规则) | ~2.1 Mpps | ~470ns |
-| XDP (eBPF) | ~14 Mpps | ~70ns |
+| 框架                    | 包转发速率 | 延迟   |
+| ----------------------- | ---------- | ------ |
+| iptables (规则 1000 条) | ~1.2 Mpps  | ~800ns |
+| nftables (等效规则)     | ~2.1 Mpps  | ~470ns |
+| XDP (eBPF)              | ~14 Mpps   | ~70ns  |
 
 ---
 

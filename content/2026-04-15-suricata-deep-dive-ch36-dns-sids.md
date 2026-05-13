@@ -12,11 +12,8 @@ tags:
 description: "深入解析 Suricata DNS 检测规则：dns.* 关键字体系、查询/响应检测、DNS-over-HTTPS 解析、日志字段与检测引擎源码映射"
 ---
 
-> [!info] Suricata 2026 深度探索系列
-> 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
-> ...
-> 34. [[2026-04-15-suricata-deep-dive-ch34-rules|第三十四章：规则语法]]
-> 35. [[2026-04-15-suricata-deep-dive-ch35-http-sids|第三十五章：HTTP 规则]]
+> [!info] Suricata 2026 深度探索系列 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+> ... 34. [[2026-04-15-suricata-deep-dive-ch34-rules|第三十四章：规则语法]] 35. [[2026-04-15-suricata-deep-dive-ch35-http-sids|第三十五章：HTTP 规则]]
 > **36. 当前章节：DNS 规则**
 
 ---
@@ -39,17 +36,17 @@ alert dns any any -> any any (
 
 ### 1.1 DNS 关键字列表
 
-| 关键字 | 匹配位置 | 说明 |
-|:---|:---|:---|
-| `dns.query` | 查询名称 | DNS 查询中的域名 |
-| `dns.query.raw` | 原始查询 | 未规范化的域名 |
-| `dns.queried` | 查询的域名 | 与查询记录关联 |
-| `dns.answer` | 响应答案 | DNS 响应中的记录 |
-| `dns.answer.raw` | 原始响应 | 未规范化的响应 |
-| `dns.rcode` | 响应码 | DNS 响应状态码 |
-| `dns.qtype` | 查询类型 | 查询类型（A/AAAA/MX 等） |
-| `dns.rrname` | 资源记录名 | 资源记录名称 |
-| `dns.rdata` | 资源数据 | 记录关联的数据 |
+| 关键字           | 匹配位置   | 说明                     |
+| :--------------- | :--------- | :----------------------- |
+| `dns.query`      | 查询名称   | DNS 查询中的域名         |
+| `dns.query.raw`  | 原始查询   | 未规范化的域名           |
+| `dns.queried`    | 查询的域名 | 与查询记录关联           |
+| `dns.answer`     | 响应答案   | DNS 响应中的记录         |
+| `dns.answer.raw` | 原始响应   | 未规范化的响应           |
+| `dns.rcode`      | 响应码     | DNS 响应状态码           |
+| `dns.qtype`      | 查询类型   | 查询类型（A/AAAA/MX 等） |
+| `dns.rrname`     | 资源记录名 | 资源记录名称             |
+| `dns.rdata`      | 资源数据   | 记录关联的数据           |
 
 ---
 
@@ -101,41 +98,41 @@ typedef struct DetectDnsQueryData_ {
 static int DetectDnsQuerySetup(char *optstr, Signature *sig)
 {
     DetectDnsQueryData *data = SCCalloc(1, sizeof(DetectDnsQueryData));
-    
+
     /* 解析 dns.query; 选项 */
     /* 可以带类型: dns.query;A */
-    
+
     if (strchr(optstr, ';')) {
         /* 带类型的格式: dns.query; A */
         char *type_str = strchr(optstr, ';') + 1;
         data->type = DnsQueryTypeFromString(type_str);
     }
-    
+
     /* 查找关联的 content 关键字 */
     DetectContentData *cd = GetLastContent(sig);
     if (cd == NULL) {
         SCLogError("dns.query requires preceding content match");
         return -1;
     }
-    
+
     /* 标记 content 为 DNS 查询匹配 */
     cd->flags |= CONTENT_DNS_QUERY;
-    
+
     return 0;
 }
 
 static int DetectDnsQueryMatch(DNSState *dns_state, DNSQuery *query, void *data)
 {
     DetectDnsQueryData *dd = (DetectDnsQueryData *)data;
-    
+
     /* 获取查询域名 */
     bstr *query_name = query->name;
-    
+
     /* 域名规范化（转小写） */
     if (!(dd->flags & DNS_QUERY_CASE_SENSITIVE)) {
         query_name = bstr_lower(query_name);
     }
-    
+
     /* 内容匹配 */
     if (BstrCmpi(query_name, dd->domain, dd->domain_len) == 0) {
         /* 检查类型过滤 */
@@ -143,7 +140,7 @@ static int DetectDnsQueryMatch(DNSState *dns_state, DNSQuery *query, void *data)
             return 1;  // 匹配
         }
     }
-    
+
     return 0;
 }
 ```
@@ -198,16 +195,16 @@ typedef struct DetectDnsAnswerData_ {
 static int DetectDnsAnswerMatch(DNSState *dns_state, DNSAnswer *answer, void *data)
 {
     DetectDnsAnswerData *dd = (DetectDnsAnswerData *)data;
-    
+
     /* 遍历答案列表 */
     for (int i = 0; i < answer->count; i++) {
         DNSResourceRecord *rr = &answer->rr[i];
-        
+
         /* 类型检查 */
         if (dd->type != 0 && rr->type != dd->type) {
             continue;
         }
-        
+
         /* 数据匹配 */
         switch (rr->type) {
             case DNS_TYPE_A:
@@ -234,7 +231,7 @@ static int DetectDnsAnswerMatch(DNSState *dns_state, DNSAnswer *answer, void *da
                 break;
         }
     }
-    
+
     return 0;
 }
 ```
@@ -264,18 +261,18 @@ alert dns any any -> any any (
 
 ### 4.2 常见 DNS 查询类型
 
-| 类型 | 值 | 说明 |
-|:---|:---:|:---|
-| A | 1 | IPv4 地址 |
-| AAAA | 28 | IPv6 地址 |
-| MX | 15 | 邮件交换 |
-| TXT | 16 | 文本记录 |
-| CNAME | 5 | 别名 |
-| NS | 2 | 名称服务器 |
-| SOA | 6 | 授权起始 |
-| PTR | 12 | 指针记录 |
-| DNSKEY | 48 | DNS 密钥 |
-| TXT | 16 | SPF 记录 |
+| 类型   | 值  | 说明       |
+| :----- | :-: | :--------- |
+| A      |  1  | IPv4 地址  |
+| AAAA   | 28  | IPv6 地址  |
+| MX     | 15  | 邮件交换   |
+| TXT    | 16  | 文本记录   |
+| CNAME  |  5  | 别名       |
+| NS     |  2  | 名称服务器 |
+| SOA    |  6  | 授权起始   |
+| PTR    | 12  | 指针记录   |
+| DNSKEY | 48  | DNS 密钥   |
+| TXT    | 16  | SPF 记录   |
 
 ```c
 // src/detect-dns-query.c — 查询类型解析
@@ -293,7 +290,7 @@ static uint16_t DnsQueryTypeFromString(const char *type_str)
     if (strcmp(type_str, "RRSIG") == 0) return DNS_TYPE_RRSIG;
     if (strcmp(type_str, "NSEC") == 0) return DNS_TYPE_NSEC;
     if (strcmp(type_str, "ANY") == 0) return DNS_TYPE_ANY;
-    
+
     return 0;
 }
 ```
@@ -322,14 +319,14 @@ alert dns any any -> any any (
 
 ### 5.2 DNS 响应码
 
-| RCODE | 名称 | 说明 |
-|:---:|:---|:---|
-| 0 | NOERROR | 无错误 |
-| 1 | FORMERR | 格式错误 |
-| 2 | SERVFAIL | 服务器故障 |
-| 3 | NXDOMAIN | 域名不存在 |
-| 4 | NOTIMP | 未实现 |
-| 5 | REFUSED | 查询被拒绝 |
+| RCODE | 名称     | 说明       |
+| :---: | :------- | :--------- |
+|   0   | NOERROR  | 无错误     |
+|   1   | FORMERR  | 格式错误   |
+|   2   | SERVFAIL | 服务器故障 |
+|   3   | NXDOMAIN | 域名不存在 |
+|   4   | NOTIMP   | 未实现     |
+|   5   | REFUSED  | 查询被拒绝 |
 
 ```c
 // src/detect-dns-rcode.c — rcode 检测
@@ -341,10 +338,10 @@ typedef struct DetectDnsRcodeData_ {
 static int DetectDnsRcodeMatch(DNSState *dns_state, void *data)
 {
     DetectDnsRcodeData *dd = (DetectDnsRcodeData *)data;
-    
+
     /* 获取响应的 RCODE */
     uint8_t rcode = dns_state->rcode;
-    
+
     return (rcode == dd->rcode) ? 1 : 0;
 }
 ```
@@ -467,15 +464,15 @@ int DNSRegister(void)
         .Init = DNSInit,
         .Deinit = DNSDeinit,
     };
-    
+
     AppLayerRegister(&proto);
-    
+
     /* 注册 UDP 检测 */
     DNSUDPRegister();
-    
+
     /* 注册 TCP 检测 */
     DNSTCPRegister();
-    
+
     return 0;
 }
 
@@ -483,10 +480,10 @@ static int DNSUDPRegister(void)
 {
     /* 端口配置 */
     AppLayerRegisterUDPPort(&dns_hdl, 53, DNSStateAlloc, DNSParseRequest);
-    
+
     /* 注册解析状态 */
     AppLayerRegisterStateFuncs(DNS_STATEUDP, DNSStateFree);
-    
+
     return 0;
 }
 ```
@@ -498,18 +495,18 @@ static int DNSUDPRegister(void)
 typedef struct DNSState_ {
     /* 事务状态 */
     uint16_t transaction_id;
-    
+
     /* 查询信息 */
     DNSQuery **queries;
     uint16_t query_count;
-    
+
     /* 响应信息 */
     DNSAnswer **answers;
     uint16_t answer_count;
-    
+
     /* RCODE */
     uint8_t rcode;
-    
+
     /* 协议版本 */
     uint8_t version;  // 1=TCP, 2=DNS-over-TLS, 3=DNS-over-HTTPS
 } DNSState;

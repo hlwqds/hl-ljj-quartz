@@ -71,19 +71,19 @@ ethtool -S eth0
 
 ### 2.2 关键诊断字段
 
-| 字段 | 含义 | 正常值 | 异常 → 原因 |
-|------|------|--------|------------|
-| `rx_dropped` | RX 在 NIC/driver 层丢包 | ≈ 0 | NIC buffer 满 |
-| `tx_dropped` | TX 丢包 | ≈ 0 | driver 发送队列满 |
-| `rx_over_errors` (or `rx_fifo_errors`) | RX FIFO overrun | 0 | 瞬时流量 > NIC 处理能力 |
-| `rx_missed_errors` | RX missed（buffer 满） | 0 | 持续高速流量，buffer 不够 |
-| `rx_crc_errors` | CRC 错误 | ≈ 0 | 光纤衰减/网线质量差 |
-| `rx_frame_errors` | 帧对齐错误 | ≈ 0 | 物理层干扰 |
-| `tx_carrier_errors` | 载波丢失 | 0 | 网线断开/模块损坏 |
-| `collisions` | 半双工冲突 | 0 | 双工不匹配（对端强制半双工）|
-| `tx_aborted_errors` | TX 中止 | 0 | 过多冲突或接口 down |
-| `rx_long_length_errors` | 超长帧 | 0 | 对端发了 > MTU 的帧 |
-| `rx_short_length_errors` | 超短帧 | 0 | 对端发了 < 最小帧的帧 |
+| 字段                                   | 含义                    | 正常值 | 异常 → 原因                  |
+| -------------------------------------- | ----------------------- | ------ | ---------------------------- |
+| `rx_dropped`                           | RX 在 NIC/driver 层丢包 | ≈ 0    | NIC buffer 满                |
+| `tx_dropped`                           | TX 丢包                 | ≈ 0    | driver 发送队列满            |
+| `rx_over_errors` (or `rx_fifo_errors`) | RX FIFO overrun         | 0      | 瞬时流量 > NIC 处理能力      |
+| `rx_missed_errors`                     | RX missed（buffer 满）  | 0      | 持续高速流量，buffer 不够    |
+| `rx_crc_errors`                        | CRC 错误                | ≈ 0    | 光纤衰减/网线质量差          |
+| `rx_frame_errors`                      | 帧对齐错误              | ≈ 0    | 物理层干扰                   |
+| `tx_carrier_errors`                    | 载波丢失                | 0      | 网线断开/模块损坏            |
+| `collisions`                           | 半双工冲突              | 0      | 双工不匹配（对端强制半双工） |
+| `tx_aborted_errors`                    | TX 中止                 | 0      | 过多冲突或接口 down          |
+| `rx_long_length_errors`                | 超长帧                  | 0      | 对端发了 > MTU 的帧          |
+| `rx_short_length_errors`               | 超短帧                  | 0      | 对端发了 < 最小帧的帧        |
 
 ### 2.3 Mellanox mlx5 统计
 

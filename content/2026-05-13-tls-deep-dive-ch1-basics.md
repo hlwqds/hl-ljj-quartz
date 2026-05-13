@@ -27,14 +27,14 @@ SSL 2.0 (1994) ──→ SSL 3.0 (1996) ──→ TLS 1.0 (1999)
 
 **关键版本说明：**
 
-| 版本 | 年份 | 主要特性 | 废弃情况 |
-|------|------|----------|----------|
-| SSL 2.0 | 1994 | 首个商业版本 | 已废弃（存在POODLE攻击） |
-| SSL 3.0 | 1996 | 修复SSL 2.0缺陷 | 已废弃（POODLE攻击） |
-| TLS 1.0 | 1999 | 基于SSL 3.0小幅改进 | 已废弃（2020年） |
-| TLS 1.1 | 2006 | 添加CBC攻击防护 | 已废弃（2020年） |
-| TLS 1.2 | 2008 | 支持AEAD，支持SHA-2 | 当前主流 |
-| TLS 1.3 | 2018 | 1-RTT握手，废除老算法 | 现代化首选 |
+| 版本    | 年份 | 主要特性              | 废弃情况                 |
+| ------- | ---- | --------------------- | ------------------------ |
+| SSL 2.0 | 1994 | 首个商业版本          | 已废弃（存在POODLE攻击） |
+| SSL 3.0 | 1996 | 修复SSL 2.0缺陷       | 已废弃（POODLE攻击）     |
+| TLS 1.0 | 1999 | 基于SSL 3.0小幅改进   | 已废弃（2020年）         |
+| TLS 1.1 | 2006 | 添加CBC攻击防护       | 已废弃（2020年）         |
+| TLS 1.2 | 2008 | 支持AEAD，支持SHA-2   | 当前主流                 |
+| TLS 1.3 | 2018 | 1-RTT握手，废除老算法 | 现代化首选               |
 
 **TLS 1.3 的革命性改进：**
 
@@ -115,12 +115,12 @@ struct {
 
 **ContentType 值：**
 
-| 值 | 类型 | 说明 |
-|----|------|------|
-| 20 | change_cipher_spec | 密码规格变更 |
-| 21 | alert | 警报消息 |
-| 22 | handshake | 握手消息 |
-| 23 | application_data | 应用数据 |
+| 值  | 类型               | 说明         |
+| --- | ------------------ | ------------ |
+| 20  | change_cipher_spec | 密码规格变更 |
+| 21  | alert              | 警报消息     |
+| 22  | handshake          | 握手消息     |
+| 23  | application_data   | 应用数据     |
 
 ### 2.2 Handshake Protocol（握手协议）
 
@@ -200,15 +200,15 @@ struct {
 
 **常见的 Fatal 警报（导致连接立即关闭）：**
 
-| 警报 | 值 | 说明 |
-|------|----|------|
-| unexpected_message | 10 | 收到不预期的消息 |
-| bad_record_mac | 20 | MAC 验证失败 |
-| record_overflow | 22 | 记录长度超限 |
-| handshake_failure | 40 | 握手协商失败 |
-| illegal_parameter | 47 | 非法参数 |
-| internal_error | 80 | 内部错误 |
-| inappropriate_fallback | 86 | 版本回退被拒绝 |
+| 警报                   | 值  | 说明             |
+| ---------------------- | --- | ---------------- |
+| unexpected_message     | 10  | 收到不预期的消息 |
+| bad_record_mac         | 20  | MAC 验证失败     |
+| record_overflow        | 22  | 记录长度超限     |
+| handshake_failure      | 40  | 握手协商失败     |
+| illegal_parameter      | 47  | 非法参数         |
+| internal_error         | 80  | 内部错误         |
+| inappropriate_fallback | 86  | 版本回退被拒绝   |
 
 **Close Notify（warning level）：** 正常关闭连接，用于通知对方不再发送数据。
 
@@ -240,14 +240,14 @@ TLS_VERSION_1_3 = (3, 4)  # TLS 1.3
 
 ### 3.2 主要差异
 
-| 特性 | SSL 3.0 | TLS 1.0+ |
-|------|---------|----------|
-| 协议版本号 | 0x0300 | 0x0301, 0x0302... |
-| MAC 算法 | MD5/SHA-1 | HMAC（更安全） |
-| PRF 算法 | 自定义 | HMAC-based |
-| 填充策略 | 块密码填充 | 更好的填充验证 |
-| 握手消息认证 | 部分认证 | 全部握手消息认证 |
-| 证书类型 | 多种 | X.509 为主 |
+| 特性         | SSL 3.0    | TLS 1.0+          |
+| ------------ | ---------- | ----------------- |
+| 协议版本号   | 0x0300     | 0x0301, 0x0302... |
+| MAC 算法     | MD5/SHA-1  | HMAC（更安全）    |
+| PRF 算法     | 自定义     | HMAC-based        |
+| 填充策略     | 块密码填充 | 更好的填充验证    |
+| 握手消息认证 | 部分认证   | 全部握手消息认证  |
+| 证书类型     | 多种       | X.509 为主        |
 
 ### 3.3 为什么要改名
 
@@ -349,11 +349,11 @@ graph TB
 
 TLS 实际上横跨了多个 OSI 层：
 
-| OSI 层 | TLS 组件 |
-|--------|----------|
+| OSI 层    | TLS 组件                             |
+| --------- | ------------------------------------ |
 | 5. 会话层 | TLS 会话管理（Session ID，恢复连接） |
-| 6. 表示层 | TLS 加密/解密，数据格式转换 |
-| 7. 应用层 | Application Data Protocol |
+| 6. 表示层 | TLS 加密/解密，数据格式转换          |
+| 7. 应用层 | Application Data Protocol            |
 
 ### 4.3 TLS 与 TCP/UDP 的关系
 
@@ -399,14 +399,14 @@ struct {
 
 ### 5.1 基本概念对比
 
-| 特性 | 对称加密 | 非对称加密 |
-|------|----------|------------|
-| 密钥数量 | 1 个（共享密钥） | 2 个（公钥+私钥） |
-| 加解密速度 | 快（10-100倍差） | 慢 |
-| 密钥长度 | 128-256 bits | 2048-4096 bits |
-| 主要用途 | 批量数据加密 | 密钥交换、签名 |
-| 算法代表 | AES, ChaCha20 | RSA, ECC |
-| 安全基础 | 位操作混淆 | 数学难题（如大数分解） |
+| 特性       | 对称加密         | 非对称加密             |
+| ---------- | ---------------- | ---------------------- |
+| 密钥数量   | 1 个（共享密钥） | 2 个（公钥+私钥）      |
+| 加解密速度 | 快（10-100倍差） | 慢                     |
+| 密钥长度   | 128-256 bits     | 2048-4096 bits         |
+| 主要用途   | 批量数据加密     | 密钥交换、签名         |
+| 算法代表   | AES, ChaCha20    | RSA, ECC               |
+| 安全基础   | 位操作混淆       | 数学难题（如大数分解） |
 
 ### 5.2 对称加密算法
 
@@ -442,14 +442,14 @@ print(f"Decrypted: {decrypted}")
 
 **AES 的工作模式：**
 
-| 模式 | 全称 | 特点 | TLS 1.3 |
-|------|------|------|----------|
-| ECB | Electronic Codebook | 不安全，不推荐 | ✗ |
-| CBC | Cipher Block Chaining | 需要 MAC，Padding Oracle | ✗ (废除) |
-| CTR | Counter | 并行，加密单项数据 | ✗ |
-| GCM | Galois/Counter Mode | AEAD，并行，认证加密 | ✓ |
-| CCM | Counter with CBC-MAC | AEAD，资源受限环境 | ✓ |
-| ChaCha20-Poly1305 | - | 移动设备友好 | ✓ |
+| 模式              | 全称                  | 特点                     | TLS 1.3  |
+| ----------------- | --------------------- | ------------------------ | -------- |
+| ECB               | Electronic Codebook   | 不安全，不推荐           | ✗        |
+| CBC               | Cipher Block Chaining | 需要 MAC，Padding Oracle | ✗ (废除) |
+| CTR               | Counter               | 并行，加密单项数据       | ✗        |
+| GCM               | Galois/Counter Mode   | AEAD，并行，认证加密     | ✓        |
+| CCM               | Counter with CBC-MAC  | AEAD，资源受限环境       | ✓        |
+| ChaCha20-Poly1305 | -                     | 移动设备友好             | ✓        |
 
 #### ChaCha20-Poly1305
 
@@ -518,12 +518,12 @@ except:
 
 **RSA 密钥长度与安全强度对比：**
 
-| RSA 密钥长度 | 大致等价对称密钥强度 | 推荐场景 |
-|-------------|---------------------|----------|
-| 1024 bits | 80 bits | 不推荐（已破解） |
-| 2048 bits | 112 bits | 短期（2025前） |
-| 3072 bits | 128 bits | 中期（2030前） |
-| 4096 bits | 156 bits | 长期安全需求 |
+| RSA 密钥长度 | 大致等价对称密钥强度 | 推荐场景         |
+| ------------ | -------------------- | ---------------- |
+| 1024 bits    | 80 bits              | 不推荐（已破解） |
+| 2048 bits    | 112 bits             | 短期（2025前）   |
+| 3072 bits    | 128 bits             | 中期（2030前）   |
+| 4096 bits    | 156 bits             | 长期安全需求     |
 
 #### ECC（Elliptic Curve Cryptography）
 
@@ -579,13 +579,13 @@ func main() {
 
 **常用椭圆曲线对比：**
 
-| 曲线 | 别名 | 密钥长度 | 安全强度 | TLS 1.3 | 备注 |
-|------|------|----------|----------|---------|------|
-| secp256r1 | P-256 | 256 bits | 128 bits | ✓ | NIST 推荐，均衡 |
-| secp384r1 | P-384 | 384 bits | 192 bits | ✓ | 高安全需求 |
-| secp521r1 | P-521 | 521 bits | 256 bits | ✓ | 最高安全 |
-| X25519 | - | 256 bits | 128 bits | ✓ | 非对称 DH，更快 |
-| X448 | - | 448 bits | 224 bits | ✓ | 高安全 DH |
+| 曲线      | 别名  | 密钥长度 | 安全强度 | TLS 1.3 | 备注            |
+| --------- | ----- | -------- | -------- | ------- | --------------- |
+| secp256r1 | P-256 | 256 bits | 128 bits | ✓       | NIST 推荐，均衡 |
+| secp384r1 | P-384 | 384 bits | 192 bits | ✓       | 高安全需求      |
+| secp521r1 | P-521 | 521 bits | 256 bits | ✓       | 最高安全        |
+| X25519    | -     | 256 bits | 128 bits | ✓       | 非对称 DH，更快 |
+| X448      | -     | 448 bits | 224 bits | ✓       | 高安全 DH       |
 
 ### 5.4 TLS 1.3 中的密码套件命名
 
@@ -614,37 +614,37 @@ TLS_CHACHA20_POLY1305_SHA256
 
 **TLS 中使用的散列函数历史：**
 
-| 散列函数 | 输出长度 | 安全状态 | TLS 1.3 | 备注 |
-|----------|----------|----------|---------|------|
-| MD5 | 128 bits | 破解 | ✗ | 1996 年发现碰撞 |
-| SHA-1 | 160 bits | 破解 | ✗ | 2017 年 SHAttered 攻击 |
-| SHA-224 | 224 bits | deprecated | ✗ | 安全强度不足 |
-| SHA-256 | 256 bits | 安全 | ✓ | TLS 1.3 主力 |
-| SHA-384 | 384 bits | 安全 | ✓ | 用于 TLS_AES_256 |
-| SHA-512 | 512 bits | 安全 | ✓ | 与 SHA-384 配合 |
-| SHA-3 | 256/384/512 | 安全 | ✓ | 替代选择 |
+| 散列函数 | 输出长度    | 安全状态   | TLS 1.3 | 备注                   |
+| -------- | ----------- | ---------- | ------- | ---------------------- |
+| MD5      | 128 bits    | 破解       | ✗       | 1996 年发现碰撞        |
+| SHA-1    | 160 bits    | 破解       | ✗       | 2017 年 SHAttered 攻击 |
+| SHA-224  | 224 bits    | deprecated | ✗       | 安全强度不足           |
+| SHA-256  | 256 bits    | 安全       | ✓       | TLS 1.3 主力           |
+| SHA-384  | 384 bits    | 安全       | ✓       | 用于 TLS_AES_256       |
+| SHA-512  | 512 bits    | 安全       | ✓       | 与 SHA-384 配合        |
+| SHA-3    | 256/384/512 | 安全       | ✓       | 替代选择               |
 
 ```python
 import hashlib
 
 def demonstrate_hash_properties():
     """演示散列函数的特性"""
-    
+
     # 雪崩效应
     h1 = hashlib.sha256(b"Hello")
     h2 = hashlib.sha256(b"Hellp")  # 只改变一个字符
-    
+
     print("=== 雪崩效应演示 ===")
     print(f"sha256('Hello'):  {h1.hexdigest()}")
     print(f"sha256('Hellp'):  {h2.hexdigest()}")
     print(f"改变的位数: {sum(c1 != c2 for c1, c2 in zip(h1.digest(), h2.digest()))}/256 bits")
-    
+
     # 长度固定
     print("\n=== 长度固定性 ===")
     for msg in [b"a", b"abc", b"Hello TLS!" * 1000]:
         h = hashlib.sha256(msg)
         print(f"输入长度: {len(msg):6d} bytes -> 摘要长度: {len(h.hexdigest())} hex chars")
-    
+
     # 碰撞演示（MD5 - 已破解）
     print("\n=== MD5 碰撞示例 ===")
     # 两个不同的 PDF 文件可以有相同的 MD5（SHAttered 团队攻击）
@@ -681,27 +681,27 @@ import hashlib
 
 def hmac_example():
     """HMAC 示例"""
-    
+
     key = b"shared_secret_key"
     message = b"Transfer $1000 to account 12345"
-    
+
     # HMAC-SHA256
     h = hmac.new(key, message, hashlib.sha256)
     print(f"HMAC-SHA256: {h.hexdigest()}")
-    
+
     # 验证
     h2 = hmac.new(key, message, hashlib.sha256)
     print(f"HMAC 验证: {'PASS' if h.digest() == h2.digest() else 'FAIL'}")
-    
+
     # 密钥错误时
     wrong_key = b"wrong_key"
     h3 = hmac.new(wrong_key, message, hashlib.sha256)
     print(f"密钥错误时: {h3.hexdigest()}")
     print(f"HMAC 验证（错误密钥）: {'PASS' if h.digest() == h3.digest() else 'FAIL'}")
-    
+
     # HMAC 的安全性来自 IPad/Opad 双重哈希
     # H(K XOR opad || H(K XOR ipad || message))
-    
+
 hmac_example()
 ```
 
@@ -714,10 +714,10 @@ GMAC 是 GCM 模式中的认证组件，通常与 AES-GCM 一起使用：
 struct aes_gcm_encrypt(key, nonce, plaintext, aad) {
     // 1. 生成计数器流
     ciphertext = plaintext XOR AES-CTR(key, nonce, counter)
-    
+
     // 2. 计算认证标签
     tag = GMAC(key, nonce, AAD, ciphertext)
-    
+
     return {ciphertext, tag}
 }
 ```
@@ -740,33 +740,33 @@ func main() {
     // AES-GCM AEAD 示例
     key := make([]byte, 32) // 256-bit
     rand.Read(key)
-    
+
     nonce := make([]byte, 12) // 96-bit nonce for GCM
     rand.Read(nonce)
-    
+
     plaintext := []byte("Confidential data")
     aad := []byte("Associated data (not encrypted)") // 附加数据，只认证不加密
-    
+
     // 创建 cipher
     block, _ := aes.NewCipher(key)
     gcm, _ := cipher.NewGCM(block)
-    
+
     // 加密并认证
     ciphertext := gcm.Seal(nil, nonce, plaintext, aad)
-    
+
     fmt.Printf("Original:    %s\n", plaintext)
     fmt.Printf("Ciphertext:  %x\n", ciphertext[:len(plaintext)])
     fmt.Printf("Nonce:       %x\n", nonce)
     fmt.Printf("Tag:         %x\n", ciphertext[len(plaintext):])
     fmt.Printf("AAD:         %s\n", aad)
-    
+
     // 解密并验证
     decrypted, err := gcm.Open(nil, nonce, ciphertext, aad)
     if err != nil {
         fmt.Println("Decryption failed!")
         return
     }
-    
+
     fmt.Printf("Decrypted:   %s\n", decrypted)
 }
 ```
@@ -790,7 +790,7 @@ graph LR
         B --> C[私钥加密]
         C --> D[数字签名]
     end
-    
+
     subgraph 验证过程
         E[消息] --> F[SHA-256 摘要]
         G[签名] --> H[公钥解密]
@@ -972,18 +972,18 @@ import time
 
 def demonstrate_prng_quality():
     """演示普通 PRNG 和 CSPRNG 的差异"""
-    
+
     # 不安全的 PRNG（Python random）
     print("=== Python random (NOT CSPRNG) ===")
     random.seed(42)
     for i in range(3):
         print(f"  {random.getrandbits(256):x}")
-    
+
     # CSPRNG（os.urandom / secrets）
     print("\n=== os.urandom (CSPRNG) ===")
     for i in range(3):
         print(f"  {int.from_bytes(os.urandom(32), 'big'):x}")
-    
+
     # secrets 模块（Python 3.6+）
     import secrets
     print("\n=== secrets (CSPRNG) ===")
@@ -1002,21 +1002,21 @@ import math
 
 def calculate_entropy_examples():
     """计算不同随机源的熵"""
-    
+
     # 硬币抛掷（公平）
     # 每掷一次提供 1 bit 熵
     print("=== 熵的计算示例 ===")
-    
+
     examples = [
         ("公平硬币", 2, 1),        # 2 种等概率结果
         ("公平六面骰", 6, math.log2(6)),  # 6 种等概率结果
         ("52 张扑克牌", 52, math.log2(52)),
         ("256-bit 随机数", 2**256, 256),
     ]
-    
+
     for name, outcomes, entropy in examples:
         print(f"  {name}: {entropy:.2f} bits 熵")
-    
+
     print("\n=== TLS 对熵的要求 ===")
     print("  PreMasterSecret: 48 bytes = 384 bits")
     print("  Client/Server Random: 32 bytes = 256 bits each")
@@ -1048,18 +1048,18 @@ import time
 
 def generate_tls_random():
     """生成 TLS 协议的随机数"""
-    
+
     # TLS 1.2 格式：4 字节时间戳 + 28 字节随机
     tls_1_2 = struct.pack("!I", int(time.time())) + os.urandom(28)
     print(f"TLS 1.2 Random ({len(tls_1_2)} bytes):")
     print(f"  Timestamp: {struct.unpack('!I', tls_1_2[:4])[0]}")
     print(f"  Random:    {tls_1_2[4:].hex()[:40]}...")
-    
+
     # TLS 1.3 格式：32 字节随机（无时间戳）
     tls_1_3 = os.urandom(32)
     print(f"\nTLS 1.3 Random ({len(tls_1_3)} bytes):")
     print(f"  Random:    {tls_1_3.hex()[:40]}...")
-    
+
     # 使用安全的熵源
     print("\n=== 推荐的熵源 ===")
     entropy_sources = [
@@ -1085,9 +1085,9 @@ import hashlib
 
 def password_hashing_with_salt():
     """使用 salt 的密码哈希"""
-    
+
     password = b"super_secret_password"
-    
+
     # 没有 salt：相同密码产生相同哈希
     hash1 = hashlib.sha256(password).hexdigest()
     hash2 = hashlib.sha256(password).hexdigest()
@@ -1095,16 +1095,16 @@ def password_hashing_with_salt():
     print(f"Password: {password}")
     print(f"Hash 1:   {hash1}")
     print(f"Hash 2:   {hash1 == hash2} (相同输入=相同输出)")
-    
+
     # 使用随机 salt
     print("\n=== 使用 salt（推荐）===")
     salt1 = os.urandom(16)
     salt2 = os.urandom(16)
-    
+
     # PBKDF2 / Argon2 之类的密钥派生函数使用 salt
     hash1 = hashlib.pbkdf2.HMAC(password, salt1, 100000, 32, hashlib.sha256)
     hash2 = hashlib.pbkdf2.HMAC(password, salt2, 100000, 32, hashlib.sha256)
-    
+
     print(f"Salt 1:   {salt1.hex()}")
     print(f"Hash 1:   {hash1.hex()}")
     print(f"Salt 2:   {salt2.hex()}")
@@ -1150,33 +1150,33 @@ from Crypto.Random import get_random_bytes
 
 def diffie_hellman_demo():
     """Diffie-Hellman 密钥交换示例"""
-    
+
     # 使用 DH 库（基于离散对数问题）
     # 参数：1924-bit MODP 组（RFC 3526）
-    
+
     print("=== Diffie-Hellman 密钥交换 ===")
-    
+
     # 生成 DH 密钥对
     # 在实际 TLS 中，这些参数由服务器指定
     p = int("""
     FFFFFFFFFFFFFFFFC2F7450666515A431CAB6A1A6B3D5A4654B1
     868FEA64BFA4A5E6A8590F1B7D6A5B7D5A4654B1A6B3D5A4654
     """.replace('\n', ''), 16)  # 简化的 p 值
-    
+
     g = 2
-    
+
     # Alice 生成私钥
     a = get_random_bytes(32)  # 256-bit 私钥
     A = pow(g, int.from_bytes(a, 'big'), p)  # A = g^a mod p
-    
+
     # Bob 生成私钥
     b = get_random_bytes(32)
     B = pow(g, int.from_bytes(b, 'big'), p)  # B = g^b mod p
-    
+
     # 交换 A 和 B 后，各自计算共享密钥
     K_alice = pow(B, int.from_bytes(a, 'big'), p)  # K = B^a mod p
     K_bob = pow(A, int.from_bytes(b, 'big'), p)    # K = A^b mod p
-    
+
     print(f"Alice's public value A (truncated): {hex(A)[:40]}...")
     print(f"Bob's public value B (truncated):   {hex(B)[:40]}...")
     print(f"\nShared secret match: {K_alice == K_bob}")
@@ -1310,7 +1310,7 @@ def tls13_psk_derivation(psk, info, length=32):
     """
     # 实际实现使用 HKDF（HMAC-based Key Derivation Function）
     # 这里用简化示例说明原理
-    
+
     label = b"tls13 " + info
     return hmac.new(psk, label, hashlib.sha256).digest()[:length]
 
@@ -1319,8 +1319,8 @@ psk = b"pre_shared_secret_key_at_least_32_bytes_long"
 
 # 导出密钥（Exporter）
 exported = tls13_psk_derivation(
-    psk, 
-    b"exp master", 
+    psk,
+    b"exp master",
     48
 )
 print(f"PSK-derived export key: {exported.hex()}")
@@ -1336,15 +1336,15 @@ print(f"Resumption PSK: {resumption_psk.hex()}")
 
 ### 9.5 密钥交换算法对比
 
-| 算法 | 密钥大小 | 安全强度 | 前向保密 | TLS 1.3 | 备注 |
-|------|----------|----------|----------|---------|------|
-| RSA key transport | 2048-4096 | 中 | 无 | ✗ | 废除 |
-| DH 2048-bit | 256 bytes | 112 bits | ✓ | ✓ | 传统 |
-| ECDH P-256 | 64 bytes | 128 bits | ✓ | ✓ | 均衡 |
-| ECDH P-384 | 96 bytes | 192 bits | ✓ | ✓ | 高安全 |
-| X25519 | 32 bytes | 128 bits | ✓ | ✓ | 推荐 |
-| PSK | 32+ bytes | 128 bits | ✓ | ✓ | 低延迟 |
-| (EC)DHE + PSK | 32+ bytes | 128 bits | ✓ | ✓ | 混合模式 |
+| 算法              | 密钥大小  | 安全强度 | 前向保密 | TLS 1.3 | 备注     |
+| ----------------- | --------- | -------- | -------- | ------- | -------- |
+| RSA key transport | 2048-4096 | 中       | 无       | ✗       | 废除     |
+| DH 2048-bit       | 256 bytes | 112 bits | ✓        | ✓       | 传统     |
+| ECDH P-256        | 64 bytes  | 128 bits | ✓        | ✓       | 均衡     |
+| ECDH P-384        | 96 bytes  | 192 bits | ✓        | ✓       | 高安全   |
+| X25519            | 32 bytes  | 128 bits | ✓        | ✓       | 推荐     |
+| PSK               | 32+ bytes | 128 bits | ✓        | ✓       | 低延迟   |
+| (EC)DHE + PSK     | 32+ bytes | 128 bits | ✓        | ✓       | 混合模式 |
 
 **前向保密（Forward Secrecy）：** 即使长期私钥泄露，过去的会话密钥仍然安全。只有使用临时密钥（Ephemeral Key）的算法才提供前向保密。
 
@@ -1548,9 +1548,9 @@ sudo tcpdump -i lo0 -w tls-handshake.pcap port 4433 &
 openssl s_client -connect example.com:443 -debug -state </dev/null 2>/dev/null | head -100
 
 # 3. 分析握手消息类型
-echo "TLS Record Layer Types:" 
+echo "TLS Record Layer Types:"
 echo "  0x14 = Handshake"
-echo "  0x15 = ChangeCipherSpec"  
+echo "  0x15 = ChangeCipherSpec"
 echo "  0x16 = ApplicationData"
 echo "  0x17 = Alert"
 
@@ -1569,19 +1569,19 @@ echo "  6. Finished (handshake_type=20)"
 
 本文深入探讨了 TLS 协议的基础知识：
 
-| 主题 | 关键要点 |
-|------|----------|
-| **历史演进** | SSL → TLS 1.0 → 1.1 → 1.2 → 1.3，每个版本都有安全性改进 |
-| **五层协议** | Record / Handshake / Alert / ChangeCipherSpec / Application Data |
-| **TLS vs SSL** | 技术等价，SSL 是商标，TLS 是 IETF 标准名称 |
-| **网络位置** | 位于 TCP 之上、应用层之下，提供传输层安全 |
-| **对称加密** | AES-GCM、ChaCha20-Poly1305，用于 bulk data 加密 |
-| **非对称加密** | RSA/ECC，用于密钥交换和身份认证 |
-| **散列与 MAC** | SHA-2 系列，HMAC，AEAD（同步加密认证） |
-| **数字签名** | RSA-PSS、ECDSA、EdDSA，提供身份认证 |
-| **随机数** | CSPRNG 至关重要，熵是安全基础 |
-| **密钥交换** | DH/ECDH/X25519/PSK，前向保密是现代 TLS 的标配 |
-| **OpenSSL** | 完整的密钥/证书生成和 TLS 测试工具链 |
+| 主题           | 关键要点                                                         |
+| -------------- | ---------------------------------------------------------------- |
+| **历史演进**   | SSL → TLS 1.0 → 1.1 → 1.2 → 1.3，每个版本都有安全性改进          |
+| **五层协议**   | Record / Handshake / Alert / ChangeCipherSpec / Application Data |
+| **TLS vs SSL** | 技术等价，SSL 是商标，TLS 是 IETF 标准名称                       |
+| **网络位置**   | 位于 TCP 之上、应用层之下，提供传输层安全                        |
+| **对称加密**   | AES-GCM、ChaCha20-Poly1305，用于 bulk data 加密                  |
+| **非对称加密** | RSA/ECC，用于密钥交换和身份认证                                  |
+| **散列与 MAC** | SHA-2 系列，HMAC，AEAD（同步加密认证）                           |
+| **数字签名**   | RSA-PSS、ECDSA、EdDSA，提供身份认证                              |
+| **随机数**     | CSPRNG 至关重要，熵是安全基础                                    |
+| **密钥交换**   | DH/ECDH/X25519/PSK，前向保密是现代 TLS 的标配                    |
+| **OpenSSL**    | 完整的密钥/证书生成和 TLS 测试工具链                             |
 
 **TLS 1.3 的核心改进：**
 
@@ -1594,7 +1594,8 @@ echo "  6. Finished (handshake_type=20)"
 
 ---
 
-*参考文献：*
+_参考文献：_
+
 - RFC 5246 (TLS 1.2)
 - RFC 8446 (TLS 1.3)
 - RFC 3526 (MODP DH Groups)

@@ -1,15 +1,25 @@
 ---
 title: "Kernel Protocol Stack 深度探索 (三十八)：XDP 与高性能网络处理"
 date: 2026-04-13
-tags: [linux, kernel, networking, series, xdp, af-xdp, zero-copy, ebpf, xdp-redirect, dpdk-xdp, ddos-mitigation, netfilter-xdp]
+tags:
+  [
+    linux,
+    kernel,
+    networking,
+    series,
+    xdp,
+    af-xdp,
+    zero-copy,
+    ebpf,
+    xdp-redirect,
+    dpdk-xdp,
+    ddos-mitigation,
+    netfilter-xdp,
+  ]
 description: "深入解析 XDP（eXpress Data Path）——XDP 在协议栈中的位置、程序类型、XDP action、XDP redirect/tx/pass、AF_XDP 零拷贝、与 Netfilter 的协同与对比、以及 DDoS 防护、负载均衡的典型应用"
 ---
 
-> [!info] Kernel Protocol Stack 深度探索系列
-> 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
-> 33. [[2026-04-13-kernel-protocol-stack-deep-dive-ch33-netfilter-hook|第三十三章：Netfilter 框架详解]]
-> 37. [[2026-04-13-kernel-protocol-stack-deep-dive-ch38-nat-deep|第三十七章：NAT 深度解析]]
-> 38. **第三十八章：XDP 与高性能网络处理**
+> [!info] Kernel Protocol Stack 深度探索系列 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]] 33. [[2026-04-13-kernel-protocol-stack-deep-dive-ch33-netfilter-hook|第三十三章：Netfilter 框架详解]] 37. [[2026-04-13-kernel-protocol-stack-deep-dive-ch38-nat-deep|第三十七章：NAT 深度解析]] 38. **第三十八章：XDP 与高性能网络处理**
 
 ---
 
@@ -48,11 +58,11 @@ IP routing...
 
 ### 1.2 三种 XDP 运行模式
 
-| 模式 | 说明 | 性能 | 驱动要求 |
-|------|------|------|---------|
-| **Native XDP** | 在驱动 RX 轮询中执行（NAPI poll 内） | 最高 (14+ Mpps) | 需驱动支持 |
-| **Offload XDP** | 在智能网卡 NPU 上执行 | 极高（卸载到硬件） | 需 SmartNIC 支持 |
-| **Generic XDP** | 在 GRO 后协议栈软件层执行 | 较低 (~3 Mpps) | 任意网卡 |
+| 模式            | 说明                                 | 性能               | 驱动要求         |
+| --------------- | ------------------------------------ | ------------------ | ---------------- |
+| **Native XDP**  | 在驱动 RX 轮询中执行（NAPI poll 内） | 最高 (14+ Mpps)    | 需驱动支持       |
+| **Offload XDP** | 在智能网卡 NPU 上执行                | 极高（卸载到硬件） | 需 SmartNIC 支持 |
+| **Generic XDP** | 在 GRO 后协议栈软件层执行            | 较低 (~3 Mpps)     | 任意网卡         |
 
 ```bash
 # 加载 XDP 程序
@@ -305,12 +315,12 @@ while (1) {
 
 ### 5.3 性能对比
 
-| 方案 | 吞吐量 | 延迟 | 用户态访问 |
-|------|--------|------|-----------|
-| 传统 socket (recvmsg) | ~1 Mpps | ~5us | 有拷贝 |
-| DPDK (UIO/VFIO) | ~20+ Mpps | ~200ns | 零拷贝，完全绕过内核 |
-| AF_XDP (copy mode) | ~5 Mpps | ~1us | 有拷贝 |
-| AF_XDP (zerocopy) | ~14 Mpps | ~300ns | 零拷贝，仍走内核调度 |
+| 方案                  | 吞吐量    | 延迟   | 用户态访问           |
+| --------------------- | --------- | ------ | -------------------- |
+| 传统 socket (recvmsg) | ~1 Mpps   | ~5us   | 有拷贝               |
+| DPDK (UIO/VFIO)       | ~20+ Mpps | ~200ns | 零拷贝，完全绕过内核 |
+| AF_XDP (copy mode)    | ~5 Mpps   | ~1us   | 有拷贝               |
+| AF_XDP (zerocopy)     | ~14 Mpps  | ~300ns | 零拷贝，仍走内核调度 |
 
 ---
 
@@ -459,7 +469,7 @@ Facebook 的 Katran 是基于 XDP 的 L4 负载均衡器，在 ~8 Mpps 速率下
     ├── 查找后端服务器地址
     ├── 封装成 GUE/IPIP 隧道
     └── XDP_TX / XDP_REDIRECT → 后端服务器
-    
+
 后端服务器通过 GUE 解封装直接回复给客户端（DSR 模式，LB 不处理回包）
 ```
 

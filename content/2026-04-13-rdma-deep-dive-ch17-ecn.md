@@ -506,13 +506,13 @@ $ tcpdump -i eth0 'udp port 4791' -v | grep CNP
 
 ### 7.1 ECN 不工作常见原因
 
-| 问题 | 原因 | 解决方案 |
-|------|------|----------|
-| 收到 CE 但无 CNP | 网卡 ECN 未启用 | 启用 ECN: `ethtool --set-ecn eth0 enable` |
-| 发送方未降速 | CNP 未到达发送方 | 检查防火墙、交换机 ACL |
-| ECN 标记率 0% | 交换机 ECN 未启用 | 配置交换机的 ECN/RED 参数 |
-| 丢包但无 ECN | 拥塞超过 ECN 处理能力 | 检查 ECN 阈值或启用 PFC |
-| DCQCN 不收敛 | 参数配置不当 | 调整 alpha、timer 参数 |
+| 问题             | 原因                  | 解决方案                                  |
+| ---------------- | --------------------- | ----------------------------------------- |
+| 收到 CE 但无 CNP | 网卡 ECN 未启用       | 启用 ECN: `ethtool --set-ecn eth0 enable` |
+| 发送方未降速     | CNP 未到达发送方      | 检查防火墙、交换机 ACL                    |
+| ECN 标记率 0%    | 交换机 ECN 未启用     | 配置交换机的 ECN/RED 参数                 |
+| 丢包但无 ECN     | 拥塞超过 ECN 处理能力 | 检查 ECN 阈值或启用 PFC                   |
+| DCQCN 不收敛     | 参数配置不当          | 调整 alpha、timer 参数                    |
 
 ### 7.2 ECN 性能问题
 

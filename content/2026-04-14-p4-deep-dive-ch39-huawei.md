@@ -5,12 +5,12 @@ tags: [p4, series, huawei, cloud, cloudengine, network, programmable, fabric, sw
 description: "华为 P4 可编程网络深度解析——CloudEngine 16800/9800 系列交换机、华为 P4+C 混合编程模型、Fabric 数据中心网络、VSF 虚拟化、P4 on Huawei"
 ---
 
-> [!info] P4 深度探索系列
-> 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+> [!info] P4 深度探索系列 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-14-p4-deep-dive-ch1-p4-overview|第一章：P4 概述]]
-> ...
-> 37. [[2026-04-14-p4-deep-dive-ch38-gcp|第三十八章：GCP 网络可编程实践]]
-> 38. **第三十九章：华为网络可编程实践——CloudEngine、P4+C 语言混合编程、Fabric 架构**
+>    ...
+> 2. [[2026-04-14-p4-deep-dive-ch38-gcp|第三十八章：GCP 网络可编程实践]]
+> 3. **第三十九章：华为网络可编程实践——CloudEngine、P4+C 语言混合编程、Fabric 架构**
 
 ---
 
@@ -790,12 +790,12 @@ acl optimization mode shared
 
 华为的 P4 可编程网络实践：
 
-| 组件 | 技术 | 特点 |
-|------|------|------|
+| 组件            | 技术              | 特点             |
+| --------------- | ----------------- | ---------------- |
 | **CloudEngine** | CE16800/9800/8800 | 多系列 P4 交换机 |
-| **SDware** | 华为自研 ASIC | P4+C 混合编程 |
-| **P4+C** | 混合编译 | 复杂逻辑卸载 |
-| **CloudFabric** | iMaster NCE | 端到端 SDN |
-| **RoCEv2** | PFC/ECN | 智能无损网络 |
+| **SDware**      | 华为自研 ASIC     | P4+C 混合编程    |
+| **P4+C**        | 混合编译          | 复杂逻辑卸载     |
+| **CloudFabric** | iMaster NCE       | 端到端 SDN       |
+| **RoCEv2**      | PFC/ECN           | 智能无损网络     |
 
 华为通过 P4+C 混合编程模型，在保持 P4 流水线高性能的同时，提供了处理复杂业务逻辑的能力。

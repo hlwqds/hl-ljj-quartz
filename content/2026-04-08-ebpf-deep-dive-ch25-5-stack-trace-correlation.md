@@ -9,8 +9,8 @@ tags:
   - observability
 ---
 
-> [!info] eBPF 2026 深度探索系列
-> 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+> [!info] eBPF 2026 深度探索系列 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+>
 > 1. [[2026-04-08-ebpf-deep-dive-ch1-registers-and-instructions|第一章：寄存器与指令集]]
 > 2. [[2026-04-08-ebpf-deep-dive-ch1-5-function-calls|第一.五章：四种函数调用与动态内存]]
 > 3. [[2026-04-08-ebpf-deep-dive-ch1-6-the-verifier|第一.六章：验证器 (Verifier) 的底层逻辑]]
@@ -62,6 +62,7 @@ tags:
 > 49. [[2026-04-09-ebpf-deep-dive-ch40-network-protocols-deep-dive|第四十章：网络协议深度解析——TCP/UDP/QUIC 的 eBPF 视角]]
 > 50. [[2026-04-09-ebpf-deep-dive-ch41-memory-safety-and-vulnerabilities|第四十一章：eBPF 内存安全与漏洞分析]]
 > 51. [[2026-04-09-ebpf-deep-dive-ch42-service-mesh-integration|第四十二章：eBPF 与 Service Mesh 深度集成]]
+
 ---
 
 ## 1. 概述：全栈追踪的"魂"
@@ -74,12 +75,12 @@ tags:
 
 在传统可观测性体系中，分布式追踪（如 OpenTelemetry）只能告诉你请求经过的微服务节点。但以下问题它无法回答：
 
-| 问题类型 | 传统追踪 | eBPF 调用栈追踪 |
-|---------|---------|---------------|
-| 哪个函数发起的 I/O？ | 不知道 | 精确到函数+行号 |
-| 锁竞争在哪一行代码？ | 无法感知 | 内核栈直接展示 |
+| 问题类型                  | 传统追踪         | eBPF 调用栈追踪    |
+| ------------------------- | ---------------- | ------------------ |
+| 哪个函数发起的 I/O？      | 不知道           | 精确到函数+行号    |
+| 锁竞争在哪一行代码？      | 无法感知         | 内核栈直接展示     |
 | GC 停顿期间线程在做什么？ | 只能看到延迟飙升 | 栈回溯揭示完整路径 |
-| 第三方库内部耗时分布？ | 黑盒 | uprobe + 栈 = 白盒 |
+| 第三方库内部耗时分布？    | 黑盒             | uprobe + 栈 = 白盒 |
 
 调用栈捕获的核心价值在于：**将运行时行为映射回源码**。当线上出现异常延迟、死锁、CPU 飙升时，调用栈就是最直接的"案发现场照片"。
 
@@ -135,11 +136,11 @@ struct {
 
 参数选择要点：
 
-| 参数 | 推荐值 | 说明 |
-|------|-------|------|
-| `max_entries` | 8192 ~ 32768 | 取决于应用复杂度，Java 应用建议更大 |
-| `value_size` | `127 * sizeof(u64)` | 内核硬上限 127 帧，超过会被截断 |
-| `key_size` | `sizeof(u32)` | 固定为 u32，StackID 范围 0 ~ max_entries-1 |
+| 参数          | 推荐值              | 说明                                       |
+| ------------- | ------------------- | ------------------------------------------ |
+| `max_entries` | 8192 ~ 32768        | 取决于应用复杂度，Java 应用建议更大        |
+| `value_size`  | `127 * sizeof(u64)` | 内核硬上限 127 帧，超过会被截断            |
+| `key_size`    | `sizeof(u32)`       | 固定为 u32，StackID 范围 0 ~ max_entries-1 |
 
 ### 2.2 三种栈采集 API 对比
 
@@ -157,10 +158,10 @@ long bpf_get_stackid(struct pt_regs *ctx, void *map, u64 flags);
 long bpf_get_stack(struct pt_regs *ctx, void *buf, u32 size, u64 flags);
 ```
 
-| API | 去重 | 内存模型 | 适用场景 |
-|-----|------|---------|---------|
-| `bpf_get_stackid` | 是 | Map 存储 | 高频事件，调用路径种类有限 |
-| `bpf_get_stack` | 否 | 直接写 buffer | 需要每次都保留完整栈（如性能剖析） |
+| API               | 去重 | 内存模型      | 适用场景                           |
+| ----------------- | ---- | ------------- | ---------------------------------- |
+| `bpf_get_stackid` | 是   | Map 存储      | 高频事件，调用路径种类有限         |
+| `bpf_get_stack`   | 否   | 直接写 buffer | 需要每次都保留完整栈（如性能剖析） |
 
 **flags 参数详解**：
 
@@ -197,12 +198,12 @@ long bpf_get_stack(struct pt_regs *ctx, void *buf, u32 size, u64 flags);
 
 #### 无帧指针情况下的栈回溯方案
 
-| 方案 | 原理 | 内核版本 | 优缺点 |
-|------|------|---------|--------|
-| FP-based | 遍历 rbp 链 | 所有版本 | 最快，但需要编译时保留帧指针 |
-| ORC (Oops Recovery Cache) | 预计算的 CFI 表 | 4.14+ | 内核态默认，速度快 |
-| DWARF CFI | 解析 .eh_frame 段 | 用户态 | 最精确，但解析开销大 |
-| BPFTOOL 符号化 | 利用 /proc/kallsyms | 所有版本 | 仅函数级，无行号 |
+| 方案                      | 原理                | 内核版本 | 优缺点                       |
+| ------------------------- | ------------------- | -------- | ---------------------------- |
+| FP-based                  | 遍历 rbp 链         | 所有版本 | 最快，但需要编译时保留帧指针 |
+| ORC (Oops Recovery Cache) | 预计算的 CFI 表     | 4.14+    | 内核态默认，速度快           |
+| DWARF CFI                 | 解析 .eh_frame 段   | 用户态   | 最精确，但解析开销大         |
+| BPFTOOL 符号化            | 利用 /proc/kallsyms | 所有版本 | 仅函数级，无行号             |
 
 对于用户态程序的栈回溯，eBPF 在内核态只记录原始地址（`u64 pc`），符号化完全在用户态异步完成。这种设计确保了 BPF 程序本身的执行路径最短，不会因为符号化阻塞热路径。
 
@@ -531,14 +532,14 @@ sequenceDiagram
 
 不同语言的 TraceID 传播方式不同，eBPF 需要针对性地处理：
 
-| 语言 | TraceID 存储位置 | 挂钩点 | 提取方式 |
-|------|-----------------|--------|---------|
-| Go | `context.Context.Value()` | `runtime.traceback` | uprobe on `net/http.(*conn).serve` |
-| Java | `org.slf4j.MDC` | ThreadLocal | uprobe on `java.net.SocketOutputStream.write` |
-| Node.js | `AsyncLocalStorage` | V8 AsyncHook | uprobe on `http.OutgoingMessage._write` |
-| Python | `contextvars` | `threading.local` | uprobe on `socket.send` |
-| Rust | `tracing::Span` | 线程局部存储 | uprobe on `std::net::TcpStream.write` |
-| C/C++ | 自定义 header | 函数参数 | uprobe on 业务函数入口 |
+| 语言    | TraceID 存储位置          | 挂钩点              | 提取方式                                      |
+| ------- | ------------------------- | ------------------- | --------------------------------------------- |
+| Go      | `context.Context.Value()` | `runtime.traceback` | uprobe on `net/http.(*conn).serve`            |
+| Java    | `org.slf4j.MDC`           | ThreadLocal         | uprobe on `java.net.SocketOutputStream.write` |
+| Node.js | `AsyncLocalStorage`       | V8 AsyncHook        | uprobe on `http.OutgoingMessage._write`       |
+| Python  | `contextvars`             | `threading.local`   | uprobe on `socket.send`                       |
+| Rust    | `tracing::Span`           | 线程局部存储        | uprobe on `std::net::TcpStream.write`         |
+| C/C++   | 自定义 header             | 函数参数            | uprobe on 业务函数入口                        |
 
 ### 5.3 Go 语言的 TraceID 提取示例
 
@@ -809,12 +810,12 @@ def classify_root_cause(user_stack, kernel_stack):
 
 ### 8.1 栈采集的性能开销
 
-| 操作 | 单次耗时 | QPS 影响评估 |
-|------|---------|-------------|
-| `bpf_get_stackid()` (FP-based) | ~50ns | 10K QPS 时增加 ~0.5ms 总开销 |
-| `bpf_get_stackid()` (ORC-based) | ~200ns | 10K QPS 时增加 ~2ms 总开销 |
-| `bpf_get_stack()` (直接拷贝) | ~500ns | 不推荐高频路径使用 |
-| 符号化 (用户态, addr2line) | ~5ms/帧 | 必须异步，不可在热路径执行 |
+| 操作                            | 单次耗时 | QPS 影响评估                 |
+| ------------------------------- | -------- | ---------------------------- |
+| `bpf_get_stackid()` (FP-based)  | ~50ns    | 10K QPS 时增加 ~0.5ms 总开销 |
+| `bpf_get_stackid()` (ORC-based) | ~200ns   | 10K QPS 时增加 ~2ms 总开销   |
+| `bpf_get_stack()` (直接拷贝)    | ~500ns   | 不推荐高频路径使用           |
+| 符号化 (用户态, addr2line)      | ~5ms/帧  | 必须异步，不可在热路径执行   |
 
 ### 8.2 生产环境最佳实践
 
@@ -877,12 +878,12 @@ nsenter -t $PID -m -p bpftool map dump name stack_map
 
 `bpf_get_stackid()` 返回负值表示错误。常见错误码：
 
-| 返回值 | 含义 | 解决方案 |
-|-------|------|---------|
-| `-ENOMEM` | Stack Map 已满 | 增大 `max_entries` 或添加 `BPF_F_REUSE_STACKID` |
-| `-EFAULT` | 无法读取栈内存 | 检查是否有权限访问目标进程的内存 |
-| `-EINVAL` | 参数无效 | 确认 `ctx` 和 `flags` 的正确性 |
-| `-EEXIST` | 栈已存在（去重） | 正常行为，使用返回的 ID 即可 |
+| 返回值    | 含义             | 解决方案                                        |
+| --------- | ---------------- | ----------------------------------------------- |
+| `-ENOMEM` | Stack Map 已满   | 增大 `max_entries` 或添加 `BPF_F_REUSE_STACKID` |
+| `-EFAULT` | 无法读取栈内存   | 检查是否有权限访问目标进程的内存                |
+| `-EINVAL` | 参数无效         | 确认 `ctx` 和 `flags` 的正确性                  |
+| `-EEXIST` | 栈已存在（去重） | 正常行为，使用返回的 ID 即可                    |
 
 ### Q2: 为什么用户态栈全是 `??`？
 
@@ -952,13 +953,13 @@ ARM64 平台的差异：
 
 JIT 编译语言的栈回溯是难点，因为 JIT 生成的代码没有 DWARF 信息：
 
-| 方案 | 适用场景 | 精度 |
-|------|---------|------|
-| V8 `--perf_prof` flag | Node.js / Chrome | 高（需要启动参数） |
-| Java `-XX:+PreserveFramePointer` | JVM | 高（需要 JVM 参数） |
-| Java AsyncGetCallTrace | JVM profiling | 高（Perf/GraalVM 原生支持） |
-| Python `sys._getframe()` | CPython | 高（解释器原生支持） |
-| JITDump / perfjitdump | 通用 | 中（需要 JIT 编译器配合） |
+| 方案                             | 适用场景         | 精度                        |
+| -------------------------------- | ---------------- | --------------------------- |
+| V8 `--perf_prof` flag            | Node.js / Chrome | 高（需要启动参数）          |
+| Java `-XX:+PreserveFramePointer` | JVM              | 高（需要 JVM 参数）         |
+| Java AsyncGetCallTrace           | JVM profiling    | 高（Perf/GraalVM 原生支持） |
+| Python `sys._getframe()`         | CPython          | 高（解释器原生支持）        |
+| JITDump / perfjitdump            | 通用             | 中（需要 JIT 编译器配合）   |
 
 **2026 年的趋势**：越来越多语言运行时原生支持 eBPF 友好的栈回溯。例如 V8 的 `--perf_prof` 模式会主动将 JIT 代码映射信息写入 `/tmp/perf-<pid>.map`，eBPF 工具可以自动读取。
 

@@ -15,12 +15,12 @@ TCP 是一个面向连接的可靠传输协议，但它不提供任何安全性�
 
 TLS 握手是 TLS 连接建立的核心过程，它完成以下关键任务：
 
-| 任务 | 说明 |
-|------|------|
-| **身份认证** | 客户端验证服务器证书，确认对方是声称的那个实体 |
-| **密钥协商** | 双方协商产生会话密钥，用于对称加密通信 |
-| **算法协商** | 双方同意使用的加密算法、哈希算法、签名算法等 |
-| **完整性保护** | 建立 MAC（Message Authentication Code）密钥 |
+| 任务           | 说明                                           |
+| -------------- | ---------------------------------------------- |
+| **身份认证**   | 客户端验证服务器证书，确认对方是声称的那个实体 |
+| **密钥协商**   | 双方协商产生会话密钥，用于对称加密通信         |
+| **算法协商**   | 双方同意使用的加密算法、哈希算法、签名算法等   |
+| **完整性保护** | 建立 MAC（Message Authentication Code）密钥    |
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -74,25 +74,25 @@ RSA 握手是最简单的一种，其特点是密钥材料由客户端生成，�
 sequenceDiagram
     participant C as 客户端 (Client)
     participant S as 服务器 (Server)
-    
+
     Note over C,S: TCP 三次握手完成
-    
+
     C->>S: ClientHello
-    
+
     S->>C: ServerHello
     Note right of S: 选择加密套件<br/>Server Certificate<br/>CertificateRequest (可选)<br/>ServerHelloDone
-    
+
     C->>S: ClientKeyExchange
     Note right of C: 包含 PreMasterSecret<br/>（用服务器公钥加密）
-    
+
     Note over C,S: 双方独立计算 MasterSecret
-    
+
     C->>S: ChangeCipherSpec
     C->>S: Finished
-    
+
     S->>C: ChangeCipherSpec
     S->>C: Finished
-    
+
     Note over C,S: 对称加密通信开始
 ```
 
@@ -133,10 +133,10 @@ int handle_client_hello(SSL *ssl, ClientHello *ch) {
             break;
         }
     }
-    
+
     // 生成 Server Random
     RAND_bytes(ssl->s3->server_random, 32);
-    
+
     // 构造 ServerHello
     ServerHello *sh = construct_server_hello(
         TLS_1_2,
@@ -144,7 +144,7 @@ int handle_client_hello(SSL *ssl, ClientHello *ch) {
         ch->session_id,  // 可能恢复会话
         ssl->s3->tmp.new_cipher
     );
-    
+
     send_message(ssl, TLS_HANDSHAKE, sh);
 }
 ```
@@ -179,11 +179,11 @@ def client_key_exchange(cert_server, client_random, server_random):
     # 生成 48 字节的 PreMasterSecret
     premaster_secret = get_random_bytes(48)
     premaster_secret[0:2] = b'\x03\x03'  # TLS 1.2 版本号
-    
+
     # 用服务器 RSA 公钥加密
     server_pubkey = RSA.import_key(cert_server.public_key)
     encrypted_pms = server_pubkey.encrypt(premaster_secret, None)[0]
-    
+
     return encrypted_pms
 ```
 
@@ -202,14 +202,14 @@ def prf(master_secret, label, seed):
 def derive_master_secret(premaster_secret, client_random, server_random):
     seed = client_random + server_random
     label = b'master secret'
-    
+
     # master_secret = PRF(premaster_secret, "master secret", client_random + server_random)
     master_secret = prf(premaster_secret, label, seed)
-    
+
     # 进一步派生会话密钥
-    key_block = prf(master_secret, b'key expansion', 
+    key_block = prf(master_secret, b'key expansion',
                     server_random + client_random)
-    
+
     # 分割出各密钥材料
     client_write_mac_key = key_block[0:32]
     server_write_mac_key = key_block[32:64]
@@ -217,7 +217,7 @@ def derive_master_secret(premaster_secret, client_random, server_random):
     server_write_key = key_block[80:96]
     client_write_iv = key_block[96:104]
     server_write_iv = key_block[104:112]
-    
+
     return {
         'master_secret': master_secret,
         'client_write_mac_key': client_write_mac_key,
@@ -237,26 +237,26 @@ ECDHE（Elliptic Curve Diffie-Hellman Ephemeral）是目前推荐使用的密钥
 sequenceDiagram
     participant C as 客户端
     participant S as 服务器
-    
+
     Note over C,S: TCP 三次握手完成
-    
+
     C->>S: ClientHello
-    
+
     S->>C: ServerHello
     Note right of S: 选择 TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
     S->>C: Server Certificate
     S->>C: Server Key Exchange
     Note right of S: ECDHE 参数 + 签名
     S->>C: ServerHelloDone
-    
+
     C->>S: Client Key Exchange
     Note right of C: 客户端 ECDH 公钥
     C->>S: ChangeCipherSpec
     C->>S: Finished
-    
+
     S->>C: ChangeCipherSpec
     S->>C: Finished
-    
+
     Note over C,S: ECDHE 密钥交换完成，开始对称加密通信
 ```
 
@@ -289,34 +289,34 @@ def ecdhe_key_derive(client_private, server_public):
     # 客户端生成 (client_private, client_public)
     # 服务器生成 (server_private, server_public)
     # 双方执行 ECDH:
-    
+
     shared_secret = client_private * server_public
     # shared_secret.x 是双方共享的椭圆曲线点 x 坐标
-    
+
     return shared_secret.x.to_bytes(32, 'big')
 
 def derive_master_secret_ecdhe(shared_secret, client_random, server_random):
     """使用 ECDHE 时 MasterSecret 的推导"""
     # seed 由客户端/服务器随机数组成
     seed = client_random + server_random
-    
+
     # 使用 PRF 推导 master secret
     # master_secret = PRF(shared_secret, "master secret", seed)
-    
+
     # 使用 HKDF（TLS 1.3 使用 HKDF，TLS 1.2 ECDHE 仍用 PRF）
     return hkdf_extract(shared_secret, seed)  # 简化表示
 ```
 
 ### 2.3 两种模式的对比
 
-| 特性 | RSA 密钥交换 | ECDHE 密钥交换 |
-|------|-------------|---------------|
-| **前向安全性** | ❌ 无（私钥泄露可解密历史） | ✅ 有（使用临时密钥） |
-| **证书用途** | 仅做身份认证 | 仅做身份认证 |
-| **密钥材料来源** | 客户端生成 PreMasterSecret | 双方执行 ECDH |
-| **ServerKeyExchange** | 不需要 | 需要（带签名） |
-| **计算复杂度** | 较低（一次 RSA 解密） | 较高（ECDH + RSA 签名验证） |
-| **推荐程度** | ❌ 已废弃（TLS 1.3 移除） | ✅ 推荐 |
+| 特性                  | RSA 密钥交换                | ECDHE 密钥交换              |
+| --------------------- | --------------------------- | --------------------------- |
+| **前向安全性**        | ❌ 无（私钥泄露可解密历史） | ✅ 有（使用临时密钥）       |
+| **证书用途**          | 仅做身份认证                | 仅做身份认证                |
+| **密钥材料来源**      | 客户端生成 PreMasterSecret  | 双方执行 ECDH               |
+| **ServerKeyExchange** | 不需要                      | 需要（带签名）              |
+| **计算复杂度**        | 较低（一次 RSA 解密）       | 较高（ECDH + RSA 签名验证） |
+| **推荐程度**          | ❌ 已废弃（TLS 1.3 移除）   | ✅ 推荐                     |
 
 ---
 
@@ -332,23 +332,24 @@ TLS 1.3 将密钥交换和服务器认证合并到同一个消息中：
 sequenceDiagram
     participant C as 客户端
     participant S as 服务器
-    
+
     Note over C,S: TCP 三次握手完成
-    
+
     C->>S: ClientHello
     Note right of C: 支持的椭圆曲线<br/>客户端 Key Share<br/>supported_versions=TLS 1.3
-    
+
     S->>C: ServerHello
     Note right of S: 选择 TLS 1.3<br/>服务器 Key Share<br/>Certificate<br/>Certificate Verify<br/>Finished
     Note right of S: 第一次网络往返 (1-RTT)
-    
+
     C->>S: Finished
     Note right of C: 验证证书+Finished<br/>第二次网络往返
-    
+
     Note over C,S: 加密通信开始
 ```
 
 关键改进：
+
 - 客户端在 ClientHello 中直接发送 Key Share（客户端 ECDH 公钥）
 - 服务器在 ServerHello 中直接发送 Key Share（服务器 ECDH 公钥）
 - 双方立即计算共享密钥，无需等待额外消息
@@ -366,7 +367,7 @@ TLS 1.3 Handshake Protocol: Client Hello
         supported_versions: TLS 1.3
         key_share: 04d6c7f0...3a8b (客户端 ECDH 公钥)
         supported_groups: secp256r1, secp384r1, x25519
-        
+
 TLS 1.3 Handshake Protocol: Server Hello
     Version: TLS 1.3
     Random: a7f3...9c2b
@@ -384,14 +385,14 @@ TLS 1.3 允许客户端在第一次握手中就发送加密的应用数据（0-R
 sequenceDiagram
     participant C as 客户端
     participant S as 服务器
-    
+
     Note over C,S: TCP 三次握手完成
-    
+
     C->>S: ClientHello
     Note right of C: PSK 身份<br/>Early Key Share<br/>Early Data (加密)
-    
+
     S->>C: ServerHello + Finished + Early Data 响应
-    
+
     Note over C,S: 0-RTT: 数据立即可用
 ```
 
@@ -407,10 +408,10 @@ def build_0rtt_client_hello(psk, psk_identity, client_early_secret):
         b'',  # context
         16  # AES-128-GCM key length
     )
-    
+
     # 使用 early_key 加密应用数据
     early_data = encrypt_early_data(application_data, early_key)
-    
+
     return ClientHello(
         psk_identity=psk_identity,
         early_data=early_data
@@ -445,7 +446,7 @@ TLS 1.3 中的 PSK（Pre-Shared Key）有两种来源：
 ```wireshark
 TLS 1.3 Handshake Protocol: Client Hello
     Extensions:
-        pre_shared_key: 
+        pre_shared_key:
             identities: [psk_identity_1, psk_identity_2]
             binders: [binder_1, binder_2]  # 验证 PSK 拥有者
 ```
@@ -455,7 +456,7 @@ TLS 1.3 Handshake Protocol: Client Hello
 void derive_early_secrets(ExternalPSK *psk) {
     // early_secret = Derive-Secret(PSK, "early data", "")
     early_secret = TLS13 DeriveSecret(psk, "early data", empty_hash);
-    
+
     // 派生 early traffic keys
     early_write_key = HKDF_Expand_Label(
         early_secret, "early data key", "", key_length
@@ -473,14 +474,14 @@ flowchart LR
     B --> C["Early Secret"]
     C --> D["Derive-Secret\n(client early traffic)"]
     C --> E["Derive-Secret\n(early exporter master)"]
-    
+
     E --> F["Handshake Secret"]
     F --> G["Derive-Secret\n(server handshake)"]
     F --> H["Derive-Secret\n(client handshake)"]
-    
+
     G --> I["Derive-Secret\n(medium data\n exporter)"]
     H --> I
-    
+
     I --> J["Application Traffic Secret"]
     J --> K["server_application_traffic_secret"]
     J --> L["client_application_traffic_secret"]
@@ -503,7 +504,7 @@ def hkdf_expand_label(prk, label, context, length):
     #     opaque label<7..255> = "tls13 " + label;
     #     opaque context<0..255> = context;
     # } HKLDFLabel;
-    
+
     hkdf_label = bytes([length]) + b'tls13 ' + label + bytes([len(context)]) + context
     return hmac.new(prk, hkdf_label, hashlib.sha256).digest()[:length]
 
@@ -520,7 +521,7 @@ def tls13_derive_secret(secret, label, transcript_hash):
 
 ```
 TLS 1.2 ECDHE 握手 (2-RTT + TCP):
-                    
+
     Client          Server
        │               │
        │──TCP SYN──────>│
@@ -559,18 +560,18 @@ TLS 1.3 1-RTT 握手:
 
 ### 4.2 核心差异一览
 
-| 特性 | TLS 1.2 | TLS 1.3 | 改进说明 |
-|------|---------|---------|---------|
-| **最小握手 RTT** | 2-RTT | 1-RTT | 减少网络延迟 |
-| **0-RTT 支持** | ❌ 不支持 | ✅ 支持 | 允许 early data |
-| **密钥交换算法** | RSA, DHE, ECDHE | 仅 ECDHE | 强制前向安全 |
-| **证书加密算法** | RSA, DSA | 仅 ECDSA (PQC 预留) | 提升安全性 |
-| **对称加密算法** | 3DES, AES-CBC | AES-GCM, ChaCha20 | 移除 CBC 模式（防范 BEAST 等攻击）|
-| **Hash 算法** | MD5, SHA1, SHA256 | SHA256, SHA384 | 移除不安全的算法 |
-| **压缩** | ✅ 支持 | ❌ 移除 | 防范 CRIME 等攻击 |
-| **Session ID 恢复** | ✅ 支持 | ❌ 被 PSK 替代 | 更简洁的恢复机制 |
-| **Renegotiation** | ✅ 支持 | ❌ 移除 | 防范REN-ATTACK |
-| **Fallba** | ✅ 支持 | ❌ 移除 | 防止协议降级攻击 |
+| 特性                | TLS 1.2           | TLS 1.3             | 改进说明                           |
+| ------------------- | ----------------- | ------------------- | ---------------------------------- |
+| **最小握手 RTT**    | 2-RTT             | 1-RTT               | 减少网络延迟                       |
+| **0-RTT 支持**      | ❌ 不支持         | ✅ 支持             | 允许 early data                    |
+| **密钥交换算法**    | RSA, DHE, ECDHE   | 仅 ECDHE            | 强制前向安全                       |
+| **证书加密算法**    | RSA, DSA          | 仅 ECDSA (PQC 预留) | 提升安全性                         |
+| **对称加密算法**    | 3DES, AES-CBC     | AES-GCM, ChaCha20   | 移除 CBC 模式（防范 BEAST 等攻击） |
+| **Hash 算法**       | MD5, SHA1, SHA256 | SHA256, SHA384      | 移除不安全的算法                   |
+| **压缩**            | ✅ 支持           | ❌ 移除             | 防范 CRIME 等攻击                  |
+| **Session ID 恢复** | ✅ 支持           | ❌ 被 PSK 替代      | 更简洁的恢复机制                   |
+| **Renegotiation**   | ✅ 支持           | ❌ 移除             | 防范REN-ATTACK                     |
+| **Fallba**          | ✅ 支持           | ❌ 移除             | 防止协议降级攻击                   |
 
 ### 4.3 安全特性对比
 
@@ -607,23 +608,23 @@ Session ID 方式在 TLS 1.2 中广泛使用：
 sequenceDiagram
     participant C as 客户端
     participant S as 服务器
-    
+
     Note over C,S: 首次完整握手
-    
+
     C->>S: ClientHello (Session ID: empty)
     S->>C: ServerHello (Session ID: abc123)
     Note right of S: 服务器缓存 Session ID -> 完整握手状态
     Note over C,S: 后续恢复握手
-    
+
     C->>S: ClientHello (Session ID: abc123)
     S->>C: ServerHello (Session ID: abc123)
     S->>C: ChangeCipherSpec
     S->>C: Finished
     Note right of S: 0-RTT 恢复，无需完整握手
-    
+
     C->>S: ChangeCipherSpec
     C->>S: Finished
-    
+
     Note over C,S: 会话恢复成功
 ```
 
@@ -634,11 +635,11 @@ struct ssl_session_st {
     unsigned char master_key[48]; // Master Secret
     SSL_CIPHER *cipher;           // 加密套件
     struct sess_cert_st *sess_cert; // 证书链
-    
+
     // Session ID 用于恢复
     unsigned char session_id[32];
     int session_id_length;
-    
+
     // 过期时间
     time_t timeout;
     time_t time;
@@ -653,24 +654,24 @@ Session Ticket 方式将会话状态加密后交给客户端保管：
 sequenceDiagram
     participant C as 客户端
     participant S as 服务器
-    
+
     Note over C,S: 首次握手，服务器发送 NewSessionTicket
-    
+
     C->>S: ClientHello
     S->>C: ServerHello
     S->>C: NewSessionTicket
     Note right of S: 加密的会话状态，包含 master_secret
     S->>C: ChangeCipherSpec
     S->>C: Finished
-    
+
     Note over C,S: 下次连接使用 Session Ticket
-    
+
     C->>S: ClientHello + Session Ticket
     S->>C: ServerHello
     S->>C: NewSessionTicket (新票)
     S->>C: ChangeCipherSpec
     S->>C: Finished
-    
+
     Note over C,S: 恢复成功，继续使用原 master_secret
 ```
 
@@ -684,27 +685,27 @@ def create_session_ticket(master_secret, session_state, ticket_age_add=0):
     """创建 Session Ticket（服务器端）"""
     # 构造会话状态
     state = session_state + struct.pack('>I', ticket_age_add)
-    
+
     # 使用 master_secret 作为密钥
     key = hmac.new(b'session ticket ticket', master_secret, hashlib.sha256).digest()[:32]
-    
+
     # AES-256-GCM 加密
     cipher = AES.new(key, AES.MODE_GCM)
     ciphertext, tag = cipher.encrypt_and_digest(state)
-    
+
     return ciphertext + tag
 
 def decrypt_session_ticket(master_secret, ticket):
     """解密 Session Ticket"""
     key = hmac.new(b'session ticket ticket', master_secret, hashlib.sha256).digest()[:32]
-    
+
     # 分离 ciphertext 和 tag
     ciphertext = ticket[:-16]
     tag = ticket[-16:]
-    
+
     cipher = AES.new(key, AES.MODE_GCM)
     state = cipher.decrypt_and_verify(ciphertext, tag)
-    
+
     return parse_session_state(state)
 ```
 
@@ -716,7 +717,7 @@ TLS 1.3 统一使用 PSK 机制进行会话恢复：
 TLS 1.3 Client Hello with PSK
     Extension: pre_shared_key
         identities (length: 58)
-        identities[0]: 
+        identities[0]:
             obfuscated_ticket_age: 300
             identity: 8a3d...7f2c (Session Ticket)
         binders (length: 48)
@@ -728,32 +729,32 @@ def tls13_session_recovery(psk, transcript_hash):
     """TLS 1.3 会话恢复密钥推导"""
     # binder_key = Derive-Secret(PSK, "resumption binder", "")
     binder_key = tls13_derive_secret(psk, "resumption binder", b'')
-    
+
     # 验证 binder
     expected_binder = hkdf_expand_label(binder_key, "tbinder", b'', 32)
-    
+
     # derived_secret = Derive-Secret(PSK, "resumed psk", "")
     derived_secret = tls13_derive_secret(psk, "resumed psk", transcript_hash)
-    
+
     # application_traffic_secret = Derive-Secret(derived_secret, "traffic upd", "")
     application_traffic_secret = tls13_derive_secret(
         derived_secret, "traffic upd", transcript_hash
     )
-    
+
     return application_traffic_secret
 ```
 
 ### 5.4 三种恢复方式对比
 
-| 特性 | Session ID | Session Ticket | TLS 1.3 PSK |
-|------|------------|----------------|-------------|
-| **状态存储位置** | 服务器 | 客户端（加密） | 客户端 |
-| **无状态服务器** | ❌ 否 | ✅ 是 | ✅ 是 |
-| **首次握手开销** | 正常 | 正常 | 正常 |
-| **恢复握手 RTT** | 1-RTT | 1-RTT | 1-RTT（可选 0-RTT） |
-| **密钥材料** | master_secret | master_secret（加密） | PSK |
-| **重连前向安全** | ❌ 复用 master_secret | ❌ 复用 master_secret | ⚠️ 可选维持 |
-| **Ticket 轮换** | 无 | 有（新 Ticket） | 有 |
+| 特性             | Session ID            | Session Ticket        | TLS 1.3 PSK         |
+| ---------------- | --------------------- | --------------------- | ------------------- |
+| **状态存储位置** | 服务器                | 客户端（加密）        | 客户端              |
+| **无状态服务器** | ❌ 否                 | ✅ 是                 | ✅ 是               |
+| **首次握手开销** | 正常                  | 正常                  | 正常                |
+| **恢复握手 RTT** | 1-RTT                 | 1-RTT                 | 1-RTT（可选 0-RTT） |
+| **密钥材料**     | master_secret         | master_secret（加密） | PSK                 |
+| **重连前向安全** | ❌ 复用 master_secret | ❌ 复用 master_secret | ⚠️ 可选维持         |
+| **Ticket 轮换**  | 无                    | 有（新 Ticket）       | 有                  |
 
 ---
 
@@ -768,7 +769,7 @@ flowchart TD
     A["根证书 (Root CA)\n自签名"] --> B["中间证书 (Intermediate CA)\n由根 CA 签名"]
     B --> C["服务器证书 (End Entity)\n由中间 CA 签名"]
     C --> D["example.com\n公钥 + 域名绑定"]
-    
+
     A -.->|信任锚| Z["客户端信任库\n(/etc/ssl/certs, etc.)"]
 ```
 
@@ -783,18 +784,18 @@ import datetime
 def verify_certificate_chain(cert_chain, trusted_certs):
     """
     验证证书链的完整性和有效性
-    
+
     cert_chain: [服务器证书, 中间证书1, 中间证书2, ...]
     trusted_certs: 信任的根证书列表
     """
     # 1. 构建证书链
     store = x509.verification.Store(trusted_certs)
-    
+
     # 2. 验证证书签名
     for i in range(len(cert_chain) - 1):
         issuer_cert = cert_chain[i + 1]
         subject_cert = cert_chain[i]
-        
+
         # 使用颁发者公钥验证签名
         try:
             subject_cert.issuer_public_key().verify(
@@ -806,10 +807,10 @@ def verify_certificate_chain(cert_chain, trusted_certs):
             raise CertificateVerificationError(
                 f"签名验证失败: {subject_cert.subject}"
             )
-    
+
     # 3. 验证证书有效性（时间、域名等）
     current_time = datetime.datetime.now()
-    
+
     for cert in cert_chain:
         if cert.not_valid_before <= current_time <= cert.not_valid_after:
             pass  # 有效期验证通过
@@ -817,14 +818,14 @@ def verify_certificate_chain(cert_chain, trusted_certs):
             raise CertificateExpiredError(
                 f"证书已过期或尚未生效: {cert.subject}"
             )
-        
+
         # 4. 验证域名
         if cert.subject.get_attribute_for_oid(x509.oid.NameOID.COMMON_NAME):
             common_name = cert.subject.get_attributes_for_oid(
                 x509.oid.NameOID.COMMON_NAME
             )[0].value
             # 检查域名匹配
-    
+
     return True
 ```
 
@@ -910,11 +911,11 @@ with context.wrap_socket(socket.socket(), server_hostname='example.com') as sock
 sequenceDiagram
     participant C as 客户端
     participant S as 服务器
-    
+
     Note over C,S: 单向 TLS（普通 HTTPS）
     C->>S: 验证服务器证书 ✅
     S->>C: 不验证客户端 ❌
-    
+
     Note over C,S: 双向 TLS（mTLS）
     C->>S: 验证服务器证书 ✅
     S->>C: 验证客户端证书 ✅
@@ -952,25 +953,25 @@ import hashlib
 def create_certificate_verify(private_key, handshake_messages_hash):
     """
     创建 CertificateVerify 消息
-    
-    签名内容 = Hash(handshake_messages) 
+
+    签名内容 = Hash(handshake_messages)
               (使用 TLS 1.2 的 PRF 或 TLS 1.3 的 Transcript Hash)
     """
     signature_input = b'TLS 1.2, CertificateVerify' + handshake_messages_hash
-    
+
     # 使用客户端私钥签名
     signature = private_key.sign(
         signature_input,
         padding.PKCS1v15(),
         hashes.SHA256()
     )
-    
+
     return signature
 
 def verify_certificate_verify(cert_public_key, signature, handshake_messages_hash):
     """验证 CertificateVerify"""
     signature_input = b'TLS 1.2, CertificateVerify' + handshake_messages_hash
-    
+
     try:
         cert_public_key.verify(
             signature,
@@ -985,12 +986,12 @@ def verify_certificate_verify(cert_public_key, signature, handshake_messages_has
 
 ### 7.4 mTLS 典型应用场景
 
-| 场景 | 说明 |
-|------|------|
-| **企业内部系统** | 员工使用客户端证书访问敏感系统 |
-| **API 认证** | 微服务之间使用 mTLS 做双向认证 |
-| **VPN** | OpenVPN、WireGuard 等使用证书认证 |
-| **IoT 设备** | 设备证书管理大规模设备身份 |
+| 场景             | 说明                              |
+| ---------------- | --------------------------------- |
+| **企业内部系统** | 员工使用客户端证书访问敏感系统    |
+| **API 认证**     | 微服务之间使用 mTLS 做双向认证    |
+| **VPN**          | OpenVPN、WireGuard 等使用证书认证 |
+| **IoT 设备**     | 设备证书管理大规模设备身份        |
 
 ```bash
 # OpenSSL 创建双向认证测试环境
@@ -1036,6 +1037,7 @@ openssl s_client \
 TLS 加密套件命名格式：`TLS_密钥交换_认证算法_WITH_加密算法_MAC算法`
 
 例如 `TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256`：
+
 - **密钥交换**：ECDHE（前向安全密钥交换）
 - **认证算法**：RSA（服务器证书使用 RSA 签名）
 - **加密算法**：AES-128-GCM（对称加密，Galois/Counter Mode）
@@ -1043,27 +1045,27 @@ TLS 加密套件命名格式：`TLS_密钥交换_认证算法_WITH_加密算法_
 
 ### 8.2 TLS 1.2 常用加密套件
 
-| 加密套件 | 密钥交换 | 加密 | MAC | 安全评级 |
-|----------|---------|------|-----|---------|
-| TLS_RSA_WITH_AES_128_CBC_SHA | RSA | AES-128-CBC | HMAC-SHA1 | ⚠️ 已废弃 |
-| TLS_RSA_WITH_AES_256_CBC_SHA | RSA | AES-256-CBC | HMAC-SHA1 | ⚠️ 已废弃 |
-| TLS_DHE_RSA_WITH_AES_128_CBC_SHA | DHE | AES-128-CBC | HMAC-SHA1 | ⚠️ 已废弃 |
-| TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA | ECDHE | AES-128-CBC | HMAC-SHA1 | ⚠️ 不推荐 |
-| TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256 | ECDHE | AES-128-GCM | GMAC-SHA256 | ✅ 安全 |
-| TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 | ECDHE | AES-256-GCM | GMAC-SHA384 | ✅ 安全 |
-| TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256 | ECDHE | AES-128-GCM | GMAC-SHA256 | ✅ 安全 |
+| 加密套件                                | 密钥交换 | 加密        | MAC         | 安全评级  |
+| --------------------------------------- | -------- | ----------- | ----------- | --------- |
+| TLS_RSA_WITH_AES_128_CBC_SHA            | RSA      | AES-128-CBC | HMAC-SHA1   | ⚠️ 已废弃 |
+| TLS_RSA_WITH_AES_256_CBC_SHA            | RSA      | AES-256-CBC | HMAC-SHA1   | ⚠️ 已废弃 |
+| TLS_DHE_RSA_WITH_AES_128_CBC_SHA        | DHE      | AES-128-CBC | HMAC-SHA1   | ⚠️ 已废弃 |
+| TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA      | ECDHE    | AES-128-CBC | HMAC-SHA1   | ⚠️ 不推荐 |
+| TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256   | ECDHE    | AES-128-GCM | GMAC-SHA256 | ✅ 安全   |
+| TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384   | ECDHE    | AES-256-GCM | GMAC-SHA384 | ✅ 安全   |
+| TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256 | ECDHE    | AES-128-GCM | GMAC-SHA256 | ✅ 安全   |
 
 ### 8.3 TLS 1.3 加密套件
 
 TLS 1.3 大幅简化了加密套件，格式变为：`TLS_加密算法_强度_GCM模式_HMAC算法`
 
-| 加密套件 | 加密 | 强度 | AEAD | 可用性 |
-|----------|------|------|------|--------|
-| TLS_AES_128_GCM_SHA256 | AES-128-GCM | 128-bit | ✅ | 通用 |
-| TLS_AES_256_GCM_SHA384 | AES-256-GCM | 256-bit | ✅ | 高安全 |
-| TLS_CHACHA20_POLY1305_SHA256 | ChaCha20-Poly1305 | 256-bit | ✅ | 移动设备优先 |
-| TLS_AES_128_CCM_SHA256 | AES-128-CCM | 128-bit | ✅ | IoT 受限环境 |
-| TLS_AES_128_CCM_8_SHA256 | AES-128-CCM-8 | 128-bit | ✅ | 特殊场景 |
+| 加密套件                     | 加密              | 强度    | AEAD | 可用性       |
+| ---------------------------- | ----------------- | ------- | ---- | ------------ |
+| TLS_AES_128_GCM_SHA256       | AES-128-GCM       | 128-bit | ✅   | 通用         |
+| TLS_AES_256_GCM_SHA384       | AES-256-GCM       | 256-bit | ✅   | 高安全       |
+| TLS_CHACHA20_POLY1305_SHA256 | ChaCha20-Poly1305 | 256-bit | ✅   | 移动设备优先 |
+| TLS_AES_128_CCM_SHA256       | AES-128-CCM       | 128-bit | ✅   | IoT 受限环境 |
+| TLS_AES_128_CCM_8_SHA256     | AES-128-CCM-8     | 128-bit | ✅   | 特殊场景     |
 
 ### 8.4 OpenSSL 加密套件协商配置
 
@@ -1084,19 +1086,19 @@ openssl ciphers -v -tls1_3 'TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:
 server {
     listen 443 ssl http2;
     server_name example.com;
-    
+
     ssl_certificate /path/to/cert.pem;
     ssl_certificate_key /path/to/key.pem;
     ssl_trusted_certificate /path/to/ca-chain.pem;
-    
+
     # TLS 版本
     ssl_protocols TLSv1.2 TLSv1.3;
-    
+
     # 加密套件配置
     ssl_ciphers 'ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384';
-    
+
     ssl_prefer_server_ciphers on;
-    
+
     # Session 配置
     ssl_session_cache shared:SSL:10m;
     ssl_session_tickets on;
@@ -1119,10 +1121,10 @@ func main() {
             // 允许的 TLS 版本
             MinVersion: tls.VersionTLS12,
             MaxVersion: tls.VersionTLS13,
-            
+
             // 优先顺序
             PreferServerCipherSuites: true,
-            
+
             // 加密套件（TLS 1.3 不支持配置，Go 自动选择最佳套件）
             // TLS 1.2 套件
             CipherSuites: []uint16{
@@ -1133,14 +1135,14 @@ func main() {
                 tls.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,
                 tls.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,
             },
-            
+
             // 曲线偏好
             CurvePreferences: []tls.CurveID{
                 tls.X25519,     // x25519
                 tls.CurveP256,  // secp256r1
                 tls.CurveP384,  // secp384r1
             },
-            
+
             // Session Resumption
             SessionTicketsDisabled: false,
             SessionTicketKey: [32]byte{/* 随机密钥 */},
@@ -1302,7 +1304,7 @@ Frame 4: TLS 1.3 Client Hello with Early Data
         Version: TLS 1.3
         Length: 67
         Early Data: 3fa5b8c2...  ← 加密的 application data
-        
+
     TLS Record Layer: Handshake Protocol: Client Hello
         Handshake Type: Client Hello (1)
         Extension: pre_shared_key
@@ -1355,14 +1357,14 @@ def parse_tls_handshake(packets):
     for pkt in packets:
         if pkt.haslayer(TLS):
             tls_layer = pkt[TLS]
-            
+
             if tls_layer.haslayer(TLSClientHello):
                 print(f"Client Hello: {tls_layer[TLSClientHello].version}")
                 print(f"Cipher Suites: {tls_layer[TLSClientHello].cipher_suites}")
-                
+
             elif tls_layer.haslayer(TLSServerHello):
                 print(f"Server Hello: {tls_layer[TLSServerHello].cipher}")
-                
+
             elif tls_layer.haslayer(TLSCertificate):
                 certs = tls_layer[TLSCertificate].certificates
                 for cert in certs:
@@ -1540,10 +1542,10 @@ import pprint
 
 def tls_handshake_demo(hostname, port=443):
     """演示 TLS 握手过程"""
-    
+
     # 创建 SSL context
     context = ssl.create_default_context()
-    
+
     # TLS 1.2 握手
     context2 = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
     context2.minimum_version = ssl.TLSVersion.TLSv1_2
@@ -1551,7 +1553,7 @@ def tls_handshake_demo(hostname, port=443):
     context2.verify_mode = ssl.CERT_REQUIRED
     context2.check_hostname = True
     context2.load_default_certs()
-    
+
     with socket.create_connection((hostname, port), timeout=10) as sock:
         with context2.wrap_socket(sock, server_hostname=hostname) as ssock:
             # 打印连接信息
@@ -1561,13 +1563,13 @@ def tls_handshake_demo(hostname, port=443):
             print(f"证书链:")
             for cert in ssock.get_verified_chain():
                 print(f"  - {cert.subject.rfc4514_string()}")
-            
+
             # 发送 HTTP 请求
             ssock.sendall(b"GET / HTTP/1.1\r\n"
                          b"Host: " + hostname.encode() + b"\r\n"
                          b"Connection: close\r\n"
                          b"\r\n")
-            
+
             # 接收响应
             response = b""
             while True:
@@ -1575,7 +1577,7 @@ def tls_handshake_demo(hostname, port=443):
                 if not data:
                     break
                 response += data
-            
+
             print(f"\n=== HTTP 响应 ===")
             print(response.decode('utf-8', errors='replace')[:500])
 
@@ -1591,18 +1593,18 @@ if __name__ == "__main__":
 
 本文详细解析了 TLS 1.2 和 TLS 1.3 的握手流程，涵盖：
 
-| 章节 | 核心要点 |
-|------|---------|
-| **TLS 握手概述** | 握手核心目标是协商密钥、提供前向安全性 |
-| **TLS 1.2 握手** | RSA 模式（已废弃）和 ECDHE 模式（推荐）|
-| **TLS 1.3 握手** | 1-RTT 标准模式 + 0-RTT Early Data |
-| **版本对比** | TLS 1.3 减少延迟、增强安全、简化算法 |
+| 章节                   | 核心要点                                 |
+| ---------------------- | ---------------------------------------- |
+| **TLS 握手概述**       | 握手核心目标是协商密钥、提供前向安全性   |
+| **TLS 1.2 握手**       | RSA 模式（已废弃）和 ECDHE 模式（推荐）  |
+| **TLS 1.3 握手**       | 1-RTT 标准模式 + 0-RTT Early Data        |
+| **版本对比**           | TLS 1.3 减少延迟、增强安全、简化算法     |
 | **Session Resumption** | Session ID、Session Ticket、PSK 三种方式 |
-| **证书认证** | PKI 链式验证、自签名、根证书注入 |
-| **mTLS** | Certificate Request + Certificate Verify |
-| **加密套件协商** | 密钥交换、认证、加密、MAC 的组合 |
-| **Wireshark 抓包** | TLS 1.2/1.3 握手消息解析 |
-| **OpenSSL 实战** | s_client/s_server 命令行模拟 |
+| **证书认证**           | PKI 链式验证、自签名、根证书注入         |
+| **mTLS**               | Certificate Request + Certificate Verify |
+| **加密套件协商**       | 密钥交换、认证、加密、MAC 的组合         |
+| **Wireshark 抓包**     | TLS 1.2/1.3 握手消息解析                 |
+| **OpenSSL 实战**       | s_client/s_server 命令行模拟             |
 
 TLS 协议仍在持续演进，TLS 1.3 已成为主流，未来随着量子计算发展，后量子密码学（Post-Quantum Cryptography）将进一步融入 TLS，为网络安全提供更持久的保障。
 

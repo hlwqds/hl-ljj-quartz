@@ -9,13 +9,9 @@ tags:
   - tls
 ---
 
-> [!info] SRv6 2026 深度探索系列
-> 0. [[2026-04-14-srv6-comprehensive-learning-roadmap|SRv6 全栈学习路径总览]]
-> ...
-> 37. [[2026-04-14-srv6-deep-dive-ch37-srv6-security|第三七章：SRv6 安全威胁与防护机制]]
-> 38. [[2026-04-14-srv6-deep-dive-ch38-srv6-security-rfc|第三八章：SRv6 Source Address Validation 与 uRPF]]
-> **39. 第三九章：SRv6 + IPsec 端到端加密**
-> 40. [[2026-04-14-srv6-deep-dive-ch40-srv6-perf|第四十章：SRv6 转发性能与 TCAM]]
+> [!info] SRv6 2026 深度探索系列 0. [[2026-04-14-srv6-comprehensive-learning-roadmap|SRv6 全栈学习路径总览]]
+> ... 37. [[2026-04-14-srv6-deep-dive-ch37-srv6-security|第三七章：SRv6 安全威胁与防护机制]] 38. [[2026-04-14-srv6-deep-dive-ch38-srv6-security-rfc|第三八章：SRv6 Source Address Validation 与 uRPF]]
+> **39. 第三九章：SRv6 + IPsec 端到端加密** 40. [[2026-04-14-srv6-deep-dive-ch40-srv6-perf|第四十章：SRv6 转发性能与 TCAM]]
 
 ---
 
@@ -33,22 +29,22 @@ graph TD
         E["机密性"]
         F["完整性"]
     end
-    
+
     A --> D
     B --> E
     C --> F
-    
+
     style A fill:#4dabf7,color:#000
     style D fill:#51cf66,color:#000
 ```
 
 ### 1.1 集成模式对比
 
-| 模式 | SRv6 作用 | IPsec 作用 | 适用场景 |
-| :--- | :--- | :--- | :--- |
-| SRv6 Outer + IPsec Inner | 路径控制 | 载荷加密 | 传输模式 |
-| IPsec Outer + SRv6 Inner | 载荷加密 | 路径控制 | 隧道模式 |
-| SRv6 + IPsec 独立 | 各自独立 | 各自独立 | 双层保护 |
+| 模式                     | SRv6 作用 | IPsec 作用 | 适用场景 |
+| :----------------------- | :-------- | :--------- | :------- |
+| SRv6 Outer + IPsec Inner | 路径控制  | 载荷加密   | 传输模式 |
+| IPsec Outer + SRv6 Inner | 载荷加密  | 路径控制   | 隧道模式 |
+| SRv6 + IPsec 独立        | 各自独立  | 各自独立   | 双层保护 |
 
 ### 1.2 封装层次对比
 
@@ -152,10 +148,10 @@ crypto ipsec profile SRV6-IPSEC-PROFILE
 segment-routing srv6
   encap ipsec
   ipsec profile SRV6-IPSEC-PROFILE
-  
+
 # 5. 配置 SRv6 locator
   locator LOC1 FC00:0:1:1::/64
-  
+
 # 6. 配置加密行为
   encryption-behavior encrypted
 ```
@@ -298,11 +294,11 @@ segment-routing ipv6
 
 ### 6.1 SRv6 + IPsec 性能开销
 
-| 操作 | CPU 开销 | 延迟增加 | 吞吐下降 |
-| :--- | :--- | :--- | :--- |
-| AES-128-GCM | 中 | ~5% | ~10% |
-| AES-256-GCM | 高 | ~10% | ~20% |
-| AES-256-GCM + SRv6 | 很高 | ~15% | ~30% |
+| 操作               | CPU 开销 | 延迟增加 | 吞吐下降 |
+| :----------------- | :------- | :------- | :------- |
+| AES-128-GCM        | 中       | ~5%      | ~10%     |
+| AES-256-GCM        | 高       | ~10%     | ~20%     |
+| AES-256-GCM + SRv6 | 很高     | ~15%     | ~30%     |
 
 ### 6.2 硬件卸载
 
@@ -310,7 +306,7 @@ segment-routing ipv6
 graph LR
     A["CPU 处理"] --> B["软件加密"]
     C["线卡处理器"] --> D["硬件卸载"]
-    
+
     style A fill:#ff6b6b,color:#000
     style C fill:#51cf66,color:#000
 ```
@@ -372,12 +368,12 @@ Enterprise                      Cloud
 
 ### 8.1 常见问题
 
-| 问题 | 症状 | 解决方案 |
-| :--- | :--- | :--- |
-| IPsec SA 建立失败 | IKE Phase 1 超时 | 检查 ISAKMP 策略匹配 |
-| SRv6 封装后 IPsec 失败 | ESP 包被丢弃 | 确认 MTU，启用 Path MTU Discovery |
-| 加密后 SRv6 路径中断 | traceroute 显示丢包 | 检查 ICV 验证设置 |
-| 性能严重下降 | 吞吐量下降 > 50% | 启用硬件卸载 |
+| 问题                   | 症状                | 解决方案                          |
+| :--------------------- | :------------------ | :-------------------------------- |
+| IPsec SA 建立失败      | IKE Phase 1 超时    | 检查 ISAKMP 策略匹配              |
+| SRv6 封装后 IPsec 失败 | ESP 包被丢弃        | 确认 MTU，启用 Path MTU Discovery |
+| 加密后 SRv6 路径中断   | traceroute 显示丢包 | 检查 ICV 验证设置                 |
+| 性能严重下降           | 吞吐量下降 > 50%    | 启用硬件卸载                      |
 
 ### 8.2 调试命令
 
@@ -401,6 +397,7 @@ debugging Ike all
 ## 9. 总结：SRv6 + IPsec 最佳实践
 
 > [!tip] SRv6 + IPsec 部署 checklist
+>
 > - [ ] 选择合适的加密算法（AES-256-GCM 优先）
 > - [ ] 使用硬件卸载减轻 CPU 负担
 > - [ ] 配置足够的 MTU（SRv6 + IPsec 开销约 60-80 字节）

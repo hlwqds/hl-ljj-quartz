@@ -14,8 +14,8 @@ tags:
   - security
 ---
 
-> [!info] Cilium 2026 深度探索系列
-> 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+> [!info] Cilium 2026 深度探索系列 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+>
 > 1. [[2026-04-14-cilium-deep-dive-ch1-cilium-overview|第一章：Cilium 概述]]
 > 2. [[2026-04-14-cilium-deep-dive-ch2-architecture|第二章：Cilium 架构]]
 > 3. [[2026-04-14-cilium-deep-dive-ch3-ebpf-datapath|第三章：eBPF 数据面]]
@@ -70,12 +70,12 @@ Cilium 网络策略采用**分层架构**，从 L3（网络层）到 L7（应用
 
 ### 1.1 层级对比
 
-| 层级 | 名称 | 匹配内容 | 性能影响 | 典型用途 |
-|:---|:---|:---|:---|:---|
-| **L2** | 数据链路 | MAC 地址、VLAN | 极低 | 基础网络隔离 |
-| **L3** | 网络层 | IP、CIDR、身份 | 极低 | IP 级别分段 |
-| **L4** | 传输层 | 端口、协议 | 低 | 服务级别控制 |
-| **L7** | 应用层 | HTTP/gRPC/DNS/SQL | 中等 | 深度包检测 |
+| 层级   | 名称     | 匹配内容          | 性能影响 | 典型用途     |
+| :----- | :------- | :---------------- | :------- | :----------- |
+| **L2** | 数据链路 | MAC 地址、VLAN    | 极低     | 基础网络隔离 |
+| **L3** | 网络层   | IP、CIDR、身份    | 极低     | IP 级别分段  |
+| **L4** | 传输层   | 端口、协议        | 低       | 服务级别控制 |
+| **L7** | 应用层   | HTTP/gRPC/DNS/SQL | 中等     | 深度包检测   |
 
 ---
 
@@ -97,13 +97,13 @@ spec:
       app: secure-app
   # 入口 L3 策略
   ingress:
-  - fromCidrs:
-    - "10.0.0.0/8"         # 允许内网
-    - "192.168.1.0/24"    # 允许办公网络
+    - fromCidrs:
+        - "10.0.0.0/8" # 允许内网
+        - "192.168.1.0/24" # 允许办公网络
   egress:
-  - toCidrs:
-    - "0.0.0.0/0"         # 允许所有出口（不推荐）
-    - "!10.0.0.5/32"      # 排除特定 IP
+    - toCidrs:
+        - "0.0.0.0/0" # 允许所有出口（不推荐）
+        - "!10.0.0.5/32" # 排除特定 IP
 ```
 
 ### 2.2 基于身份的 L3 策略
@@ -121,11 +121,11 @@ spec:
     matchLabels:
       app: payment-service
   ingress:
-  # 允许具有特定身份的服务访问
-  - fromIdentity:
-      matchLabels:
-        app: api-gateway
-        environment: production
+    # 允许具有特定身份的服务访问
+    - fromIdentity:
+        matchLabels:
+          app: api-gateway
+          environment: production
 ```
 
 ### 2.3 CIDR 策略进阶
@@ -141,13 +141,13 @@ spec:
     matchLabels:
       app: webserver
   egress:
-  # 允许访问特定 IP 范围
-  - toCidrs:
-    - "93.184.216.0/24"    # 允许 example.com IP 范围
-    - "172.217.0.0/16"    # 允许 Google IP 范围
-    toPorts:
-    - port: "443"
-      protocol: TCP
+    # 允许访问特定 IP 范围
+    - toCidrs:
+        - "93.184.216.0/24" # 允许 example.com IP 范围
+        - "172.217.0.0/16" # 允许 Google IP 范围
+      toPorts:
+        - port: "443"
+          protocol: TCP
 ```
 
 ---
@@ -169,19 +169,19 @@ spec:
     matchLabels:
       app: database
   ingress:
-  - fromEndpoints:
-    - matchLabels:
-        app: api-service
-    toPorts:
-    - port: "5432"
-      protocol: TCP
+    - fromEndpoints:
+        - matchLabels:
+            app: api-service
+      toPorts:
+        - port: "5432"
+          protocol: TCP
   egress:
-  - toEndpoints:
-    - matchLabels:
-        app: backup-server
-    toPorts:
-    - port: "873"
-      protocol: TCP
+    - toEndpoints:
+        - matchLabels:
+            app: backup-server
+      toPorts:
+        - port: "873"
+          protocol: TCP
 ```
 
 ### 3.2 多端口 L4 策略
@@ -197,14 +197,14 @@ spec:
     matchLabels:
       app: webserver
   ingress:
-  - toPorts:
-    - ports:
-      - port: "80"
-        protocol: TCP
-      - port: "443"
-        protocol: TCP
-      - port: "8080"
-        protocol: TCP
+    - toPorts:
+        - ports:
+            - port: "80"
+              protocol: TCP
+            - port: "443"
+              protocol: TCP
+            - port: "8080"
+              protocol: TCP
 ```
 
 ### 3.3 协议级别控制
@@ -220,12 +220,12 @@ spec:
     matchLabels:
       app: streaming-server
   egress:
-  - toEndpoints:
-    - matchLabels:
-        app: media-source
-    toPorts:
-    - port: "5000"
-      protocol: UDP
+    - toEndpoints:
+        - matchLabels:
+            app: media-source
+      toPorts:
+        - port: "5000"
+          protocol: UDP
 ```
 
 ### 3.4 SCTP 协议支持
@@ -241,9 +241,9 @@ spec:
     matchLabels:
       app: telecom-service
   ingress:
-  - toPorts:
-    - port: "36444"
-      protocol: SCTP
+    - toPorts:
+        - port: "36444"
+          protocol: SCTP
 ```
 
 ---
@@ -265,18 +265,18 @@ spec:
     matchLabels:
       app: api-gateway
   ingress:
-  - fromEndpoints:
-    - matchLabels:
-        app: frontend
-    toPorts:
-    - port: "8080"
-      protocol: TCP
-      rules:
-        http:
-        - method: "GET"
-          path: "/api/v1/.*"
-        - method: "POST"
-          path: "/api/v1/orders"
+    - fromEndpoints:
+        - matchLabels:
+            app: frontend
+      toPorts:
+        - port: "8080"
+          protocol: TCP
+          rules:
+            http:
+              - method: "GET"
+                path: "/api/v1/.*"
+              - method: "POST"
+                path: "/api/v1/orders"
 ```
 
 ### 4.2 L7 策略执行流程
@@ -317,26 +317,26 @@ spec:
     matchLabels:
       app: admin-api
   ingress:
-  - fromEndpoints:
-    - matchLabels:
-        app: admin-frontend
-    toPorts:
-    - port: "8080"
-      protocol: TCP
-      rules:
-        http:
-        # 允许管理 API
-        - method: "GET"
-          path: "/admin/.*"
-        - method: "POST"
-          path: "/admin/.*"
-        - method: "PUT"
-          path: "/admin/.*"
-        # 允许健康检查
-        - method: "GET"
-          path: "/health"
-        - method: "GET"
-          path: "/metrics"
+    - fromEndpoints:
+        - matchLabels:
+            app: admin-frontend
+      toPorts:
+        - port: "8080"
+          protocol: TCP
+          rules:
+            http:
+              # 允许管理 API
+              - method: "GET"
+                path: "/admin/.*"
+              - method: "POST"
+                path: "/admin/.*"
+              - method: "PUT"
+                path: "/admin/.*"
+              # 允许健康检查
+              - method: "GET"
+                path: "/health"
+              - method: "GET"
+                path: "/metrics"
 ```
 
 ---
@@ -357,31 +357,31 @@ spec:
       app: payment-service
   # 入口策略
   ingress:
-  # L3: 来自 API 网关
-  - fromEndpoints:
-    - matchLabels:
-        app: api-gateway
-    # L4: TCP 8080
-    toPorts:
-    - port: "8080"
-      protocol: TCP
-      # L7: HTTP 规则
-      rules:
-        http:
-        - method: "POST"
-          path: "/api/v1/payments"
-        - method: "GET"
-          path: "/api/v1/payments/.*"
+    # L3: 来自 API 网关
+    - fromEndpoints:
+        - matchLabels:
+            app: api-gateway
+      # L4: TCP 8080
+      toPorts:
+        - port: "8080"
+          protocol: TCP
+          # L7: HTTP 规则
+          rules:
+            http:
+              - method: "POST"
+                path: "/api/v1/payments"
+              - method: "GET"
+                path: "/api/v1/payments/.*"
   # 出口策略
   egress:
-  # L3: 来自内部服务
-  - toEndpoints:
-    - matchLabels:
-        app: database
-    # L4: PostgreSQL
-    toPorts:
-    - port: "5432"
-      protocol: TCP
+    # L3: 来自内部服务
+    - toEndpoints:
+        - matchLabels:
+            app: database
+      # L4: PostgreSQL
+      toPorts:
+        - port: "5432"
+          protocol: TCP
 ```
 
 ### 5.2 策略优先级
@@ -393,16 +393,16 @@ kind: CiliumNetworkPolicy
 metadata:
   name: high-priority
 spec:
-  priority: 1                    # 高优先级
+  priority: 1 # 高优先级
   endpointSelector:
     matchLabels:
       app: critical-service
   ingress:
-  - fromCidrs:
-    - "10.0.0.0/8"
-    toPorts:
-    - port: "443"
-      protocol: TCP
+    - fromCidrs:
+        - "10.0.0.0/8"
+      toPorts:
+        - port: "443"
+          protocol: TCP
 
 ---
 apiVersion: cilium.io/v2
@@ -410,16 +410,16 @@ kind: CiliumNetworkPolicy
 metadata:
   name: low-priority
 spec:
-  priority: 100                  # 低优先级
+  priority: 100 # 低优先级
   endpointSelector:
     matchLabels:
       app: critical-service
   ingress:
-  - fromCidrs:
-    - "0.0.0.0/0"
-    toPorts:
-    - port: "443"
-      protocol: TCP
+    - fromCidrs:
+        - "0.0.0.0/0"
+      toPorts:
+        - port: "443"
+          protocol: TCP
 ```
 
 ### 5.3 策略评估顺序
@@ -454,12 +454,12 @@ spec:
 
 Cilium 的默认行为取决于策略类型：
 
-| 场景 | 默认行为 |
-|:---|:---|
-| **无任何策略** | 允许所有流量 |
-| **应用 NetworkPolicy** | 只允许匹配的流量 |
-| **应用 CiliumNetworkPolicy** | 只允许匹配的流量 |
-| **命名空间级别默认拒绝** | 拒绝所有未匹配的流量 |
+| 场景                         | 默认行为             |
+| :--------------------------- | :------------------- |
+| **无任何策略**               | 允许所有流量         |
+| **应用 NetworkPolicy**       | 只允许匹配的流量     |
+| **应用 CiliumNetworkPolicy** | 只允许匹配的流量     |
+| **命名空间级别默认拒绝**     | 拒绝所有未匹配的流量 |
 
 ### 6.2 实现默认拒绝
 
@@ -471,9 +471,9 @@ metadata:
   name: default-deny-ingress
   namespace: production
 spec:
-  podSelector: {}           # 选择所有 Pod
+  podSelector: {} # 选择所有 Pod
   policyTypes:
-  - Ingress                # 只拒绝入口
+    - Ingress # 只拒绝入口
 
 ---
 # 命名空间级别默认拒绝出口
@@ -485,7 +485,7 @@ metadata:
 spec:
   podSelector: {}
   policyTypes:
-  - Egress
+    - Egress
 ```
 
 ### 6.3 默认拒绝 + 精确允许
@@ -501,8 +501,8 @@ metadata:
 spec:
   podSelector: {}
   policyTypes:
-  - Ingress
-  - Egress
+    - Ingress
+    - Egress
 
 ---
 # 2. 允许前端访问后端
@@ -515,13 +515,13 @@ spec:
     matchLabels:
       app: backend
   ingress:
-  - from:
-    - podSelector:
-        matchLabels:
-          app: frontend
-    ports:
-    - port: 8080
-      protocol: TCP
+    - from:
+        - podSelector:
+            matchLabels:
+              app: frontend
+      ports:
+        - port: 8080
+          protocol: TCP
 
 ---
 # 3. 允许后端访问数据库
@@ -534,21 +534,21 @@ spec:
     matchLabels:
       app: database
   ingress:
-  - from:
-    - podSelector:
-        matchLabels:
-          app: backend
-    ports:
-    - port: 5432
-      protocol: TCP
+    - from:
+        - podSelector:
+            matchLabels:
+              app: backend
+      ports:
+        - port: 5432
+          protocol: TCP
   egress:
-  - to:
-    - podSelector:
-        matchLabels:
-          app: backend
-    ports:
-    - port: 5432
-      protocol: TCP
+    - to:
+        - podSelector:
+            matchLabels:
+              app: backend
+      ports:
+        - port: 5432
+          protocol: TCP
 ```
 
 ---
@@ -644,8 +644,8 @@ metadata:
 spec:
   podSelector: {}
   policyTypes:
-  - Ingress
-  - Egress
+    - Ingress
+    - Egress
 
 ---
 # 前端服务策略
@@ -658,20 +658,20 @@ spec:
     matchLabels:
       app: frontend
   egress:
-  # L3+L4: 只能访问 API 网关
-  - toEndpoints:
-    - matchLabels:
-        app: api-gateway
-    toPorts:
-    - port: "8080"
-      protocol: TCP
-  # L3+L4: DNS
-  - toPorts:
-    - port: "53"
-      protocol: UDP
-    toEndpoints:
-    - matchLabels:
-        k8s-app: kube-dns
+    # L3+L4: 只能访问 API 网关
+    - toEndpoints:
+        - matchLabels:
+            app: api-gateway
+      toPorts:
+        - port: "8080"
+          protocol: TCP
+    # L3+L4: DNS
+    - toPorts:
+        - port: "53"
+          protocol: UDP
+      toEndpoints:
+        - matchLabels:
+            k8s-app: kube-dns
 
 ---
 # API 网关策略
@@ -684,51 +684,51 @@ spec:
     matchLabels:
       app: api-gateway
   ingress:
-  # L3+L4: 来自前端
-  - fromEndpoints:
-    - matchLabels:
-        app: frontend
-    toPorts:
-    - port: "8080"
-      protocol: TCP
-      # L7: HTTP 规则
-      rules:
-        http:
-        - method: "GET"
-          path: "/api/products.*"
-        - method: "POST"
-          path: "/api/orders"
-        - method: "GET"
-          path: "/api/users.*"
+    # L3+L4: 来自前端
+    - fromEndpoints:
+        - matchLabels:
+            app: frontend
+      toPorts:
+        - port: "8080"
+          protocol: TCP
+          # L7: HTTP 规则
+          rules:
+            http:
+              - method: "GET"
+                path: "/api/products.*"
+              - method: "POST"
+                path: "/api/orders"
+              - method: "GET"
+                path: "/api/users.*"
   egress:
-  # 访问用户服务
-  - toEndpoints:
-    - matchLabels:
-        app: user-service
-    toPorts:
-    - port: "8080"
-      protocol: TCP
-  # 访问产品服务
-  - toEndpoints:
-    - matchLabels:
-        app: product-service
-    toPorts:
-    - port: "8080"
-      protocol: TCP
-  # 访问订单服务
-  - toEndpoints:
-    - matchLabels:
-        app: order-service
-    toPorts:
-    - port: "8080"
-      protocol: TCP
-  # DNS
-  - toPorts:
-    - port: "53"
-      protocol: UDP
-    toEndpoints:
-    - matchLabels:
-        k8s-app: kube-dns
+    # 访问用户服务
+    - toEndpoints:
+        - matchLabels:
+            app: user-service
+      toPorts:
+        - port: "8080"
+          protocol: TCP
+    # 访问产品服务
+    - toEndpoints:
+        - matchLabels:
+            app: product-service
+      toPorts:
+        - port: "8080"
+          protocol: TCP
+    # 访问订单服务
+    - toEndpoints:
+        - matchLabels:
+            app: order-service
+      toPorts:
+        - port: "8080"
+          protocol: TCP
+    # DNS
+    - toPorts:
+        - port: "53"
+          protocol: UDP
+      toEndpoints:
+        - matchLabels:
+            k8s-app: kube-dns
 
 ---
 # 订单服务策略
@@ -741,36 +741,36 @@ spec:
     matchLabels:
       app: order-service
   ingress:
-  # L3+L4: 来自 API 网关
-  - fromEndpoints:
-    - matchLabels:
-        app: api-gateway
-    toPorts:
-    - port: "8080"
-      protocol: TCP
-      rules:
-        http:
-        - method: "POST"
-          path: "/api/v1/orders"
-        - method: "GET"
-          path: "/api/v1/orders/[0-9]+"
-        - method: "PUT"
-          path: "/api/v1/orders/[0-9]+/cancel"
+    # L3+L4: 来自 API 网关
+    - fromEndpoints:
+        - matchLabels:
+            app: api-gateway
+      toPorts:
+        - port: "8080"
+          protocol: TCP
+          rules:
+            http:
+              - method: "POST"
+                path: "/api/v1/orders"
+              - method: "GET"
+                path: "/api/v1/orders/[0-9]+"
+              - method: "PUT"
+                path: "/api/v1/orders/[0-9]+/cancel"
   egress:
-  # 访问数据库
-  - toEndpoints:
-    - matchLabels:
-        app: order-database
-    toPorts:
-    - port: "5432"
-      protocol: TCP
-  # DNS
-  - toPorts:
-    - port: "53"
-      protocol: UDP
-    toEndpoints:
-    - matchLabels:
-        k8s-app: kube-dns
+    # 访问数据库
+    - toEndpoints:
+        - matchLabels:
+            app: order-database
+      toPorts:
+        - port: "5432"
+          protocol: TCP
+    # DNS
+    - toPorts:
+        - port: "53"
+          protocol: UDP
+      toEndpoints:
+        - matchLabels:
+            k8s-app: kube-dns
 ```
 
 ### 8.2 零信任策略模板
@@ -786,8 +786,8 @@ metadata:
 spec:
   podSelector: {}
   policyTypes:
-  - Ingress
-  - Egress
+    - Ingress
+    - Egress
 
 ---
 # 2. DNS 允许
@@ -800,12 +800,12 @@ spec:
     matchLabels:
       app: "*"
   egress:
-  - toPorts:
-    - port: "53"
-      protocol: UDP
-    toEndpoints:
-    - matchLabels:
-        k8s-app: kube-dns
+    - toPorts:
+        - port: "53"
+          protocol: UDP
+      toEndpoints:
+        - matchLabels:
+            k8s-app: kube-dns
 
 ---
 # 3. API Server 允许（如果需要）
@@ -818,12 +818,12 @@ spec:
     matchLabels:
       app: "*"
   egress:
-  - toEndpoints:
-    - matchLabels:
-        k8s-app: kube-apiserver
-    toPorts:
-    - port: "443"
-      protocol: TCP
+    - toEndpoints:
+        - matchLabels:
+            k8s-app: kube-apiserver
+      toPorts:
+        - port: "443"
+          protocol: TCP
 ```
 
 ---
@@ -953,26 +953,26 @@ policyTypes:
 
 # 好的实践：
 ingress:
-- fromEndpoints:
-  - matchLabels:
-      app: api-gateway    # 标签选择器，匹配多个 Pod
-  toPorts:
-  - port: "8080"
-    protocol: TCP
-    rules:
-      http:
-      - method: "GET"
-        path: "/api/v1.*"   # 前缀匹配，性能好
+  - fromEndpoints:
+      - matchLabels:
+          app: api-gateway # 标签选择器，匹配多个 Pod
+    toPorts:
+      - port: "8080"
+        protocol: TCP
+        rules:
+          http:
+            - method: "GET"
+              path: "/api/v1.*" # 前缀匹配，性能好
 ```
 
 ---
 
 ## 11. 总结
 
-| 层级 | 策略能力 | 性能 | 使用场景 |
-|:---|:---|:---|:---|
-| **L3** | IP、CIDR、身份 | 极低 | 基础网络分段 |
-| **L4** | 端口、协议 | 低 | 服务级别控制 |
+| 层级   | 策略能力             | 性能 | 使用场景     |
+| :----- | :------------------- | :--- | :----------- |
+| **L3** | IP、CIDR、身份       | 极低 | 基础网络分段 |
+| **L4** | 端口、协议           | 低   | 服务级别控制 |
 | **L7** | HTTP、gRPC、DNS、SQL | 中等 | 深度安全控制 |
 
 **关键要点**：

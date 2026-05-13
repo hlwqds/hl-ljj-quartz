@@ -9,8 +9,8 @@ tags:
   - security
 ---
 
-> [!info] eBPF 2026 深度探索系列
-> 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+> [!info] eBPF 2026 深度探索系列 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+>
 > 1. [[2026-04-08-ebpf-deep-dive-ch1-registers-and-instructions|第一章：寄存器与指令集]]
 > 2. [[2026-04-08-ebpf-deep-dive-ch1-5-function-calls|第一.五章：四种函数调用与动态内存]]
 > 3. [[2026-04-08-ebpf-deep-dive-ch1-6-the-verifier|第一.六章：验证器 (Verifier) 的底层逻辑]]
@@ -62,6 +62,7 @@ tags:
 > 49. [[2026-04-09-ebpf-deep-dive-ch40-network-protocols-deep-dive|第四十章：网络协议深度解析——TCP/UDP/QUIC 的 eBPF 视角]]
 > 50. [[2026-04-09-ebpf-deep-dive-ch41-memory-safety-and-vulnerabilities|第四十一章：eBPF 内存安全与漏洞分析]]
 > 51. [[2026-04-09-ebpf-deep-dive-ch42-service-mesh-integration|第四十二章：eBPF 与 Service Mesh 深度集成]]
+
 ---
 
 # 第十五章：无感增强容器隔离性
@@ -96,14 +97,14 @@ graph TB
 
 ### 1.1 容器逃逸攻击面
 
-| 攻击路径 | 传统防御 | eBPF 防御 |
-|:---|:---|:---|
-| `/proc` 信息泄露 | `hidepid=2`（不完善） | LSM BPF 拦截 `/proc` 读取 |
-| 内核漏洞利用 (CVE) | 无 | LSM BPF 限制敏感 syscall |
-| 挂载逃逸 | `--privileged` 限制 | LSM BPF 拦截 `mount` 系统调用 |
-| 网络嗅探 | NetworkPolicy | XDP + TC 实现微隔离 |
-| 容器间通信 | NetworkPolicy | eBPF 网络策略引擎（Cilium） |
-| 敏感文件读取 | 只读挂载 | LSM BPF 路径级拦截 |
+| 攻击路径           | 传统防御              | eBPF 防御                     |
+| :----------------- | :-------------------- | :---------------------------- |
+| `/proc` 信息泄露   | `hidepid=2`（不完善） | LSM BPF 拦截 `/proc` 读取     |
+| 内核漏洞利用 (CVE) | 无                    | LSM BPF 限制敏感 syscall      |
+| 挂载逃逸           | `--privileged` 限制   | LSM BPF 拦截 `mount` 系统调用 |
+| 网络嗅探           | NetworkPolicy         | XDP + TC 实现微隔离           |
+| 容器间通信         | NetworkPolicy         | eBPF 网络策略引擎（Cilium）   |
+| 敏感文件读取       | 只读挂载              | LSM BPF 路径级拦截            |
 
 ---
 
@@ -372,39 +373,39 @@ metadata:
   name: container-file-shield
 spec:
   kprobes:
-  - call: "security_file_permission"
-    syscall: false
-    args:
-    - index: 0
-      type: "file"
-    selectors:
-    - matchNamespaces:
-      - namespace: Mnt
-        operator: NotIn
-        values:
-        - "host_mnt_ns"  # 不是宿主机的 mount namespace
-      matchArgs:
-      - index: 0
-        operator: "Prefix"
-        values:
-        - "/etc/shadow"
-        - "/etc/passwd"
-        - "/root/.ssh"
-      matchActions:
-      - action: Follow
-        argError: -13  # EACCES
+    - call: "security_file_permission"
+      syscall: false
+      args:
+        - index: 0
+          type: "file"
+      selectors:
+        - matchNamespaces:
+            - namespace: Mnt
+              operator: NotIn
+              values:
+                - "host_mnt_ns" # 不是宿主机的 mount namespace
+          matchArgs:
+            - index: 0
+              operator: "Prefix"
+              values:
+                - "/etc/shadow"
+                - "/etc/passwd"
+                - "/root/.ssh"
+          matchActions:
+            - action: Follow
+              argError: -13 # EACCES
 ```
 
 ### 4.3 Tetragon vs 传统方案对比
 
-| 维度 | Seccomp | AppArmor | Tetragon (eBPF) |
-|:---|:---|:---|:---|
-| **策略粒度** | Syscall 号 | 路径+权限 | Syscall 参数深度检查 |
-| **动态更新** | 需重启容器 | 需重新加载 | 热更新（秒级） |
-| **审计能力** | 仅计数 | 日志 | 完整事件上下文 |
-| **跨容器追踪** | 无 | 无 | 支持（cgroup ID） |
-| **性能开销** | ~1% | ~2% | ~3-5% |
-| **Kubernetes 集成** | Pod spec | Pod annotation | CRD 原生 |
+| 维度                | Seccomp    | AppArmor       | Tetragon (eBPF)      |
+| :------------------ | :--------- | :------------- | :------------------- |
+| **策略粒度**        | Syscall 号 | 路径+权限      | Syscall 参数深度检查 |
+| **动态更新**        | 需重启容器 | 需重新加载     | 热更新（秒级）       |
+| **审计能力**        | 仅计数     | 日志           | 完整事件上下文       |
+| **跨容器追踪**      | 无         | 无             | 支持（cgroup ID）    |
+| **性能开销**        | ~1%        | ~2%            | ~3-5%                |
+| **Kubernetes 集成** | Pod spec   | Pod annotation | CRD 原生             |
 
 ---
 
@@ -450,13 +451,13 @@ int BPF_PROG(detect_mount_escape, const char *dev_name,
 
 ### 5.2 常见逃逸手法与检测
 
-| 逃逸手法 | 原理 | eBPF 检测方式 |
-|:---|:---|:---|
-| `--privileged` + `mount` | 挂载宿主机文件系统 | `lsm/sb_mount` 检测敏感路径挂载 |
-| `nsenter` | 进入宿主机 namespace | `lsm/ns_setns` 检测 namespace 切换 |
-| `CVE-2022-0185` | 内核 unshare 漏洞 | 监控 `unshare` 系统调用的参数 |
-| Docker Socket 挂载 | 通过 API 创建特权容器 | `lsm/file_open` 检测 `/var/run/docker.sock` |
-| `/proc` 信息泄露 | 读取宿主机进程信息 | LSM BPF 过滤 `/proc` 读取 |
+| 逃逸手法                 | 原理                  | eBPF 检测方式                               |
+| :----------------------- | :-------------------- | :------------------------------------------ |
+| `--privileged` + `mount` | 挂载宿主机文件系统    | `lsm/sb_mount` 检测敏感路径挂载             |
+| `nsenter`                | 进入宿主机 namespace  | `lsm/ns_setns` 检测 namespace 切换          |
+| `CVE-2022-0185`          | 内核 unshare 漏洞     | 监控 `unshare` 系统调用的参数               |
+| Docker Socket 挂载       | 通过 API 创建特权容器 | `lsm/file_open` 检测 `/var/run/docker.sock` |
+| `/proc` 信息泄露         | 读取宿主机进程信息    | LSM BPF 过滤 `/proc` 读取                   |
 
 ---
 
@@ -464,13 +465,13 @@ int BPF_PROG(detect_mount_escape, const char *dev_name,
 
 ### 6.1 开销分析
 
-| 安全策略组合 | CPU 开销 | 内存开销 | 延迟影响 |
-|:---|:---|:---|:---|
-| 无策略（基准） | 0% | 0 | 0ns |
-| 文件访问控制 | ~1.5% | ~10MB | ~200ns/op |
-| 网络微隔离 | ~2% | ~15MB | ~150ns/conn |
-| 进程执行控制 | ~1% | ~5MB | ~100ns/exec |
-| 全量策略 | ~4-5% | ~30MB | ~500ns/op |
+| 安全策略组合   | CPU 开销 | 内存开销 | 延迟影响    |
+| :------------- | :------- | :------- | :---------- |
+| 无策略（基准） | 0%       | 0        | 0ns         |
+| 文件访问控制   | ~1.5%    | ~10MB    | ~200ns/op   |
+| 网络微隔离     | ~2%      | ~15MB    | ~150ns/conn |
+| 进程执行控制   | ~1%      | ~5MB     | ~100ns/exec |
+| 全量策略       | ~4-5%    | ~30MB    | ~500ns/op   |
 
 ### 6.2 优化策略
 

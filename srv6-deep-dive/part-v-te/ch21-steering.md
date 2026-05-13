@@ -881,4 +881,3 @@ Traffic steering in SRv6 combines multiple mechanisms to place traffic on optima
 Understanding steering and protection mechanisms is essential for designing resilient SRv6 networks that meet service-level objectives during both normal operation and failure scenarios.
 
 ---
-

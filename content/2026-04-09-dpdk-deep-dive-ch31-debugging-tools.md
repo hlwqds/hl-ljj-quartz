@@ -5,10 +5,8 @@ tags: [dpdk, series, debugging, devbind, ethtool, pci, uio, vfio, network-driver
 description: "深入理解 DPDK 调试工具——dpdk-devbind 设备绑定、ethool 查看配置、PCI 设备管理、UIO/VFIO 驱动绑定、网络设备状态查看"
 ---
 
-> [!info] DPDK 深度探索系列
-> 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
-> 1-30. 前三十章已完成
-> 31. **第三十一章：调试工具——dpdk-devbind、ethool**
+> [!info] DPDK 深度探索系列 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
+> 1-30. 前三十章已完成 31. **第三十一章：调试工具——dpdk-devbind、ethool**
 
 ---
 
@@ -991,6 +989,7 @@ perf 显示 RX-dropped 增加
 ---
 
 > [!tip] 参考文献
+>
 > - DPDK documentation, "Getting Started Guide", https://doc.dpdk.org/guides/linux_gsg/
 > - DPDK, "Device Binding Tool", https://doc.dpdk.org/guides/tools/devbind.html
 > - Linux ethtool man page, `man ethtool`

@@ -1,12 +1,12 @@
 ---
 title: "Kernel Protocol Stack 深度探索 (八)：VLAN 与 802.1Q"
 date: 2026-04-13
-tags: [linux, kernel, networking, series, vlan, 802.1q, qinq, vlan_group,净室]
+tags: [linux, kernel, networking, series, vlan, 802.1q, qinq, vlan_group, 净室]
 description: "深入解析 VLAN 技术实现——802.1Q VLAN Tagging、 VLAN Group 内部结构、QinQ 双层 VLAN 标签、VLAN 过滤与 MAC 地址学习、以及 VLAN 与网桥的协同工作"
 ---
 
-> [!info] Kernel Protocol Stack 深度探索系列
-> 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Kernel Protocol Stack 深度探索系列 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-kernel-protocol-stack-deep-dive-ch1-skbuff|第一章：sk_buff 与数据包生命周期]]
 > 2. [[2026-04-13-kernel-protocol-stack-deep-dive-ch2-netdevice|第二章：Netdevice 与网卡抽象]]
 > 3. [[2026-04-13-kernel-protocol-stack-deep-dive-ch3-ring-buffer|第三章：Ring Buffer 与 DMA]]
@@ -34,25 +34,25 @@ graph LR
     subgraph "应用层"
         APP["用户态"]
     end
-    
+
     subgraph "L4"
         L4["TCP/UDP"]
     end
-    
+
     subgraph "L3"
         L3["IP"]
     end
-    
+
     subgraph "VLAN层"
         VLAN["802.1Q Tag<br/>TCI + Protocol"]
     end
-    
+
     subgraph "L2"
         ETH["Ethernet"]
     end
-    
+
     APP --> L4 --> L3 --> VLAN --> ETH
-    
+
     style VLAN fill:#f59f00,stroke:#333
 ```
 
@@ -98,24 +98,24 @@ struct {
 
 ### 2.3 TCI 各字段详解
 
-| 字段 | 位宽 | 说明 | 用途 |
-|------|------|------|------|
-| VID | 12 bits | VLAN Identifier | 标识 VLAN (0-4095) |
-| DEI | 1 bit | Drop Eligibility Indicator | 帧是否可被丢弃（QoS） |
-| PCP | 3 bits | Priority Code Point | 802.1p QoS 优先级 (0-7) |
+| 字段 | 位宽    | 说明                       | 用途                    |
+| ---- | ------- | -------------------------- | ----------------------- |
+| VID  | 12 bits | VLAN Identifier            | 标识 VLAN (0-4095)      |
+| DEI  | 1 bit   | Drop Eligibility Indicator | 帧是否可被丢弃（QoS）   |
+| PCP  | 3 bits  | Priority Code Point        | 802.1p QoS 优先级 (0-7) |
 
 **PCP 优先级映射：**
 
-| PCP | 优先级 | 典型用途 |
-|-----|--------|----------|
-| 0 | Best Effort | 普通数据 |
-| 1 | Background | 后台任务 |
-| 2 | Reserved | - |
-| 3 | Excellent Effort | 关键业务 |
-| 4 | Controlled Load | 实时业务 |
-| 5 | Video | 视频 (<100ms) |
-| 6 | Voice | 语音 (<10ms) |
-| 7 | Network Control | 控制平面 |
+| PCP | 优先级           | 典型用途      |
+| --- | ---------------- | ------------- |
+| 0   | Best Effort      | 普通数据      |
+| 1   | Background       | 后台任务      |
+| 2   | Reserved         | -             |
+| 3   | Excellent Effort | 关键业务      |
+| 4   | Controlled Load  | 实时业务      |
+| 5   | Video            | 视频 (<100ms) |
+| 6   | Voice            | 语音 (<10ms)  |
+| 7   | Network Control  | 控制平面      |
 
 ---
 
@@ -130,23 +130,23 @@ struct {
 struct vlan_dev_priv {
     // 关联的物理设备
     struct net_device   *real_dev;
-    
+
     // VLAN 标识
     u16                 vlan_id;         // VLAN ID (1-4094)
     u16                 vlan_proto;      // ETH_P_8021Q 或 ETH_P_8021AD
-    
+
     // VLAN 特性标志
     u32                 flags;
-    
+
     // VLAN 协议处理
     struct packet_type  vlan_pp;
-    
+
     // MAC 地址（默认继承物理设备 MAC）
     unsigned char       addr[ETH_ALEN];
-    
+
     // 统计信息
     struct vlan_stats   __percpu *vlan_stats;
-    
+
     // 广播/多播地址
     struct in_device   *indev;
 };
@@ -163,12 +163,12 @@ struct net_bridge_vlan {
     struct net_bridge_port  *port;       // NULL 表示网桥自身
     u16                     vid;         // VLAN ID (1-4094)
     u16                     flags;      // BRIDGE_VLAN_* flags
-    
+
     // 状态
     atomic_t                refcount;   // 引用计数
     unsigned long           unused_after;
     struct timer_list       timer;
-    
+
     struct rcu_head         rcu;
 };
 
@@ -197,7 +197,7 @@ struct sk_buff {
     // VLAN 相关
     __u16           vlan_tci;        // VLAN Tag Control Information
     __be16          vlan_proto;      // VLAN 协议 (0x8100 or 0x88a8)
-    
+
     // 实际存储位置
     #define VLAN_TAG_PRESENT    0x1000
     #define VLAN_TAG_CONTROL(tci) ((tci) & 0x0FFF)
@@ -218,23 +218,23 @@ sequenceDiagram
     participant DRV as 网卡驱动
     participant STACK as VLAN Handler
     participant VLAN_DEV as VLAN 设备 (如 eth0.100)
-    
+
     NIC->>DRV: DMA 完成，触发硬中断
     DRV->>DRV: napi_schedule()
     DRV->>STACK: netif_receive_skb(skb)
-    
+
     Note over STACK: eth_type_trans()<br/>检测 VLAN Tag (0x8100)
-    
+
     STACK->>STACK: 检查 skb->vlan_tci
     STACK->>STACK: 调用 __vlan_hwaccel_put_tag()
-    
+
     alt VLAN Filter 启用（网桥）
         STACK->>STACK: br_vlan_allowed() 检查 VID
         STACK->>VLAN_DEV: 转发到对应 VLAN 设备
     else 普通 VLAN 设备
         STACK->>VLAN_DEV: 交给 vlan_dev 处理
     end
-    
+
     VLAN_DEV->>VLAN_DEV: 剥除 VLAN Tag
     VLAN_DEV->>STACK: 送入上层协议栈
 ```
@@ -247,20 +247,20 @@ static netdev_tx_t vlan_dev_start_xmit(struct sk_buff *skb,
                                         struct net_device *dev)
 {
     struct vlan_dev_priv *vlan = vlan_dev_priv(dev);
-    
+
     // 1. 确认 VLAN Tag 存在
     BUG_ON(!skb_vlan_tag_present(skb));
-    
+
     // 2. 更新统计
     dev->stats.tx_packets++;
     dev->stats.tx_bytes += skb->len;
-    
+
     // 3. 设置协议为内层协议
     skb->protocol = vlan->vlan_proto;  // 恢复原始 EtherType
-    
+
     // 4. 清除 VLAN tag（硬件已处理，这里只是元数据）
     skb->vlan_tci = 0;
-    
+
     // 5. 发送到物理设备
     return dev_queue_xmit(skb);
 }
@@ -275,7 +275,7 @@ static netdev_tx_t vlan_dev_start_xmit(struct sk_buff *skb,
 static void i40e_vlan_stripping(struct i40e_ring *rx_ring, bool on)
 {
     u32 reg;
-    
+
     if (on) {
         // 启用 VLAN stripping（硬件自动剥除 Tag）
         reg = rd32(&rx_ring->q_vector->hw,
@@ -332,11 +332,11 @@ void br_forward(const struct net_bridge_port *to,
         kfree_skb(skb);
         return;
     }
-    
+
     // 2. 检查端口状态
     if (to->state != BR_STATE_FORWARDING)
         return;
-    
+
     // 3. 转发
     if (local_rcv)
         br_deliver(to, skb);    // 送本地
@@ -356,12 +356,12 @@ struct net_bridge_fdb_entry {
     unsigned char           addr[ETH_ALEN];  // MAC 地址
     struct net_bridge_port  *dst;            // 出端口
     u16                     vlan_id;         // 关联的 VLAN
-    
+
     unsigned long           updated;
     unsigned long           used;
-    
+
     atomic_t                usage;
-    
+
     unsigned char           is_local:1;
     unsigned char           is_static:1;
     unsigned char           frozen:1;
@@ -409,7 +409,7 @@ struct vlan_dev_priv {
     // ...
     u16             vlan_id;               // C-VID (Customer VLAN ID)
     u16             vlan_proto;            // ETH_P_8021Q 或 ETH_P_8021AD
-    
+
     // QinQ 嵌套
     u16             inner_vlan_id;         // 内层 VLAN
     bool            vlan_proto_simple;      // 简化的 QinQ 模式
@@ -460,11 +460,11 @@ bridge vlan add dev eth0.20 vid 20
 
 常见的 VLAN 攻击方式及防护：
 
-| 攻击方式 | 描述 | 内核防护 |
-|---------|------|---------|
+| 攻击方式        | 描述               | 内核防护                 |
+| --------------- | ------------------ | ------------------------ |
 | Switch Spoofing | 模拟交换机发送 DTP | 禁用 DTP，手动设置 trunk |
-| Double Tagging | 双层标签外层剥离 | 交换机端口启用 VLAN 过滤 |
-| ARP Spoofing | VLAN 内 ARP 欺骗 | 启用 802.1X 认证 |
+| Double Tagging  | 双层标签外层剥离   | 交换机端口启用 VLAN 过滤 |
+| ARP Spoofing    | VLAN 内 ARP 欺骗   | 启用 802.1X 认证         |
 
 ### 7.3 Private VLAN（PVLAN）
 
@@ -547,7 +547,7 @@ Id=100
 static int mydev_set_vlan_filter(struct net_device *dev, u16 vid, bool enable)
 {
     struct mydev_priv *priv = netdev_priv(dev);
-    
+
     // 硬件设置 VLAN 过滤表
     return mydev_hw_vlan_filter(priv, vid, enable);
 }
@@ -569,17 +569,17 @@ static gro_result_t mydev_gro_receive(struct napi_struct *napi,
                                         struct sk_buff *skb)
 {
     struct vlan_hdr *vhdr;
-    
+
     if (skb->protocol == htons(ETH_P_8021Q)) {
         vhdr = (struct vlan_hdr *)skb->data;
         skb->vlan_tci = ntohs(vhdr->h_vlan_TCI);
         skb->vlan_proto = htons(ETH_P_8021Q);
-        
+
         // 移动 skb->data 到内层
         __skb_pull(skb, VLAN_HLEN);
         skb->protocol = eth_type_trans(skb, dev);
     }
-    
+
     // 调用标准 GRO
     return napi_gro_receive(napi, skb);
 }
@@ -594,34 +594,34 @@ graph TD
     subgraph "用户态"
         APP["应用"]
     end
-    
+
     subgraph "Socket 层"
         SKT["sock"]
     end
-    
+
     subgraph "L4"
         L4["TCP/UDP"]
     end
-    
+
     subgraph "L3"
         L3["IP"]
     end
-    
+
     subgraph "VLAN 层"
         VLAN_TAG["VLAN Tag<br/>(TCI + Protocol)"]
     end
-    
+
     subgraph "L2"
         ETH["Ethernet"]
     end
-    
+
     subgraph "硬件"
         NIC["网卡"]
     end
-    
+
     APP --> SKT --> L4 --> L3
     L3 --> VLAN_TAG --> ETH --> NIC
-    
+
     style VLAN_TAG fill:#f59f00,stroke:#333
 ```
 

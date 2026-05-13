@@ -1,17 +1,23 @@
 ---
 title: "Kernel Protocol Stack 深度探索 (四十一)：RSS 与 RPS"
 date: 2026-04-13
-tags: [linux, kernel, networking, series, rss, rps, receive-side-scaling, receive-packet-steering, smp, irq-affinity]
+tags:
+  [
+    linux,
+    kernel,
+    networking,
+    series,
+    rss,
+    rps,
+    receive-side-scaling,
+    receive-packet-steering,
+    smp,
+    irq-affinity,
+  ]
 description: "深入解析 RSS（硬件 Receive Side Scaling）和 RPS（软件 Receive Packet Steering）——两者的工作原理、哈希计算、CPU 映射、irq affinity 调优，以及与 RFS（Receive Flow Steering）的协同"
 ---
 
-> [!info] Kernel Protocol Stack 深度探索系列
-> 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
-> 40. [[2026-04-13-kernel-protocol-stack-deep-dive-ch40-gro-gso|第四十章：GRO 与 GSO]]
-> 41. **第四十一章：RSS 与 RPS**
-> 42. [[2026-04-13-kernel-protocol-stack-deep-dive-ch42-tso|第四十二章：TSO 与 UFO]]
-> 43. [[2026-04-13-kernel-protocol-stack-deep-dive-ch43-bpf-hook|第四十三章：Linux BPF 网络钩子]]
-> 44. [[2026-04-13-kernel-protocol-stack-deep-dive-ch44-offload|第四十四章：硬件 offload]]
+> [!info] Kernel Protocol Stack 深度探索系列 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]] 40. [[2026-04-13-kernel-protocol-stack-deep-dive-ch40-gro-gso|第四十章：GRO 与 GSO]] 41. **第四十一章：RSS 与 RPS** 42. [[2026-04-13-kernel-protocol-stack-deep-dive-ch42-tso|第四十二章：TSO 与 UFO]] 43. [[2026-04-13-kernel-protocol-stack-deep-dive-ch43-bpf-hook|第四十三章：Linux BPF 网络钩子]] 44. [[2026-04-13-kernel-protocol-stack-deep-dive-ch44-offload|第四十四章：硬件 offload]]
 
 ---
 
@@ -379,21 +385,21 @@ cat /sys/class/net/eth0/queues/rx-0/rps_stats
 
 ### 6.3 常见问题
 
-| 问题 | 症状 | 解决方案 |
-|------|------|---------|
-| IRQ 未正确绑定 | 单 CPU softirq 100% | 设置 irq affinity |
-| 队列数 < CPU 数 | 部分 CPU 空闲 | 启用 RPS |
-| RPS 过度使用 | 跨 CPU cache bouncing | 限制 rps_cpus 掩码 |
-| NUMA 不亲和 | 访问远程内存延迟高 | 使用 `numactl` 绑定进程到 local CPU |
+| 问题            | 症状                  | 解决方案                            |
+| --------------- | --------------------- | ----------------------------------- |
+| IRQ 未正确绑定  | 单 CPU softirq 100%   | 设置 irq affinity                   |
+| 队列数 < CPU 数 | 部分 CPU 空闲         | 启用 RPS                            |
+| RPS 过度使用    | 跨 CPU cache bouncing | 限制 rps_cpus 掩码                  |
+| NUMA 不亲和     | 访问远程内存延迟高    | 使用 `numactl` 绑定进程到 local CPU |
 
 ---
 
 ## 7. 总结
 
-| 机制 | 层次 | 实现 | 适用场景 |
-|------|------|------|---------|
-| **RSS** | 硬件 | 网卡计算哈希，分配到 RX 队列 | 现代多队列网卡 |
-| **RPS** | 软件 | 内核在 netif_receive_skb 时重定向 | 单队列网卡、队列数不足 |
-| **RFS** | 软件 | 记录 flow→CPU 映射，改善 cache locality | 需要低延迟的应用 |
+| 机制    | 层次 | 实现                                    | 适用场景               |
+| ------- | ---- | --------------------------------------- | ---------------------- |
+| **RSS** | 硬件 | 网卡计算哈希，分配到 RX 队列            | 现代多队列网卡         |
+| **RPS** | 软件 | 内核在 netif_receive_skb 时重定向       | 单队列网卡、队列数不足 |
+| **RFS** | 软件 | 记录 flow→CPU 映射，改善 cache locality | 需要低延迟的应用       |
 
 RSS 和 RPS 的核心思想相同——**通过 flow hash 实现负载均衡**——只是实现层次不同。实际生产中，优先使用 RSS（硬件），RPS 作为补充，RFS 用于需要极致延迟优化的场景。

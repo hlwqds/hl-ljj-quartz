@@ -9,8 +9,8 @@ tags:
   - assembly
 ---
 
-> [!info] eBPF 2026 深度探索系列
-> 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+> [!info] eBPF 2026 深度探索系列 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+>
 > 1. [[2026-04-08-ebpf-deep-dive-ch1-registers-and-instructions|第一章：寄存器与指令集]]
 > 2. **第一.五章：四种函数调用与动态内存**
 > 3. [[2026-04-08-ebpf-deep-dive-ch1-6-the-verifier|第一.六章：验证器 (Verifier) 的底层逻辑]]
@@ -126,15 +126,15 @@ sequenceDiagram
 
 ### 2.2 常用 Helper 分类
 
-| 类别 | 代表 Helper | 说明 |
-| :--- | :--- | :--- |
-| **Map 操作** | `bpf_map_lookup_elem`, `bpf_map_update_elem`, `bpf_map_delete_elem` | 所有 Map 的 CRUD |
-| **数据读取** | `bpf_probe_read_user`, `bpf_probe_read_kernel` | 安全读取用户态/内核态内存 |
-| **网络操作** | `bpf_redirect`, `bpf_skb_vlan_push`, `bpf_csum_diff` | 网络包修改与重定向 |
-| **时间获取** | `bpf_ktime_get_ns`, `bpf_jiffies64` | 获取纳秒级时间戳 |
-| **打印调试** | `bpf_trace_printk` | 输出到 trace_pipe |
-| **Per-CPU 操作** | `bpf_get_smp_processor_id`, `bpf_this_cpu_ptr` | 获取当前 CPU 信息 |
-| **Spin Lock** | `bpf_spin_lock`, `bpf_spin_unlock` | Map 内的自旋锁 |
+| 类别             | 代表 Helper                                                         | 说明                      |
+| :--------------- | :------------------------------------------------------------------ | :------------------------ |
+| **Map 操作**     | `bpf_map_lookup_elem`, `bpf_map_update_elem`, `bpf_map_delete_elem` | 所有 Map 的 CRUD          |
+| **数据读取**     | `bpf_probe_read_user`, `bpf_probe_read_kernel`                      | 安全读取用户态/内核态内存 |
+| **网络操作**     | `bpf_redirect`, `bpf_skb_vlan_push`, `bpf_csum_diff`                | 网络包修改与重定向        |
+| **时间获取**     | `bpf_ktime_get_ns`, `bpf_jiffies64`                                 | 获取纳秒级时间戳          |
+| **打印调试**     | `bpf_trace_printk`                                                  | 输出到 trace_pipe         |
+| **Per-CPU 操作** | `bpf_get_smp_processor_id`, `bpf_this_cpu_ptr`                      | 获取当前 CPU 信息         |
+| **Spin Lock**    | `bpf_spin_lock`, `bpf_spin_unlock`                                  | Map 内的自旋锁            |
 
 ### 2.3 代码实战：Helper 调用详解
 
@@ -244,13 +244,13 @@ int parse_packet(struct xdp_md *ctx) {
 
 ### 3.2 inline vs 非inline：关键区别
 
-| 特性 | `__always_inline` | `static` (非 inline) |
-| :--- | :--- | :--- |
+| 特性         | `__always_inline`                  | `static` (非 inline)       |
+| :----------- | :--------------------------------- | :------------------------- |
 | **编译方式** | 编译器将函数体**直接展开**到调用处 | 生成独立的 `BPF_CALL` 指令 |
-| **指令数** | 可能增加总指令数（重复展开） | 更少的总指令数（共享代码） |
-| **Verifier** | 无跨函数分析，验证更快 | 需要跨过程分析，更慢 |
-| **栈使用** | 每个调用处独立计算栈 | **共享 512 字节栈空间** |
-| **适用场景** | 简短函数、性能关键路径 | 大型函数、代码复用 |
+| **指令数**   | 可能增加总指令数（重复展开）       | 更少的总指令数（共享代码） |
+| **Verifier** | 无跨函数分析，验证更快             | 需要跨过程分析，更慢       |
+| **栈使用**   | 每个调用处独立计算栈               | **共享 512 字节栈空间**    |
+| **适用场景** | 简短函数、性能关键路径             | 大型函数、代码复用         |
 
 ### 3.3 栈共享陷阱
 
@@ -276,14 +276,14 @@ static int sub_func() {
 
 在 kernel 6.19 中，`MAX_BPF_STACK` 仍然是 512 字节，但 verifier 对栈的检查逻辑发生了重要变化（verifier.c:6530）：
 
-| 程序类型 | 栈检查模式 | 说明 |
-|---------|-----------|------|
-| `kprobe` | `PRIV_STACK_ADAPTIVE` | 每个 subprog **独立**分配栈 |
-| `tracepoint` | `PRIV_STACK_ADAPTIVE` | 同上 |
-| `perf_event` | `PRIV_STACK_ADAPTIVE` | 同上 |
-| `raw_tracepoint` | `PRIV_STACK_ADAPTIVE` | 同上 |
-| `tracing` / `lsm` | 条件启用 | 需要递归或手动请求 |
-| `socket_filter` / `cgroup_skb` / `sched_cls` 等 | `NO_PRIV_STACK` | **累加**所有 subprog 栈 |
+| 程序类型                                        | 栈检查模式            | 说明                        |
+| ----------------------------------------------- | --------------------- | --------------------------- |
+| `kprobe`                                        | `PRIV_STACK_ADAPTIVE` | 每个 subprog **独立**分配栈 |
+| `tracepoint`                                    | `PRIV_STACK_ADAPTIVE` | 同上                        |
+| `perf_event`                                    | `PRIV_STACK_ADAPTIVE` | 同上                        |
+| `raw_tracepoint`                                | `PRIV_STACK_ADAPTIVE` | 同上                        |
+| `tracing` / `lsm`                               | 条件启用              | 需要递归或手动请求          |
+| `socket_filter` / `cgroup_skb` / `sched_cls` 等 | `NO_PRIV_STACK`       | **累加**所有 subprog 栈     |
 
 `PRIV_STACK_ADAPTIVE` 模式下，每个 subprog 获得独立的 private stack，不再共享 512B。因此上面的 300+250=550B 场景在 kprobe 下**完全合法**（max(300, 250) = 300 < 512）。
 
@@ -431,14 +431,14 @@ char _license[] SEC("license") = "GPL";
 
 ### 4.4 Tail Call vs BPF-to-BPF Call 对比
 
-| 特性 | BPF-to-BPF Call | Tail Call |
-| :--- | :--- | :--- |
-| **返回行为** | **会返回**到调用者 | **不返回**，执行权完全转移 |
-| **栈** | 共享 512 字节（累加） | **独立栈**（清空重建） |
-| **调用深度** | 无硬限制（受指令数限制） | 最多 33 层 |
-| **跨程序** | 不支持（同一 .o 文件内） | 支持（不同 eBPF 程序间） |
-| **数据传递** | 通过函数参数和返回值 | 只能通过 Map 传递 |
-| **性能** | 函数调用开销（极小） | 稍高（需要查 Map + 重置栈） |
+| 特性         | BPF-to-BPF Call          | Tail Call                   |
+| :----------- | :----------------------- | :-------------------------- |
+| **返回行为** | **会返回**到调用者       | **不返回**，执行权完全转移  |
+| **栈**       | 共享 512 字节（累加）    | **独立栈**（清空重建）      |
+| **调用深度** | 无硬限制（受指令数限制） | 最多 33 层                  |
+| **跨程序**   | 不支持（同一 .o 文件内） | 支持（不同 eBPF 程序间）    |
+| **数据传递** | 通过函数参数和返回值     | 只能通过 Map 传递           |
+| **性能**     | 函数调用开销（极小）     | 稍高（需要查 Map + 重置栈） |
 
 ---
 
@@ -471,27 +471,27 @@ BTF_SET8_END(bpf_kfunc_set_xdp)
 
 ### 5.3 kfuncs vs Helper Functions
 
-| 特性 | Helper Functions | kfuncs |
-| :--- | :--- | :--- |
-| **定义位置** | 内核核心 (`kernel/bpf/`) | 任意内核子系统 |
-| **注册方式** | 硬编码数组 | BTF SET 声明 |
-| **新增流程** | 修改核心代码 + 内核补审查 | 子系统自行注册 |
-| **类型安全** | 运行时检查 | **编译时 BTF 类型检查** |
-| **参数标记** | 无 | `KF_TRUSTED_ARGS`, `KF_ACQUIRE` 等语义标记 |
-| **版本兼容** | 需要用户态库适配 | **弱链接 (Weak Linking)** 自动处理 |
+| 特性         | Helper Functions          | kfuncs                                     |
+| :----------- | :------------------------ | :----------------------------------------- |
+| **定义位置** | 内核核心 (`kernel/bpf/`)  | 任意内核子系统                             |
+| **注册方式** | 硬编码数组                | BTF SET 声明                               |
+| **新增流程** | 修改核心代码 + 内核补审查 | 子系统自行注册                             |
+| **类型安全** | 运行时检查                | **编译时 BTF 类型检查**                    |
+| **参数标记** | 无                        | `KF_TRUSTED_ARGS`, `KF_ACQUIRE` 等语义标记 |
+| **版本兼容** | 需要用户态库适配          | **弱链接 (Weak Linking)** 自动处理         |
 
 ### 5.4 kfuncs 标志位
 
 kfuncs 通过 BTF 标志位声明其行为约束，Verifier 利用这些信息进行更精确的安全检查：
 
-| 标志 | 含义 | 示例 |
-| :--- | :--- | :--- |
-| `KF_ACQUIRE` | 返回一个**新获取的所有权指针** | `bpf_obj_new_impl` |
-| `KF_RELEASE` | **释放**一个所有权指针 | `bpf_obj_drop_impl` |
-| `KF_TRUSTED_ARGS` | 参数指针必须是 Verifier 信任的 | 大多数 kfuncs |
-| `KF_RET_NULL` | 可能返回 NULL | `bpf_sk_lookup_tcp` |
-| `KF_MODIFY_RETURN` | 可以修改调用者的返回值 | LSM 钩子 |
-| `KF_DESTRUCTIVE` | 调用会销毁参数对象 | `bpf_kfree_skb` |
+| 标志               | 含义                           | 示例                |
+| :----------------- | :----------------------------- | :------------------ |
+| `KF_ACQUIRE`       | 返回一个**新获取的所有权指针** | `bpf_obj_new_impl`  |
+| `KF_RELEASE`       | **释放**一个所有权指针         | `bpf_obj_drop_impl` |
+| `KF_TRUSTED_ARGS`  | 参数指针必须是 Verifier 信任的 | 大多数 kfuncs       |
+| `KF_RET_NULL`      | 可能返回 NULL                  | `bpf_sk_lookup_tcp` |
+| `KF_MODIFY_RETURN` | 可以修改调用者的返回值         | LSM 钩子            |
+| `KF_DESTRUCTIVE`   | 调用会销毁参数对象             | `bpf_kfree_skb`     |
 
 ### 5.5 弱链接 (Weak Linking)
 
@@ -551,12 +551,12 @@ quadrantChart
 
 ### 6.3 寄存器状态迁移总结
 
-| 调用类型 | R0 | R1-R5 | R6-R9 | R10 |
-| :--- | :--- | :--- | :--- | :--- |
-| **Helper Call** | 返回值（可能被覆盖） | **caller-saved**（失效） | **callee-saved**（不变） | 不变 |
-| **BPF-to-BPF Call** | 返回值 | caller-saved | callee-saved | 不变 |
-| **Tail Call** | 重置 | 传入新 ctx | 重置 | **重置**（新栈帧） |
-| **kfunc Call** | 返回值（带 BTF 类型） | caller-saved | callee-saved | 不变 |
+| 调用类型            | R0                    | R1-R5                    | R6-R9                    | R10                |
+| :------------------ | :-------------------- | :----------------------- | :----------------------- | :----------------- |
+| **Helper Call**     | 返回值（可能被覆盖）  | **caller-saved**（失效） | **callee-saved**（不变） | 不变               |
+| **BPF-to-BPF Call** | 返回值                | caller-saved             | callee-saved             | 不变               |
+| **Tail Call**       | 重置                  | 传入新 ctx               | 重置                     | **重置**（新栈帧） |
+| **kfunc Call**      | 返回值（带 BTF 类型） | caller-saved             | callee-saved             | 不变               |
 
 ---
 
@@ -621,20 +621,21 @@ stateDiagram-v2
 ```
 
 所有权规则：
+
 1. **每次 `bpf_obj_new` 必须有对应的 `bpf_obj_drop` 或转移操作**——否则 Verifier 拒绝
 2. **转移所有权后不能再使用该指针**——Verifier 追踪所有权状态
 3. **Per-CPU 对象的所有权在 CPU 间不可转移**——防止 ALOC (Acquire-Load, Ownership, Check) 违规
 
 ### 7.3 新旧方案对比
 
-| 特性 | 2022 方案 (Per-CPU Map) | 2026 方案 (bpf_obj_new) |
-| :--- | :--- | :--- |
-| **内存分配** | 预分配固定空间 | 按需动态分配 |
-| **灵活性** | 低（必须查 Map） | 极高（类似 C malloc） |
-| **安全性** | 逻辑繁琐，容易泄漏 | **Verifier 强制追踪所有权** |
-| **性能** | 存在查 Map 开销 | 原生堆指针访问 |
-| **数据结构** | 只能是简单类型 | 支持链表、红黑树、图 |
-| **适用内核** | 所有支持 eBPF 的内核 | 6.x+ (需 CONFIG_BPF_SYSCALL) |
+| 特性         | 2022 方案 (Per-CPU Map) | 2026 方案 (bpf_obj_new)      |
+| :----------- | :---------------------- | :--------------------------- |
+| **内存分配** | 预分配固定空间          | 按需动态分配                 |
+| **灵活性**   | 低（必须查 Map）        | 极高（类似 C malloc）        |
+| **安全性**   | 逻辑繁琐，容易泄漏      | **Verifier 强制追踪所有权**  |
+| **性能**     | 存在查 Map 开销         | 原生堆指针访问               |
+| **数据结构** | 只能是简单类型          | 支持链表、红黑树、图         |
+| **适用内核** | 所有支持 eBPF 的内核    | 6.x+ (需 CONFIG_BPF_SYSCALL) |
 
 ---
 
@@ -659,6 +660,7 @@ for (int i = 0; i < 100; i++) {
 ### 8.2 Tail Call 的隐藏开销
 
 每次 `bpf_tail_call` 执行时：
+
 1. 查询 Prog Array Map（哈希查找）
 2. 重置整个栈帧（清零 512 字节）
 3. 跳转到新程序的入口
@@ -690,13 +692,14 @@ Tail Call 的"不返回"设计是有意为之的——它避免了复杂的跨�
 
 不是。kfuncs 依赖于内核 BTF 中导出的函数签名。在旧内核上，你声明的 kfunc 可能不存在。通过 **弱链接** (`__weak`)，程序仍然可以加载，但运行时调用会被跳过。建议使用 `bpf_core_enum_value_exists()` 或 libbpf 的 `LIBBPF_OPTS` 机制进行运行时特性检测。
 
-**Q3: BPF-to-BPF Call 中 __always_inline 和 static 不加 inline 有什么实际区别？**
+**Q3: BPF-to-BPF Call 中 \_\_always_inline 和 static 不加 inline 有什么实际区别？**
 
 `__always_inline` 让编译器将函数体直接展开到调用处，相当于宏替换。好处是没有函数调用开销和跨过程分析开销；坏处是增加总指令数。对于少于 20 行的函数，推荐 `__always_inline`；对于超过 50 行的函数，推荐用 `static` 让编译器决定。
 
 **Q4: 如何调试 Tail Call 跳转失败的问题？**
 
 Tail Call 跳转失败（返回 -ENOENT）的常见原因：
+
 1. 目标程序未加载到 Map 中
 2. Map 的 index 超出范围
 3. 已达到 33 层深度限制
@@ -713,6 +716,7 @@ bpftool prog show
 **Q5: 2026 年新项目应该优先用 Helper 还是 kfuncs？**
 
 优先使用 **kfuncs**。原因：
+
 1. kfuncs 有编译时类型检查，更安全
 2. kfuncs 支持弱链接，向前兼容性更好
 3. 新的内核功能主要通过 kfuncs 暴露

@@ -9,8 +9,8 @@ tags:
   - kernel
 ---
 
-> [!info] eBPF 2026 深度探索系列
-> 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+> [!info] eBPF 2026 深度探索系列 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+>
 > 1. [[2026-04-08-ebpf-deep-dive-ch1-registers-and-instructions|第一章：寄存器与指令集]]
 > 2. [[2026-04-08-ebpf-deep-dive-ch1-5-function-calls|第一.五章：四种函数调用与动态内存]]
 > 3. [[2026-04-08-ebpf-deep-dive-ch1-6-the-verifier|第一.六章：验证器 (Verifier) 的底层逻辑]]
@@ -131,19 +131,19 @@ graph TD
 
 ### 2.2 核心类型对比
 
-| 类型 | 查找复杂度 | 支持删除 | 线程安全 | 典型用途 |
-| :--- | :--- | :--- | :--- | :--- |
-| `HASH` | O(1) 平均 | ✅ | 需要 `BPF_F_LOCK` | 通用键值存储 |
-| `ARRAY` | O(1) | ❌ | 需要 `BPF_F_LOCK` | 固定索引配置 |
-| `PERCPU_HASH` | O(1) 平均 | ✅ | **天然安全** | 高频计数器 |
-| `PERCPU_ARRAY` | O(1) | ❌ | **天然安全** | 高频配置/临时缓冲 |
-| `LRU_HASH` | O(1) 平均 | ✅ 自动淘汰 | 需要 `BPF_F_LOCK` | 连接跟踪、会话缓存 |
-| `RINGBUF` | N/A | N/A | 多生产者安全 | 事件上报 |
-| `PERF_EVENT_ARRAY` | N/A | N/A | 每核独立 | 事件上报（旧方案） |
-| `STACK` | O(1) | ✅ | 需要 `BPF_F_LOCK` | LIFO 任务队列 |
-| `PROG_ARRAY` | O(1) | ✅ | N/A | Tail Call 分发 |
-| `SOCKMAP` | O(1) | ✅ | N/A | Socket 重定向 |
-| `BLOOM_FILTER` | O(k) | ❌ | 天然安全 | 快速成员检测 |
+| 类型               | 查找复杂度 | 支持删除    | 线程安全          | 典型用途           |
+| :----------------- | :--------- | :---------- | :---------------- | :----------------- |
+| `HASH`             | O(1) 平均  | ✅          | 需要 `BPF_F_LOCK` | 通用键值存储       |
+| `ARRAY`            | O(1)       | ❌          | 需要 `BPF_F_LOCK` | 固定索引配置       |
+| `PERCPU_HASH`      | O(1) 平均  | ✅          | **天然安全**      | 高频计数器         |
+| `PERCPU_ARRAY`     | O(1)       | ❌          | **天然安全**      | 高频配置/临时缓冲  |
+| `LRU_HASH`         | O(1) 平均  | ✅ 自动淘汰 | 需要 `BPF_F_LOCK` | 连接跟踪、会话缓存 |
+| `RINGBUF`          | N/A        | N/A         | 多生产者安全      | 事件上报           |
+| `PERF_EVENT_ARRAY` | N/A        | N/A         | 每核独立          | 事件上报（旧方案） |
+| `STACK`            | O(1)       | ✅          | 需要 `BPF_F_LOCK` | LIFO 任务队列      |
+| `PROG_ARRAY`       | O(1)       | ✅          | N/A               | Tail Call 分发     |
+| `SOCKMAP`          | O(1)       | ✅          | N/A               | Socket 重定向      |
+| `BLOOM_FILTER`     | O(k)       | ❌          | 天然安全          | 快速成员检测       |
 
 ---
 
@@ -256,6 +256,7 @@ struct config *cfg = bpf_map_lookup_elem(&config_map, &key);
 ```
 
 **特点：**
+
 - 查找速度最快（直接计算偏移，无哈希计算）
 - 不支持删除（不能释放某个槽位）
 - 索引必须是连续的非负整数
@@ -292,11 +293,11 @@ sequenceDiagram
 
 **性能对比实测（XDP 场景，PPS 级别）：**
 
-| 方案 | 吞吐量 | 延迟 (P99) |
-| :--- | :--- | :--- |
-| 普通 Hash Map + `__sync_fetch_and_add` | ~15 Mpps | ~800 ns |
-| Per-CPU Hash Map (直接写入) | **~30 Mpps** | **~300 ns** |
-| Per-CPU Array Map (直接写入) | **~35 Mpps** | **~250 ns** |
+| 方案                                   | 吞吐量       | 延迟 (P99)  |
+| :------------------------------------- | :----------- | :---------- |
+| 普通 Hash Map + `__sync_fetch_and_add` | ~15 Mpps     | ~800 ns     |
+| Per-CPU Hash Map (直接写入)            | **~30 Mpps** | **~300 ns** |
+| Per-CPU Array Map (直接写入)           | **~35 Mpps** | **~250 ns** |
 
 ### 4.3 Per-CPU Map 代码实战
 
@@ -337,6 +338,7 @@ int count_proto(struct xdp_md *ctx) {
 
 > [!warning] 用户态读取 Per-CPU Map 的注意事项
 > 用户态读取 Per-CPU Map 时，需要遍历所有 CPU 核心并聚合结果：
+>
 > ```c
 > // 用户态代码 (C/libbpf)
 > for (int cpu = 0; cpu < num_cpus; cpu++) {
@@ -372,17 +374,17 @@ graph TB
 
 ### 5.3 详细对比
 
-| 特性 | Perf Event Array | Ring Buffer |
-| :--- | :--- | :--- |
-| **引入版本** | Linux 4.4 | Linux 5.8 |
-| **内存模型** | 每 CPU 独立 Buffer | 全局共享 Buffer |
-| **内存利用率** | 低（按最大 CPU 数预分配） | **高**（按需使用） |
-| **写入方式** | 一次性写入整条记录 | **Reserve → 填充 → Submit** |
-| **读取方式** | perf_event_open + mmap | ring_buffer__consume |
-| **数据丢失** | 满时丢弃整条记录 | 满时丢弃整条记录 |
-| **自定义 Header** | 需要手动构建 | 内建支持 |
-| **多生产者** | 每 CPU 独立（天然隔离） | **多核安全**（原子操作） |
-| **推荐程度** | 旧项目兼容 | **2026 年首选** |
+| 特性              | Perf Event Array          | Ring Buffer                 |
+| :---------------- | :------------------------ | :-------------------------- |
+| **引入版本**      | Linux 4.4                 | Linux 5.8                   |
+| **内存模型**      | 每 CPU 独立 Buffer        | 全局共享 Buffer             |
+| **内存利用率**    | 低（按最大 CPU 数预分配） | **高**（按需使用）          |
+| **写入方式**      | 一次性写入整条记录        | **Reserve → 填充 → Submit** |
+| **读取方式**      | perf_event_open + mmap    | ring_buffer\_\_consume      |
+| **数据丢失**      | 满时丢弃整条记录          | 满时丢弃整条记录            |
+| **自定义 Header** | 需要手动构建              | 内建支持                    |
+| **多生产者**      | 每 CPU 独立（天然隔离）   | **多核安全**（原子操作）    |
+| **推荐程度**      | 旧项目兼容                | **2026 年首选**             |
 
 ### 5.4 Ring Buffer 代码实战
 
@@ -549,12 +551,12 @@ graph TD
 
 ### 7.2 四种通信模式
 
-| 模式 | 方向 | 延迟 | 适用场景 |
-| :--- | :--- | :--- | :--- |
-| **Map 读写** | 双向 | 极低 (~100ns) | 配置下发、统计聚合 |
-| **Ring Buffer 事件** | 内核→用户 | 中等 (~1μs) | 日志上报、事件流 |
-| **Map 事件通知** | 内核→用户 | 低 | 简单通知 |
-| **Perf Event** | 内核→用户 | 中等 | 采样数据（旧方案） |
+| 模式                 | 方向      | 延迟          | 适用场景           |
+| :------------------- | :-------- | :------------ | :----------------- |
+| **Map 读写**         | 双向      | 极低 (~100ns) | 配置下发、统计聚合 |
+| **Ring Buffer 事件** | 内核→用户 | 中等 (~1μs)   | 日志上报、事件流   |
+| **Map 事件通知**     | 内核→用户 | 低            | 简单通知           |
+| **Perf Event**       | 内核→用户 | 中等          | 采样数据（旧方案） |
 
 ### 7.3 批量操作
 
@@ -589,6 +591,7 @@ stateDiagram-v2
 ```
 
 **引用计数规则：**
+
 1. 每个 `bpf()` syscall 中的 `map_fd` 增加一个引用
 2. 每次 `close(map_fd)` 减少一个引用
 3. 当引用计数降为 0 时，内核回收内存
@@ -693,6 +696,7 @@ int update_counter(struct pt_regs *ctx) {
 ```
 
 > [!warning] Spin Lock 使用限制
+>
 > 1. 必须在同一个 CPU 上 lock 和 unlock（不能跨 CPU 传递锁）
 > 2. 持锁期间不能调用任何可能睡眠的 Helper
 > 3. 持锁期间不能调用 `bpf_map_lookup_elem`（可能导致死锁）
@@ -712,6 +716,7 @@ int update_counter(struct pt_regs *ctx) {
 **Q3: Map 数据会持久化到磁盘吗？**
 
 默认不会。程序退出后 Map 被销毁。如果需要持久化，可以：
+
 1. 使用 `bpftool map pin` 挂载到 `/sys/fs/bpf`
 2. 在用户态定期将 Map 数据写回文件
 3. 使用 `BTF_MAP_TYPE_ARENA`（实验性）进行持久化
@@ -723,5 +728,6 @@ Per-CPU Map 的大小取决于**运行时可见的 CPU 数量**。在容器中�
 **Q5: Ring Buffer 和 Perf Event Array 可以共存吗？**
 
 可以。同一个 eBPF 程序可以同时使用两种 Buffer。实际上很多生产系统会同时使用 Ring Buffer（用于高频事件流）和普通 Map（用于配置和聚合统计）。选择哪种取决于数据特性：
+
 - **高频、小数据、允许丢失**：Ring Buffer
 - **低频、大数据、需要可靠传输**：Map + 轮询

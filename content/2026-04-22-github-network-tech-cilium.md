@@ -11,13 +11,13 @@ description: eBPF-based Networking, Security, and Observability — 云原生网
 
 **cilium/cilium** 是目前 GitHub 上最活跃的云原生网络项目之一，基于 eBPF（Extended Berkeley Packet Filter）技术，为 Kubernetes 集群提供高性能的**网络连接、安全策略和可观测性**能力。
 
-| 指标 | 数值 |
-| --- | --- |
-| GitHub Stars | 24.2k |
-| Forks | 3.7k |
-| Commits | 42,241 |
-| 主要语言 | Go |
-| 最新更新 | 2026-04-22（1 小时前） |
+| 指标         | 数值                   |
+| ------------ | ---------------------- |
+| GitHub Stars | 24.2k                  |
+| Forks        | 3.7k                   |
+| Commits      | 42,241                 |
+| 主要语言     | Go                     |
+| 最新更新     | 2026-04-22（1 小时前） |
 
 项目定位为 CNI（容器网络接口）插件，同时也是一个完整的**服务网格（Service Mesh）**解决方案，深度集成 Kubernetes Gateway API。
 
@@ -54,15 +54,15 @@ cilium 将网络和安全逻辑直接注入 Linux 内核，借助 eBPF 的高效
 
 ## 最近更新（近 7 天）
 
-| Commit | 时间 | 内容 |
-| --- | --- | --- |
-| `5a75007f` | 2026-04-21 | fix: improve validator logging and prevent unnecessary watches |
-| `42324fc1` | 2026-04-21 | Update network-policy-api to official release-0.2 (v1alpha2) |
-| `e4f96757` | 2026-04-21 | gateway-api: Fix missed version upgrades for stable objects |
-| `f7af4d09` | 2026-04-21 | ces: remove deprecated `ces-slice-mode` option |
-| `d2b17f41` | 2026-04-20 | bpf: encap: move & use DSR-GENEVE helpers |
+| Commit     | 时间       | 内容                                                                   |
+| ---------- | ---------- | ---------------------------------------------------------------------- |
+| `5a75007f` | 2026-04-21 | fix: improve validator logging and prevent unnecessary watches         |
+| `42324fc1` | 2026-04-21 | Update network-policy-api to official release-0.2 (v1alpha2)           |
+| `e4f96757` | 2026-04-21 | gateway-api: Fix missed version upgrades for stable objects            |
+| `f7af4d09` | 2026-04-21 | ces: remove deprecated `ces-slice-mode` option                         |
+| `d2b17f41` | 2026-04-20 | bpf: encap: move & use DSR-GENEVE helpers                              |
 | `59fa538a` | 2026-04-15 | ci: add strict-mode-ingress WireGuard to both stable and newest config |
-| `e88e8376` | 2026-04-02 | feat(annotations): allow per-pod source IP verification control |
+| `e88e8376` | 2026-04-02 | feat(annotations): allow per-pod source IP verification control        |
 
 **近期待发布版本**：`v1.20.0-pre.1`，稳定版本包括 `v1.19.3`、`v1.18.9`、`v1.17.15`。
 

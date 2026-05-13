@@ -5,8 +5,8 @@ tags: [linux, kernel, networking, series, routing, fib, fib_table, routing-cache
 description: "深入解析 Linux 路由子系统——FIB 数据结构、路由查找算法、路由缓存历史（2.6 时代）、FIB TRIE 结构、路由配置与 iproute2、以及策略路由基础"
 ---
 
-> [!info] Kernel Protocol Stack 深度探索系列
-> 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Kernel Protocol Stack 深度探索系列 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-kernel-protocol-stack-deep-dive-ch1-skbuff|第一章：sk_buff 与数据包生命周期]]
 > 2. [[2026-04-13-kernel-protocol-stack-deep-dive-ch2-netdevice|第二章：Netdevice 与网卡抽象]]
 > 3. [[2026-04-13-kernel-protocol-stack-deep-dive-ch3-ring-buffer|第三章：Ring Buffer 与 DMA]]
@@ -38,23 +38,23 @@ graph LR
     subgraph "数据包流程"
         SKB["sk_buff"]
     end
-    
+
     subgraph "路由查找"
         DST["dst_entry"]
         FIB["FIB Lookup"]
         NH["Nexthop"]
     end
-    
+
     subgraph "邻居解析"
         NEIGH["Neighbor"]
         ARP["ARP"]
     end
-    
+
     subgraph "发送"
         DEV["net_device"]
         QDISC["qdisc"]
     end
-    
+
     SKB --> FIB
     FIB --> DST
     DST --> NH
@@ -62,7 +62,7 @@ graph LR
     NEIGH --> ARP
     ARP --> DEV
     DEV --> QDISC
-    
+
     style FIB fill:#f59f00,stroke:#333
 ```
 
@@ -80,16 +80,16 @@ struct fib_table {
     struct hlist_node       tb_hlist;       // 哈希链表节点
     u32                     tb_id;           // 路由表 ID (RT_TABLE_*)
     unsigned char           tb_data[0];       // 路由数据
-    
+
     // 路由查找函数
     int                     (*tb_lookup)(struct fib_table *tb,
                                           const struct flowi4 *flp,
                                           struct fib_result *res);
-    
+
     // 路由配置函数
     int                     (*tb_insert)(struct fib_table *tb,
                                           struct fib_config *cfg);
-    
+
     // 路由删除函数
     int                     (*tb_delete)(struct fib_table *tb,
                                           struct fib_config *cfg);
@@ -125,7 +125,7 @@ struct fib_info {
     __be32                  fib_src;         // 源网络
     __u8                    fib_dst_len;      // 目的前缀长度
     __u8                    fib_src_len;      // 源前缀长度
-    
+
     struct fib_nh           fib_nh[0];      // nexthop 信息
 };
 ```
@@ -213,10 +213,10 @@ static inline int fib_lookup(struct net *net, const struct flowi4 *flp,
                              struct fib_result *res)
 {
     struct fib_table *tb;
-    
+
     // 1. 根据 skb 的 fwmark 或 oif 选择路由表
     tb = fib_get_table(net, RT_TABLE_MAIN);
-    
+
     // 2. 调用表的查找函数
     return tb->tb_lookup(tb, flp, res);
 }
@@ -230,10 +230,10 @@ static int fib_trie_lookup(struct fib_table *tb,
     t_key key = ntohl(flp->daddr);
     t_key m;
     int ret;
-    
+
     // 遍历 trie 树，查找最长前缀匹配
     // ...
-    
+
     return ret;
 }
 ```
@@ -266,6 +266,7 @@ _dst_cache 哈希表：
 ```
 
 **问题：**
+
 - 大量并发连接时缓存条目爆炸
 - 每秒创建/销毁大量 dst_entry
 - 放大攻击风险
@@ -275,6 +276,7 @@ _dst_cache 哈希表：
 **Linux 2.6.39 (2011)：** 移除了路由缓存
 
 **替代方案：**
+
 - RPS (Receive Packet Steering) - 多核分发
 - 硬件 FIB - 智能网卡
 - FIB notifier - 用户空间缓存同步
@@ -290,18 +292,18 @@ struct dst_entry {
     unsigned long           _metrics;         // 指标（跳数等）
     unsigned long           expires;          // 过期时间
     struct dst_entry       *from;             // 路由源（用于生成 dst）
-    
+
     // Nexthop 信息
     struct neighbour        *_neigh;
-    
+
     // 输入/输出函数
     int                     (*input)(struct sk_buff *);
     int                     (*output)(struct net *, struct sock *, struct sk_buff *);
-    
+
     // 统计
     struct dst_stats        __percpu *stats;
     atomic_t                __refcnt;
-    
+
     // 优先级和obsolete 标记
     short                   obsolete;
     int                     pending;
@@ -354,7 +356,7 @@ ip rule add oif eth0 table 100
 ip rule show
 ```
 
-### 5.3 /proc/sys/net/ipv4/conf/*/route_localnet
+### 5.3 /proc/sys/net/ipv4/conf/\*/route_localnet
 
 ```bash
 # 允许本地网络使用路由而非交付本地
@@ -376,18 +378,18 @@ graph LR
         R3["优先级 32766: default"]
         R4["优先级 32767: main"]
     end
-    
+
     subgraph "路由表"
         T_LOCAL["table local"]
         T_MAIN["table main"]
         T_CUSTOM["table custom"]
     end
-    
+
     R1 --> T_LOCAL
     R2 --> T_CUSTOM
     R3 --> T_MAIN
     R4 --> T_MAIN
-    
+
     style R2 fill:#f59f00,stroke:#333
 ```
 
@@ -454,29 +456,29 @@ int ip_output(struct net *net, struct sock *sk, struct sk_buff *skb)
 {
     struct dst_entry *dst = skb_dst(skb);
     struct net_device *dev = dst->dev;
-    
+
     // 更新统计
     IP_INC_STATS(net, IPSTATS_MIB_OUTREQUESTS);
-    
+
     // 钩子点（Netfilter）
     if (ip_local_out(net, sk, skb))
         return 0;
-    
+
     return NET_XMIT_DROP;
 }
 
 int ip_local_out(struct net *net, struct sock *sk, struct sk_buff *skb)
 {
     int err;
-    
+
     // NF_INET_LOCAL_OUT 钩子
     err = nf_hook(NFPROTO_IPV4, NF_INET_LOCAL_OUT,
                   net, sk, skb, NULL, dst->dev,
                   dst_output);
-    
+
     if (likely(err == 1))
         err = dst_output(net, sk, skb);
-    
+
     return err;
 }
 
@@ -494,30 +496,30 @@ int ip_rcv(struct sk_buff *skb, struct net_device *dev,
            struct packet_type *pt, struct net_device *orig_dev)
 {
     struct net *net = dev_net(dev);
-    
+
     // NF_INET_PRE_ROUTING 钩子
     if (ip_rcv_finish(net, &init_net, skb))
         return NET_RX_SUCCESS;
-    
+
     return NET_RX_DROP;
 }
 
 int ip_rcv_finish(struct net *net, struct sock *sk, struct sk_buff *skb)
 {
     struct dst_entry *dst;
-    
+
     // 路由查找
     if (skb_dst(skb))
         goto route_done;
-    
+
     // 执行路由查找
     if (ip_route_input_noref(skb, iph->daddr, iph->saddr,
                              iph->tos, dev))
         goto drop;
-    
+
 route_done:
     dst = skb_dst(skb);
-    
+
     // 根据路由类型处理
     switch (dst->dev->flags & IFF_UP) {
     case RTN_UNICAST:
@@ -529,7 +531,7 @@ route_done:
         // 发送 ICMP 不可达
         break;
     }
-    
+
 drop:
     kfree_skb(skb);
     return NET_RX_DROP;
@@ -542,17 +544,17 @@ drop:
 
 ### 8.1 路由协议类型
 
-| 协议 | 说明 | 优先级 |
-|------|------|--------|
-| `redirect` | ICMP 重定向 | 0 |
-| `kernel` | 内核添加的路由 | 0 |
-| `boot` | 启动时读取的路由 | 0 |
-| `static` | 管理员添加的路由 | 0 |
-| `gated` | gated 守护进程 | 100 |
-| `ra` | IPv6 路由通告 | 100 |
-| `mrouted` | 多播路由 daemon | 100 |
-| `babel` | Babel 协议 | 100 |
-| `bird` | BIRD 守护进程 | 100 |
+| 协议       | 说明             | 优先级 |
+| ---------- | ---------------- | ------ |
+| `redirect` | ICMP 重定向      | 0      |
+| `kernel`   | 内核添加的路由   | 0      |
+| `boot`     | 启动时读取的路由 | 0      |
+| `static`   | 管理员添加的路由 | 0      |
+| `gated`    | gated 守护进程   | 100    |
+| `ra`       | IPv6 路由通告    | 100    |
+| `mrouted`  | 多播路由 daemon  | 100    |
+| `babel`    | Babel 协议       | 100    |
+| `bird`     | BIRD 守护进程    | 100    |
 
 ### 8.2 路由优先级
 
@@ -563,7 +565,7 @@ static int fib_default_adv(struct fib_table *tb, struct fib_config *cfg)
     // 路由优先级比较
     if (cfg->fc_priority)
         return cfg->fc_priority;
-    
+
     // 根据协议设置默认优先级
     switch (cfg->fc_protocol) {
     case RTPROT_STATIC:
@@ -617,29 +619,29 @@ graph TD
     subgraph "数据包输入"
         SKB["sk_buff"]
     end
-    
+
     subgraph "ip_rule"
         RULE["策略路由<br/>规则匹配"]
     end
-    
+
     subgraph "FIB Lookup"
         FIB["FIB TRIE<br/>最长前缀匹配"]
     end
-    
+
     subgraph "dst_entry"
         DST["dst_entry<br/>输出/输入函数"]
     end
-    
+
     subgraph "Nexthop"
         NH["Nexthop<br/>下一跳"]
     end
-    
+
     subgraph "Neighbor"
         NEIGH["Neighbor<br/>MAC 解析"]
     end
-    
+
     SKB --> RULE --> FIB --> DST --> NH --> NEIGH
-    
+
     style FIB fill:#f59f00,stroke:#333
 ```
 

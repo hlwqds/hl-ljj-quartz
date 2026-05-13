@@ -1,7 +1,20 @@
 ---
 title: io_uring × NVMe 深度探索 Ch2：NVMe-oF 网络块设备
 date: 2026-04-20 15:00:00
-tags: [io_uring, NVMe, NVMe-oF, Network Storage, RDMA, TCP, Fabric, Block Device, Remote Storage, iSCSI, RoCE]
+tags:
+  [
+    io_uring,
+    NVMe,
+    NVMe-oF,
+    Network Storage,
+    RDMA,
+    TCP,
+    Fabric,
+    Block Device,
+    Remote Storage,
+    iSCSI,
+    RoCE,
+  ]
 description: 深入讲解 NVMe over Fabrics 架构：RDMA/TCP 传输层、NVMe/TCP vs RDMA 对比、 initiator/target 配置、以及 io_uring 在 NVMe-oF 中的角色。
 ---
 

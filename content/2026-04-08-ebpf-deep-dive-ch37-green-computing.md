@@ -10,8 +10,8 @@ tags:
   - carbon
 ---
 
-> [!info] eBPF 2026 深度探索系列
-> 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+> [!info] eBPF 2026 深度探索系列 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+>
 > 1. [[2026-04-08-ebpf-deep-dive-ch1-registers-and-instructions|第一章：寄存器与指令集]]
 > 2. [[2026-04-08-ebpf-deep-dive-ch1-5-function-calls|第一.五章：四种函数调用与动态内存]]
 > 3. [[2026-04-08-ebpf-deep-dive-ch1-6-the-verifier|第一.六章：验证器 (Verifier) 的底层逻辑]]
@@ -63,6 +63,7 @@ tags:
 > 49. [[2026-04-09-ebpf-deep-dive-ch40-network-protocols-deep-dive|第四十章：网络协议深度解析——TCP/UDP/QUIC 的 eBPF 视角]]
 > 50. [[2026-04-09-ebpf-deep-dive-ch41-memory-safety-and-vulnerabilities|第四十一章：eBPF 内存安全与漏洞分析]]
 > 51. [[2026-04-09-ebpf-deep-dive-ch42-service-mesh-integration|第四十二章：eBPF 与 Service Mesh 深度集成]]
+
 ---
 
 ## 1. 概述：为什么计算需要"绿色"？
@@ -70,6 +71,7 @@ tags:
 2026 年，全球数据中心消耗的电力已超过 4000 TWh，占全球碳排放的约 2%。随着 AI 推理、加密货币挖矿、边缘计算的爆发式增长，能耗监控与优化已成为云厂商和企业 IT 的核心挑战。
 
 eBPF 在绿色计算中扮演的角色：
+
 1. **精准计量**：测量每个进程/容器/服务的真实能耗
 2. **碳感知调度**：根据电网碳强度动态调度工作负载
 3. **能耗归因**：将能耗精确归属到业务单元（团队、产品、成本中心）
@@ -98,13 +100,13 @@ graph TB
 
 ### 1.2 能耗单位与换算关系
 
-| 单位 | 含义 | 典型设备 |
-|:---|:---|:---|
-| **W (瓦特)** | 瞬时功率 | 单核 CPU ~5-15W |
-| **kWh (千瓦时)** | 能量单位 | 1kWh = 1000W 持续 1 小时 |
-| **gCO2eq/kWh** | 碳强度 | 煤电 800, 风电 0, 核电 12 |
-| **PUE** | 电源使用效率 | 典型值 1.3-1.8 |
-| **WRI** | 水资源强度 | 数据中心冷却用水 |
+| 单位             | 含义         | 典型设备                  |
+| :--------------- | :----------- | :------------------------ |
+| **W (瓦特)**     | 瞬时功率     | 单核 CPU ~5-15W           |
+| **kWh (千瓦时)** | 能量单位     | 1kWh = 1000W 持续 1 小时  |
+| **gCO2eq/kWh**   | 碳强度       | 煤电 800, 风电 0, 核电 12 |
+| **PUE**          | 电源使用效率 | 典型值 1.3-1.8            |
+| **WRI**          | 水资源强度   | 数据中心冷却用水          |
 
 ---
 
@@ -495,13 +497,13 @@ int should_preempt(struct scx Sched_context *ctx, struct task_struct *p) {
 
 ### 6.1 NVMe SSD 功耗模型
 
-| 状态 | 功耗 | eBPF 追踪点 |
-|:---|:---|:---|
-| **Active** | 5-10W | blk_mq_start_request |
-| **Idle** | 1-3W | blk_mq_idle |
-| **PS0 (Active) | 5W | - |
-| **PS1 (Sleep) | 1W | - |
-| **PS4 (最深省电) | 0.005W | - |
+| 状态               | 功耗   | eBPF 追踪点          |
+| :----------------- | :----- | :------------------- |
+| **Active**         | 5-10W  | blk_mq_start_request |
+| **Idle**           | 1-3W   | blk_mq_idle          |
+| \*\*PS0 (Active)   | 5W     | -                    |
+| \*\*PS1 (Sleep)    | 1W     | -                    |
+| \*\*PS4 (最深省电) | 0.005W | -                    |
 
 ### 6.2 网络能耗归因
 
@@ -594,11 +596,11 @@ graph TB
 
 ```promql
 # 容器级能耗 (Wh)
-container_energy_wh{container="my-app"} = 
+container_energy_wh{container="my-app"} =
   rate(container_cpu_usage_seconds_total[5m]) * 5 * 1000 / 3600
 
 # 服务碳排放 (gCO2eq)
-service_carbon{svc="payment"} = 
+service_carbon{svc="payment"} =
   service_energy_wh * carbon_intensity_gco2_per_kwh / 1000
 
 # PUE (Power Usage Effectiveness)
@@ -651,14 +653,14 @@ organization: acme-corp
 # 能耗摘要
 energy:
   total_kwh: 1250000
-  renewable_kwh: 875000  # 70%
-  grid_kwh: 375000       # 30%
+  renewable_kwh: 875000 # 70%
+  grid_kwh: 375000 # 30%
 
 # 碳排放
 carbon:
-  scope2_operations: 150  # tonnes CO2eq
-  scope3_value_chain: 45  # tonnes CO2eq
-  carbon_intensity_avg: 400  # gCO2eq/kWh
+  scope2_operations: 150 # tonnes CO2eq
+  scope3_value_chain: 45 # tonnes CO2eq
+  carbon_intensity_avg: 400 # gCO2eq/kWh
 
 # 服务级归因
 services:
@@ -696,9 +698,10 @@ A：在 Kubernetes 环境中，每个 Pod 属于一个 cgroup。通过追踪 `cg
 **Q3：碳感知调度会影响服务质量吗？**
 
 A：合理的碳调度策略不会影响 SLO。设计原则是：
-1) 只对"可延迟任务"（batch jobs、后台同步、非紧急批处理）应用延迟
-2) 设定最大延迟阈值（如 30 分钟），超则强制执行
-3) 紧急任务（latency-sensitive）始终优先执行
+
+1. 只对"可延迟任务"（batch jobs、后台同步、非紧急批处理）应用延迟
+2. 设定最大延迟阈值（如 30 分钟），超则强制执行
+3. 紧急任务（latency-sensitive）始终优先执行
 
 **Q4：ARM 架构的能耗追踪与 x86 有何不同？**
 
@@ -707,6 +710,7 @@ A：ARM 服务器（如 AWS Graviton、Ampere Altra）使用 ARM Performance Mon
 **Q5：如何将能耗数据集成到 FinOps 平台？**
 
 A：标准流程是：
+
 1. eBPF Agent 采集 → 格式化 JSON
 2. 通过 OpenTelemetry Protocol (OTLP) 发送到时序数据库
 3. 与云厂商的 CUR (Cost and Usage Report) 关联

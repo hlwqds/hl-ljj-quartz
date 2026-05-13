@@ -1,7 +1,21 @@
 ---
 title: io_uring × NVMe 深度探索 Ch3：ZNS SSD 与 zone append
 date: 2026-04-21 09:00:00
-tags: [io_uring, NVMe, ZNS, Zoned Namespaces, Zone Append, SMR, Flash, Storage, F2FS, LSM Tree, Write Amplification, Wear Leveling]
+tags:
+  [
+    io_uring,
+    NVMe,
+    ZNS,
+    Zoned Namespaces,
+    Zone Append,
+    SMR,
+    Flash,
+    Storage,
+    F2FS,
+    LSM Tree,
+    Write Amplification,
+    Wear Leveling,
+  ]
 description: 深入讲解 ZNS SSD 架构：ZAC 命令集、zone append 操作、write pointer、顺序写入保证、以及 F2FS + ZNS 的最佳实践，告别 write amplification。
 ---
 
@@ -55,41 +69,44 @@ ZNS = Zoned Namespace Commands
   主机负责保证顺序写入 → SSD 减少 GC
 
 ```
+
 ┌─────────────────────────────────────────────────────────────────┐
-│                    传统 NVMe SSD（Host-Unaware）               │
+│ 传统 NVMe SSD（Host-Unaware） │
 ├─────────────────────────────────────────────────────────────────┤
-│  Host 写入（随机）          SSD 内部                            │
-│  LBA 0 ───────► FTL ──────► NAND Block                         │
-│  LBA 1 ───────► (映射表)  ──► ┌────┐ ┌────┐ ┌────┐ ┌────┐      │
-│  LBA 2 ───────►             │valid│ │valid│ │free│ │free│      │
-│  ...                        │page│ │page│ │    │ │    │      │
-│                             └────┘ └────┘ └────┘ └────┘      │
-│                                ↑ GC 需要移动有效页             │
+│ Host 写入（随机） SSD 内部 │
+│ LBA 0 ───────► FTL ──────► NAND Block │
+│ LBA 1 ───────► (映射表) ──► ┌────┐ ┌────┐ ┌────┐ ┌────┐ │
+│ LBA 2 ───────► │valid│ │valid│ │free│ │free│ │
+│ ... │page│ │page│ │ │ │ │ │
+│ └────┘ └────┘ └────┘ └────┘ │
+│ ↑ GC 需要移动有效页 │
 └─────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────┐
-│                    ZNS SSD（Host-Aware）                        │
+│ ZNS SSD（Host-Aware） │
 ├─────────────────────────────────────────────────────────────────┤
-│  Host 写入（顺序）        SSD 内部                            │
-│  Zone 0 ───► Write Ptr ──► NAND Block (zone)                  │
-│  ┌─────────────────┐    ┌────┐ ┌────┐ ┌────┐ ┌────┐         │
-│  │ wp=0KB          │    │ 4KB│ │ 4KB│ │    │ │    │  ← 顺序写│
-│  │ size=256MB      │    │ ok │ │ ok │ │    │ │    │         │
-│  │ capacity=256MB  │    └────┘ └────┘ └────┘ └────┘         │
-│  └─────────────────┘                                          │
-│                                                                 │
-│  Zone 1 ───► Write Ptr ──► NAND Block (zone)                  │
-│  ┌─────────────────┐    ┌────┐ ┌────┐ ┌────┐ ┌────┐           │
-│  │ wp=128MB       │    │ 4KB│ │ 4KB│ │ 4KB│ │    │ ← 中间位置│
-│  │ size=256MB     │    │ ok │ │ ok │ │ ok │ │    │         │
-│  └─────────────────┘    └────┘ └────┘ └────┘ └────┘           │
+│ Host 写入（顺序） SSD 内部 │
+│ Zone 0 ───► Write Ptr ──► NAND Block (zone) │
+│ ┌─────────────────┐ ┌────┐ ┌────┐ ┌────┐ ┌────┐ │
+│ │ wp=0KB │ │ 4KB│ │ 4KB│ │ │ │ │ ← 顺序写│
+│ │ size=256MB │ │ ok │ │ ok │ │ │ │ │ │
+│ │ capacity=256MB │ └────┘ └────┘ └────┘ └────┘ │
+│ └─────────────────┘ │
+│ │
+│ Zone 1 ───► Write Ptr ──► NAND Block (zone) │
+│ ┌─────────────────┐ ┌────┐ ┌────┐ ┌────┐ ┌────┐ │
+│ │ wp=128MB │ │ 4KB│ │ 4KB│ │ 4KB│ │ │ ← 中间位置│
+│ │ size=256MB │ │ ok │ │ ok │ │ ok │ │ │ │
+│ └─────────────────┘ └────┘ └────┘ └────┘ └────┘ │
 └─────────────────────────────────────────────────────────────────┘
 
 关键改进：
-  1. Zone 必须顺序写（不能随机写）
-  2. Zone 只能整体擦除
-  3. 主机控制写入位置（write pointer）
-  4. SSD 无需内部 GC（zone 满了直接通知主机）
+
+1. Zone 必须顺序写（不能随机写）
+2. Zone 只能整体擦除
+3. 主机控制写入位置（write pointer）
+4. SSD 无需内部 GC（zone 满了直接通知主机）
+
 ```
 
 ---
@@ -99,32 +116,34 @@ ZNS = Zoned Namespace Commands
 ### 2.1 Zone 抽象
 
 ```
+
 ZNS Zone 结构：
 
 ┌─────────────────────────────────────────────────────────────┐
-│  Zone Size: 典型 256MB / 512MB / 1GB / 2GB                 │
-│  Zone Capacity: 可用于写入的容量（通常 < zone size）        │
-│  Write Pointer (WP): 当前写入位置（从 zone 起始偏移）      │
-│  Zone State: 状态机                                        │
+│ Zone Size: 典型 256MB / 512MB / 1GB / 2GB │
+│ Zone Capacity: 可用于写入的容量（通常 < zone size） │
+│ Write Pointer (WP): 当前写入位置（从 zone 起始偏移） │
+│ Zone State: 状态机 │
 └─────────────────────────────────────────────────────────────┘
 
 Zone 状态：
-  EMPTY        — 全新，未使用
-  OPEN         — 正在写入（可能是 host open 或 fw open）
-  CLOSED       — 写满后正常关闭
-  FULL         — 写满，无法再写入
-  READ_ONLY    — 只读（只允许读取）
-  OFFLINE      — 不可用（故障）
+EMPTY — 全新，未使用
+OPEN — 正在写入（可能是 host open 或 fw open）
+CLOSED — 写满后正常关闭
+FULL — 写满，无法再写入
+READ_ONLY — 只读（只允许读取）
+OFFLINE — 不可用（故障）
 
 Zone 状态转换：
-  EMPTY ──写入──► OPEN ──写满──► CLOSED ──重置──► EMPTY
-                    │                          ↑
-                    └──► FULL ───重置──► EMPTY
+EMPTY ──写入──► OPEN ──写满──► CLOSED ──重置──► EMPTY
+│ ↑
+└──► FULL ───重置──► EMPTY
 
 Zone 类型：
-  · Sequential Write Required（顺序写必须）— 常规 ZNS
-  · Sequential Write Preferred（顺序写推荐）— 部分 SSD
-```
+· Sequential Write Required（顺序写必须）— 常规 ZNS
+· Sequential Write Preferred（顺序写推荐）— 部分 SSD
+
+````
 
 ### 2.2 ZNS 命令集
 
@@ -166,7 +185,7 @@ struct nvme_zone_append {
     __u32   zaflags;           // append 标志
 };
 // CQE.result = 实际写入的 LBA
-```
+````
 
 ### 2.3 Zone Append 的意义
 
@@ -730,7 +749,7 @@ ZNS 作为 PMEM 的备份：
 
 ## 6. 多流 vs ZNS
 
-### 6.1  Streams（传统 SSD 的补救）
+### 6.1 Streams（传统 SSD 的补救）
 
 ```
 Streams = 传统 NVMe SSD 的"软 ZNS"

@@ -9,8 +9,8 @@ tags:
   - cross-platform
 ---
 
-> [!info] eBPF 2026 深度探索系列
-> 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+> [!info] eBPF 2026 深度探索系列 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+>
 > 1. [[2026-04-08-ebpf-deep-dive-ch1-registers-and-instructions|第一章：寄存器与指令集]]
 > 2. [[2026-04-08-ebpf-deep-dive-ch1-5-function-calls|第一.五章：四种函数调用与动态内存]]
 > 3. [[2026-04-08-ebpf-deep-dive-ch1-6-the-verifier|第一.六章：验证器 (Verifier) 的底层逻辑]]
@@ -62,6 +62,7 @@ tags:
 > 49. [[2026-04-09-ebpf-deep-dive-ch40-network-protocols-deep-dive|第四十章：网络协议深度解析——TCP/UDP/QUIC 的 eBPF 视角]]
 > 50. [[2026-04-09-ebpf-deep-dive-ch41-memory-safety-and-vulnerabilities|第四十一章：eBPF 内存安全与漏洞分析]]
 > 51. [[2026-04-09-ebpf-deep-dive-ch42-service-mesh-integration|第四十二章：eBPF 与 Service Mesh 深度集成]]
+
 ---
 
 ## 1. 概述：苹果生态的封闭与开放
@@ -72,14 +73,14 @@ tags:
 
 ### 1.1 macOS 内核 (XNU) 与 Linux 内核的本质差异
 
-| 维度 | Linux | XNU (macOS) |
-|:---|:---|:---|
-| **架构** | 单体宏内核 | 混合内核 (Mach + BSD) |
-| **可编程性** | 开源，可加载内核模块 | 封闭，仅支持 KEXT/SysExt |
-| **安全模型** | SELinux / AppArmor / LSM BPF | AMFI / SIP / Sandbox |
-| **追踪框架** | ftrace + eBPF + perf | DTrace + Instruments |
-| **网络栈** | Netfilter / XDP / TC | NetworkExtension / PacketFilter |
-| **驱动模型** | 可加载内核模块 (LKM) | DriverKit (用户态驱动) |
+| 维度         | Linux                        | XNU (macOS)                     |
+| :----------- | :--------------------------- | :------------------------------ |
+| **架构**     | 单体宏内核                   | 混合内核 (Mach + BSD)           |
+| **可编程性** | 开源，可加载内核模块         | 封闭，仅支持 KEXT/SysExt        |
+| **安全模型** | SELinux / AppArmor / LSM BPF | AMFI / SIP / Sandbox            |
+| **追踪框架** | ftrace + eBPF + perf         | DTrace + Instruments            |
+| **网络栈**   | Netfilter / XDP / TC         | NetworkExtension / PacketFilter |
+| **驱动模型** | 可加载内核模块 (LKM)         | DriverKit (用户态驱动)          |
 
 ---
 
@@ -126,13 +127,13 @@ es_new_client_result_t result = es_new_client(&client, ^(es_client_t *c, const e
 
 **ESF vs LSM BPF 对比**：
 
-| 维度 | LSM BPF (Linux) | ESF (macOS) |
-|:---|:---|:---|
-| **编程语言** | C + eBPF | C / Swift / ObjC |
-| **更新方式** | 动态加载字节码 | 编译为 System Extension |
-| **灵活性** | 极高（可编写任意逻辑） | 受限（预定义事件类型） |
-| **性能** | 内核态，极低开销 | 用户态回调，中等开销 |
-| **审批** | 无需 | 需 Apple Developer 审核 |
+| 维度         | LSM BPF (Linux)        | ESF (macOS)             |
+| :----------- | :--------------------- | :---------------------- |
+| **编程语言** | C + eBPF               | C / Swift / ObjC        |
+| **更新方式** | 动态加载字节码         | 编译为 System Extension |
+| **灵活性**   | 极高（可编写任意逻辑） | 受限（预定义事件类型）  |
+| **性能**     | 内核态，极低开销       | 用户态回调，中等开销    |
+| **审批**     | 无需                   | 需 Apple Developer 审核 |
 
 ### 2.3 内核架构限制
 
@@ -173,14 +174,14 @@ sudo bpftime attach -e 'uretprobe:/usr/lib/libSystem.B.dylib:connect' \
 
 **bpftime 在 macOS 上的能力范围**：
 
-| 能力 | macOS 支持 | 说明 |
-|:---|:---|:---|
-| **uprobe/uretprobe** | 支持 | 追踪用户态函数 |
-| **内存读取** | 支持 | bpf_probe_read_user |
-| **Map 操作** | 支持 | Hash/Array/RingBuf |
-| **网络包处理** | 不支持 | 无 XDP/TC 等价物 |
-| **内核态追踪** | 不支持 | 无法使用 kprobe |
-| **进程拦截** | 有限 | 通过 bpftime override_return |
+| 能力                 | macOS 支持 | 说明                         |
+| :------------------- | :--------- | :--------------------------- |
+| **uprobe/uretprobe** | 支持       | 追踪用户态函数               |
+| **内存读取**         | 支持       | bpf_probe_read_user          |
+| **Map 操作**         | 支持       | Hash/Array/RingBuf           |
+| **网络包处理**       | 不支持     | 无 XDP/TC 等价物             |
+| **内核态追踪**       | 不支持     | 无法使用 kprobe              |
+| **进程拦截**         | 有限       | 通过 bpftime override_return |
 
 ### 3.2 逻辑翻译层 (eBPF-to-ESF)
 
@@ -257,14 +258,14 @@ docker run --privileged -v $(pwd):/work ubuntu:24.04 \
 ```json
 // .vscode/settings.json
 {
-    "ebpf.validation.executable": "bpftool",
-    "ebpf.targetPlatform": "linux",
-    "remote.SSH.remotePlatform": {
-        "bpf-dev-vm": "linux"
-    },
-    "files.associations": {
-        "*.bpf.c": "c"
-    }
+  "ebpf.validation.executable": "bpftool",
+  "ebpf.targetPlatform": "linux",
+  "remote.SSH.remotePlatform": {
+    "bpf-dev-vm": "linux"
+  },
+  "files.associations": {
+    "*.bpf.c": "c"
+  }
 }
 ```
 
@@ -272,14 +273,14 @@ docker run --privileged -v $(pwd):/work ubuntu:24.04 \
 
 ## 5. macOS 原生替代方案对比
 
-| 需求 | eBPF (Linux) | macOS 原生方案 | bpftime (macOS) |
-|:---|:---|:---|:---|
-| **系统调用追踪** | kprobe/syscall trace | DTrace | uprobe on libc |
-| **网络包过滤** | XDP/TC | NetworkExtension | 不支持 |
-| **文件访问监控** | LSM BPF | ESF / Folder Action | uprobe on open |
-| **进程创建拦截** | LSM bprm_check | ESF AUTH_EXEC | 不支持 |
-| **性能分析** | perf + eBPF | Instruments | bpf_perf_event (有限) |
-| **安全策略执行** | LSM BPF | ESF + Sandbox | 不支持 |
+| 需求             | eBPF (Linux)         | macOS 原生方案      | bpftime (macOS)       |
+| :--------------- | :------------------- | :------------------ | :-------------------- |
+| **系统调用追踪** | kprobe/syscall trace | DTrace              | uprobe on libc        |
+| **网络包过滤**   | XDP/TC               | NetworkExtension    | 不支持                |
+| **文件访问监控** | LSM BPF              | ESF / Folder Action | uprobe on open        |
+| **进程创建拦截** | LSM bprm_check       | ESF AUTH_EXEC       | 不支持                |
+| **性能分析**     | perf + eBPF          | Instruments         | bpf_perf_event (有限) |
+| **安全策略执行** | LSM BPF              | ESF + Sandbox       | 不支持                |
 
 ---
 
@@ -349,18 +350,18 @@ Apple Silicon (M1/M2/M3/M4) 的统一内存架构和高效的性能核心为 eBP
 
 ### 8.1 DTrace vs bpftime vs Instruments 全维度对比
 
-| 维度 | DTrace (原生) | bpftime (eBPF) | Instruments (Apple) |
-|:---|:---|:---|:---|
-| **内核追踪** | 支持（但持续受限） | 不支持 | 支持 |
-| **用户态追踪** | 支持 | 支持 | 支持 |
-| **可编程性** | D 语言脚本 | C + eBPF 字节码 | 不可编程（固定视图） |
-| **实时性** | 实时 | 实时 | 事后分析 |
-| **性能开销** | 低-中 | 低 | 中-高 |
-| **跨平台** | macOS/Solaris/BSD | Linux/macOS/Windows | 仅 macOS |
-| **Apple 维护状态** | 持续裁剪中 | 社区驱动 | 积极维护 |
-| **未来前景** | 走向衰退 | 快速成长 | 稳定但有限 |
-| **安全场景** | 有限 | 有限（用户态） | 不支持 |
-| **网络追踪** | 有限 | 不支持 | 支持 |
+| 维度               | DTrace (原生)      | bpftime (eBPF)      | Instruments (Apple)  |
+| :----------------- | :----------------- | :------------------ | :------------------- |
+| **内核追踪**       | 支持（但持续受限） | 不支持              | 支持                 |
+| **用户态追踪**     | 支持               | 支持                | 支持                 |
+| **可编程性**       | D 语言脚本         | C + eBPF 字节码     | 不可编程（固定视图） |
+| **实时性**         | 实时               | 实时                | 事后分析             |
+| **性能开销**       | 低-中              | 低                  | 中-高                |
+| **跨平台**         | macOS/Solaris/BSD  | Linux/macOS/Windows | 仅 macOS             |
+| **Apple 维护状态** | 持续裁剪中         | 社区驱动            | 积极维护             |
+| **未来前景**       | 走向衰退           | 快速成长            | 稳定但有限           |
+| **安全场景**       | 有限               | 有限（用户态）      | 不支持               |
+| **网络追踪**       | 有限               | 不支持              | 支持                 |
 
 ### 8.2 场景选择决策树
 
@@ -388,14 +389,14 @@ graph TD
 
 ### 8.3 macOS 上 eBPF 开发的常见陷阱
 
-| 陷阱 | 描述 | 解决方案 |
-|:---|:---|:---|
-| **SIP 限制** | 无法追踪系统进程 | 使用 `csrutil disable` 或在 VM 中工作 |
-| **Dylib 路径变化** | macOS 更新后库路径改变 | 使用 `@rpath` 或运行时解析 |
-| **ARM vs x86** | Apple Silicon 和 Intel 的指针大小不同 | 使用 `bpftime` 的 CO-RE 特性自动适配 |
-| **Rosetta 干扰** | Rosetta 2 翻译的进程结构不同 | 针对翻译后的二进制重新计算偏移 |
-| **Hardened Runtime** | 应用签名限制代码注入 | 在调试时禁用 Hardened Runtime |
-| **内存布局随机化 (ASLR)** | 每次运行地址不同 | 使用符号名而非硬编码地址 |
+| 陷阱                      | 描述                                  | 解决方案                              |
+| :------------------------ | :------------------------------------ | :------------------------------------ |
+| **SIP 限制**              | 无法追踪系统进程                      | 使用 `csrutil disable` 或在 VM 中工作 |
+| **Dylib 路径变化**        | macOS 更新后库路径改变                | 使用 `@rpath` 或运行时解析            |
+| **ARM vs x86**            | Apple Silicon 和 Intel 的指针大小不同 | 使用 `bpftime` 的 CO-RE 特性自动适配  |
+| **Rosetta 干扰**          | Rosetta 2 翻译的进程结构不同          | 针对翻译后的二进制重新计算偏移        |
+| **Hardened Runtime**      | 应用签名限制代码注入                  | 在调试时禁用 Hardened Runtime         |
+| **内存布局随机化 (ASLR)** | 每次运行地址不同                      | 使用符号名而非硬编码地址              |
 
 ### 8.4 实战：在 macOS 上构建完整的 eBPF 开发测试流水线
 
@@ -485,13 +486,13 @@ python3 correlate_traces.py \
 
 ### 10.3 macOS 上 eBPF 开发的性能基准
 
-| 操作 | Intel Mac | Apple Silicon (M4) | 说明 |
-|:---|:---|:---|:---|
-| uprobe 挂载 | 50μs | 15μs | ARM 指针更简单 |
-| 单次 bpf_probe_read_user | 80ns | 35ns | UMA 减少内存屏障 |
-| RingBuffer 写入 | 200ns | 80ns | NEON 加速内存拷贝 |
-| Map 查找 (Hash) | 150ns | 60ns | 缓存效果更好 |
-| bpftime 启动 | 500ms | 200ms | JIT 编译更快 |
+| 操作                     | Intel Mac | Apple Silicon (M4) | 说明              |
+| :----------------------- | :-------- | :----------------- | :---------------- |
+| uprobe 挂载              | 50μs      | 15μs               | ARM 指针更简单    |
+| 单次 bpf_probe_read_user | 80ns      | 35ns               | UMA 减少内存屏障  |
+| RingBuffer 写入          | 200ns     | 80ns               | NEON 加速内存拷贝 |
+| Map 查找 (Hash)          | 150ns     | 60ns               | 缓存效果更好      |
+| bpftime 启动             | 500ms     | 200ms              | JIT 编译更快      |
 
 ---
 
@@ -533,17 +534,17 @@ A：bpftime 提供了与 Linux 类似的验证器错误信息，但格式略有�
 
 A：bpftime 在 macOS 上实现了 Linux eBPF API 的子集。兼容性矩阵：
 
-| API | Linux | macOS bpftime | 说明 |
-|:---|:---|:---|:---|
-| `bpf_probe_read_user()` | 支持 | 支持 | 完全兼容 |
-| `bpf_get_current_pid_tgid()` | 支持 | 支持 | 返回 macOS PID |
-| `bpf_get_current_comm()` | 支持 | 支持 | 返回进程名 |
-| `bpf_ringbuf_output()` | 支持 | 支持 | 完全兼容 |
-| `bpf_map_lookup_elem()` | 支持 | 支持 | Hash/Array Map |
-| `bpf_ktime_get_ns()` | 支持 | 支持 | 返回系统时间 |
-| `bpf_printk()` | 支持 | 支持 | 输出到 stdout |
-| `bpf_get_current_cgroup_id()` | 支持 | 不支持 | macOS 无 cgroup |
-| `bpf_sk_lookup_tcp()` | 支持 | 不支持 | 无 socket 操作 |
+| API                           | Linux | macOS bpftime | 说明            |
+| :---------------------------- | :---- | :------------ | :-------------- |
+| `bpf_probe_read_user()`       | 支持  | 支持          | 完全兼容        |
+| `bpf_get_current_pid_tgid()`  | 支持  | 支持          | 返回 macOS PID  |
+| `bpf_get_current_comm()`      | 支持  | 支持          | 返回进程名      |
+| `bpf_ringbuf_output()`        | 支持  | 支持          | 完全兼容        |
+| `bpf_map_lookup_elem()`       | 支持  | 支持          | Hash/Array Map  |
+| `bpf_ktime_get_ns()`          | 支持  | 支持          | 返回系统时间    |
+| `bpf_printk()`                | 支持  | 支持          | 输出到 stdout   |
+| `bpf_get_current_cgroup_id()` | 支持  | 不支持        | macOS 无 cgroup |
+| `bpf_sk_lookup_tcp()`         | 支持  | 不支持        | 无 socket 操作  |
 
 建议在代码中使用 `#ifdef __APPLE__` 条件编译处理平台差异。
 

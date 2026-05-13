@@ -1,12 +1,26 @@
 ---
 title: "Kernel Protocol Stack 深度探索 (二十八)：Socket API 概述"
 date: 2026-04-13
-tags: [linux, kernel, networking, series, socket, api, file-descriptor, socketpair, send, recv, sendmsg, recvmsg]
+tags:
+  [
+    linux,
+    kernel,
+    networking,
+    series,
+    socket,
+    api,
+    file-descriptor,
+    socketpair,
+    send,
+    recv,
+    sendmsg,
+    recvmsg,
+  ]
 description: "深入解析 POSIX Socket API——socket 创建、bind/listen/accept、send/recv 系列、sendmsg/recvmsg/control message、文件描述符与 socket 的关系"
 ---
 
-> [!info] Kernel Protocol Stack 深度探索系列
-> 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Kernel Protocol Stack 深度探索系列 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-kernel-protocol-stack-deep-dive-ch1-skbuff|第一章：sk_buff 与数据包生命周期]]
 > 2. [[2026-04-13-kernel-protocol-stack-deep-dive-ch2-netdevice|第二章：Netdevice 与网卡抽象]]
 > 3. [[2026-04-13-kernel-protocol-stack-deep-dive-ch3-ring-buffer|第三章：Ring Buffer 与 DMA]]
@@ -43,6 +57,7 @@ description: "深入解析 POSIX Socket API——socket 创建、bind/listen/acc
 Socket API 是用户空间程序与内核网络栈交互的标准接口。Linux 将 socket 作为文件描述符（file descriptor）处理，统一了网络 I/O 与文件 I/O 的编程模型。
 
 核心特点：
+
 - Socket 是文件描述符，可使用 read/write/poll/select/epoll
 - 支持多种协议族（AF_INET、AF_INET6、AF_UNIX）
 - 支持多种类型（SOCK_STREAM、SOCK_DGRAM、SOCK_RAW）
@@ -66,27 +81,28 @@ int raw_sock = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP); // RAW
 
 ### 2.2 domain（协议族）
 
-| Domain | 说明 |
-|--------|------|
-| AF_INET | IPv4 |
-| AF_INET6 | IPv6 |
+| Domain             | 说明               |
+| ------------------ | ------------------ |
+| AF_INET            | IPv4               |
+| AF_INET6           | IPv6               |
 | AF_UNIX / AF_LOCAL | Unix Domain Socket |
-| AF_NETLINK | Netlink |
-| AF_PACKET | 链路层原始套接字 |
+| AF_NETLINK         | Netlink            |
+| AF_PACKET          | 链路层原始套接字   |
 
 ### 2.3 type（套接字类型）
 
-| Type | 说明 |
-|------|------|
-| SOCK_STREAM | 面向连接的字节流（TCP） |
-| SOCK_DGRAM | 无连接的数据报（UDP） |
-| SOCK_RAW | 原始套接字（直接访问 IP 层） |
-| SOCK_SEQPACKET | 面向连接的有序数据包 |
-| SOCK_RDM | 可靠数据报（不常用） |
+| Type           | 说明                         |
+| -------------- | ---------------------------- |
+| SOCK_STREAM    | 面向连接的字节流（TCP）      |
+| SOCK_DGRAM     | 无连接的数据报（UDP）        |
+| SOCK_RAW       | 原始套接字（直接访问 IP 层） |
+| SOCK_SEQPACKET | 面向连接的有序数据包         |
+| SOCK_RDM       | 可靠数据报（不常用）         |
 
 ### 2.4 protocol
 
 通常设为 0，让内核根据 domain 和 type 自动选择协议：
+
 - AF_INET + SOCK_STREAM → IPPROTO_TCP
 - AF_INET + SOCK_DGRAM → IPPROTO_UDP
 
@@ -313,7 +329,7 @@ int inet_stream_connect(struct socket *sock, struct sockaddr *uaddr,
 
     // 启动 TCP 三次握手
     err = tcp_v4_connect(sock->file, uaddr, addr_len);
-    
+
     // 等待连接建立（可中断睡眠）
     current->state = TASK_INTERRUPTIBLE;
     schedule();
@@ -387,15 +403,15 @@ SYSCALL_DEFINE6(sendto, int, sockfd, void *, buff, size_t, len,
 
 ### 7.4 flags 参数
 
-| Flag | 说明 |
-|------|------|
-| MSG_OOB | 发送外带数据（TCP） |
-| MSG_DONTROUTE | 跳过路由表 |
-| MSG_DONTWAIT | 非阻塞 |
-| MSG_EOR | 标记消息结束 |
-| MSG_MORE | 还有更多数据 |
-| MSG_NOSIGNAL | 不发送 SIGPIPE |
-| MSG_CONFIRM | 确认对端收到 |
+| Flag          | 说明                |
+| ------------- | ------------------- |
+| MSG_OOB       | 发送外带数据（TCP） |
+| MSG_DONTROUTE | 跳过路由表          |
+| MSG_DONTWAIT  | 非阻塞              |
+| MSG_EOR       | 标记消息结束        |
+| MSG_MORE      | 还有更多数据        |
+| MSG_NOSIGNAL  | 不发送 SIGPIPE      |
+| MSG_CONFIRM   | 确认对端收到        |
 
 ---
 
@@ -432,7 +448,7 @@ SYSCALL_DEFINE6(recvfrom, int, sockfd, void *, ubuf, size_t, size,
 
     // 复制到用户空间
     err = skb_copy_datagram_msg(skb, 0, msg, size);
-    
+
     // 返回发送方地址
     if (uaddr) {
         struct sockaddr *addr = (struct sockaddr *)uaddr;
@@ -446,14 +462,14 @@ SYSCALL_DEFINE6(recvfrom, int, sockfd, void *, ubuf, size_t, size,
 
 ### 8.3 flags 参数
 
-| Flag | 说明 |
-|------|------|
-| MSG_OOB | 接收外带数据 |
-| MSG_PEEK | 窥视（不删除数据） |
-| MSG_DONTWAIT | 非阻塞 |
-| MSG_ERRQUEUE | 从错误队列接收 |
-| MSG_TRUNC | 数据被截断 |
-| MSG_WAITALL | 等待完整消息 |
+| Flag         | 说明               |
+| ------------ | ------------------ |
+| MSG_OOB      | 接收外带数据       |
+| MSG_PEEK     | 窥视（不删除数据） |
+| MSG_DONTWAIT | 非阻塞             |
+| MSG_ERRQUEUE | 从错误队列接收     |
+| MSG_TRUNC    | 数据被截断         |
+| MSG_WAITALL  | 等待完整消息       |
 
 ---
 
@@ -486,11 +502,11 @@ shutdown(sockfd, SHUT_RD);
 
 ### 9.3 两者区别
 
-| close() | shutdown() |
-|---------|------------|
-| 释放文件描述符 | 仅关闭连接方向 |
-| 引用计数减 1 | 立即生效 |
-| 所有方向关闭 | 可选择只关读或写 |
+| close()        | shutdown()       |
+| -------------- | ---------------- |
+| 释放文件描述符 | 仅关闭连接方向   |
+| 引用计数减 1   | 立即生效         |
+| 所有方向关闭   | 可选择只关读或写 |
 
 ---
 
@@ -542,14 +558,14 @@ for (cmsg = CMSG_FIRSTHDR(&msg); cmsg; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
 
 ### 10.4 常用 control message 类型
 
-| Type | Level | 说明 |
-|------|-------|------|
-| SCM_RIGHTS | SOL_SOCKET | 传递文件描述符 |
-| SCM_CREDENTIALS | SOL_SOCKET | 发送进程凭证 |
-| IP_TTL | IPPROTO_IP | 发送 TTL |
-| IP_PKTINFO | IPPROTO_IP | 接收包信息 |
-| IPV6_PKTINFO | IPPROTO_IPV6 | IPv6 包信息 |
-| SCM_TIMESTAMP | SOL_SOCKET | 时间戳 |
+| Type            | Level        | 说明           |
+| --------------- | ------------ | -------------- |
+| SCM_RIGHTS      | SOL_SOCKET   | 传递文件描述符 |
+| SCM_CREDENTIALS | SOL_SOCKET   | 发送进程凭证   |
+| IP_TTL          | IPPROTO_IP   | 发送 TTL       |
+| IP_PKTINFO      | IPPROTO_IP   | 接收包信息     |
+| IPV6_PKTINFO    | IPPROTO_IPV6 | IPv6 包信息    |
+| SCM_TIMESTAMP   | SOL_SOCKET   | 时间戳         |
 
 ---
 
@@ -623,18 +639,18 @@ setsockopt(sockfd, IPPROTO_IP, IP_MULTICAST_TTL, &ttl, sizeof(ttl));
 
 ## 13. 总结
 
-| 系统调用 | 用途 |
-|---------|------|
-| socket() | 创建 socket |
-| bind() | 绑定地址/端口 |
-| listen() | 监听（服务器） |
-| accept() | 接受连接 |
-| connect() | 连接服务器 |
-| send/sendto/sendmsg | 发送数据 |
-| recv/recvfrom/recvmsg | 接收数据 |
-| close() | 关闭 socket |
-| shutdown() | 半关闭 |
-| getsockopt/setsockopt | 设置选项 |
-| socketpair() | 创建成对 socket |
+| 系统调用              | 用途            |
+| --------------------- | --------------- |
+| socket()              | 创建 socket     |
+| bind()                | 绑定地址/端口   |
+| listen()              | 监听（服务器）  |
+| accept()              | 接受连接        |
+| connect()             | 连接服务器      |
+| send/sendto/sendmsg   | 发送数据        |
+| recv/recvfrom/recvmsg | 接收数据        |
+| close()               | 关闭 socket     |
+| shutdown()            | 半关闭          |
+| getsockopt/setsockopt | 设置选项        |
+| socketpair()          | 创建成对 socket |
 
 Socket API 是 Unix 网络编程的基石，通过文件描述符抽象统一了网络 I/O 与文件系统 I/O。

@@ -10,8 +10,8 @@ tags:
 description: "PCAP 是 Suricata 最简单但性能最低的抓包模式。本章解析 pcap 配置、libpcap 工作原理、snapshot 机制，以及与 AF-PACKET 的性能对比"
 ---
 
-> [!info] Suricata 2026 深度探索系列
-> 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Suricata 2026 深度探索系列 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-15-suricata-deep-dive-ch1-overview|第一章：Suricata 概述]]
 > 2. [[2026-04-15-suricata-deep-dive-ch2-config|第二章：Suricata 配置系统]]
 > 3. [[2026-04-15-suricata-deep-dive-ch3-runmodes|第三章：Runmodes 运行模式]]
@@ -32,7 +32,7 @@ sequenceDiagram
     participant KERNEL as Linux Kernel
     participant PCAP as libpcap
     participant SURICATA as Suricata Process
-    
+
     NIC->>KERNEL: 硬件中断
     KERNEL->>KERNEL: TCP/IP 协议栈处理
     KERNEL->>PCAP: 复制到 pcap 缓冲区
@@ -43,14 +43,14 @@ sequenceDiagram
 
 ### 1.1 与 AF-PACKET 对比
 
-| 特性 | PCAP | AF-PACKET |
-| :--- | :--- | :--- |
-| **性能** | 低 | 高 |
-| **内存拷贝** | 2次 (NIC→Kernel→User) | 0次 (mmap 共享) |
-| **跨平台** | Linux/BSD/macOS/Windows | Linux only |
-| **内核版本依赖** | 无 | 需要 2.6.27+ |
-| **RSS 支持** | 有限 | 完整 |
-| **XDP 支持** | 无 | 支持 |
+| 特性             | PCAP                    | AF-PACKET       |
+| :--------------- | :---------------------- | :-------------- |
+| **性能**         | 低                      | 高              |
+| **内存拷贝**     | 2次 (NIC→Kernel→User)   | 0次 (mmap 共享) |
+| **跨平台**       | Linux/BSD/macOS/Windows | Linux only      |
+| **内核版本依赖** | 无                      | 需要 2.6.27+    |
+| **RSS 支持**     | 有限                    | 完整            |
+| **XDP 支持**     | 无                      | 支持            |
 
 ---
 
@@ -61,9 +61,9 @@ sequenceDiagram
 ```yaml
 # suricata.yaml
 pcap:
-  - interface: eth0              # 监听接口
+  - interface: eth0 # 监听接口
     # 或
-  - interface: any               # 监听所有接口
+  - interface: any # 监听所有接口
 ```
 
 ### 2.2 完整配置项
@@ -73,28 +73,28 @@ pcap:
 pcap:
   - interface: eth0
     # 缓冲区大小
-    buffer-size: 16777216        # 16MB (libpcap 缓冲区)
-    
+    buffer-size: 16777216 # 16MB (libpcap 缓冲区)
+
     # 快照长度
-    snaplen: 65535               # 最大抓包长度
-    
+    snaplen: 65535 # 最大抓包长度
+
     # 混杂模式
-    promisc: yes                  # 是否启用混杂模式
-    
+    promisc: yes # 是否启用混杂模式
+
     # 监控方向
-    monitor: yes                  # Monitor 模式 (802.11 需要)
-    
+    monitor: yes # Monitor 模式 (802.11 需要)
+
     # 校验和
-    checksum-checks: 1            # 0=关闭, 1=开启
-    
+    checksum-checks: 1 # 0=关闭, 1=开启
+
     # BPF 过滤器 (编译后生效)
     bpf-filter: "tcp and port 80"
-    
+
     # 混杂超时
-    immediate-mode: no           # 立即模式 (关闭缓冲)
-    
+    immediate-mode: no # 立即模式 (关闭缓冲)
+
     # 混合模式 (同时监听多个接口)
-    mixed: yes                   # 混合模式
+    mixed: yes # 混合模式
     # 或使用 groups
     groups:
       - eth0
@@ -150,7 +150,7 @@ typedef struct PcapCaptureContext_ {
 static int PcapLoadConfig(PcapCaptureContext **pctx)
 {
     *pctx = SCCalloc(1, sizeof(PcapCaptureContext));
-    
+
     /* 读取 interface */
     const char *iface;
     if (ConfGet("pcap.interface", &iface) != 1) {
@@ -158,7 +158,7 @@ static int PcapLoadConfig(PcapCaptureContext **pctx)
         return -1;
     }
     strlcpy((*pctx)->iface, iface, PCAP_IFACE_NAME_LEN);
-    
+
     /* 读取 buffer-size (默认 16MB) */
     const char *bs_str;
     if (ConfGet("pcap.buffer-size", &bs_str) == 1) {
@@ -166,7 +166,7 @@ static int PcapLoadConfig(PcapCaptureContext **pctx)
     } else {
         (*pctx)->buffer_size = 16777216;  // 16MB
     }
-    
+
     /* 读取 snaplen (默认 65535) */
     const char *sl_str;
     if (ConfGet("pcap.snaplen", &sl_str) == 1) {
@@ -174,18 +174,18 @@ static int PcapLoadConfig(PcapCaptureContext **pctx)
     } else {
         (*pctx)->snaplen = 65535;
     }
-    
+
     /* 读取 promisc */
     int promisc = 1;
     (void)ConfGetBool("pcap.promisc", &promisc);
     (*pctx)->promisc = promisc;
-    
+
     /* 读取 bpf-filter */
     const char *bpf_str;
     if (ConfGet("pcap.bpf-filter", &bpf_str) == 1) {
         (*pctx)->bpf_prog_str = bpf_str;  // 待编译
     }
-    
+
     /* 读取 monitor 模式 */
     int monitor = 0;
     (void)ConfGetBool("pcap.monitor", &monitor);
@@ -200,36 +200,36 @@ static int PcapLoadConfig(PcapCaptureContext **pctx)
 static int PcapOpen(PcapCaptureContext *ctx)
 {
     char errbuf[PCAP_ERRBUF_SIZE];
-    
+
     /* 创建 pcap 句柄 */
     ctx->pcap_hdl = pcap_create(ctx->iface, errbuf);
     if (ctx->pcap_hdl == NULL) {
         SCLogError("pcap_create failed: %s", errbuf);
         return -1;
     }
-    
+
     /* 设置快照长度 */
     if (pcap_set_snaplen(ctx->pcap_hdl, ctx->snaplen) != 0) {
         SCLogWarning("pcap_set_snaplen failed: %s", pcap_geterr(ctx->pcap_hdl));
     }
-    
+
     /* 设置缓冲区大小 */
     if (pcap_set_buffer_size(ctx->pcap_hdl, ctx->buffer_size) != 0) {
         SCLogWarning("pcap_set_buffer_size failed: %s", pcap_geterr(ctx->pcap_hdl));
     }
-    
+
     /* 设置混杂模式 */
     if (pcap_set_promisc(ctx->pcap_hdl, ctx->promisc) != 0) {
         SCLogWarning("pcap_set_promisc failed: %s", pcap_geterr(ctx->pcap_hdl));
     }
-    
+
     /* 设置 Monitor 模式 (802.11) */
     #ifdef PCAP_SET_TSTAMP_PRECISION
     if (ctx->monitor) {
         pcap_set_tstamp_type(ctx->pcap_hdl, PCAP_TSTAMP_ADAPTER_TIMESTAMP);
     }
     #endif
-    
+
     /* 设置立即模式 (最小化延迟) */
     #ifdef PCAP_IMMEDIATE_MODE
     int immediate = 0;
@@ -239,27 +239,27 @@ static int PcapOpen(PcapCaptureContext *ctx)
         pcap_set_immediate_mode(ctx->pcap_hdl, mode);
     }
     #endif
-    
+
     /* 激活句柄 */
     if (pcap_activate(ctx->pcap_hdl) != 0) {
         SCLogError("pcap_activate failed: %s", pcap_geterr(ctx->pcap_hdl));
         pcap_close(ctx->pcap_hdl);
         return -1;
     }
-    
+
     /* 编译 BPF 过滤器 */
     if (ctx->bpf_prog_str) {
         if (pcap_compile(ctx->pcap_hdl, &ctx->bpf_prog, ctx->bpf_prog_str, 1, 0) != 0) {
             SCLogError("pcap_compile failed: %s", pcap_geterr(ctx->pcap_hdl));
             return -1;
         }
-        
+
         if (pcap_setfilter(ctx->pcap_hdl, &ctx->bpf_prog) != 0) {
             SCLogError("pcap_setfilter failed: %s", pcap_geterr(ctx->pcap_hdl));
             return -1;
         }
     }
-    
+
     return 0;
 }
 ```
@@ -271,16 +271,16 @@ static int PcapOpen(PcapCaptureContext *ctx)
 static TmEcode PcapLoop(ThreadVars *tv, void *data)
 {
     PcapCaptureContext *ctx = (PcapCaptureContext *)data;
-    
+
     /* 获取文件描述符用于 poll */
     int fd = pcap_get_selectable_fd(ctx->pcap_hdl);
     if (fd < 0) {
         SCLogError("pcap_get_selectable_fd failed");
         return TM_ECODE_FAILED;
     }
-    
+
     struct pollfd pfd = { .fd = fd, .events = POLLIN };
-    
+
     while (1) {
         /* 等待数据包 */
         int ret = poll(&pfd, 1, 1000);  // 1s 超时
@@ -288,26 +288,26 @@ static TmEcode PcapLoop(ThreadVars *tv, void *data)
             if (errno == EINTR) continue;
             break;
         }
-        
+
         if (ret == 0) {
             /* 超时：处理统计和清理 */
             PcapStatsUpdate(ctx);
             continue;
         }
-        
+
         /* 读取数据包 (非阻塞) */
         int pkts = pcap_dispatch(ctx->pcap_hdl, -1, PcapCallback, (u_char *)tv);
         if (pkts < 0) {
             SCLogError("pcap_dispatch failed: %s", pcap_geterr(ctx->pcap_hdl));
             break;
         }
-        
+
         /* 检查退出信号 */
         if (SignalHandlerIsFlagSet(SURIANSIG_TERM)) {
             break;
         }
     }
-    
+
     return TM_ECODE_OK;
 }
 
@@ -315,26 +315,26 @@ static TmEcode PcapLoop(ThreadVars *tv, void *data)
 static void PcapCallback(u_char *tv, const struct pcap_pkthdr *h, const u_char *pkt)
 {
     ThreadVars *thv = (ThreadVars *)tv;
-    
+
     /* 获取 Packet */
     Packet *p = PacketGetFromQueueOrAlloc();
     if (p == NULL) return;
-    
+
     /* 复制数据 */
     memcpy(p->ext_buffer, pkt, h->caplen);
     p->datalen = h->caplen;
     p->pktlen = h->len;
-    
+
     /* 设置时间戳 */
     p->ts.tv_sec = h->ts.tv_sec;
     p->ts.tv_usec = h->ts.tv_usec;
-    
+
     /* 设置数据包指针 */
     p->ext_pkt = (uint8_t *)p->ext_buffer;
-    
+
     /* 设置链路层类型 */
     p->datalink = DLT_EN10MB;  // Ethernet
-    
+
     /* 分发到处理管道 */
     if (TmThreadsSlotVar(thv, p) != TM_ECODE_OK) {
         PacketReturnToPool(p);
@@ -349,7 +349,7 @@ static void PcapCallback(u_char *tv, const struct pcap_pkthdr *h, const u_char *
 static void PcapStatsUpdate(PcapCaptureContext *ctx)
 {
     struct pcap_stat ps;
-    
+
     if (pcap_stats(ctx->pcap_hdl, &ps) == 0) {
         /* 更新计数器 */
         StatsAddUI64(ctx->tv, STATS_ID_PCAP_BACKLOG, ps.ps_recv);
@@ -375,12 +375,12 @@ flowchart LR
         BPF["BPF 过滤器"]
         PCAP_BUF["pcap 缓冲区"]
     end
-    
+
     subgraph USER["用户空间"]
         LIBPCAP["libpcap 库"]
         APP["Suricata"]
     end
-    
+
     NIC --> SKB
     SKB --> BPF
     BPF -->|"过滤后"| PCAP_BUF
@@ -422,15 +422,15 @@ pcap_compile(pcap_hdl, &prog, "tcp port 80", ...);
 
 ## 5. 配置 → 源码映射表
 
-| YAML 配置 | C 变量 | 源文件 | 说明 |
-| :--- | :--- | :--- | :--- |
-| `pcap[].interface` | `pcap_lookupdev()` | `source-pcap.c` | 网卡名 |
-| `pcap[].buffer-size` | `pcap_set_buffer_size()` | `source-pcap.c` | libpcap 缓冲区 |
-| `pcap[].snaplen` | `pcap_set_snaplen()` | `source-pcap.c` | 快照长度 |
-| `pcap[].promisc` | `pcap_set_promisc()` | `source-pcap.c` | 混杂模式 |
-| `pcap[].bpf-filter` | `pcap_compile()`/`pcap_setfilter()` | `source-pcap.c` | BPF 过滤器 |
-| `pcap[].monitor` | `pcap_set_tstamp_type()` | `source-pcap.c` | Monitor 模式 |
-| `pcap[].immediate-mode` | `pcap_set_immediate_mode()` | `source-pcap.c` | 立即模式 |
+| YAML 配置               | C 变量                              | 源文件          | 说明           |
+| :---------------------- | :---------------------------------- | :-------------- | :------------- |
+| `pcap[].interface`      | `pcap_lookupdev()`                  | `source-pcap.c` | 网卡名         |
+| `pcap[].buffer-size`    | `pcap_set_buffer_size()`            | `source-pcap.c` | libpcap 缓冲区 |
+| `pcap[].snaplen`        | `pcap_set_snaplen()`                | `source-pcap.c` | 快照长度       |
+| `pcap[].promisc`        | `pcap_set_promisc()`                | `source-pcap.c` | 混杂模式       |
+| `pcap[].bpf-filter`     | `pcap_compile()`/`pcap_setfilter()` | `source-pcap.c` | BPF 过滤器     |
+| `pcap[].monitor`        | `pcap_set_tstamp_type()`            | `source-pcap.c` | Monitor 模式   |
+| `pcap[].immediate-mode` | `pcap_set_immediate_mode()`         | `source-pcap.c` | 立即模式       |
 
 ---
 
@@ -442,10 +442,10 @@ pcap_compile(pcap_hdl, &prog, "tcp port 80", ...);
 # suricata.yaml — PCAP 性能优化
 pcap:
   - interface: eth0
-    buffer-size: 33554432         # 32MB (增大)
+    buffer-size: 33554432 # 32MB (增大)
     snaplen: 65535
-    immediate-mode: yes          # 最小化延迟
-    checksum-checks: 0            # NIC 已校验
+    immediate-mode: yes # 最小化延迟
+    checksum-checks: 0 # NIC 已校验
 ```
 
 ### 6.2 BPF 过滤器优化
@@ -480,12 +480,12 @@ net.core.rmem_default = 16777216
 
 ### 7.1 常见错误
 
-| 错误信息 | 原因 | 解决方案 |
-| :--- | :--- | :--- |
-| `pcap_create: eth0: That device is not up` | 接口未启用 | `ip link set eth0 up` |
-| `pcap_open_live: no VLAN support` | 内核不支持 VLAN | 升级内核或使用 `any` 接口 |
-| `pcap_setfilter: no VLAN support` | BPF 不支持 VLAN | 修改过滤规则 |
-| `pcap_dispatch: truncated` | snaplen 太小 | 增大 snaplen |
+| 错误信息                                   | 原因            | 解决方案                  |
+| :----------------------------------------- | :-------------- | :------------------------ |
+| `pcap_create: eth0: That device is not up` | 接口未启用      | `ip link set eth0 up`     |
+| `pcap_open_live: no VLAN support`          | 内核不支持 VLAN | 升级内核或使用 `any` 接口 |
+| `pcap_setfilter: no VLAN support`          | BPF 不支持 VLAN | 修改过滤规则              |
+| `pcap_dispatch: truncated`                 | snaplen 太小    | 增大 snaplen              |
 
 ### 7.2 调试方法
 
@@ -524,17 +524,17 @@ suricata -r /path/to/capture.pcap -c suricata.yaml
 static int PcapFileOpen(PcapCaptureContext *ctx, const char *filename)
 {
     char errbuf[PCAP_ERRBUF_SIZE];
-    
+
     /* 打开 PCAP 文件 */
     ctx->pcap_hdl = pcap_open_offline(filename, errbuf);
     if (ctx->pcap_hdl == NULL) {
         SCLogError("pcap_open_offline failed: %s", errbuf);
         return -1;
     }
-    
+
     /* 获取链路层类型 */
     ctx->datalink = pcap_datalink(ctx->pcap_hdl);
-    
+
     return 0;
 }
 ```

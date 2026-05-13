@@ -12,8 +12,8 @@ tags:
   - networking
 ---
 
-> [!info] Cilium 2026 深度探索系列
-> 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+> [!info] Cilium 2026 深度探索系列 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+>
 > 1. [[2026-04-14-cilium-deep-dive-ch1-cilium-overview|第一章：Cilium 概述]]
 > 2. [[2026-04-14-cilium-deep-dive-ch2-architecture|第二章：Cilium 架构]]
 > 3. [[2026-04-14-cilium-deep-dive-ch3-ebpf-datapath|第三章：eBPF 数据面]]
@@ -49,28 +49,28 @@ spec:
     matchLabels:
       app: frontend
   ingress:
-  - fromEndpoints:
-    - matchLabels:
-        app: backend
-    toPorts:
-    - port: "8080"
-      protocol: TCP
-      rules:
-        http:
-        - method: "GET"
-          path: "/api/v1.*"
+    - fromEndpoints:
+        - matchLabels:
+            app: backend
+      toPorts:
+        - port: "8080"
+          protocol: TCP
+          rules:
+            http:
+              - method: "GET"
+                path: "/api/v1.*"
 ```
 
 ### 1.1 CNP vs K8s NetworkPolicy
 
-| 特性 | K8s NetworkPolicy | CiliumNetworkPolicy |
-|:---|:---|:---|
-| **L3 策略** | Pod/namespace selector | + CIDR 范围 |
-| **L4 策略** | TCP/UDP port | + ICMP, SCTP |
-| **L7 策略** | ❌ 不支持 | HTTP/gRPC/DNS/SQL/Kafka |
-| **默认行为** | 允许一切（未匹配时） | 可配置默认拒绝 |
-| **策略级别** | 命名资源 | + 全局/集群范围 |
-| **身份感知** | Pod 身份 | 加密身份 + 审计 |
+| 特性         | K8s NetworkPolicy      | CiliumNetworkPolicy     |
+| :----------- | :--------------------- | :---------------------- |
+| **L3 策略**  | Pod/namespace selector | + CIDR 范围             |
+| **L4 策略**  | TCP/UDP port           | + ICMP, SCTP            |
+| **L7 策略**  | ❌ 不支持              | HTTP/gRPC/DNS/SQL/Kafka |
+| **默认行为** | 允许一切（未匹配时）   | 可配置默认拒绝          |
+| **策略级别** | 命名资源               | + 全局/集群范围         |
+| **身份感知** | Pod 身份               | 加密身份 + 审计         |
 
 ---
 
@@ -88,40 +88,40 @@ spec:
   endpointSelector:
     matchLabels:
       app: my-app
-  
+
   # 入口规则（可选）
   ingress:
-  - from:
-    # 方式1: 通过端点选择器
-    - endpointSelector:
-        matchLabels:
-          app: other-app
-    # 方式2: 通过 CIDR
-    - cidrs:
-      - "10.0.0.0/8"
-    # 方式3: 通过身份
-    - identity:
-        matchLabels:
-          app: specific-identity
-    toPorts:
-    - port: "80"
-      protocol: TCP
-      rules:
-        http:
-        - method: "GET"
-          path: "/health"
-  
+    - from:
+        # 方式1: 通过端点选择器
+        - endpointSelector:
+            matchLabels:
+              app: other-app
+        # 方式2: 通过 CIDR
+        - cidrs:
+            - "10.0.0.0/8"
+        # 方式3: 通过身份
+        - identity:
+            matchLabels:
+              app: specific-identity
+      toPorts:
+        - port: "80"
+          protocol: TCP
+          rules:
+            http:
+              - method: "GET"
+                path: "/health"
+
   # 出口规则（可选）
   egress:
-  - toEndpoints:
-    - matchLabels:
-        app: database
-    toPorts:
-    - port: "5432"
-      protocol: TCP
-    - toDNS:
-      - "*.example.com"
-      port: "53"
+    - toEndpoints:
+        - matchLabels:
+            app: database
+      toPorts:
+        - port: "5432"
+          protocol: TCP
+        - toDNS:
+            - "*.example.com"
+          port: "53"
 ```
 
 ### 2.2 规则评估顺序
@@ -165,9 +165,9 @@ spec:
     matchLabels:
       app: server
   ingress:
-  - fromEndpoints:
-    - matchLabels:
-        app: client
+    - fromEndpoints:
+        - matchLabels:
+            app: client
 ```
 
 ### 3.2 基于 CIDR 的 L3 策略
@@ -185,10 +185,10 @@ spec:
     matchLabels:
       app: internal-service
   ingress:
-  - fromCidrs:
-    - "192.168.1.0/24"    # 允许办公室网络
-    - "10.0.0.0/8"        # 允许内网
-    - "!10.0.0.5/32"      # 排除特定 IP
+    - fromCidrs:
+        - "192.168.1.0/24" # 允许办公室网络
+        - "10.0.0.0/8" # 允许内网
+        - "!10.0.0.5/32" # 排除特定 IP
 ```
 
 **CIDR 策略的典型使用场景**：
@@ -212,15 +212,15 @@ spec:
     matchLabels:
       app: sensitive-data
   ingress:
-  - from:
-    # 必须同时满足：
-    # 1. 来自指定 CIDR
-    # 2. 来自带有特定标签的端点
-    - cidrs:
-      - "10.0.0.0/8"
-      endpointSelector:
-        matchLabels:
-          zone: trusted
+    - from:
+        # 必须同时满足：
+        # 1. 来自指定 CIDR
+        # 2. 来自带有特定标签的端点
+        - cidrs:
+            - "10.0.0.0/8"
+          endpointSelector:
+            matchLabels:
+              zone: trusted
 ```
 
 ---
@@ -242,9 +242,9 @@ spec:
     matchLabels:
       app: webserver
   ingress:
-  - toPorts:
-    - port: "80"
-      protocol: TCP
+    - toPorts:
+        - port: "80"
+          protocol: TCP
 ```
 
 ### 4.2 多端口 L4 策略
@@ -260,27 +260,27 @@ spec:
     matchLabels:
       app: webserver
   ingress:
-  - toPorts:
-    - ports:
-      - port: "80"
-        protocol: TCP
-      - port: "443"
-        protocol: TCP
-      - port: "8080"
-        protocol: TCP
+    - toPorts:
+        - ports:
+            - port: "80"
+              protocol: TCP
+            - port: "443"
+              protocol: TCP
+            - port: "8080"
+              protocol: TCP
 ```
 
 ### 4.3 支持的协议
 
 CiliumNetworkPolicy 支持的协议：
 
-| 协议 | 说明 | 示例 |
-|:---|:---|:---|
-| TCP | 传输控制协议 | `protocol: TCP` |
-| UDP | 用户数据报协议 | `protocol: UDP` |
-| SCTP | 流控制传输协议 | `protocol: SCTP` |
-| ICMP | 互联网控制消息协议 | `protocol: ICMP` |
-| ANY | 任何协议 | `protocol: 1` (ICMPv6) |
+| 协议 | 说明               | 示例                   |
+| :--- | :----------------- | :--------------------- |
+| TCP  | 传输控制协议       | `protocol: TCP`        |
+| UDP  | 用户数据报协议     | `protocol: UDP`        |
+| SCTP | 流控制传输协议     | `protocol: SCTP`       |
+| ICMP | 互联网控制消息协议 | `protocol: ICMP`       |
+| ANY  | 任何协议           | `protocol: 1` (ICMPv6) |
 
 ### 4.4 ICMP 协议控制
 
@@ -295,14 +295,14 @@ spec:
     matchLabels:
       app: network-tool
   egress:
-  - toPorts:
-    - port: "0"
-      protocol: ICMP
-      rules:
-        icmps:
-        - fields:
-          - type: 8   # Echo Request
-            code: 0
+    - toPorts:
+        - port: "0"
+          protocol: ICMP
+          rules:
+            icmps:
+              - fields:
+                  - type: 8 # Echo Request
+                    code: 0
 ```
 
 ---
@@ -324,31 +324,31 @@ spec:
     matchLabels:
       app: api-gateway
   ingress:
-  - fromEndpoints:
-    - matchLabels:
-        app: frontend
-    toPorts:
-    - port: "8080"
-      protocol: TCP
-      rules:
-        http:
-        # 允许 GET /api/users
-        - method: "GET"
-          path: "/api/users"
-        # 允许 GET /api/products
-        - method: "GET"
-          path: "/api/products"
-        # 拒绝其他所有请求（隐式）
+    - fromEndpoints:
+        - matchLabels:
+            app: frontend
+      toPorts:
+        - port: "8080"
+          protocol: TCP
+          rules:
+            http:
+              # 允许 GET /api/users
+              - method: "GET"
+                path: "/api/users"
+              # 允许 GET /api/products
+              - method: "GET"
+                path: "/api/products"
+            # 拒绝其他所有请求（隐式）
 ```
 
 ### 5.2 HTTP 策略字段
 
-| 字段 | 类型 | 说明 |
-|:---|:---|:---|
-| `method` | string/regex | HTTP 方法（GET/POST/PUT/DELETE/PATCH/HEAD/OPTIONS） |
-| `path` | string/regex | URL 路径 |
-| `protocol` | string | HTTP 版本（HTTP/1.1, HTTP/2） |
-| `headers` | []HeaderMatch | 请求头匹配 |
+| 字段       | 类型          | 说明                                                |
+| :--------- | :------------ | :-------------------------------------------------- |
+| `method`   | string/regex  | HTTP 方法（GET/POST/PUT/DELETE/PATCH/HEAD/OPTIONS） |
+| `path`     | string/regex  | URL 路径                                            |
+| `protocol` | string        | HTTP 版本（HTTP/1.1, HTTP/2）                       |
+| `headers`  | []HeaderMatch | 请求头匹配                                          |
 
 ```yaml
 # 带 Header 匹配的 HTTP 策略
@@ -361,19 +361,19 @@ spec:
     matchLabels:
       app: api-gateway
   ingress:
-  - fromEndpoints:
-    - matchLabels:
-        app: mobile-app
-    toPorts:
-    - port: "8080"
-      protocol: TCP
-      rules:
-        http:
-        - method: "POST"
-          path: "/api/v1/payments"
-          headers:
-          - "X-API-Key:.*"           # 必须包含 API Key
-          - "Content-Type: application/json"
+    - fromEndpoints:
+        - matchLabels:
+            app: mobile-app
+      toPorts:
+        - port: "8080"
+          protocol: TCP
+          rules:
+            http:
+              - method: "POST"
+                path: "/api/v1/payments"
+                headers:
+                  - "X-API-Key:.*" # 必须包含 API Key
+                  - "Content-Type: application/json"
 ```
 
 ### 5.3 gRPC 策略
@@ -389,21 +389,21 @@ spec:
     matchLabels:
       app: order-service
   ingress:
-  - fromEndpoints:
-    - matchLabels:
-        app: api-gateway
-    toPorts:
-    - port: "50051"
-      protocol: TCP
-      rules:
-        http:
-        # gRPC 使用 POST，path 为 /service.Method 格式
-        - method: "POST"
-          path: "/OrderService/CreateOrder"
-        - method: "POST"
-          path: "/OrderService/CancelOrder"
-        - method: "POST"
-          path: "/OrderService/GetOrder"
+    - fromEndpoints:
+        - matchLabels:
+            app: api-gateway
+      toPorts:
+        - port: "50051"
+          protocol: TCP
+          rules:
+            http:
+              # gRPC 使用 POST，path 为 /service.Method 格式
+              - method: "POST"
+                path: "/OrderService/CreateOrder"
+              - method: "POST"
+                path: "/OrderService/CancelOrder"
+              - method: "POST"
+                path: "/OrderService/GetOrder"
 ```
 
 ### 5.4 DNS 策略
@@ -419,14 +419,14 @@ spec:
     matchLabels:
       app: webserver
   egress:
-  - toPorts:
-    - port: "53"
-      protocol: UDP
-      rules:
-        dns:
-        - matchPattern: "*.example.com"      # 允许访问 *.example.com
-        - matchPattern: "internal.db.local" # 允许访问内部数据库
-        - matchPattern: "kubernetes.default" # 允许 K8s API
+    - toPorts:
+        - port: "53"
+          protocol: UDP
+          rules:
+            dns:
+              - matchPattern: "*.example.com" # 允许访问 *.example.com
+              - matchPattern: "internal.db.local" # 允许访问内部数据库
+              - matchPattern: "kubernetes.default" # 允许 K8s API
 ```
 
 ---
@@ -446,20 +446,20 @@ spec:
     matchLabels:
       app: frontend
   egress:
-  # 允许访问后端服务
-  - toEndpoints:
-    - matchLabels:
-        app: backend
-    toPorts:
-    - port: "8080"
-      protocol: TCP
-  # 允许 DNS 查询
-  - toPorts:
-    - port: "53"
-      protocol: UDP
-    toEndpoints:
-    - matchLabels:
-        k8s-app: kube-dns
+    # 允许访问后端服务
+    - toEndpoints:
+        - matchLabels:
+            app: backend
+      toPorts:
+        - port: "8080"
+          protocol: TCP
+    # 允许 DNS 查询
+    - toPorts:
+        - port: "53"
+          protocol: UDP
+      toEndpoints:
+        - matchLabels:
+            k8s-app: kube-dns
 ```
 
 ### 6.2 出口 CIDR 策略
@@ -475,12 +475,12 @@ spec:
     matchLabels:
       app: backup-client
   egress:
-  # 允许备份到特定 IP
-  - toCidrs:
-    - "192.168.50.0/24"
-    toPorts:
-    - port: "873"
-      protocol: TCP
+    # 允许备份到特定 IP
+    - toCidrs:
+        - "192.168.50.0/24"
+      toPorts:
+        - port: "873"
+          protocol: TCP
   # 拒绝其他所有出口
 ```
 
@@ -512,21 +512,21 @@ spec:
     matchLabels:
       app: secure-app
   ingress:
-  # 只允许前端访问
-  - fromEndpoints:
-    - matchLabels:
-        app: frontend
-    toPorts:
-    - port: "443"
-      protocol: TCP
+    # 只允许前端访问
+    - fromEndpoints:
+        - matchLabels:
+            app: frontend
+      toPorts:
+        - port: "443"
+          protocol: TCP
   egress:
-  # 只允许访问数据库
-  - toEndpoints:
-    - matchLabels:
-        app: database
-    toPorts:
-    - port: "5432"
-      protocol: TCP
+    # 只允许访问数据库
+    - toEndpoints:
+        - matchLabels:
+            app: database
+      toPorts:
+        - port: "5432"
+          protocol: TCP
   # 所有其他流量被隐式拒绝
 ```
 
@@ -572,14 +572,14 @@ spec:
     matchLabels:
       app: payment-service
   ingress:
-  # 允许具有特定身份标签的服务访问
-  - fromIdentity:
-      matchLabels:
-        app: api-gateway
-        environment: production
-    toPorts:
-    - port: "8080"
-      protocol: TCP
+    # 允许具有特定身份标签的服务访问
+    - fromIdentity:
+        matchLabels:
+          app: api-gateway
+          environment: production
+      toPorts:
+        - port: "8080"
+          protocol: TCP
 ```
 
 ---
@@ -600,24 +600,24 @@ spec:
     matchLabels:
       app: web-frontend
   egress:
-  - toEndpoints:
-    - matchLabels:
-        app: api-gateway
-    toPorts:
-    - port: "8080"
-      protocol: TCP
-      rules:
-        http:
-        - method: "POST"
-          path: "/api/v1.*"
-        - method: "GET"
-          path: "/api/v1/users.*"
-  - toPorts:
-    - port: "53"
-      protocol: UDP
-    toEndpoints:
-    - matchLabels:
-        k8s-app: kube-dns
+    - toEndpoints:
+        - matchLabels:
+            app: api-gateway
+      toPorts:
+        - port: "8080"
+          protocol: TCP
+          rules:
+            http:
+              - method: "POST"
+                path: "/api/v1.*"
+              - method: "GET"
+                path: "/api/v1/users.*"
+    - toPorts:
+        - port: "53"
+          protocol: UDP
+      toEndpoints:
+        - matchLabels:
+            k8s-app: kube-dns
 
 ---
 apiVersion: cilium.io/v2
@@ -629,29 +629,29 @@ spec:
     matchLabels:
       app: api-gateway
   ingress:
-  - fromEndpoints:
-    - matchLabels:
-        app: web-frontend
-    toPorts:
-    - port: "8080"
-      protocol: TCP
-      rules:
-        http:
-        - method: "POST"
-          path: "/api/v1.*"
+    - fromEndpoints:
+        - matchLabels:
+            app: web-frontend
+      toPorts:
+        - port: "8080"
+          protocol: TCP
+          rules:
+            http:
+              - method: "POST"
+                path: "/api/v1.*"
   egress:
-  - toEndpoints:
-    - matchLabels:
-        app: user-service
-    toPorts:
-    - port: "8080"
-      protocol: TCP
-  - toEndpoints:
-    - matchLabels:
-        app: order-service
-    toPorts:
-    - port: "8080"
-      protocol: TCP
+    - toEndpoints:
+        - matchLabels:
+            app: user-service
+      toPorts:
+        - port: "8080"
+          protocol: TCP
+    - toEndpoints:
+        - matchLabels:
+            app: order-service
+      toPorts:
+        - port: "8080"
+          protocol: TCP
 ```
 
 ### 9.2 零信任网络策略
@@ -668,35 +668,35 @@ spec:
       app: sensitive-app
   description: "Zero trust policy - default deny, explicit allow"
   ingress:
-  # 只允许 API 网关访问
-  - fromEndpoints:
-    - matchLabels:
-        app: api-gateway
-        environment: production
-    toPorts:
-    - port: "443"
-      protocol: TCP
-      rules:
-        http:
-        - method: "POST"
-          path: "/api/v1/data"
-          headers:
-          - "Authorization: Bearer .+"
+    # 只允许 API 网关访问
+    - fromEndpoints:
+        - matchLabels:
+            app: api-gateway
+            environment: production
+      toPorts:
+        - port: "443"
+          protocol: TCP
+          rules:
+            http:
+              - method: "POST"
+                path: "/api/v1/data"
+                headers:
+                  - "Authorization: Bearer .+"
   egress:
-  # 只允许访问数据库
-  - toEndpoints:
-    - matchLabels:
-        app: postgres
-    toPorts:
-    - port: "5432"
-      protocol: TCP
-  # 只允许 DNS
-  - toPorts:
-    - port: "53"
-      protocol: UDP
-    toEndpoints:
-    - matchLabels:
-        k8s-app: kube-dns
+    # 只允许访问数据库
+    - toEndpoints:
+        - matchLabels:
+            app: postgres
+      toPorts:
+        - port: "5432"
+          protocol: TCP
+    # 只允许 DNS
+    - toPorts:
+        - port: "53"
+          protocol: UDP
+      toEndpoints:
+        - matchLabels:
+            k8s-app: kube-dns
 ```
 
 ---
@@ -740,12 +740,12 @@ kubectl -n kube-system exec ds/cilium -- \
 
 CiliumNetworkPolicy 提供了比 K8s NetworkPolicy 更强大的网络策略能力：
 
-| 层级 | 能力 |
-|:---|:---|
-| **L3** | Pod Selector、CIDR、身份、namespace |
-| **L4** | TCP/UDP/SCTP/ICMP 端口控制 |
-| **L7** | HTTP/gRPC/DNS/Kafka/SQL 深度检测 |
-| **默认行为** | 可配置默认拒绝 |
-| **身份安全** | 加密身份、审计日志 |
+| 层级         | 能力                                |
+| :----------- | :---------------------------------- |
+| **L3**       | Pod Selector、CIDR、身份、namespace |
+| **L4**       | TCP/UDP/SCTP/ICMP 端口控制          |
+| **L7**       | HTTP/gRPC/DNS/Kafka/SQL 深度检测    |
+| **默认行为** | 可配置默认拒绝                      |
+| **身份安全** | 加密身份、审计日志                  |
 
 下一章我们将介绍 Kubernetes 原生 NetworkPolicy 以及 Cilium 对其的增强。

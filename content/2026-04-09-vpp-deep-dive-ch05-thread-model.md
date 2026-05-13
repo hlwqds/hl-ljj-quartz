@@ -50,14 +50,14 @@ description: "深入解析 VPP Thread 模型：Main vs Workers、barrier 同步�
 
 ### 1.2 Main vs Worker 职责
 
-| 职责 | Main Thread | Worker Threads |
-|------|-------------|----------------|
-| **初始化** | ✅ 完成 | ❌ | 
-| **Plugin 加载** | ✅ 完成 | ❌ |
-| **图配置** | ✅ 执行 | ❌ |
-| **包处理** | ❌ | ✅ 独占 |
-| **CLI/API** | ✅ 管理 | ❌ |
-| **Worker 同步** | ✅ barrier | ❌ |
+| 职责            | Main Thread | Worker Threads |
+| --------------- | ----------- | -------------- |
+| **初始化**      | ✅ 完成     | ❌             |
+| **Plugin 加载** | ✅ 完成     | ❌             |
+| **图配置**      | ✅ 执行     | ❌             |
+| **包处理**      | ❌          | ✅ 独占        |
+| **CLI/API**     | ✅ 管理     | ❌             |
+| **Worker 同步** | ✅ barrier  | ❌             |
 
 ## 2. Thread 初始化
 
@@ -689,14 +689,14 @@ vpp# show node
 
 VPP Thread 模型核心设计：
 
-| 组件 | 设计 | 优势 |
-|------|------|------|
-| **Main Thread** | 管理平面 | 配置变更、API 处理 |
-| **Worker Threads** | 数据平面 | 线性扩展、多核并行 |
-| **Barrier Sync** | Main ↔ Workers | 安全的配置变更 |
-| **RCU** | 锁less 读取 | 高效并发 |
-| **Work Stealing** | 动态负载均衡 | 减少空闲 |
-| **CPU Affinity** | NUMA 感知 | 最小化延迟 |
+| 组件               | 设计           | 优势               |
+| ------------------ | -------------- | ------------------ |
+| **Main Thread**    | 管理平面       | 配置变更、API 处理 |
+| **Worker Threads** | 数据平面       | 线性扩展、多核并行 |
+| **Barrier Sync**   | Main ↔ Workers | 安全的配置变更     |
+| **RCU**            | 锁less 读取    | 高效并发           |
+| **Work Stealing**  | 动态负载均衡   | 减少空闲           |
+| **CPU Affinity**   | NUMA 感知      | 最小化延迟         |
 
 ```
 Thread 协作流程：

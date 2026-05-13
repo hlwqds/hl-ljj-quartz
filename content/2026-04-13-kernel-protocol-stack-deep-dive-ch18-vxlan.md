@@ -1,12 +1,13 @@
 ---
 title: "Kernel Protocol Stack 深度探索 (十八)：VXLAN 虚拟可扩展局域网"
 date: 2026-04-13
-tags: [linux, kernel, networking, series, vxlan, tunnel, virtualization, sdn, network virtualization]
+tags:
+  [linux, kernel, networking, series, vxlan, tunnel, virtualization, sdn, network virtualization]
 description: "深入解析 Linux VXLAN 隧道协议——VXLAN 头部结构、封装解封装、VTEP、BUM 流量处理、组播映射、以及与 VLAN 的对比"
 ---
 
-> [!info] Kernel Protocol Stack 深度探索系列
-> 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Kernel Protocol Stack 深度探索系列 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-kernel-protocol-stack-deep-dive-ch1-skbuff|第一章：sk_buff 与数据包生命周期]]
 > 2. [[2026-04-13-kernel-protocol-stack-deep-dive-ch2-netdevice|第二章：Netdevice 与网卡抽象]]
 > 3. [[2026-04-13-kernel-protocol-stack-deep-dive-ch3-ring-buffer|第三章：Ring Buffer 与 DMA]]
@@ -34,12 +35,12 @@ VXLAN（Virtual Extensible LAN，虚拟可扩展局域网）是一种网络虚�
 
 **VXLAN 解决的问题：**
 
-| 问题 | 传统方案 | VXLAN 解决方案 |
-|------|----------|----------------|
-| VLAN ID 数量不足 | 最多 4094 个 VLAN | 1600 万个 VNI |
-| 多租户网络隔离 | VLAN 隔离 | VNI + VRF 隔离 |
-| 虚拟机迁移限制 | 同一 VLAN 内 | 跨三层网络迁移 |
-| STP 阻塞问题 | 生成树协议限制路径 | 基于 UDP 的等价路由 |
+| 问题             | 传统方案           | VXLAN 解决方案      |
+| ---------------- | ------------------ | ------------------- |
+| VLAN ID 数量不足 | 最多 4094 个 VLAN  | 1600 万个 VNI       |
+| 多租户网络隔离   | VLAN 隔离          | VNI + VRF 隔离      |
+| 虚拟机迁移限制   | 同一 VLAN 内       | 跨三层网络迁移      |
+| STP 阻塞问题     | 生成树协议限制路径 | 基于 UDP 的等价路由 |
 
 **VXLAN 核心特点：**
 
@@ -76,12 +77,12 @@ VXLAN（Virtual Extensible LAN，虚拟可扩展局域网）是一种网络虚�
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 ```
 
-| 字段 | 位宽 | 说明 |
-|------|------|------|
-| I (I flag) | 1 | 1 表示存在 VNI，0 表示未使用 |
-| Reserved | 95 | 保留字段 |
-| VNI | 24 | VXLAN Network Identifier |
-| Reserved | 8 | 保留字段 |
+| 字段       | 位宽 | 说明                         |
+| ---------- | ---- | ---------------------------- |
+| I (I flag) | 1    | 1 表示存在 VNI，0 表示未使用 |
+| Reserved   | 95   | 保留字段                     |
+| VNI        | 24   | VXLAN Network Identifier     |
+| Reserved   | 8    | 保留字段                     |
 
 ### 2.3 内核 VXLAN 头结构
 
@@ -127,6 +128,7 @@ struct udphdr {
 ### 3.1 VTEP（VXLAN Tunnel End Point）
 
 VTEP 是 VXLAN 隧道的端点，负责：
+
 - 将本地 VM 的 Ethernet 帧封装为 VXLAN 包
 - 将接收到的 VXLAN 包解封装为 Ethernet 帧
 - 维护 MAC-to-VTEP 的映射表（MAC 表）
@@ -155,7 +157,7 @@ static netdev_tx_t vxlan_xmit(struct sk_buff *skb, struct net_device *dev)
     __be32 dst_ip;
     __be16 src_port, dst_port;
     int min_mtu = vxlan->min_mtu;
-    
+
     // 1. 获取目标 VTEP IP（通过 MAC 表查找或组播）
     fdb = vxlan_fdb_find(vxlan, eth_hdr(skb)->h_dest);
     if (fdb) {
@@ -166,19 +168,19 @@ static netdev_tx_t vxlan_xmit(struct sk_buff *skb, struct net_device *dev)
         dst_ip = config->group_addr;
         dst_port = config->port;
     }
-    
+
     // 2. 添加 VXLAN 头部
     if (!skb_inner_mac_header(skb))
         skb_set_inner_mac_header(skb, -ETH_HLEN);
-    
+
     vxlan_build_skb(skb, vxlan->sock, sizeof(struct vxlanhdr),
                      vni, dst_ip, src_port, dst_port);
-    
+
     // 3. 添加外层 IP 头
     udp_tunnel_xmit_skb(rt, vxlan->sock->sk, skb,
                         src_ip, dst_ip, protocol,
                         tos, ttl, df, src_port, dst_port, false);
-    
+
     return NETDEV_TX_OK;
 }
 ```
@@ -194,31 +196,31 @@ static int vxlan_rcv(struct sock *sk, struct sk_buff *skb)
     struct vxlan_config *cfg;
     __be32 vni;
     int err;
-    
+
     // 1. 解析 VXLAN 头部
     if (!pskb_may_pull(skb, VXLAN_HLEN))
         return -EINVAL;
-    
+
     vxh = (struct vxlanhdr *)skb->data;
     if (!(vxh->vx_flags & VXLAN_HF_VNI))
         return -EINVAL;
-    
+
     vni = vxlan_vni(vxh->vx_vni);
     skb_pull(skb, VXLAN_HLEN);
-    
+
     // 2. 查找对应的 vxlan socket
     vs = vxlan_lookup_sock(skb->sk, vni);
     if (!vs)
         return -ENOENT;
     cfg = &vs->cfg;
-    
+
     // 3. 更新 MAC 表
     vxlan_fdb_update(vs, src_mac, src_ip, vni, ...);
-    
+
     // 4. 设置网络层头并交付给上层
     skb->protocol = eth_type_trans(skb, dev);
     skb_scrub_packet(skb, false);
-    
+
     netif_rx(skb);
     return 0;
 }
@@ -302,11 +304,11 @@ ip -s link show vxlan0
 
 ### 5.1 BUM 流量类型
 
-| 类型 | 说明 | 处理方式 |
-|------|------|----------|
-| Broadcast | 广播帧（如 ARP 请求） | 组播复制到所有 VTEP |
-| Unknown Unicast | 目的 MAC 未知的帧 | 组播复制或泛洪 |
-| Multicast | 组播帧 | 依赖组播路由 |
+| 类型            | 说明                  | 处理方式            |
+| --------------- | --------------------- | ------------------- |
+| Broadcast       | 广播帧（如 ARP 请求） | 组播复制到所有 VTEP |
+| Unknown Unicast | 目的 MAC 未知的帧     | 组播复制或泛洪      |
+| Multicast       | 组播帧                | 依赖组播路由        |
 
 ### 5.2 组播映射
 
@@ -370,7 +372,7 @@ static void vxlan_fdb_update(struct vxlan_sock *vs,
                              __be32 ip, __u32 vni, ...)
 {
     struct vxlan_fdb *fdb;
-    
+
     fdb = vxlan_fdb_find(vs, mac, vni);
     if (fdb) {
         // 更新已有的 MAC 表项
@@ -393,15 +395,15 @@ static void vxlan_fdb_update(struct vxlan_sock *vs,
 
 ### 7.1 核心差异
 
-| 特性 | VLAN | VXLAN |
-|------|------|-------|
-| 标识宽度 | 12-bit (4094) | 24-bit (16M) |
-| 网络范围 | 二层广播域 | 跨三层网络 |
-| 封装方式 | 无（纯以太网） | MAC-in-UDP |
-| 隧道端点 | 交换机/路由器 | VTEP（网卡/软件） |
-| 组播支持 | 原生 | 需要组播或单播复制 |
-| 硬件支持 | 广泛 | 有限（智能网卡） |
-| 迁移能力 | 受限 | 跨三层自由迁移 |
+| 特性     | VLAN           | VXLAN              |
+| -------- | -------------- | ------------------ |
+| 标识宽度 | 12-bit (4094)  | 24-bit (16M)       |
+| 网络范围 | 二层广播域     | 跨三层网络         |
+| 封装方式 | 无（纯以太网） | MAC-in-UDP         |
+| 隧道端点 | 交换机/路由器  | VTEP（网卡/软件）  |
+| 组播支持 | 原生           | 需要组播或单播复制 |
+| 硬件支持 | 广泛           | 有限（智能网卡）   |
+| 迁移能力 | 受限           | 跨三层自由迁移     |
 
 ### 7.2 典型组网对比
 
@@ -463,16 +465,16 @@ struct vxlan_config {
 static int vxlan_udp_encap_recv(struct sock *sk, struct sk_buff *skb)
 {
     struct vxlanhdr *vxh;
-    
+
     // 检查端口和版本
     if (!vxlan_get_sk_family(vs) == AF_INET)
         return 1;  // 不处理
-    
+
     // 解析 VNI
     vxh = (struct vxlanhdr *)(udp_hdr(skb) + 1);
     if (!(vxh->vx_flags & VXLAN_HF_VNI))
         return 1;
-    
+
     // 解封装并交付
     return vxlan_rcv(sk, skb);
 }
@@ -534,6 +536,7 @@ bridge -statistics fdb show dev vxlan0
 VXLAN 是现代数据中心网络虚拟化的核心协议：
 
 **关键要点：**
+
 1. 24-bit VNI 支持 1600 万个隔离网络
 2. UDP 封装支持 ECN 和负载均衡
 3. VTEP 负责封装解封装和 MAC 学习
@@ -542,6 +545,7 @@ VXLAN 是现代数据中心网络虚拟化的核心协议：
 6. 硬件卸载支持越来越好（智能网卡）
 
 **典型应用场景：**
+
 - 数据中心多租户网络隔离
 - 虚拟机/容器跨主机通信
 - 容器编排平台（Kubernetes CNI）

@@ -1,12 +1,13 @@
 ---
 title: "P4 深度探索 (十七)：Parse Varset——变长 Header 与 IPv6 Extension Header 解析"
 date: 2026-04-14
-tags: [p4, series, parse-varset, ipv6, extension-header, varbit, parser, variable-length, hop-by-hop]
+tags:
+  [p4, series, parse-varset, ipv6, extension-header, varbit, parser, variable-length, hop-by-hop]
 description: "P4 Parse Varset 深度解析——变长 Header 定义、varbit 类型、IPv6 Extension Header 解析（Hop-by-Hop/Destination/Routing/Fragment）、状态机循环解析、TLV 编码解析、IPv6 分片处理"
 ---
 
-> [!info] P4 深度探索系列
-> 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+> [!info] P4 深度探索系列 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-14-p4-deep-dive-ch1-p4-overview|第一章：P4 概述——诞生背景与协议无关包处理]]
 > 2. [[2026-04-14-p4-deep-dive-ch2-p4-architecture|第二章：P4 架构模型——PSA/V1Model、Ingress/Egress]]
 > 3. [[2026-04-14-p4-deep-dive-ch3-p4-vs-ebpf|第三章：P4 vs eBPF——适用场景与硬件/软件对比]]
@@ -35,12 +36,12 @@ P4 的 `varbit` 类型和 **Parse Varset** 机制，专门用于处理这类变�
 
 ### 1.1 P4 中的定长 vs 变长类型
 
-| 类型 | 关键字 | 特点 |
-|------|--------|------|
-| 定长位 | `bit<W>` | 编译时已知宽度 |
-| 变长位 | `varbit<W>` | 运行时确定，最大 W 比特 |
-| 定长 Header | `header` | 所有字段定长 |
-| 变长 Header | `header` + `varbit` | 至少一个字段变长 |
+| 类型        | 关键字              | 特点                    |
+| ----------- | ------------------- | ----------------------- |
+| 定长位      | `bit<W>`            | 编译时已知宽度          |
+| 变长位      | `varbit<W>`         | 运行时确定，最大 W 比特 |
+| 定长 Header | `header`            | 所有字段定长            |
+| 变长 Header | `header` + `varbit` | 至少一个字段变长        |
 
 ---
 
@@ -111,17 +112,17 @@ Extension Header 长度可变: 每个 Extension Header 由:
 
 ### 3.1 IPv6 Extension Header 类型
 
-| Next Header值 | Extension Header |
-|--------------|----------------|
-| 0 | Hop-by-Hop Options |
-| 6 | TCP (不是 Extension Header) |
-| 17 | UDP (不是 Extension Header) |
-| 43 | Routing Header |
-| 44 | Fragment Header |
-| 50 | ESP Header |
-| 51 | AH Header |
-| 59 | No Next Header |
-| 60 | Destination Options (before Routing) |
+| Next Header值 | Extension Header                     |
+| ------------- | ------------------------------------ |
+| 0             | Hop-by-Hop Options                   |
+| 6             | TCP (不是 Extension Header)          |
+| 17            | UDP (不是 Extension Header)          |
+| 43            | Routing Header                       |
+| 44            | Fragment Header                      |
+| 50            | ESP Header                           |
+| 51            | AH Header                            |
+| 59            | No Next Header                       |
+| 60            | Destination Options (before Routing) |
 
 ### 3.2 Hop-by-Hop Options Header
 
@@ -759,14 +760,13 @@ control IngressDeparser(packet_out packet,
 
 本章介绍了 P4 中 **Parse Varset** 处理变长 Header 的机制：
 
-| 技术 | 应用场景 |
-|------|---------|
-| `varbit<W>` | 变长位字段，最大 W bits |
-| `packet.extract()` | 动态提取变长 Header |
-| `header_union` | 互斥的 Header（只能有一个有效） |
-| `header stack` | 顺序排列的同类 Header（MPLS） |
-| 状态机循环 | IPv6 Extension Header 链式解析 |
-| `packet.lookahead<T>()` | 预读而不消耗数据 |
+| 技术                    | 应用场景                        |
+| ----------------------- | ------------------------------- |
+| `varbit<W>`             | 变长位字段，最大 W bits         |
+| `packet.extract()`      | 动态提取变长 Header             |
+| `header_union`          | 互斥的 Header（只能有一个有效） |
+| `header stack`          | 顺序排列的同类 Header（MPLS）   |
+| 状态机循环              | IPv6 Extension Header 链式解析  |
+| `packet.lookahead<T>()` | 预读而不消耗数据                |
 
 IPv6 Extension Header 的解析是 Parse Varset 最复杂的应用，需要用**状态机循环**处理链式 Extension Header，直到遇到上层协议或 No Next Header。
-

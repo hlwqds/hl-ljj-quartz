@@ -25,19 +25,20 @@ tags:
 BBR（2016 年由 Google 发布）是继 CUBIC 之后的新一代拥塞控制算法。与 CUBIC/Reno 基于丢包进行拥塞检测不同，BBR 基于**显式带宽-延迟模型**进行拥塞控制。
 
 核心观察：
+
 - 丢包**不是**拥塞的最好信号
 - 丢包时网络已经极度拥塞
 - 应该测量**实际带宽**和**最小延迟**
 
 ### 1.2 BBR vs 传统算法
 
-| 特性 | CUBIC/Reno | BBR |
-|------|------------|-----|
-| 拥塞信号 | 丢包 | 延迟 + 带宽模型 |
-| cwnd 增长 | 丢包后减少，重新慢启动 | 基于带宽估计连续调整 |
-| 队列建立 | 可能建立大队列 | 主动避免队列 |
-| 带宽利用率 | 较低（保守） | 较高 |
-| 公平性 | 好 | 较差（v1），改进中（v2） |
+| 特性       | CUBIC/Reno             | BBR                      |
+| ---------- | ---------------------- | ------------------------ |
+| 拥塞信号   | 丢包                   | 延迟 + 带宽模型          |
+| cwnd 增长  | 丢包后减少，重新慢启动 | 基于带宽估计连续调整     |
+| 队列建立   | 可能建立大队列         | 主动避免队列             |
+| 带宽利用率 | 较低（保守）           | 较高                     |
+| 公平性     | 好                     | 较差（v1），改进中（v2） |
 
 ### 1.3 核心思想
 
@@ -106,6 +107,7 @@ class BBR:
 ```
 
 STARTUP 阶段：
+
 - pacing_rate 指数增长（× 2 每 RTT）
 - 类似 TCP 慢启动，但目标是探测带宽而非填满队列
 
@@ -138,7 +140,7 @@ def probe_bw():
             pacing_gain = 0.75  # 减少，探测是否有多余包
         else:
             pacing_gain = 1.0  # 正常
-        
+
         pacing_rate = bandwidth * pacing_gain
         cwnd = max(bandwidth * min_rtt, 4 * MSS)
 ```
@@ -178,10 +180,10 @@ BBR 通过 ACK 反馈来测量带宽：
 def on_acked(packet, now):
     rtt = now - packet.send_time
     delivery_rate = packet.size / (ack_time - packet.send_time)
-    
+
     # 跟踪最近 10 个 RTT 的最大带宽
     bandwidth_samples.append(delivery_rate)
-    
+
     # 使用滑动窗口最大值
     if len(bandwidth_samples) >= N:
         bandwidth = max(bandwidth_samples[-N:])
@@ -228,6 +230,7 @@ def update_min_rtt(rtt_sample):
 ### 4.2 min_rtt 过时问题
 
 min_rtt 一旦设置，可能很长时间不变。但这不代表当前网络：
+
 - 路由可能改变
 - 拥塞可能导致实际 RTT 增加
 
@@ -247,6 +250,7 @@ cwnd = bandwidth * min_rtt * cwnd_gain
 ```
 
 通常：
+
 - `pacing_gain` 在 0.75 到 1.25 之间变化
 - `cwnd_gain` 通常是 2.0（给 cwnd 一些余量）
 
@@ -311,11 +315,11 @@ def get_sendable():
 
 ### 7.1 拥塞信号
 
-| 方面 | CUBIC/Reno | BBR |
-|------|------------|-----|
-| 主要信号 | 丢包 | 延迟 |
-| 次要信号 | RTT 变化 | 丢包（但晚于延迟） |
-| 响应 | 乘法减少 cwnd | 调整 pacing_rate |
+| 方面     | CUBIC/Reno    | BBR                |
+| -------- | ------------- | ------------------ |
+| 主要信号 | 丢包          | 延迟               |
+| 次要信号 | RTT 变化      | 丢包（但晚于延迟） |
+| 响应     | 乘法减少 cwnd | 调整 pacing_rate   |
 
 ### 7.2 队列建立
 
@@ -323,7 +327,7 @@ def get_sendable():
 CUBIC：
   倾向于在瓶颈处建立大队列
   RTT 持续较高
-  
+
 BBR：
   主动避免队列
   RTT 接近 min_rtt
@@ -345,6 +349,7 @@ BBR 在高带宽延迟积（BDP）网络中优势明显。
 ### 7.4 公平性
 
 BBR v1 的一个问题是公平性：
+
 - BBR 流可能抢占 CUBIC 流的带宽
 - 多个 BBR 流可能振荡
 
@@ -357,6 +362,7 @@ BBR v2 改进了这些问题。
 ### 8.1 QUIC 的 BBR 支持
 
 多个 QUIC 实现支持 BBR：
+
 - **quiche** (Cloudflare)
 - **msquic** (Microsoft)
 - **ngtcp2**
@@ -371,18 +377,18 @@ class BBRQuicCC:
         self.min_rtt = inf
         self.cwnd = 4 * MSS
         self.pacing_rate = 0
-    
+
     def on_packet_sent(self, packet):
         self.packets_in_flight += packet.size
         self.schedule_next_send()
-    
+
     def on_acked(self, ack):
         self.update_bandwidth(ack)
         self.update_rtt(ack)
         self.adapt_state()
         self.adjust_cwnd()
         self.adjust_pacing()
-    
+
     def on_loss(self, lost_packets):
         # BBR 对丢包不减少 cwnd
         # 但会更新状态
@@ -392,6 +398,7 @@ class BBRQuicCC:
 ### 8.3 与 TCP BBR 的差异
 
 QUIC BBR 实现可能与 TCP BBR 有细微差异：
+
 - Packet Number 空间不同
 - ACK 机制不同（QUIC 有 ACK Frequency）
 - 连接迁移处理不同
@@ -403,12 +410,14 @@ QUIC BBR 实现可能与 TCP BBR 有细微差异：
 ### 9.1 丢包敏感场景
 
 BBR 不把丢包作为主要拥塞信号，在某些场景下可能过于激进：
+
 - 无线网络（有天然丢包）
 - 高度拥塞的网络
 
 ### 9.2 公平性问题
 
 BBR v1 可能对其他流不公平：
+
 - 抢占带宽
 - 饿死 CUBIC 流
 
@@ -417,6 +426,7 @@ BBR v2 通过引入 ECN 支持和更保守的增益来改善。
 ### 9.3 慢网络
 
 在极慢的网络（调制解调器、卫星）：
+
 - min_rtt 很大（500ms+）
 - BDP 计算不准确
 - pacing_rate 可能过低
@@ -427,17 +437,18 @@ BBR v2 通过引入 ECN 支持和更保守的增益来改善。
 
 ### 10.1 可调参数
 
-| 参数 | 默认值 | 说明 |
-|------|--------|------|
-| startup_gain | 2.77 | STARTUP 阶段增益 |
-| drain_gain | 0.75 | DRAIN 阶段增益 |
-| probe_bw_gain | [1.25, 0.75, 1.0, ...] | PROBE_BW 循环增益 |
-| cwnd_gain | 2.0 | cwnd 相对 BDP 的增益 |
-| min_pipe | 4 MSS | 最小 cwnd |
+| 参数          | 默认值                 | 说明                 |
+| ------------- | ---------------------- | -------------------- |
+| startup_gain  | 2.77                   | STARTUP 阶段增益     |
+| drain_gain    | 0.75                   | DRAIN 阶段增益       |
+| probe_bw_gain | [1.25, 0.75, 1.0, ...] | PROBE_BW 循环增益    |
+| cwnd_gain     | 2.0                    | cwnd 相对 BDP 的增益 |
+| min_pipe      | 4 MSS                  | 最小 cwnd            |
 
 ### 10.2 场景化调优
 
 **数据中心**：
+
 ```
 min_rtt 很小（<1ms）
 bandwidth 很高
@@ -445,6 +456,7 @@ bandwidth 很高
 ```
 
 **卫星网络**：
+
 ```
 min_rtt 很大（500ms+）
 bandwidth 中等
@@ -466,6 +478,7 @@ Google 内部改进版本。
 ### 11.3 BBR v2 (2019)
 
 BBR v2 改进：
+
 - 支持 ECN（Explicit Congestion Notification）
 - 更公平的带宽共享
 - 更精确的拥塞检测

@@ -12,15 +12,8 @@ tags:
   - frr
 ---
 
-> [!info] Cilium 2026 深度探索系列
-> 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
-> ...
-> 41. [[2026-04-14-cilium-deep-dive-ch41-debug|第四十一章：故障诊断]]
-> 42. [[2026-04-14-cilium-deep-dive-ch42-performance|第四十二章：性能调优]]
-> 43. [[2026-04-14-cilium-deep-dive-ch43-ecosystem|第四十三章：Cilium 生态概述]]
-> 44. **第四十四章：BGP 网络集成** ←
-> 45. [[2026-04-14-cilium-deep-dive-ch45-security|第四十五章：安全生态集成]]
-> 46. [[2026-04-14-cilium-deep-dive-ch46-operator|第四十六章：扩展与 Operator]]
+> [!info] Cilium 2026 深度探索系列 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+> ... 41. [[2026-04-14-cilium-deep-dive-ch41-debug|第四十一章：故障诊断]] 42. [[2026-04-14-cilium-deep-dive-ch42-performance|第四十二章：性能调优]] 43. [[2026-04-14-cilium-deep-dive-ch43-ecosystem|第四十三章：Cilium 生态概述]] 44. **第四十四章：BGP 网络集成** ← 45. [[2026-04-14-cilium-deep-dive-ch45-security|第四十五章：安全生态集成]] 46. [[2026-04-14-cilium-deep-dive-ch46-operator|第四十六章：扩展与 Operator]]
 
 ---
 
@@ -192,7 +185,7 @@ spec:
     - name: lbpool
       # 分配给 LoadBalancer 的 IP 范围
       cidr: "172.20.0.0/16"
-      exclusion:  # 排除的子网
+      exclusion: # 排除的子网
         - "172.20.1.0/24"
 ```
 
@@ -523,13 +516,13 @@ router bgp 65001
 
 ## 9. BGP 性能考虑
 
-| 参数 | 默认值 | 调优建议 |
-|:---|:---|:---|
-| HoldTime | 9s | 保持较低减少资源占用 |
-| KeepAlive | 3s | 建议为 HoldTime 的 1/3 |
-| ConnectRetry | 120s | 网络不稳定时增加 |
-| TableMap | - | 可用于过滤路由 |
-| Prefix Limit | - | 防止路由泛洪 |
+| 参数         | 默认值 | 调优建议               |
+| :----------- | :----- | :--------------------- |
+| HoldTime     | 9s     | 保持较低减少资源占用   |
+| KeepAlive    | 3s     | 建议为 HoldTime 的 1/3 |
+| ConnectRetry | 120s   | 网络不稳定时增加       |
+| TableMap     | -      | 可用于过滤路由         |
+| Prefix Limit | -      | 防止路由泛洪           |
 
 ---
 

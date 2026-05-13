@@ -46,13 +46,13 @@ description: "深入解析 VPP 中断与轮询模式：interrupt-driven、poll-m
 
 ### 1.2 模式选择决策
 
-| 场景 | 推荐模式 | 原因 |
-|------|----------|------|
-| **< 1 Gbps** | Interrupt | 低功耗，足够性能 |
-| **1-10 Gbps** | Adaptive | 平衡功耗与性能 |
-| **> 10 Gbps** | Poll | 最大吞吐量 |
-| **流量波动大** | Adaptive | 自动适应 |
-| **NFV/Cloud** | Poll | 稳定低延迟 |
+| 场景           | 推荐模式  | 原因             |
+| -------------- | --------- | ---------------- |
+| **< 1 Gbps**   | Interrupt | 低功耗，足够性能 |
+| **1-10 Gbps**  | Adaptive  | 平衡功耗与性能   |
+| **> 10 Gbps**  | Poll      | 最大吞吐量       |
+| **流量波动大** | Adaptive  | 自动适应         |
+| **NFV/Cloud**  | Poll      | 稳定低延迟       |
 
 ### 1.3 VPP 默认行为
 
@@ -109,7 +109,7 @@ cat /proc/interrupts | grep -E 'eth|dpdk|vpp'
 # startup.conf 中的 PMD 配置
 dpdk {
     no-primary-fallback         # 不使用 primary 模式
-    
+
     # RX/TX 队列大小
     dev default {
         num-rx-queues 4
@@ -143,7 +143,7 @@ vppctl show hardware
 #   RX desc: 1024 per queue
 #   TX queues: 4
 #   TX desc: 1024 per queue
-#   
+#
 #   Queue stats:
 #   Queue 0: packets=12345678, drops=0, errors=0
 #   Queue 1: packets=23456789, drops=10, errors=0
@@ -323,13 +323,13 @@ typedef struct {
 coalescing_config_t configs[] = {
     // 低延迟场景
     {10,   1,  10,   1,  "低延迟(< 100us)"},
-    
+
     // 平衡场景
     {50,   16, 50,   16, "平衡(推荐默认值)"},
-    
+
     // 高吞吐场景
     {100,  64, 100,  64, "高吞吐"},
-    
+
     // 超高吞吐
     {200,  256, 200, 256, "极限吞吐"},
 };
@@ -352,7 +352,7 @@ coalescing_config_t configs[] = {
 while true; do
     # 获取当前流量
     RX_PPS=$(cat /sys/class/net/eth0/statistics/rx_packets)
-    
+
     # 计算变化
     if [ $RX_PPS -gt 1000000 ]; then
         # 高流量，减少中断
@@ -364,7 +364,7 @@ while true; do
         # 低流量，降低延迟
         ethtool -C eth0 rx-usecs 10 rx-frames 1
     fi
-    
+
     sleep 1
 done
 ```
@@ -403,12 +403,12 @@ done
 dpdk {
     # 启用 adaptive poll mode
     adaptive-poll on
-    
+
     # 轮询间隔（纳秒）
     # 高速: 100us = 100000ns
     # 低速: 10ms = 10000000ns
     poll-sleep-us 100000
-    
+
     # 流量阈值
     adaptive-poll-threshold {
         min-packets 10000      # 进入 polling 的流量阈值
@@ -447,7 +447,7 @@ adaptive_poll_loop (vlib_main_t *vm)
 {
     adaptive_poll_main_t *apm = &vm->adaptive_poll;
     u64 now = clib_cpu_time_now();
-    
+
     // 根据当前模式确定下次轮询时间
     if (apm->mode == ADAPTIVE_IDLE) {
         // 等待中断唤醒或超时
@@ -461,7 +461,7 @@ adaptive_poll_loop (vlib_main_t *vm)
             process_poll_batch(vm);
             apm->last_poll_time = now;
         }
-        
+
         // 流量持续高，切换到快速轮询
         if (apm->packets_per_sec > apm->poll_threshold) {
             apm->mode = ADAPTIVE_POLL_FAST;
@@ -473,7 +473,7 @@ adaptive_poll_loop (vlib_main_t *vm)
             process_poll_batch(vm);
             apm->last_poll_time = now;
         }
-        
+
         // 流量降低，返回慢速或 idle
         if (apm->packets_per_sec < apm->idle_threshold) {
             apm->mode = ADAPTIVE_POLL_SLOW;
@@ -587,13 +587,13 @@ vppctl set adaptive-poll threshold min 50000 max 200000
 dpdk {
     # 默认使用 interrupt
     default driver-config interrupt
-    
+
     # 特定接口配置
     dev TenGigabitEthernet0/0/0 {
         poll-mode              # 10G，使用 poll
         num-rx-queues 4
     }
-    
+
     dev TenGigabitEthernet0/1/0 {
         interrupt-mode         # 1G，使用 interrupt
         num-rx-queues 1
@@ -611,7 +611,7 @@ dpdk {
 
 while true; do
     HOUR=$(date +%H)
-    
+
     if [ $HOUR -ge 8 ] && [ $HOUR -lt 20 ]; then
         # 白天：高性能模式
         vppctl set interface poll-mode TenGigabitEthernet0/0/0 enable
@@ -621,7 +621,7 @@ while true; do
         vppctl set interface poll-mode TenGigabitEthernet0/0/0 disable
         ethtool -C eth0 rx-usecs 20 rx-frames 5
     fi
-    
+
     sleep 3600
 done
 ```
@@ -644,11 +644,11 @@ worker_config_t worker_configs[] = {
     {1, 0, 1, 100000},
     {1, 0, 2, 100000},
     {1, 0, 3, 100000},
-    
+
     // Worker 4-5: Adaptive，混合负载
     {1, 1, 4, 1000000},   // 1ms，adaptive
     {1, 1, 5, 1000000},
-    
+
     // Worker 6: Interrupt-only，低优先级
     {0, 1, 6, 0},         // pure interrupt
 };
@@ -709,19 +709,19 @@ best_throughput=0
 
 for config in "${configs[@]}"; do
     IFS=' ' read -r rx tx <<< "$config"
-    
+
     ethtool -C $INTERFACE rx-usecs ${rx%%:*} rx-frames ${rx##*:} \
                                    tx-usecs ${tx%%:*} tx-frames ${tx##*:}
-    
+
     sleep 2
-    
+
     # 测试吞吐
     throughput=$(cat /sys/class/net/$INTERFACE/statistics/rx_bytes)
     sleep 5
     throughput=$((($(cat /sys/class/net/$INTERFACE/statistics/rx_bytes) - throughput) / 5))
-    
+
     echo "Config $config: $throughput bytes/s"
-    
+
     if [ $throughput -gt $best_throughput ]; then
         best_throughput=$throughput
         best_config=$config
@@ -749,24 +749,24 @@ while true; do
     rx_packets=$(cat /sys/class/net/$INTERFACE/statistics/rx_packets)
     tx_packets=$(cat /sys/class/net/$INTERFACE/statistics/tx_packets)
     rx_bytes=$(cat /sys/class/net/$INTERFACE/statistics/rx_bytes)
-    
+
     # 获取中断统计
     irq=$(cat /proc/interrupts | grep $INTERFACE | awk '{print $2}')
-    
+
     sleep 1
-    
+
     # 计算速率
     rx_pps=$(( $(cat /sys/class/net/$INTERFACE/statistics/rx_packets) - rx_packets ))
     tx_pps=$(( $(cat /sys/class/net/$INTERFACE/statistics/tx_packets) - tx_packets ))
     rx_bps=$(( $(cat /sys/class/net/$INTERFACE/statistics/rx_bytes) - rx_bytes ))
-    
+
     # 显示
     clear
     echo "=== $INTERFACE Stats ==="
     echo "RX: $rx_pps pps ($((rx_bps * 8 / 1000000)) Mbps)"
     echo "TX: $tx_pps pps"
     echo "Interrupts: $irq"
-    
+
     # 判断模式是否合适
     if [ $rx_pps -gt 500000 ]; then
         echo "Mode: Poll (high throughput)"
@@ -814,12 +814,14 @@ done
 ---
 
 > [!tip] 最佳实践
+>
 > 1. 生产环境根据实际流量选择合适模式
 > 2. 高吞吐场景使用 Poll Mode + 大队列
 > 3. 流量波动场景使用 Adaptive 自动切换
 > 4. Interrupt 模式务必启用 coalescing
 
 > [!warning] 注意事项
+>
 > - 纯 Interrupt 模式在高吞吐下会导致中断风暴
 > - Poll 模式持续占用 CPU，适合独占场景
 > - Coalescing 参数需要根据实际流量调优

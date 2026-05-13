@@ -9,8 +9,8 @@ tags:
   - persistence
 ---
 
-> [!info] eBPF 2026 深度探索系列
-> 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+> [!info] eBPF 2026 深度探索系列 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+>
 > 1. [[2026-04-08-ebpf-deep-dive-ch1-registers-and-instructions|第一章：寄存器与指令集]]
 > 2. [[2026-04-08-ebpf-deep-dive-ch1-5-function-calls|第一.五章：四种函数调用与动态内存]]
 > 3. [[2026-04-08-ebpf-deep-dive-ch1-6-the-verifier|第一.六章：验证器 (Verifier) 的底层逻辑]]
@@ -62,6 +62,7 @@ tags:
 > 49. [[2026-04-09-ebpf-deep-dive-ch40-network-protocols-deep-dive|第四十章：网络协议深度解析——TCP/UDP/QUIC 的 eBPF 视角]]
 > 50. [[2026-04-09-ebpf-deep-dive-ch41-memory-safety-and-vulnerabilities|第四十一章：eBPF 内存安全与漏洞分析]]
 > 51. [[2026-04-09-ebpf-deep-dive-ch42-service-mesh-integration|第四十二章：eBPF 与 Service Mesh 深度集成]]
+
 ---
 
 # 第十八章：生命周期管理与 BPF Links
@@ -96,15 +97,15 @@ graph LR
 
 ### 2.1 Link 类型矩阵
 
-| Link 类型 | 挂载目标 | 内核版本 | 自动清理 | 原子更新 |
-|:---|:---|:---|:---|:---|
-| `bpf_link` (raw) | kprobe/kretprobe | 5.7+ | 是 | 是 |
-| `bpf_tracing_link` | fentry/fexit/tracepoint | 5.11+ | 是 | 是 |
-| `bpf_xdp_link` | XDP (per-if) | 5.7+ | 是 | 是 |
-| `bpf_cgroup_link` | cgroup | 5.15+ | 是 | 是 |
-| `bpf_netns_link` | network namespace | 5.15+ | 是 | 是 |
-| `bpf_iter_link` | BPF iterator | 5.9+ | 是 | 否 |
-| `bpf_struct_ops_link` | struct_ops | 6.0+ | 是 | 否 |
+| Link 类型             | 挂载目标                | 内核版本 | 自动清理 | 原子更新 |
+| :-------------------- | :---------------------- | :------- | :------- | :------- |
+| `bpf_link` (raw)      | kprobe/kretprobe        | 5.7+     | 是       | 是       |
+| `bpf_tracing_link`    | fentry/fexit/tracepoint | 5.11+    | 是       | 是       |
+| `bpf_xdp_link`        | XDP (per-if)            | 5.7+     | 是       | 是       |
+| `bpf_cgroup_link`     | cgroup                  | 5.15+    | 是       | 是       |
+| `bpf_netns_link`      | network namespace       | 5.15+    | 是       | 是       |
+| `bpf_iter_link`       | BPF iterator            | 5.9+     | 是       | 否       |
+| `bpf_struct_ops_link` | struct_ops              | 6.0+     | 是       | 否       |
 
 ### 2.2 各类型 Link 代码示例
 
@@ -183,14 +184,14 @@ void bpf_link_put(struct bpf_link *link) {
 
 ### 3.3 旧模式 vs 现代模式对比
 
-| 特性 | 旧模式 (Raw Attach) | 现代模式 (BPF Links) |
-|:---|:---|:---|
-| **挂载稳定性** | 易冲突，难管理 | 对象化管理，可追踪 |
-| **容错性** | 加载器崩溃后程序残留 | 加载器崩溃后自动卸载 |
-| **原子更新** | 需先卸后挂，存在断流期 | 支持 `bpf_link_update` 原子热更新 |
-| **多程序同一挂载点** | 后挂覆盖前挂（不确定） | 多 Link 共存，按优先级 |
-| **可观测性** | `bpftool prog show` | `bpftool link show` |
-| **权限模型** | `CAP_SYS_ADMIN` | `CAP_BPF` (部分类型) |
+| 特性                 | 旧模式 (Raw Attach)    | 现代模式 (BPF Links)              |
+| :------------------- | :--------------------- | :-------------------------------- |
+| **挂载稳定性**       | 易冲突，难管理         | 对象化管理，可追踪                |
+| **容错性**           | 加载器崩溃后程序残留   | 加载器崩溃后自动卸载              |
+| **原子更新**         | 需先卸后挂，存在断流期 | 支持 `bpf_link_update` 原子热更新 |
+| **多程序同一挂载点** | 后挂覆盖前挂（不确定） | 多 Link 共存，按优先级            |
+| **可观测性**         | `bpftool prog show`    | `bpftool link show`               |
+| **权限模型**         | `CAP_SYS_ADMIN`        | `CAP_BPF` (部分类型)              |
 
 ---
 
@@ -326,12 +327,12 @@ cleanup:
 
 ### 5.3 更新策略选择
 
-| 策略 | 方法 | 断流时间 | 复杂度 |
-|:---|:---|:---|:---|
-| **原子替换** | `bpf_link_update` | 0ns | 低 |
-| **蓝绿部署** | 两个 Link + 路由切换 | ~1μs | 中 |
-| **金丝雀发布** | Per-CPU 逐步替换 | 渐进 | 高 |
-| **回滚** | 恢复旧版 `bpf_link_update` | 0ns | 低 |
+| 策略           | 方法                       | 断流时间 | 复杂度 |
+| :------------- | :------------------------- | :------- | :----- |
+| **原子替换**   | `bpf_link_update`          | 0ns      | 低     |
+| **蓝绿部署**   | 两个 Link + 路由切换       | ~1μs     | 中     |
+| **金丝雀发布** | Per-CPU 逐步替换           | 渐进     | 高     |
+| **回滚**       | 恢复旧版 `bpf_link_update` | 0ns      | 低     |
 
 ---
 
@@ -488,13 +489,13 @@ graph LR
 
 ### 8.2 Session vs Pin 对比
 
-| 维度 | Pin (BPFFS) | BPF Sessions |
-|:---|:---|:---|
-| **生命周期绑定** | 文件系统 | 内核对象（如 netns） |
-| **清理触发** | 手动 `rm` 或 `umount` | 内核对象销毁时自动 |
-| **适用场景** | 全局服务 | 命名空间级服务 |
-| **管理复杂度** | 低（文件操作） | 中（需理解子系统） |
-| **内核要求** | 4.x+ | 6.12+ |
+| 维度             | Pin (BPFFS)           | BPF Sessions         |
+| :--------------- | :-------------------- | :------------------- |
+| **生命周期绑定** | 文件系统              | 内核对象（如 netns） |
+| **清理触发**     | 手动 `rm` 或 `umount` | 内核对象销毁时自动   |
+| **适用场景**     | 全局服务              | 命名空间级服务       |
+| **管理复杂度**   | 低（文件操作）        | 中（需理解子系统）   |
+| **内核要求**     | 4.x+                  | 6.12+                |
 
 ---
 

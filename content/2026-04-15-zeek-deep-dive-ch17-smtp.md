@@ -12,8 +12,8 @@ tags:
 description: "深入解析 Zeek SMTP 分析器——SMTP::Info record、邮件头解析、附件提取、垃圾邮件检测、SMTP 脚本事件"
 ---
 
-> [!info] Zeek 2026 深度探索系列
-> 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Zeek 2026 深度探索系列 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-15-zeek-deep-dive-ch1-overview|第一章：Zeek 概述]]
 > 2. [[2026-04-15-zeek-deep-dive-ch2-installation|第二章：安装部署]]
 > 3. [[2026-04-15-zeek-deep-dive-ch3-config|第三章：配置系统]]
@@ -508,15 +508,16 @@ event file_over_new_connection(f: fa_file, c: connection, is_orig: bool)
 
 本章介绍了 Zeek SMTP 分析器的核心能力：
 
-| 组件 | 说明 |
-|------|------|
-| **SMTP::Info** | SMTP 日志核心 record，包含邮件头、发件人、收件人、附件 |
-| **smtp_request** | SMTP 命令事件 (MAIL/RCPT/DATA) |
-| **smtp_reply** | SMTP 响应事件 |
-| **smtp_message** | 完整邮件消息事件 |
-| **附件提取** | 集成 file_analysis 框架 |
+| 组件             | 说明                                                   |
+| ---------------- | ------------------------------------------------------ |
+| **SMTP::Info**   | SMTP 日志核心 record，包含邮件头、发件人、收件人、附件 |
+| **smtp_request** | SMTP 命令事件 (MAIL/RCPT/DATA)                         |
+| **smtp_reply**   | SMTP 响应事件                                          |
+| **smtp_message** | 完整邮件消息事件                                       |
+| **附件提取**     | 集成 file_analysis 框架                                |
 
 SMTP 日志对于检测：
+
 - 钓鱼邮件
 - 恶意附件
 - 垃圾邮件

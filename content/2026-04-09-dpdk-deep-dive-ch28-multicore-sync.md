@@ -1,14 +1,24 @@
 ---
 title: "DPDK 深度探索 (二十八)：多核同步——Spinlock、RCU、Memory Reorder"
 date: 2026-04-09
-tags: [dpdk, series, spinlock, rcu, memory-reorder, lock-free, mcs-lock, memory-barrier, synchronization, multicore]
+tags:
+  [
+    dpdk,
+    series,
+    spinlock,
+    rcu,
+    memory-reorder,
+    lock-free,
+    mcs-lock,
+    memory-barrier,
+    synchronization,
+    multicore,
+  ]
 description: "深入理解 DPDK 多核同步机制——Spinlock、MCS Lock、RCU 读写锁、Memory Reorder、Memory Barrier、CAS、ABA 问题"
 ---
 
-> [!info] DPDK 深度探索系列
-> 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
-> 1-27. 前二十七章已完成
-> 28. **第二十八章：多核同步——Spinlock、RCU、Memory Reorder**
+> [!info] DPDK 深度探索系列 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
+> 1-27. 前二十七章已完成 28. **第二十八章：多核同步——Spinlock、RCU、Memory Reorder**
 
 ---
 
@@ -1699,6 +1709,7 @@ flow_update(struct flow_table *ft, struct flow_key *key, uint32_t action)
 ---
 
 > [!tip] 参考文献
+>
 > - Intel, "Intel 64 and IA-32 Architectures Software Developer's Manual, Vol. 3A"
 > - ARM, "ARM Architecture Reference Manual, ARMv8"
 > - "Memory Barriers: a Hardware View", Paul McKenney

@@ -5,8 +5,8 @@ tags: [p4, series, header, packet, header-stack, metadata]
 description: "P4 Header 与 Packet 内核深度解析——Header 类型声明与状态语义、Header Stack 数组、Packet 类的核心方法（extract/emit/truncate）、Metadata 与 Header 的区别、典型协议头的 P4 定义示例"
 ---
 
-> [!info] P4 深度探索系列
-> 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+> [!info] P4 深度探索系列 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-14-p4-deep-dive-ch1-p4-overview|第一章：P4 概述——诞生背景与协议无关包处理]]
 > 2. [[2026-04-14-p4-deep-dive-ch2-p4-architecture|第二章：P4 架构模型——PSA/V1Model、Ingress/Egress]]
 > 3. [[2026-04-14-p4-deep-dive-ch3-p4-vs-ebpf|第三章：P4 vs eBPF——适用场景与硬件/软件对比]]
@@ -68,6 +68,7 @@ header tcp_t {
 ```
 
 **字段类型约束**：
+
 - Header 字段**只能是固定宽度的类型**：`bit<N>`、`varbit<N>`、`bool`
 - Header 字段**不能是**：`int<N>`、`enum`（enum 可以作为字段值，但字段本身仍是 bit<N>）
 - Header 字段**不能有默认值**（全零或 Invalid 是默认值）
@@ -163,13 +164,13 @@ eth.setInvalid();  // 状态变为 Invalid
 
 **Valid/Invalid 的语义**：
 
-| 操作 | 当 Invalid 时 | 当 Valid 时 |
-|------|--------------|-------------|
-| `isValid()` | 返回 `false` | 返回 `true` |
-| 读取字段值 | **未定义行为** | 返回字段值 |
-| 写入字段 | **未定义行为** | 写入成功 |
-| `setValid()` | 变为 Valid | 仍为 Valid |
-| `setInvalid()` | 仍为 Invalid | 变为 Invalid |
+| 操作           | 当 Invalid 时  | 当 Valid 时  |
+| -------------- | -------------- | ------------ |
+| `isValid()`    | 返回 `false`   | 返回 `true`  |
+| 读取字段值     | **未定义行为** | 返回字段值   |
+| 写入字段       | **未定义行为** | 写入成功     |
+| `setValid()`   | 变为 Valid     | 仍为 Valid   |
+| `setInvalid()` | 仍为 Invalid   | 变为 Invalid |
 
 **重要警告**：访问 Invalid Header 的字段是**未定义行为**，在某些硬件上可能返回垃圾值，在软件交换机上可能触发断言失败。
 
@@ -187,7 +188,7 @@ control Ingress() {
             if (h.ethernet.etherType == 0x0800) {
                 // 提取 IPv4
                 packet.extract(h.ipv4);
-                
+
                 if (h.ipv4.isValid() && h.ipv4.ttl > 0) {
                     // 处理 IPv4 包
                     ipv4_forward.apply();
@@ -251,9 +252,9 @@ int last_idx = vlans.lastValid();  // 如 [0]=Valid, [1]=Invalid, 返回 0
 ```c
 state parse_vlan {
     bit<16> ether_type;
-    
+
     packet.extract(h.vlans[next_vlan_index]);
-    
+
     if (next_vlan_index < 2) {
         ether_type = h.vlans[next_vlan_index].etherType;
         if (ether_type == 0x8100) {
@@ -261,7 +262,7 @@ state parse_vlan {
             transition parse_vlan;  // 继续解析下一个 VLAN
         }
     }
-    
+
     transition select(ether_type) {
         0x0800:   parse_ipv4;
         0x86DD:   parse_ipv6;
@@ -276,13 +277,13 @@ state parse_vlan {
 
 ### 5.1 Packet 类的核心方法
 
-| 方法 | 作用 |
-|------|------|
-| `packet.extract(h)` | 从数据包中提取 Header |
-| `packet.lookahead<T>()` | 预读 T 类型的数据但不消耗 |
-| `packet.emit(h)` | 将 Header 重新组装到数据包 |
-| `packet.push_front(size)` | 在数据包前面添加空间 |
-| `packet.truncate(size)` | 截断数据包长度 |
+| 方法                      | 作用                       |
+| ------------------------- | -------------------------- |
+| `packet.extract(h)`       | 从数据包中提取 Header      |
+| `packet.lookahead<T>()`   | 预读 T 类型的数据但不消耗  |
+| `packet.emit(h)`          | 将 Header 重新组装到数据包 |
+| `packet.push_front(size)` | 在数据包前面添加空间       |
+| `packet.truncate(size)`   | 截断数据包长度             |
 
 ### 5.2 extract()：Header 提取
 
@@ -301,6 +302,7 @@ packet.extract(h.vlans, next_vlan_index);
 ```
 
 **extract() 的语义**：
+
 1. 从数据包当前偏移读取数据
 2. 填充到 Header 的各个字段
 3. 将 Header 的 Valid/Invalid 状态设置为 **Valid**
@@ -342,6 +344,7 @@ control DeparserImpl(packet_out packet, in headers_t h) {
 ```
 
 **emit() 的语义**：
+
 1. 仅发送 **Valid** 的 Header
 2. Invalid Header 被**跳过**（不发送）
 3. Header Stack 发送所有 Valid 元素
@@ -381,13 +384,13 @@ packet.truncate(64);
 
 ### 6.1 概念区分
 
-| 维度 | Header | Metadata |
-|------|--------|----------|
-| **用途** | 表示数据包内容 | 表示包的上下文信息 |
-| **来源** | 来自网络线缆 | 由程序生成或修改 |
-| **序列化** | 会出现在数据包中 | 不会出现在数据包中 |
-| **Valid 状态** | 有 | 无 |
-| **典型示例** | Ethernet、IPv4、TCP | 入口端口、时间戳、是否被 ACL 命中 |
+| 维度           | Header              | Metadata                          |
+| -------------- | ------------------- | --------------------------------- |
+| **用途**       | 表示数据包内容      | 表示包的上下文信息                |
+| **来源**       | 来自网络线缆        | 由程序生成或修改                  |
+| **序列化**     | 会出现在数据包中    | 不会出现在数据包中                |
+| **Valid 状态** | 有                  | 无                                |
+| **典型示例**   | Ethernet、IPv4、TCP | 入口端口、时间戳、是否被 ACL 命中 |
 
 ### 6.2 Metadata 声明
 

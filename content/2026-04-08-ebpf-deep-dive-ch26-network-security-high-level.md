@@ -10,8 +10,8 @@ tags:
   - deep-packet-inspection
 ---
 
-> [!info] eBPF 2026 深度探索系列
-> 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+> [!info] eBPF 2026 深度探索系列 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+>
 > 1. [[2026-04-08-ebpf-deep-dive-ch1-registers-and-instructions|第一章：寄存器与指令集]]
 > 2. [[2026-04-08-ebpf-deep-dive-ch1-5-function-calls|第一.五章：四种函数调用与动态内存]]
 > 3. [[2026-04-08-ebpf-deep-dive-ch1-6-the-verifier|第一.六章：验证器 (Verifier) 的底层逻辑]]
@@ -63,6 +63,7 @@ tags:
 > 49. [[2026-04-09-ebpf-deep-dive-ch40-network-protocols-deep-dive|第四十章：网络协议深度解析——TCP/UDP/QUIC 的 eBPF 视角]]
 > 50. [[2026-04-09-ebpf-deep-dive-ch41-memory-safety-and-vulnerabilities|第四十一章：eBPF 内存安全与漏洞分析]]
 > 51. [[2026-04-09-ebpf-deep-dive-ch42-service-mesh-integration|第四十二章：eBPF 与 Service Mesh 深度集成]]
+
 ---
 
 ## 1. 概述：从过滤 IP 到识别"身份"
@@ -71,13 +72,13 @@ tags:
 
 本章聚焦 eBPF 在网络安全防御领域的高阶实战：
 
-| 场景 | eBPF 钩子点 | 关键技术 | 响应延迟 |
-|------|------------|---------|---------|
-| XDP 防火墙 | XDP | L3/L4 过滤 + 指纹识别 | < 1us |
-| DDoS 缓解 | XDP + TC | 速率限制 + 行为分析 | < 10us |
-| 微分段 | TC + cgroup | 零信任网络隔离 | < 100us |
-| IDS/IPS | XDP + TC + perf | 深度包检测 + 实时阻断 | < 50us |
-| 蜜罐引流 | XDP redirect | 攻击者透明重定向 | < 5us |
+| 场景       | eBPF 钩子点     | 关键技术              | 响应延迟 |
+| ---------- | --------------- | --------------------- | -------- |
+| XDP 防火墙 | XDP             | L3/L4 过滤 + 指纹识别 | < 1us    |
+| DDoS 缓解  | XDP + TC        | 速率限制 + 行为分析   | < 10us   |
+| 微分段     | TC + cgroup     | 零信任网络隔离        | < 100us  |
+| IDS/IPS    | XDP + TC + perf | 深度包检测 + 实时阻断 | < 50us   |
+| 蜜罐引流   | XDP redirect    | 攻击者透明重定向      | < 5us    |
 
 ### 1.1 为什么传统方案不够
 
@@ -291,13 +292,13 @@ graph LR
 
 ### 4.1 攻击类型与 eBPF 对策
 
-| 攻击类型 | 流量特征 | eBPF 对策 | 部署位置 |
-|---------|---------|----------|---------|
-| SYN Flood | 大量 SYN 无后续 ACK | SYN Cookie + SYN Proxy | XDP |
-| UDP Flood | 大量 UDP 到随机端口 | 速率限制 + 协议验证 | XDP |
-| HTTP Flood | 合法 HTTP 但频率异常 | 行为分析 + Token Bucket | TC |
-| DNS Amplification | 小请求大响应 | 出口速率限制 + 源验证 | XDP + TC |
-| Slowloris | 缓慢发送 HTTP 头 | 连接超时 + 最小速率 | TC |
+| 攻击类型          | 流量特征             | eBPF 对策               | 部署位置 |
+| ----------------- | -------------------- | ----------------------- | -------- |
+| SYN Flood         | 大量 SYN 无后续 ACK  | SYN Cookie + SYN Proxy  | XDP      |
+| UDP Flood         | 大量 UDP 到随机端口  | 速率限制 + 协议验证     | XDP      |
+| HTTP Flood        | 合法 HTTP 但频率异常 | 行为分析 + Token Bucket | TC       |
+| DNS Amplification | 小请求大响应         | 出口速率限制 + 源验证   | XDP + TC |
+| Slowloris         | 缓慢发送 HTTP 头     | 连接超时 + 最小速率     | TC       |
 
 ### 4.2 令牌桶限速器
 
@@ -429,11 +430,11 @@ graph TB
 
 ### 6.1 两阶段架构
 
-| 阶段 | 钩子 | 功能 | 延迟开销 |
-|------|------|------|---------|
-| 快速路径 | XDP | IP 信誉、端口/协议匹配 | < 1us |
-| 深度路径 | TC | DPI 签名匹配、异常检测 | < 50us |
-| 分析路径 | 用户态 | AI 行为分析、威胁情报 | ms 级 |
+| 阶段     | 钩子   | 功能                   | 延迟开销 |
+| -------- | ------ | ---------------------- | -------- |
+| 快速路径 | XDP    | IP 信誉、端口/协议匹配 | < 1us    |
+| 深度路径 | TC     | DPI 签名匹配、异常检测 | < 50us   |
+| 分析路径 | 用户态 | AI 行为分析、威胁情报  | ms 级    |
 
 ```mermaid
 sequenceDiagram
@@ -619,13 +620,13 @@ int xdp_honeypot_redirect(struct xdp_md *ctx) {
 
 ### 9.1 部署清单
 
-| 项目 | 建议 | 原因 |
-|------|------|------|
-| XDP 模式 | 优先 native，配 generic 回退 | 性能最优且兼容性好 |
-| Map 大小 | 预估并设置合理上限 | 避免内存浪费或条目淘汰 |
-| CPU 亲和性 | 绑定 XDP 到特定核心 | 减少 CPU 缓存抖动 |
-| 监控 | 独立健康检查程序 | 确保 eBPF 程序正常运行 |
-| 日志 | perf event + ring buffer | 避免 bpf_trace_printk 开销 |
+| 项目       | 建议                         | 原因                       |
+| ---------- | ---------------------------- | -------------------------- |
+| XDP 模式   | 优先 native，配 generic 回退 | 性能最优且兼容性好         |
+| Map 大小   | 预估并设置合理上限           | 避免内存浪费或条目淘汰     |
+| CPU 亲和性 | 绑定 XDP 到特定核心          | 减少 CPU 缓存抖动          |
+| 监控       | 独立健康检查程序             | 确保 eBPF 程序正常运行     |
+| 日志       | perf event + ring buffer     | 避免 bpf_trace_printk 开销 |
 
 ### 9.2 性能调优
 
@@ -677,14 +678,14 @@ XDP 无法处理需要跨包重组的协议（如 HTTP）。正确架构：XDP �
 
 eBPF 在安全领域的价值，在于它将防御线推向了**物理网卡的边缘**。通过指纹级识别和动态闭环策略，eBPF 让 Linux 内核拥有了识别"隐藏敌人"的火眼金睛。
 
-| 能力 | eBPF 钩子 | 核心优势 | 适用场景 |
-|------|----------|---------|---------|
-| L3/L4 过滤 | XDP | 亚微秒延迟 | DDoS 防护 |
-| TLS 指纹识别 | XDP | 内核态计算 | Bot 检测 |
-| 有状态防火墙 | XDP + Map | 无需 conntrack | 细粒度访问控制 |
-| 速率限制 | XDP | 令牌桶算法 | 流量整形 |
-| 深度包检测 | TC + perf | 两阶段架构 | IDS/IPS |
-| 微分段 | cgroup/skb | 进程级隔离 | 零信任网络 |
-| 蜜罐引流 | XDP redirect | 透明重定向 | 威胁情报收集 |
+| 能力         | eBPF 钩子    | 核心优势       | 适用场景       |
+| ------------ | ------------ | -------------- | -------------- |
+| L3/L4 过滤   | XDP          | 亚微秒延迟     | DDoS 防护      |
+| TLS 指纹识别 | XDP          | 内核态计算     | Bot 检测       |
+| 有状态防火墙 | XDP + Map    | 无需 conntrack | 细粒度访问控制 |
+| 速率限制     | XDP          | 令牌桶算法     | 流量整形       |
+| 深度包检测   | TC + perf    | 两阶段架构     | IDS/IPS        |
+| 微分段       | cgroup/skb   | 进程级隔离     | 零信任网络     |
+| 蜜罐引流     | XDP redirect | 透明重定向     | 威胁情报收集   |
 
 在下一章中，我们将深入探讨 [[2026-04-08-ebpf-deep-dive-ch27-agent-engineering-architecture|工业级模块化 Agent 架构演进]]，了解如何将 eBPF 安全能力与 AI Agent 系统深度集成。

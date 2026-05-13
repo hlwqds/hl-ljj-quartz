@@ -1,7 +1,21 @@
 ---
 title: io_uring × NVMe 深度探索 Ch5：io_uring vs SPDK 性能对比
 date: 2026-04-23 09:00:00
-tags: [io_uring, NVMe, SPDK, Performance, Benchmark, FIO, Latency, IOPS, Throughput, DPDK, Poll Mode, Comparison]
+tags:
+  [
+    io_uring,
+    NVMe,
+    SPDK,
+    Performance,
+    Benchmark,
+    FIO,
+    Latency,
+    IOPS,
+    Throughput,
+    DPDK,
+    Poll Mode,
+    Comparison,
+  ]
 description: 深入对比 io_uring 与 SPDK 的性能：延迟分解、IOPS、吞吐量、CPU 占用、扩展性分析，以及不同场景下的选型建议。
 ---
 

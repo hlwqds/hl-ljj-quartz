@@ -10,10 +10,8 @@ description: "深入理解 DPDK KNI 机制——用户态与 Linux 内核网络�
 > 本章节保留作为历史参考，记录 KNI 的设计思路和架构。实际项目中应使用 **AF_XDP**（第十五章补充）或 **TAP** 作为替代方案。
 > 最后包含 KNI 的 DPDK 版本为 **22.11 LTS**。
 >
-> [!info] DPDK 深度探索系列
-> 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
-> 1-14. 前十四章已完成
-> 15. **第十五章：KNI (Kernel NIC Interface) 用户态与内核通信**（已废弃，历史参考）
+> [!info] DPDK 深度探索系列 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
+> 1-14. 前十四章已完成 15. **第十五章：KNI (Kernel NIC Interface) 用户态与内核通信**（已废弃，历史参考）
 > 15b. [[2026-04-09-dpdk-deep-dive-ch15b-af-xdp|第十五章补充：AF_XDP —— KNI 的现代替代]]
 
 ---
@@ -99,14 +97,14 @@ flowchart LR
     style KNI2 fill:#ffd93d22,stroke:#ffd93d
 ```
 
-| 场景 | 说明 | 为什么必须走内核 |
-|------|------|-----------------|
-| **SSH 管理** | 运维通过 eth0 SSH 登录 | sshd 是用户态程序，但依赖内核 TCP/IP 协议栈 |
-| **BGP/OSPF** | 与邻居路由器交换路由 | BGP/OSPF daemon（FRR/Bird）依赖内核 socket |
-| **iptables** | 防火墙/ACL 过滤 | iptables 是内核 netfilter 模块，必须内核处理 |
-| **ARP** | 地址解析 | ARP 协议由内核协议栈自动处理 |
-| **DHCP** | 获取 IP 地址 | DHCP client 依赖内核 socket |
-| **ICMP** | ping 排障 | ICMP 由内核协议栈处理 |
+| 场景         | 说明                   | 为什么必须走内核                             |
+| ------------ | ---------------------- | -------------------------------------------- |
+| **SSH 管理** | 运维通过 eth0 SSH 登录 | sshd 是用户态程序，但依赖内核 TCP/IP 协议栈  |
+| **BGP/OSPF** | 与邻居路由器交换路由   | BGP/OSPF daemon（FRR/Bird）依赖内核 socket   |
+| **iptables** | 防火墙/ACL 过滤        | iptables 是内核 netfilter 模块，必须内核处理 |
+| **ARP**      | 地址解析               | ARP 协议由内核协议栈自动处理                 |
+| **DHCP**     | 获取 IP 地址           | DHCP client 依赖内核 socket                  |
+| **ICMP**     | ping 排障              | ICMP 由内核协议栈处理                        |
 
 ---
 
@@ -161,12 +159,12 @@ flowchart LR
 
 先记住这个对应关系：
 
-| FIFO 名称       | 内核视角          | DPDK App 视角          | 包的流向            |
-| ------------- | ------------- | -------------------- | --------------- |
-| **`rx_q`**    | 内核**接收**包的队列  | DPDK **发送**包到内核      | DPDK App → 内核   |
-| **`tx_q`**    | 内核**发送**包的队列  | DPDK **接收**来自内核的包    | 内核 → DPDK App   |
-| **`alloc_q`** | 内核**申请** mbuf | DPDK **分配** mbuf 给内核 | 内核 → DPDK（请求方向） |
-| **`free_q`**  | 内核**释放** mbuf | DPDK **回收** mbuf     | 内核 → DPDK       |
+| FIFO 名称     | 内核视角             | DPDK App 视角             | 包的流向                |
+| ------------- | -------------------- | ------------------------- | ----------------------- |
+| **`rx_q`**    | 内核**接收**包的队列 | DPDK **发送**包到内核     | DPDK App → 内核         |
+| **`tx_q`**    | 内核**发送**包的队列 | DPDK **接收**来自内核的包 | 内核 → DPDK App         |
+| **`alloc_q`** | 内核**申请** mbuf    | DPDK **分配** mbuf 给内核 | 内核 → DPDK（请求方向） |
+| **`free_q`**  | 内核**释放** mbuf    | DPDK **回收** mbuf        | 内核 → DPDK             |
 
 所以你说的没错——**KNI 的 `rx_q` 对 DPDK App 来说是发送路径**。
 
@@ -951,13 +949,13 @@ kni_alloc_shared_mbuf(struct kni_buf_info *buf, struct rte_mempool *pool)
 
 ### 8.3 KNI vs vhost-user
 
-| 特性 | KNI | vhost-user |
-|------|-----|------------|
-| **用途** | 内核网络栈交互 | VM 通信 |
-| **数据路径** | FIFO + ioctl | virtqueue + eventfd |
-| **性能** | 较低（有拷贝） | 高（零拷贝） |
-| **功能** | 完整内核栈 | 仅数据转发 |
-| **适用** | 控制平面 | 数据平面 |
+| 特性         | KNI            | vhost-user          |
+| ------------ | -------------- | ------------------- |
+| **用途**     | 内核网络栈交互 | VM 通信             |
+| **数据路径** | FIFO + ioctl   | virtqueue + eventfd |
+| **性能**     | 较低（有拷贝） | 高（零拷贝）        |
+| **功能**     | 完整内核栈     | 仅数据转发          |
+| **适用**     | 控制平面       | 数据平面            |
 
 ---
 
@@ -988,6 +986,7 @@ kni_alloc_shared_mbuf(struct kni_buf_info *buf, struct rte_mempool *pool)
 ---
 
 > [!tip] 参考文献
+>
 > - Intel, "DPDK KNI", https://doc.dpdk.org/guides/prog_guide/kernel_nic_interface.html
 > - Linux kernel source: drivers/net/kni/
 > - "KNI vs vhost-user", https://doc.dpdk.org/guides/prog_guide/overview.html

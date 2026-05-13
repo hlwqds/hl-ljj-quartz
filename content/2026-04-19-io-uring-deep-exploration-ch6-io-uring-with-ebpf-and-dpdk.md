@@ -1,7 +1,19 @@
 ---
 title: io_uring 深度探索 Ch6：与 eBPF/DPDK 的协同
 date: 2026-04-19 14:00:00
-tags: [io_uring, Linux, eBPF, DPDK, Kernel Bypass, High Performance, Trace, Offload, Security, Observability]
+tags:
+  [
+    io_uring,
+    Linux,
+    eBPF,
+    DPDK,
+    Kernel Bypass,
+    High Performance,
+    Trace,
+    Offload,
+    Security,
+    Observability,
+  ]
 description: 深入讲解 io_uring 与 eBPF/DPDK 的协同：eBPF 监控 io_uring、io_uring 作为 eBPF map、kernel bypass 网络与存储、DPDK+io_uring 混合架构、安全与观测能力。
 ---
 

@@ -14,12 +14,12 @@ description: "深入解析基于 DPDK 的负载均衡器设计：L4 NAT/LVS 模�
 
 ### 1.1 分类
 
-| 类型 | 层 | 说明 |
-|------|---|------|
-| **L4 NAT** | 传输层 | 基于 IP + Port 做 NAT 转发 |
-| **L4 LB** | 传输层 | 基于 Connection 做负载分配 |
+| 类型        | 层     | 说明                        |
+| ----------- | ------ | --------------------------- |
+| **L4 NAT**  | 传输层 | 基于 IP + Port 做 NAT 转发  |
+| **L4 LB**   | 传输层 | 基于 Connection 做负载分配  |
 | **L7 HTTP** | 应用层 | 基于 HTTP URL/Cookie 做路由 |
-| **GSLB** | DNS 层 | 全局负载，跨数据中心 |
+| **GSLB**    | DNS 层 | 全局负载，跨数据中心        |
 
 ### 1.2 L4 vs L7
 
@@ -387,13 +387,13 @@ get_sticky_backend(struct lb_context *ctx, uint32_t src_ip)
 
 ### 5.1 健康检查类型
 
-| 类型 | 说明 | 频率 |
-|------|------|------|
-| **TCP Connect** | 尝试三次握手 | 5-30s |
-| **HTTP GET** | GET /health | 5-30s |
-| **HTTPS** | TLS 握手 | 5-30s |
-| **Ping** | ICMP | 1-10s |
-| **TCP Half-Open** | SYN + RST | 1-10s |
+| 类型              | 说明         | 频率  |
+| ----------------- | ------------ | ----- |
+| **TCP Connect**   | 尝试三次握手 | 5-30s |
+| **HTTP GET**      | GET /health  | 5-30s |
+| **HTTPS**         | TLS 握手     | 5-30s |
+| **Ping**          | ICMP         | 1-10s |
+| **TCP Half-Open** | SYN + RST    | 1-10s |
 
 ### 5.2 健康检查实现
 

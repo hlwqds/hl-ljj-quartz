@@ -67,13 +67,13 @@ SRQ 模型：
 
 SRQ 本质上是一个**共享的接收缓冲区**，与普通 QP 的 RQ 有以下区别：
 
-| 特性 | Per-QP RQ | SRQ |
-|------|-----------|-----|
-| 绑定方式 | QP 私有 | 多个 QP 共享 |
-| WQE 数量 | 静态配置 | 动态调整 |
-| 内存开销 | O(N × QP数) | O(SRQ_WQE) |
-| Post Rx 灵活性 | 仅 QP 所有者 | 任何共享 QP |
-| 支持类型 | RC/UC/UD | RC/UC/RD/UD |
+| 特性           | Per-QP RQ    | SRQ          |
+| -------------- | ------------ | ------------ |
+| 绑定方式       | QP 私有      | 多个 QP 共享 |
+| WQE 数量       | 静态配置     | 动态调整     |
+| 内存开销       | O(N × QP数)  | O(SRQ_WQE)   |
+| Post Rx 灵活性 | 仅 QP 所有者 | 任何共享 QP  |
+| 支持类型       | RC/UC/UD     | RC/UC/RD/UD  |
 
 ### 2.2 SRQ 的工作流程
 
@@ -447,6 +447,7 @@ $ ibv_srq_dump <srq_handle>
 ---
 
 > [!tip] 延伸阅读
+>
 > - [[2026-04-13-rdma-deep-dive-ch7-queue-pair|第七章：队列对 (QP)]] —— QP 机制的完整说明
 > - [[2026-04-13-rdma-deep-dive-ch9-verbs-api|第九章：Verbs API]] —— libibverbs API 详解
 > - [[2026-04-13-rdma-deep-dive-ch24-rdma-cni|第二十四章：RDMA CNI]] —— K8s 中的 SRQ 应用

@@ -12,13 +12,8 @@ tags:
   - developer
 ---
 
-> [!info] Cilium 2026 深度探索系列
-> 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
-> ...
-> 43. [[2026-04-14-cilium-deep-dive-ch43-ecosystem|第四十三章：Cilium 生态概述]]
-> 44. [[2026-04-14-cilium-deep-dive-ch44-bgp|第四十四章：BGP 网络集成]]
-> 45. [[2026-04-14-cilium-deep-dive-ch45-security|第四十五章：安全生态集成]]
-> 46. **第四十六章：扩展与 Operator** ←
+> [!info] Cilium 2026 深度探索系列 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+> ... 43. [[2026-04-14-cilium-deep-dive-ch43-ecosystem|第四十三章：Cilium 生态概述]] 44. [[2026-04-14-cilium-deep-dive-ch44-bgp|第四十四章：BGP 网络集成]] 45. [[2026-04-14-cilium-deep-dive-ch45-security|第四十五章：安全生态集成]] 46. **第四十六章：扩展与 Operator** ←
 
 ---
 

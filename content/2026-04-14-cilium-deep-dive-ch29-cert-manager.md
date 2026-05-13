@@ -11,12 +11,8 @@ tags:
   - networking
 ---
 
-> [!info] Cilium 2026 深度探索系列
-> 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
-> ...
-> 27. [[2026-04-14-cilium-deep-dive-ch27-gateway-api|第二十七章：Gateway API]]
-> 28. [[2026-04-14-cilium-deep-dive-ch28-ingress-annotations|第二十八章：Ingress 注解详解]]
-> 29. **第二十九章：Cert-Manager 与 TLS 自动化** ←
+> [!info] Cilium 2026 深度探索系列 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+> ... 27. [[2026-04-14-cilium-deep-dive-ch27-gateway-api|第二十七章：Gateway API]] 28. [[2026-04-14-cilium-deep-dive-ch28-ingress-annotations|第二十八章：Ingress 注解详解]] 29. **第二十九章：Cert-Manager 与 TLS 自动化** ←
 
 ---
 
@@ -54,14 +50,14 @@ Cert-Manager 是 Kubernetes 中的证书管理控制器，它通过 ACME（Autom
 
 ### 1.1 核心 CRD 资源
 
-| CRD | 说明 |
-|:---|:---|
-| `Issuer` | 命名空间级别的证书颁发者配置 |
-| `ClusterIssuer` | 集群级别的证书颁发者配置 |
-| `Certificate` | 证书请求规范 |
-| `CertificateRequest` | 证书请求记录 |
-| `Order` | ACME 订单（ACME 协议） |
-| `Challenge` | ACME DNS/HTTP 验证挑战 |
+| CRD                  | 说明                         |
+| :------------------- | :--------------------------- |
+| `Issuer`             | 命名空间级别的证书颁发者配置 |
+| `ClusterIssuer`      | 集群级别的证书颁发者配置     |
+| `Certificate`        | 证书请求规范                 |
+| `CertificateRequest` | 证书请求记录                 |
+| `Order`              | ACME 订单（ACME 协议）       |
+| `Challenge`          | ACME DNS/HTTP 验证挑战       |
 
 ---
 
@@ -114,18 +110,18 @@ spec:
       name: letsencrypt-prod-account-key
     # ACME 挑战类型
     solvers:
-    # HTTP-01 挑战（通过 Ingress 验证）
-    - http01:
-        ingress:
-          class: cilium
-      # DNS-01 挑战（通过 DNS 验证）
-    - dns01:
-        # CloudFlare DNS 验证
-        cloudflare:
-          email: cloud@example.com
-          apiKeySecretRef:
-            name: cloudflare-api-key
-            key: api-key
+      # HTTP-01 挑战（通过 Ingress 验证）
+      - http01:
+          ingress:
+            class: cilium
+        # DNS-01 挑战（通过 DNS 验证）
+      - dns01:
+          # CloudFlare DNS 验证
+          cloudflare:
+            email: cloud@example.com
+            apiKeySecretRef:
+              name: cloudflare-api-key
+              key: api-key
 ```
 
 ### 3.2 Let's Encrypt 测试环境 Issuer
@@ -143,9 +139,9 @@ spec:
     privateKeySecretRef:
       name: letsencrypt-staging-account-key
     solvers:
-    - http01:
-        ingress:
-          class: cilium
+      - http01:
+          ingress:
+            class: cilium
 ```
 
 ### 3.3 Vault PKI Issuer
@@ -192,13 +188,13 @@ spec:
   # Subject 信息
   subject:
     organizations:
-    - Example Corp
+      - Example Corp
     organizationalUnits:
-    - Engineering
+      - Engineering
   # 要申请的域名
   dnsNames:
-  - cafe.example.com
-  - "*.cafe.example.com"
+    - cafe.example.com
+    - "*.cafe.example.com"
   # 证书颁发者
   issuerRef:
     name: letsencrypt-prod
@@ -224,16 +220,16 @@ spec:
     name: letsencrypt-prod
     kind: ClusterIssuer
   dnsNames:
-  - api.example.com
-  - admin.example.com
+    - api.example.com
+    - admin.example.com
   # SANs（Subject Alternative Names）
   altNames:
-  - ip: 10.0.0.1
-  - email: admin@example.com
+    - ip: 10.0.0.1
+    - email: admin@example.com
   # 密钥用法
   usages:
-  - server auth
-  - client auth
+    - server auth
+    - client auth
   # 续期策略
   renewBeforeExpiryDays: 30
   # 证书策略
@@ -242,7 +238,7 @@ spec:
       name: letsencrypt-prod
     # 静脉证书吊销列表
     crlDistributionPoints:
-    - "http://crl.example.com/ca.crl"
+      - "http://crl.example.com/ca.crl"
 ```
 
 ---
@@ -266,21 +262,21 @@ metadata:
 spec:
   ingressClassName: cilium
   tls:
-  - hosts:
-    - cafe.example.com
-    # cert-manager 会自动创建此 Secret
-    secretName: cafe-tls
+    - hosts:
+        - cafe.example.com
+      # cert-manager 会自动创建此 Secret
+      secretName: cafe-tls
   rules:
-  - host: cafe.example.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: cafe-backend
-            port:
-              number: 80
+    - host: cafe.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: cafe-backend
+                port:
+                  number: 80
 ```
 
 ### 5.2 完整示例：咖啡店 HTTPS
@@ -304,13 +300,13 @@ spec:
         app: cafe
     spec:
       containers:
-      - name: cafe
-        image: hashicorp/http-echo
-        args:
-        - "-text=Hello from Cafe HTTPS"
-        - "-listen=:8080"
-        ports:
-        - containerPort: 8080
+        - name: cafe
+          image: hashicorp/http-echo
+          args:
+            - "-text=Hello from Cafe HTTPS"
+            - "-listen=:8080"
+          ports:
+            - containerPort: 8080
 ---
 apiVersion: v1
 kind: Service
@@ -318,8 +314,8 @@ metadata:
   name: cafe-backend
 spec:
   ports:
-  - port: 80
-    targetPort: 8080
+    - port: 80
+      targetPort: 8080
   selector:
     app: cafe
 ```
@@ -339,20 +335,20 @@ metadata:
 spec:
   ingressClassName: cilium
   tls:
-  - hosts:
-    - cafe.example.com
-    secretName: cafe-tls
+    - hosts:
+        - cafe.example.com
+      secretName: cafe-tls
   rules:
-  - host: cafe.example.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: cafe-backend
-            port:
-              number: 80
+    - host: cafe.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: cafe-backend
+                port:
+                  number: 80
 ```
 
 ### 5.3 证书生命周期
@@ -386,19 +382,19 @@ metadata:
 spec:
   gatewayClassName: cilium
   listeners:
-  - name: https
-    port: 443
-    protocol: HTTPS
-    tls:
-      mode: Terminate
-      # 引用 cert-manager 管理的 Secret
-      certificateRefs:
-      - name: cafe-gateway-tls
-        kind: Secret
-        namespace: ingress
-    allowedRoutes:
-      namespaces:
-        from: Same
+    - name: https
+      port: 443
+      protocol: HTTPS
+      tls:
+        mode: Terminate
+        # 引用 cert-manager 管理的 Secret
+        certificateRefs:
+          - name: cafe-gateway-tls
+            kind: Secret
+            namespace: ingress
+      allowedRoutes:
+        namespaces:
+          from: Same
 ---
 # 单独创建 Certificate 资源
 apiVersion: cert-manager.io/v1
@@ -412,7 +408,7 @@ spec:
     name: letsencrypt-prod
     kind: ClusterIssuer
   dnsNames:
-  - cafe.example.com
+    - cafe.example.com
 ```
 
 ### 6.2 GatewayClass 级别的默认 TLS
@@ -469,17 +465,17 @@ spec:
     privateKeySecretRef:
       name: letsencrypt-prod-account-key
     solvers:
-    - http01:
-        ingress:
-          class: cilium
-        # 挑战超时配置
-        config:
-          ingressClass: cilium
-      # 域名匹配配置
-      selector:
-        dnsNames:
-        - "*.example.com"
-        - example.com
+      - http01:
+          ingress:
+            class: cilium
+          # 挑战超时配置
+          config:
+            ingressClass: cilium
+        # 域名匹配配置
+        selector:
+          dnsNames:
+            - "*.example.com"
+            - example.com
 ```
 
 ---
@@ -500,16 +496,16 @@ spec:
     privateKeySecretRef:
       name: letsencrypt-prod-account-key
     solvers:
-    - dns01:
-        cloudflare:
-          email: cloud@example.com
-          apiKeySecretRef:
-            name: cloudflare-api-key
-            key: api-key
-          # 使用 API Token（更安全）
-          apiTokenSecretRef:
-            name: cloudflare-api-token
-            key: api-token
+      - dns01:
+          cloudflare:
+            email: cloud@example.com
+            apiKeySecretRef:
+              name: cloudflare-api-key
+              key: api-key
+            # 使用 API Token（更安全）
+            apiTokenSecretRef:
+              name: cloudflare-api-token
+              key: api-token
 ```
 
 ### 8.2 Route53 DNS
@@ -526,25 +522,25 @@ spec:
     privateKeySecretRef:
       name: letsencrypt-prod-account-key
     solvers:
-    - dns01:
-        route53:
-          region: us-east-1
-          # IAM Role 认证
-          hostedZoneID: ZONE_ID
-          # 或者使用 Access Key
-          secretAccessKeySecretRef:
-            name: route53-credentials
-            key: secret-access-key
+      - dns01:
+          route53:
+            region: us-east-1
+            # IAM Role 认证
+            hostedZoneID: ZONE_ID
+            # 或者使用 Access Key
+            secretAccessKeySecretRef:
+              name: route53-credentials
+              key: secret-access-key
 ```
 
 ### 8.3 DNS-01 挑战的优势
 
-| 特性 | HTTP-01 | DNS-01 |
-|:---|:---|:---|
-| **通配符证书** | 不支持 | 支持 |
-| **验证速度** | 快 | 依赖 DNS 传播 |
-| **适用场景** | 公开 HTTP 服务 | 内部服务/通配符 |
-| **配置复杂度** | 低 | 高（需要 DNS 提供商） |
+| 特性           | HTTP-01        | DNS-01                |
+| :------------- | :------------- | :-------------------- |
+| **通配符证书** | 不支持         | 支持                  |
+| **验证速度**   | 快             | 依赖 DNS 传播         |
+| **适用场景**   | 公开 HTTP 服务 | 内部服务/通配符       |
+| **配置复杂度** | 低             | 高（需要 DNS 提供商） |
 
 ---
 
@@ -556,7 +552,7 @@ Cert-Manager 自动管理证书续期：
 
 ```
                     Certificate 续期时间线
-                    
+
   0天                    75天                    90天
    │                       │                       │
    ▼                       ▼                       ▼
@@ -588,9 +584,9 @@ kind: Certificate
 metadata:
   name: cafe-tls
 spec:
-  renewBefore: 720h  # 30天前续期
+  renewBefore: 720h # 30天前续期
   # 续期策略
-  renewalSchedule: "0 0 * * *"  # 每天午夜尝试
+  renewalSchedule: "0 0 * * *" # 每天午夜尝试
 ```
 
 ---
@@ -599,12 +595,12 @@ spec:
 
 ### 10.1 常见问题
 
-| 问题 | 可能原因 | 解决方案 |
-|:---|:---|:---|
-| `Waiting for HTTP-01 challenge propagation` | Ingress 未正确响应 | 检查 Ingress 配置 |
-| `invalid challenge` | 域名未正确配置 | 确认 DNS 记录 |
-| `connection refused` | Let's Encrypt 无法访问 | 检查防火墙规则 |
-| `rate limited` | 请求过于频繁 | 改用 staging 环境测试 |
+| 问题                                        | 可能原因               | 解决方案              |
+| :------------------------------------------ | :--------------------- | :-------------------- |
+| `Waiting for HTTP-01 challenge propagation` | Ingress 未正确响应     | 检查 Ingress 配置     |
+| `invalid challenge`                         | 域名未正确配置         | 确认 DNS 记录         |
+| `connection refused`                        | Let's Encrypt 无法访问 | 检查防火墙规则        |
+| `rate limited`                              | 请求过于频繁           | 改用 staging 环境测试 |
 
 ### 10.2 调试命令
 
@@ -656,18 +652,18 @@ spec:
     kind: Issuer
   commonName: example.com
   dnsNames:
-  - example.com
-  - "*.example.com"
+    - example.com
+    - "*.example.com"
   # 自定义 OID
   subject:
     countries:
-    - US
+      - US
     provinces:
-    - California
+      - California
     localities:
-    - San Francisco
+      - San Francisco
     postalCodes:
-    - "94105"
+      - "94105"
   # CA 约束
   isCA: false
   # 额外配置
@@ -687,10 +683,10 @@ spec:
     name: letsencrypt-prod
     kind: ClusterIssuer
   dnsNames:
-  - cafe.example.com
-  - api.example.com
-  - admin.example.com
-  - "*.example.com"
+    - cafe.example.com
+    - api.example.com
+    - admin.example.com
+    - "*.example.com"
 ```
 
 ### 11.3 静脉证书
@@ -707,11 +703,11 @@ spec:
     kind: Issuer
   commonName: internal.example.com
   dnsNames:
-  - internal.example.com
-  - "*.internal.example.com"
+    - internal.example.com
+    - "*.internal.example.com"
   usages:
-  - server auth
-  - client auth
+    - server auth
+    - client auth
 ```
 
 ---
@@ -732,7 +728,7 @@ spec:
   # 使用强加密算法
   privateKey:
     algorithm: ECDSA
-    size: 384  # P-384
+    size: 384 # P-384
   # 限制 Secret 使用
   secretTemplate:
     labels:
@@ -752,13 +748,13 @@ metadata:
 spec:
   secretName: rotated-tls
   # 短有效期，提高安全性
-  duration: 168h  # 7天
-  renewBefore: 24h  # 1天前续期
+  duration: 168h # 7天
+  renewBefore: 24h # 1天前续期
   issuerRef:
     name: letsencrypt-prod
     kind: ClusterIssuer
   dnsNames:
-  - secure.example.com
+    - secure.example.com
 ```
 
 ---
@@ -782,17 +778,17 @@ kubectl get svc -n cert-manager cert-manager -o yaml
 ```yaml
 # 证书即将过期告警
 groups:
-- name: cert-manager
-  rules:
-  - alert: CertificateExpiringSoon
-    expr: |
-      certmanager_certificate_expiration_timestamp_seconds - time() < 604800  # 7天
-    for: 5m
-    labels:
-      severity: warning
-    annotations:
-      summary: "Certificate expiring soon"
-      description: "Certificate {{ $labels.namespace }}/{{ $labels.name }} expires in {{ $value | humanizeDuration }}"
+  - name: cert-manager
+    rules:
+      - alert: CertificateExpiringSoon
+        expr: |
+          certmanager_certificate_expiration_timestamp_seconds - time() < 604800  # 7天
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Certificate expiring soon"
+          description: "Certificate {{ $labels.namespace }}/{{ $labels.name }} expires in {{ $value | humanizeDuration }}"
 ```
 
 ---

@@ -10,10 +10,8 @@ tags:
   - troubleshooting
 ---
 
-> [!info] SRv6 2026 深度探索系列
-> 0. [[2026-04-14-srv6-comprehensive-learning-roadmap|SRv6 全栈学习路径总览]]
-> ...
-> 35. [[2026-04-14-srv6-deep-dive-ch35-srv6-perf|第三五章：SRv6 性能监控与基准测试]]
+> [!info] SRv6 2026 深度探索系列 0. [[2026-04-14-srv6-comprehensive-learning-roadmap|SRv6 全栈学习路径总览]]
+> ... 35. [[2026-04-14-srv6-deep-dive-ch35-srv6-perf|第三五章：SRv6 性能监控与基准测试]]
 > **36. 第三六章：SRv6 工具链与模拟器**
 
 ---
@@ -29,24 +27,24 @@ graph TD
         S["Scapy<br/>数据包构造"]
         T["tcpdump<br/>命令行抓包"]
     end
-    
+
     subgraph "模拟器"
         F["FRR / Bird<br/>路由模拟"]
         M["Mininet-WiFi<br/>网络仿真"]
         H["HRMS/SRV6-sim<br/>专用模拟器"]
     end
-    
+
     subgraph "配置与管理"
         I["iproute2<br/>Linux SRv6"]
         B["BIRD<br/>SRv6 BGP"]
         N["Netconf/YANG<br/>设备配置"]
     end
-    
+
     W --> T
     S --> T
     F --> M
     H --> M
-    
+
     style W fill:#4dabf7,color:#000
     style S fill:#ffd43b,color:#000
     style H fill:#ff6b6b,color:#000
@@ -143,13 +141,13 @@ Frame 145: 128 bytes on wire (1024 bits)
 
 Wireshark 为 SRv6 提供以下专家信息：
 
-| 专家信息 | 含义 | 可能问题 |
-| :--- | :--- | :--- |
-| `SRH: Segments Left == 0` | 正常结束 | - |
-| `SRH: Segments Left == Last Entry` | 最后一段 | - |
-| `SRH: DA doesn't match any SID` | SID 未找到 | 配置错误 |
-| `SRH: ICV verification failed` | ICV 校验失败 | 密钥不一致 |
-| `SRH: Malformed segment list` | 格式错误 | 抓包损坏 |
+| 专家信息                           | 含义         | 可能问题   |
+| :--------------------------------- | :----------- | :--------- |
+| `SRH: Segments Left == 0`          | 正常结束     | -          |
+| `SRH: Segments Left == Last Entry` | 最后一段     | -          |
+| `SRH: DA doesn't match any SID`    | SID 未找到   | 配置错误   |
+| `SRH: ICV verification failed`     | ICV 校验失败 | 密钥不一致 |
+| `SRH: Malformed segment list`      | 格式错误     | 抓包损坏   |
 
 ### 2.5 抓包实战技巧
 
@@ -171,8 +169,8 @@ tcpdump -i eth0 -nn 'ip6[6] == 43 and ip6[48:4] == 0xFC000001'
 
 > [!tip] tcpdump IPv6 Extension Header 偏移计算
 > IPv6 Header = 40 bytes
-> SRH Header = 8 bytes (fixed) + 16 * segment_count
-> Segment List[n] offset = 48 + (n * 16)
+> SRH Header = 8 bytes (fixed) + 16 _ segment_count
+> Segment List[n] offset = 48 + (n _ 16)
 
 ---
 
@@ -206,13 +204,13 @@ import sys
 def create_srv6_packet(dst_sid, segment_list, payload="Hello SRv6"):
     """
     创建 SRv6 数据包
-    
+
     Args:
         dst_sid: 最终目标 SID
         segment_list: Segment 列表 [SID1, SID2, ..., SIDn]
         payload: 内层载荷
     """
-    
+
     # 构造 SRH
     srh = IPv6ExtHdrRouting(
         nh=58,  # ICMPv6，或 6=TCP, 17=UDP
@@ -221,20 +219,20 @@ def create_srv6_packet(dst_sid, segment_list, payload="Hello SRv6"):
         last_entry=len(segment_list) - 1,
         addresses=segment_list
     )
-    
+
     # 构造 IPv6 头
     ipv6 = IPv6(
         src="2001:db8::1",
         dst=dst_sid,
         nh=43  # Routing Header
     )
-    
+
     # 构造内层载荷（ICMPv6 Echo）
     inner = ICMPv6EchoRequest(data=payload)
-    
+
     # 组装完整包
     packet = ipv6 / srh / inner
-    
+
     return packet
 
 # 构造 End.X 行为的包
@@ -243,13 +241,13 @@ def create_endx_packet(locator, func_arg, next_hop, payload="Data"):
     构造 End.X 行为的 SRv6 包
     SID format: LOCATOR:FUNC:ARG
     """
-    
+
     # Segment List: [End.X SID, Final Destination]
     segments = [
         "FC00:0:1:1::5",  # End.X SID with cross-connect
         "2001:db8::100"   # Final destination
     ]
-    
+
     srh = IPv6ExtHdrRouting(
         nh=6,  # TCP
         type=4,
@@ -257,34 +255,34 @@ def create_endx_packet(locator, func_arg, next_hop, payload="Data"):
         last_entry=1,
         addresses=segments
     )
-    
+
     ipv6 = IPv6(src="2001:db8::1", dst=segments[0], nh=43)
-    
+
     tcp = TCP(sport=12345, dport=80)
     packet = ipv6 / srh / tcp / payload
-    
+
     return packet
 
 # 发送并捕获响应
 def srv6_ping(target_sid, count=4):
     """SRv6 ping 功能"""
-    
+
     print(f"Pinging {target_sid} with SRv6...")
-    
+
     for i in range(count):
         # 构造包
         pkt = create_srv6_packet(
             dst_sid=target_sid,
             segment_list=[target_sid]
         )
-        
+
         # 发送并接收
         send(pkt, verbose=0)
-        
+
         # 等待响应
-        resp = sniff(filter=f"ip6 and ip6 dst {pkt[IPv6].src}", 
+        resp = sniff(filter=f"ip6 and ip6 dst {pkt[IPv6].src}",
                      timeout=2, count=1)
-        
+
         if resp:
             print(f"  Reply from {resp[0][IPv6].src}: time=1.23 ms")
         else:
@@ -296,10 +294,10 @@ if __name__ == "__main__":
         dst_sid="FC00:0:1:1::1",
         segment_list=["FC00:0:1:1::1", "FC00:0:2:1::1", "FC00:0:3:1::1"]
     )
-    
+
     print("Generated SRv6 packet:")
     packet.show()
-    
+
     # 保存到 pcap
     wrpcap("srv6_test.pcap", packet)
     print("Saved to srv6_test.pcap")
@@ -318,59 +316,59 @@ from scapy.layers.inet6 import IPv6, IPv6ExtHdrRouting
 
 def analyze_srv6_packet(pcap_file):
     """分析 pcap 文件中的 SRv6 包"""
-    
+
     packets = rdpcap(pcap_file)
-    
+
     srv6_stats = {
         "total": 0,
         "segments_left": {},
         "segment_lists": [],
         "sids": []
     }
-    
+
     for pkt in packets:
         if IPv6 in pkt and pkt[IPv6].nh == 43:  # Routing Header
             srv6_stats["total"] += 1
-            
+
             # 查找 SRH
             srh = pkt.getlayer(IPv6ExtHdrRouting, 2)
             if srh:
                 srv6_stats["segments_left"][srh.segleft] = \
                     srv6_stats["segments_left"].get(srh.segleft, 0) + 1
-                
+
                 # 提取所有 SID
                 for addr in srh.addresses:
                     if addr not in srv6_stats["sids"]:
                         srv6_stats["sids"].append(addr)
-                
+
                 srv6_stats["segment_lists"].append(srh.addresses)
-    
+
     return srv6_stats
 
 def filter_srv6_by_sid(pcap_file, target_sid):
     """从 pcap 中筛选包含特定 SID 的包"""
-    
+
     packets = rdpcap(pcap_file)
     matching = []
-    
+
     for pkt in packets:
         if IPv6 not in pkt:
             continue
-        
+
         # 检查是否为 SRv6
         if pkt[IPv6].nh != 43:
             continue
-        
+
         srh = pkt.getlayer(IPv6ExtHdrRouting, 2)
         if srh and target_sid in srh.addresses:
             matching.append(pkt)
-    
+
     return matching
 
 if __name__ == "__main__":
     # 分析示例
     stats = analyze_srv6_packet("srv6_capture.pcap")
-    
+
     print(f"Total SRv6 packets: {stats['total']}")
     print(f"Unique SIDs found: {len(stats['sids'])}")
     print(f"SIDs: {stats['sids']}")
@@ -383,15 +381,15 @@ if __name__ == "__main__":
 def create_usid_packet(usid_block, usid_list, payload="Data"):
     """
     构造 uSID 封装的 SRv6 包
-    
+
     Args:
         usid_block: uSID block 前缀 (e.g., "FC00:0001")
         usid_list: uN/uA/uF ID 列表
     """
-    
+
     # uSID 格式: Block | uN1 | uN2 | uN3 | uN4
     usid_str = usid_block + ":" + ":".join(usid_list)
-    
+
     # uSID 作为单一 128-bit 地址
     srh = IPv6ExtHdrRouting(
         nh=6,
@@ -400,15 +398,15 @@ def create_usid_packet(usid_block, usid_list, payload="Data"):
         last_entry=0,
         addresses=[usid_str]
     )
-    
+
     ipv6 = IPv6(
         src="2001:db8::1",
         dst=usid_str,
         nh=43
     )
-    
+
     packet = ipv6 / srh / TCP(sport=12345, dport=80) / payload
-    
+
     return packet
 ```
 
@@ -547,12 +545,12 @@ apt-get install bird2
 protocol bgp {
     local as 65000;
     neighbor 10.0.0.2 as 65001;
-    
+
     ipv6 {
         import filter { accept; };
         export filter { accept; };
     };
-    
+
     # BGP SRv6 SAFI/MFAI
     bfd;
 }
@@ -581,43 +579,43 @@ from mn_wifi.link import adhoc
 
 def create_srv6_topology():
     """创建 SRv6 测试拓扑"""
-    
+
     net = Mininet_wifi()
-    
+
     info("=== Creating SRv6 Topology ===\n")
-    
+
     # 创建交换机
     s1 = net.addSwitch('s1')
     s2 = net.addSwitch('s2')
-    
+
     # 创建路由器节点
     pe1 = net.addHost('pe1', ip='2001:db8:1::1/64')
     pe2 = net.addHost('pe2', ip='2001:db8:2::1/64')
-    
+
     # 创建客户端主机
     h1 = net.addHost('h1', ip='10.0.1.1/24')
     h2 = net.addHost('h2', ip='10.0.2.1/24')
-    
+
     # 连接主机到 PE
     net.addLink(h1, pe1)
     net.addLink(h2, pe2)
-    
+
     # 连接 PE 之间
     net.addLink(pe1, s1)
     net.addLink(s1, s2)
     net.addLink(s2, pe2)
-    
+
     info("=== Starting Network ===\n")
     net.build()
-    
+
     # 配置 SRv6（需要在主机上手动配置）
     info("=== Configuring SRv6 ===\n")
     pe1.cmd('ip -6 addr add FC00:0:1:1::1/64 dev pe1-eth1')
     pe2.cmd('ip -6 addr add FC00:0:2:2::1/64 dev pe2-eth1')
-    
+
     # 配置 SRv6 路由
     pe1.cmd('ip -6 route add 10.0.2.0/24 via FC00:0:2:2::1 encap seg6 mode encap segs FC00:0:2:2::1 dev pe1-eth1')
-    
+
     CLI(net)
     net.stop()
 
@@ -723,11 +721,11 @@ ostinato &
 module ietf-srv6-base {
   namespace "urn:ietf:params:xml:ns:yang:ietf-srv6-base";
   prefix "srv6";
-  
+
   import ietf-inet-types {
     prefix inet;
   }
-  
+
   container srv6 {
     list locator {
       key "name";
@@ -797,30 +795,33 @@ netconf-console --host router.example.com \
 
 ### 9.1 工具矩阵
 
-| 工具 | 用途 | 平台 | 学习曲线 | 推荐场景 |
-| :--- | :--- | :--- | :--- | :--- |
-| Wireshark | 包分析 | Windows/Linux/macOS | 低 | 故障排查 |
-| Scapy | 包构造 | Linux/macOS | 中 | 测试验证 |
-| tcpdump | 抓包 | Linux | 低 | 快速诊断 |
-| iproute2 | Linux 配置 | Linux | 中 | 开发者 |
-| FRR | 路由模拟 | Linux | 高 | 实验环境 |
-| Mininet | 网络仿真 | Linux | 高 | 学术研究 |
-| Cisco CML | 厂商模拟 | VM | 中 | 企业培训 |
-| Ostinato | 流量生成 | Linux/macOS | 低 | 性能测试 |
+| 工具      | 用途       | 平台                | 学习曲线 | 推荐场景 |
+| :-------- | :--------- | :------------------ | :------- | :------- |
+| Wireshark | 包分析     | Windows/Linux/macOS | 低       | 故障排查 |
+| Scapy     | 包构造     | Linux/macOS         | 中       | 测试验证 |
+| tcpdump   | 抓包       | Linux               | 低       | 快速诊断 |
+| iproute2  | Linux 配置 | Linux               | 中       | 开发者   |
+| FRR       | 路由模拟   | Linux               | 高       | 实验环境 |
+| Mininet   | 网络仿真   | Linux               | 高       | 学术研究 |
+| Cisco CML | 厂商模拟   | VM                  | 中       | 企业培训 |
+| Ostinato  | 流量生成   | Linux/macOS         | 低       | 性能测试 |
 
 ### 9.2 推荐工具链组合
 
 **故障排查工具链：**
+
 ```
 tcpdump (抓包) → Wireshark (分析) → Scapy (验证)
 ```
 
 **开发测试工具链：**
+
 ```
 iproute2 (Linux) → Scapy (构造) → Wireshark (验证)
 ```
 
 **培训演示工具链：**
+
 ```
 Cisco CML / Juniper vMX → Wireshark → Scapy
 ```
@@ -831,14 +832,14 @@ Cisco CML / Juniper vMX → Wireshark → Scapy
 
 ### 10.1 日常工具使用
 
-| 场景 | 推荐工具 | 关键命令 |
-| :--- | :--- | :--- |
-| 快速抓包 | tcpdump | `tcpdump -i any 'ip6[6] == 43'` |
-| 深度分析 | Wireshark | `ipv6.nxt == 43 && srv6.segment_left == 1` |
-| 包构造 | Scapy | `IPv6()/SRH()/TCP()/data` |
-| Linux SRv6 | iproute2 | `ip -6 sr segs ... encap seg6` |
-| 路由模拟 | FRR/BIRD | `vtysh` / `birdc` |
-| 性能测试 | pktgen | `pgset` 系列命令 |
+| 场景       | 推荐工具  | 关键命令                                   |
+| :--------- | :-------- | :----------------------------------------- |
+| 快速抓包   | tcpdump   | `tcpdump -i any 'ip6[6] == 43'`            |
+| 深度分析   | Wireshark | `ipv6.nxt == 43 && srv6.segment_left == 1` |
+| 包构造     | Scapy     | `IPv6()/SRH()/TCP()/data`                  |
+| Linux SRv6 | iproute2  | `ip -6 sr segs ... encap seg6`             |
+| 路由模拟   | FRR/BIRD  | `vtysh` / `birdc`                          |
+| 性能测试   | pktgen    | `pgset` 系列命令                           |
 
 ### 10.2 学习路径建议
 

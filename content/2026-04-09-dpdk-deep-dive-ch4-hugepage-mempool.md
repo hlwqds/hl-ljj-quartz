@@ -5,8 +5,8 @@ tags: [dpdk, series, hugepage, mempool, memory, mbuf, numa]
 description: "深入理解 DPDK 内存子系统的核心——Linux HugeTLB 机制、DPDK 大页内存管理、rte_mempool 的无锁 ring 设计、以及 per-lcore 缓存优化"
 ---
 
-> [!info] DPDK 深度探索系列
-> 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
+> [!info] DPDK 深度探索系列 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-09-dpdk-deep-dive-ch1-architecture-overview|第一章：架构概述——kernel bypass 原理与 DPDK 定位]]
 > 2. [[2026-04-09-dpdk-deep-dive-ch2-uio-vfio-iommu|第二章：UIO/VFIO/IOMMU 用户态驱动框架]]
 > 3. [[2026-04-09-dpdk-deep-dive-ch3-eal-initialization|第三章：EAL 初始化与 lcore 模型]]
@@ -38,25 +38,25 @@ TLB miss penalty: 100-200 ns (25-30x 预算)
 
 ### 1.2 大页的优势
 
-| 特性 | 4KB 页 | 2MB 页 | 1GB 页 |
-|------|--------|--------|--------|
-| **页表项数 (1GB)** | 256K | 512 | 1 |
-| **TLB coverage** | 1GB/4KB = 256K entry 需要 | 1GB/2MB = 512 entry | 1 entry |
-| **TLB miss 率** | 高 | 低 | 极低 |
-| **内存粒度** | 细 | 中 | 粗 |
-| **碎片风险** | 低 | 中 | 高 |
+| 特性               | 4KB 页                    | 2MB 页              | 1GB 页  |
+| ------------------ | ------------------------- | ------------------- | ------- |
+| **页表项数 (1GB)** | 256K                      | 512                 | 1       |
+| **TLB coverage**   | 1GB/4KB = 256K entry 需要 | 1GB/2MB = 512 entry | 1 entry |
+| **TLB miss 率**    | 高                        | 低                  | 极低    |
+| **内存粒度**       | 细                        | 中                  | 粗      |
+| **碎片风险**       | 低                        | 中                  | 高      |
 
 ```mermaid
 graph LR
     A["4KB Pages<br/>256K PTEs"] -->|TLB Miss| B["Page Walk<br/>10-20 cycles"]
     A --> C["High TLB Miss Rate"]
-    
+
     D["2MB Pages<br/>512 PTEs"] -->|TLB Miss| E["Page Walk<br/>10-20 cycles"]
     D --> F["Low TLB Miss Rate"]
-    
+
     G["1GB Pages<br/>1 PTE"] -->|TLB Miss| H["Page Walk<br/>10-20 cycles"]
     H --> I["Minimal TLB Pressure"]
-    
+
     style C fill:#ff6b6b
     style F fill:#feca57
     style I fill:#51cf66
@@ -197,11 +197,11 @@ memseg（物理内存段）           memzone（具名区域）         mempool�
  跟踪物理内存页              从 memseg 中预留区域          从 memzone 分配固定大小对象
 ```
 
-| 层次 | 职责 | 生命周期 |
-|------|------|---------|
-| memseg | 跟踪每个大页的物理/虚拟地址映射 | EAL 启动时创建，进程退出时释放 |
-| memzone | 按名称预留连续内存区域 | 创建后一直存在，直到显式释放 |
-| mempool | 从 memzone 分配固定大小的对象池 | 应用创建，应用释放 |
+| 层次    | 职责                            | 生命周期                       |
+| ------- | ------------------------------- | ------------------------------ |
+| memseg  | 跟踪每个大页的物理/虚拟地址映射 | EAL 启动时创建，进程退出时释放 |
+| memzone | 按名称预留连续内存区域          | 创建后一直存在，直到显式释放   |
+| mempool | 从 memzone 分配固定大小的对象池 | 应用创建，应用释放             |
 
 #### memseg：物理内存段
 
@@ -265,10 +265,10 @@ mz = rte_memzone_reserve("packet_buffer",
 
 IOVA (I/O Virtual Address) 是 DPDK 内存模型的核心概念：
 
-| 模式 | IOVA 含义 | 依赖 | 适用场景 |
-|------|-----------|------|---------|
-| **IOVA as PA** | IOVA = 物理地址 | UIO 或 VFIO no-IOMMU | 物理地址直接用于 DMA |
-| **IOVA as VA** | IOVA = 虚拟地址 | VFIO + IOMMU | 虚拟化场景，VA 与 IOVA 统一 |
+| 模式           | IOVA 含义       | 依赖                 | 适用场景                    |
+| -------------- | --------------- | -------------------- | --------------------------- |
+| **IOVA as PA** | IOVA = 物理地址 | UIO 或 VFIO no-IOMMU | 物理地址直接用于 DMA        |
+| **IOVA as VA** | IOVA = 虚拟地址 | VFIO + IOMMU         | 虚拟化场景，VA 与 IOVA 统一 |
 
 ```c
 // 检测 IOVA 模式
@@ -343,11 +343,11 @@ graph TB
         B["rte_ring<br/>(无锁 FIFO)"]
         C["Per-lcore Cache<br/>(本地缓存)"]
     end
-    
+
     A -->|"rte_ring 存储空闲对象指针"| B
     B -->|"批量获取/归还"| C
     C -->|"每次 32 个对象"| D["应用层"]
-    
+
     style A fill:#74b9ff
     style B fill:#fdcb6e
     style C fill:#55efc4
@@ -609,14 +609,14 @@ rte_pktmbuf_pool_create(const char *name,
                          int socket_id)
 ```
 
-| 参数 | 说明 | 典型值 |
-|------|------|-------|
-| `name` | 池名称 | "mbuf_pool_0" |
-| `nb_mbuf` | mbuf 总数 | 8192 |
-| `cache_size` | per-lcore 缓存 | 256 |
-| `priv_size` | 私有数据大小 | 0 |
-| `data_room_size` | 数据区大小 | RTE_MBUF_DEFAULT_BUF_SIZE (2176) |
-| `socket_id` | NUMA socket | rte_eth_dev_socket_id(port_id) |
+| 参数             | 说明           | 典型值                           |
+| ---------------- | -------------- | -------------------------------- |
+| `name`           | 池名称         | "mbuf_pool_0"                    |
+| `nb_mbuf`        | mbuf 总数      | 8192                             |
+| `cache_size`     | per-lcore 缓存 | 256                              |
+| `priv_size`      | 私有数据大小   | 0                                |
+| `data_room_size` | 数据区大小     | RTE_MBUF_DEFAULT_BUF_SIZE (2176) |
+| `socket_id`      | NUMA socket    | rte_eth_dev_socket_id(port_id)   |
 
 ### 5.2 计算内存需求
 
@@ -827,13 +827,13 @@ rte_eal_dump_physmem_layout(stdout);  // 物理内存布局
 
 ### 7.2 常见内存错误
 
-| 错误 | 原因 | 解决 |
-|------|------|------|
-| `EAL: failed to map HugePage file` | 大页不足 | 增加 hugepages |
-| `EAL: Cannot allocate mbuf` | mbuf pool 耗尽 | 增加 pool size |
-| `IOMMU: DMA map failed` | IOVA 地址冲突 | 使用 VA mode |
-| `out of memory` | 跨 NUMA 分配失败 | 检查 socket-mem |
-| `memzone reservation failed` | 内存碎片 | 重启应用 |
+| 错误                               | 原因             | 解决            |
+| ---------------------------------- | ---------------- | --------------- |
+| `EAL: failed to map HugePage file` | 大页不足         | 增加 hugepages  |
+| `EAL: Cannot allocate mbuf`        | mbuf pool 耗尽   | 增加 pool size  |
+| `IOMMU: DMA map failed`            | IOVA 地址冲突    | 使用 VA mode    |
+| `out of memory`                    | 跨 NUMA 分配失败 | 检查 socket-mem |
+| `memzone reservation failed`       | 内存碎片         | 重启应用        |
 
 ### 7.3 调优参数
 
@@ -875,6 +875,7 @@ echo 1024 > /sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages
 ---
 
 > [!tip] 参考文献
+>
 > - Intel, "DPDK Memory Management", https://doc.dpdk.org/guides/prog_guide/mempool_lib.html
 > - Intel, "DPDK Mbuf Library", https://doc.dpdk.org/guides/prog_guide/mbuf_lib.html
 > - Linux Kernel Documentation, "HugeTLB", https://www.kernel.org/doc/html/latest/admin-guide/mm/hugetlbpage.html

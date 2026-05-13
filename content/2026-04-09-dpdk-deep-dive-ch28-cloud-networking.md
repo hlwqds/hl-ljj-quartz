@@ -42,11 +42,11 @@ description: "深入解析 DPDK 云环境网络：AWS ENA、Virtio-Net、Azure A
 
 ### 1.2 主要云提供商对比
 
-| 提供商 | 接口 | 驱动 | 最大带宽 | 最大 PPS |
-|--------|------|------|----------|----------|
-| **AWS** | ENA | ena | 100 Gbps | 100M |
-| **Azure** | SR-IOV VF | mlx5 | 50 Gbps | 50M |
-| **GCP** | gVNIC | gvnic | 50 Gbps | 50M |
+| 提供商    | 接口      | 驱动  | 最大带宽 | 最大 PPS |
+| --------- | --------- | ----- | -------- | -------- |
+| **AWS**   | ENA       | ena   | 100 Gbps | 100M     |
+| **Azure** | SR-IOV VF | mlx5  | 50 Gbps  | 50M      |
+| **GCP**   | gVNIC     | gvnic | 50 Gbps  | 50M      |
 
 ## 2. AWS ENA
 
@@ -408,11 +408,11 @@ ovs-vsctl add-port br0 eth0
 
 云网络技术对比：
 
-| 云 | 接口 | 驱动 | 卸载 | RDMA |
-|----|------|------|------|------|
-| **AWS** | ENA | ena | Yes | EFA |
-| **Azure** | SR-IOV | mlx5 | Yes | Yes |
-| **GCP** | gVNIC | gvnic | Yes | No |
+| 云        | 接口   | 驱动  | 卸载 | RDMA |
+| --------- | ------ | ----- | ---- | ---- |
+| **AWS**   | ENA    | ena   | Yes  | EFA  |
+| **Azure** | SR-IOV | mlx5  | Yes  | Yes  |
+| **GCP**   | gVNIC  | gvnic | Yes  | No   |
 
 云网络优化：
 

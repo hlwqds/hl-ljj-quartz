@@ -10,8 +10,8 @@ tags:
   - cloud-native
 ---
 
-> [!info] Cilium 2026 深度探索系列
-> 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+> [!info] Cilium 2026 深度探索系列 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+>
 > 1. [[2026-04-14-cilium-deep-dive-ch1-cilium-overview|第一章：Cilium 概述]]
 > 2. **第二章：Cilium 架构** ←
 > 3. [[2026-04-14-cilium-deep-dive-ch3-ebpf-datapath|第三章：eBPF 数据面]]
@@ -98,6 +98,7 @@ Cilium Agent 是一个跑在每个节点上的 DaemonSet 进程，是整个 Cili
 5. **状态同步**：与 kvstore（etcd）同步集群拓扑状态
 
 **通信方式：**
+
 - 通过 Kubernetes API Server 获取集群元数据（无需直接访问 etcd）
 - 通过 kvstore（etcd）同步跨节点状态（Cluster Mesh）
 
@@ -146,15 +147,15 @@ Packet arrives at NIC
 
 eBPF Map 是 Cilium 数据面的**状态存储核心**，以键值对形式存在，供 eBPF 程序和用户态进程共享访问。
 
-| Map 名称 | 类型 | 用途 |
-|:---|:---|:---|
-| `cilium_services` | LPM Trie / Hash | Service IP → Backend Pods 映射 |
-| `cilium_endpoints` | Hash | Pod IP → Endpoint 元数据 |
-| `cilium_policy` | LPM Trie | 安全策略规则存储 |
-| `cilium_ipcache` | LPM Trie | IP → Identity 缓存 |
-| `cilium_tunnel_map` | Tunnel | VXLAN/Geneve 隧道端点 |
-| `cilium_node_map` | Hash | 集群节点信息 |
-| `cilium_vtep_map` | Hash | VTEP（VXLAN Tunnel End Point）|
+| Map 名称            | 类型            | 用途                           |
+| :------------------ | :-------------- | :----------------------------- |
+| `cilium_services`   | LPM Trie / Hash | Service IP → Backend Pods 映射 |
+| `cilium_endpoints`  | Hash            | Pod IP → Endpoint 元数据       |
+| `cilium_policy`     | LPM Trie        | 安全策略规则存储               |
+| `cilium_ipcache`    | LPM Trie        | IP → Identity 缓存             |
+| `cilium_tunnel_map` | Tunnel          | VXLAN/Geneve 隧道端点          |
+| `cilium_node_map`   | Hash            | 集群节点信息                   |
+| `cilium_vtep_map`   | Hash            | VTEP（VXLAN Tunnel End Point） |
 
 ### 2.4 kvstore（分布式键值存储）
 
@@ -197,11 +198,11 @@ Node A                          Node B
 
 CNCM 定义了**跨节点 Pod 通信的方式**，有三种选择：
 
-| 模式 | 隧道类型 | 封装头 | 适用场景 |
-|:---|:---|:---|:---|
-| **vxlan** | VXLAN | 额外 50 字节 | 默认，通用 |
-| **geneve** | GENEVE | 可扩展 64 字节 | 需要携带自定义元数据 |
-| **direct** | IPIP / 无封装 | 直接路由 | 高性能，支持 TSO/GSO |
+| 模式       | 隧道类型      | 封装头         | 适用场景             |
+| :--------- | :------------ | :------------- | :------------------- |
+| **vxlan**  | VXLAN         | 额外 50 字节   | 默认，通用           |
+| **geneve** | GENEVE        | 可扩展 64 字节 | 需要携带自定义元数据 |
+| **direct** | IPIP / 无封装 | 直接路由       | 高性能，支持 TSO/GSO |
 
 ### 3.3 直接路由模式（Direct Routing）
 
@@ -265,16 +266,16 @@ spec:
     matchLabels:
       app: frontend
   ingress:
-  - fromEndpoints:
-    - matchLabels:
-        app: backend
-    toPorts:
-    - port: "80"
-      protocol: TCP
-      rules:
-        http:
-        - method: "GET"
-          path: "/api/*"
+    - fromEndpoints:
+        - matchLabels:
+            app: backend
+      toPorts:
+        - port: "80"
+          protocol: TCP
+          rules:
+            http:
+              - method: "GET"
+                path: "/api/*"
 ```
 
 策略的目标是 `app: backend` 这个**标签身份**，而不是具体的 Pod IP。
@@ -283,13 +284,13 @@ spec:
 
 ## 5. 章节总结
 
-| 组件 | 职责 | 位置 |
-|:---|:---|:---|
-| **Cilium Agent** | 控制器：监听 K8s API、编译加载 eBPF 程序、管理 Map | 用户态（DaemonSet） |
-| **eBPF Datapath** | 数据面：包转发、策略执行、隧道封装 | 内核态（eBPF VM） |
-| **eBPF Maps** | 状态存储：Service 映射、Endpoint 元数据、策略规则 | 内核态（RAM） |
-| **kvstore (etcd)** | 跨节点状态同步、IPAM、Identity 分配 | 用户态（可选） |
-| **Hubble** | 可观测性：Flow 日志、Metrics、UI | 用户态 + 内核态 |
+| 组件               | 职责                                               | 位置                |
+| :----------------- | :------------------------------------------------- | :------------------ |
+| **Cilium Agent**   | 控制器：监听 K8s API、编译加载 eBPF 程序、管理 Map | 用户态（DaemonSet） |
+| **eBPF Datapath**  | 数据面：包转发、策略执行、隧道封装                 | 内核态（eBPF VM）   |
+| **eBPF Maps**      | 状态存储：Service 映射、Endpoint 元数据、策略规则  | 内核态（RAM）       |
+| **kvstore (etcd)** | 跨节点状态同步、IPAM、Identity 分配                | 用户态（可选）      |
+| **Hubble**         | 可观测性：Flow 日志、Metrics、UI                   | 用户态 + 内核态     |
 
 **下一章**：深入 eBPF 数据面，理解 TC/XDP Hook、Socket 转发和 Host Routing 的实现细节。
 

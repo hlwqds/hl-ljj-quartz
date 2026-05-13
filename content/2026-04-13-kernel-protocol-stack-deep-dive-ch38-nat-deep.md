@@ -1,16 +1,26 @@
 ---
 title: "Kernel Protocol Stack 深度探索 (三十七)：NAT 深度解析"
 date: 2026-04-13
-tags: [linux, kernel, networking, series, nat, snat, dnat, masquerade, fullcone, symmetric-nat, stun, port-reuse, hairpin-nat]
+tags:
+  [
+    linux,
+    kernel,
+    networking,
+    series,
+    nat,
+    snat,
+    dnat,
+    masquerade,
+    fullcone,
+    symmetric-nat,
+    stun,
+    port-reuse,
+    hairpin-nat,
+  ]
 description: "深入解析 Linux NAT 实现原理——NAT 类型（fullcone/restricted-cone/port-restricted/symmetric）、SNAT/DNAT/MASQUERADE、端口冲突解决、TCP 序列号调整、hairpin NAT、以及 STUN 穿透与内核支持"
 ---
 
-> [!info] Kernel Protocol Stack 深度探索系列
-> 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
-> 15. [[2026-04-13-kernel-protocol-stack-deep-dive-ch15-conntrack|第十五章：连接跟踪 Conntrack]]
-> 16. [[2026-04-13-kernel-protocol-stack-deep-dive-ch16-nat|第十六章：NAT 与地址转换]]
-> 36. [[2026-04-13-kernel-protocol-stack-deep-dive-ch37-conntrack-internals|第三十六章：Conntrack 内部机制]]
-> 37. **第三十七章：NAT 深度解析**
+> [!info] Kernel Protocol Stack 深度探索系列 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]] 15. [[2026-04-13-kernel-protocol-stack-deep-dive-ch15-conntrack|第十五章：连接跟踪 Conntrack]] 16. [[2026-04-13-kernel-protocol-stack-deep-dive-ch16-nat|第十六章：NAT 与地址转换]] 36. [[2026-04-13-kernel-protocol-stack-deep-dive-ch37-conntrack-internals|第三十六章：Conntrack 内部机制]] 37. **第三十七章：NAT 深度解析**
 
 ---
 
@@ -19,6 +29,7 @@ description: "深入解析 Linux NAT 实现原理——NAT 类型（fullcone/res
 NAT（Network Address Translation，网络地址转换）通过修改 IP 报文的源/目的地址和端口，解决 IPv4 地址不足问题，并实现内网隔离。
 
 Linux 内核 NAT 的实现依赖 conntrack：
+
 1. conntrack 记录连接的原始 tuple（ORIGINAL 方向）
 2. NAT 模块计算转换后的 tuple（REPLY 方向）
 3. 后续属于该连接的包，根据 REPLY tuple 自动做反向转换
@@ -27,11 +38,11 @@ Linux 内核 NAT 的实现依赖 conntrack：
 SNAT 示例：
   内网包：  10.0.0.1:12345 → 8.8.8.8:80     (ORIGINAL)
   转换后：203.0.113.1:54321 → 8.8.8.8:80    (经 NAT 修改后)
-  
+
   conntrack 记录：
     ORIGINAL: src=10.0.0.1:12345  dst=8.8.8.8:80
     REPLY:    src=8.8.8.8:80      dst=203.0.113.1:54321
-  
+
   回包自动转换（无需额外规则）：
     8.8.8.8:80 → 203.0.113.1:54321  ──NAT反转──►  8.8.8.8:80 → 10.0.0.1:12345
 ```
@@ -48,7 +59,7 @@ SNAT 示例：
 外部 IP:Port 映射固定，任何外部主机都可通过该映射主动连接内网
 
   内网 A:1000 ──SNAT──► 公网:5000
-  
+
   外部任意主机 B:任意 → 公网:5000 → A:1000  ✓ 可穿透
 ```
 
@@ -58,7 +69,7 @@ SNAT 示例：
 内网 A:1000 主动连接过 B 后，B 才能主动连接 A
 
   内网 A:1000 → B:80 映射为 公网:5000
-  B 的任意端口 → 公网:5000 → A:1000  ✓ 
+  B 的任意端口 → 公网:5000 → A:1000  ✓
   C（未连接过）→ 公网:5000 → A:1000  ✗
 ```
 
@@ -79,7 +90,7 @@ SNAT 示例：
 
   A:1000 → B:80  映射为  公网:5000
   A:1000 → C:80  映射为  公网:5001  (不同目标，不同映射)
-  
+
   STUN 穿透失败，需要 TURN 中继
 ```
 
@@ -278,7 +289,7 @@ Hairpin NAT 解决内网主机通过公网 IP 访问同一内网服务器的问�
   客户端 192.168.1.2 → 公网 IP 203.0.113.1:80
   公网 IP 应该 DNAT 到内网服务器 192.168.1.100:80
   但数据包来自内网，路由器可能无法正确处理
-  
+
 解决：Hairpin SNAT
 ```
 

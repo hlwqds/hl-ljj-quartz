@@ -5,8 +5,8 @@ tags: [vpn, series, ipsec, hardware-offload, qat, caam, crypto-accelerator]
 description: "IPSec 硬件卸载深度解析——Intel QAT、CAAM、NITROX、cloud hw-offload，内核 xfrm 卸载接口、DMA 引擎、密码学加速"
 ---
 
-> [!info] VPN 技术深度探索系列
-> 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+> [!info] VPN 技术深度探索系列 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-vpn-deep-dive-ch43-subnet-router|第四十三章：Subnet Router 模式]]
 > 2. **第四十四章：IPSec 硬件卸载**
 > 3. [[2026-04-13-vpn-deep-dive-ch45-wireguard-perf|第四十五章：WireGuard 性能]]
@@ -486,6 +486,7 @@ IPSec 硬件卸载是高性能 VPN 部署的关键技术：
 ---
 
 > [!tip] 延伸阅读
+>
 > - Intel QAT 官方文档：https://intel.com/QAT
 > - Linux IPSec 硬件卸载：Documentation/networking/ipsec-offload.rst
 > - Kernel Crypto API：Documentation/crypto/api.rst

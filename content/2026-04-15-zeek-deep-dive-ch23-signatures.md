@@ -11,8 +11,8 @@ tags:
 description: "深入解析 Zeek 签名检测——Sig::Info、签名框架、签名语法、自定义签名、协议检测"
 ---
 
-> [!info] Zeek 2026 深度探索系列
-> 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Zeek 2026 深度探索系列 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-15-zeek-deep-dive-ch1-overview|第一章：Zeek 概述]]
 > 2. [[2026-04-15-zeek-deep-dive-ch2-installation|第二章：安装部署]]
 > 3. [[2026-04-15-zeek-deep-dive-ch3-config|第三章：配置系统]]
@@ -149,16 +149,16 @@ signature <id> "<name>"
 
 #### 3.2.2 必需上下文
 
-| 上下文 | 说明 |
-|--------|------|
+| 上下文 | 说明      |
+| ------ | --------- |
 | `http` | HTTP 协议 |
 | `smtp` | SMTP 协议 |
-| `dns` | DNS 协议 |
-| `ssh` | SSH 协议 |
-| `tcp` | TCP 连接 |
-| `udp` | UDP 连接 |
-| `icmp` | ICMP 包 |
-| `**` | 任何协议 |
+| `dns`  | DNS 协议  |
+| `ssh`  | SSH 协议  |
+| `tcp`  | TCP 连接  |
+| `udp`  | UDP 连接  |
+| `icmp` | ICMP 包   |
+| `**`   | 任何协议  |
 
 ### 3.3 匹配条件
 
@@ -613,29 +613,32 @@ signature sid-9000004 "State filtered" tcp {
 
 本章介绍了 Zeek 签名检测框架：
 
-| 组件 | 说明 |
-|------|------|
-| **sig.log** | 签名匹配日志 |
+| 组件                 | 说明                   |
+| -------------------- | ---------------------- |
+| **sig.log**          | 签名匹配日志           |
 | **Signatures::Info** | 签名信息的 record 类型 |
-| **signature_match** | 签名匹配事件 |
-| **@load-sigs** | 加载签名文件 |
-| **payload** | payload 内容匹配 |
-| **header** | 协议头匹配 |
-| **tcp-state** | TCP 状态过滤 |
+| **signature_match**  | 签名匹配事件           |
+| **@load-sigs**       | 加载签名文件           |
+| **payload**          | payload 内容匹配       |
+| **header**           | 协议头匹配             |
+| **tcp-state**        | TCP 状态过滤           |
 
 签名语法核心要素：
+
 - `signature <id> "<name>" <context> { <conditions> }`
 - `payload /<regex>/` - payload 匹配
 - `header <proto>.<header> /<regex>/` - header 匹配
 - `tcp-state <state>` - 连接状态过滤
 
 签名检测的价值：
+
 - 检测协议混淆和规避
 - 发现恶意流量模式
 - 补充协议分析器的检测能力
 - 与威胁情报联动
 
 签名与 Suricata 规则的区别：
+
 - Zeek 签名使用 ZeekScript 语法
 - 支持更灵活的事件处理
 - 与 Zeek 事件系统深度集成

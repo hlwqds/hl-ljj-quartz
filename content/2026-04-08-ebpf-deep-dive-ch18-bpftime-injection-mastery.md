@@ -9,8 +9,8 @@ tags:
   - devops
 ---
 
-> [!info] eBPF 2026 深度探索系列
-> 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+> [!info] eBPF 2026 深度探索系列 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+>
 > 1. [[2026-04-08-ebpf-deep-dive-ch1-registers-and-instructions|第一章：寄存器与指令集]]
 > 2. [[2026-04-08-ebpf-deep-dive-ch1-5-function-calls|第一.五章：四种函数调用与动态内存]]
 > 3. [[2026-04-08-ebpf-deep-dive-ch1-6-the-verifier|第一.六章：验证器 (Verifier) 的底层逻辑]]
@@ -62,6 +62,7 @@ tags:
 > 49. [[2026-04-09-ebpf-deep-dive-ch40-network-protocols-deep-dive|第四十章：网络协议深度解析——TCP/UDP/QUIC 的 eBPF 视角]]
 > 50. [[2026-04-09-ebpf-deep-dive-ch41-memory-safety-and-vulnerabilities|第四十一章：eBPF 内存安全与漏洞分析]]
 > 51. [[2026-04-09-ebpf-deep-dive-ch42-service-mesh-integration|第四十二章：eBPF 与 Service Mesh 深度集成]]
+
 ---
 
 ## 1. 核心挑战：为什么全量注入是"最后一公里"难题
@@ -98,12 +99,12 @@ graph LR
 
 注入操作必须在应用的关键路径之前完成，否则会丢失关键数据：
 
-| 阶段 | 时间点 | 能否捕获 | 说明 |
-| :--- | :--- | :--- | :--- |
-| `execve` 系统调用 | 进程创建时 | LD_PRELOAD / CRI | 最佳时机，所有代码执行前 |
-| `main()` 入口 | 用户态入口 | PTRACE 注入 | 较晚，可能遗漏初始化阶段 |
-| 动态库加载后 | `dlopen` 完成 | `dlopen` hook | 可以，但时序不稳定 |
-| 请求处理时 | 业务逻辑中 | uprobe (内核态) | 太晚，无法捕获启动阶段 |
+| 阶段              | 时间点        | 能否捕获         | 说明                     |
+| :---------------- | :------------ | :--------------- | :----------------------- |
+| `execve` 系统调用 | 进程创建时    | LD_PRELOAD / CRI | 最佳时机，所有代码执行前 |
+| `main()` 入口     | 用户态入口    | PTRACE 注入      | 较晚，可能遗漏初始化阶段 |
+| 动态库加载后      | `dlopen` 完成 | `dlopen` hook    | 可以，但时序不稳定       |
+| 请求处理时        | 业务逻辑中    | uprobe (内核态)  | 太晚，无法捕获启动阶段   |
 
 ---
 
@@ -221,14 +222,14 @@ ENV LD_PRELOAD=/usr/lib/libbpftime.so
 
 **LD_PRELOAD 的局限性与绕过场景**：
 
-| 场景 | 是否生效 | 原因 |
-| :--- | :--- | :--- |
-| 普通动态链接程序 | 生效 | ld.so 正常处理 |
-| 静态链接程序 | 不生效 | 无动态链接器参与 |
-| `SUID`/`SGID` 程序 | 不生效 | 安全机制忽略 LD_PRELOAD |
-| Go 默认构建 | 不生效 | Go 使用自己的 syscall 实现 |
-| `LD_PRELOAD` 被重置 | 不生效 | 子进程可能清空该变量 |
-| 使用 `dlopen` 显式加载 | 部分 | 只劫持 `dlopen` 拦截的符号 |
+| 场景                   | 是否生效 | 原因                       |
+| :--------------------- | :------- | :------------------------- |
+| 普通动态链接程序       | 生效     | ld.so 正常处理             |
+| 静态链接程序           | 不生效   | 无动态链接器参与           |
+| `SUID`/`SGID` 程序     | 不生效   | 安全机制忽略 LD_PRELOAD    |
+| Go 默认构建            | 不生效   | Go 使用自己的 syscall 实现 |
+| `LD_PRELOAD` 被重置    | 不生效   | 子进程可能清空该变量       |
+| 使用 `dlopen` 显式加载 | 部分     | 只劫持 `dlopen` 拦截的符号 |
 
 #### B. 内核监听法 (bpftime-daemon)
 
@@ -270,13 +271,13 @@ ptrace(PTRACE_SEIZE, pid, NULL,
 
 关键差异：
 
-| 特性 | `PTRACE_ATTACH` | `PTRACE_SEIZE` |
-| :--- | :--- | :--- |
-| 信号影响 | 发送 SIGSTOP | 不发送信号 |
-| 进程暂停 | 立即暂停 | 仅在下次 syscall 边界暂停 |
-| 线程处理 | 需要手动处理每个线程 | 自动跟踪所有线程 |
-| 附加开销 | 较高（上下文切换） | 极低（无额外切换） |
-| 内核版本要求 | 2.2+ | 3.4+ |
+| 特性         | `PTRACE_ATTACH`      | `PTRACE_SEIZE`            |
+| :----------- | :------------------- | :------------------------ |
+| 信号影响     | 发送 SIGSTOP         | 不发送信号                |
+| 进程暂停     | 立即暂停             | 仅在下次 syscall 边界暂停 |
+| 线程处理     | 需要手动处理每个线程 | 自动跟踪所有线程          |
+| 附加开销     | 较高（上下文切换）   | 极低（无额外切换）        |
+| 内核版本要求 | 2.2+                 | 3.4+                      |
 
 ---
 
@@ -469,23 +470,23 @@ metadata:
     bpftime.io/bpf-programs: "http-latency,mysql-trace"
 spec:
   containers:
-  - name: web-app
-    image: myapp:latest
-    env:
-    - name: LD_PRELOAD
-      value: "/opt/bpftime/libbpftime.so"
-    volumeMounts:
-    - name: bpftime-libs
-      mountPath: /opt/bpftime
+    - name: web-app
+      image: myapp:latest
+      env:
+        - name: LD_PRELOAD
+          value: "/opt/bpftime/libbpftime.so"
+      volumeMounts:
+        - name: bpftime-libs
+          mountPath: /opt/bpftime
   initContainers:
-  - name: bpftime-setup
-    image: bpftime/init:2026.1
-    volumeMounts:
-    - name: bpftime-libs
-      mountPath: /opt/bpftime
+    - name: bpftime-setup
+      image: bpftime/init:2026.1
+      volumeMounts:
+        - name: bpftime-libs
+          mountPath: /opt/bpftime
   volumes:
-  - name: bpftime-libs
-    emptyDir: {}
+    - name: bpftime-libs
+      emptyDir: {}
 ```
 
 ### 4.3 Admission Webhook 自动注入
@@ -520,15 +521,15 @@ Webhook 核心逻辑：拦截 `Pod Create` 请求，检查 `bpftime.io/inject` �
 
 ## 5. 性能与成功率对比
 
-| 注入方式 | 适用对象 | 成功率 | 对瞬时应用支持 | 性能开销 | 部署复杂度 | 内核版本要求 |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **手动挂载** | 特定 PID | 一般 (易竞态) | 无法支持 | 低 | 低 | 4.17+ |
-| **LD_PRELOAD** | 新启动进程 | **100%** | 完美支持 | **极低** | **低** | 任意 |
-| **PTRACE 注入** | 存量进程 | 95% (受权限限制) | 无法支持 | 中 | 中 | 2.2+ |
-| **PTRACE_SEIZE** | 存量进程 | 95% | 无法支持 | **低** | 中 | 3.4+ |
-| **bpftime-daemon** | 全量进程 | 98% | 部分支持 | 低 | 高 | 5.8+ |
-| **CRI 自动化** | 全量容器 | **100%** | 完美支持 | **极低** | 中 | 任意 |
-| **K8s Webhook** | 全量 Pod | **100%** | 完美支持 | **极低** | 高 | K8s 1.16+ |
+| 注入方式           | 适用对象   | 成功率           | 对瞬时应用支持 | 性能开销 | 部署复杂度 | 内核版本要求 |
+| :----------------- | :--------- | :--------------- | :------------- | :------- | :--------- | :----------- |
+| **手动挂载**       | 特定 PID   | 一般 (易竞态)    | 无法支持       | 低       | 低         | 4.17+        |
+| **LD_PRELOAD**     | 新启动进程 | **100%**         | 完美支持       | **极低** | **低**     | 任意         |
+| **PTRACE 注入**    | 存量进程   | 95% (受权限限制) | 无法支持       | 中       | 中         | 2.2+         |
+| **PTRACE_SEIZE**   | 存量进程   | 95%              | 无法支持       | **低**   | 中         | 3.4+         |
+| **bpftime-daemon** | 全量进程   | 98%              | 部分支持       | 低       | 高         | 5.8+         |
+| **CRI 自动化**     | 全量容器   | **100%**         | 完美支持       | **极低** | 中         | 任意         |
+| **K8s Webhook**    | 全量 Pod   | **100%**         | 完美支持       | **极低** | 高         | K8s 1.16+    |
 
 ### 5.1 性能基准测试
 
@@ -594,14 +595,14 @@ securityContext:
 
 ### 6.4 常见陷阱速查
 
-| 陷阱 | 现象 | 解决方案 |
-| :--- | :--- | :--- |
-| 重复注入 | 进程 crash (double free) | 注入前检查 `/proc/<pid>/maps` |
-| 注入时机过晚 | 丢失启动阶段数据 | 使用 CRI Hook 而非 PTRACE |
-| 线程竞态 | 多线程进程间歇性 crash | 使用 `PTRACE_SEIZE` 替代 `ATTACH` |
-| ASLR 冲突 | 注入 shellcode 执行失败 | 使用 PIE 无关的相对寻址 |
-| seccomp 限制 | 容器中注入失败 | 确保 seccomp 策略允许 `ptrace` |
-| cgroup v2 限制 | 无法跨 cgroup 注入 | 在正确的 cgroup 层级执行注入 |
+| 陷阱           | 现象                     | 解决方案                          |
+| :------------- | :----------------------- | :-------------------------------- |
+| 重复注入       | 进程 crash (double free) | 注入前检查 `/proc/<pid>/maps`     |
+| 注入时机过晚   | 丢失启动阶段数据         | 使用 CRI Hook 而非 PTRACE         |
+| 线程竞态       | 多线程进程间歇性 crash   | 使用 `PTRACE_SEIZE` 替代 `ATTACH` |
+| ASLR 冲突      | 注入 shellcode 执行失败  | 使用 PIE 无关的相对寻址           |
+| seccomp 限制   | 容器中注入失败           | 确保 seccomp 策略允许 `ptrace`    |
+| cgroup v2 限制 | 无法跨 cgroup 注入       | 在正确的 cgroup 层级执行注入      |
 
 ---
 

@@ -5,8 +5,8 @@ tags: [vpn, series, gfw, detection, defense, dpi, traffic-analysis, protocol-obf
 description: "GFW 检测与防御深度解析——流量特征识别、DPI 检测方法、被动/主动检测、对抗策略、协议混淆"
 ---
 
-> [!info] VPN 技术深度探索系列
-> 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+> [!info] VPN 技术深度探索系列 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-vpn-deep-dive-ch47-vpn-hardening|第四十七章：VPN 安全加固]]
 > 2. **第四十八章：GFW 检测与防御**
 > 3. [[2026-04-13-vpn-deep-dive-ch49-vpn-benchmark|第四十九章：VPN 基准测试]]
@@ -423,38 +423,40 @@ V2Ray 协议对抗策略：
   "log": {
     "loglevel": "warning"
   },
-  "inbounds": [{
-    "port": 443,
-    "listen": "0.0.0.0",
-    "protocol": "vless",
-    "settings": {
-      "clients": [{
-        "id": "b831381d-6324-4d53-ad4f-8cda48b30811",
-        "flow": "xtls-rprx-vision"
-      }],
-      "decryption": "none"
-    },
-    "streamSettings": {
-      "network": "tcp",
-      "security": "reality",
-      "realitySettings": {
-        "show": false,
-        "dest": "www.microsoft.com:443",
-        "xver": 0,
-        "serverNames": [
-          "www.microsoft.com",
-          "www.apple.com",
-          "www.amazon.com"
+  "inbounds": [
+    {
+      "port": 443,
+      "listen": "0.0.0.0",
+      "protocol": "vless",
+      "settings": {
+        "clients": [
+          {
+            "id": "b831381d-6324-4d53-ad4f-8cda48b30811",
+            "flow": "xtls-rprx-vision"
+          }
         ],
-        "privateKey": "0RVT-4xAhkNH-xMB8fR6KlPOS6V6ZvM2qV4xV8wV9qA",
-        "shortIds": [""]
+        "decryption": "none"
+      },
+      "streamSettings": {
+        "network": "tcp",
+        "security": "reality",
+        "realitySettings": {
+          "show": false,
+          "dest": "www.microsoft.com:443",
+          "xver": 0,
+          "serverNames": ["www.microsoft.com", "www.apple.com", "www.amazon.com"],
+          "privateKey": "0RVT-4xAhkNH-xMB8fR6KlPOS6V6ZvM2qV4xV8wV9qA",
+          "shortIds": [""]
+        }
       }
     }
-  }],
-  "outbounds": [{
-    "protocol": "freedom",
-    "tag": "direct"
-  }]
+  ],
+  "outbounds": [
+    {
+      "protocol": "freedom",
+      "tag": "direct"
+    }
+  ]
 }
 ```
 
@@ -593,6 +595,7 @@ GFW 检测与防御是持续对抗：
 ---
 
 > [!tip] 延伸阅读
+>
 > - GFW 原理详解：[[2026-04-13-vpn-deep-dive-ch24-gfw-principle|第二十四章：GFW 工作原理]]
 > - Reality 协议：https://github.com/XTLS/Xray-core
 > - GREAT Firewall 论文：https://censorbib.nymity.ch/

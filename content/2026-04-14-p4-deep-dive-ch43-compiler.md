@@ -5,15 +5,15 @@ tags: [p4, series, p4c, compiler, architecture, backend, codegen, bmv2, tofino, 
 description: "P4 编译器 (p4c) 深度解析——编译器前端 (Lexer/Parser/AST)、PSA/TNA 架构映射、HMAC 验证、后端代码生成、BMv2/Tofino/DPDK 多目标后端"
 ---
 
-> [!info] P4 深度探索系列
-> 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+> [!info] P4 深度探索系列 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-14-p4-deep-dive-ch1-p4-overview|第一章：P4 概述]]
-> ...
-> 39. [[2026-04-14-p4-deep-dive-ch39-huawei|第三十九章：华为网络可编程实践]]
-> 40. [[2026-04-14-p4-deep-dive-ch40-alibaba|第四十章：阿里云网络可编程实践]]
-> 41. [[2026-04-14-p4-deep-dive-ch41-debug|第四十一章：P4 排错与诊断]]
-> 42. [[2026-04-14-p4-deep-dive-ch42-resource|第四十二章：P4 资源优化]]
-> 43. **第四十三章：P4 编译器 (p4c) 架构——前端解析、HMAC 验证、后端代码生成、目标后端**
+>    ...
+> 2. [[2026-04-14-p4-deep-dive-ch39-huawei|第三十九章：华为网络可编程实践]]
+> 3. [[2026-04-14-p4-deep-dive-ch40-alibaba|第四十章：阿里云网络可编程实践]]
+> 4. [[2026-04-14-p4-deep-dive-ch41-debug|第四十一章：P4 排错与诊断]]
+> 5. [[2026-04-14-p4-deep-dive-ch42-resource|第四十二章：P4 资源优化]]
+> 6. **第四十三章：P4 编译器 (p4c) 架构——前端解析、HMAC 验证、后端代码生成、目标后端**
 
 ---
 
@@ -1116,4 +1116,4 @@ p4c 编译器架构总结:
 
 ---
 
-*P4 深度探索系列 © 2026*
+_P4 深度探索系列 © 2026_

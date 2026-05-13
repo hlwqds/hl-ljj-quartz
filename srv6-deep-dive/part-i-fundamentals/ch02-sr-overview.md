@@ -45,10 +45,10 @@ SR Domain Example:
             |     \                         |
             |      \                  [R5]
             |       \                      /
-            |        [R4]-----------------  
+            |        [R4]-----------------
        50Gbps            (Node-SID 104)
-            |                              
-            |                              
+            |
+            |
            [R2]---------------------------[R6]
     192.0.2.2/32 (Node-SID 102)        192.0.2.6/32 (Node-SID 106)
 
@@ -220,7 +220,7 @@ Packet to 192.0.2.3 with SID list [Adj-SID R1-to-R4, Node-SID 103]
 - R1 sends packet directly to R4 via specific interface
 - R4 processes Node-SID 103, forwards to R3 via shortest path
 
-This combination forces the first hop but allows 
+This combination forces the first hop but allows
 IGP to determine the remainder.
 ```
 

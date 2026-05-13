@@ -1,16 +1,13 @@
 ---
 title: "VPN 技术深度探索 (十六)：AH 与 ESP 协议深度解析"
 date: 2026-04-13
-tags: [vpn, series, networking, security, ipsec, ah, esp, aead, aes-gcm, hmac, anti-replay, padding, iv]
+tags:
+  [vpn, series, networking, security, ipsec, ah, esp, aead, aes-gcm, hmac, anti-replay, padding, iv]
 description: "AH 与 ESP 协议深度解析——ESP 加密与认证流程、AES-GCM AEAD 模式、HMAC 完整性保护、防重放滑动窗口机制、ESP Padding 详解、IV/Nonce 处理、组合加密认证算法对比"
 ---
 
-> [!info] VPN 技术深度探索系列
-> 14. [[2026-04-13-vpn-deep-dive-ch14-ipsec-overview|IPSec 体系概述]]
-> 15. [[2026-04-13-vpn-deep-dive-ch15-ipsec-ike|IKE 密钥交换]]
-> **16. AH 与 ESP 协议（本章）**
-> 17. [[2026-04-13-vpn-deep-dive-ch17-ipsec-policy|IPSec 策略配置]]
-> 18. [[2026-04-13-vpn-deep-dive-ch18-ipsec-troubleshooting|IPSec 排错]]
+> [!info] VPN 技术深度探索系列 14. [[2026-04-13-vpn-deep-dive-ch14-ipsec-overview|IPSec 体系概述]] 15. [[2026-04-13-vpn-deep-dive-ch15-ipsec-ike|IKE 密钥交换]]
+> **16. AH 与 ESP 协议（本章）** 17. [[2026-04-13-vpn-deep-dive-ch17-ipsec-policy|IPSec 策略配置]] 18. [[2026-04-13-vpn-deep-dive-ch18-ipsec-troubleshooting|IPSec 排错]]
 
 ---
 
@@ -44,6 +41,7 @@ Payload Len 字段含义：AH 载荷长度，单位为 **32 位（4字节）**�
 ### 1.2 AH 认证范围
 
 AH 的 ICV 覆盖：
+
 - **外层 IP 头中的不变字段**（Immutable Fields）
 - **AH 头本身**（ICV 字段置 0 计算）
 - **上层载荷**（IP 头之后的全部内容）
@@ -117,27 +115,32 @@ ESP 完整封装结构（传输模式）：
 ### 2.2 字段详解
 
 **SPI（Security Parameters Index）**：
+
 - 32 位整数，与目的 IP + 协议联合标识接收方 SA
 - 范围 1～0xFFFFFFFF（0 保留，1～255 保留给本地使用）
 
 **Sequence Number（序列号）**：
+
 - 从 1 开始，每个 ESP 包递增 1
 - 用于**防重放攻击**
 - 溢出（到 2^32）时必须重新协商 SA
 - 扩展序列号（ESN，RFC 4304）：64 位序列号，避免高速链路频繁重协商
 
 **IV/Nonce（初始化向量/随机数）**：
+
 - AES-CBC 模式：8 字节 IV（随机，不重复）
 - AES-CTR/GCM 模式：8 字节隐式 Nonce + 4 字节 salt
 - 必须对每个包唯一，否则破坏加密安全性
 
 **Padding（填充）**：
+
 - 作用 1：块对齐（AES-CBC 需要 16 字节对齐）
 - 作用 2：流量分析对抗（填充使报文长度统一）
 - Pad Length：填充字节数（0-255）
 - Next Header：被保护的上层协议（传输模式：TCP/UDP/ICMP；隧道模式：IP=4）
 
 **ICV（Integrity Check Value）**：
+
 - HMAC-SHA256：截断为 128 位（16 字节）
 - AES-GCM：内置 128 位认证标签（ICV）
 - AES-GMAC：仅认证，不加密
@@ -170,6 +173,7 @@ ESP + AES-CBC + HMAC-SHA256 处理顺序：
 ```
 
 缺点：
+
 - "先加密后认证"（Encrypt-then-MAC）需要两次独立运算
 - 存在 Padding Oracle 攻击风险（若实现不当）
 - 并行化能力差（CBC 解密可并行，加密不能）
@@ -203,6 +207,7 @@ ESP + AES-256-GCM 中：
 ```
 
 AES-GCM 的优势：
+
 ```
 优势：
   1. 同时加密 + 认证，一次遍历数据
@@ -274,6 +279,7 @@ ESP 中 HMAC 的覆盖范围：
 ### 4.2 截断 HMAC（Truncated HMAC）
 
 RFC 4868 规定 HMAC 输出需截断：
+
 - HMAC-SHA-256-128：输出 256 bit，截断为 **128 bit**（16 字节）ICV
 - HMAC-SHA-384-192：输出 384 bit，截断为 **192 bit**（24 字节）ICV
 - HMAC-SHA-512-256：输出 512 bit，截断为 **256 bit**（32 字节）ICV

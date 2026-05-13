@@ -46,14 +46,15 @@ QUIC 1-RTT:
 
 QUIC 握手过程中涉及三种 Long Header 包：
 
-| 包类型 | 加密级别 | 用途 | 携带的 TLS 消息 |
-|--------|----------|------|-----------------|
-| **Initial** | `ENCRYPTION_INITIAL` | 交换加密参数、验证服务端 | ClientHello / ServerHello / EncryptedExtensions / Certificates / Finished |
-| **Handshake** | `ENCRYPTION_HANDSHAKE` | 确认会话密钥、完成握手 | Finished |
-| **0-RTT** | `ENCRYPTION_0-RTT` | 早期数据传输（0-RTT） | early_data |
+| 包类型        | 加密级别               | 用途                     | 携带的 TLS 消息                                                           |
+| ------------- | ---------------------- | ------------------------ | ------------------------------------------------------------------------- |
+| **Initial**   | `ENCRYPTION_INITIAL`   | 交换加密参数、验证服务端 | ClientHello / ServerHello / EncryptedExtensions / Certificates / Finished |
+| **Handshake** | `ENCRYPTION_HANDSHAKE` | 确认会话密钥、完成握手   | Finished                                                                  |
+| **0-RTT**     | `ENCRYPTION_0-RTT`     | 早期数据传输（0-RTT）    | early_data                                                                |
 
 > [!note] 加密级别定义
 > QUIC 的加密级别（encryption level）与 TLS 1.3 的密钥阶段（key phase）对应：
+>
 > - `INITIAL`：初始级别，使用初始密钥（initial keys）
 > - `HANDSHAKE`：握手级别，使用握手密钥
 > - `0-RTT`：0-RTT 级别，使用 0-RTT 密钥
@@ -132,6 +133,7 @@ Initial Packet (
 ```
 
 服务端响应的 Initial 包含多个 CRYPTO 帧，分别承载：
+
 - **ServerHello**：协议版本、TLS 扩展、选定的密码套件
 - **EncryptedExtensions**：服务端 QUIC 参数
 - **Certificates**：证书
@@ -256,15 +258,15 @@ TLS 1.3 的握手消息通过 QUIC CRYPTO 帧传输，而不是直接封装在 T
 
 ### 5.1 映射关系
 
-| TLS 1.3 消息 | QUIC 帧类型 | 所在包类型 |
-|--------------|------------|-----------|
-| ClientHello | CRYPTO | Initial |
-| ServerHello | CRYPTO | Initial |
-| EncryptedExtensions | CRYPTO | Initial |
-| Certificates | CRYPTO | Initial |
-| CertificateVerify | CRYPTO | Initial |
-| Finished | CRYPTO | Initial 或 Handshake |
-| NewSessionTicket | CRYPTO | 1-RTT |
+| TLS 1.3 消息        | QUIC 帧类型 | 所在包类型           |
+| ------------------- | ----------- | -------------------- |
+| ClientHello         | CRYPTO      | Initial              |
+| ServerHello         | CRYPTO      | Initial              |
+| EncryptedExtensions | CRYPTO      | Initial              |
+| Certificates        | CRYPTO      | Initial              |
+| CertificateVerify   | CRYPTO      | Initial              |
+| Finished            | CRYPTO      | Initial 或 Handshake |
+| NewSessionTicket    | CRYPTO      | 1-RTT                |
 
 ### 5.2 为什么不用 TLS 记录层
 
@@ -329,10 +331,10 @@ QUIC 握手期间，连接状态经历以下转换：
 
 QUIC 的三个包类型分别对应三个独立的包号空间（Packet Number Space）：
 
-| 包类型 | 包号空间 | 加密级别 | 密钥来源 |
-|--------|----------|----------|----------|
-| Initial | `initial_number_space` | Initial keys | 派生于 SCID |
-| Handshake | `handshake_number_space` | Handshake keys | 派生于 ServerHello |
+| 包类型      | 包号空间                   | 加密级别           | 密钥来源             |
+| ----------- | -------------------------- | ------------------ | -------------------- |
+| Initial     | `initial_number_space`     | Initial keys       | 派生于 SCID          |
+| Handshake   | `handshake_number_space`   | Handshake keys     | 派生于 ServerHello   |
 | 0-RTT/1-RTT | `application_number_space` | 0-RTT / 1-RTT keys | 派生于 master secret |
 
 每个包号空间从 0 开始独立计数。这意味着同一个 Connection ID 下可能有三个包号都为 0 的包，分别属于三个不同的包号空间。
@@ -370,11 +372,11 @@ QUIC 对握手包使用独立的超时与重传策略：
 
 ### 8.2 丢包对握手延迟的影响
 
-| 丢包位置 | 影响 | 延迟增加 |
-|----------|------|----------|
-| 第一个 Initial | 1-RTT 延迟加倍 | +1 RTT |
-| 服务端 Initial（ServerHello） | 握手无法完成 | +2 RTT（超时重传） |
-| Handshake 包 | 密钥确认延迟 | +1 RTT（probe） |
+| 丢包位置                      | 影响           | 延迟增加           |
+| ----------------------------- | -------------- | ------------------ |
+| 第一个 Initial                | 1-RTT 延迟加倍 | +1 RTT             |
+| 服务端 Initial（ServerHello） | 握手无法完成   | +2 RTT（超时重传） |
+| Handshake 包                  | 密钥确认延迟   | +1 RTT（probe）    |
 
 ---
 

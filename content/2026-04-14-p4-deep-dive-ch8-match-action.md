@@ -5,8 +5,8 @@ tags: [p4, series, match-action, table, action, key, exact, lpm, ternary, p4-16]
 description: "P4 Match-Action 深度解析——Table 定义与用途、Action 函数、Key 声明、Match Kind (exact/lpm/ternary/range) 的语义与硬件实现、表的默认动作、动作参数、表条目"
 ---
 
-> [!info] P4 深度探索系列
-> 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+> [!info] P4 深度探索系列 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-14-p4-deep-dive-ch1-p4-overview|第一章：P4 概述——诞生背景与协议无关包处理]]
 > 2. [[2026-04-14-p4-deep-dive-ch2-p4-architecture|第二章：P4 架构模型——PSA/V1Model、Ingress/Egress]]
 > 3. [[2026-04-14-p4-deep-dive-ch3-p4-vs-ebpf|第三章：P4 vs eBPF——适用场景与硬件/软件对比]]
@@ -26,6 +26,7 @@ description: "P4 Match-Action 深度解析——Table 定义与用途、Action �
 2. **Action（动作）**：执行查找到的动作（修改字段、发送、丢弃、复制等）
 
 这种分离设计带来了几个关键优势：
+
 - **协议无关**：同一套硬件可以支持不同的协议（如 ACL、路由、防火墙）
 - **控制面与数据面分离**：控制面负责填充表项，数据面负责查表执行
 - **硬件友好**：Match 和 Action 在硬件中是分离的资源（TCAM/RAM vs ALU/修改逻辑）
@@ -149,6 +150,7 @@ table ddos_filter {
 ```
 
 **掩码语法**：
+
 ```
 value &&& mask
 
@@ -179,12 +181,12 @@ table acl_filter {
 
 ### 3.6 Match Kind 与硬件资源
 
-| Match Kind | 硬件资源 | 典型应用 |
-|------------|---------|---------|
-| exact | Hash + CAM | MAC 学习、ACL 精确匹配 |
-| lpm | TCAM 或 Patricia Tree | IP 路由查找 |
-| ternary | TCAM | ACL 规则、防火墙 |
-| range | TCAM (转换为三元) | 端口范围、长度范围 |
+| Match Kind | 硬件资源              | 典型应用               |
+| ---------- | --------------------- | ---------------------- |
+| exact      | Hash + CAM            | MAC 学习、ACL 精确匹配 |
+| lpm        | TCAM 或 Patricia Tree | IP 路由查找            |
+| ternary    | TCAM                  | ACL 规则、防火墙       |
+| range      | TCAM (转换为三元)     | 端口范围、长度范围     |
 
 ---
 
@@ -218,19 +220,19 @@ action modify_fields() {
     // 1. 修改 Header 字段
     h.ipv4.ttl = h.ipv4.ttl - 1;
     h.ipv4.srcAddr = 0x0A000001;
-    
+
     // 2. 修改 Metadata
     meta.qos_class = 3;
-    
+
     // 3. 设置出口端口
     standard_metadata.egress_spec = 5;
-    
+
     // 4. 标记丢弃
     mark_to_drop(standard_metadata);
-    
+
     // 5. 修改校验和
     h.ipv4.hdrChecksum = ipv4_checksum.update(h.ipv4);
-    
+
     // 6. 调用其他动作
     // 注意：不能递归调用，但可以在动作中调用其他动作
 }
@@ -291,13 +293,13 @@ table my_table {
         action1;
         action2;
     }
-    
+
     // ========== 可选属性 ==========
     default_action = action2;       // 默认动作
     size = 1024;                    // 表大小提示（编译器使用）
     supports_timeout = true;         // 支持表项超时
     idle_timeout = 300;             // 空闲超时（秒）
-    
+
     // ========== 内部属性（编译器/架构使用） ==========
     // const entries = { };          // 编译时常量表项
 }
@@ -367,7 +369,7 @@ control Ingress() {
     apply {
         // 简单 apply
         ipv4_lpm.apply();
-        
+
         // 保存 apply 结果
         if (ipv4_lpm.apply().hit) {
             // 表项命中
@@ -393,7 +395,7 @@ control Ingress() {
         if (ipv4_fib.apply().hit) {
             // 表项被命中，执行对应动作
         }
-        
+
         // 结合条件判断
         if (h.tcp.isValid()) {
             tcp_acl.apply();
@@ -409,13 +411,13 @@ control Ingress() {
     apply {
         // 1. MAC 学习表（精确匹配，先执行）
         mac_learn.apply();
-        
+
         // 2. VLAN 验证表
         vlan_check.apply();
-        
+
         // 3. IPv4 路由表（LPM）
         ipv4_fib.apply();
-        
+
         // 4. ACL 表（三元匹配，最后执行）
         if (h.tcp.isValid()) {
             acl_table.apply();
@@ -502,13 +504,13 @@ request.entities.add().table_entry = entry
 
 ### 8.1 表的顺序
 
-| 顺序 | 表类型 | 理由 |
-|------|--------|------|
-| 1 | MAC Learning | 精确匹配，性能高，先执行可以学习 MAC |
-| 2 | VLAN Validation | 验证 VLAN 合法性 |
-| 3 | LPM 路由表 | 较长匹配优先 |
-| 4 | ACL/Filter | 三元匹配在最后，避免过早丢弃 |
-| 5 | Counter/Meter | 统计类表最后执行 |
+| 顺序 | 表类型          | 理由                                 |
+| ---- | --------------- | ------------------------------------ |
+| 1    | MAC Learning    | 精确匹配，性能高，先执行可以学习 MAC |
+| 2    | VLAN Validation | 验证 VLAN 合法性                     |
+| 3    | LPM 路由表      | 较长匹配优先                         |
+| 4    | ACL/Filter      | 三元匹配在最后，避免过早丢弃         |
+| 5    | Counter/Meter   | 统计类表最后执行                     |
 
 ### 8.2 Key 字段选择
 
@@ -544,7 +546,7 @@ table bad_acl {
 table ipv4_fib {
     key = { h.ipv4.dstAddr: lpm; }
     actions = { ipv4_forward; drop; }
-    
+
     // 默认动作：丢弃（安全策略）
     // 防止路由表为空时所有包被意外转发
     default_action = drop;
@@ -751,13 +753,13 @@ control MyIngress(inout headers h,
     apply {
         // 1. QoS 标记
         qos_table.apply();
-        
+
         // 2. LPM 路由查找
         if (ipv4_lpm.apply().hit) {
             // 路由命中，执行转发
             // ipv4_forward 已在动作中处理 TTL 和出口
         }
-        
+
         // 3. ACL 检查
         if (h.tcp.isValid()) {
             ipv4_acl.apply();

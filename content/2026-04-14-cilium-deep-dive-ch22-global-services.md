@@ -12,12 +12,8 @@ tags:
   - cloud-native
 ---
 
-> [!info] Cilium 2026 深度探索系列
-> 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
-> ...
-> 20. [[2026-04-14-cilium-deep-dive-ch20-otel|第二十章：OpenTelemetry]]
-> 21. [[2026-04-14-cilium-deep-dive-ch21-cluster-mesh|第二十一章：Cluster Mesh]]
-> 22. **第二十二章：Global Services** ←
+> [!info] Cilium 2026 深度探索系列 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+> ... 20. [[2026-04-14-cilium-deep-dive-ch20-otel|第二十章：OpenTelemetry]] 21. [[2026-04-14-cilium-deep-dive-ch21-cluster-mesh|第二十一章：Cluster Mesh]] 22. **第二十二章：Global Services** ←
 
 ---
 
@@ -111,7 +107,7 @@ metadata:
   name: nginx-global
   annotations:
     io.cilium/global-service: "true"
-    io.cilium/shared-service: "true"    # 允许其他集群共享此服务
+    io.cilium/shared-service: "true" # 允许其他集群共享此服务
 spec:
   type: ClusterIP
   selector:
@@ -127,18 +123,18 @@ metadata:
   name: nginx-global
   annotations:
     io.cilium/global-service: "true"
-    io.cilium/service-affinity: "local"  # 优先本地后端
-    io.cilium/global-service-weight: "100"  # 权重 100
+    io.cilium/service-affinity: "local" # 优先本地后端
+    io.cilium/global-service-weight: "100" # 权重 100
 ```
 
 常用注解：
 
-| 注解 | 说明 |
-|:---|:---|
-| `io.cilium/global-service` | 标记为全局服务 |
-| `io.cilium/shared-service` | 允许其他集群发现此服务 |
-| `io.cilium/global-service-weight` | 跨集群流量权重 |
-| `io.cilium/service-affinity` | `local`（优先本地）或 `all`（全局） |
+| 注解                              | 说明                                |
+| :-------------------------------- | :---------------------------------- |
+| `io.cilium/global-service`        | 标记为全局服务                      |
+| `io.cilium/shared-service`        | 允许其他集群发现此服务              |
+| `io.cilium/global-service-weight` | 跨集群流量权重                      |
+| `io.cilium/service-affinity`      | `local`（优先本地）或 `all`（全局） |
 
 ---
 
@@ -336,34 +332,34 @@ helm upgrade cilium cilium/cilium \
 
 关键指标：
 
-| 指标 | 说明 |
-|:---|:---|
-| `cilium_services_global` | 全局 Service 总数 |
+| 指标                             | 说明                         |
+| :------------------------------- | :--------------------------- |
+| `cilium_services_global`         | 全局 Service 总数            |
 | `cilium_global_service_backends` | 每个 Global Service 的后端数 |
-| `cilium_global_service_errors` | 跨集群健康检查失败次数 |
+| `cilium_global_service_errors`   | 跨集群健康检查失败次数       |
 
 ---
 
 ## 8. 局限性
 
-| 限制 | 说明 |
-|:---|:---|
-| **L7 策略限制** | L7 (HTTP/gRPC) 策略只能在单集群内生效 |
+| 限制                 | 说明                                               |
+| :------------------- | :------------------------------------------------- |
+| **L7 策略限制**      | L7 (HTTP/gRPC) 策略只能在单集群内生效              |
 | **Session Affinity** | 跨集群的会话亲和基于 RemoteCluster，不支持更细粒度 |
-| **Headless Service** | Global Service 不支持 Headless 模式 |
-| **Service Type** | 仅支持 ClusterIP 类型 |
+| **Headless Service** | Global Service 不支持 Headless 模式                |
+| **Service Type**     | 仅支持 ClusterIP 类型                              |
 
 ---
 
 ## 9. 章节总结
 
-| 概念 | 说明 |
-|:---|:---|
+| 概念               | 说明                                                           |
+| :----------------- | :------------------------------------------------------------- |
 | **Global Service** | 跨集群共享的 Service，通过 `io.cilium/global-service` 注解启用 |
-| **故障转移** | 基于健康检查的自动故障转移，无需人工干预 |
-| **权重配置** | 通过注解配置跨集群流量权重 |
-| **DNS 解析** | 跨集群 DNS 返回最优的后端 |
-| **零信任** | 基于 Identity 的访问控制，跨集群有效 |
+| **故障转移**       | 基于健康检查的自动故障转移，无需人工干预                       |
+| **权重配置**       | 通过注解配置跨集群流量权重                                     |
+| **DNS 解析**       | 跨集群 DNS 返回最优的后端                                      |
+| **零信任**         | 基于 Identity 的访问控制，跨集群有效                           |
 
 **下一章**：探讨 CNI Chaining，了解 Cilium 如何与 Flannel、Calico 等其他 CNI 协同工作。
 

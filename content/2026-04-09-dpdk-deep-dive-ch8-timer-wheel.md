@@ -5,8 +5,8 @@ tags: [dpdk, series, timer, htimer, timer-wheel, software-timer, librte_timer]
 description: "深入理解 DPDK rte_timer 的实现——基于 Linux kernel 的 timer wheel 算法、HTimer (Hashed Timer Wheel)、级联调度、以及在 DPDK 应用中的典型使用场景"
 ---
 
-> [!info] DPDK 深度探索系列
-> 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
+> [!info] DPDK 深度探索系列 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-09-dpdk-deep-dive-ch1-architecture-overview|第一章：架构概述——kernel bypass 原理与 DPDK 定位]]
 > 2. [[2026-04-09-dpdk-deep-dive-ch2-uio-vfio-iommu|第二章：UIO/VFIO/IOMMU 用户态驱动框架]]
 > 3. [[2026-04-09-dpdk-deep-dive-ch3-eal-initialization|第三章：EAL 初始化与 lcore 模型]]
@@ -22,22 +22,22 @@ description: "深入理解 DPDK rte_timer 的实现——基于 Linux kernel 的
 
 DPDK 应用需要在没有内核支持的情况下管理大量定时器：
 
-| 场景 | 需求 |
-|------|------|
+| 场景             | 需求                             |
+| ---------------- | -------------------------------- |
 | **链路状态检测** | 定期发送 keepalive，检测邻居存活 |
-| **会话超时** | TCP 会话超时断开 |
-| **重传机制** | 数据包超时重传 |
-| **统计上报** | 定期导出 counters |
-| **调试/诊断** | 定时打印状态 |
+| **会话超时**     | TCP 会话超时断开                 |
+| **重传机制**     | 数据包超时重传                   |
+| **统计上报**     | 定期导出 counters                |
+| **调试/诊断**    | 定时打印状态                     |
 
 ### 1.1 传统定时器方案的问题
 
-| 方案 | 问题 |
-|------|------|
-| **sleep()** | 阻塞整个线程，无法处理其他事件 |
-| **alarm() + signal()** | 信号处理复杂，精度受限（秒级） |
-| **POSIX timer_create()** | 每个定时器需要独立文件描述符，扩展性差 |
-| **select/poll + timeout** | 需要结合 I/O 事件，无法独立工作 |
+| 方案                      | 问题                                   |
+| ------------------------- | -------------------------------------- |
+| **sleep()**               | 阻塞整个线程，无法处理其他事件         |
+| **alarm() + signal()**    | 信号处理复杂，精度受限（秒级）         |
+| **POSIX timer_create()**  | 每个定时器需要独立文件描述符，扩展性差 |
+| **select/poll + timeout** | 需要结合 I/O 事件，无法独立工作        |
 
 ### 1.2 DPDK rte_timer 设计目标
 
@@ -104,13 +104,13 @@ graph LR
         W2["wheel[2]<br/>jiffies 128-191"]
         W3["wheel[3]<br/>jiffies 192-255"]
     end
-    
+
     subgraph "定时器链表"
         T1["timer: expires=200ms"]
         T2["timer: expires=150ms"]
         T3["timer: expires=220ms"]
     end
-    
+
     T1 --> W3
     T2 --> W2
     T3 --> W3
@@ -134,10 +134,10 @@ struct rte_timer {
         } s;
         rte_timer_callback_t f;  // 回调函数（调试时使用）
     };
-    
+
     rte_timer_callback_t f;     // 回调函数
     void *arg;                   // 回调参数
-    
+
     struct rte_timer *next;      // 链表下一项（同一 bucket 内）
     struct rte_timer **prev;     // 链表上一项指针（用于 O(1) 删除）
 };
@@ -231,19 +231,19 @@ timer_init(struct rte_timer_subsystem *ts)
 {
     unsigned int lcore_id = rte_lcore_id();
     struct priv_timer *priv = &timemap[lcore_id];
-    
+
     // 分配 pending 数组（bucket 数组）
     // pending_limit = 2^24 = 16M buckets
     priv->pending_limit = 1 << 24;
-    priv->pending = calloc(priv->pending_limit, 
+    priv->pending = calloc(priv->pending_limit,
                              sizeof(struct rte_timer *));
-    
+
     // 初始化 jiffies
     priv->timer_jiffies = 0;
-    
+
     // 初始化锁
     rte_spinlock_init(&priv->lock);
-    
+
     return 0;
 }
 ```
@@ -269,43 +269,43 @@ rte_timer_reset(struct rte_timer *tim,
     uint64_t expire;
     uint32_t period;
     int ret;
-    
+
     // 1. 参数检查
     if (!tim || f == NULL)
         return -EINVAL;
-    
+
     if (lcore_id >= RTE_MAX_LCORE && lcore_id != LCORE_ID_ANY)
         return -EINVAL;
-    
+
     // 2. 确定目标 lcore
     if (lcore_id == LCORE_ID_ANY)
         lcore_id = rte_lcore_id();
-    
+
     // 3. 计算过期时间
     priv = &timemap[lcore_id];
     expire = priv->timer_jiffies + ticks;
-    
+
     // 4. 计算周期（如果是周期定时器）
     period = (type == RTE_TIMER_PERIODICAL) ? ticks : 0;
-    
+
     // 5. 加锁
     rte_spinlock_lock(&priv->lock);
-    
+
     // 6. 从当前链表移除（如果已经在运行）
     _rte_timer_stop(tim, priv, 0, NULL);
-    
+
     // 7. 设置定时器状态
     tim->expire = expire;
     tim->f = f;
     tim->arg = arg;
     tim->s.state = RTE_TIMER_RUNNING;
     tim->s.lcore_id = lcore_id;
-    
+
     // 8. 插入到对应 bucket
     timer_add(tim, period);
-    
+
     rte_spinlock_unlock(&priv->lock);
-    
+
     return 0;
 }
 ```
@@ -359,13 +359,13 @@ rte_timer_stop(struct rte_timer *tim)
 {
     unsigned int lcore_id = rte_lcore_id();
     struct priv_timer *priv = &timemap[lcore_id];
-    
+
     rte_spinlock_lock(&priv->lock);
-    
+
     int ret = _rte_timer_stop(tim, priv, 1, NULL);
-    
+
     rte_spinlock_unlock(&priv->lock);
-    
+
     return ret;
 }
 
@@ -380,22 +380,22 @@ _rte_timer_stop(struct rte_timer *tim,
     if (tim->s.state != RTE_TIMER_RUNNING &&
         tim->s.state != RTE_TIMER_PENDING)
         return -ENOENT;
-    
+
     // 2. 检查是否在当前 lcore
     if (tim->s.lcore_id != priv->lcore_id)
         return -EACCES;
-    
+
     // 3. 从链表中移除
     if (tim->prev)
         *tim->prev = tim->next;
     if (tim->next)
         tim->next->prev = tim->prev;
-    
+
     // 4. 更新状态
     tim->prev = NULL;
     tim->next = NULL;
     tim->s.state = new_state;
-    
+
     return 0;
 }
 ```
@@ -764,6 +764,7 @@ DPDK rte_timer 借鉴 Linux 内核，使用 4 级时间轮，每级 64 个 slot�
 级联的核心思想：**低级 wheel 转完一圈时，从高级 wheel 取出定时器"降落"到低级 wheel**。
 
 类比时钟：
+
 ```
   秒针（wheel[0]）转 60 圈 → 分针（wheel[1]）走 1 格
   分针（wheel[1]）转 60 圈 → 时针（wheel[2]）走 1 格
@@ -900,7 +901,7 @@ link_check_callback(struct rte_timer *tim, void *arg)
 {
     struct link_info *link = arg;
     uint64_t now = rte_get_timer_cycles();
-    
+
     // 检查是否超时
     if (now - link->last_recv > LINK_TIMEOUT_CYCLES) {
         link->state = LINK_DOWN;
@@ -940,7 +941,7 @@ struct session {
     uint16_t src_port;
     uint32_t dst_ip;
     uint16_t dst_port;
-    
+
     struct rte_timer timeout_timer;
     uint8_t state;
 };
@@ -949,7 +950,7 @@ static void
 session_timeout_callback(struct rte_timer *tim, void *arg)
 {
     struct session *sess = arg;
-    
+
     // 超时，清理会话
     session_cleanup(sess);
 }
@@ -1133,15 +1134,15 @@ void
 rte_timer_subsystem_init(void)
 {
     unsigned int lcore_id;
-    
+
     if (rte_timer_subsystem_init_called)
         return;
-    
+
     // 初始化每个 lcore 的 priv_timer
     RTE_LCORE_FOREACH(lcore_id) {
         timer_init(&timemap[lcore_id]);
     }
-    
+
     rte_timer_subsystem_init_called = 1;
 }
 ```
@@ -1154,17 +1155,17 @@ static void
 main_loop(void *arg)
 {
     struct rte_timer_subsystem_init();  // 初始化定时器子系统
-    
+
     while (!quit) {
         // 处理 Rx/Tx
         rx_pkts = rte_eth_rx_burst(port_id, queue_id, pkts, 32);
         for (int i = 0; i < rx_pkts; i++) {
             process_packet(pkts[i]);
         }
-        
+
         // 管理定时器（检查到期）
         rte_timer_manage();
-        
+
         // 其他处理...
     }
 }
@@ -1176,11 +1177,11 @@ main_loop(void *arg)
 
 ### 11.1 时间复杂度
 
-| 操作 | 复杂度 | 说明 |
-|------|--------|------|
-| **rte_timer_reset** | O(1) | 直接插入对应 bucket |
-| **rte_timer_stop** | O(1) | 如果知道定时器所在 lcore |
-| **rte_timer_manage** | O(1)* | 只检查当前 slot，但 slot 可能很长 |
+| 操作                 | 复杂度 | 说明                              |
+| -------------------- | ------ | --------------------------------- |
+| **rte_timer_reset**  | O(1)   | 直接插入对应 bucket               |
+| **rte_timer_stop**   | O(1)   | 如果知道定时器所在 lcore          |
+| **rte_timer_manage** | O(1)\* | 只检查当前 slot，但 slot 可能很长 |
 
 ### 11.2 实际性能数据
 
@@ -1250,6 +1251,7 @@ main_loop(void *arg)
 ---
 
 > [!tip] 参考文献
+>
 > - "Linux kernel timer wheel implementation", https://www.kernel.org/doc/html/latest/core-api/time.html
 > - "Hashed and Hierarchical Timing Wheels", George Varghese, 1997
 > - Intel, "DPDK Timer Library", https://doc.dpdk.org/guides/prog_guide/timer_lib.html

@@ -9,8 +9,8 @@ tags:
   - enforcement
 ---
 
-> [!info] eBPF 2026 深度探索系列
-> 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+> [!info] eBPF 2026 深度探索系列 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+>
 > 1. [[2026-04-08-ebpf-deep-dive-ch1-registers-and-instructions|第一章：寄存器与指令集]]
 > 2. [[2026-04-08-ebpf-deep-dive-ch1-5-function-calls|第一.五章：四种函数调用与动态内存]]
 > 3. [[2026-04-08-ebpf-deep-dive-ch1-6-the-verifier|第一.六章：验证器 (Verifier) 的底层逻辑]]
@@ -62,6 +62,7 @@ tags:
 > 49. [[2026-04-09-ebpf-deep-dive-ch40-network-protocols-deep-dive|第四十章：网络协议深度解析——TCP/UDP/QUIC 的 eBPF 视角]]
 > 50. [[2026-04-09-ebpf-deep-dive-ch41-memory-safety-and-vulnerabilities|第四十一章：eBPF 内存安全与漏洞分析]]
 > 51. [[2026-04-09-ebpf-deep-dive-ch42-service-mesh-integration|第四十二章：eBPF 与 Service Mesh 深度集成]]
+
 ---
 
 # 第七章：LSM BPF 从可观测到安全执法
@@ -77,16 +78,16 @@ tags:
 
 ### 1.1 LSM BPF vs Seccomp：深度对比
 
-| 维度 | Seccomp-BPF | LSM BPF |
-|:---|:---|:---|
-| **拦截时机** | 系统调用入口 | 内核函数内部 |
-| **上下文** | 系统调用参数（原始寄存器） | 解析后的内核结构体 |
-| **文件路径** | 只能看到 fd/指针 | 可以看到完整路径（`file->f_path`） |
-| **网络信息** | 只有 socket fd | 可以看到 `struct socket`、目标地址 |
-| **性能** | 系统调用开销 | Trampoline 近零开销 |
-| **灵活性** | 过滤系统调用号 | 过滤任意内核安全决策点 |
-| **动态更新** | 需要重启进程 | 运行时热加载 |
-| **适用场景** | 沙箱隔离 | 运行时安全、容器安全 |
+| 维度         | Seccomp-BPF                | LSM BPF                            |
+| :----------- | :------------------------- | :--------------------------------- |
+| **拦截时机** | 系统调用入口               | 内核函数内部                       |
+| **上下文**   | 系统调用参数（原始寄存器） | 解析后的内核结构体                 |
+| **文件路径** | 只能看到 fd/指针           | 可以看到完整路径（`file->f_path`） |
+| **网络信息** | 只有 socket fd             | 可以看到 `struct socket`、目标地址 |
+| **性能**     | 系统调用开销               | Trampoline 近零开销                |
+| **灵活性**   | 过滤系统调用号             | 过滤任意内核安全决策点             |
+| **动态更新** | 需要重启进程               | 运行时热加载                       |
+| **适用场景** | 沙箱隔离                   | 运行时安全、容器安全               |
 
 ---
 
@@ -155,43 +156,43 @@ sequenceDiagram
 
 #### 进程生命周期
 
-| Hook | 触发时机 | 参数 | 典型用途 |
-|:---|:---|:---|:---|
-| `bprm_check_security` | `execve()` 系统调用 | `struct linux_binprm *` | 阻止恶意程序执行 |
-| `task_setuid` | UID 变更 | `struct cred *` | 防止特权提升 |
-| `task_setgid` | GID 变更 | `struct cred *` | 防止组权限提升 |
-| `task_kill` | 发送信号 | `struct siginfo *` | 防止进程间信号攻击 |
-| `ptrace_access_check` | ptrace 调试 | `struct task_struct *` | 防止调试器注入 |
-| `task_prctl` | prctl 调用 | 各参数 | 监控进程属性变更 |
+| Hook                  | 触发时机            | 参数                    | 典型用途           |
+| :-------------------- | :------------------ | :---------------------- | :----------------- |
+| `bprm_check_security` | `execve()` 系统调用 | `struct linux_binprm *` | 阻止恶意程序执行   |
+| `task_setuid`         | UID 变更            | `struct cred *`         | 防止特权提升       |
+| `task_setgid`         | GID 变更            | `struct cred *`         | 防止组权限提升     |
+| `task_kill`           | 发送信号            | `struct siginfo *`      | 防止进程间信号攻击 |
+| `ptrace_access_check` | ptrace 调试         | `struct task_struct *`  | 防止调试器注入     |
+| `task_prctl`          | prctl 调用          | 各参数                  | 监控进程属性变更   |
 
 #### 文件系统
 
-| Hook | 触发时机 | 参数 | 典型用途 |
-|:---|:---|:---|:---|
-| `file_open` | 文件打开 | `struct file *` | 保护敏感文件 |
-| `inode_permission` | 权限检查 | `struct inode *, int` | 细粒度访问控制 |
-| `inode_create` | 文件创建 | `struct inode *, struct dentry *` | 防止恶意文件写入 |
-| `inode_unlink` | 文件删除 | `struct inode *, struct dentry *` | 防篡改保护 |
-| `inode_rename` | 文件重命名 | `struct inode *, struct dentry *` | 关键文件保护 |
-| `mmap_file` | 内存映射 | `struct file *, unsigned long` | 防止可疑代码映射 |
+| Hook               | 触发时机   | 参数                              | 典型用途         |
+| :----------------- | :--------- | :-------------------------------- | :--------------- |
+| `file_open`        | 文件打开   | `struct file *`                   | 保护敏感文件     |
+| `inode_permission` | 权限检查   | `struct inode *, int`             | 细粒度访问控制   |
+| `inode_create`     | 文件创建   | `struct inode *, struct dentry *` | 防止恶意文件写入 |
+| `inode_unlink`     | 文件删除   | `struct inode *, struct dentry *` | 防篡改保护       |
+| `inode_rename`     | 文件重命名 | `struct inode *, struct dentry *` | 关键文件保护     |
+| `mmap_file`        | 内存映射   | `struct file *, unsigned long`    | 防止可疑代码映射 |
 
 #### 网络
 
-| Hook | 触发时机 | 参数 | 典型用途 |
-|:---|:---|:---|:---|
-| `socket_create` | Socket 创建 | `int family, int type` | 限制 socket 类型 |
-| `socket_bind` | Socket 绑定 | `struct socket *, struct sockaddr *` | 端口保护 |
-| `socket_connect` | 网络连接 | `struct socket *, struct sockaddr *` | 出站连接控制 |
-| `socket_listen` | 监听 | `struct socket *, int` | 防止非法监听 |
-| `inet_conn_request` | TCP 连接请求 | `struct sock *, struct sk_buff *` | TCP 级别过滤 |
+| Hook                | 触发时机     | 参数                                 | 典型用途         |
+| :------------------ | :----------- | :----------------------------------- | :--------------- |
+| `socket_create`     | Socket 创建  | `int family, int type`               | 限制 socket 类型 |
+| `socket_bind`       | Socket 绑定  | `struct socket *, struct sockaddr *` | 端口保护         |
+| `socket_connect`    | 网络连接     | `struct socket *, struct sockaddr *` | 出站连接控制     |
+| `socket_listen`     | 监听         | `struct socket *, int`               | 防止非法监听     |
+| `inet_conn_request` | TCP 连接请求 | `struct sock *, struct sk_buff *`    | TCP 级别过滤     |
 
 #### BPF 自身
 
-| Hook | 触发时机 | 参数 | 典型用途 |
-|:---|:---|:---|:---|
-| `bpf_map` | BPF Map 操作 | `struct bpf_map *, fmode_t` | Map 级访问控制 |
-| `bpf_prog` | BPF 程序操作 | `struct bpf_prog *` | 防止恶意 BPF 加载 |
-| `bpf_token` | BPF Token 操作 | `struct bpf_token *` | Token 权限控制 |
+| Hook        | 触发时机       | 参数                        | 典型用途          |
+| :---------- | :------------- | :-------------------------- | :---------------- |
+| `bpf_map`   | BPF Map 操作   | `struct bpf_map *, fmode_t` | Map 级访问控制    |
+| `bpf_prog`  | BPF 程序操作   | `struct bpf_prog *`         | 防止恶意 BPF 加载 |
+| `bpf_token` | BPF Token 操作 | `struct bpf_token *`        | Token 权限控制    |
 
 ---
 
@@ -540,12 +541,12 @@ int BPF_PROG(fast_perm_check, struct inode *inode, int mask) {
 
 ### 7.2 性能数据
 
-| LSM Hook | 典型调用频率 | BPF 程序耗时 | 对系统的影响 |
-|:---|:---|:---|:---|
-| `inode_permission` | ~1-10M/s | ~20-50ns | 低（如果优化良好） |
-| `file_open` | ~10-100K/s | ~100-500ns | 极低 |
-| `bprm_check_security` | ~1-10K/s | ~200ns-1μs | 可忽略 |
-| `socket_connect` | ~1-50K/s | ~100-300ns | 可忽略 |
+| LSM Hook              | 典型调用频率 | BPF 程序耗时 | 对系统的影响       |
+| :-------------------- | :----------- | :----------- | :----------------- |
+| `inode_permission`    | ~1-10M/s     | ~20-50ns     | 低（如果优化良好） |
+| `file_open`           | ~10-100K/s   | ~100-500ns   | 极低               |
+| `bprm_check_security` | ~1-10K/s     | ~200ns-1μs   | 可忽略             |
+| `socket_connect`      | ~1-50K/s     | ~100-300ns   | 可忽略             |
 
 ---
 
@@ -563,25 +564,25 @@ metadata:
   name: shadow-file-protection
 spec:
   lsmHooks:
-  - hook: security_file_open
-    args:
-    - index: 0
-      type: "file"  # struct file *
-    selectors:
-    - matchNamespaces:
-      - namespace: Mnt
-        operator: NotIn
-        values:
-        - "host_mnt_ns"  # 仅在容器内生效
-    - matchArguments:
-      - index: 0
-        operator: "Prefix"
-        values:
-        - "/etc/shadow"
-    actions:
-    - action: Post
-      actionPost: |-
-        return -EPERM;
+    - hook: security_file_open
+      args:
+        - index: 0
+          type: "file" # struct file *
+      selectors:
+        - matchNamespaces:
+            - namespace: Mnt
+              operator: NotIn
+              values:
+                - "host_mnt_ns" # 仅在容器内生效
+        - matchArguments:
+            - index: 0
+              operator: "Prefix"
+              values:
+                - "/etc/shadow"
+      actions:
+        - action: Post
+          actionPost: |-
+            return -EPERM;
 ```
 
 ### 8.2 安全架构全景

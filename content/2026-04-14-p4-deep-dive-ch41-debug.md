@@ -1,19 +1,32 @@
 ---
 title: "P4 深度探索 (四十一)：P4 排错与诊断——pdump/Wireshark 抓包、日志分析、流水线调试"
 date: 2026-04-14
-tags: [p4, series, debugging, troubleshooting, pdump, wireshark, p4c, logging, diagnostics, bmv2, tofino]
+tags:
+  [
+    p4,
+    series,
+    debugging,
+    troubleshooting,
+    pdump,
+    wireshark,
+    p4c,
+    logging,
+    diagnostics,
+    bmv2,
+    tofino,
+  ]
 description: "P4 可编程网络排错与诊断深度解析——BMv2 pdump 抓包、Wireshark 分析 P4 包格式、日志级别与调试技术、控制平面与数据平面一致性验证、常见错误与解决方案"
 ---
 
-> [!info] P4 深度探索系列
-> 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+> [!info] P4 深度探索系列 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-14-p4-deep-dive-ch1-p4-overview|第一章：P4 概述]]
-> ...
-> 37. [[2026-04-14-p4-deep-dive-ch37-azure|第三十七章：Azure 网络可编程实践]]
-> 38. [[2026-04-14-p4-deep-dive-ch38-gcp|GCP 网络可编程实践]]
-> 39. [[2026-04-14-p4-deep-dive-ch39-huawei|第三十九章：华为网络可编程实践]]
-> 40. [[2026-04-14-p4-deep-dive-ch40-alibaba|第四十章：阿里云网络可编程实践]]
-> 41. **第四十一章：P4 排错与诊断——pdump/Wireshark 抓包、日志分析、流水线调试**
+>    ...
+> 2. [[2026-04-14-p4-deep-dive-ch37-azure|第三十七章：Azure 网络可编程实践]]
+> 3. [[2026-04-14-p4-deep-dive-ch38-gcp|GCP 网络可编程实践]]
+> 4. [[2026-04-14-p4-deep-dive-ch39-huawei|第三十九章：华为网络可编程实践]]
+> 5. [[2026-04-14-p4-deep-dive-ch40-alibaba|第四十章：阿里云网络可编程实践]]
+> 6. **第四十一章：P4 排错与诊断——pdump/Wireshark 抓包、日志分析、流水线调试**
 
 ---
 
@@ -740,11 +753,11 @@ tail -f /var/log/bf_switchd.log
 
 ### 8.1 Parser 错误
 
-| 错误 | 原因 | 解决方案 |
-|------|------|----------|
+| 错误          | 原因              | 解决方案                      |
+| ------------- | ----------------- | ----------------------------- |
 | 包被意外 drop | Parser 状态机错误 | 检查 `transition select` 条件 |
-| Header 未解析 | EtherType 不匹配 | 验证 EtherType 值 |
-| Parser 超时 | 状态机死循环 | 检查所有状态都有 transition |
+| Header 未解析 | EtherType 不匹配  | 验证 EtherType 值             |
+| Parser 超时   | 状态机死循环      | 检查所有状态都有 transition   |
 
 ```c
 // 常见 Parser 错误
@@ -768,11 +781,11 @@ state start {
 
 ### 8.2 Match-Action 错误
 
-| 错误 | 原因 | 解决方案 |
-|------|------|----------|
-| Table miss | 没有 default_action | 添加 default_action |
-| Action 参数错误 | 参数类型不匹配 | 检查 P4 程序中 Action 参数类型 |
-| TCAM 满 | 表项过多 | 压缩表项，合并规则 |
+| 错误            | 原因                | 解决方案                       |
+| --------------- | ------------------- | ------------------------------ |
+| Table miss      | 没有 default_action | 添加 default_action            |
+| Action 参数错误 | 参数类型不匹配      | 检查 P4 程序中 Action 参数类型 |
+| TCAM 满         | 表项过多            | 压缩表项，合并规则             |
 
 ### 8.3 编译错误
 
@@ -926,6 +939,6 @@ P4 排错工具全景:
 
 ---
 
-*作者: 匿名*
+_作者: 匿名_
 
-*P4 深度探索系列 © 2026*
+_P4 深度探索系列 © 2026_

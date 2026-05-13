@@ -5,8 +5,8 @@ tags: [p4, series, p4-runtime, grpc, protobuf, control-plane, api, p4info]
 description: "P4 Runtime 深度解析——gRPC/Protobuf 通信架构、P4Info 元数据交换、Table Entry 管理、P4 Runtime 与 P4 程序的关系、Archietctural Model"
 ---
 
-> [!info] P4 深度探索系列
-> 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+> [!info] P4 深度探索系列 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-14-p4-deep-dive-ch1-p4-overview|第一章：P4 概述——诞生背景与协议无关包处理]]
 > 2. [[2026-04-14-p4-deep-dive-ch2-p4-architecture|第二章：P4 架构模型——PSA/V1Model、Ingress/Egress]]
 > 3. [[2026-04-14-p4-deep-dive-ch3-p4-vs-ebpf|第三章：P4 vs eBPF——适用场景与硬件/软件对比]]
@@ -74,24 +74,24 @@ P4 程序生命周期:
 
 ### 1.1 P4 Runtime 的设计目标
 
-| 设计目标 | 说明 |
-|---------|------|
+| 设计目标     | 说明                             |
+| ------------ | -------------------------------- |
 | **厂商无关** | 统一 API，适用于所有 P4 兼容设备 |
-| **动态配置** | 运行时动态插入/删除表项 |
-| **原子操作** | 支持事务性表项更新 |
-| **双向通信** | 数据平面可上报事件到控制平面 |
-| **可扩展** | 支持新增 P4 架构和 extern 类型 |
+| **动态配置** | 运行时动态插入/删除表项          |
+| **原子操作** | 支持事务性表项更新               |
+| **双向通信** | 数据平面可上报事件到控制平面     |
+| **可扩展**   | 支持新增 P4 架构和 extern 类型   |
 
 ### 1.2 P4 Runtime vs 传统配置方式
 
-| 维度 | P4 Runtime | 传统 CLI/NETCONF |
-|------|------------|------------------|
-| **抽象层次** | 表项级别 | 设备级别 |
-| **数据类型** | 结构化 (Protobuf) | 字符串/XML |
-| **性能** | 高效 (gRPC) | 较低 |
-| **类型安全** | 强类型 | 弱类型 |
-| **自动化** | 易于编程 | 难以自动化 |
-| **厂商相关** | 标准化 | 厂商私有 |
+| 维度         | P4 Runtime        | 传统 CLI/NETCONF |
+| ------------ | ----------------- | ---------------- |
+| **抽象层次** | 表项级别          | 设备级别         |
+| **数据类型** | 结构化 (Protobuf) | 字符串/XML       |
+| **性能**     | 高效 (gRPC)       | 较低             |
+| **类型安全** | 强类型            | 弱类型           |
+| **自动化**   | 易于编程          | 难以自动化       |
+| **厂商相关** | 标准化            | 厂商私有         |
 
 ---
 
@@ -168,13 +168,13 @@ service P4Runtime {
     rpc Write(WriteRequest) returns (WriteResponse);
     rpc Read(ReadRequest) returns (stream ReadResponse);
     rpc BatchWrite(BatchWriteRequest) returns (BatchWriteResponse);
-    
+
     // 流式遥测
-    rpc StreamChannel(stream StreamMessageRequest) 
+    rpc StreamChannel(stream StreamMessageRequest)
         returns (stream StreamMessageResponse);
-    
+
     // 仲裁管理
-    rpc Arbitration(stream ArbitrationMessage) 
+    rpc Arbitration(stream ArbitrationMessage)
         returns (stream ArbitrationMessage);
 }
 
@@ -297,8 +297,8 @@ message Table {
         "alias": "ipv4_forward"
       },
       "params": [
-        {"id": 1, "name": "port", "bitwidth": 9},
-        {"id": 2, "name": "dst_mac", "bitwidth": 48}
+        { "id": 1, "name": "port", "bitwidth": 9 },
+        { "id": 2, "name": "dst_mac", "bitwidth": 48 }
       ]
     }
   }
@@ -414,14 +414,14 @@ P4Runtime Server {
 
 ### 4.3 关键组件说明
 
-| 组件 | 功能 |
-|------|------|
-| **Session Manager** | 管理客户端连接、会话状态、主选举 |
-| **Transaction Manager** | 处理原子性表项更新、批量操作 |
-| **Table Manager** | 维护表项缓存、同步硬件状态 |
-| **P4-Info Validator** | 验证写入请求符合 P4Info 定义 |
-| **Device Configurator** | 配置硬件寄存器、流水线 |
-| **Hardware Driver** | 访问 TCAM/SRAM、寄存器等硬件资源 |
+| 组件                    | 功能                             |
+| ----------------------- | -------------------------------- |
+| **Session Manager**     | 管理客户端连接、会话状态、主选举 |
+| **Transaction Manager** | 处理原子性表项更新、批量操作     |
+| **Table Manager**       | 维护表项缓存、同步硬件状态       |
+| **P4-Info Validator**   | 验证写入请求符合 P4Info 定义     |
+| **Device Configurator** | 配置硬件寄存器、流水线           |
+| **Hardware Driver**     | 访问 TCAM/SRAM、寄存器等硬件资源 |
 
 ---
 
@@ -553,14 +553,14 @@ def insert_ipv4_route():
             "dst_mac": "00:11:22:33:44:55"
         }
     )
-    
+
     # 写入请求
     p4_helper.WriteTableEntry(table_entry)
 
 # 批量插入表项
 def batch_insert_routes():
     entries = []
-    
+
     for subnet in ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]:
         entry = p4_helper.make_table_entry(
             table_name="MyIngress.ipv4_fib",
@@ -569,7 +569,7 @@ def batch_insert_routes():
             action_params={"port": 1, "dst_mac": "00:11:22:33:44:55"}
         )
         entries.append(entry)
-    
+
     # 批量写入
     p4_helper.WriteTableEntry(entries, atomic=True)
 ```
@@ -632,7 +632,7 @@ message DigestEntry {
 /*
 control MyIngress(...) {
     Digest<bit<48>>() d;  // 定义 Digest
-    
+
     apply {
         if (h.tcp.isValid()) {
             // 发送 MAC 学习信息
@@ -721,20 +721,20 @@ message Arbitration {
 # P4Runtime 客户端选举示例
 def election_example():
     from p4runtime_lib.helper import P4RuntimeHelper
-    
+
     helper = P4RuntimeHelper(
         p4_info_path="build/p4info.txt",
         grpc_ip="192.168.1.1"
     )
-    
+
     # 选举 ID (多个控制器协调)
     election_id = helper.election_id
     election_id.high = 0
     election_id.low = 1
-    
+
     # 设置为主
     helper.set_masterelection_id(election_id)
-    
+
     # 开始流通道
     helper.mcast_stream_channel()
 ```
@@ -775,12 +775,12 @@ message P4RuntimeError {
 def atomic_batch_update(helper):
     # 开始事务
     transaction = helper.new_transaction()
-    
+
     # 添加多个操作
     transaction.insert(p4_helper.make_table_entry(...))  # INSERT
     transaction.modify(other_entry)                       # MODIFY
     transaction.delete(old_entry)                          # DELETE
-    
+
     # 提交事务 - 全部成功或全部失败
     try:
         transaction.submit()
@@ -793,14 +793,14 @@ def atomic_batch_update(helper):
 
 ## 9. 总结
 
-| 组件 | 功能 |
-|------|------|
-| **gRPC** | 高性能 RPC 框架，基于 HTTP/2 |
-| **Protobuf** | 结构化数据序列化，比 JSON 更高效 |
-| **P4Info** | P4 程序元数据，描述所有可配置元素 |
-| **P4Runtime Server** | 数据平面上的 gRPC 服务器 |
-| **P4Runtime Client** | 控制平面使用的 SDK |
-| **StreamChannel** | 双向流，用于 PacketIn/Digest |
-| **Master Election** | 多控制面场景下的主选举 |
+| 组件                 | 功能                              |
+| -------------------- | --------------------------------- |
+| **gRPC**             | 高性能 RPC 框架，基于 HTTP/2      |
+| **Protobuf**         | 结构化数据序列化，比 JSON 更高效  |
+| **P4Info**           | P4 程序元数据，描述所有可配置元素 |
+| **P4Runtime Server** | 数据平面上的 gRPC 服务器          |
+| **P4Runtime Client** | 控制平面使用的 SDK                |
+| **StreamChannel**    | 双向流，用于 PacketIn/Digest      |
+| **Master Election**  | 多控制面场景下的主选举            |
 
 P4 Runtime 是 P4 生态系统的关键组件，它将 P4 程序的能力与实际网络运营连接起来。通过标准化的 gRPC/Protobuf API，网络运营商可以实现厂商无关的自动化控制平面。

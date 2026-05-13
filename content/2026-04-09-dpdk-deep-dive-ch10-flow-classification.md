@@ -5,10 +5,8 @@ tags: [dpdk, series, flow, rte_flow, RSS, ACL, Flow Director, match-action]
 description: "深入理解 DPDK 流量分类——RSS 哈希分散、Flow Director 精确匹配、ACL 库加速五元组查找、以及 rte_flow 通用匹配动作框架"
 ---
 
-> [!info] DPDK 深度探索系列
-> 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
-> 1-9. 前九章已完成
-> 10. **第十章：Flow Classification 流量分类与 rte_flow**
+> [!info] DPDK 深度探索系列 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
+> 1-9. 前九章已完成 10. **第十章：Flow Classification 流量分类与 rte_flow**
 
 ---
 
@@ -16,13 +14,13 @@ description: "深入理解 DPDK 流量分类——RSS 哈希分散、Flow Direct
 
 DPDK 处理百万级数据包时，需要识别"这是什么样的流量"：
 
-| 场景 | 需求 |
-|------|------|
-| **多核负载均衡** | 将不同 flows 分散到不同 lcore 处理 |
+| 场景               | 需求                                         |
+| ------------------ | -------------------------------------------- |
+| **多核负载均衡**   | 将不同 flows 分散到不同 lcore 处理           |
 | **服务质量 (QoS)** | 语音流量优先，游戏流量次之，普通流量普通处理 |
-| **安全过滤** | 识别并阻断恶意流量 |
-| **会话跟踪** | 同一个 flow 的包必须到同一个 lcore |
-| **策略路由** | 特定流量走特定路径 |
+| **安全过滤**       | 识别并阻断恶意流量                           |
+| **会话跟踪**       | 同一个 flow 的包必须到同一个 lcore           |
+| **策略路由**       | 特定流量走特定路径                           |
 
 ### 1.1 流量分类技术全景
 
@@ -704,32 +702,32 @@ classify_packet(struct rte_acl_ctx *acl_ctx,
 {
     uint8_t buffer[128];
     struct rte_ether_hdr *eth = rte_pktmbuf_mtod(m, struct rte_ether_hdr *);
-    
+
     // 提取要匹配的字段到 buffer
     struct rte_ipv4_hdr *ip = (struct rte_ipv4_hdr *)(eth + 1);
     memcpy(buffer + 12, &ip->src_addr, 4);
     memcpy(buffer + 16, &ip->dst_addr, 4);
-    
+
     if (ip->next_proto_id == IPPROTO_TCP) {
-        struct rte_tcp_hdr *tcp = (struct rte_tcp_hdr *)((char *)ip + 
+        struct rte_tcp_hdr *tcp = (struct rte_tcp_hdr *)((char *)ip +
                         (ip->version_ihl & 0x0F) * 4);
         *(uint16_t *)(buffer + 20) = tcp->src_port;
         *(uint16_t *)(buffer + 22) = tcp->dst_port;
         buffer[23] = IPPROTO_TCP;
     }
-    
+
     // 执行查找
     int ret = rte_acl_classify(acl_ctx,
                                 &buffer,  // 输入
                                 results,   // 输出
                                 1,         // 只查一条
                                 RTE_ACL_CLASSIFY_DEFAULT);
-    
+
     if (ret == 0) {
         uint32_t action = results[0] & 0xFF;
         return action;
     }
-    
+
     return 0;  // 无匹配
 }
 ```
@@ -911,6 +909,7 @@ rte_flow 的设计目标是将不同厂商网卡各自独立的流分类 API 统
 > 如果硬件不支持某个 pattern/action 组合，调用会返回错误，应用需要 fallback 到软件处理。
 >
 > 查询硬件能力的方式：
+>
 > ```c
 > struct rte_flow_action actions[] = {
 >     { .type = RTE_FLOW_ACTION_TYPE_COUNT },  // 想用 COUNT
@@ -1177,11 +1176,11 @@ setup_flow_groups(uint16_t port_id)
 {
     // Group 0: 默认 RSS
     create_rss_flow(port_id, 0, 0, queues, nb_queues);
-    
+
     // Group 1: 特殊流量
     create_drop_flow(port_id, 1, 1, bad_ip);
     create_mirror_flow(port_id, 1, 1, monitor_port);
-    
+
     // Group 2: 紧急拦截
     create_rate_limit_flow(port_id, 2, 2, ddos_ip);
 }
@@ -1193,12 +1192,12 @@ setup_flow_groups(uint16_t port_id)
 
 ### 6.1 各技术性能对比
 
-| 技术 | 吞吐量 | 延迟 | 灵活性 | 适用范围 |
-|------|--------|------|--------|----------|
-| **RSS** | 线速 | ~0 | 低 | 负载均衡 |
-| **Flow Director** | 线速 | ~0 | 中 | Intel NIC 精确匹配 |
-| **librte_acl** | ~50-100 Mpps | ~50ns | 高 | 软件分类/复杂规则 |
-| **rte_flow** | 取决于底层 | 取决于底层 | 高 | 通用 API |
+| 技术              | 吞吐量       | 延迟       | 灵活性 | 适用范围           |
+| ----------------- | ------------ | ---------- | ------ | ------------------ |
+| **RSS**           | 线速         | ~0         | 低     | 负载均衡           |
+| **Flow Director** | 线速         | ~0         | 中     | Intel NIC 精确匹配 |
+| **librte_acl**    | ~50-100 Mpps | ~50ns      | 高     | 软件分类/复杂规则  |
+| **rte_flow**      | 取决于底层   | 取决于底层 | 高     | 通用 API           |
 
 ### 6.2 选型指南
 
@@ -1366,6 +1365,7 @@ setup_ddos_protection(uint16_t port_id)
 ---
 
 > [!tip] 参考文献
+>
 > - Intel, "DPDK Flow API", https://doc.dpdk.org/guides/prog_guide/rte_flow.html
 > - Intel, "RSS and Flow Director", https://doc.dpdk.org/guides/prog_guide/rte_ethdev.html
 > - "librte_acl", https://doc.dpdk.org/guides/prog_guide/acl_lib.html

@@ -5,8 +5,8 @@ tags: [vpn, series, shadowsocks, socks5, proxy, aeand, obfs]
 description: "Shadowsocks 协议深度解析——SOCKS5 代理架构、AEAD 加密（AES-GCM/ChaCha20-Poly1305）、shadowsocks-libev 实现、插件系统与 obfs 混淆机制"
 ---
 
-> [!info] VPN 技术深度探索系列
-> 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+> [!info] VPN 技术深度探索系列 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-vpn-deep-dive-ch24-gfw-principle|GFW 工作原理]]
 > 2. **第二十五章：Shadowsocks 原理**
 > 3. [[2026-04-13-vpn-deep-dive-ch26-shadowsocksr|第二十六章：ShadowsocksR]]
@@ -118,7 +118,7 @@ SOCKS5 握手流程：
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### 2.2 SOCKS5 UDP  ASSOCIATE
+### 2.2 SOCKS5 UDP ASSOCIATE
 
 UDP 转发是 SOCKS5 的重要功能，Shadowsocks 支持 UDP 转发：
 
@@ -419,7 +419,7 @@ simple-obfs 混淆模式：
 
    插件选项：
    plugin_opts="obfs=tls;failover=example.com;mode=client"
-   
+
    ├─ obfs=tls：使用 TLS 混淆
    ├─ failover=example.com：连接失败时的备用域名
    └─ mode=client：客户端模式
@@ -428,7 +428,7 @@ simple-obfs 混淆模式：
 
    插件选项：
    plugin_opts="obfs=http;failover=example.com;mode=client"
-   
+
    伪装成 HTTP 请求：
    GET / HTTP/1.1
    Host: example.com
@@ -448,7 +448,7 @@ v2ray-plugin 混淆模式：
    plugin_opts="server_plugin=v2ray;path=/ws;host=example.com;tls"
 
    流量伪装：
-   
+
    Client                                    Server
     │                                          │
     │  TLS 握手                                 │
@@ -463,7 +463,7 @@ v2ray-plugin 混淆模式：
     │  WebSocket 帧（包含 SS 数据）              │
     │◀─────────────────────────────────────────▶│
     │                                          │
-   
+
    特点：
    ├─ 使用标准 WebSocket 协议
    ├─ TLS 加密（SNI 可伪装）
@@ -474,7 +474,7 @@ v2ray-plugin 混淆模式：
 
    插件选项：
    plugin_opts="server_plugin=v2ray;mode=quic"
-   
+
    ├─ 使用 QUIC 协议传输
    ├─ 0-RTT 快速恢复
    └─ 原生 UDP 支持

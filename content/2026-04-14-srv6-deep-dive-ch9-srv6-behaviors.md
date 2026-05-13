@@ -24,25 +24,25 @@ The behavior determines:
 
 Behaviors are identified by their **Function code** in the SID. RFC 8986 defines:
 
-| Function Code | Behavior Name | Description |
-|--------------|---------------|-------------|
-| 0x0000 | End | Basic endpoint, decrement and forward |
-| 0x0001 | End.X | Endpoint with cross-connect to neighbor |
-| 0x0002 | End.T | Endpoint with table lookup |
-| 0x0003 | End.DX6 | Endpoint with decapsulation to IPv6 |
-| 0x0004 | End.DX4 | Endpoint with decapsulation to IPv4 |
-| 0x0005 | End.DT6 | Endpoint with IPv6 table lookup (VRF) |
-| 0x0006 | End.DT4 | Endpoint with IPv4 table lookup (VRF) |
-| 0x0007 | End.B6.Encaps | B6 insertion with encapsulation |
-| 0x0008 | End.B6.Encaps.Red | Reduced B6 insertion |
-| 0x0009 | End.BM | Behavior with meta |
-| 0x000A | End.S | End with next-segment processing |
-| 0x000B | End.B6.Encaps.Encaps.Red | Reduced double encapsulation |
-| 0x000C | End.B6.Encaps.Encaps | Double encapsulation |
-| 0x000D | End.Zero | Return zero |
-| 0x000E | End.Next.E | Next endpoint |
-| 0x000F | End.Next.C | Next crossing |
-| 0x0010+ | Custom | Operator-defined behaviors |
+| Function Code | Behavior Name            | Description                             |
+| ------------- | ------------------------ | --------------------------------------- |
+| 0x0000        | End                      | Basic endpoint, decrement and forward   |
+| 0x0001        | End.X                    | Endpoint with cross-connect to neighbor |
+| 0x0002        | End.T                    | Endpoint with table lookup              |
+| 0x0003        | End.DX6                  | Endpoint with decapsulation to IPv6     |
+| 0x0004        | End.DX4                  | Endpoint with decapsulation to IPv4     |
+| 0x0005        | End.DT6                  | Endpoint with IPv6 table lookup (VRF)   |
+| 0x0006        | End.DT4                  | Endpoint with IPv4 table lookup (VRF)   |
+| 0x0007        | End.B6.Encaps            | B6 insertion with encapsulation         |
+| 0x0008        | End.B6.Encaps.Red        | Reduced B6 insertion                    |
+| 0x0009        | End.BM                   | Behavior with meta                      |
+| 0x000A        | End.S                    | End with next-segment processing        |
+| 0x000B        | End.B6.Encaps.Encaps.Red | Reduced double encapsulation            |
+| 0x000C        | End.B6.Encaps.Encaps     | Double encapsulation                    |
+| 0x000D        | End.Zero                 | Return zero                             |
+| 0x000E        | End.Next.E               | Next endpoint                           |
+| 0x000F        | End.Next.C               | Next crossing                           |
+| 0x0010+       | Custom                   | Operator-defined behaviors              |
 
 ### 9.2.3 Behavior Classification
 
@@ -87,6 +87,7 @@ on receiving packet with DA = End SID:
 ```
 
 **Use cases:**
+
 - Node identification
 - Path waypoint
 - Simple path steering
@@ -116,6 +117,7 @@ on receiving packet with DA = End.X SID:
 ```
 
 **Use cases:**
+
 - Traffic engineering through specific links
 - Load balancing across multiple paths
 - Bypass constrained links
@@ -146,6 +148,7 @@ on receiving packet with DA = End.T SID:
 ```
 
 **Use cases:**
+
 - Multi-table forwarding (VRF-like)
 - Policy-based routing
 - Tenant isolation
@@ -179,6 +182,7 @@ on receiving packet with DA = End.DX6 SID:
 ```
 
 **Use cases:**
+
 - L2VPN IPv6 access
 - Service termination
 - Hairpin forwarding for services
@@ -203,6 +207,7 @@ on receiving packet with DA = End.DX4 SID:
 ```
 
 **Use cases:**
+
 - SRv6 for IPv4 VPN
 - IPv4 service delivery over IPv6 SR domain
 - Transition scenarios
@@ -228,6 +233,7 @@ on receiving packet with DA = End.DT6 SID:
 ```
 
 **Use cases:**
+
 - IPv6 VPN (6VPE)
 - Tenant routing isolation
 - Multi-service forwarding
@@ -253,6 +259,7 @@ on receiving packet with DA = End.DT4 SID:
 ```
 
 **Use cases:**
+
 - IPv4 VPN (BGP VPNv4)
 - L3VPN for IPv4
 - Legacy VPN migration
@@ -296,6 +303,7 @@ After:
 ```
 
 **Use cases:**
+
 - Service function chaining
 - Traffic engineering over underlay
 - VPN interconnection
@@ -315,6 +323,7 @@ on receiving packet with DA = End.B6.Encaps.Red SID:
 ```
 
 **Use cases:**
+
 - Same as End.B6.Encaps when inner header not needed
 - Lower overhead for simple forwarding cases
 
@@ -358,6 +367,7 @@ on receiving packet with DA = End.BM SID:
 ```
 
 **Use cases:**
+
 - Complex service chains
 - OAM metadata carrying
 - Policy-based processing
@@ -423,6 +433,7 @@ uSID also defines DT/DX variants:
 A **microprogram** is a sequence of SRv6 behaviors executed at a single node. Instead of requiring a separate SID for each step, multiple behaviors can be composed at one SID.
 
 Example: A node needs to:
+
 1. Decapsulate outer header
 2. Lookup in VRF table
 3. Forward via specific interface
@@ -610,15 +621,15 @@ Allocation scheme:
 
 Maintain a registry of allocated function codes:
 
-| Function | Code | Used By | Purpose |
-|----------|------|---------|---------|
-| End | 0x0000 | All nodes | Base endpoint |
-| End.X | 0x0001 | All nodes | Cross-connect |
-| End.T | 0x0002 | Selected | Table lookup |
-| End.DX6 | 0x0003 | PE nodes | IPv6 decap |
-| End.DT6 | 0x0005 | PE nodes | VRF decap |
-| End.B6 | 0x0007 | Selected | Encapsulation |
-| End.FC | 0x0010 | Custom | Flow cache |
+| Function | Code   | Used By   | Purpose       |
+| -------- | ------ | --------- | ------------- |
+| End      | 0x0000 | All nodes | Base endpoint |
+| End.X    | 0x0001 | All nodes | Cross-connect |
+| End.T    | 0x0002 | Selected  | Table lookup  |
+| End.DX6  | 0x0003 | PE nodes  | IPv6 decap    |
+| End.DT6  | 0x0005 | PE nodes  | VRF decap     |
+| End.B6   | 0x0007 | Selected  | Encapsulation |
+| End.FC   | 0x0010 | Custom    | Flow cache    |
 
 ## 9.12 Summary
 

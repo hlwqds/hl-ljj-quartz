@@ -61,12 +61,12 @@ map.update_value(&key, &value)?;    // 类型安全更新
 
 libbpf-rs 底层调用 libbpf C 库（`libbpf/sys/src/`），不是重写。其职责分工：
 
-| 层级 | 技术 | 说明 |
-|------|------|------|
-| eBPF 程序编写 | clang + bpftool | 生成 `.bpf.o` 目标文件 |
-| eBPF 对象加载 | libbpf C 库 | 底层实现 map 创建、程序验证 |
-| Rust 绑定 | libbpf-rs | 类型安全的 Rust API |
-| 用户态程序 | Rust | 编写加载和控制逻辑 |
+| 层级          | 技术            | 说明                        |
+| ------------- | --------------- | --------------------------- |
+| eBPF 程序编写 | clang + bpftool | 生成 `.bpf.o` 目标文件      |
+| eBPF 对象加载 | libbpf C 库     | 底层实现 map 创建、程序验证 |
+| Rust 绑定     | libbpf-rs       | 类型安全的 Rust API         |
+| 用户态程序    | Rust            | 编写加载和控制逻辑          |
 
 ## 快速上手
 

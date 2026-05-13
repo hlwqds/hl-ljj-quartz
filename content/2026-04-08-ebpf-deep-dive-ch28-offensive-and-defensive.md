@@ -9,8 +9,8 @@ tags:
   - digital-forensics
 ---
 
-> [!info] eBPF 2026 深度探索系列
-> 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+> [!info] eBPF 2026 深度探索系列 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+>
 > 1. [[2026-04-08-ebpf-deep-dive-ch1-registers-and-instructions|第一章：寄存器与指令集]]
 > 2. [[2026-04-08-ebpf-deep-dive-ch1-5-function-calls|第一.五章：四种函数调用与动态内存]]
 > 3. [[2026-04-08-ebpf-deep-dive-ch1-6-the-verifier|第一.六章：验证器 (Verifier) 的底层逻辑]]
@@ -62,6 +62,7 @@ tags:
 > 49. [[2026-04-09-ebpf-deep-dive-ch40-network-protocols-deep-dive|第四十章：网络协议深度解析——TCP/UDP/QUIC 的 eBPF 视角]]
 > 50. [[2026-04-09-ebpf-deep-dive-ch41-memory-safety-and-vulnerabilities|第四十一章：eBPF 内存安全与漏洞分析]]
 > 51. [[2026-04-09-ebpf-deep-dive-ch42-service-mesh-integration|第四十二章：eBPF 与 Service Mesh 深度集成]]
+
 ---
 
 ## 1. 概述：内核中的"双刃剑"
@@ -74,14 +75,14 @@ tags:
 
 传统 Rootkit 的核心思路是修改内核代码或数据结构——例如通过 `/dev/mem` 直接写物理内存、劫持内核模块列表、或修改系统调用表。这些手段虽然有效，但存在明显的检测面：
 
-| 特性 | 传统 Rootkit | eBPF Rootkit |
-|------|-------------|--------------|
-| 加载方式 | `insmod` / 直接写内存 | `bpf()` 系统调用 |
-| 内核修改 | 修改内核代码段/数据段 | 不修改任何内核代码 |
-| 检测难度 | 可通过完整性校验发现 | 字节码通过验证器，难以区分合法与恶意 |
-| 持久性 | 依赖开机启动项 | 可通过 systemd/cron 自动加载 |
-| 卸载痕迹 | `rmmod` 后可能残留 | `close(fd)` 即可，干净无痕 |
-| 权限要求 | root + 可能需要关闭 Secure Boot | root + `CAP_BPF` / `CAP_SYS_ADMIN` |
+| 特性     | 传统 Rootkit                    | eBPF Rootkit                         |
+| -------- | ------------------------------- | ------------------------------------ |
+| 加载方式 | `insmod` / 直接写内存           | `bpf()` 系统调用                     |
+| 内核修改 | 修改内核代码段/数据段           | 不修改任何内核代码                   |
+| 检测难度 | 可通过完整性校验发现            | 字节码通过验证器，难以区分合法与恶意 |
+| 持久性   | 依赖开机启动项                  | 可通过 systemd/cron 自动加载         |
+| 卸载痕迹 | `rmmod` 后可能残留              | `close(fd)` 即可，干净无痕           |
+| 权限要求 | root + 可能需要关闭 Secure Boot | root + `CAP_BPF` / `CAP_SYS_ADMIN`   |
 
 eBPF Rootkit 的核心优势在于：**它使用的是内核原生提供的合法接口**。从内核的角度来看，eBPF 程序在通过验证器检查后就是"合法代码"，传统的基于签名的检测方法完全失效。
 
@@ -207,13 +208,13 @@ int xdp_backdoor(struct xdp_md *ctx)
 
 #### C2 通道的进化
 
-| 代际 | 技术 | 检测难度 | 带宽 |
-|------|------|---------|------|
-| 第一代 | 隐藏端口监听 + 反向 Shell | 低（端口扫描可发现） | 高 |
-| 第二代 | ICMP Tunnel / DNS Tunnel | 中（流量异常可检测） | 中 |
-| 第三代 | XDP 魔术包触发 + Map 通信 | 高（无 Socket 记录） | 低 |
-| 第四代 | eBPF-perf-event 用户态回传 | 极高（混入正常性能数据） | 中 |
-| 第五代（2026） | AF_XDP 零拷贝双向通道 | 极高（绕过内核协议栈） | 高 |
+| 代际           | 技术                       | 检测难度                 | 带宽 |
+| -------------- | -------------------------- | ------------------------ | ---- |
+| 第一代         | 隐藏端口监听 + 反向 Shell  | 低（端口扫描可发现）     | 高   |
+| 第二代         | ICMP Tunnel / DNS Tunnel   | 中（流量异常可检测）     | 中   |
+| 第三代         | XDP 魔术包触发 + Map 通信  | 高（无 Socket 记录）     | 低   |
+| 第四代         | eBPF-perf-event 用户态回传 | 极高（混入正常性能数据） | 中   |
+| 第五代（2026） | AF_XDP 零拷贝双向通道      | 极高（绕过内核协议栈）   | 高   |
 
 ### 2.3 内核态凭证窃取
 
@@ -395,12 +396,12 @@ graph TB
 
 验证器 (Verifier) 是 eBPF 安全模型的核心，但它本身也出现过安全漏洞：
 
-| CVE | 年份 | 类型 | 影响 |
-|-----|------|------|------|
-| CVE-2021-3444 | 2021 | 32 位边界计算错误 | 越界读写 |
-| CVE-2023-2163 | 2023 | 寄存器边界追踪不精确 | 提权 |
-| CVE-2024-1086 | 2024 | nftables + BPF 混合利用 | 内核提权 |
-| CVE-2025-2177 | 2025 | BPF ringbuf 溢出 | 任意代码执行 |
+| CVE           | 年份 | 类型                    | 影响         |
+| ------------- | ---- | ----------------------- | ------------ |
+| CVE-2021-3444 | 2021 | 32 位边界计算错误       | 越界读写     |
+| CVE-2023-2163 | 2023 | 寄存器边界追踪不精确    | 提权         |
+| CVE-2024-1086 | 2024 | nftables + BPF 混合利用 | 内核提权     |
+| CVE-2025-2177 | 2025 | BPF ringbuf 溢出        | 任意代码执行 |
 
 > [!tip] 经验教训
 > 验证器并非完美的安全屏障。每次内核升级都应审查 BPF 子系统的安全补丁，并评估其对现有安全策略的影响。
@@ -416,12 +417,14 @@ graph TB
   "linux": {
     "seccomp": {
       "defaultAction": "SCMP_ACT_ERRNO",
-      "syscalls": [{
-        "names": ["bpf"],
-        "action": "SCMP_ACT_ERRNO",
-        "errno": 1,
-        "comment": "Block eBPF in untrusted containers"
-      }]
+      "syscalls": [
+        {
+          "names": ["bpf"],
+          "action": "SCMP_ACT_ERRNO",
+          "errno": 1,
+          "comment": "Block eBPF in untrusted containers"
+        }
+      ]
     }
   }
 }

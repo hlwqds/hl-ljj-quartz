@@ -1,7 +1,25 @@
 ---
 title: AF_XDP 深度探索 Ch3：数据路径分析
 date: 2026-04-27 09:00:00
-tags: [AF_XDP, XDP, Data Path, Zero Copy, UMEM, Ring Buffer, DMA, Packet Flow, Kernel Path, Driver, NAPI, RX, TX, Tracepoints, Performance Analysis, Latency Breakdown]
+tags:
+  [
+    AF_XDP,
+    XDP,
+    Data Path,
+    Zero Copy,
+    UMEM,
+    Ring Buffer,
+    DMA,
+    Packet Flow,
+    Kernel Path,
+    Driver,
+    NAPI,
+    RX,
+    TX,
+    Tracepoints,
+    Performance Analysis,
+    Latency Breakdown,
+  ]
 description: 深入解析 AF_XDP 完整数据路径：NIC DMA → XDP → UMEM → 用户态 → 发送的全流程，tracepoint 追踪，以及各阶段延迟分解。
 ---
 
@@ -111,7 +129,7 @@ AF_XDP 完整数据路径：
 
 ### 2.1 NIC 到内核（DMA + 驱动）
 
-```
+````
 NIC 接收数据包到内核的过程：
 
   1. NIC 硬件
@@ -147,31 +165,33 @@ NIC 接收数据包到内核的过程：
 
 ### 2.2 XDP 触发点
 
-```
+````
+
 XDP 在 NIC 接收流程中的位置：
 
-  NIC 收到包
-      │
-      ▼
-  DMA 到 RX Ring（主机内存）
-      │
-      ▼
-  ┌─────────────────────────────────────────────────────────────┐
-  │              ★★★ XDP 触发点 ★★★                           │
-  │  此时 sk_buff 尚未创建！                                   │
-  │  XDP 程序可以：                                           │
-  │    · 读取 packet header（data 指针）                      │
-  │    · 修改 packet content                                   │
-  │    · 重定向到 AF_XDP / 其他接口                           │
-  │    · 丢弃（DDoS 防护）                                    │
-  └─────────────────────────────────────────────────────────────┘
-      │
-      ├── XDP_DROP → 丢弃（不创建 skb）
-      │
-      ├── XDP_PASS → 创建 skb → 网络栈
-      │
-      └── XDP_REDIRECT → 重定向到其他接口/AF_XDP
-```
+NIC 收到包
+│
+▼
+DMA 到 RX Ring（主机内存）
+│
+▼
+┌─────────────────────────────────────────────────────────────┐
+│ ★★★ XDP 触发点 ★★★ │
+│ 此时 sk_buff 尚未创建！ │
+│ XDP 程序可以： │
+│ · 读取 packet header（data 指针） │
+│ · 修改 packet content │
+│ · 重定向到 AF_XDP / 其他接口 │
+│ · 丢弃（DDoS 防护） │
+└─────────────────────────────────────────────────────────────┘
+│
+├── XDP_DROP → 丢弃（不创建 skb）
+│
+├── XDP_PASS → 创建 skb → 网络栈
+│
+└── XDP_REDIRECT → 重定向到其他接口/AF_XDP
+
+````
 
 ```c
 // XDP 处理上下文（ctx）
@@ -201,7 +221,7 @@ int xdp_inspect(struct xdp_md *ctx)
 
     return XDP_PASS;
 }
-```
+````
 
 ### 2.3 XDP_REDIRECT 到 AF_XDP
 

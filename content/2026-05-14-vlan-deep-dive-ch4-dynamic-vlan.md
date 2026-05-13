@@ -24,7 +24,7 @@ flowchart LR
         A2[Fa0/2] -->|手动绑定| V20[VLAN 20]
         A3[Fa0/3] -->|手动绑定| V10[VLAN 10]
     end
-    
+
     subgraph 动态VLAN
         B1[Fa0/1] -->|MAC 查询| PS[策略服务器]
         B2[Fa0/2] -->|802.1X| PS
@@ -37,11 +37,11 @@ flowchart LR
 
 ### 1.2 三种动态 VLAN 识别机制
 
-| 机制 | 识别依据 | 典型应用场景 | 标准化程度 | 优点 | 缺点 |
-|------|---------|-------------|-----------|------|------|
-| **MAC-based VLAN** | 终端 MAC 地址 | 哑终端/物联网设备 | 部分标准化（VMPS） | 设备移动后自动跟随 | MAC 地址数据库维护复杂 |
-| **Protocol-based VLAN** | 二层协议类型（IP/IPX/AppleTalk） | 多协议共存环境 | 私有 | 多协议环境天然隔离 | 协议支持有限，现代网络已少用 |
-| **Policy-based VLAN（802.1X）** | 用户认证 + RADIUS 属性 | 企业园区网准入 | IEEE 标准 | 精细化访问控制，用户驱动 | 需要部署 RADIUS基础设施 |
+| 机制                            | 识别依据                         | 典型应用场景      | 标准化程度         | 优点                     | 缺点                         |
+| ------------------------------- | -------------------------------- | ----------------- | ------------------ | ------------------------ | ---------------------------- |
+| **MAC-based VLAN**              | 终端 MAC 地址                    | 哑终端/物联网设备 | 部分标准化（VMPS） | 设备移动后自动跟随       | MAC 地址数据库维护复杂       |
+| **Protocol-based VLAN**         | 二层协议类型（IP/IPX/AppleTalk） | 多协议共存环境    | 私有               | 多协议环境天然隔离       | 协议支持有限，现代网络已少用 |
+| **Policy-based VLAN（802.1X）** | 用户认证 + RADIUS 属性           | 企业园区网准入    | IEEE 标准          | 精细化访问控制，用户驱动 | 需要部署 RADIUS基础设施      |
 
 ### 1.3 静态 VLAN 的局限性
 
@@ -73,31 +73,31 @@ flowchart TD
         SW1[接入交换机]
         SW2[接入交换机]
     end
-    
+
     subgraph 控制平面
         VTP_S[VTP Server<br/>VLAN 信息传播]
         GVRP[GVRP/MVRP<br/>VLAN 注册传播]
         VMPS_S[VMPS Server<br/>MAC→VLAN 映射]
         RADIUS[RADIUS Server<br/>用户→VLAN 映射]
     end
-    
+
     subgraph 终端
         EP1[哑终端<br/>00:1A:2B:3C:4D:5E]
         EP2[员工笔记本<br/>user@corp.com]
         EP3[IoT 传感器]
     end
-    
+
     EP1 -->|MAC 地址| SW1
     EP2 -->|802.1X EAPOL| SW2
     EP3 -->|MAC 地址| SW2
-    
+
     SW1 -->|MAC 查询| VMPS_S
     SW2 -->|MAC 查询| VMPS_S
     SW2 -->|RADIUS Access-Request| RADIUS
     SW1 -->|VTP 同步| VTP_S
     SW1 -->|GVRP 注册| GVRP
     SW2 -->|GVRP 注册| GVRP
-    
+
     VMPS_S -->|VLAN ID| SW1
     VMPS_S -->|VLAN ID| SW2
     RADIUS -->|Access-Accept<br/>+ Tunnel 属性| SW2
@@ -119,7 +119,7 @@ sequenceDiagram
     participant S2 as VTP Client (Switch 2)
     participant S3 as VTP Client (Switch 3)
     participant S4 as VTP Transparent (Switch 4)
-    
+
     Note over S1: Revision = 0 (初始)
     S1->>S2: VTP Advertisement (VLAN 10,20,30, Rev=5)
     S1->>S3: VTP Advertisement (VLAN 10,20,30, Rev=5)
@@ -134,11 +134,11 @@ sequenceDiagram
 
 VTP 有三种核心消息类型，理解它们是排查 VTP 问题的关键：
 
-| 消息类型 | 触发条件 | 传播行为 |
-|---------|---------|---------|
-| **Summary Advertisement** | Server/Client 每 5 分钟周期性发送，或触发式发送 | 携带 VTP 域名、修订号、配置哈希 |
-| **Subset Advertisement** | Server 上 VLAN 配置变更时 | 携带完整的 VLAN 详细信息（名称、VLAN ID、SAID、MTU 等）|
-| ** Advertisement Request** | Client 收到 Summary 后发现修订号高于本地 | 请求 Server 发送完整的 Subset |
+| 消息类型                   | 触发条件                                        | 传播行为                                                |
+| -------------------------- | ----------------------------------------------- | ------------------------------------------------------- |
+| **Summary Advertisement**  | Server/Client 每 5 分钟周期性发送，或触发式发送 | 携带 VTP 域名、修订号、配置哈希                         |
+| **Subset Advertisement**   | Server 上 VLAN 配置变更时                       | 携带完整的 VLAN 详细信息（名称、VLAN ID、SAID、MTU 等） |
+| ** Advertisement Request** | Client 收到 Summary 后发现修订号高于本地        | 请求 Server 发送完整的 Subset                           |
 
 ```
 VTP 完整同步流程：
@@ -147,7 +147,7 @@ VTP 完整同步流程：
   → 发送 Advertisement Request
   → Server 回复 Summary + Subset Advertisement
   → Client 更新本地 VLAN 数据库
-  
+
 [VLAN 配置变更]
   → Server 发送 Subset Advertisement（包含变更详情）
   → 域内所有 Client 更新本地副本
@@ -157,11 +157,11 @@ VTP 完整同步流程：
 
 VTP 支持三种工作模式，理解它们的差异是正确部署的前提：
 
-| 模式 | 能创建 VLAN | 能修改 VLAN | 能删除 VLAN | 发送 VTP 广告 | 学习 VTP 广告 | 典型用途 |
-|------|-----------|------------|------------|--------------|--------------|---------|
-| **Server** | ✅ | ✅ | ✅ | ✅ | ✅ | 核心/汇聚层，VLAN 管理入口 |
-| **Client** | ❌ | ❌ | ❌ | ✅（转发）| ✅ | 接入层，纯 VLAN 信息消费者 |
-| **Transparent** | ✅（本地有效）| ✅（本地有效）| ✅（本地有效）| ❌ | ❌（不学习）| 隔离域、扩展 VLAN 支持 |
+| 模式            | 能创建 VLAN    | 能修改 VLAN    | 能删除 VLAN    | 发送 VTP 广告 | 学习 VTP 广告 | 典型用途                   |
+| --------------- | -------------- | -------------- | -------------- | ------------- | ------------- | -------------------------- |
+| **Server**      | ✅             | ✅             | ✅             | ✅            | ✅            | 核心/汇聚层，VLAN 管理入口 |
+| **Client**      | ❌             | ❌             | ❌             | ✅（转发）    | ✅            | 接入层，纯 VLAN 信息消费者 |
+| **Transparent** | ✅（本地有效） | ✅（本地有效） | ✅（本地有效） | ❌            | ❌（不学习）  | 隔离域、扩展 VLAN 支持     |
 
 ```网络配置
 ! VTP 配置示例
@@ -182,6 +182,7 @@ vtp domain CampusNetwork     ! Transparent 模式仍需域名为其他交换机�
 ```
 
 **Server 模式**是默认模式，也是最常用的模式。**Transparent 模式**常用于：
+
 - 需要本地管理 VLAN 但不希望影响整个域的场景
 - VTP 版本 1/2 不支持扩展 VLAN（1006-4094），需用 Transparent 透传
 - 测试环境中隔离特定交换机
@@ -249,13 +250,14 @@ flowchart TD
     R2[修订号 5<br/>Server 创建 VLAN 10,20]
     R3[修订号 8<br/>Server 创建 VLAN 30]
     R4[修订号 12<br/>Server 删除 VLAN 20]
-    
+
     R1 -->|配置变更| R2 -->|配置变更| R3 -->|配置变更| R4
-    
+
     style R4 fill:#f96
 ```
 
 **修订号递增规则**：
+
 - 创建 VLAN：修订号 +1
 - 修改 VLAN（包括重命名、修改 MTU 等）：修订号 +1
 - 删除 VLAN：修订号 +1
@@ -297,15 +299,15 @@ vtp mode transparent
 
 ### 3.3 VTP 版本对比
 
-| 特性 | VTPv1 | VTPv2 | VTPv3 |
-|------|-------|-------|-------|
-| 扩展 VLAN（1006-4094）| ❌ | ❌ | ✅ |
-| 支持令牌环 | ✅ | ✅ | ✅ |
-| 修订号一致性检查 | 简单 | 简单 | 增强（支持重置）|
-| 认证方式 | 密码（明文传输）| 密码（MD5）| 密码（MD5）+ 隐藏 |
-| 服务器角色转换 | 无限制 | 无限制 | 支持显式降级 |
-| 支持 MSTP 兼容 | ❌ | ✅ | ✅ |
-| 配置文件要求 | VLAN 数据库 | VLAN 数据库 | 主服务器数据库 |
+| 特性                   | VTPv1            | VTPv2       | VTPv3             |
+| ---------------------- | ---------------- | ----------- | ----------------- |
+| 扩展 VLAN（1006-4094） | ❌               | ❌          | ✅                |
+| 支持令牌环             | ✅               | ✅          | ✅                |
+| 修订号一致性检查       | 简单             | 简单        | 增强（支持重置）  |
+| 认证方式               | 密码（明文传输） | 密码（MD5） | 密码（MD5）+ 隐藏 |
+| 服务器角色转换         | 无限制           | 无限制      | 支持显式降级      |
+| 支持 MSTP 兼容         | ❌               | ✅          | ✅                |
+| 配置文件要求           | VLAN 数据库      | VLAN 数据库 | 主服务器数据库    |
 
 ```网络配置
 ! VTPv3 配置（Catalyst 9000 系列）
@@ -353,22 +355,22 @@ GVRP 的设计目标是**替代手动 VLAN 配置**，让交换机通过协议�
 
 ### 4.2 GVRP vs VTP 核心差异
 
-| 维度 | VTP | GVRP |
-|------|-----|------|
-| 标准化 | Cisco 私有 | IEEE 802.1D |
-| 方向 | Server→Client 单向传播 | 双向注册/注销 |
-| 交换机角色 | Server/Client/Transparent | 注册器（Registrar）有三种模式 |
-| VLAN 传播范围 | 整个 VTP 域 | 整个桥接网络（STP 域）|
-| 设备发现 | 需手动配置 domain | 自动发现 |
-| 配置同步 | Server 端集中配置 | 分布式的 Join/Leave 机制 |
-| 删除传播 | Server 删除 → 自动传播删除 | 需要显式 Leave 消息 |
+| 维度          | VTP                        | GVRP                          |
+| ------------- | -------------------------- | ----------------------------- |
+| 标准化        | Cisco 私有                 | IEEE 802.1D                   |
+| 方向          | Server→Client 单向传播     | 双向注册/注销                 |
+| 交换机角色    | Server/Client/Transparent  | 注册器（Registrar）有三种模式 |
+| VLAN 传播范围 | 整个 VTP 域                | 整个桥接网络（STP 域）        |
+| 设备发现      | 需手动配置 domain          | 自动发现                      |
+| 配置同步      | Server 端集中配置          | 分布式的 Join/Leave 机制      |
+| 删除传播      | Server 删除 → 自动传播删除 | 需要显式 Leave 消息           |
 
 ### 4.3 GVRP 工作机制
 
 GVRP 通过三种消息类型完成 VLAN 注册：
 
 - **Join 消息**：端口申请加入特定 VLAN
-- **Leave 消息**：端口申请退出特定 VLAN  
+- **Leave 消息**：端口申请退出特定 VLAN
 - **LeaveAll 消息**：周期性清理，触发端口重新注册
 
 ```mermaid
@@ -377,14 +379,14 @@ flowchart LR
         PA1[Port 1] -->|Join(VLAN 10)| G1[GVRP]
         PA2[Port 2] -->|Leave(VLAN 20)| G1
     end
-    
-    subgraph Switch_B  
+
+    subgraph Switch_B
         PB1[Port 1] --> G2[GVRP]
         PB2[Port 2] --> G2
     end
-    
+
     G1 <-->|Trunk 链路<br/>GVRP 广告| G2
-    
+
     style G1 fill:#b1d5a4
     style G2 fill:#b1d5a4
 ```
@@ -415,11 +417,11 @@ GVRP 的每个端口都有一个状态机，理解它有助于排查注册问题
 
 GVRP 的每端口注册模式决定了该端口对 VLAN 注册请求的行为：
 
-| 模式 | 行为描述 | 适用场景 | 风险等级 |
-|------|---------|---------|---------|
-| **Normal** | 动态注册/注销，接收对端 Join/Leave | 标准的动态端口 | 中 |
-| **Fixed** | 仅传播本地创建的 VLAN，不接受远程注册 | 上联口、静态 VLAN 端口 | 低 |
-| **Forbidden** | 不注册任何 VLAN（除 VLAN 1）| 安全隔离、拒绝动态注册 | 最低 |
+| 模式          | 行为描述                              | 适用场景               | 风险等级 |
+| ------------- | ------------------------------------- | ---------------------- | -------- |
+| **Normal**    | 动态注册/注销，接收对端 Join/Leave    | 标准的动态端口         | 中       |
+| **Fixed**     | 仅传播本地创建的 VLAN，不接受远程注册 | 上联口、静态 VLAN 端口 | 低       |
+| **Forbidden** | 不注册任何 VLAN（除 VLAN 1）          | 安全隔离、拒绝动态注册 | 最低     |
 
 ```网络配置
 ! Cisco 交换机 GVRP 配置
@@ -457,6 +459,7 @@ interface GigabitEthernet0/3
 ```
 
 **推荐实践**：
+
 - 上联端口（朝向汇聚层）：使用 **Fixed** 模式，避免接入设备污染汇聚层 VLAN 表
 - 终端接入端口：使用 **Normal** 模式，支持动态 VLAN 上线
 - 特殊安全端口：使用 **Forbidden** 模式，强制仅使用本地配置的 VLAN
@@ -466,12 +469,12 @@ interface GigabitEthernet0/3
 
 GVRP 的行为受多个定时器控制，理解它们有助于微调协议行为：
 
-| 定时器 | 默认值 | 作用 |
-|--------|--------|------|
-| Join Timer | 200ms | 发送 Join 消息的间隔 |
-| Hold Timer | 10ms | 抑制多次 Join 消息的阈值 |
-| Leave Timer | 600ms | 收到 Leave 消息后等待重新 Join 的时间 |
-| LeaveAll Timer | 10000ms | 周期性触发 LeaveAll，清理所有注册 |
+| 定时器         | 默认值  | 作用                                  |
+| -------------- | ------- | ------------------------------------- |
+| Join Timer     | 200ms   | 发送 Join 消息的间隔                  |
+| Hold Timer     | 10ms    | 抑制多次 Join 消息的阈值              |
+| Leave Timer    | 600ms   | 收到 Leave 消息后等待重新 Join 的时间 |
+| LeaveAll Timer | 10000ms | 周期性触发 LeaveAll，清理所有注册     |
 
 ```网络配置
 ! 调整 GVRP 定时器（一般不需要修改）
@@ -500,22 +503,22 @@ flowchart TD
     subgraph 终端
         M[MAC: 00:1A:2B:3C:4D:5E]
     end
-    
+
     subgraph 交换机
         SW[接入交换机]
         VMPS_Client[VMPS Client 模块]
     end
-    
+
     subgraph VMPS服务器
         VPS[VLAN Policy Server<br/>:1589]
     end
-    
+
     M -->|连接请求| SW
     SW -->|MAC 查询| VMPS_Client
     VMPS_Client -->|VMPS Query| VPS
     VPS -->|VLAN 分配响应| VMPS_Client
     VMPS_Client -->|配置端口| M
-    
+
     style VPS fill:#b1d5a4
 ```
 
@@ -561,10 +564,10 @@ VMPS port-group AccessSwitches
 
 ### 6.3 VMPS 安全模式对比
 
-| 模式 | 未知 MAC 处理 | 优点 | 缺点 |
-|------|-------------|------|------|
-| **open** | 划入 fallback VLAN | 允许白名单外的设备有基本网络 | 未授权设备可能被放入 Guest VLAN |
-| **secure** | 端口进入 err-disabled 状态 | 最高安全性，未授权设备完全隔离 | 设备更换 MAC 后需要管理员介入 |
+| 模式       | 未知 MAC 处理              | 优点                           | 缺点                            |
+| ---------- | -------------------------- | ------------------------------ | ------------------------------- |
+| **open**   | 划入 fallback VLAN         | 允许白名单外的设备有基本网络   | 未授权设备可能被放入 Guest VLAN |
+| **secure** | 端口进入 err-disabled 状态 | 最高安全性，未授权设备完全隔离 | 设备更换 MAC 后需要管理员介入   |
 
 **安全建议**：生产环境应使用 **secure 模式**，而非 fallback VLAN。Fallback VLAN 会导致未授权设备被放入 Guest VLAN，如果 Guest VLAN 策略不当，可能造成安全漏洞。
 
@@ -629,21 +632,21 @@ flowchart LR
     subgraph 请求方
         Supplicant[Supplicant<br/>客户端软件<br/>如 Network Access Manager]
     end
-    
+
     subgraph 认证方
         Authenticator[Authenticator<br/>网络访问交换机<br/>NAS / 802.1X Switch]
     end
-    
+
     subgraph 认证服务器
         AS[RADIUS Server<br/>如 FreeRADIUS / Cisco ISE<br/>/ Microsoft NPS]
     end
-    
+
     Supplicant -->|EAPOL| Authenticator
     Authenticator -->|RADIUS Access-Request<br/>UDP 1812| AS
     AS -->|RADIUS Access-Challenge<br/>UDP 1812| Authenticator
     Authenticator -->|EAPOL| Supplicant
     AS -->|Access-Accept<br/>+ VLAN 属性| Authenticator
-    
+
     style AS fill:#b1d5a4
 ```
 
@@ -659,7 +662,7 @@ flowchart LR
 7. 交换机透传 Challenge 给终端
 8. 终端响应 Challenge（包含加密的凭证）
 9. 交换机转发给 RADIUS 服务器验证
-10. RADIUS 服务器验证成功，发送 Access-Accept + 
+10. RADIUS 服务器验证成功，发送 Access-Accept +
     Tunnel-Private-Group-ID (VLAN ID) + Tunnel-Type (VLAN)
 11. 交换机根据 VLAN ID 将端口划入对应 VLAN，设为 authorized
 ```
@@ -668,14 +671,14 @@ flowchart LR
 
 802.1X 支持多种 EAP 认证类型，选择时需考虑安全性和兼容性：
 
-| EAP 类型 | 安全性 | 客户端兼容性 | 备注 |
-|---------|--------|------------|------|
-| **EAP-MD5** | 低（MD5 哈希）| 广泛 | 已不推荐，存在离线破解风险 |
-| **EAP-MSCHAPv2** | 中 | Windows 内置 | 需要证书或 PEAP 保护 |
-| **PEAP-MSCHAPv2** | 高 | 广泛 | 建议的生产方案 |
-| **EAP-TLS** | 最高 | 需要证书 | 双向证书认证，部署复杂 |
-| **EAP-TTLS** | 高 | 良好 | 服务端证书认证，客户端可选 |
-| **FAST** | 高 | Cisco 设备 | Cisco 专有，支持 PAC |
+| EAP 类型          | 安全性         | 客户端兼容性 | 备注                       |
+| ----------------- | -------------- | ------------ | -------------------------- |
+| **EAP-MD5**       | 低（MD5 哈希） | 广泛         | 已不推荐，存在离线破解风险 |
+| **EAP-MSCHAPv2**  | 中             | Windows 内置 | 需要证书或 PEAP 保护       |
+| **PEAP-MSCHAPv2** | 高             | 广泛         | 建议的生产方案             |
+| **EAP-TLS**       | 最高           | 需要证书     | 双向证书认证，部署复杂     |
+| **EAP-TTLS**      | 高             | 良好         | 服务端证书认证，客户端可选 |
+| **FAST**          | 高             | Cisco 设备   | Cisco 专有，支持 PAC       |
 
 ### 7.4 RADIUS 属性与 VLAN 分配
 
@@ -732,6 +735,7 @@ DEFAULT   Huntgroup-Name == "finance", Auth-Type := Accept
 ```
 
 关键属性说明：
+
 - **Tunnel-Type = 13**（代表 VLAN，IANA 分配的值）
 - **Tunnel-Medium-Type = 6**（代表 IEEE 802，即以太网）
 - **Tunnel-Private-Group-ID** = VLAN ID（字符串格式，可以是数字或 VLAN 名称）
@@ -740,12 +744,12 @@ DEFAULT   Huntgroup-Name == "finance", Auth-Type := Accept
 
 802.1X 的一大优势是可以根据认证结果将终端分配到不同策略的 VLAN：
 
-| VLAN 类型 | 触发条件 | 典型用途 | 网络访问权限 |
-|----------|---------|---------|-------------|
-| **Guest VLAN** | 终端不支持 802.1X（未安装客户端）| 自助门户、补丁服务器 | 仅限内网有限资源 |
-| **Restricted VLAN** | 认证失败（密码错误等）| 受限访问，提示安装客户端 | 极度受限 |
-| **Critical VLAN** | RADIUS 服务器不可达 | 紧急访问通道 | 降级但可用 |
-| **Default VLAN** | Fallback 策略 | 临时接入 | 由策略决定 |
+| VLAN 类型           | 触发条件                          | 典型用途                 | 网络访问权限     |
+| ------------------- | --------------------------------- | ------------------------ | ---------------- |
+| **Guest VLAN**      | 终端不支持 802.1X（未安装客户端） | 自助门户、补丁服务器     | 仅限内网有限资源 |
+| **Restricted VLAN** | 认证失败（密码错误等）            | 受限访问，提示安装客户端 | 极度受限         |
+| **Critical VLAN**   | RADIUS 服务器不可达               | 紧急访问通道             | 降级但可用       |
+| **Default VLAN**    | Fallback 策略                     | 临时接入                 | 由策略决定       |
 
 ```网络配置
 ! Cisco 交换机 802.1X + Guest VLAN 配置
@@ -785,14 +789,14 @@ sequenceDiagram
     participant EP as 终端 (已认证，VLAN 20)
     participant SW as 交换机
     participant R AS as RADIUS 服务器
-    
+
     Note over EP,SW: 初始状态：端口在 VLAN 20
     R AS->>SW: Access-Accept (Tunnel-Private-Group-ID = "30")
     Note over SW: RADIUS 返回新 VLAN 30
     SW->>EP: 重新认证触发（Reauth）
     SW->>EP: 动态 VLAN 分配
     Note over SW: 端口从 VLAN 20 迁移到 VLAN 30
-    
+
     alt 交换机支持 VSD (Virtual Switch Domain)
         SW->>SW: 认证状态保持，仅 VLAN ID 变更
     else 交换机仅支持静态迁移
@@ -842,6 +846,7 @@ MVRP（Multiple VLAN Registration Protocol）是 GVRP 的**继任者**，同样�
 MVRP 解决了 GVRP 在大规模部署中的一些性能问题，提供了更高效的机制。 Juniper、Cisco（高端系列）、HP/Aruba 等主流厂商已开始支持 MVRP。
 
 核心改进：
+
 - 更高效的消息编码（减少了协议 overhead）
 - 支持 **MMRP（Multiple Multicast Registration Protocol）** 事件驱动的扩展
 - 更好的收敛性能
@@ -849,27 +854,27 @@ MVRP 解决了 GVRP 在大规模部署中的一些性能问题，提供了更高
 
 ### 8.2 MVRP 与 GVRP 对比
 
-| 特性 | GVRP | MVRP |
-|------|------|------|
-| 标准 | IEEE 802.1D | IEEE 802.1Q-2011 |
-| 消息类型 | Join/Leave/LeaveAll | New/Join-In/Join Empty/Leave/LeaveAll |
-| 协议效率 | 较低 | 较高（事件驱动增强）|
-| 定时器 | 固定（Join 定时器、Hold 定时器等）| 更灵活的定时机制 |
-| 厂商支持 | 广泛（Cisco、Juniper 等）| 较新（高端设备支持）|
-| 与 GVRP 兼容性 | N/A | 部分兼容（GVRP 设备视为 MVRP Applicant）|
+| 特性           | GVRP                               | MVRP                                     |
+| -------------- | ---------------------------------- | ---------------------------------------- |
+| 标准           | IEEE 802.1D                        | IEEE 802.1Q-2011                         |
+| 消息类型       | Join/Leave/LeaveAll                | New/Join-In/Join Empty/Leave/LeaveAll    |
+| 协议效率       | 较低                               | 较高（事件驱动增强）                     |
+| 定时器         | 固定（Join 定时器、Hold 定时器等） | 更灵活的定时机制                         |
+| 厂商支持       | 广泛（Cisco、Juniper 等）          | 较新（高端设备支持）                     |
+| 与 GVRP 兼容性 | N/A                                | 部分兼容（GVRP 设备视为 MVRP Applicant） |
 
 ### 8.3 MVRP 消息类型详解
 
 MVRP 定义了 6 种 PDU 类型，每种类型对应不同的注册行为：
 
-| 消息类型 | 触发条件 | 含义 |
-|---------|---------|------|
-| **New** | 本地 VLAN 被创建 | 通知邻居本交换机创建了新 VLAN |
-| **Join-In** | 确认收到邻居的注册请求 | 表示愿意接收该 VLAN 的流量 |
-| **Join Empty** | 邻居请求注册一个本地还不存在的 VLAN | 请求本交换机创建该 VLAN |
-| **Leave** | 动态注销 VLAN 注册 | 通知邻居不再需要该 VLAN |
-| **LeaveAll** | 周期性清理 | 重置所有注册关系 |
-| **Empty** | 声明本地没有活跃的 VLAN 注册 | 响应邻居的 Join Empty |
+| 消息类型       | 触发条件                            | 含义                          |
+| -------------- | ----------------------------------- | ----------------------------- |
+| **New**        | 本地 VLAN 被创建                    | 通知邻居本交换机创建了新 VLAN |
+| **Join-In**    | 确认收到邻居的注册请求              | 表示愿意接收该 VLAN 的流量    |
+| **Join Empty** | 邻居请求注册一个本地还不存在的 VLAN | 请求本交换机创建该 VLAN       |
+| **Leave**      | 动态注销 VLAN 注册                  | 通知邻居不再需要该 VLAN       |
+| **LeaveAll**   | 周期性清理                          | 重置所有注册关系              |
+| **Empty**      | 声明本地没有活跃的 VLAN 注册        | 响应邻居的 Join Empty         |
 
 ```mermaid
 flowchart TD
@@ -880,7 +885,7 @@ flowchart TD
     C -->|Join-In| B
     B -->|New| D[Switch D 收到 New 消息]
     D -->|Join-In| B
-    
+
     style A fill:#b1d5a4
     style B fill:#b1d5a4
     style C fill:#b1d5a4
@@ -939,29 +944,29 @@ flowchart TD
     subgraph Core[核心层 - Core-SW]
         C1[Catalyst 9300<br/>VTP Server<br/>VLAN 10/20/30/100/999]
     end
-    
+
     subgraph Dist[汇聚层 - Dist-SW-1/2]
         D1[Dist-SW-1<br/>GVRP Normal]
         D2[Dist-SW-2<br/>GVRP Fixed]
     end
-    
+
     subgraph Access[接入层]
         A1[Access-SW-1<br/>VMPS Client<br/>MAC→VLAN]
         A2[Access-SW-2<br/>802.1X<br/>用户→VLAN]
     end
-    
+
     subgraph Server[服务器区]
         VMPS[VMPS Server<br/>10.1.100.10:1589]
         RADIUS[RADIUS/ISE<br/>10.1.100.20:1812]
     end
-    
+
     C1 <-->|Trunk<br/>VTP + GVRP| D1
     C1 <-->|Trunk<br/>VTP + GVRP| D2
     D1 <-->|Trunk<br/>GVRP| A1
     D1 <-->|Trunk<br/>GVRP| A2
     A1 <-->|MAC 查询| VMPS
     A2 <-->|EAP/RADIUS| RADIUS
-    
+
     style Core fill:#b1d5a4
     style Server fill:#d4a4a4
 ```
@@ -1388,7 +1393,7 @@ DEFAULT Auth-Type := Reject
 
 ```bash
 # ISE 中配置 802.1X + VLAN 分配的关键步骤：
-# 
+#
 # 1. 网络设备添加（交换机）
 #    Administration > Network Resources > Network Devices
 #    - 添加交换机 IP、共享密钥
@@ -1417,19 +1422,19 @@ flowchart TD
     Start[需要动态 VLAN?] --> |网络规模 < 10 台| S1[静态 VLAN]
     Start --> |网络规模 10-100 台| S2[VTP Server/Client]
     Start --> |网络规模 100+ 台| S3{终端类型?}
-    
+
     S3 --> |哑终端/MAC 固定| S4[VMPS]
     S3 --> |用户认证为主| S5[802.1X + RADIUS]
     S3 --> |多厂商设备| S6[GVRP/MVRP]
     S3 --> |SDN 控制器管理| S7[控制器统一管理]
-    
+
     S1 --> End1[手动配置 VLAN]
     S2 --> End2[VTP 自动传播]
     S4 --> End4[MAC 到 VLAN 映射]
     S5 --> End5[用户到 VLAN 映射]
     S6 --> End6[跨厂商 VLAN 注册]
     S7 --> End7[策略驱动自动分配]
-    
+
     S2 --> |安全顾虑| S8[+ 802.1X 增强]
     S4 --> |安全顾虑| S9[+ 802.1X fallback]
     S6 --> |安全顾虑| S10[+ VMPS/802.1X]
@@ -1535,14 +1540,14 @@ debug gvrp
 
 **常见故障原因及解决方案**：
 
-| 故障 | 原因 | 解决 |
-|-----|------|------|
-| VLAN 传播不到对端 | Trunk 端口未允许该 VLAN | `switchport trunk allowed vlan add <vid>` |
-| GVRP 注册被拒绝 | 端口是 Fixed/Forbidden 模式 | `gvrp registration normal` |
-| Join 消息未发出 | 端口未启用 GVRP | `gvrp enable` |
-| 交换机不支持 GVRP | 老旧设备缺少 GVRP 支持 | 升级固件或改用静态配置 |
-| VLAN 被修剪掉 | VTP Pruning 启用且无本地成员 | `vtp pruning` 关闭或添加本地端口 |
-| 双工/速率不匹配 | 端口协商失败 | 检查双工设置 |
+| 故障              | 原因                         | 解决                                      |
+| ----------------- | ---------------------------- | ----------------------------------------- |
+| VLAN 传播不到对端 | Trunk 端口未允许该 VLAN      | `switchport trunk allowed vlan add <vid>` |
+| GVRP 注册被拒绝   | 端口是 Fixed/Forbidden 模式  | `gvrp registration normal`                |
+| Join 消息未发出   | 端口未启用 GVRP              | `gvrp enable`                             |
+| 交换机不支持 GVRP | 老旧设备缺少 GVRP 支持       | 升级固件或改用静态配置                    |
+| VLAN 被修剪掉     | VTP Pruning 启用且无本地成员 | `vtp pruning` 关闭或添加本地端口          |
+| 双工/速率不匹配   | 端口协商失败                 | 检查双工设置                              |
 
 ### 10.3 VMPS 查询无响应
 
@@ -1664,25 +1669,25 @@ radius-server vsa send   # 必须在交换机上配置
 ```mermaid
 flowchart TD
     F1[终端无法上网] --> F2{是否在动态 VLAN 端口?}
-    
+
     F2 --> |否| S1[检查静态 VLAN 配置]
-    
+
     F2 --> |是| Q1{查看 show vtp status}
-    
+
     Q1 --> |VTP 修订号异常| Q2[定位修订号最高的交换机]
     Q1 --> |VTP 域不一致| Q3[统一 VTP domain]
     Q1 --> |正常| Q4{检查 GVRP}
-    
+
     Q4 --> |GVRP 端口状态异常| Q5[检查 gvrp registration 模式<br/>检查 trunk allowed vlan]
     Q4 --> |正常| Q6{检查 VMPS}
-    
+
     Q6 --> |VMPS 未响应| Q7[ping VMPS 服务器<br/>检查 UDP 1589<br/>检查 MAC 格式]
     Q6 --> |VMPS 响应但 VLAN 不对| Q8[检查 VLAN 名称匹配<br/>检查 VMPS 数据库]
     Q6 --> |正常| Q9{检查 802.1X}
-    
+
     Q9 --> |认证失败| Q10[检查 RADIUS 日志<br/>检查用户凭证]
     Q9 --> |认证成功<br/>VLAN 未生效| Q11[检查 VSA 属性<br/>检查 Tunnel 属性]
-    
+
     Q2 --> R1[设为 Transparent 或<br/>vtp revision 0]
     Q3 --> R2[统一 domain 名称<br/>设置统一密码]
     Q5 --> R3[设为 normal 模式<br/>确认 trunk 允许 VLAN]
@@ -1747,31 +1752,31 @@ show lldp neighbors                 # LLDP 邻居
 
 ### 动态 VLAN 协议对比
 
-| 协议 | 类型 | 标准化 | 厂商 | VLAN 传播方式 | 典型场景 |
-|------|------|--------|------|--------------|---------|
-| VTP | Server/Client | Cisco 私有 | Cisco | Server → Client 单向 | 单一厂商园区网 |
-| GVRP | Registrar | IEEE 802.1D | 多厂商 | 双向 Join/Leave | 多厂商混合网络 |
-| MVRP | Registrar | IEEE 802.1Q-2011 | 主流厂商 | 双向 New/Join | 现代多厂商网络 |
-| VMPS | Query/Response | Cisco 私有 | Cisco | MAC → VLAN 映射 | 哑终端网络 |
-| 802.1X | EAP/RADIUS | IEEE 802.1X | 多厂商 | 用户认证 → VLAN | 企业准入控制 |
+| 协议   | 类型           | 标准化           | 厂商     | VLAN 传播方式        | 典型场景       |
+| ------ | -------------- | ---------------- | -------- | -------------------- | -------------- |
+| VTP    | Server/Client  | Cisco 私有       | Cisco    | Server → Client 单向 | 单一厂商园区网 |
+| GVRP   | Registrar      | IEEE 802.1D      | 多厂商   | 双向 Join/Leave      | 多厂商混合网络 |
+| MVRP   | Registrar      | IEEE 802.1Q-2011 | 主流厂商 | 双向 New/Join        | 现代多厂商网络 |
+| VMPS   | Query/Response | Cisco 私有       | Cisco    | MAC → VLAN 映射      | 哑终端网络     |
+| 802.1X | EAP/RADIUS     | IEEE 802.1X      | 多厂商   | 用户认证 → VLAN      | 企业准入控制   |
 
 ### 端口模式与动态 VLAN 兼容性
 
-| 端口模式 | VTP | GVRP | VMPS | 802.1X |
-|---------|-----|------|------|--------|
-| Access | ❌ | ❌ | ✅ | ✅ |
-| Trunk | ✅ | ✅ | ✅ | ✅ |
-| Dynamic Auto | ❌ | ❌ | ❌ | ✅ |
-| Dynamic Desirable | ❌ | ❌ | ❌ | ✅ |
+| 端口模式          | VTP | GVRP | VMPS | 802.1X |
+| ----------------- | --- | ---- | ---- | ------ |
+| Access            | ❌  | ❌   | ✅   | ✅     |
+| Trunk             | ✅  | ✅   | ✅   | ✅     |
+| Dynamic Auto      | ❌  | ❌   | ❌   | ✅     |
+| Dynamic Desirable | ❌  | ❌   | ❌   | ✅     |
 
 ### VLAN 分配属性速查
 
-| 属性 | 值 | 含义 |
-|------|---|------|
-| Tunnel-Type | 13 | VLAN（IANA 标准）|
-| Tunnel-Medium-Type | 6 | IEEE 802 |
-| Tunnel-Private-Group-ID | "10" | VLAN ID（字符串）|
-| Cisco AV-pair | mdm_vlan=10 | Cisco 专用格式 |
+| 属性                    | 值          | 含义              |
+| ----------------------- | ----------- | ----------------- |
+| Tunnel-Type             | 13          | VLAN（IANA 标准） |
+| Tunnel-Medium-Type      | 6           | IEEE 802          |
+| Tunnel-Private-Group-ID | "10"        | VLAN ID（字符串） |
+| Cisco AV-pair           | mdm_vlan=10 | Cisco 专用格式    |
 
 ---
 
@@ -1790,13 +1795,13 @@ show lldp neighbors                 # LLDP 邻居
 
 **技术选型建议**：
 
-| 场景 | 推荐方案 | 理由 |
-|------|---------|------|
-| 中小型单一厂商网络 | VTP + 802.1X | 兼顾配置效率和安全性 |
-| 多厂商混合网络 | GVRP/MVRP | 标准协议，跨厂商兼容 |
-| 哑终端密集型（IoT/工厂自动化）| VMPS | MAC-to-VLAN 的最佳实践 |
-| 高安全要求的企业网 | 802.1X + RADIUS + CoA | 用户级的动态策略，精细化控制 |
-| SD-Access / DNA Center 环境 | 控制器统一管理 | SDA Fabric 替代传统 VTP/GVRP |
+| 场景                           | 推荐方案              | 理由                         |
+| ------------------------------ | --------------------- | ---------------------------- |
+| 中小型单一厂商网络             | VTP + 802.1X          | 兼顾配置效率和安全性         |
+| 多厂商混合网络                 | GVRP/MVRP             | 标准协议，跨厂商兼容         |
+| 哑终端密集型（IoT/工厂自动化） | VMPS                  | MAC-to-VLAN 的最佳实践       |
+| 高安全要求的企业网             | 802.1X + RADIUS + CoA | 用户级的动态策略，精细化控制 |
+| SD-Access / DNA Center 环境    | 控制器统一管理        | SDA Fabric 替代传统 VTP/GVRP |
 
 **最佳实践**：
 
@@ -1812,4 +1817,4 @@ show lldp neighbors                 # LLDP 邻居
 
 ---
 
-*参考文献：[IEEE 802.1Q-2018](https://ieeexplore.ieee.org/document/8406793) | [Cisco VTP Documentation](https://www.cisco.com/c/en/us/td/docs/switches/lan/catalyst9000/software/release/17-12/configuration_guide/vlan/b_17_ly_vlan_Cg.html) | [RFC 3580 - IEEE 802.1X RADIUS Usage Guidelines](https://tools.ietf.org/html/rfc3580) | [RFC 4675 - RADIUS Attributes for VLAN and QoS](https://tools.ietf.org/html/rfc4675) | [GVRP IEEE 802.1D](https://standards.ieee.org/standard/802_1D-2004.html)*
+_参考文献：[IEEE 802.1Q-2018](https://ieeexplore.ieee.org/document/8406793) | [Cisco VTP Documentation](https://www.cisco.com/c/en/us/td/docs/switches/lan/catalyst9000/software/release/17-12/configuration_guide/vlan/b_17_ly_vlan_Cg.html) | [RFC 3580 - IEEE 802.1X RADIUS Usage Guidelines](https://tools.ietf.org/html/rfc3580) | [RFC 4675 - RADIUS Attributes for VLAN and QoS](https://tools.ietf.org/html/rfc4675) | [GVRP IEEE 802.1D](https://standards.ieee.org/standard/802_1D-2004.html)_

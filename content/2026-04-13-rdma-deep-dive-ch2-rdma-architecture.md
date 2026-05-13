@@ -16,11 +16,11 @@ description: "深入 RDMA 架构：RNIC/HCA 硬件架构、libibverbs 编程模�
 
 ### 1.1 术语区分
 
-| 术语 | 全称 | 说明 |
-|------|------|------|
+| 术语     | 全称                        | 说明                             |
+| -------- | --------------------------- | -------------------------------- |
 | **RNIC** | RDMA Network Interface Card | Ethernet RDMA 网卡（RoCE/iWARP） |
-| **HCA** | Host Channel Adapter | InfiniBand 专用通道适配器 |
-| **TCA** | Target Channel Adapter | HCA 的目标侧（IB 规范术语） |
+| **HCA**  | Host Channel Adapter        | InfiniBand 专用通道适配器        |
+| **TCA**  | Target Channel Adapter      | HCA 的目标侧（IB 规范术语）      |
 
 实际使用中，RNIC 和 HCA 常被混用，都指"支持 RDMA 的网卡"。
 
@@ -80,14 +80,14 @@ PD (Protection Domain)
     └── AH (Address Handle)  [for UD]
 ```
 
-| 对象 | 英文 | 作用 |
-|------|------|------|
+| 对象   | 英文              | 作用                                         |
+| ------ | ----------------- | -------------------------------------------- |
 | **PD** | Protection Domain | 将 QP、MR 等资源分组，隔离不同应用的访问权限 |
-| **QP** | Queue Pair | 发送/接收请求的队列对 |
-| **CQ** | Completion Queue | 异步接收操作完成通知 |
-| **MR** | Memory Region | 已注册、可被 RDMA 访问的内存区域 |
-| **AH** | Address Handle | 目的地地址信息（用于 UD QP） |
-| **MW** | Memory Window | 内存窗口，提供更灵活的远程访问控制 |
+| **QP** | Queue Pair        | 发送/接收请求的队列对                        |
+| **CQ** | Completion Queue  | 异步接收操作完成通知                         |
+| **MR** | Memory Region     | 已注册、可被 RDMA 访问的内存区域             |
+| **AH** | Address Handle    | 目的地地址信息（用于 UD QP）                 |
+| **MW** | Memory Window     | 内存窗口，提供更灵活的远程访问控制           |
 
 ### 2.2 ibv_post_send 流程
 
@@ -105,16 +105,17 @@ ibv_post_send(qp, &wr, &bad_wr);  // 同步返回
 ```
 
 RNIC 收到 WR 后：
+
 1. 通过 DMA 读取本地内存中的发送数据
 2. 通过网络传输到对端
 3. 完成后，生成 Work Completion 放入 CQ
 
 ### 2.3 两种操作模式
 
-| 模式 | 英文 | 说明 | CPU 参与 |
-|------|------|------|----------|
-| **Send/Recv** | Two-sided | 需要两端参与，接收方必须 post_recv | 双方都要 |
-| **RDMA Read/Write** | One-sided | 单侧操作，读取端无需对端 CPU 参与 | 仅发送端 |
+| 模式                | 英文      | 说明                               | CPU 参与 |
+| ------------------- | --------- | ---------------------------------- | -------- |
+| **Send/Recv**       | Two-sided | 需要两端参与，接收方必须 post_recv | 双方都要 |
+| **RDMA Read/Write** | One-sided | 单侧操作，读取端无需对端 CPU 参与  | 仅发送端 |
 
 ---
 
@@ -152,12 +153,12 @@ QP 是 RDMA 连接的核心，每个 QP 有一个状态机：
 
 ### 3.2 Queue Pair 类型
 
-| 类型 | 全称 | 可靠性 | 场景 |
-|------|------|--------|------|
-| **RC** | Reliable Connection | 可靠连接，保证送达 | HPC、AI 训练（主要使用） |
-| **UC** | Unreliable Connection | 不可靠连接 | 很少用 |
-| **UD** | Unreliable Datagram | 不可靠数据报，无连接 | 多播、 broadcast |
-| **RD** | Reliable Datagram | 可靠数据报 | 在 InfiniBand 中有，RoCE/iWARP 不支持 |
+| 类型   | 全称                  | 可靠性               | 场景                                  |
+| ------ | --------------------- | -------------------- | ------------------------------------- |
+| **RC** | Reliable Connection   | 可靠连接，保证送达   | HPC、AI 训练（主要使用）              |
+| **UC** | Unreliable Connection | 不可靠连接           | 很少用                                |
+| **UD** | Unreliable Datagram   | 不可靠数据报，无连接 | 多播、 broadcast                      |
+| **RD** | Reliable Datagram     | 可靠数据报           | 在 InfiniBand 中有，RoCE/iWARP 不支持 |
 
 ---
 
@@ -199,6 +200,7 @@ MW 可以改变远程地址范围（re-MW）
 RDMA QP 的连接建立涉及交换 GID、LID、QPN 等信息，这需要一个控制面握手协议——**Connection Manager (CM)**。
 
 CM 支持两种 API：
+
 - **CM ID**：面向连接的 RC/UC 类型的连接管理
 - **rdma_cm**：更现代的 API，同时支持 RDMA 和传统 IP
 
@@ -248,9 +250,9 @@ ibv_post_send (opcode=IBV_WR_RDMA_READ,
 
 ### 6.4 Atomic Operations
 
-| 操作 | 说明 |
-|------|------|
-| **Fetch & Add** | 读取远程值，加上本地值，写回 |
+| 操作                     | 说明                         |
+| ------------------------ | ---------------------------- |
+| **Fetch & Add**          | 读取远程值，加上本地值，写回 |
 | **Compare & Swap (CAS)** | 如果远程值等于比较值，则交换 |
 
 原子操作用于分布式锁、计数器等场景。
@@ -278,13 +280,13 @@ ibv_post_send (opcode=IBV_WR_RDMA_READ,
 
 RDMA 架构的核心抽象：
 
-| 组件 | 作用 |
-|------|------|
+| 组件   | 作用                                        |
+| ------ | ------------------------------------------- |
 | **QP** | RDMA 操作的基本单元，状态机管理连接生命周期 |
 | **MR** | 零拷贝的物理基础，注册内存获取 DMA 访问权限 |
-| **PD** | 隔离不同应用/用户间的 RDMA 资源 |
-| **CQ** | 异步事件通知，轮询完成的工作请求 |
-| **CM** | 控制面，负责连接建立与拆除 |
+| **PD** | 隔离不同应用/用户间的 RDMA 资源             |
+| **CQ** | 异步事件通知，轮询完成的工作请求            |
+| **CM** | 控制面，负责连接建立与拆除                  |
 
 > [!next] 下一章
 > 第三章我们聚焦 InfiniBand，深入解析 IB 协议栈的链路层、网络层、传输层，以及 LID/GID 地址机制。

@@ -5,8 +5,8 @@ tags: [p4, series, tna, tofino, architecture, pipeline, native-architecture, int
 description: "P4 TNA 架构深度解析——Tofino Native Architecture 完整架构、MAU (Match-Action Unit)、Gate List、Packet Clock、Ingress/Egress 优化、BFN (布隆过滤器)、Tofino 专属特性"
 ---
 
-> [!info] P4 深度探索系列
-> 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+> [!info] P4 深度探索系列 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-14-p4-deep-dive-ch1-p4-overview|第一章：P4 概述——诞生背景与协议无关包处理]]
 > 2. [[2026-04-14-p4-deep-dive-ch2-p4-architecture|第二章：P4 架构模型——PSA/V1Model、Ingress/Egress]]
 > 3. [[2026-04-14-p4-deep-dive-ch3-p4-vs-ebpf|第三章：P4 vs eBPF——适用场景与硬件/软件对比]]
@@ -27,6 +27,7 @@ description: "P4 TNA 架构深度解析——Tofino Native Architecture 完整�
 **TNA (Tofino Native Architecture)** 是 Intel Tofino 系列交换芯片的原生 P4 架构。它在 PSA 基础上添加了大量 Tofino 特定的优化和硬件原生支持，是实现**线速处理 (Wire-speed Processing)** 的关键。
 
 与 PSA 相比，TNA 的核心区别：
+
 - **硬件原生**：充分利用 Tofino 的并行处理能力
 - **确定性延迟**：流水线级数固定，延迟可精确预测
 - **丰富资源**：超大容量的 TCAM/RAM 资源
@@ -130,6 +131,7 @@ MAU 是 Tofino 流水线的核心执行单元。每个 MAU Stage 包含：
 ### 3.2 Packet Gate
 
 **Gate** 是 TNA 中的基本执行控制单元。每个 Gate 包含：
+
 - **Condition**：执行条件（布尔表达式）
 - **True Action List**：条件为真时执行的动作列表
 - **False Action List**：条件为假时执行的动作列表
@@ -194,6 +196,7 @@ Port ──> Parser ──> MAU Stage 0 ──> MAU Stage 1 ──> ... ──> 
 ### 4.2 Ingress Parser 特性
 
 Tofino Parser 支持：
+
 - **并行提取**：多个字段可同时提取
 - **状态机并行**：多个解析状态可并行处理
 - **Header 长度自动推断**：PLENGTH 机制
@@ -210,12 +213,12 @@ parser IngressParser(...) {
 
 ### 4.3 Ingress MAU 资源
 
-| 资源类型 | 每 Stage 容量 | 总计 (32 Stage) |
-|----------|--------------|-----------------|
-| SRAM (TCAM) | 4K entries | 128K entries |
-| SRAM (Exact) | 16K entries | 512K entries |
-| ALUs | 4 | 128 |
-| Hash Units | 2 | 64 |
+| 资源类型      | 每 Stage 容量   | 总计 (32 Stage)   |
+| ------------- | --------------- | ----------------- |
+| SRAM (TCAM)   | 4K entries      | 128K entries      |
+| SRAM (Exact)  | 16K entries     | 512K entries      |
+| ALUs          | 4               | 128               |
+| Hash Units    | 2               | 64                |
 | Action Memory | 4K instructions | 128K instructions |
 
 ---
@@ -284,12 +287,12 @@ Port 0
 
 ### 5.3 调度机制
 
-| 调度类型 | 描述 |
-|----------|------|
-| **Strict Priority (SP)** | 严格优先级调度 |
-| **Deficit Weighted Round Robin (DWRR)** | 基于信用值的加权调度 |
-| **Enhanced Transmission Selection (ETS)** | 带宽保证+优先级 |
-| **Per-Port Shaping** | 端口级整形 |
+| 调度类型                                  | 描述                 |
+| ----------------------------------------- | -------------------- |
+| **Strict Priority (SP)**                  | 严格优先级调度       |
+| **Deficit Weighted Round Robin (DWRR)**   | 基于信用值的加权调度 |
+| **Enhanced Transmission Selection (ETS)** | 带宽保证+优先级      |
+| **Per-Port Shaping**                      | 端口级整形           |
 
 ---
 
@@ -338,9 +341,9 @@ Digest 用于将数据包信息**异步反馈**给控制面：
 ```c
 // TNA Digest 示例
 control Ingress(...) {
-    
+
     digest<mac_learn_digest_t>(1) mac_learn;  // digest_id = 1
-    
+
     action mac_learn() {
         // 创建 MAC 学习消息
         mac_learn_digest_t d = {
@@ -349,11 +352,11 @@ control Ingress(...) {
         };
         mac_learn.pack(d);  // 发送给控制面
     }
-    
+
     table mac_learn_table {
         // ...
     }
-    
+
     apply {
         mac_learn_table.apply();
     }
@@ -384,7 +387,7 @@ table mac_table {
     key = { h.ethernet.srcAddr : exact; }
     actions = { mac_learn; }
     default_action = mac_learn;
-    
+
     // 表项空闲超时后自动删除
     const idle_timeout = true;
     idle_timeout_seconds = 300;  // 5分钟
@@ -446,14 +449,14 @@ PSA_Switch(ip, ep) main;
 
 ## 9. TNA vs PSA 性能对比
 
-| 指标 | PSA (BMv2) | TNA (Tofino) |
-|------|-----------|--------------|
-| 吞吐量 | ~10Mpps | ~1000Mpps (3.2T) |
-| 延迟 | 10-50μs | **< 1μs** |
-| 表容量 | 受限 | 数十 M entries |
-| TCAM | 可选 | 原生支持 |
-| 并行度 | 有限 | 32 Stage × 4 ALUs |
-| 队列 | 简单 | 16K+ 队列 |
+| 指标   | PSA (BMv2) | TNA (Tofino)      |
+| ------ | ---------- | ----------------- |
+| 吞吐量 | ~10Mpps    | ~1000Mpps (3.2T)  |
+| 延迟   | 10-50μs    | **< 1μs**         |
+| 表容量 | 受限       | 数十 M entries    |
+| TCAM   | 可选       | 原生支持          |
+| 并行度 | 有限       | 32 Stage × 4 ALUs |
+| 队列   | 简单       | 16K+ 队列         |
 
 ---
 

@@ -1,15 +1,25 @@
 ---
 title: "VPN 技术深度探索 (十八)：IPSec 排错实战"
 date: 2026-04-13
-tags: [vpn, series, networking, security, ipsec, troubleshooting, strongswan, charon, nat-traversal, debug, tcpdump, ike-debug]
+tags:
+  [
+    vpn,
+    series,
+    networking,
+    security,
+    ipsec,
+    troubleshooting,
+    strongswan,
+    charon,
+    nat-traversal,
+    debug,
+    tcpdump,
+    ike-debug,
+  ]
 description: "IPSec 排错实战——strongSwan/Charon 日志分析、IKE 协商失败定位、NAT 穿透问题排查、ESP 解密失败处理、防重放告警分析、MTU 分片问题、常见错误码速查、系统性排错方法论"
 ---
 
-> [!info] VPN 技术深度探索系列
-> 14. [[2026-04-13-vpn-deep-dive-ch14-ipsec-overview|IPSec 体系概述]]
-> 15. [[2026-04-13-vpn-deep-dive-ch15-ipsec-ike|IKE 密钥交换]]
-> 16. [[2026-04-13-vpn-deep-dive-ch16-ipsec-esp|AH 与 ESP 协议]]
-> 17. [[2026-04-13-vpn-deep-dive-ch17-ipsec-policy|IPSec 策略配置]]
+> [!info] VPN 技术深度探索系列 14. [[2026-04-13-vpn-deep-dive-ch14-ipsec-overview|IPSec 体系概述]] 15. [[2026-04-13-vpn-deep-dive-ch15-ipsec-ike|IKE 密钥交换]] 16. [[2026-04-13-vpn-deep-dive-ch16-ipsec-esp|AH 与 ESP 协议]] 17. [[2026-04-13-vpn-deep-dive-ch17-ipsec-policy|IPSec 策略配置]]
 > **18. IPSec 排错（本章）**
 
 ---
@@ -77,6 +87,7 @@ esp         ESP 数据包处理（不常用）
 ```
 
 日志级别：
+
 - **-1**：不输出
 - **0**：只输出错误
 - **1**：警告（默认）
@@ -558,7 +569,7 @@ Step 3：强制 MSS Clamp
      days=$(( ($(openssl x509 -in server.pem -noout -enddate \
          | cut -d= -f2 | date -f- +%s) - $(date +%s)) / 86400 ))
      [ $days -lt 30 ] && echo "证书将在 ${days} 天后过期！"
-  
+
   3. 使用 certbot 或 ACME 自动续期
 ```
 
@@ -605,18 +616,18 @@ tcpdump -i xfrm0 -nn
 
 ## 10. 常见错误码速查
 
-| 错误 / Notify | 含义 | 常见原因 |
-|---------------|------|---------|
-| NO_PROPOSAL_CHOSEN | 算法提议无交集 | 双端 proposals 配置不匹配 |
-| AUTHENTICATION_FAILED | 认证失败 | PSK 不一致、证书问题 |
-| TS_UNACCEPTABLE | 流量选择符不接受 | local_ts/remote_ts 配置错误 |
-| INVALID_KE_PAYLOAD | DH 组不接受 | DH 组不在对端接受列表 |
-| INVALID_SYNTAX | 报文语法错误 | 实现 Bug 或版本不兼容 |
-| CHILD_SA_NOT_FOUND | 找不到 Child SA | SA 已删除或 SPI 错误 |
-| TEMPORARY_FAILURE | 临时失败 | 资源不足，稍后重试 |
-| SINGLE_PAIR_REQUIRED | 需要单一选择符对 | 某些实现限制 |
-| FAILED_CP_REQUIRED | 需要 CP（配置载荷）| 客户端需要 IP 分配但服务端未配 |
-| INVALID_MAJOR_VERSION | IKE 版本不支持 | 强制 IKEv2 但对端只支持 v1 |
+| 错误 / Notify         | 含义                | 常见原因                       |
+| --------------------- | ------------------- | ------------------------------ |
+| NO_PROPOSAL_CHOSEN    | 算法提议无交集      | 双端 proposals 配置不匹配      |
+| AUTHENTICATION_FAILED | 认证失败            | PSK 不一致、证书问题           |
+| TS_UNACCEPTABLE       | 流量选择符不接受    | local_ts/remote_ts 配置错误    |
+| INVALID_KE_PAYLOAD    | DH 组不接受         | DH 组不在对端接受列表          |
+| INVALID_SYNTAX        | 报文语法错误        | 实现 Bug 或版本不兼容          |
+| CHILD_SA_NOT_FOUND    | 找不到 Child SA     | SA 已删除或 SPI 错误           |
+| TEMPORARY_FAILURE     | 临时失败            | 资源不足，稍后重试             |
+| SINGLE_PAIR_REQUIRED  | 需要单一选择符对    | 某些实现限制                   |
+| FAILED_CP_REQUIRED    | 需要 CP（配置载荷） | 客户端需要 IP 分配但服务端未配 |
+| INVALID_MAJOR_VERSION | IKE 版本不支持      | 强制 IKEv2 但对端只支持 v1     |
 
 ---
 

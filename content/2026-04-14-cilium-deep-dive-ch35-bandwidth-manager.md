@@ -11,12 +11,8 @@ tags:
   - kubernetes
 ---
 
-> [!info] Cilium 2026 深度探索系列
-> 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
-> ...
-> 34. [[2026-04-14-cilium-deep-dive-ch34-migration|第三十四章：从 Sidecar 到 Ambient 的迁移]]
-> 35. **第三十五章：带宽管理器** ←
-> 36. [[2026-04-14-cilium-deep-dive-ch36-node-encryption|第三十六章：节点加密]]
+> [!info] Cilium 2026 深度探索系列 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+> ... 34. [[2026-04-14-cilium-deep-dive-ch34-migration|第三十四章：从 Sidecar 到 Ambient 的迁移]] 35. **第三十五章：带宽管理器** ← 36. [[2026-04-14-cilium-deep-dive-ch36-node-encryption|第三十六章：节点加密]]
 
 ---
 
@@ -47,11 +43,11 @@ Cilium 的方案将**带宽计量和排队调度直接嵌入 eBPF 数据面**，
 
 Bandwidth Manager 底层使用 **FQ-PIE（Fair Queueing + Proportional Integral Controller Enhanced）** qdisc：
 
-|| 组件 | 作用 |
-|:---|:---|:---|
-| **Fair Queueing** | 按流（flow）分组，保证各 Pod/流的公平性 |
-| **PIE** | AQM（主动队列管理）算法，基于队列长度预估延迟，主动丢弃 |
-| **无锁设计** | eBPF map 替代传统锁，多核友好 |
+|                   | 组件                                                    | 作用 |
+| :---------------- | :------------------------------------------------------ | :--- |
+| **Fair Queueing** | 按流（flow）分组，保证各 Pod/流的公平性                 |
+| **PIE**           | AQM（主动队列管理）算法，基于队列长度预估延迟，主动丢弃 |
+| **无锁设计**      | eBPF map 替代传统锁，多核友好                           |
 
 ### 1.2 启用 Bandwidth Manager
 
@@ -86,8 +82,8 @@ metadata:
     kubernetes.io/ingress-bandwidth: "200M"
 spec:
   containers:
-  - name: app
-    image: nginx:1.25
+    - name: app
+      image: nginx:1.25
 ```
 
 > [!note] Cilium 实际实现
@@ -107,16 +103,16 @@ spec:
     matchLabels:
       app: payment-service
   egress:
-  - toPorts:
-    - ports:
-      - port: "443"
-        protocol: TCP
-    # 带宽限制
-    bandwidth:
-      egressRate: "50M"   # 限制出向带宽 50Mbps
+    - toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+      # 带宽限制
+      bandwidth:
+        egressRate: "50M" # 限制出向带宽 50Mbps
   ingress:
-  - bandwidth:
-      ingressRate: "100M"  # 限制入向带宽 100Mbps
+    - bandwidth:
+        ingressRate: "100M" # 限制入向带宽 100Mbps
 ```
 
 ### 2.3 验证带宽限制生效
@@ -267,18 +263,18 @@ spec:
     matchLabels:
       app: voice-gateway
   egress:
-  - toPorts:
-    - ports:
-      - port: "5060"
-        protocol: UDP
-    trafficPolicy: Accept
-    qosClass: high      # 高优先级
-  - toPorts:
-    - ports:
-      - port: "443"
-        protocol: TCP
-    trafficPolicy: Accept
-    qosClass: normal
+    - toPorts:
+        - ports:
+            - port: "5060"
+              protocol: UDP
+      trafficPolicy: Accept
+      qosClass: high # 高优先级
+    - toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+      trafficPolicy: Accept
+      qosClass: normal
 ```
 
 ### 5.2 带宽保障与突发
@@ -294,9 +290,9 @@ spec:
     matchLabels:
       app: trading-engine
   egress:
-  - bandwidth:
-      egressRate: "1G"        # 保障 1Gbps
-      burstAllowance: "100M"  # 允许 100M 突发
+    - bandwidth:
+        egressRate: "1G" # 保障 1Gbps
+        burstAllowance: "100M" # 允许 100M 突发
 ```
 
 ---
@@ -343,12 +339,12 @@ ip link show | grep veth
 
 Bandwidth Manager 的 eBPF 实现**开销极低**：
 
-| 场景 | 无 BWM | 有 BWM | 开销 |
-|:---|:---|:---|:---|
-| 小包 (64B) | 基准 | +0.3% CPU | 可忽略 |
-| 中包 (1400B) | 基准 | +0.1% CPU | 可忽略 |
-| 高并发 (100K pps) | 基准 | +1.2% CPU | 极低 |
-| 限速 10Mbps vs 1Gbps | 基准 | 延迟+0.05ms | 极低 |
+| 场景                 | 无 BWM | 有 BWM      | 开销   |
+| :------------------- | :----- | :---------- | :----- |
+| 小包 (64B)           | 基准   | +0.3% CPU   | 可忽略 |
+| 中包 (1400B)         | 基准   | +0.1% CPU   | 可忽略 |
+| 高并发 (100K pps)    | 基准   | +1.2% CPU   | 极低   |
+| 限速 10Mbps vs 1Gbps | 基准   | 延迟+0.05ms | 极低   |
 
 > [!tip] 推荐
 > 带宽限制应在 Pod 创建时通过 Helm 默认值全局启用，而不是事后逐一配置。Cilium Operator 会自动将注解转化为 eBPF 配置。
@@ -357,14 +353,15 @@ Bandwidth Manager 的 eBPF 实现**开销极低**：
 
 ## 7. 章节总结
 
-|| 组件 | 作用 | 位置 |
-|:---|:---|:---|:---|
+|                       | 组件             | 作用             | 位置 |
+| :-------------------- | :--------------- | :--------------- | :--- |
 | **Bandwidth Manager** | Pod 级别带宽限制 | eBPF egress hook |
-| **FQ-PIE** | 公平队列 + AQM | qdisc 层 |
-| **Token Bucket** | 计量与整型 | eBPF map |
-| **BBR** | TCP 拥塞控制 | 内核 TCP stack |
+| **FQ-PIE**            | 公平队列 + AQM   | qdisc 层         |
+| **Token Bucket**      | 计量与整型       | eBPF map         |
+| **BBR**               | TCP 拥塞控制     | 内核 TCP stack   |
 
 **关键优势**：
+
 - eBPF 层实现，绕过内核 qdisc 锁竞争
 - Per-pod 独立计量，多核友好
 - 支持带宽保障和突发容量

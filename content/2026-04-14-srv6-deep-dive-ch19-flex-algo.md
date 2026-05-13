@@ -653,4 +653,3 @@ FlexAlgo extends IGP with constraint-based path computation capabilities essenti
 FlexAlgo represents a fundamental shift from single-metric IGP to multi-criteria TE within the IGP infrastructure, enabling sophisticated path engineering without centralized controllers or signaling protocols.
 
 ---
-

@@ -292,7 +292,7 @@ CMD ["vpp", "-c", "/etc/vpp/startup.conf"]
 
 ```yaml
 # docker-compose.yml
-version: '3.8'
+version: "3.8"
 
 services:
   vpp:
@@ -306,9 +306,9 @@ services:
       - ./data:/var/lib/vpp
       - /mnt/huge:/mnt/huge
     ports:
-      - "5001:5001"  # gRPC
-      - "9932:9932"  # Telemetry
-      - "8080:8080"  # REST API
+      - "5001:5001" # gRPC
+      - "9932:9932" # Telemetry
+      - "8080:8080" # REST API
     networks:
       - vpp-net
     restart: unless-stopped
@@ -386,47 +386,47 @@ spec:
       hostNetwork: true
       serviceAccountName: vpp-cni
       containers:
-      - name: vpp
-        image: vpp:latest
-        securityContext:
-          privileged: true
-        env:
-        - name: VPP_HUGEPAGE_MB
-          value: "1024"
-        - name: PLUGIN_PATH
-          value: /usr/lib/vpp/plugins
-        volumeMounts:
-        - name: huges
-          mountPath: /mnt/huge
-        - name: cni-bin
-          mountPath: /opt/cni/bin
-        - name: cni-conf
-          mountPath: /etc/cni/net.d
-        - name: vpp-config
-          mountPath: /etc/vpp
-        resources:
-          requests:
-            memory: "2Gi"
-            hugepages-2Mi: "1Gi"
-          limits:
-            memory: "4Gi"
-            hugepages-2Mi: "2Gi"
+        - name: vpp
+          image: vpp:latest
+          securityContext:
+            privileged: true
+          env:
+            - name: VPP_HUGEPAGE_MB
+              value: "1024"
+            - name: PLUGIN_PATH
+              value: /usr/lib/vpp/plugins
+          volumeMounts:
+            - name: huges
+              mountPath: /mnt/huge
+            - name: cni-bin
+              mountPath: /opt/cni/bin
+            - name: cni-conf
+              mountPath: /etc/cni/net.d
+            - name: vpp-config
+              mountPath: /etc/vpp
+          resources:
+            requests:
+              memory: "2Gi"
+              hugepages-2Mi: "1Gi"
+            limits:
+              memory: "4Gi"
+              hugepages-2Mi: "2Gi"
       volumes:
-      - name: huges
-        emptyDir:
-          medium: Memory
-      - name: cni-bin
-        hostPath:
-          path: /opt/cni/bin
-      - name: cni-conf
-        hostPath:
-          path: /etc/cni/net.d
-      - name: vpp-config
-        configMap:
-          name: vpp-config
+        - name: huges
+          emptyDir:
+            medium: Memory
+        - name: cni-bin
+          hostPath:
+            path: /opt/cni/bin
+        - name: cni-conf
+          hostPath:
+            path: /etc/cni/net.d
+        - name: vpp-config
+          configMap:
+            name: vpp-config
       tolerations:
-      - effect: NoSchedule
-        operator: Exists
+        - effect: NoSchedule
+          operator: Exists
 ```
 
 ### 3.2 CNI 配置
@@ -442,9 +442,7 @@ spec:
     "subnet": "10.244.0.0/16",
     "rangeStart": "10.244.1.100",
     "rangeEnd": "10.244.1.200",
-    "routes": [
-      {"dst": "0.0.0.0/0"}
-    ]
+    "routes": [{ "dst": "0.0.0.0/0" }]
   },
   "mtu": 9000,
   "pluginLogging": {
@@ -495,23 +493,23 @@ spec:
     spec:
       hostNetwork: true
       containers:
-      - name: vpp-lb
-        image: vpp:latest
-        securityContext:
-          capabilities:
-            add:
-            - NET_ADMIN
-            - SYS_ADMIN
-        env:
-        - name: VPP_LB_MODE
-          value: "l3dsr"
-        volumeMounts:
-        - name: config
-          mountPath: /etc/vpp
+        - name: vpp-lb
+          image: vpp:latest
+          securityContext:
+            capabilities:
+              add:
+                - NET_ADMIN
+                - SYS_ADMIN
+          env:
+            - name: VPP_LB_MODE
+              value: "l3dsr"
+          volumeMounts:
+            - name: config
+              mountPath: /etc/vpp
       volumes:
-      - name: config
-        configMap:
-          name: vpp-lb-config
+        - name: config
+          configMap:
+            name: vpp-lb-config
 ```
 
 ### 3.4 ServiceMesh 集成
@@ -533,16 +531,16 @@ spec:
         app: vpp-sidecar
     spec:
       containers:
-      - name: vpp-sidecar
-        image: vpp:latest
-        ports:
-        - containerPort: 15001  # Envoy redirect
-        - containerPort: 15006
-        env:
-        - name: VPP_SIDECAR_MODE
-          value: "istio"
-        - name: VPP_CONTROL_PLANE_PORT
-          value: "15005"
+        - name: vpp-sidecar
+          image: vpp:latest
+          ports:
+            - containerPort: 15001 # Envoy redirect
+            - containerPort: 15006
+          env:
+            - name: VPP_SIDECAR_MODE
+              value: "istio"
+            - name: VPP_CONTROL_PLANE_PORT
+              value: "15005"
 ```
 
 ## 4. Ansible 自动化
@@ -621,7 +619,7 @@ all:
       file:
         path: "{{ item }}"
         state: directory
-        mode: '0755'
+        mode: "0755"
       loop:
         - /etc/vpp
         - /run/vpp
@@ -631,7 +629,7 @@ all:
       template:
         src: templates/startup.conf.j2
         dest: /etc/vpp/startup.conf
-        mode: '0644'
+        mode: "0644"
       notify: restart vpp
 
     - name: Enable and start VPP

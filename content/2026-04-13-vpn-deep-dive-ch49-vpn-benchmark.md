@@ -5,8 +5,8 @@ tags: [vpn, series, benchmark, performance-testing, methodology, cpu-overhead, t
 description: "VPN 基准测试深度解析——性能测试方法论、吞吐量/延迟/抖动测试、CPU 开销对比、测试工具与自动化"
 ---
 
-> [!info] VPN 技术深度探索系列
-> 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+> [!info] VPN 技术深度探索系列 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-vpn-deep-dive-ch48-detection-defense|第四十八章：GFW 检测与防御]]
 > 2. **第四十九章：VPN 基准测试**
 > 3. [[2026-04-13-vpn-deep-dive-ch50-future-vpn|第五十章：VPN 未来趋势]]
@@ -500,21 +500,21 @@ NODES=(
 for node in "${NODES[@]}"; do
     IFS=':' read -r name ip location <<< "$node"
     echo "=== Testing $location ($name) ==="
-    
+
     # 延迟
     avg_rtt=$(ping -c 20 $ip | grep -oP 'rtt min/avg/max/mdev = [\d.]+/[\d.]+/[\d.]+/[\d.]+' | \
               awk -F'/' '{print $5}')
     echo "RTT (avg): $avg_rtt ms"
-    
+
     # 吞吐量
     throughput=$(iperf3 -c $ip -t 30 -f m -J 2>/dev/null | \
                  jq '.end.sum_sent.bits_per_second / 1000000')
     echo "Throughput: $throughput Mbps"
-    
+
     # 丢包率
     loss=$(ping -c 200 $ip | grep -oP '\d+(?=% packet loss)')
     echo "Packet Loss: $loss%"
-    
+
     echo ""
 done
 ```
@@ -564,60 +564,68 @@ done
 # VPN 性能基准测试报告
 
 ## 测试信息
+
 - **测试日期**: YYYY-MM-DD
-- **测试人员**: 
-- **VPN 版本**: 
-- **操作系统**: 
-- **内核版本**: 
+- **测试人员**:
+- **VPN 版本**:
+- **操作系统**:
+- **内核版本**:
 
 ## 测试环境
-| 组件 | 规格 |
-|------|------|
-| CPU | Intel Xeon Gold 6230 |
-| 内存 | 64GB DDR4 |
-| 网卡 | Intel X710 10GbE |
-| OS | Ubuntu 22.04 |
-| 内核 | 6.2.0 |
+
+| 组件 | 规格                 |
+| ---- | -------------------- |
+| CPU  | Intel Xeon Gold 6230 |
+| 内存 | 64GB DDR4            |
+| 网卡 | Intel X710 10GbE     |
+| OS   | Ubuntu 22.04         |
+| 内核 | 6.2.0                |
 
 ## 测试结果
 
 ### 1. 吞吐量
-| MTU | 下载 (Mbps) | 上传 (Mbps) | CPU % |
-|-----|-------------|-------------|-------|
-| 1400 | | | |
-| 1500 | | | |
+
+| MTU  | 下载 (Mbps) | 上传 (Mbps) | CPU % |
+| ---- | ----------- | ----------- | ----- |
+| 1400 |             |             |       |
+| 1500 |             |             |       |
 
 ### 2. 延迟
-| 指标 | 数值 |
-|------|------|
-| 平均 RTT | ms |
-| P50 RTT | ms |
-| P95 RTT | ms |
-| P99 RTT | ms |
-| 抖动 | ms |
+
+| 指标     | 数值 |
+| -------- | ---- |
+| 平均 RTT | ms   |
+| P50 RTT  | ms   |
+| P95 RTT  | ms   |
+| P99 RTT  | ms   |
+| 抖动     | ms   |
 
 ### 3. 丢包率
-| 负载 | 丢包率 |
-|------|--------|
-| 空闲 | % |
-| 1 Gbps | % |
-| 5 Gbps | % |
+
+| 负载   | 丢包率 |
+| ------ | ------ |
+| 空闲   | %      |
+| 1 Gbps | %      |
+| 5 Gbps | %      |
 
 ### 4. CPU 开销
-| 指标 | 数值 |
-|------|------|
-| 单连接 CPU | 核 |
-| 8 连接 CPU | 核 |
-| 每 Gbps CPU | 核 |
+
+| 指标        | 数值 |
+| ----------- | ---- |
+| 单连接 CPU  | 核   |
+| 8 连接 CPU  | 核   |
+| 每 Gbps CPU | 核   |
 
 ## 结论
+
 - [ ] 性能符合预期
 - [ ] 无明显瓶颈
 - [ ] 稳定性测试通过
 
 ## 问题与建议
-1. 
-2. 
+
+1.
+2.
 ```
 
 ---
@@ -638,6 +646,7 @@ VPN 基准测试关键要点：
 ---
 
 > [!tip] 延伸阅读
+>
 > - iperf3 官方文档：https://iperf.fr/
 > - Linux 网络基准测试：Documentation/networking/scaling.rst
 > - WireGuard 性能数据：https://www.wireguard.com/performance/

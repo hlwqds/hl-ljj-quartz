@@ -9,8 +9,8 @@ tags:
   - evolution
 ---
 
-> [!info] eBPF 2026 深度探索系列
-> 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+> [!info] eBPF 2026 深度探索系列 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+>
 > 1. [[2026-04-08-ebpf-deep-dive-ch1-registers-and-instructions|第一章：寄存器与指令集]]
 > 2. [[2026-04-08-ebpf-deep-dive-ch1-5-function-calls|第一.五章：四种函数调用与动态内存]]
 > 3. [[2026-04-08-ebpf-deep-dive-ch1-6-the-verifier|第一.六章：验证器 (Verifier) 的底层逻辑]]
@@ -62,6 +62,7 @@ tags:
 > 49. [[2026-04-09-ebpf-deep-dive-ch40-network-protocols-deep-dive|第四十章：网络协议深度解析——TCP/UDP/QUIC 的 eBPF 视角]]
 > 50. [[2026-04-09-ebpf-deep-dive-ch41-memory-safety-and-vulnerabilities|第四十一章：eBPF 内存安全与漏洞分析]]
 > 51. [[2026-04-09-ebpf-deep-dive-ch42-service-mesh-integration|第四十二章：eBPF 与 Service Mesh 深度集成]]
+
 ---
 
 ## 1. 概述：从"封闭"向"开放"的转变
@@ -78,14 +79,14 @@ kfuncs 是内核函数 (Kernel Functions) 的缩写，是一套允许 eBPF 程�
 
 ### 1.2 历史演进
 
-| 阶段 | 时间 | 关键事件 |
-|------|------|----------|
-| Helper 时代 | 2014-2020 | 所有 eBPF 程序只能通过 `call helper_id` 调用预注册函数 |
-| kfuncs 引入 | 5.11 (2021) | 首次支持通过 BTF 调用内核函数，最初仅限 tracing 类程序 |
-| 引用计数支持 | 5.12-5.14 | 引入 `KF_ACQUIRE`/`KF_RELEASE` 标志，支持引用计数安全 |
-| 模块级 kfunc | 5.17 (2022) | 允许内核模块注册 kfunc，彻底打破核心内核限制 |
-| 完善与普及 | 5.19-6.x | 支持更多程序类型、弱链接 (Weak Linking)、sleepable kfunc |
-| 成熟期 | 6.8+ (2024-2026) | kfuncs 成为新内核功能的默认暴露方式，数量超过 300 个 |
+| 阶段         | 时间             | 关键事件                                                 |
+| ------------ | ---------------- | -------------------------------------------------------- |
+| Helper 时代  | 2014-2020        | 所有 eBPF 程序只能通过 `call helper_id` 调用预注册函数   |
+| kfuncs 引入  | 5.11 (2021)      | 首次支持通过 BTF 调用内核函数，最初仅限 tracing 类程序   |
+| 引用计数支持 | 5.12-5.14        | 引入 `KF_ACQUIRE`/`KF_RELEASE` 标志，支持引用计数安全    |
+| 模块级 kfunc | 5.17 (2022)      | 允许内核模块注册 kfunc，彻底打破核心内核限制             |
+| 完善与普及   | 5.19-6.x         | 支持更多程序类型、弱链接 (Weak Linking)、sleepable kfunc |
+| 成熟期       | 6.8+ (2024-2026) | kfuncs 成为新内核功能的默认暴露方式，数量超过 300 个     |
 
 ---
 
@@ -95,20 +96,21 @@ kfuncs 是内核函数 (Kernel Functions) 的缩写，是一套允许 eBPF 程�
 
 ### 2.1 核心差异总览
 
-| 维度 | BPF Helpers | kfuncs |
-|------|-------------|--------|
-| **标识方式** | 整数 ID（如 `BPF_FUNC_map_lookup_elem = 1`） | BTF 符号名（如 `bpf_get_file_by_fd`） |
-| **注册位置** | 硬编码在 `kernel/bpf/helpers.c` 等核心文件中 | 可注册在任意内核源文件或内核模块中 |
-| **类型安全** | 仅在运行时检查参数类型 | 通过 BTF 在加载时进行完整的类型校验 |
-| **扩展方式** | 修改内核源码，提交上游补丁 | 编写独立模块，使用 `register_btf_kfunc_id_set()` |
-| **跨版本兼容** | 依赖 Helper ID 稳定性，通常向后兼容 | 依赖 BTF 类型定义，通过弱链接实现版本适配 |
-| **调用开销** | 通过 Helper 调用表间接跳转 | JIT 直接生成原生 `call` 指令 |
-| **语义标注** | 无（Helper 行为由 ID 隐式决定） | 通过 `KF_*` 标志显式声明行为语义 |
-| **适用程序类型** | 大多数程序类型 | 逐步扩展，tracing/LSM 已全面支持 |
+| 维度             | BPF Helpers                                  | kfuncs                                           |
+| ---------------- | -------------------------------------------- | ------------------------------------------------ |
+| **标识方式**     | 整数 ID（如 `BPF_FUNC_map_lookup_elem = 1`） | BTF 符号名（如 `bpf_get_file_by_fd`）            |
+| **注册位置**     | 硬编码在 `kernel/bpf/helpers.c` 等核心文件中 | 可注册在任意内核源文件或内核模块中               |
+| **类型安全**     | 仅在运行时检查参数类型                       | 通过 BTF 在加载时进行完整的类型校验              |
+| **扩展方式**     | 修改内核源码，提交上游补丁                   | 编写独立模块，使用 `register_btf_kfunc_id_set()` |
+| **跨版本兼容**   | 依赖 Helper ID 稳定性，通常向后兼容          | 依赖 BTF 类型定义，通过弱链接实现版本适配        |
+| **调用开销**     | 通过 Helper 调用表间接跳转                   | JIT 直接生成原生 `call` 指令                     |
+| **语义标注**     | 无（Helper 行为由 ID 隐式决定）              | 通过 `KF_*` 标志显式声明行为语义                 |
+| **适用程序类型** | 大多数程序类型                               | 逐步扩展，tracing/LSM 已全面支持                 |
 
 ### 2.2 调用路径对比
 
 **Helper 调用路径：**
+
 ```
 eBPF 指令: call <helper_id>
   -> 解释器/JIT 查找 helper 调用表
@@ -118,6 +120,7 @@ eBPF 指令: call <helper_id>
 ```
 
 **kfunc 调用路径：**
+
 ```
 eBPF 指令: call <kfunc_address>
   -> 直接跳转到内核函数
@@ -171,7 +174,7 @@ __bpf_kfunc struct task_struct *bpf_task_acquire(struct task_struct *p);
 
 ---
 
-## 4. kfunc 注册机制：KF_* 标志详解
+## 4. kfunc 注册机制：KF\_\* 标志详解
 
 一个普通的内核函数并不会自动成为 kfunc。其注册过程涉及内核侧的显式导出与加载侧的动态绑定。理解 `KF_*` 标志是掌握 kfuncs 的关键。
 
@@ -188,6 +191,7 @@ BTF_ID_FLAGS(func, bpf_task_acquire, KF_ACQUIRE | KF_RET_NULL | KF_TRUSTED_ARGS)
 ```
 
 关键语义：
+
 - 返回的指针拥有一个引用计数
 - 如果 kfunc 同时标记了 `KF_RET_NULL`，验证器要求调用者检查返回值是否为 NULL
 - 该指针可以被存储到 Map 中（通过 kptr）或传递给其他 kfunc
@@ -205,6 +209,7 @@ BTF_ID_FLAGS(func, bpf_task_release, KF_RELEASE)
 ```
 
 关键语义：
+
 - 验证器会追踪所有通过 `KF_ACQUIRE` 获取的指针
 - 如果程序退出时仍有未释放的引用，验证器将拒绝加载
 - 防止引用计数泄漏，这是内核中最常见的 bug 类型之一
@@ -222,6 +227,7 @@ BTF_ID_FLAGS(func, bpf_task_from_pid, KF_ACQUIRE | KF_RET_NULL | KF_TRUSTED_ARGS
 ```
 
 验证器行为：
+
 ```c
 struct task_struct *task = bpf_task_from_pid(target_pid);
 // 验证器在此插入分支约束：task 必须经过 NULL 检查
@@ -236,6 +242,7 @@ bpf_task_release(task);  // 必须释放
 ### 4.4 KF_TRUSTED_ARGS：信任参数来源
 
 `KF_TRUSTED_ARGS` 表示 kfunc 期望其参数来自受信任的来源。这通常意味着参数必须是：
+
 - 来自另一个 kfunc 的返回值（如 `KF_ACQUIRE` 返回的指针）
 - 来自 Map 中的 kptr
 - 来自程序上下文（如 tracepoint 参数）
@@ -244,12 +251,12 @@ bpf_task_release(task);  // 必须释放
 
 ### 4.5 其他重要标志
 
-| 标志 | 含义 | 使用场景 |
-|------|------|----------|
-| `KF_RCU` | 函数必须在 RCU 读锁定保护下调用 | 访问 RCU 保护的数据结构 |
-| `KF_SLEEPABLE` | 函数可能睡眠，仅在 sleepable BPF 程序中可用 | 需要获取互斥锁、分配内存等 |
-| `KF_DESTRUCTIVE` | 函数可能修改系统状态（如关闭文件） | LSM 钩子中的安全决策函数 |
-| `KF_ITER_NEW` / `KF_ITER_NEXT` / `KF_ITER_DESTROY` | 标记迭代器 kfunc 的三阶段 | BPF Iterator 的 begin/next/end |
+| 标志                                               | 含义                                        | 使用场景                       |
+| -------------------------------------------------- | ------------------------------------------- | ------------------------------ |
+| `KF_RCU`                                           | 函数必须在 RCU 读锁定保护下调用             | 访问 RCU 保护的数据结构        |
+| `KF_SLEEPABLE`                                     | 函数可能睡眠，仅在 sleepable BPF 程序中可用 | 需要获取互斥锁、分配内存等     |
+| `KF_DESTRUCTIVE`                                   | 函数可能修改系统状态（如关闭文件）          | LSM 钩子中的安全决策函数       |
+| `KF_ITER_NEW` / `KF_ITER_NEXT` / `KF_ITER_DESTROY` | 标记迭代器 kfunc 的三阶段                   | BPF Iterator 的 begin/next/end |
 
 ### 4.6 标志组合示例
 
@@ -278,7 +285,7 @@ BTF_ID_FLAGS(func, bpf_obj_new_impl, KF_ACQUIRE | KF_RET_NULL | KF_SLEEPABLE)
 
 理解 kfunc 的完整调用链路是掌握其工作原理的关键。我们分阶段来看整个过程。
 
-### 5.1 编译时：__ksym 声明
+### 5.1 编译时：\_\_ksym 声明
 
 在 BPF 程序中，开发者使用 `extern` 关键字配合 `__ksym` 属性声明目标函数：
 
@@ -291,6 +298,7 @@ extern void bpf_task_release(struct task_struct *p) __ksym;
 ```
 
 编译器在看到 `__ksym` 属性时，会：
+
 1. 在 `.ksyms` 段中创建一个符号引用条目
 2. 在目标 BPF 指令中生成一个 `call` 指令，目标地址暂填 0
 3. 将类型信息记录到 BTF 中，供后续重定位使用
@@ -511,6 +519,7 @@ kfunc 与 Helper 函数在工程上最大的区别在于：**Helper 必须静态
 ### 9.1 模块化开发的优势
 
 在 2026 年，如果你需要一个内核尚未提供的特殊功能（如自定义协议解析、硬件加速接口）：
+
 1. **无需修改内核主线**：你可以编写一个独立的驱动模块，利用 `register_btf_kfunc_id_set()` 在初始化时注册自定义函数。
 2. **热插拔支持**：加载模块，eBPF 程序即可调用新函数；卸载 BPF 程序后，模块亦可安全卸载。内核会自动管理两者之间的引用计数，防止 Use-After-Free。
 
@@ -769,29 +778,37 @@ int BPF_PROG(read_obj)
 ### 11.1 常见错误及解决方案
 
 **错误 1：kfunc 未找到**
+
 ```
 libbpf: failed to find BTF for extern kfunc 'bpf_calc_magic_number' [#0]
 ```
+
 原因：内核或模块未加载，或 kfunc 未注册到当前程序类型。检查模块是否已 `insmod`，以及注册的程序类型是否匹配。
 
 **错误 2：类型不匹配**
+
 ```
 verifier error: kfunc '#0' (bpf_calc_magic_number) arg#0 expected
   'PTR_TO_CTX' but got 'SCALAR_VALUE'
 ```
+
 原因：传递给 kfunc 的参数类型与 BTF 定义不一致。检查函数声明是否与内核源码完全匹配。
 
 **错误 3：引用泄漏**
+
 ```
 verifier error: Unreleased reference id=4
 ```
+
 原因：通过 `KF_ACQUIRE` 获取的资源未在所有路径上通过 `KF_RELEASE` 释放。检查所有分支是否都正确释放了资源。
 
 **错误 4：不受信任的参数**
+
 ```
 verifier error: kfunc '#0' (bpf_task_release) requires trusted_args but arg#0
   is not a trusted pointer
 ```
+
 原因：传递给标记了 `KF_TRUSTED_ARGS` 的 kfunc 的参数来源不受信任。确保参数来自另一个 kfunc 的返回值、Map kptr 或程序上下文。
 
 ### 11.2 调试工具
@@ -844,6 +861,7 @@ bpftool prog dump xlated id <prog_id>
 ### Q5: 如何判断我的内核是否支持某个特定的 kfunc？
 
 有三种方法：
+
 1. **检查内核源码**：在内核源码中搜索 `BTF_ID_FLAGS(func, <kfunc_name>` 或使用 `grep -r "__bpf_kfunc" kernel/`
 2. **使用 bpftool**：`bpftool btf dump file /sys/kernel/btf/vmlinux format c | grep <kfunc_name>`
 3. **编程检测**：在 BPF 程序中使用 `__weak` 声明 kfunc，通过检查返回值是否为 NULL 来判断是否可用（推荐，可实现运行时自适应）

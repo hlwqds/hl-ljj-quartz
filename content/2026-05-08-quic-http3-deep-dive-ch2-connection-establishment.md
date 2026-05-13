@@ -1,7 +1,25 @@
 ---
 title: QUIC & HTTP/3 深度探索 Ch2：连接建立与握手机制
 date: 2026-05-08 09:00:00
-tags: [QUIC, TLS 1.3, Handshake, Connection Establishment, Initial Packet, Handshake Packet, Crypto Frame, Key Derivation, 1-RTT, Certificate, Certificate Verify, Handshake States, TLS Messages, AEAD, QUIC Version, Retry]
+tags:
+  [
+    QUIC,
+    TLS 1.3,
+    Handshake,
+    Connection Establishment,
+    Initial Packet,
+    Handshake Packet,
+    Crypto Frame,
+    Key Derivation,
+    1-RTT,
+    Certificate,
+    Certificate Verify,
+    Handshake States,
+    TLS Messages,
+    AEAD,
+    QUIC Version,
+    Retry,
+  ]
 description: QUIC & HTTP/3 深度探索 Ch2：QUIC 连接建立详细流程、TLS 1.3 与 QUIC 集成、密钥导出机制、握手状态机、1-RTT 与 0-RTT 详细解析。
 ---
 

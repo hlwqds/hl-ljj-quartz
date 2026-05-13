@@ -1,7 +1,7 @@
 ---
 title: "RDMA 第十六章：PFC 流控——构建无损以太网"
 date: 2026-04-13
-tags: [rdma, roce, pfc, priority-flow-control,无损网络, pause-frame, ethernet, dcb]
+tags: [rdma, roce, pfc, priority-flow-control, 无损网络, pause-frame, ethernet, dcb]
 description: "详解 Priority Flow Control (PFC) 机制：IEEE 802.1Qbb 链路层流控、Priority 定义、Pause 帧格式、DCBX 协商、无损网络配置最佳实践。"
 ---
 
@@ -456,13 +456,13 @@ Pause Time 优化原则：
 
 ### 6.2 常见问题与解决
 
-| 问题 | 原因 | 解决方案 |
-|------|------|----------|
-| PFC 不生效 | DCBX 协商失败 | 检查两端 DCBX 模式是否匹配 |
-| 网络丢包 | PFC 未覆盖所有链路 | 确认所有交换机端口都启用了 PFC |
-| 链路利用率低 | Pause Time 过短 | 增加 pause_time 值 |
-| Pause Storm | PFC 过度触发 | 调整阈值或启用 ECN 替代部分 PFC |
-| 死锁 | PFC 配置错误导致环路 | 正确配置 PFC + 检查 STP |
+| 问题         | 原因                 | 解决方案                        |
+| ------------ | -------------------- | ------------------------------- |
+| PFC 不生效   | DCBX 协商失败        | 检查两端 DCBX 模式是否匹配      |
+| 网络丢包     | PFC 未覆盖所有链路   | 确认所有交换机端口都启用了 PFC  |
+| 链路利用率低 | Pause Time 过短      | 增加 pause_time 值              |
+| Pause Storm  | PFC 过度触发         | 调整阈值或启用 ECN 替代部分 PFC |
+| 死锁         | PFC 配置错误导致环路 | 正确配置 PFC + 检查 STP         |
 
 ### 6.3 验证 PFC 配置
 
@@ -533,11 +533,13 @@ HoL Blocking：
 ### 7.3 PFC 与 RoCE v2 的演进
 
 随着 ECN（下一章内容）成熟，部分场景开始用 ECN 替代 PFC：
+
 - ECN 是端到端的（而非逐跳）
 - 不需要 Pause 帧，避免 Pause Storm
 - 但 ECN 需要网络设备支持 ECN 标记
 
 现代 RoCE 配置通常采用 **ECN + PFC** 混合模式：
+
 - ECN 处理轻度拥塞（端到端）
 - PFC 处理极端拥塞（最后手段）
 

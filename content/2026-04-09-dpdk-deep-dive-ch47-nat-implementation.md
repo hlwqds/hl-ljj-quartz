@@ -14,12 +14,12 @@ description: "深入解析基于 DPDK 的 NAT 实现：NAPT、CGNAT、NAT444 架
 
 ### 1.1 NAT 类型
 
-| 类型 | 说明 | 应用 |
-|------|------|------|
-| **Basic NAT** | 1:1 IP 映射 | 少量公网 IP 分配 |
-| **NAPT** | Network Address Port Translation (PAT) | 多个用户共享公网 IP |
-| **CGNAT** | Carrier-Grade NAT | 运营商级别大规模 NAT |
-| **NAT444** | 两级 NAT (用户 + 运营商) | 解决最后一段 IPv4 |
+| 类型          | 说明                                   | 应用                 |
+| ------------- | -------------------------------------- | -------------------- |
+| **Basic NAT** | 1:1 IP 映射                            | 少量公网 IP 分配     |
+| **NAPT**      | Network Address Port Translation (PAT) | 多个用户共享公网 IP  |
+| **CGNAT**     | Carrier-Grade NAT                      | 运营商级别大规模 NAT |
+| **NAT444**    | 两级 NAT (用户 + 运营商)               | 解决最后一段 IPv4    |
 
 ### 1.2 IPv4 地址紧缺
 
@@ -363,13 +363,13 @@ cleanup_expired_sessions(void *arg)
 
 ### 5.1 常见 ALG 需求
 
-| 协议 | 挑战 | NAT 处理 |
-|------|------|----------|
-| **FTP** | IP 在 PORT 命令中 | ALG 修改 IP |
-| **H.323** | 动态端口 | ALG 打开端口 |
-| **SIP** | IP/Port 在 SDP 中 | ALG 修改 SDP |
-| **RTSP** | 端口在 DESCRIBE 中 | ALG 修改 |
-| **P2P** | 打洞 | STUN/TURN |
+| 协议      | 挑战               | NAT 处理     |
+| --------- | ------------------ | ------------ |
+| **FTP**   | IP 在 PORT 命令中  | ALG 修改 IP  |
+| **H.323** | 动态端口           | ALG 打开端口 |
+| **SIP**   | IP/Port 在 SDP 中  | ALG 修改 SDP |
+| **RTSP**  | 端口在 DESCRIBE 中 | ALG 修改     |
+| **P2P**   | 打洞               | STUN/TURN    |
 
 ### 5.2 FTP ALG
 

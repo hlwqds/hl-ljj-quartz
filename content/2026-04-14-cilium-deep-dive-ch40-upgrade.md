@@ -10,14 +10,8 @@ tags:
   - kubernetes
 ---
 
-> [!info] Cilium 2026 深度探索系列
-> 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
-> ...
-> 38. [[2026-04-14-cilium-deep-dive-ch38-sockmap|第三十八章：Sockmap]]
-> 39. [[2026-04-14-cilium-deep-dive-ch39-install|第三十九章：生产级安装指南]]
-> 40. **第四十章：升级策略与最佳实践** ←
-> 41. [[2026-04-14-cilium-deep-dive-ch41-debug|第四十一章：故障诊断]]
-> 42. [[2026-04-14-cilium-deep-dive-ch42-performance|第四十二章：性能调优]]
+> [!info] Cilium 2026 深度探索系列 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+> ... 38. [[2026-04-14-cilium-deep-dive-ch38-sockmap|第三十八章：Sockmap]] 39. [[2026-04-14-cilium-deep-dive-ch39-install|第三十九章：生产级安装指南]] 40. **第四十章：升级策略与最佳实践** ← 41. [[2026-04-14-cilium-deep-dive-ch41-debug|第四十一章：故障诊断]] 42. [[2026-04-14-cilium-deep-dive-ch42-performance|第四十二章：性能调优]]
 
 ---
 
@@ -58,11 +52,11 @@ Cilium 采用**原地升级**模式，Agent 和 Operator 可以滚动更新而�
 
 ### 1.1 版本支持策略
 
-| 版本类型 | 支持周期 | 说明 |
-|:---|:---|:---|
-| **LTS (Long Term Support)** | 2 年 | 1.14.x, 1.15.x 等 |
-| **Stable** | 6 个月 | 最新 stable 版本 |
-| **Main** | 开发版 | 不推荐生产使用 |
+| 版本类型                    | 支持周期 | 说明              |
+| :-------------------------- | :------- | :---------------- |
+| **LTS (Long Term Support)** | 2 年     | 1.14.x, 1.15.x 等 |
+| **Stable**                  | 6 个月   | 最新 stable 版本  |
+| **Main**                    | 开发版   | 不推荐生产使用    |
 
 ```
 推荐升级路径:
@@ -73,11 +67,11 @@ Cilium 采用**原地升级**模式，Agent 和 Operator 可以滚动更新而�
 
 ### 1.2 升级风险评估
 
-| 风险级别 | 影响 | 缓解措施 |
-|:---|:---|:---|
-| **低** | 功能更新 | 自动测试验证 |
-| **中** | 配置变更 | ConfigMap 渐进更新 |
-| **高** | 数据面变更 | 预留维护窗口 |
+| 风险级别 | 影响       | 缓解措施           |
+| :------- | :--------- | :----------------- |
+| **低**   | 功能更新   | 自动测试验证       |
+| **中**   | 配置变更   | ConfigMap 渐进更新 |
+| **高**   | 数据面变更 | 预留维护窗口       |
 
 ---
 
@@ -196,8 +190,8 @@ spec:
   updateStrategy:
     type: RollingUpdate
     rollingUpdate:
-      maxUnavailable: 1  # 每次最多不可用 1 个节点
-      maxSurge: 1        # 允许最多超出 1 个节点
+      maxUnavailable: 1 # 每次最多不可用 1 个节点
+      maxSurge: 1 # 允许最多超出 1 个节点
 ```
 
 ```
@@ -277,12 +271,12 @@ helm upgrade cilium cilium/cilium \
 
 某些配置变更需要特殊处理：
 
-| 配置项 | 变更类型 | 处理方式 |
-|:---|:---|:---|
-| `bpf.hostRouting` | 可能破坏 | 升级完成后手动启用 |
-| `kubeProxyReplacement` | 破坏性 | 预留维护窗口 |
-| `ipam.mode` | 破坏性 | 不支持在线变更 |
-| `encryption.type` | 破坏性 | 预留维护窗口 |
+| 配置项                 | 变更类型 | 处理方式           |
+| :--------------------- | :------- | :----------------- |
+| `bpf.hostRouting`      | 可能破坏 | 升级完成后手动启用 |
+| `kubeProxyReplacement` | 破坏性   | 预留维护窗口       |
+| `ipam.mode`            | 破坏性   | 不支持在线变更     |
+| `encryption.type`      | 破坏性   | 预留维护窗口       |
 
 ```bash
 # 检查是否有破坏性变更
@@ -318,12 +312,12 @@ kubectl get ciliumendpoints -A -o yaml > ciliumendpoints-backup.yaml
 
 以下情况需要数据面（eBPF 程序）重启：
 
-| 场景 | 影响 | 处理 |
-|:---|:---|:---|
-| 内核版本升级 | 必须重启 Agent | 节点 Drain |
-| eBPF Map 结构调整 | 必须重启 Agent | 滚动更新 |
-| 底层内核 bug | 必须重启 Agent | 紧急修复 |
-| 配置变更 `bpf.*` | 通常热更新 | 特殊情况需重启 |
+| 场景              | 影响           | 处理           |
+| :---------------- | :------------- | :------------- |
+| 内核版本升级      | 必须重启 Agent | 节点 Drain     |
+| eBPF Map 结构调整 | 必须重启 Agent | 滚动更新       |
+| 底层内核 bug      | 必须重启 Agent | 紧急修复       |
+| 配置变更 `bpf.*`  | 通常热更新     | 特殊情况需重启 |
 
 ### 5.2 平滑重启流程
 
@@ -463,12 +457,12 @@ cilium metrics export | grep cilium_
 
 Cilium 1.15 新特性：
 
-| 特性 | 说明 | 启用方式 |
-|:---|:---|:---|
-| **Bandwidth Manager EDT** | 更好的限速 | `bandwidth-manager.edt=true` |
-| **bpf.clockProbe** | 跨时区兼容性 | 自动启用 |
-| **Hubble Flow Logs** | 改进的日志 | `--set hubble.flowLog.enabled=true` |
-| **L7 DNS Policy** | 增强 DNS 策略 | CRD 自动创建 |
+| 特性                      | 说明          | 启用方式                            |
+| :------------------------ | :------------ | :---------------------------------- |
+| **Bandwidth Manager EDT** | 更好的限速    | `bandwidth-manager.edt=true`        |
+| **bpf.clockProbe**        | 跨时区兼容性  | 自动启用                            |
+| **Hubble Flow Logs**      | 改进的日志    | `--set hubble.flowLog.enabled=true` |
+| **L7 DNS Policy**         | 增强 DNS 策略 | CRD 自动创建                        |
 
 ### 8.2 配置清理
 
@@ -486,12 +480,12 @@ helm template cilium/cilium --show-only templates/configmap.yaml | grep -E "^[^-
 
 ### 9.1 升级失败排查
 
-| 问题 | 原因 | 解决方案 |
-|:---|:---|:---|
-| Agent 启动失败 | 内核不支持新 eBPF 程序 | 降级或升级内核 |
-| Operator 无法启动 | RBAC 变更 | 重新应用 ClusterRole |
-| etcd 写入失败 | 版本不兼容 | 使用新版本 etcdctl |
-| 连接中断 | 数据面重启 | 正常现象，验证恢复 |
+| 问题              | 原因                   | 解决方案             |
+| :---------------- | :--------------------- | :------------------- |
+| Agent 启动失败    | 内核不支持新 eBPF 程序 | 降级或升级内核       |
+| Operator 无法启动 | RBAC 变更              | 重新应用 ClusterRole |
+| etcd 写入失败     | 版本不兼容             | 使用新版本 etcdctl   |
+| 连接中断          | 数据面重启             | 正常现象，验证恢复   |
 
 ### 9.2 性能下降
 
@@ -510,12 +504,12 @@ ip link | grep cilium
 
 ## 10. 升级时间估算
 
-| 集群规模 | 升级时间 | 说明 |
-|:---|:---|:---|
-| < 10 节点 | 5-10 分钟 | 快速滚动更新 |
-| 10-50 节点 | 15-30 分钟 | 标准滚动更新 |
+| 集群规模    | 升级时间   | 说明         |
+| :---------- | :--------- | :----------- |
+| < 10 节点   | 5-10 分钟  | 快速滚动更新 |
+| 10-50 节点  | 15-30 分钟 | 标准滚动更新 |
 | 50-200 节点 | 30-60 分钟 | 批量滚动更新 |
-| > 200 节点 | 60+ 分钟 | 分批升级 |
+| > 200 节点  | 60+ 分钟   | 分批升级     |
 
 ---
 

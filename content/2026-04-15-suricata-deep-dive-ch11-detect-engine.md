@@ -12,8 +12,8 @@ tags:
 description: "深入解析 Suricata 检测引擎的架构设计：Detect 工作流程、SigGroupBuild 规则编译、MPM 多模式匹配流水线、以及 Detection Thread 调度机制"
 ---
 
-> [!info] Suricata 2026 深度探索系列
-> 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Suricata 2026 深度探索系列 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-15-suricata-deep-dive-ch1-overview|第一章：Suricata 概述]]
 > 2. [[2026-04-15-suricata-deep-dive-ch2-config|第二章：Suricata 配置系统]]
 > 3. [[2026-04-15-suricata-deep-dive-ch3-runmodes|第三章：Runmodes 运行模式]]
@@ -728,22 +728,22 @@ void DetectEngineThreadCtxFree(DetectEngineThreadCtx *det_ctx)
 # suricata.yaml
 detect:
   # 检测引擎配置
-  profile: medium                 # 签名匹配配置文件
+  profile: medium # 签名匹配配置文件
 
   # MPM 默认模式
   mpm:
-    algo: auto                   # 自动选择 AC/Bm/Hyperscan
+    algo: auto # 自动选择 AC/Bm/Hyperscan
 
   # 签名匹配
   sig-match:
-    compile-limit: 1000          # 每签名编译限制
+    compile-limit: 1000 # 每签名编译限制
 
   # 流重组
   stream:
-    depth: 1MB                   # 流重组深度
+    depth: 1MB # 流重组深度
     reassembly:
-      depth: 1MB                 # 重组深度
-      alignment: 4               # 内存对齐
+      depth: 1MB # 重组深度
+      alignment: 4 # 内存对齐
 
   # AppLayer 检测
   applog:
@@ -751,7 +751,7 @@ detect:
     type: http
 
   # 检测线程数
-  threads: auto                  # auto 或具体数字
+  threads: auto # auto 或具体数字
 ```
 
 ### 7.2 profile 配置
@@ -759,12 +759,12 @@ detect:
 ```yaml
 # suricata.yaml — 不同 profile 的配置
 detect:
-  profile: high                  # 或 medium/low/custom
+  profile: high # 或 medium/low/custom
 
   # custom profile 示例
   custom:
     # MPM 算法
-    mpm-algo: ac                # ac/bm/hs（Hyperscan）
+    mpm-algo: ac # ac/bm/hs（Hyperscan）
 
     # 签名匹配缓冲大小
     sig-buffer-size: 32768

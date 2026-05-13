@@ -1,7 +1,20 @@
 ---
 title: io_uring × NVMe 深度探索 Ch6：混合架构实战
 date: 2026-04-24 09:00:00
-tags: [io_uring, NVMe, Hybrid Architecture, SPDK, io_uring-cp, Network Storage, Local Storage,实战, Design, Production, Case Study]
+tags:
+  [
+    io_uring,
+    NVMe,
+    Hybrid Architecture,
+    SPDK,
+    io_uring-cp,
+    Network Storage,
+    Local Storage,
+    实战,
+    Design,
+    Production,
+    Case Study,
+  ]
 description: 综合实战：设计高性能混合存储系统，集成 io_uring NVMe/TCP 网络存储、SPDK 本地高速存储、ZNS SSD 分层、以及统一抽象层设计。
 ---
 
@@ -1313,7 +1326,7 @@ CMD ["./start.sh"]
 ```yaml
 # docker-compose.yml — 生产部署
 
-version: '3.8'
+version: "3.8"
 services:
   hybrid-storage:
     image: hybrid-storage:latest
@@ -1355,7 +1368,7 @@ metadata:
 provisioner: hybrid-storage.io
 parameters:
   # 存储类型选择
-  type: "spdk"           # spdk / zns / nvme-tcp
+  type: "spdk" # spdk / zns / nvme-tcp
   # 设备路径
   device: "/dev/nvme0n1"
   # QoS 参数

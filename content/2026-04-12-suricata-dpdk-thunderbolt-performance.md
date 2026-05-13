@@ -19,14 +19,14 @@ description: 在 Thunderbolt 拓展坞 + Mellanox 25GbE 环境下编译和测试
 
 ### 环境
 
-| 项目 | 值 |
-|------|-----|
-| Suricata | 9.0.0-dev（源码编译），启用 DPDK 支持 |
-| DPDK | 24.11.4，已通过 trust_tb 解决 Thunderbolt DMA 限制 |
-| 网卡 | Mellanox ConnectX-4 Lx MCX4121A（双口 25GbE） |
-| 连接 | SFP28 DAC 直连铜缆 |
-| 系统 | Fedora 43，内核 6.19.11 |
-| CPU | Intel Meteor Lake，6P+8E（CPU 0-13 大核 5.4GHz，CPU 14-15 小核 2.5GHz） |
+| 项目     | 值                                                                      |
+| -------- | ----------------------------------------------------------------------- |
+| Suricata | 9.0.0-dev（源码编译），启用 DPDK 支持                                   |
+| DPDK     | 24.11.4，已通过 trust_tb 解决 Thunderbolt DMA 限制                      |
+| 网卡     | Mellanox ConnectX-4 Lx MCX4121A（双口 25GbE）                           |
+| 连接     | SFP28 DAC 直连铜缆                                                      |
+| 系统     | Fedora 43，内核 6.19.11                                                 |
+| CPU      | Intel Meteor Lake，6P+8E（CPU 0-13 大核 5.4GHz，CPU 14-15 小核 2.5GHz） |
 
 ## 编译
 
@@ -71,16 +71,16 @@ cargo install cbindgen
 
 > **Rust 版本说明：** Suricata `Cargo.toml` 要求最低 `rust-version = "1.75.0"`，但未锁定上限。实测 rustc 1.94.1 编译 `suricata` crate 单核超过 10 分钟，而 1.89.0 只需约 1 分钟，差距巨大。建议使用 1.89.0。详见 [Rust LTO 原理与影响](/2026-04-13-rust-lto-principle-and-impact)。
 
-| 包 | 用途 |
-|----|------|
-| libbsd-devel | `strlcpy` 等 BSD 兼容函数 |
-| pcre2-devel | 正则表达式引擎（规则匹配） |
-| jansson-devel | JSON 解析（EVE 日志输出） |
-| librdkafka-devel | Kafka 输出支持 |
-| libbpf-devel | eBPF 支持 |
-| libcap-ng-devel | 权限降级 |
+| 包                | 用途                                 |
+| ----------------- | ------------------------------------ |
+| libbsd-devel      | `strlcpy` 等 BSD 兼容函数            |
+| pcre2-devel       | 正则表达式引擎（规则匹配）           |
+| jansson-devel     | JSON 解析（EVE 日志输出）            |
+| librdkafka-devel  | Kafka 输出支持                       |
+| libbpf-devel      | eBPF 支持                            |
+| libcap-ng-devel   | 权限降级                             |
 | cbindgen（cargo） | 生成 `rust-bindings.h`（C-Rust FFI） |
-| rust/cargo | Rust 组件编译（app-layer 等） |
+| rust/cargo        | Rust 组件编译（app-layer 等）        |
 
 ### 配置
 
@@ -95,6 +95,7 @@ CFLAGS="-I/usr/include/librdkafka" \
 ```
 
 > **说明：**
+>
 > - `PKG_CONFIG_PATH`：DPDK 本地编译时，`meson-uninstalled/libdpdk-uninstalled.pc` 包含正确的头文件和库路径，`meson-private/libdpdk.pc` 指向 `/usr/local/include`（头文件不在那里）
 > - `CFLAGS="-I/usr/include/librdkafka"`：Fedora 的 `librdkafka-devel` 将头文件安装在 `/usr/include/librdkafka/rdkafka.h`，而 Suricata 搜索 `<rdkafka.h>`（无子目录），configure 检测头文件失败但库链接成功，实际编译时找不到
 
@@ -196,9 +197,9 @@ threading:
   set-cpu-affinity: yes
   cpu-affinity:
     management-cpu-set:
-      cpu: [ 0 ]
+      cpu: [0]
     worker-cpu-set:
-      cpu: [ 1, 2, 3 ]
+      cpu: [1, 2, 3]
       mode: "exclusive"
 
 af-packet: []
@@ -336,15 +337,15 @@ exec sudo \
 
 #### 方案对比
 
-| 方案 | 速率 | 可行性 | 说明 |
-|------|------|--------|------|
-| DPDK testpmd（primary） | 线速（10+10 Gbps 已验证） | 不能与 Suricata 同时运行 | DPDK 只允许一个 primary 进程 |
-| DPDK testpmd（secondary） | — | 失败 | static vs shared DPDK tailq 不兼容；shared vs shared mbuf pool 不兼容 |
-| Pktgen-DPDK（secondary） | 待测 | 可行 | 专为流量生成设计，支持多进程，可自行创建 mbuf pool |
-| 内核 pktgen | ~49 万 pps / ~2.0 Gbps | 可用 | Fedora 43 内核 6.19.11 模块缺失，需手动编译加载 |
-| 内核 raw socket（单线程） | ~46 万 pps / ~2.3 Gbps | 可用 | 系统调用开销是瓶颈 |
-| 内核 raw socket（多进程） | ~55 万 pps / ~2.8 Gbps | 可用 | 提升有限，受内核协议栈限制 |
-| 独立机器 | 线速 | 最佳方案 | 需要额外硬件 |
+| 方案                      | 速率                      | 可行性                   | 说明                                                                  |
+| ------------------------- | ------------------------- | ------------------------ | --------------------------------------------------------------------- |
+| DPDK testpmd（primary）   | 线速（10+10 Gbps 已验证） | 不能与 Suricata 同时运行 | DPDK 只允许一个 primary 进程                                          |
+| DPDK testpmd（secondary） | —                         | 失败                     | static vs shared DPDK tailq 不兼容；shared vs shared mbuf pool 不兼容 |
+| Pktgen-DPDK（secondary）  | 待测                      | 可行                     | 专为流量生成设计，支持多进程，可自行创建 mbuf pool                    |
+| 内核 pktgen               | ~49 万 pps / ~2.0 Gbps    | 可用                     | Fedora 43 内核 6.19.11 模块缺失，需手动编译加载                       |
+| 内核 raw socket（单线程） | ~46 万 pps / ~2.3 Gbps    | 可用                     | 系统调用开销是瓶颈                                                    |
+| 内核 raw socket（多进程） | ~55 万 pps / ~2.8 Gbps    | 可用                     | 提升有限，受内核协议栈限制                                            |
+| 独立机器                  | 线速                      | 最佳方案                 | 需要额外硬件                                                          |
 
 #### DPDK 多进程失败分析
 
@@ -361,12 +362,12 @@ DPDK 多进程设计用于**同一应用的不同实例**（如多个 testpmd �
 
 内核 mlx5_core 驱动发包速率上限约 ~50 万 pps（~2 Gbps），多线程 pktgen 也无法突破：
 
-| 发包方式 | 速率 | 说明 |
-|----------|------|------|
-| raw socket（单线程） | ~46 万 pps / ~2.3 Gbps | 系统调用开销瓶颈 |
-| raw socket（4 进程） | ~55 万 pps / ~2.8 Gbps | 提升有限 |
+| 发包方式              | 速率                   | 说明                  |
+| --------------------- | ---------------------- | --------------------- |
+| raw socket（单线程）  | ~46 万 pps / ~2.3 Gbps | 系统调用开销瓶颈      |
+| raw socket（4 进程）  | ~55 万 pps / ~2.8 Gbps | 提升有限              |
 | 内核 pktgen（1 线程） | ~49 万 pps / ~2.0 Gbps | 受限于 mlx5_core 驱动 |
-| 内核 pktgen（4 线程） | ~59 万 pps / ~2.4 Gbps | 多线程几乎无扩展 |
+| 内核 pktgen（4 线程） | ~59 万 pps / ~2.4 Gbps | 多线程几乎无扩展      |
 
 瓶颈原因：mlx5_core 内核驱动每发一个包要经过 sk_buff 分配、协议栈钩子、驱动锁等多层开销，而 DPDK 是用户态直接往 TX ring 批量写描述符。与两台机器的场景不同，单机双口时 TX（内核）和 RX（DPDK）共享同一 PCIe 总线和 CPU 资源。
 
@@ -462,22 +463,22 @@ Suricata DPDK 模式在单机双 DPDK primary 共存方案下完全正常收包�
 
 单机环境下，无论用内核工具还是双 DPDK primary，发包速率都卡在 ~2 Gbps。而 testpmd 独占双口时能达到 10+ Gbps，差距的原因是 **TX 和 RX 共享同一块 NIC 的 PCIe 资源**：
 
-| 场景 | TX 方式 | RX 方式 | 速率 |
-|------|--------|--------|------|
-| testpmd（独占） | DPDK PMD（port 1） | DPDK PMD（port 0） | 10+ Gbps |
-| Pktgen-DPDK + Suricata | DPDK PMD（port 1） | DPDK PMD（port 0） | ~2 Gbps |
-| 内核 pktgen + Suricata | mlx5_core（port 1） | DPDK PMD（port 0） | ~2 Gbps |
+| 场景                   | TX 方式             | RX 方式            | 速率     |
+| ---------------------- | ------------------- | ------------------ | -------- |
+| testpmd（独占）        | DPDK PMD（port 1）  | DPDK PMD（port 0） | 10+ Gbps |
+| Pktgen-DPDK + Suricata | DPDK PMD（port 1）  | DPDK PMD（port 0） | ~2 Gbps  |
+| 内核 pktgen + Suricata | mlx5_core（port 1） | DPDK PMD（port 0） | ~2 Gbps  |
 
 testpmd 独占双口时，TX 和 RX 都在同一个进程内协调，可以直接从 RX ring 回收 TX 发出的包，PCIe DMA 总线利用效率最高。当 TX 和 RX 分属不同进程（即使都是 DPDK），每次 DMA 传输都需要经过 PCIe 总线仲裁，加上两套 DPDK 运行时的内存带宽竞争，吞吐大幅下降。
 
 这个瓶颈是 Thunderbolt 拓展坞下双口共享同一 PCIe 链路的物理限制，非软件问题。
 
-| 发包方式 | 速率 | 说明 |
-|----------|------|------|
-| DPDK testpmd（独占双口） | 线速（10+10 Gbps） | 不能与 Suricata 同时运行 |
-| Pktgen-DPDK（双 primary） | ~2.1 Gbps | PCIe 资源竞争瓶颈 |
-| 内核 pktgen | ~2.0 Gbps | 内核驱动 + PCIe 竞争 |
-| 内核 raw socket（多进程） | ~2.8 Gbps | 内核协议栈 + PCIe 竞争 |
+| 发包方式                  | 速率               | 说明                     |
+| ------------------------- | ------------------ | ------------------------ |
+| DPDK testpmd（独占双口）  | 线速（10+10 Gbps） | 不能与 Suricata 同时运行 |
+| Pktgen-DPDK（双 primary） | ~2.1 Gbps          | PCIe 资源竞争瓶颈        |
+| 内核 pktgen               | ~2.0 Gbps          | 内核驱动 + PCIe 竞争     |
+| 内核 raw socket（多进程） | ~2.8 Gbps          | 内核协议栈 + PCIe 竞争   |
 
 #### 硬件吞吐能力（独立测试）
 
@@ -509,13 +510,13 @@ testpmd 独占双口时，TX 和 RX 都在同一个进程内协调，可以直�
 
 ### Suricata 收包模式性能上限
 
-| 模式 | 机制 | 典型吞吐量 (25GbE) | CPU 开销 |
-|------|------|-------------------|---------|
-| AF_PACKET（默认） | 内核 sk_buff 拷贝 → syscall → 用户态 | 2-5Mpps (~3-8 Gbps@512B) | 高：每包一次系统调用 |
-| pcap | AF_PACKET + libpcap 封装 | 1-3Mpps (~2-5 Gbps@512B) | 最高：libpcap 额外开销 |
-| AF_XDP（copy 模式） | XDP redirect → AF_XDP socket，内核拷贝 | 8-15Mpps (~10-18 Gbps@512B) | 中：syscall 但批量处理 |
-| AF_XDP（zero-copy） | DMA 直接到用户态 ring buffer | 15-25Mpps (~18-25 Gbps@512B) | 低：真正零拷贝 |
-| DPDK PMD（当前使用） | 完全内核 bypass，用户态轮询 | 25-35Mpps（可达线速） | 高：busy-poll 吃满核心 |
+| 模式                 | 机制                                   | 典型吞吐量 (25GbE)           | CPU 开销               |
+| -------------------- | -------------------------------------- | ---------------------------- | ---------------------- |
+| AF_PACKET（默认）    | 内核 sk_buff 拷贝 → syscall → 用户态   | 2-5Mpps (~3-8 Gbps@512B)     | 高：每包一次系统调用   |
+| pcap                 | AF_PACKET + libpcap 封装               | 1-3Mpps (~2-5 Gbps@512B)     | 最高：libpcap 额外开销 |
+| AF_XDP（copy 模式）  | XDP redirect → AF_XDP socket，内核拷贝 | 8-15Mpps (~10-18 Gbps@512B)  | 中：syscall 但批量处理 |
+| AF_XDP（zero-copy）  | DMA 直接到用户态 ring buffer           | 15-25Mpps (~18-25 Gbps@512B) | 低：真正零拷贝         |
+| DPDK PMD（当前使用） | 完全内核 bypass，用户态轮询            | 25-35Mpps（可达线速）        | 高：busy-poll 吃满核心 |
 
 DPDK PMD 已经是最快的收包方式。Suricata 当前 2 Gbps 下 0 drop 说明检测引擎远未饱和。
 
@@ -549,20 +550,20 @@ DDR5 内存带宽约 50 GB/s，64B 包通过 ring buffer 每包约 10ns，理论
 
 共享内存注入测的是 Suricata 检测引擎的**纯处理能力**，去掉了 I/O 影响。基于 Meteor Lake 3 个 P-core（5.4GHz）：
 
-| 规则集 | 64B 包 | 512B 包 | 1518B 包 |
-|--------|--------|---------|----------|
-| 无规则（仅 decode） | ~35-45Mpps | ~25-30Mpps | ~18-22Mpps |
-| 小规则集（~100 条） | ~15-25Mpps | ~8-12Mpps | ~4-6Mpps |
-| Emerging Threats 全量（~30K 条） | ~6-10Mpps | ~3-5Mpps | ~1.5-2.5Mpps |
-| ET + 启用 HTTP/TLS 解码 | ~4-7Mpps | ~2-3Mpps | ~1-1.5Mpps |
+| 规则集                           | 64B 包     | 512B 包    | 1518B 包     |
+| -------------------------------- | ---------- | ---------- | ------------ |
+| 无规则（仅 decode）              | ~35-45Mpps | ~25-30Mpps | ~18-22Mpps   |
+| 小规则集（~100 条）              | ~15-25Mpps | ~8-12Mpps  | ~4-6Mpps     |
+| Emerging Threats 全量（~30K 条） | ~6-10Mpps  | ~3-5Mpps   | ~1.5-2.5Mpps |
+| ET + 启用 HTTP/TLS 解码          | ~4-7Mpps   | ~2-3Mpps   | ~1-1.5Mpps   |
 
 512B 包换算成带宽：
 
-| 规则集 | 3 核吞吐 |
-|--------|---------|
-| 无规则 | ~12-15 Gbps |
-| 小规则集 | ~3-6 Gbps |
-| ET 全量 | ~1.2-2 Gbps |
+| 规则集        | 3 核吞吐      |
+| ------------- | ------------- |
+| 无规则        | ~12-15 Gbps   |
+| 小规则集      | ~3-6 Gbps     |
+| ET 全量       | ~1.2-2 Gbps   |
 | ET + 协议解码 | ~0.8-1.2 Gbps |
 
 Suricata 的处理流水线：
@@ -637,20 +638,20 @@ cargo install cbindgen
 
 perf 分析结果：
 
-| 阶段 | CPU 占比 |
-|------|----------|
-| LTO 链接优化 | 145.2% |
-| rustc 编译 | 41.7% |
-| LLVM opt 优化 | 41.1% |
-| cc1（C 编译） | 13.0% |
+| 阶段          | CPU 占比 |
+| ------------- | -------- |
+| LTO 链接优化  | 145.2%   |
+| rustc 编译    | 41.7%    |
+| LLVM opt 优化 | 41.1%    |
+| cc1（C 编译） | 13.0%    |
 
 编译时间对比（`cargo build --release`）：
 
 | rustc 版本 | LLVM 版本 | 编译时间 |
-|------------|-----------|----------|
-| 1.89.0 | LLVM 18 | ~50s |
-| 1.91.0 | LLVM 19 | ~62s |
-| 1.94.1 | LLVM 21 | >200s |
+| ---------- | --------- | -------- |
+| 1.89.0     | LLVM 18   | ~50s     |
+| 1.91.0     | LLVM 19   | ~62s     |
+| 1.94.1     | LLVM 21   | >200s    |
 
 **解决：** 锁定 Rust 工具链版本：
 
@@ -725,9 +726,9 @@ threading:
   set-cpu-affinity: yes
   cpu-affinity:
     management-cpu-set:
-      cpu: [ 0 ]
+      cpu: [0]
     worker-cpu-set:
-      cpu: [ 1, 2, 3 ]
+      cpu: [1, 2, 3]
       mode: "exclusive"
 ```
 

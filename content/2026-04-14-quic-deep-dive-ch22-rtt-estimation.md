@@ -118,6 +118,7 @@ RTT_sample = ack_receive_time - packet_send_time
 ```
 
 但这个值需要调整，因为：
+
 - 发送方不知道对方何时生成 ACK
 - ACK 可能被延迟发送（ACK Frequency）
 - ACK 路径可能与数据路径不同
@@ -152,11 +153,11 @@ adjusted_rtt = 200ms - 50ms = 150ms  <- 真实 RTT
 
 单次 RTT 采样有噪声，QUIC 使用以下变量维护平滑的 RTT 估计：
 
-| 变量 | 含义 | 用途 |
-|------|------|------|
-| `min_rtt` | 观察到的最小 RTT | 网络底噪估计 |
-| `smoothed_rtt` | 指数加权移动平均 | 当前 RTT 估计 |
-| `rttvar` | RTT 抖动（variance） | RTT 波动程度 |
+| 变量           | 含义                 | 用途          |
+| -------------- | -------------------- | ------------- |
+| `min_rtt`      | 观察到的最小 RTT     | 网络底噪估计  |
+| `smoothed_rtt` | 指数加权移动平均     | 当前 RTT 估计 |
+| `rttvar`       | RTT 抖动（variance） | RTT 波动程度  |
 
 ---
 
@@ -183,6 +184,7 @@ min_rtt = min(min_rtt, adjusted_rtt_sample)
 ### 4.4 min_rtt 的局限性
 
 `min_rtt` 可能在以下情况下过时：
+
 - 网络路径改变（连接迁移）
 - 网络条件根本性改变
 - 初始测量不准确
@@ -204,6 +206,7 @@ smoothed_rtt = (1 - alpha) * smoothed_rtt + alpha * sample_rtt
 ```
 
 展开后：
+
 ```
 smoothed_rtt = smoothed_rtt + 0.125 * (sample_rtt - smoothed_rtt)
 ```
@@ -221,7 +224,7 @@ def update_smoothed_rtt(rttvar, sample_rtt):
         # RFC 9002 公式
         error = sample_rtt - smoothed_rtt
         smoothed_rtt = smoothed_rtt + (0.125 * error)
-        
+
         # rttvar 也会被更新（见下一节）
         rttvar = rttvar + (0.25 * abs(error) - rttvar)
 ```
@@ -251,11 +254,13 @@ rttvar = rttvar + beta * (abs(smoothed_rtt - sample_rtt) - rttvar)
 ### 6.3 为什么需要 rttvar
 
 RTT 波动在网络中很常见：
+
 - 路由器队列长度变化
 - 无线信号干扰
 - 网络拥塞程度变化
 
 `rttvar` 让我们知道 RTT 的"不确定性"，用于：
+
 - **PTO 计算**：更大的 rttvar → 更长的 PTO
 - **丢包判定**：RTT 突然变化可能意味着丢包
 
@@ -315,6 +320,7 @@ escape_origin = max(ack_delay, max(1.5 * rttvar, kGranularity))
 ### 8.1 异常值过滤
 
 RTT 样点可能因为以下原因异常：
+
 - ACK 延迟报告不准确
 - 网络重排序
 - 中间设备干扰
@@ -326,21 +332,22 @@ def filter_rtt_sample(sample_rtt):
     # 过滤掉明显不合理的值
     if sample_rtt < min_rtt:
         return None  # 不可能小于 min_rtt
-    
+
     # 过滤掉过大的值（可能是时钟问题）
     if sample_rtt > 100 * min_rtt:
         return None
-    
+
     # 过滤掉与当前估计差异太大的值
     if abs(sample_rtt - smoothed_rtt) > 4 * rttvar:
         return None  # 可能是异常值
-    
+
     return sample_rtt
 ```
 
 ### 8.2 虚假 RTT 样点
 
 在以下情况下，RTT 测量可能不准确：
+
 - ACK Frequency 设置过高（延迟很久才 ACK）
 - 数据包和 ACK 走了不同路径
 - 负载均衡器导致路径变化
@@ -374,10 +381,12 @@ cwnd += bytes_acked for each ACK
 ```
 
 何时退出慢启动？
+
 - `cwnd >= ssthresh`，或
 - 检测到丢包
 
 `ssthresh` 的初始值可能是：
+
 - 一个固定大值（如 65535 bytes）
 - 基于带宽估算：`ssthresh = bandwidth * min_rtt`
 
@@ -465,10 +474,10 @@ def compute_ack_delay():
         delay = time_since_last_ack
     else:
         delay = 0  # 每包 ACK，无额外延迟
-    
+
     # 但不能超过 max_ack_delay
     delay = min(delay, max_ack_delay)
-    
+
     return delay
 ```
 
@@ -487,7 +496,7 @@ ACK Frame:
   Largest Acknowledged: 5
   Ack Delay: 12ms
   [Received at T2]
-  
+
 RTT = T2 - T1 - 12ms
 ```
 

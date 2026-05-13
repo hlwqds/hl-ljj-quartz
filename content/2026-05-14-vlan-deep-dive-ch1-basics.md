@@ -16,18 +16,18 @@ description: "深入探索 VLAN 技术的基础原理，涵盖广播域问题、
 ```mermaid
 graph LR
     subgraph "同一广播域"
-        PC1["PC1<br/>192.168.1.10/24"] 
+        PC1["PC1<br/>192.168.1.10/24"]
         PC2["PC2<br/>192.168.1.11/24"]
         PC3["PC3<br/>192.168.1.12/24"]
         PC4["PC4<br/>192.168.1.13/24"]
         SW1["交换机 SW1"]
-        
+
         PC1 --> SW1
         PC2 --> SW1
         PC3 --> SW1
         PC4 --> SW1
     end
-    
+
     style PC1 fill:#e1f5fe
     style PC2 fill:#e1f5fe
     style PC3 fill:#e1f5fe
@@ -36,12 +36,12 @@ graph LR
 
 **广播域膨胀带来的问题：**
 
-| 问题类型 | 具体表现 | 影响 |
-|---------|---------|------|
-| 带宽浪费 | 广播帧泛洪到所有端口，消耗链路带宽 | 网络性能下降 |
-| 安全性降低 | 任何主机都能收到广播，可抓取敏感协议数据 | 数据泄露风险 |
-| 故障扩散 | 广播风暴可导致全网瘫痪 | 可用性下降 |
-| 管理困难 | 所有设备混在一起，无法按业务隔离 | 运维复杂度增加 |
+| 问题类型   | 具体表现                                 | 影响           |
+| ---------- | ---------------------------------------- | -------------- |
+| 带宽浪费   | 广播帧泛洪到所有端口，消耗链路带宽       | 网络性能下降   |
+| 安全性降低 | 任何主机都能收到广播，可抓取敏感协议数据 | 数据泄露风险   |
+| 故障扩散   | 广播风暴可导致全网瘫痪                   | 可用性下降     |
+| 管理困难   | 所有设备混在一起，无法按业务隔离         | 运维复杂度增加 |
 
 在企业网络中，通常需要将不同部门（研发、财务、行政）、不同业务系统（生产、办公、监控）的流量隔离开。传统做法是购置独立的物理交换机，但这会带来成本激增和扩展困难的问题。
 
@@ -72,7 +72,7 @@ graph TB
             P6["Port 6 - PC6"]
         end
     end
-    
+
     style VLAN 10 fill:#bbdefb
     style VLAN 20 fill:#c8e6c9
     style VLAN 30 fill:#ffe0b2
@@ -85,6 +85,7 @@ graph TB
 在 1990 年代初期， Cisco 开发了专有的 VLAN 解决方案，主要包括：
 
 **ISL（Inter-Switch Link）**
+
 - Cisco 于 1992 年推出的专有协议
 - 在原始以太网帧外层封装 26 字节 ISL 头 + 4 字节 CRC 尾
 - 支持 Cisco 设备间的 VLAN 中继
@@ -95,6 +96,7 @@ graph TB
   - 不支持标准 802.1Q 的嵌套 VLAN（QinQ）
 
 **VLAN Trunk Protocol（VTP）**
+
 - Cisco 专有的 VLAN 动态分发协议
 - 允许交换机之间自动同步 VLAN 信息
 - 工作模式：Server / Client / Transparent
@@ -104,14 +106,14 @@ graph TB
 
 1998 年，IEEE 正式发布 802.1Q 标准，成为 VLAN 技术的通用实现：
 
-| 特性 | ISL | 802.1Q |
-|-----|-----|--------|
-| 标准化 | Cisco 专有 | IEEE 标准 |
-| 封装方式 | 外层封装（26B 头 + 4B CRC） | 内部插入标签（4B） |
-| VLAN 数量 | 1024 | 4094（12位 ID） |
-| Native VLAN | 不支持 | 支持 |
-| QinQ | 不支持 | 支持 |
-| 厂商支持 | 仅 Cisco | 所有厂商 |
+| 特性        | ISL                         | 802.1Q             |
+| ----------- | --------------------------- | ------------------ |
+| 标准化      | Cisco 专有                  | IEEE 标准          |
+| 封装方式    | 外层封装（26B 头 + 4B CRC） | 内部插入标签（4B） |
+| VLAN 数量   | 1024                        | 4094（12位 ID）    |
+| Native VLAN | 不支持                      | 支持               |
+| QinQ        | 不支持                      | 支持               |
+| 厂商支持    | 仅 Cisco                    | 所有厂商           |
 
 **802.1Q 的核心设计：**
 
@@ -126,7 +128,7 @@ graph LR
         Payload["Payload<br/>46-1500B"]
         CRC["CRC<br/>4B"]
     end
-    
+
     subgraph "802.1Q Tagged 帧"
         DA2["DA<br/>6B"]
         SA2["SA<br/>6B"]
@@ -155,13 +157,13 @@ graph LR
 
 ### 2.3 802.1Q 标准演进
 
-| 年份 | 标准 | 关键特性 |
-|-----|------|---------|
+| 年份 | 标准        | 关键特性                    |
+| ---- | ----------- | --------------------------- |
 | 1998 | 802.1Q-1998 | 初始标准，支持单层 VLAN Tag |
-| 2003 | 802.1Q-2003 | 修订版，整合之前增补 |
-| 2005 | 802.1Q-2005 | 支持 Q-in-Q（双层 VLAN） |
-| 2011 | 802.1Q-2011 | 当前版本，整合所有修订 |
-| 2018 | 802.1Q-2018 | 新增 GRE 隧道 VLAN 扩展 |
+| 2003 | 802.1Q-2003 | 修订版，整合之前增补        |
+| 2005 | 802.1Q-2005 | 支持 Q-in-Q（双层 VLAN）    |
+| 2011 | 802.1Q-2011 | 当前版本，整合所有修订      |
+| 2018 | 802.1Q-2018 | 新增 GRE 隧道 VLAN 扩展     |
 
 ## 3. VLAN 与广播域
 
@@ -176,19 +178,19 @@ graph TB
         PC1["PC1<br/>192.168.10.1"]
         PC2["PC2<br/>192.168.10.2"]
     end
-    
+
     subgraph "VLAN 20 - 192.168.20.0/24"
         SW1B["SW1:20"]
         PC3["PC3<br/>192.168.20.1"]
         PC4["PC4<br/>192.168.20.2"]
     end
-    
+
     subgraph "VLAN 30 - 192.168.30.0/24"
         SW1C["SW1:30"]
         PC5["PC5<br/>192.168.30.1"]
         PC6["PC6<br/>192.168.30.2"]
     end
-    
+
     PC1 --> PC2
     PC3 --> PC4
     PC5 --> PC6
@@ -200,21 +202,21 @@ graph TB
 
 **VLAN 间路由的三种方式：**
 
-| 方式 | 实现原理 | 特点 |
-|-----|---------|------|
+| 方式              | 实现原理                                      | 特点                     |
+| ----------------- | --------------------------------------------- | ------------------------ |
 | 路由器-on-a-stick | 单臂路由，一个物理接口通过子接口关联多个 VLAN | 节省接口，适合中小型网络 |
-| 三层交换机 SVI | 交换机内置路由功能，创建 VLAN 接口作为网关 | 性能高，适合中型网络 |
-| 独立三层接口 | 每个 VLAN 连接独立的路由器接口 | 简单直接，消耗接口多 |
+| 三层交换机 SVI    | 交换机内置路由功能，创建 VLAN 接口作为网关    | 性能高，适合中型网络     |
+| 独立三层接口      | 每个 VLAN 连接独立的路由器接口                | 简单直接，消耗接口多     |
 
 ```mermaid
 graph LR
     subgraph "VLAN 10"
-        PC1["PC1"] 
+        PC1["PC1"]
     end
     subgraph "VLAN 20"
         PC2["PC2"]
     end
-    
+
     SW1["三层交换机"] -->|VLAN 10 SVI| PC1
     SW1 -->|VLAN 20 SVI| PC2
     SW1 -->|L3 路由| SW1
@@ -222,13 +224,13 @@ graph LR
 
 ### 3.3 广播域对比
 
-| 隔离层级 | 设备类型 | 广播域范围 |
-|---------|---------|-----------|
-| 二层交换机（无 VLAN） | L2 Switch | 整个交换机的所有端口 |
-| 二层交换机（多 VLAN） | L2 Switch + VLAN | 单个 VLAN 内的所有端口 |
-| 三层交换机 | L3 Switch | 单个 VLAN 内（路由打破广播域） |
-| 路由器 | Router | 每个接口是一个独立的广播域 |
-| 防火墙 | Firewall | 每个安全区域是独立的广播域 |
+| 隔离层级              | 设备类型         | 广播域范围                     |
+| --------------------- | ---------------- | ------------------------------ |
+| 二层交换机（无 VLAN） | L2 Switch        | 整个交换机的所有端口           |
+| 二层交换机（多 VLAN） | L2 Switch + VLAN | 单个 VLAN 内的所有端口         |
+| 三层交换机            | L3 Switch        | 单个 VLAN 内（路由打破广播域） |
+| 路由器                | Router           | 每个接口是一个独立的广播域     |
+| 防火墙                | Firewall         | 每个安全区域是独立的广播域     |
 
 ## 4. 二层转发基础
 
@@ -265,11 +267,11 @@ graph LR
 
 **关键字段详解：**
 
-| 字段 | 字节数 | 值 | 说明 |
-|-----|-------|-----|------|
-| TPID | 2 | `0x8100` | Tag Protocol Identifier，标识 802.1Q VLAN Tag |
-| TCI | 2 | 0x0000-0xFFFF | Tag Control Information，包含 VID、PCP、DEI |
-| EtherType | 2 | `0x0800` (IPv4) / `0x86DD` (IPv6) | 后续载荷的协议类型 |
+| 字段      | 字节数 | 值                                | 说明                                          |
+| --------- | ------ | --------------------------------- | --------------------------------------------- |
+| TPID      | 2      | `0x8100`                          | Tag Protocol Identifier，标识 802.1Q VLAN Tag |
+| TCI       | 2      | 0x0000-0xFFFF                     | Tag Control Information，包含 VID、PCP、DEI   |
+| EtherType | 2      | `0x0800` (IPv4) / `0x86DD` (IPv6) | 后续载荷的协议类型                            |
 
 **TCI 字段细分（2 字节 = 16 位）：**
 
@@ -290,11 +292,9 @@ graph LR
   - 5 = Video
   - 6 = Voice
   - 7 = Network Control
-  
 - **DEI（Drop Eligibility Indicator）**：1 位（原名 CFI，Canonical Format Indicator）
   - 0 = 以太网格式（正常）
   - 1 = 令牌环格式（可丢弃标记）
-  
 - **VID（VLAN Identifier）**：12 位，范围 1-4094
   - 0 表示没有 VLAN（仅用于 PCP 优先级标记）
   - 4095（0xFFF）是保留值
@@ -304,16 +304,16 @@ graph LR
 
 由于 VLAN Tag 的插入，802.1Q 帧的 payload 减少了 4 字节。对于标准 1500 字节的 MTU：
 
-| 帧类型 | 最大 Payload | 实际数据 Payload（含 IP 头） |
-|-------|------------|--------------------------|
-| 标准以太网帧 | 1500B | 1500B |
-| 802.1Q Tagged 帧 | 1500B | 1496B（少了 4 字节 VLAN Tag） |
+| 帧类型           | 最大 Payload | 实际数据 Payload（含 IP 头）  |
+| ---------------- | ------------ | ----------------------------- |
+| 标准以太网帧     | 1500B        | 1500B                         |
+| 802.1Q Tagged 帧 | 1500B        | 1496B（少了 4 字节 VLAN Tag） |
 
 **实际抓包示例（tcpdump 输出）：**
 
 ```bash
 # 正常帧（无 VLAN Tag）
-14:23:45.123456 00:11:22:33:44:55 > 66:77:88:99:aa:bb, ethertype IPv4 (0x0800), length 98: 
+14:23:45.123456 00:11:22:33:44:55 > 66:77:88:99:aa:bb, ethertype IPv4 (0x0800), length 98:
    192.168.1.10.443 > 192.168.1.20.54321: Flags [P.], seq 1:49, ack 1, win 502, length 48
 
 # Tagged 帧（VLAN 10）
@@ -337,15 +337,15 @@ sequenceDiagram
     participant PC1 as PC1 (MAC: A)
     participant PC2 as PC2 (MAC: B)
     participant SW as 交换机
-    
+
     Note over SW: CAM 表初始为空
-    
+
     PC1->>SW: 数据帧 (Src: A, Dst: B)
     Note over SW: 提取 Src MAC: A
     Note over SW: 记录 A -> Port 1
     Note over SW: 查询 CAM 表找 B<br/>未找到
     Note over SW: 泛洪到除 Port 1 外所有端口
-    
+
     SW->>PC2: 数据帧 (Src: A, Dst: B)
     PC2->>SW: 回复帧 (Src: B, Dst: A)
     Note over SW: 提取 Src MAC: B
@@ -372,6 +372,7 @@ Vlan    Mac Address       Type        Ports
 **CAM 表查找过程：**
 
 当交换机收到目标 MAC 地址为 D 的帧时：
+
 1. 在 CAM 表中查找 D
 2. **命中**：从对应端口转发（单播）
 3. **未命中**：泛洪到所有同一 VLAN 的其他端口（广播）
@@ -389,7 +390,7 @@ graph LR
         FL["泛洪到同一 VLAN<br/>的所有端口"]
         OUT["Port Y, Z, ...<br/>转发广播帧"]
     end
-    
+
     IN --> EX --> FL --> OUT
 ```
 
@@ -425,29 +426,29 @@ VLAN 的核心机制是通过将交换机的不同端口分配到不同的 VLAN�
 ```mermaid
 graph TB
     subgraph "交换机端口分配"
-        P1["Port 1"] 
+        P1["Port 1"]
         P2["Port 2"]
         P3["Port 3"]
         P4["Port 4"]
         P5["Port 5"]
         P6["Port 6"]
     end
-    
+
     subgraph "VLAN 10"
         P1 --- V10["VLAN 10"]
         P2 --- V10
     end
-    
+
     subgraph "VLAN 20"
         P3 --- V20["VLAN 20"]
         P4 --- V20
     end
-    
+
     subgraph "VLAN 30"
         P5 --- V30["VLAN 30"]
         P6 --- V30
     end
-    
+
     style V10 fill:#bbdefb
     style V20 fill:#c8e6c9
     style V30 fill:#ffe0b2
@@ -459,13 +460,13 @@ VLAN ID（VID）是 12 位的值（0-4095，可用 1-4094），用于在网络�
 
 **VLAN ID 分配建议：**
 
-| 范围 | 用途 | 说明 |
-|-----|------|------|
-| 1 | 默认 VLAN | 交换机出厂默认，所有端口初始属于 VLAN 1 |
-| 2-1001 | 普通 VLAN | 正常业务 VLAN，可自由使用 |
-| 1002-1005 | 保留 VLAN | 用于 FDDI、Token Ring 等，已很少使用 |
-| 1006-4094 | 扩展 VLAN | 部分老旧设备可能不支持 |
-| 0 | PCP only | 仅用于优先级标记，不表示 VLAN |
+| 范围      | 用途      | 说明                                    |
+| --------- | --------- | --------------------------------------- |
+| 1         | 默认 VLAN | 交换机出厂默认，所有端口初始属于 VLAN 1 |
+| 2-1001    | 普通 VLAN | 正常业务 VLAN，可自由使用               |
+| 1002-1005 | 保留 VLAN | 用于 FDDI、Token Ring 等，已很少使用    |
+| 1006-4094 | 扩展 VLAN | 部分老旧设备可能不支持                  |
+| 0         | PCP only  | 仅用于优先级标记，不表示 VLAN           |
 
 **VLAN 1 的特殊性：**
 
@@ -478,10 +479,10 @@ VLAN ID（VID）是 12 位的值（0-4095，可用 1-4094），用于在网络�
 
 交换机如何判断一个帧属于哪个 VLAN？根据端口类型：
 
-| 端口类型 | 收到未标记帧 | 收到标记帧 | 发送帧 |
-|---------|-------------|-----------|--------|
-| Access | 分配给端口的 VLAN | 丢弃或忽略 | 发送未标记帧 |
-| Trunk | 分配给 Native VLAN | 使用帧中的 VLAN ID | 通常发送标记帧 |
+| 端口类型 | 收到未标记帧       | 收到标记帧         | 发送帧         |
+| -------- | ------------------ | ------------------ | -------------- |
+| Access   | 分配给端口的 VLAN  | 丢弃或忽略         | 发送未标记帧   |
+| Trunk    | 分配给 Native VLAN | 使用帧中的 VLAN ID | 通常发送标记帧 |
 
 ## 6. 接入端口与中继端口
 
@@ -522,11 +523,11 @@ graph LR
     subgraph "发送方（VLAN 10）"
         ORIG["原始帧"] --> ADD["添加 VLAN Tag<br/>TPID=0x8100<br/>VID=10"]
     end
-    
+
     subgraph "Trunk 链路传输"
         TAGGED["Tagged 帧<br/>0x8100 + VID=10"]
     end
-    
+
     subgraph "接收方"
         ADD --> TAGGED
         TAGGED --> REM["移除 VLAN Tag<br/>发送原始帧"]
@@ -535,14 +536,14 @@ graph LR
 
 ### 6.3 端口模式对比
 
-| 特性 | Access 端口 | Trunk 端口 |
-|-----|-------------|-----------|
-| 连接的设备类型 | 终端设备 | 交换机/路由器 |
-| 承载的 VLAN 数量 | 1 个 | 多个或所有 |
-| 帧标记 | 无（untagged） | 有（tagged），Native VLAN 可选无 |
-| 配置复杂度 | 低 | 中 |
-| 典型用途 | 接入层连接用户 | 汇聚层/核心层互联 |
-| DTP 协商 | 无（静态配置） | 可协商（auto/desirable/trunk） |
+| 特性             | Access 端口    | Trunk 端口                       |
+| ---------------- | -------------- | -------------------------------- |
+| 连接的设备类型   | 终端设备       | 交换机/路由器                    |
+| 承载的 VLAN 数量 | 1 个           | 多个或所有                       |
+| 帧标记           | 无（untagged） | 有（tagged），Native VLAN 可选无 |
+| 配置复杂度       | 低             | 中                               |
+| 典型用途         | 接入层连接用户 | 汇聚层/核心层互联                |
+| DTP 协商         | 无（静态配置） | 可协商（auto/desirable/trunk）   |
 
 ### 6.4 DTP（Dynamic Trunking Protocol）
 
@@ -550,21 +551,21 @@ Cisco 专有的协议，用于自动协商端口是否为 Trunk 模式。
 
 **DTP 模式：**
 
-| 模式 | 行为 |
-|-----|------|
-| switchport mode trunk | 强制成为 Trunk，不协商 |
-| switchport mode access | 强制成为 Access，禁用 DTP |
-| switchport mode dynamic desirable | 主动发起协商，愿意成为 Trunk |
-| switchport mode dynamic auto | 被动等待协商，仅在对方发起时成为 Trunk |
+| 模式                              | 行为                                   |
+| --------------------------------- | -------------------------------------- |
+| switchport mode trunk             | 强制成为 Trunk，不协商                 |
+| switchport mode access            | 强制成为 Access，禁用 DTP              |
+| switchport mode dynamic desirable | 主动发起协商，愿意成为 Trunk           |
+| switchport mode dynamic auto      | 被动等待协商，仅在对方发起时成为 Trunk |
 
 **DTP 协商结果矩阵：**
 
-|  | Access | Desirable | Auto | Trunk |
-|--|--------|-----------|------|-------|
-| Access | Access | Desirable | Access | Trunk |
-| Desirable | Desirable | Desirable | Trunk | Trunk |
-| Auto | Access | Trunk | Auto | Trunk |
-| Trunk | Trunk | Trunk | Trunk | Trunk |
+|           | Access    | Desirable | Auto   | Trunk |
+| --------- | --------- | --------- | ------ | ----- |
+| Access    | Access    | Desirable | Access | Trunk |
+| Desirable | Desirable | Desirable | Trunk  | Trunk |
+| Auto      | Access    | Trunk     | Auto   | Trunk |
+| Trunk     | Trunk     | Trunk     | Trunk  | Trunk |
 
 **安全建议**：在接入层端口使用 `switchport mode access` 并禁用 DTP（`switchport nonegotiate`），防止意外形成 Trunk。
 
@@ -586,11 +587,11 @@ graph LR
         V10["VLAN 10"] -->|标记帧 VID=10| T1["Trunk Port"]
         V1["Native VLAN 1"] -->|未标记帧| T1
     end
-    
+
     subgraph "Trunk 链路"
         T1 -->|承载所有 VLAN| T2["Trunk Port"]
     end
-    
+
     subgraph "接收方"
         T2 -->|标记帧 VID=10| V10R["VLAN 10"]
         T2 -->|未标记帧| V1R["Native VLAN 1"]
@@ -611,12 +612,12 @@ show interfaces GigabitEthernet0/1 trunk
 
 **关键注意事项：**
 
-| 风险 | 描述 | 解决方案 |
-|-----|------|---------|
-| VLAN 1 透明传输 | 攻击者可能利用未标记的 VLAN 1 流量进行攻击 | 将 Native VLAN 改为非 1 的 VLAN |
-| 双向标记攻击 | 攻击者发送双 Tag 帧，利用 Native VLAN 穿透 VLAN 隔离 | 启用 VLAN 过滤，在 trunk 端剥离不需要的 VLAN |
-| Native VLAN 不一致 | 两端交换机 Native VLAN 配置不同会导致 STP/CDP 信息丢失 | 确保链路两端 Native VLAN 一致 |
-| CDP 泄露 | Cisco 设备默认通过 Native VLAN 发送 CDP，可能泄露拓扑信息 | 在不需要的端口禁用 CDP 或修改 Native VLAN |
+| 风险               | 描述                                                      | 解决方案                                     |
+| ------------------ | --------------------------------------------------------- | -------------------------------------------- |
+| VLAN 1 透明传输    | 攻击者可能利用未标记的 VLAN 1 流量进行攻击                | 将 Native VLAN 改为非 1 的 VLAN              |
+| 双向标记攻击       | 攻击者发送双 Tag 帧，利用 Native VLAN 穿透 VLAN 隔离      | 启用 VLAN 过滤，在 trunk 端剥离不需要的 VLAN |
+| Native VLAN 不一致 | 两端交换机 Native VLAN 配置不同会导致 STP/CDP 信息丢失    | 确保链路两端 Native VLAN 一致                |
+| CDP 泄露           | Cisco 设备默认通过 Native VLAN 发送 CDP，可能泄露拓扑信息 | 在不需要的端口禁用 CDP 或修改 Native VLAN    |
 
 ### 7.4 Native VLAN 安全配置最佳实践
 
@@ -636,6 +637,7 @@ no lldp transmit
 **native vlan tag 命令的效果：**
 
 当启用此命令后，Trunk 端口将：
+
 - 要求收到的帧必须带有有效的 802.1Q Tag
 - 拒绝未标记的帧
 - 发送的所有帧都会带有 Tag（包括 Native VLAN）
@@ -746,10 +748,10 @@ default interface GigabitEthernet0/3
 
 每个 VLAN 有两种状态：
 
-| 状态 | 含义 | 影响 |
-|-----|------|------|
-| active | VLAN 正常工作 | 端口可正常转发流量 |
-| suspend | VLAN 被挂起 | 端口暂停转发，但配置保留 |
+| 状态    | 含义          | 影响                     |
+| ------- | ------------- | ------------------------ |
+| active  | VLAN 正常工作 | 端口可正常转发流量       |
+| suspend | VLAN 被挂起   | 端口暂停转发，但配置保留 |
 
 ```网络配置
 ! 挂起 VLAN
@@ -778,18 +780,18 @@ graph TB
         G2["Gig0/11 - VLAN 10"]
         G3["Gig0/12 - VLAN 20"]
     end
-    
+
     subgraph "SW2 - 接入交换机"
         F3["Gig0/1 - Trunk"]
         G4["Gig0/10 - VLAN 10"]
         G5["Gig0/11 - VLAN 20"]
     end
-    
+
     PC1["PC1 - VLAN 10"]
     PC2["PC2 - VLAN 20"]
     PC3["PC3 - VLAN 10"]
     PC4["PC4 - VLAN 20"]
-    
+
     F1 --- F3
     F2 --- F4
     PC1 --- G1
@@ -850,7 +852,7 @@ interface GigabitEthernet0/10
  spanning-tree portfast
 !
 interface GigabitEthernet0/11
- description PC2_Engineering  
+ description PC2_Engineering
  switchport mode access
  switchport access vlan 10
  spanning-tree portfast
@@ -914,11 +916,11 @@ VLAN Name                             Status    Ports
 1    default                          active    Gi0/24
 10   Engineering                      active    Gi0/10, Gi0/11
 20   Finance                          active    Gi0/12
-99   Native                           active    
-1002 fddi-default                     active    
-1003 token-ring-default               active    
-1004 fddinet-default                  active    
-1005 trnet-default                    active    
+99   Native                           active
+1002 fddi-default                     active
+1003 token-ring-default               active
+1004 fddinet-default                  active
+1005 trnet-default                    active
 ```
 
 **查看 Trunk 状态：**
@@ -977,8 +979,8 @@ Negotiation of Trunking: Off
 Access Mode VLAN: 10 (Engineering)
 Trunking Native Mode VLAN: 99 (Native)
 Voice VLAN: none
-Administrative private-vlan host-association: none 
-Administrative private-vlan mapping: none 
+Administrative private-vlan host-association: none
+Administrative private-vlan mapping: none
 ```
 
 ### 9.4 使用 Python 自动化配置
@@ -1005,7 +1007,7 @@ switches = [
         "secret": "enable_pass",
     },
     {
-        "device_type": "cisco_ios", 
+        "device_type": "cisco_ios",
         "host": "192.168.10.12",
         "username": "admin",
         "password": "cisco123",
@@ -1046,24 +1048,24 @@ def main():
         {"id": 30, "name": "HR"},
         {"id": 40, "name": "IT"},
     ]
-    
+
     for sw in switches:
         print(f"\nConnecting to {sw['host']}...")
         try:
             conn = ConnectHandler(**sw)
             conn.enable()
-            
+
             # 批量创建 VLAN
             print(f"  Creating VLANs on {sw['host']}...")
             for vlan in vlans:
                 configure_vlan(conn, vlan["id"], vlan["name"])
-            
+
             # 保存配置
             conn.save_config()
             print(f"  Configuration saved on {sw['host']}")
-            
+
             conn.disconnect()
-            
+
         except Exception as e:
             print(f"  ERROR connecting to {sw['host']}: {e}")
 
@@ -1106,8 +1108,8 @@ cat /proc/net/vlan/config
 
 # 抓包查看 VLAN Tag
 tcpdump -i eth0 -nn -v | grep -i vlan
-# 10:45:32.123456 802.1Q, vlan 10, p 0, 
-#   ethertype 0x0800, ... 
+# 10:45:32.123456 802.1Q, vlan 10, p 0,
+#   ethertype 0x0800, ...
 
 # 删除 VLAN 子接口
 ip link delete eth0.10
@@ -1161,12 +1163,12 @@ show mac address-table
 
 **CAM 表未更新的可能原因：**
 
-| 原因 | 诊断方法 | 解决方案 |
-|-----|---------|---------|
-| 端口关闭 | `show interfaces status` | 启用端口 `no shutdown` |
-| 双工不匹配 | `show interfaces GigabitEthernet0/x` | 强制双工/速率 |
-| 线缆故障 | 更换线缆测试 | 更换线缆 |
-| 交换机 CPU 过载 | `show processes cpu` | 优化流量或升级设备 |
+| 原因            | 诊断方法                             | 解决方案               |
+| --------------- | ------------------------------------ | ---------------------- |
+| 端口关闭        | `show interfaces status`             | 启用端口 `no shutdown` |
+| 双工不匹配      | `show interfaces GigabitEthernet0/x` | 强制双工/速率          |
+| 线缆故障        | 更换线缆测试                         | 更换线缆               |
+| 交换机 CPU 过载 | `show processes cpu`                 | 优化流量或升级设备     |
 
 ### 10.3 端口模式问题
 
@@ -1190,12 +1192,12 @@ show dtp interface GigabitEthernet0/1
 
 **典型配置错误：**
 
-| 错误类型 | 错误配置 | 正确配置 |
-|---------|---------|---------|
-| 交换机间用 Access 模式 | `switchport mode access` | `switchport mode trunk` |
-| Trunk 未指定封装 | （默认 auto dot1q） | `switchport trunk encapsulation dot1q` |
-| Trunk 未放行 VLAN | 默认只有 1,1002-1005 | `switchport trunk allowed vlan 10,20` |
-| Access 端口忘配 VLAN | 端口默认在 VLAN 1 | `switchport access vlan 10` |
+| 错误类型               | 错误配置                 | 正确配置                               |
+| ---------------------- | ------------------------ | -------------------------------------- |
+| 交换机间用 Access 模式 | `switchport mode access` | `switchport mode trunk`                |
+| Trunk 未指定封装       | （默认 auto dot1q）      | `switchport trunk encapsulation dot1q` |
+| Trunk 未放行 VLAN      | 默认只有 1,1002-1005     | `switchport trunk allowed vlan 10,20`  |
+| Access 端口忘配 VLAN   | 端口默认在 VLAN 1        | `switchport access vlan 10`            |
 
 **Trunk 端口常见问题：**
 
@@ -1227,11 +1229,11 @@ show cdp neighbors detail
 
 **Native VLAN 不一致的影响：**
 
-| 不一致场景 | 表现 | 影响 |
-|-----------|-----|------|
-| SW1 Native=1, SW2 Native=99 | CDP/VTP 消息丢失 | 交换机管理困难 |
-| Native VLAN 流量被其他 VLAN 接收 | VLAN 跳跃风险 | 安全威胁 |
-| 一端 tag，另一端 untag | 流量被标记为不同 VLAN | 通信失败 |
+| 不一致场景                       | 表现                  | 影响           |
+| -------------------------------- | --------------------- | -------------- |
+| SW1 Native=1, SW2 Native=99      | CDP/VTP 消息丢失      | 交换机管理困难 |
+| Native VLAN 流量被其他 VLAN 接收 | VLAN 跳跃风险         | 安全威胁       |
+| 一端 tag，另一端 untag           | 流量被标记为不同 VLAN | 通信失败       |
 
 **修复方案：**
 
@@ -1265,7 +1267,7 @@ flowchart LR
     B -->|通| D{"Ping 192.168.20.253<br/>VLAN 20 网关"}
     D -->|不通| E["检查 VLAN 20 配置"]
     D -->|通| F["检查路由表"]
-    
+
     C --> G["SVI 是否 UP?<br/>IP 是否配置?"]
     E --> G
     F --> H["是否有 IP routing?<br/>SVI 接口是否 UP"]
@@ -1292,11 +1294,11 @@ show ip route
 
 **典型问题与解决：**
 
-| 问题 | 诊断 | 解决 |
-|-----|------|-----|
+| 问题          | 诊断                                         | 解决                          |
+| ------------- | -------------------------------------------- | ----------------------------- |
 | SVI 接口 DOWN | `show interface Vlan10` 显示 "protocol down" | VLAN 内至少有一个 active 端口 |
-| 没有路由 | `show ip route` 无 VLAN 间路由 | 启用 `ip routing` |
-| ACL 阻止 | `show access-lists` | 检查/调整 ACL |
+| 没有路由      | `show ip route` 无 VLAN 间路由               | 启用 `ip routing`             |
+| ACL 阻止      | `show access-lists`                          | 检查/调整 ACL                 |
 
 ### 10.6 综合故障排查流程
 
@@ -1305,7 +1307,7 @@ flowchart TD
     A["终端 A 无法访问终端 B"] --> B{"同一 VLAN?"}
     B -->|是| C["检查二层转发"]
     B -->|否| D["检查三层路由"]
-    
+
     C --> E{"物理连接 OK?"}
     E -->|否| F["修复物理连接"]
     E -->|是| G{"端口模式正确?"}
@@ -1313,11 +1315,11 @@ flowchart TD
     G -->|是| I{"CAM 表正常?"}
     I -->|否| J["清空 CAM 表"]
     I -->|是| K["检查 STP"]
-    
+
     D --> L{"网关可达?"}
     L -->|否| M["检查 SVI 配置"]
     L -->|是| N["检查路由/ACL"]
-    
+
     F --> Z["验证连通性"]
     H --> Z
     J --> Z
@@ -1328,19 +1330,19 @@ flowchart TD
 
 ### 10.7 常用故障排查命令速查表
 
-| 场景 | 命令 |
-|-----|------|
-| 查看所有 VLAN | `show vlan brief` |
-| 查看端口所属 VLAN | `show interfaces switchport` |
-| 查看 CAM 表 | `show mac address-table` |
-| 查看 Trunk 状态 | `show interfaces trunk` |
-| 查看 SVI 状态 | `show ip interface brief Vlan X` |
-| 查看 VLAN 的 STP | `show spanning-tree vlan X` |
-| 清空 CAM 表 | `clear mac address-table dynamic` |
-| 测试端口协商 | `show interfaces GigabitEthernet0/X` |
-| 查看 DTP | `show dtp interface GigabitEthernet0/X` |
-| 查看 CDP 邻居 | `show cdp neighbors detail` |
-| 查看 Native VLAN | `show interfaces trunk` |
+| 场景              | 命令                                    |
+| ----------------- | --------------------------------------- |
+| 查看所有 VLAN     | `show vlan brief`                       |
+| 查看端口所属 VLAN | `show interfaces switchport`            |
+| 查看 CAM 表       | `show mac address-table`                |
+| 查看 Trunk 状态   | `show interfaces trunk`                 |
+| 查看 SVI 状态     | `show ip interface brief Vlan X`        |
+| 查看 VLAN 的 STP  | `show spanning-tree vlan X`             |
+| 清空 CAM 表       | `clear mac address-table dynamic`       |
+| 测试端口协商      | `show interfaces GigabitEthernet0/X`    |
+| 查看 DTP          | `show dtp interface GigabitEthernet0/X` |
+| 查看 CDP 邻居     | `show cdp neighbors detail`             |
+| 查看 Native VLAN  | `show interfaces trunk`                 |
 
 ### 10.8 VLAN 安全问题与加固
 
@@ -1350,10 +1352,10 @@ VLAN 技术虽然提供了逻辑隔离，但存在多种绕过和攻击方式，
 
 VLAN 跳跃攻击有两种主要方式：
 
-| 攻击方式 | 原理 | 防御措施 |
-|---------|------|---------|
-| Switch Spoofing | 攻击者模拟交换机，协商 Trunk 端口，访问所有 VLAN | 禁用 DTP，使用 `switchport nonegotiate` |
-| Double Tagging | 攻击者发送双层 VLAN Tag 的帧，利用 Native VLAN 穿透 | 将 Native VLAN 改为非 1 的 VLAN，启用 `native vlan tag` |
+| 攻击方式        | 原理                                                | 防御措施                                                |
+| --------------- | --------------------------------------------------- | ------------------------------------------------------- |
+| Switch Spoofing | 攻击者模拟交换机，协商 Trunk 端口，访问所有 VLAN    | 禁用 DTP，使用 `switchport nonegotiate`                 |
+| Double Tagging  | 攻击者发送双层 VLAN Tag 的帧，利用 Native VLAN 穿透 | 将 Native VLAN 改为非 1 的 VLAN，启用 `native vlan tag` |
 
 **Double Tagging 攻击详解：**
 
@@ -1362,12 +1364,13 @@ graph LR
     ATT["攻击者 PC<br/>VLAN 10"] -->|双 Tag 帧<br/>外层 VID=1<br/>内层 VID=10| SW1["SW1<br/>Native VLAN=1"]
     SW1 -->|移除外层 Tag<br/>变成 VID=10| SW2["SW2"]
     SW2 -->|按 VID=10 转发| VLAN10["VLAN 10 目标"]
-    
+
     style ATT fill:#ffcccc
     style VLAN10 fill:#ffcccc
 ```
 
 攻击者发送带有两层 VLAN Tag 的帧：
+
 1. 外层 Tag 的 VID = Native VLAN（通常是 1）
 2. 内层 Tag 的 VID = 目标 VLAN（想要访问的 VLAN）
 3. 当帧到达交换机 Trunk 口时，外层 Tag 被剥离
@@ -1408,11 +1411,11 @@ switchport port-security mac-address sticky
 
 对于需要更细粒度隔离的场景，Cisco 提供了 Private VLAN（PVLAN）技术：
 
-| PVLAN 类型 | 作用 | 通信规则 |
-|-----------|------|---------|
-| Primary VLAN | 包含 Secondary VLAN | - |
-| Secondary VLAN (Community) | 社区 VLAN | 同社区内端口可互通信 |
-| Secondary VLAN (Isolated) | 孤立 VLAN | 端口之间完全隔离，只能与网关通信 |
+| PVLAN 类型                 | 作用                | 通信规则                         |
+| -------------------------- | ------------------- | -------------------------------- |
+| Primary VLAN               | 包含 Secondary VLAN | -                                |
+| Secondary VLAN (Community) | 社区 VLAN           | 同社区内端口可互通信             |
+| Secondary VLAN (Isolated)  | 孤立 VLAN           | 端口之间完全隔离，只能与网关通信 |
 
 ```网络配置
 ! 创建 Primary 和 Secondary VLAN
@@ -1485,10 +1488,10 @@ vlan 1000
 
 **Customer VLAN（CTAG）与 Service Provider VLAN（STAG）：**
 
-| 标签类型 | 术语 | 位置 | VID 范围 | 典型用途 |
-|---------|------|-----|---------|---------|
-| CTAG | Customer VLAN Tag | 内层 | 1-4094 | 客户自定义 |
-| STAG | Service Provider Tag | 外层 | 1-4094 | 运营商分配 |
+| 标签类型 | 术语                 | 位置 | VID 范围 | 典型用途   |
+| -------- | -------------------- | ---- | -------- | ---------- |
+| CTAG     | Customer VLAN Tag    | 内层 | 1-4094   | 客户自定义 |
+| STAG     | Service Provider Tag | 外层 | 1-4094   | 运营商分配 |
 
 ### 11.3 VLAN 映射（VLAN Translation）
 
@@ -1506,16 +1509,16 @@ interface GigabitEthernet0/1
 
 一个典型的企业网络 VLAN 规划：
 
-| VLAN ID | 用途 | 网段 | 说明 |
-|--------|------|------|------|
-| 1 | 默认/管理 | - | 建议不使用，改为专用管理 VLAN |
-| 10 | 服务器区 | 192.168.10.0/24 | DMZ/内网服务器 |
-| 20 | 研发部 | 192.168.20.0/24 | 研发人员接入 |
-| 30 | 市场部 | 192.168.30.0/24 | 市场营销人员 |
-| 40 | 财务部 | 192.168.40.0/24 | 财务人员（敏感数据） |
-| 50 | 语音（VoIP） | 192.168.50.0/24 | IP 电话 |
-| 99 | 管理 VLAN | 192.168.99.0/24 | 交换机管理 |
-| 999 | Native VLAN | - | 用于 Trunk 链路 |
+| VLAN ID | 用途         | 网段            | 说明                          |
+| ------- | ------------ | --------------- | ----------------------------- |
+| 1       | 默认/管理    | -               | 建议不使用，改为专用管理 VLAN |
+| 10      | 服务器区     | 192.168.10.0/24 | DMZ/内网服务器                |
+| 20      | 研发部       | 192.168.20.0/24 | 研发人员接入                  |
+| 30      | 市场部       | 192.168.30.0/24 | 市场营销人员                  |
+| 40      | 财务部       | 192.168.40.0/24 | 财务人员（敏感数据）          |
+| 50      | 语音（VoIP） | 192.168.50.0/24 | IP 电话                       |
+| 99      | 管理 VLAN    | 192.168.99.0/24 | 交换机管理                    |
+| 999     | Native VLAN  | -               | 用于 Trunk 链路               |
 
 **IP 子网与 VLAN 对应原则：**
 
@@ -1531,31 +1534,31 @@ graph TB
         C1["L3 Switch 01"]
         C2["L3 Switch 02"]
     end
-    
+
     subgraph "汇聚层 Distribution"
         D1["L2 Switch 01"]
         D2["L2 Switch 02"]
         D3["L2 Switch 03"]
         D4["L2 Switch 04"]
     end
-    
+
     subgraph "接入层 Access"
         A1["Access Port"]
         A2["Access Port"]
         A3["Access Port"]
         A4["Access Port"]
     end
-    
+
     A1 --> D1
     A2 --> D1
     A3 --> D2
     A4 --> D2
-    
+
     D1 --> C1
     D2 --> C1
     D3 --> C2
     D4 --> C2
-    
+
     style C1 fill:#90caf9
     style C2 fill:#90caf9
     style D1 fill:#a5d6a7
@@ -1566,11 +1569,11 @@ graph TB
 
 **各层 VLAN 设计要点：**
 
-| 层次 | VLAN 范围 | 说明 |
-|-----|----------|------|
-| 接入层 | 尽量在一个交换机内完成 VLAN 划分 | 减少 Trunk 带宽占用 |
-| 汇聚层 | 透传多个接入层的 VLAN 到核心 | 聚合多个接入交换机的 VLAN |
-| 核心层 | 执行 VLAN 间路由 | 三层交换，确保线速转发 |
+| 层次   | VLAN 范围                        | 说明                      |
+| ------ | -------------------------------- | ------------------------- |
+| 接入层 | 尽量在一个交换机内完成 VLAN 划分 | 减少 Trunk 带宽占用       |
+| 汇聚层 | 透传多个接入层的 VLAN 到核心     | 聚合多个接入交换机的 VLAN |
+| 核心层 | 执行 VLAN 间路由                 | 三层交换，确保线速转发    |
 
 ### 12.3 VLAN 设计的黄金法则
 
@@ -1585,13 +1588,13 @@ graph TB
 
 ### 12.4 常见 VLAN 设计错误
 
-| 错误 | 后果 | 正确做法 |
-|-----|------|---------|
-| 所有端口默认 VLAN 1 | 安全风险，广播域过大 | 明确划分 VLAN |
-| Trunk 不限定 VLAN | 不必要的流量占用带宽 | 使用 `allowed vlan` 列表 |
-| 随意使用扩展范围 VLAN | 与保留 VLAN 冲突 | 规划好 VLAN 范围 |
-| Native VLAN 不一致 | CDP/VTP/STP 故障 | 链路两端配置一致 |
-| 不同子网混用同一 VLAN | 违反网络设计原则 | 一 VLAN 一子网 |
+| 错误                  | 后果                 | 正确做法                 |
+| --------------------- | -------------------- | ------------------------ |
+| 所有端口默认 VLAN 1   | 安全风险，广播域过大 | 明确划分 VLAN            |
+| Trunk 不限定 VLAN     | 不必要的流量占用带宽 | 使用 `allowed vlan` 列表 |
+| 随意使用扩展范围 VLAN | 与保留 VLAN 冲突     | 规划好 VLAN 范围         |
+| Native VLAN 不一致    | CDP/VTP/STP 故障     | 链路两端配置一致         |
+| 不同子网混用同一 VLAN | 违反网络设计原则     | 一 VLAN 一子网           |
 
 ## 总结
 
@@ -1627,6 +1630,7 @@ graph TB
 **下一章预告**：
 
 VLAN 深度探索 Ch2 将深入探讨：
+
 - VLAN Trunking Protocol（VTP）的原理与注意事项
 - PVSTP（Per-VLAN Spanning Tree）与 VLAN 的交互
 - VTPv3 与配置同步机制
@@ -1637,4 +1641,4 @@ VLAN 深度探索 Ch2 将深入探讨：
 
 ---
 
-*本文档基于 IEEE 802.1Q-2018 标准及 Cisco IOS 15.x 版本编写。实验配置适用于支持 802.1Q 的标准交换机设备。*
+_本文档基于 IEEE 802.1Q-2018 标准及 Cisco IOS 15.x 版本编写。实验配置适用于支持 802.1Q 的标准交换机设备。_

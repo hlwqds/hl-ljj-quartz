@@ -143,21 +143,21 @@ int nvme_rdma_connect(struct nvme_rdma_queue* queue,
                        struct sockaddr* addr) {
     struct rdma_cm_id* cm_id;
     struct rdma_event_channel* channel;
-    
+
     // 1. 创建 RDMA CM 通道
     channel = rdma_create_event_channel();
     cm_id = rdma_create_id(channel, queue, NULL, RDMA_PS_NVME);
-    
+
     // 2. 解析地址并连接
     rdma_resolve_addr(cm_id, NULL, addr, 2000);
-    
+
     // 3. 建立 RDMA 连接
     // NVMf (NVMe over Fabrics) 协议专用 PS
     rdma_connect(cm_id, &connection_param);
-    
+
     // 4. 创建 NVMe 队列对
     queue->qp = nvme_rdma_create_qp(cm_id);
-    
+
     return 0;
 }
 
@@ -167,39 +167,39 @@ int nvme_rdma_submit_io(struct nvme_rdma_queue* queue,
                         void* data, size_t data_len) {
     struct ibv_send_wr wr, *bad_wr;
     struct ibv_sge sge;
-    
+
     // 1. 准备 SGL (Scatter-Gather List)
     sge.addr = (uint64_t)data;
     sge.length = data_len;
     sge.lkey = queue->mr->lkey;
-    
+
     // 2. 准备 Send WR
     wr.opcode = IBV_WR_RDMA_WRITE;  // 或 IBV_WR_SEND
     wr.sg_list = &sge;
     wr.num_sge = 1;
     wr.next = NULL;
-    
+
     // 3. 注入 NVMe 命令
     // NVMe-oF 将 NVMe 命令封装在 RDMA payload 中
     memcpy(queue->cmd_buffer, cmd, sizeof(struct nvme_command));
-    
+
     // 4. 提交到 HCA
     ibv_post_send(queue->qp, &wr, &bad_wr);
-    
+
     return 0;
 }
 ```
 
 ### 2.3 NVMe-oF RDMA vs iSCSI/iSER
 
-| 特性 | NVMe-oF RDMA | iSER (iSCSI over RDMA) | iSCSI (TCP) |
-|------|--------------|------------------------|-------------|
-| 协议开销 | 极低 (NVMe 精简命令) | 中等 (iSCSI 封装) | 较高 (TCP/IP) |
-| 延迟 | 1-3 us | 2-5 us | 50-100 us |
-| IOPS (百万) | 10+ | 5-8 | 1-2 |
-| CPU 开销 | <2% | <5% | 20-30% |
-| 命令深度 | 64K | 4K | 32 |
-| 适用场景 | 高性能块存储 | 通用存储 | 通用存储 |
+| 特性        | NVMe-oF RDMA         | iSER (iSCSI over RDMA) | iSCSI (TCP)   |
+| ----------- | -------------------- | ---------------------- | ------------- |
+| 协议开销    | 极低 (NVMe 精简命令) | 中等 (iSCSI 封装)      | 较高 (TCP/IP) |
+| 延迟        | 1-3 us               | 2-5 us                 | 50-100 us     |
+| IOPS (百万) | 10+                  | 5-8                    | 1-2           |
+| CPU 开销    | <2%                  | <5%                    | 20-30%        |
+| 命令深度    | 64K                  | 4K                     | 32            |
+| 适用场景    | 高性能块存储         | 通用存储               | 通用存储      |
 
 ---
 
@@ -213,7 +213,7 @@ SmartSSD（Storage Fabric SmartSSD）是将计算能力下沉到存储介质的�
 SmartSSD 架构：
 
   传统架构：                    SmartSSD 架构：
-  
+
   ┌─────────┐                  ┌─────────┐
   │  CPU   │                   │  CPU   │
   │ Server │                   │ Server │
@@ -230,7 +230,7 @@ SmartSSD 架构：
                             │  │  (计算卸载)   │  │
                             │  └───────────────┘  │
                             └─────────────────────┘
-  
+
   数据传输：                  数据处理：
   CPU ← RDMA ← Storage       CPU ← RDMA ← SmartSSD
                             (计算结果直接返回)
@@ -246,10 +246,10 @@ SmartSSD 架构：
 void traditional_processing(int fd, void* result) {
     char buffer[1024 * 1024];  // 1MB buffer
     size_t bytes_read = read(fd, buffer, sizeof(buffer));
-    
+
     // 网络传输到计算节点
     send_via_rdma(buffer, bytes_read);
-    
+
     // 在服务器端处理
     process_data(buffer, bytes_read, result);
 }
@@ -263,10 +263,10 @@ void sfst_processing(int fd, void* result) {
         .length = FILE_SIZE,
         .predicate = filter_function,
     };
-    
+
     // 2. SmartSSD 执行处理
     send_task_via_rdma(fd, &task);
-    
+
     // 3. 只接收处理结果（少量数据）
     recv_result_via_rdma(result, sizeof(result));
 }
@@ -579,7 +579,7 @@ tcpdump -i mlx5_0 -nn -v 'port 4791'  # NVMe-oF over RDMA 端口
   - 检查两端 NQN 是否匹配
   - 验证 RDMA 连通性 (ibv_rc_pingpong)
   - 检查防火墙/安全策略
-  
+
   解决：
   - 确认 discovery 成功
   - 重启 nvme-rdma 服务
@@ -590,7 +590,7 @@ tcpdump -i mlx5_0 -nn -v 'port 4791'  # NVMe-oF over RDMA 端口
   - 检查单链路 vs 多路径
   - 验证 PFC/ECN 配置
   - 分析 CPU 利用率
-  
+
   解决：
   - 启用 MPIO 多路径
   - 调整队列深度
@@ -601,7 +601,7 @@ tcpdump -i mlx5_0 -nn -v 'port 4791'  # NVMe-oF over RDMA 端口
   - 检查 MDS 负载
   - 验证 LNET RDMA 配置
   - 分析网络延迟
-  
+
   解决：
   - 启用 MDT 负载均衡
   - 优化 LNET 配置
@@ -621,6 +621,7 @@ tcpdump -i mlx5_0 -nn -v 'port 4791'  # NVMe-oF over RDMA 端口
 ---
 
 > [!tip] 延伸阅读
+>
 > - [[2026-04-13-rdma-deep-dive-ch3-infiniband|第三章：InfiniBand 架构]] —— IB 协议栈基础
 > - [[2026-04-13-rdma-deep-dive-ch9-verbs-api|第九章：verbs API]] —— RDMA 编程接口
 > - [[2026-04-13-rdma-deep-dive-ch19-ras-tools|第十九章：RDMA 配置工具]] —— perftest 性能测试

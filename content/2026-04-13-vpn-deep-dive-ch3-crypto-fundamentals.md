@@ -5,8 +5,8 @@ tags: [vpn, series, networking, security, cryptography, aes, rsa, diffie-hellman
 description: "VPN 密码学核心——对称加密 (AES-CBC/GCM)、非对称加密 (RSA/ECC)、Diffie-Hellman 密钥交换、HMAC 完整性校验、AEAD 认证加密"
 ---
 
-> [!info] VPN 技术深度探索系列
-> 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+> [!info] VPN 技术深度探索系列 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-vpn-deep-dive-ch1-vpn-fundamentals|VPN 基础概念]]
 > 2. [[2026-04-13-vpn-deep-dive-ch2-tunnel-basics|第二章：隧道技术基础]]
 > 3. **第三章：密码学基础**
@@ -20,12 +20,12 @@ VPN 的核心价值是**在不可信的公共网络上建立安全的通信通�
 
 密码学为 VPN 提供：
 
-| 安全目标 | 密码学工具 | 说明 |
-|----------|------------|------|
-| **机密性 (Confidentiality)** | 对称/非对称加密 | 防止数据被窃听 |
-| **完整性 (Integrity)** | HMAC / AEAD | 防止数据被篡改 |
-| **密钥交换 (Key Exchange)** | DH / ECDH | 在不安全通道上建立共享密钥 |
-| **认证 (Authentication)** | 数字签名 / 证书 | 验证对端身份 |
+| 安全目标                     | 密码学工具      | 说明                       |
+| ---------------------------- | --------------- | -------------------------- |
+| **机密性 (Confidentiality)** | 对称/非对称加密 | 防止数据被窃听             |
+| **完整性 (Integrity)**       | HMAC / AEAD     | 防止数据被篡改             |
+| **密钥交换 (Key Exchange)**  | DH / ECDH       | 在不安全通道上建立共享密钥 |
+| **认证 (Authentication)**    | 数字签名 / 证书 | 验证对端身份               |
 
 ```mermaid
 graph TB
@@ -34,13 +34,13 @@ graph TB
         A2["篡改 (Tamper)"]
         A3["冒充 (Impersonate)"]
     end
-    
+
     subgraph Defense["密码学防御"]
         D1["加密 → 机密性"]
         D2["HMAC → 完整性"]
         D3["数字签名 → 认证"]
     end
-    
+
     A1 -.->|对抗| D1
     A2 -.->|对抗| D2
     A3 -.->|对抗| D3
@@ -69,10 +69,10 @@ P = D(E(P, K), K)
 
 **AES (Advanced Encryption Standard)** 是目前最广泛使用的对称加密算法：
 
-| 参数 | 选项 |
-|------|------|
-| **密钥长度** | 128 / 192 / 256 位 |
-| **分组长度** | 固定 128 位 (16 字节) |
+| 参数         | 选项                                       |
+| ------------ | ------------------------------------------ |
+| **密钥长度** | 128 / 192 / 256 位                         |
+| **分组长度** | 固定 128 位 (16 字节)                      |
 | **迭代次数** | 10 (AES-128) / 12 (AES-192) / 14 (AES-256) |
 
 AES 不是简单地对 16 字节进行一次性加密，而是通过多轮变换（SubBytes → ShiftRows → MixColumns → AddRoundKey）打乱数据：
@@ -106,6 +106,7 @@ IV (初始化向量) ──────────────────►�
 ```
 
 **CBC 的问题**：
+
 - 必须顺序解密（前一个块损坏会导致后续无法解密）
 - 无完整性保护（攻击者可修改密文位）
 - 并行化困难
@@ -124,6 +125,7 @@ Counter 1 ──► AES 加密 ──► Keystream 1 ──► XOR ──► 密
 ```
 
 **GCM 的优势**：
+
 - 可以并行加密（Counter 模式）
 - 同时输出密文和认证标签
 - 认证加密一体化，防止密文篡改
@@ -162,6 +164,7 @@ P = D(E(P, PK), SK)
 ```
 
 **用途**：非对称加密**不用于加密大量数据**（太慢），而是用于：
+
 1. 密钥交换（建立对称密钥）
 2. 数字签名（身份认证）
 
@@ -195,6 +198,7 @@ openssl rsa -in server.key -pubout -out server.crt  # 导出公钥
 ```
 
 **RSA 的问题**：
+
 - 密钥长度大（2048 位 RSA ≈ 2304 位密文）
 - 计算慢（比 AES 慢约 1000 倍）
 - 无法抵御量子计算（ Shor's Algorithm）
@@ -204,10 +208,10 @@ openssl rsa -in server.key -pubout -out server.crt  # 导出公钥
 **ECC (Elliptic Curve Cryptography)** 使用椭圆曲线数学，**用更短的密钥提供同等安全性**：
 
 | RSA 密钥长度 | ECC 密钥长度 | 安全性 |
-|-------------|-------------|--------|
-| 2048 位 | 256 位 | 相当 |
-| 3072 位 | 384 位 | 相当 |
-| 4096 位 | 512 位 | 相当 |
+| ------------ | ------------ | ------ |
+| 2048 位      | 256 位       | 相当   |
+| 3072 位      | 384 位       | 相当   |
+| 4096 位      | 512 位       | 相当   |
 
 ```
 椭圆曲线方程：y² = x³ + ax + b (mod p)
@@ -252,6 +256,7 @@ shared_secret = curve25519(sks, pke)  // 服务器
 ```
 
 **Curve25519 的优势**：
+
 - 密钥仅 32 字节，签名仅 64 字节
 - 设计的曲线参数避免多种攻击
 - 实现简单、速度快、侧信道攻击抵抗好
@@ -293,17 +298,17 @@ sequenceDiagram
     participant A as Alice
     participant B as Bob
     participant E as Eve (攻击者)
-    
+
     Note over A,B: 双方约定: g=5, p=23 (公开)
-    
+
     A->>B: A = 5^6 mod 23 = 8
     Note over A: Alice 私钥 a=6
-    
+
     B->>A: B = 5^15 mod 23 = 19
     Note over B: Bob 私钥 b=15
-    
+
     Note over A,B: 共享秘密 = 19^6 mod 23 = 2<br/>共享秘密 = 8^15 mod 23 = 2
-    
+
     E->>A: A = 8 (只能看到)
     E->>B: B = 19 (只能看到)
     Note over E: Eve 不知道 a=6, b=15<br/>无法算出共享秘密 = 2
@@ -376,28 +381,28 @@ HMAC 使用哈希函数（SHA-256、SHA-384、SHA-512）：
 
 #define KEY_LEN 32  // SHA-256 输出 32 字节
 
-void hmac_sha256(uint8_t *key, size_t key_len, 
+void hmac_sha256(uint8_t *key, size_t key_len,
                  uint8_t *msg, size_t msg_len,
                  uint8_t *out) {
     uint8_t k_ipad[64] = {0};
     uint8_t k_opad[64] = {0};
     uint8_t k[64] = {0};
-    
+
     // 密钥填充/扩展到 64 字节
     memcpy(k, key, key_len);
-    
+
     // 内部填充 (ipad = 0x36) 和外部填充 (opad = 0x5c)
     for (int i = 0; i < 64; i++) {
         k_ipad[i] = k[i] ^ 0x36;
         k_opad[i] = k[i] ^ 0x5c;
     }
-    
+
     // 内层哈希
     uint8_t inner[32];
     sha256_update(k_ipad, 64);
     sha256_update(msg, msg_len);
     sha256_final(inner);
-    
+
     // 外层哈希
     sha256_update(k_opad, 64);
     sha256_update(inner, 32);
@@ -421,11 +426,11 @@ HMAC 计算范围：ESP Header + 加密载荷 + ESP Trailer（不含外层 IP）
 
 ### 5.4 认证标签长度与安全性
 
-| HMAC 类型 | 输出长度 | 安全性 |
-|-----------|----------|--------|
-| HMAC-SHA1 | 20 字节 | 已不推荐（SHA-1 弱点） |
-| HMAC-SHA256 | 32 字节 | 推荐 |
-| HMAC-SHA384 | 48 字节 | 高安全场景 |
+| HMAC 类型   | 输出长度 | 安全性                 |
+| ----------- | -------- | ---------------------- |
+| HMAC-SHA1   | 20 字节  | 已不推荐（SHA-1 弱点） |
+| HMAC-SHA256 | 32 字节  | 推荐                   |
+| HMAC-SHA384 | 48 字节  | 高安全场景             |
 
 ---
 
@@ -436,6 +441,7 @@ HMAC 计算范围：ESP Header + 加密载荷 + ESP Trailer（不含外层 IP）
 **AEAD (Authenticated Encryption with Associated Data)** 是一种同时提供**加密 + 认证**的加密模式，是现代 VPN 的首选。
 
 **三大保证**：
+
 1. **机密性**：攻击者无法获知明文
 2. **完整性**：攻击者无法篡改密文
 3. **认证**：只有持有密钥的人能生成有效密文
@@ -467,12 +473,12 @@ cipher AES-256-GCM    # ← GCM 后缀表示 AEAD
 
 ### 6.3 认证加密与非认证加密的对比
 
-| 场景 | 非认证加密 (AES-CBC) | AEAD (AES-GCM) |
-|------|---------------------|-----------------|
-| 机密性 | ✅ | ✅ |
-| 完整性校验 | ❌ (需额外 HMAC) | ✅ |
-| 篡改攻击 | 可能成功 | **必定检测到** |
-| VPN 协议 | 旧版 IPSec | 现代 IPSec / WireGuard |
+| 场景       | 非认证加密 (AES-CBC) | AEAD (AES-GCM)         |
+| ---------- | -------------------- | ---------------------- |
+| 机密性     | ✅                   | ✅                     |
+| 完整性校验 | ❌ (需额外 HMAC)     | ✅                     |
+| 篡改攻击   | 可能成功             | **必定检测到**         |
+| VPN 协议   | 旧版 IPSec           | 现代 IPSec / WireGuard |
 
 **篡改攻击示例（AES-CBC，无 HMAC）**：
 
@@ -525,13 +531,13 @@ void hkdf_extract(uint8_t *secret, size_t secret_len,
     hmac_sha256(salt, salt_len, secret, secret_len, prk);
 }
 
-void hkdf_expand(uint8_t *prk, 
+void hkdf_expand(uint8_t *prk,
                   uint8_t *info, size_t info_len,
                   uint8_t *okm, size_t okm_len) {
     // Expand: 迭代计算 HMAC 链
     uint8_t T[32] = {0};
     uint8_t counter = 1;
-    
+
     while (okm_len > 0) {
         hmac_sha256(prk, 32, T, 32, T);
         hmac_sha256(prk, 32, T, 32, info, info_len, &counter, 1, T);
@@ -560,16 +566,17 @@ HKDF(ck, DH 结果, " WireGuard v1 zt1 etc")
 
 ## 8. 总结：VPN 密码学全景
 
-|| 组件 | 技术 | 用途 |
-|------|------|------|------|
-| **对称加密** | AES-256-GCM, ChaCha20 | 加密传输数据 |
-| **非对称加密** | RSA-4096, ECDH (Curve25519) | 密钥交换、签名 |
-| **密钥交换** | ECDH, DH | 安全建立共享密钥 |
-| **完整性校验** | HMAC-SHA256, Poly1305 | 防篡改 |
-| **认证加密** | AES-GCM, ChaCha20-Poly1305 | 加密 + 认证一体化 |
-| **密钥派生** | HKDF | 从原始秘密派生出各类密钥 |
+|                | 组件                        | 技术                     | 用途 |
+| -------------- | --------------------------- | ------------------------ | ---- |
+| **对称加密**   | AES-256-GCM, ChaCha20       | 加密传输数据             |
+| **非对称加密** | RSA-4096, ECDH (Curve25519) | 密钥交换、签名           |
+| **密钥交换**   | ECDH, DH                    | 安全建立共享密钥         |
+| **完整性校验** | HMAC-SHA256, Poly1305       | 防篡改                   |
+| **认证加密**   | AES-GCM, ChaCha20-Poly1305  | 加密 + 认证一体化        |
+| **密钥派生**   | HKDF                        | 从原始秘密派生出各类密钥 |
 
 **密钥体系的核心原则**：
+
 1. 数据加密用**对称密钥**（快）
 2. 对称密钥通过 **DH/ECDH** 交换（安全）
 3. 身份通过**数字签名**验证（证书）
@@ -581,6 +588,7 @@ HKDF(ck, DH 结果, " WireGuard v1 zt1 etc")
 ---
 
 > [!quote] 参考文献
+>
 > - [[2026-03-12-wireguard-protocol-deep-dive|WireGuard 协议深度解析]] — 密码学应用
 > - [[2026-03-12-ipsec-protocol-deep-dive|IPSec 协议深度解析]] — ESP 加密与认证
 > - [[2026-04-13-vpn-deep-dive-ch2-tunnel-basics|第二章：隧道技术基础]] — 隧道封装原理

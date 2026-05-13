@@ -34,12 +34,12 @@ description: "深入解析 DPDK 容器网络：DOCKER/CNI、VSwitch、OVS-DPDK�
 
 ### 1.2 DPDK 容器网络优势
 
-| 方案 | 吞吐量 | 延迟 | CPU 开销 |
-|------|--------|------|----------|
-| **Linux Bridge** | ~2-3 Gbps | ~100μs | 高 |
-| **OVS (kernel)** | ~3-4 Gbps | ~80μs | 高 |
-| **OVS-DPDK** | ~10-15 Gbps | ~20μs | 低 |
-| **VPP** | ~10-15 Gbps | ~15μs | 低 |
+| 方案             | 吞吐量      | 延迟   | CPU 开销 |
+| ---------------- | ----------- | ------ | -------- |
+| **Linux Bridge** | ~2-3 Gbps   | ~100μs | 高       |
+| **OVS (kernel)** | ~3-4 Gbps   | ~80μs  | 高       |
+| **OVS-DPDK**     | ~10-15 Gbps | ~20μs  | 低       |
+| **VPP**          | ~10-15 Gbps | ~15μs  | 低       |
 
 ## 2. OVS-DPDK
 
@@ -247,15 +247,15 @@ func cmdAdd(args *skel.CmdArgs) error {
 ```json
 // /etc/cni/net.d/10-dpdk.conf
 {
-    "cniVersion": "0.4.0",
-    "name": "dpdk-network",
-    "type": "dpdkcni",
-    "datapath_type": "netdev",
-    "dev_args": "0000:3d:00.0",
-    "ipam": {
-        "type": "host-local",
-        "subnet": "10.10.0.0/16"
-    }
+  "cniVersion": "0.4.0",
+  "name": "dpdk-network",
+  "type": "dpdkcni",
+  "datapath_type": "netdev",
+  "dev_args": "0000:3d:00.0",
+  "ipam": {
+    "type": "host-local",
+    "subnet": "10.10.0.0/16"
+  }
 }
 ```
 
@@ -330,22 +330,22 @@ spec:
     spec:
       hostNetwork: true
       containers:
-      - name: dpdk-plugin
-        image: intel/dpdk-device-plugin:latest
-        securityContext:
-          privileged: true
-        volumeMounts:
-        - name: device-plugin
-          mountPath: /var/lib/kubelet/device-plugins
-        - name: hugepages
-          mountPath: /mnt/hugepages
+        - name: dpdk-plugin
+          image: intel/dpdk-device-plugin:latest
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - name: device-plugin
+              mountPath: /var/lib/kubelet/device-plugins
+            - name: hugepages
+              mountPath: /mnt/hugepages
       volumes:
-      - name: device-plugin
-        hostPath:
-          path: /var/lib/kubelet/device-plugins
-      - name: hugepages
-        emptyDir:
-          medium: HugePages
+        - name: device-plugin
+          hostPath:
+            path: /var/lib/kubelet/device-plugins
+        - name: hugepages
+          emptyDir:
+            medium: HugePages
 ```
 
 ## 6. SR-IOV 容器
@@ -387,12 +387,12 @@ dpdk-devbind --bind=igb_uio eth0 vf 1
 
 ### 7.1 容器网络性能
 
-| 方案 | 吞吐量 | 延迟 | CPU cycles/pkt |
-|------|--------|------|----------------|
-| **veth + bridge** | ~2 Gbps | ~100μs | ~400 |
-| **OVS (kernel)** | ~3 Gbps | ~80μs | ~300 |
-| **OVS-DPDK** | ~10 Gbps | ~20μs | ~50 |
-| **SR-IOV** | ~15 Gbps | ~5μs | ~20 |
+| 方案              | 吞吐量   | 延迟   | CPU cycles/pkt |
+| ----------------- | -------- | ------ | -------------- |
+| **veth + bridge** | ~2 Gbps  | ~100μs | ~400           |
+| **OVS (kernel)**  | ~3 Gbps  | ~80μs  | ~300           |
+| **OVS-DPDK**      | ~10 Gbps | ~20μs  | ~50            |
+| **SR-IOV**        | ~15 Gbps | ~5μs   | ~20            |
 
 ### 7.2 优化建议
 
@@ -427,12 +427,12 @@ isolcpus=0-3
 
 选择建议：
 
-| 场景 | 推荐方案 |
-|------|----------|
+| 场景         | 推荐方案      |
+| ------------ | ------------- |
 | **开发测试** | veth + bridge |
-| **一般生产** | OVS (kernel) |
-| **高性能** | OVS-DPDK |
-| **超高性能** | SR-IOV |
+| **一般生产** | OVS (kernel)  |
+| **高性能**   | OVS-DPDK      |
+| **超高性能** | SR-IOV        |
 
 ---
 

@@ -34,21 +34,21 @@ graph TB
         C[Tool Selection]
         D[Result Processing]
     end
-    
+
     subgraph "Tool Use System"
         F[Tool Registry]
         G[Tool Executor]
         H[Sandbox Manager]
         I[Result Validator]
     end
-    
+
     subgraph "External Tools"
         J[File Operations]
         K[Code Execution]
         L[Search Tools]
         M[Git Tools]
     end
-    
+
     B --> C --> G
     G --> J & K & L & M
     J & K --> H --> I --> D
@@ -60,28 +60,30 @@ graph TB
 
 ```typescript
 interface ToolSchema {
-  name: string;           // 工具唯一标识符
-  description: string;    // 供 LLM 理解何时使用
-  parameters: {           // JSON Schema 格式参数定义
-    type: "object";
-    properties: Record<string, ParameterSchema>;
-    required: string[];
-  };
-  returns: {              // 返回值定义
-    type: "object";
-    properties: Record<string, ReturnSchema>;
-  };
-  examples?: ToolExample[]; // 使用示例
+  name: string // 工具唯一标识符
+  description: string // 供 LLM 理解何时使用
+  parameters: {
+    // JSON Schema 格式参数定义
+    type: "object"
+    properties: Record<string, ParameterSchema>
+    required: string[]
+  }
+  returns: {
+    // 返回值定义
+    type: "object"
+    properties: Record<string, ReturnSchema>
+  }
+  examples?: ToolExample[] // 使用示例
 }
 
 interface ParameterSchema {
-  type: string;
-  description: string;
-  default?: any;
-  enum?: any[];
-  minimum?: number;
-  maxLength?: number;
-  pattern?: string;
+  type: string
+  description: string
+  default?: any
+  enum?: any[]
+  minimum?: number
+  maxLength?: number
+  pattern?: string
 }
 ```
 
@@ -91,45 +93,45 @@ interface ParameterSchema {
 class ParameterValidator:
     def validate(self, params: dict, schema: dict) -> ValidationResult:
         errors = []
-        
+
         # 检查必需参数
         for required in schema.get("required", []):
             if required not in params:
                 errors.append(f"Missing required: {required}")
-        
+
         # 校验类型和约束
         for name, value in params.items():
             if name in schema["properties"]:
                 errors.extend(self._validate_property(name, value, schema["properties"][name]))
-        
+
         return ValidationResult(is_valid=len(errors) == 0, errors=errors)
-    
+
     def _validate_property(self, name: str, value: any, schema: dict) -> list:
         errors = []
-        
+
         # 类型检查
         expected = schema.get("type")
         if not self._check_type(value, expected):
             errors.append(f"{name}: expected {expected}")
-        
+
         # 枚举检查
         if "enum" in schema and value not in schema["enum"]:
             errors.append(f"{name}: must be one of {schema['enum']}")
-        
+
         # 数值范围
         if expected == "number":
             if "minimum" in schema and value < schema["minimum"]:
                 errors.append(f"{name}: must be >= {schema['minimum']}")
-        
+
         # 字符串长度和模式
         if expected == "string":
             if "maxLength" in schema and len(value) > schema["maxLength"]:
                 errors.append(f"{name}: exceeds maxLength")
             if "pattern" in schema and not re.match(schema["pattern"], value):
                 errors.append(f"{name}: does not match pattern")
-        
+
         return errors
-    
+
     def _check_type(self, value: any, expected: str) -> bool:
         type_map = {
             "string": lambda v: isinstance(v, str),
@@ -146,18 +148,20 @@ class ParameterValidator:
 
 ```typescript
 interface ToolResult {
-  success: boolean;           // 执行是否成功
-  error?: {                   // 错误信息（失败时）
-    code: string;             // 错误码
-    message: string;          // 错误描述
-    details?: any;
-  };
-  data?: any;                 // 成功时返回数据
-  metadata?: {                // 元数据
-    execution_time_ms: number;
-    truncated?: boolean;
-    sandboxed?: boolean;
-  };
+  success: boolean // 执行是否成功
+  error?: {
+    // 错误信息（失败时）
+    code: string // 错误码
+    message: string // 错误描述
+    details?: any
+  }
+  data?: any // 成功时返回数据
+  metadata?: {
+    // 元数据
+    execution_time_ms: number
+    truncated?: boolean
+    sandboxed?: boolean
+  }
 }
 ```
 
@@ -173,10 +177,10 @@ class ToolVersion:
 class VersionedToolRegistry:
     def __init__(self):
         self._tools: Dict[str, Dict[str, ToolVersion]] = {}
-    
+
     def register(self, name: str, schema: ToolSchema, version: str = "1.0.0"):
         self._tools.setdefault(name, {})[version] = ToolVersion(version, schema)
-    
+
     def get(self, name: str, version: str = None) -> Optional[ToolSchema]:
         if name not in self._tools:
             return None
@@ -186,7 +190,7 @@ class VersionedToolRegistry:
             valid = [v for v in versions.values() if not v.deprecated]
             return max(valid, key=lambda x: x.version).schema if valid else None
         return versions.get(version)
-    
+
     def deprecate(self, name: str, version: str):
         if name in self._tools and version in self._tools[name]:
             self._tools[name][version].deprecated = True
@@ -194,14 +198,14 @@ class VersionedToolRegistry:
 
 ## 3. Tool 分类体系
 
-| 类别 | 典型工具 | 主要功能 |
-|------|----------|----------|
+| 类别     | 典型工具                | 主要功能                 |
+| -------- | ----------------------- | ------------------------ |
 | 文件操作 | Read, Write, Edit, Glob | 文件读写、编辑、模式匹配 |
-| 代码执行 | Bash, REPL | shell 命令、代码运行 |
-| 搜索 | Grep, WebSearch | 文本搜索、网络搜索 |
-| Git | GitLog, GitDiff | Git 版本控制操作 |
-| 构建 | Build, Compile | 项目构建打包 |
-| 测试 | Test, Coverage | 单元测试、覆盖率 |
+| 代码执行 | Bash, REPL              | shell 命令、代码运行     |
+| 搜索     | Grep, WebSearch         | 文本搜索、网络搜索       |
+| Git      | GitLog, GitDiff         | Git 版本控制操作         |
+| 构建     | Build, Compile          | 项目构建打包             |
+| 测试     | Test, Coverage          | 单元测试、覆盖率         |
 
 ### 3.1 文件操作类工具
 
@@ -209,7 +213,7 @@ class VersionedToolRegistry:
 class ReadTool:
     name = "Read"
     description = "Read contents from a file."
-    
+
     parameters = {
         "type": "object",
         "properties": {
@@ -219,16 +223,16 @@ class ReadTool:
         },
         "required": ["path"]
     }
-    
+
     def execute(self, path: str, offset: int = 1, limit: int = 1000) -> ToolResult:
         try:
             with open(path, 'r', encoding='utf-8') as f:
                 lines = f.readlines()
-            
+
             start = offset - 1
             end = min(start + limit, len(lines))
             content = ''.join(lines[start:end])
-            
+
             return ToolResult(
                 success=True,
                 data={
@@ -249,7 +253,7 @@ class ReadTool:
 class WriteTool:
     name = "Write"
     description = "Write content to a file. Use for new files or complete overwrite."
-    
+
     parameters = {
         "type": "object",
         "properties": {
@@ -259,15 +263,15 @@ class WriteTool:
         },
         "required": ["path", "content"]
     }
-    
+
     def execute(self, path: str, content: str, create_directories: bool = False) -> ToolResult:
         try:
             full_path = Path(path)
             if create_directories:
                 full_path.parent.mkdir(parents=True, exist_ok=True)
-            
+
             full_path.write_text(content, encoding='utf-8')
-            
+
             return ToolResult(
                 success=True,
                 data={"path": str(full_path), "bytes_written": len(content.encode('utf-8'))}
@@ -282,7 +286,7 @@ class WriteTool:
 class BashTool:
     name = "Bash"
     description = "Execute a bash command in an isolated environment with resource limits."
-    
+
     parameters = {
         "type": "object",
         "properties": {
@@ -292,13 +296,13 @@ class BashTool:
         },
         "required": ["command"]
     }
-    
+
     def execute(self, command: str, timeout: int = 30, working_directory: str = ".") -> ToolResult:
         import subprocess
         import threading
-        
+
         result = {"stdout": "", "stderr": "", "exit_code": None, "timed_out": False}
-        
+
         def run():
             try:
                 proc = subprocess.Popen(
@@ -313,11 +317,11 @@ class BashTool:
                 proc.kill()
                 result["timed_out"] = True
                 result["stderr"] = f"Command timed out after {timeout}s"
-        
+
         thread = threading.Thread(target=run)
         thread.start()
         thread.join(timeout=timeout + 5)
-        
+
         return ToolResult(
             success=not result["timed_out"] and result["exit_code"] == 0,
             data={
@@ -335,7 +339,7 @@ class BashTool:
 class GrepTool:
     name = "Grep"
     description = "Search for text patterns in files using regex."
-    
+
     parameters = {
         "type": "object",
         "properties": {
@@ -348,27 +352,27 @@ class GrepTool:
         },
         "required": ["pattern"]
     }
-    
+
     def execute(self, pattern: str, path: str = ".", file_pattern: str = "*",
                 case_sensitive: bool = True, context_lines: int = 0, max_results: int = 100) -> ToolResult:
         import re
         from pathlib import Path
-        
+
         try:
             regex = re.compile(pattern, 0 if case_sensitive else re.IGNORECASE)
         except re.error as e:
             return ToolResult(success=False, error={"code": "INVALID_REGEX", "message": str(e)})
-        
+
         matches = []
         search_path = Path(path)
-        
+
         for file_path in search_path.rglob(file_pattern):
             if not file_path.is_file() or any(p.startswith('.') for p in file_path.parts):
                 continue
-            
+
             try:
                 lines = file_path.read_text(encoding='utf-8', errors='ignore').splitlines()
-                
+
                 for line_num, line in enumerate(lines, 1):
                     if regex.search(line):
                         match = {"path": str(file_path), "line": line_num, "content": line.rstrip()}
@@ -381,10 +385,10 @@ class GrepTool:
                             break
             except (PermissionError, OSError):
                 continue
-            
+
             if len(matches) >= max_results:
                 break
-        
+
         return ToolResult(
             success=True,
             data={"matches": matches, "total_matches": len(matches), "truncated": len(matches) == max_results}
@@ -398,7 +402,7 @@ class GitTools:
     class LogTool:
         name = "GitLog"
         description = "View git commit history."
-        
+
         parameters = {
             "type": "object",
             "properties": {
@@ -407,7 +411,7 @@ class GitTools:
                 "format": {"type": "string", "description": "Format string", "default": "%h %s"}
             }
         }
-        
+
         def execute(self, path: str = ".", max_count: int = 20, format: str = "%h %s") -> ToolResult:
             import subprocess
             try:
@@ -419,11 +423,11 @@ class GitTools:
                 return ToolResult(success=True, data={"commits": commits, "count": len(commits)})
             except subprocess.TimeoutExpired:
                 return ToolResult(success=False, error={"code": "TIMEOUT", "message": "Git log timed out"})
-    
+
     class DiffTool:
         name = "GitDiff"
         description = "Show changes between commits or working tree."
-        
+
         parameters = {
             "type": "object",
             "properties": {
@@ -432,7 +436,7 @@ class GitTools:
                 "file": {"type": "string", "description": "Specific file"}
             }
         }
-        
+
         def execute(self, path: str = ".", target: str = "HEAD", file: str = None) -> ToolResult:
             import subprocess
             cmd = ["git", "-C", path, "diff", target]
@@ -456,23 +460,23 @@ sequenceDiagram
     participant PV as Parameter Validator
     participant SM as Sandbox Manager
     participant RV as Result Validator
-    
+
     LLM->>TE: Tool Call (name, params)
     TE->>PV: Validate Parameters
-    
+
     alt Invalid Parameters
         PV-->>TE: Validation Error
         TE-->>LLM: Error Result
     end
-    
+
     TE->>SM: Prepare & Execute in Sandbox
     SM-->>TE: Execution Complete
-    
+
     TE->>RV: Validate Result
     alt Invalid Result
         RV-->>TE: Validation Error
     end
-    
+
     TE-->>LLM: Final Tool Result
 ```
 
@@ -484,23 +488,23 @@ class ToolExecutor:
         self.registry = registry
         self.sandbox = sandbox_manager
         self.validator = ParameterValidator()
-    
+
     async def execute(self, tool_call: ToolCall) -> ToolResult:
         start_time = time.time()
-        
+
         # 1. 获取工具 schema
         schema = self.registry.get(tool_call.name)
         if schema is None:
             return ToolResult(success=False, error={"code": "TOOL_NOT_FOUND", "message": f"Tool '{tool_call.name}' not found"})
-        
+
         # 2. 参数校验
         validation = self.validator.validate(tool_call.arguments, schema.parameters)
         if not validation.is_valid:
             return ToolResult(success=False, error={"code": "INVALID_PARAMETERS", "message": "Validation failed", "details": validation.errors})
-        
+
         # 3. 预处理参数
         processed_args = self._preprocess(tool_call.arguments, schema.parameters)
-        
+
         # 4. 执行
         try:
             result = await self._execute_tool(schema, processed_args)
@@ -509,7 +513,7 @@ class ToolExecutor:
             return result
         except Exception as e:
             return ToolResult(success=False, error={"code": "EXECUTION_ERROR", "message": str(e)})
-    
+
     def _preprocess(self, args: dict, schema: dict) -> dict:
         processed = {}
         for name, param_schema in schema.get("properties", {}).items():
@@ -518,7 +522,7 @@ class ToolExecutor:
             elif "default" in param_schema:
                 processed[name] = param_schema["default"]
         return processed
-    
+
     def _convert(self, value: any, target_type: str) -> any:
         conversions = {"integer": int, "number": float, "boolean": bool}
         return conversions.get(target_type, lambda x: x)(value)
@@ -531,7 +535,7 @@ class SandboxManager:
     def __init__(self, config: SandboxConfig):
         self.config = config
         self._sandboxes: Dict[str, Sandbox] = {}
-    
+
     async def prepare(self, tool_name: str) -> str:
         sandbox_id = str(uuid.uuid4())
         sandbox = Sandbox(
@@ -542,13 +546,13 @@ class SandboxManager:
         await sandbox.initialize()
         self._sandboxes[sandbox_id] = sandbox
         return sandbox_id
-    
+
     async def execute(self, sandbox_id: str, func: callable, args: tuple, kwargs: dict) -> Any:
         sandbox = self._sandboxes[sandbox_id]
         if not sandbox.check_limits():
             raise ResourceLimitExceeded(f"Limits exceeded for {sandbox_id}")
         return await sandbox.run(func, args, kwargs)
-    
+
     async def cleanup(self, sandbox_id: str):
         if sandbox_id in self._sandboxes:
             await self._sandboxes[sandbox_id].destroy()
@@ -559,24 +563,24 @@ class Sandbox:
         self.id = id
         self.working_directory = working_directory
         self.limits = limits
-    
+
     async def initialize(self):
         self.working_directory.mkdir(parents=True, exist_ok=True)
         self._apply_resource_limits()
-    
+
     def _apply_resource_limits(self):
         import resource
         max_memory = self.limits.max_memory_mb * 1024 * 1024
         resource.setrlimit(resource.RLIMIT_AS, (max_memory, max_memory))
         resource.setrlimit(resource.RLIMIT_CPU, (self.limits.max_execution_time_sec, self.limits.max_execution_time_sec))
         resource.setrlimit(resource.RLIMIT_NPROC, (10, 10))
-    
+
     async def run(self, func: callable, args: tuple, kwargs: dict) -> Any:
         loop = asyncio.get_event_loop()
         def _run():
             os.chdir(self.working_directory)
             return func(*args, **kwargs)
-        
+
         future = loop.run_in_executor(None, _run)
         try:
             result = await asyncio.wait_for(future, timeout=self.limits.max_execution_time_sec)
@@ -594,12 +598,12 @@ class ResultProcessor:
     def process_success(self, result: ToolResult, max_size: int = 100000) -> ToolResult:
         if result.data is None:
             return result
-        
+
         serialized = json.dumps(result.data, default=str)
         if len(serialized) > max_size:
             return self._truncate(result, max_size)
         return result
-    
+
     def _truncate(self, result: ToolResult, max_size: int) -> ToolResult:
         if isinstance(result.data, dict):
             truncated = {}
@@ -627,11 +631,11 @@ class ErrorHandler:
         "TIMEOUT": {"recoverable": True, "retry": True, "action": "Increase timeout"},
         "INVALID_PARAMETERS": {"recoverable": False, "retry": True, "action": "Fix parameters"},
     }
-    
+
     def handle_error(self, error: dict) -> ToolResult:
         code = error.get("code", "UNKNOWN_ERROR")
         category = self.ERROR_CATEGORIES.get(code, {"recoverable": False, "retry": False})
-        
+
         return ToolResult(
             success=False,
             error={
@@ -640,7 +644,7 @@ class ErrorHandler:
                 "category": category
             }
         )
-    
+
     def should_retry(self, error: ToolResult) -> bool:
         return error.error.get("category", {}).get("retry", False)
 ```
@@ -651,7 +655,7 @@ class ErrorHandler:
 class TimeoutHandler:
     def __init__(self, default_timeout: int = 30):
         self.default_timeout = default_timeout
-    
+
     async def execute_with_timeout(self, coro, timeout: int = None) -> ToolResult:
         timeout = timeout or self.default_timeout
         try:
@@ -674,7 +678,7 @@ class TruncationHandler:
             result.metadata = result.metadata or {}
             result.metadata["truncated"] = True
         return result
-    
+
     def _truncate_by_lines(self, data: Any, max_lines: int = 1000) -> Any:
         if isinstance(data, dict):
             return {k: self._truncate_by_lines(v, max_lines) for k, v in data.items()}
@@ -692,11 +696,11 @@ class TruncationHandler:
 
 ### 6.1 协同模式对比
 
-| 模式 | 适用场景 | 优点 | 缺点 |
-|------|----------|------|------|
+| 模式     | 适用场景         | 优点                 | 缺点               |
+| -------- | ---------------- | -------------------- | ------------------ |
 | 串行执行 | 有依赖关系的任务 | 简单可靠，可共享状态 | 速度受限于最慢步骤 |
-| 并行执行 | 相互独立的任务 | 充分利用资源，速度快 | 不适合有依赖的场景 |
-| 条件触发 | 根据结果决策 | 灵活应变 | 流程复杂 |
+| 并行执行 | 相互独立的任务   | 充分利用资源，速度快 | 不适合有依赖的场景 |
+| 条件触发 | 根据结果决策     | 灵活应变             | 流程复杂           |
 
 ### 6.2 串行执行
 
@@ -705,27 +709,27 @@ class SequentialExecutor:
     async def execute_chain(self, tool_calls: List[ToolCall], context: dict = None) -> List[ToolResult]:
         results = []
         execution_context = context or {}
-        
+
         for i, tool_call in enumerate(tool_calls):
             # 添加前一个结果到上下文
             if results:
                 execution_context["last_result"] = results[-1]
-            
+
             # 解析参数引用
             resolved_args = self._resolve_references(tool_call.arguments, execution_context)
-            
+
             # 执行
             result = await self.tool_executor.execute(ToolCall(name=tool_call.name, arguments=resolved_args))
             results.append(result)
-            
+
             # 失败时停止
             if not result.success:
                 for remaining in tool_calls[i+1:]:
                     results.append(ToolResult(success=False, error={"code": "CHAIN_ABORTED", "message": "Previous tool failed"}))
                 break
-        
+
         return results
-    
+
     def _resolve_references(self, args: dict, context: dict) -> dict:
         resolved = {}
         for key, value in args.items():
@@ -736,7 +740,7 @@ class SequentialExecutor:
             else:
                 resolved[key] = value
         return resolved
-    
+
     def _resolve_path(self, path: List[str], context: dict) -> Any:
         current = context
         for segment in path:
@@ -755,14 +759,14 @@ class SequentialExecutor:
 class ParallelExecutor:
     async def execute_parallel(self, tool_calls: List[ToolCall], max_concurrency: int = 5) -> List[ToolResult]:
         semaphore = asyncio.Semaphore(max_concurrency)
-        
+
         async def execute_one(call: ToolCall, index: int):
             async with semaphore:
                 return (index, await self.tool_executor.execute(call))
-        
+
         tasks = [execute_one(call, i) for i, call in enumerate(tool_calls)]
         completed = await asyncio.gather(*tasks, return_exceptions=True)
-        
+
         results = [None] * len(tool_calls)
         for item in completed:
             if isinstance(item, Exception):
@@ -779,11 +783,11 @@ class ParallelExecutor:
 class ConditionalExecutor:
     async def execute_conditional(self, workflow: Dict) -> ToolResult:
         current_step = 0
-        
+
         while current_step < len(workflow["steps"]):
             step = workflow["steps"][current_step]
             result = await self.executor.execute(ToolCall(name=step["tool"], arguments=step.get("args", {})))
-            
+
             condition = step.get("condition", {})
             if condition:
                 if condition.get("if") == "success" and not result.success:
@@ -792,15 +796,15 @@ class ConditionalExecutor:
                     target = condition.get("then", current_step + 1)
             else:
                 target = current_step + 1
-            
+
             if isinstance(target, str) and target in workflow.get("branches", {}):
                 branch_result = await self.execute_branch(workflow["branches"][target], {"last_result": result})
                 if branch_result:
                     return branch_result
                 target = current_step + 1
-            
+
             current_step = target if isinstance(target, int) else current_step + 1
-        
+
         return result
 ```
 
@@ -823,7 +827,7 @@ class ToolDescriptionGenerator:
         if schema.examples:
             parts.append(self._generate_examples(schema))
         return "\n\n".join(parts)
-    
+
     def _generate_parameters_doc(self, schema: ToolSchema) -> str:
         lines = ["## Parameters\n"]
         for name, param in schema.parameters.get("properties", {}).items():
@@ -843,14 +847,14 @@ class ExampleEngineering:
         examples = []
         required = {k: v for k, v in schema.parameters.get("properties", {}).items()
                    if k in schema.parameters.get("required", [])}
-        
+
         # 基本用法
         args = {name: self._generate_sample(param) for name, param in required.items()}
         examples.append({
             "description": f"Call {schema.name} to achieve basic goal",
             "tool_call": {"name": schema.name, "arguments": args}
         })
-        
+
         # 带可选参数
         if schema.parameters.get("properties"):
             optional_example = dict(args)
@@ -861,9 +865,9 @@ class ExampleEngineering:
                 "description": f"Call {schema.name} with optional parameters",
                 "tool_call": {"name": schema.name, "arguments": optional_example}
             })
-        
+
         return examples[:num_examples]
-    
+
     def _generate_sample(self, param_schema: dict) -> Any:
         samples = {"string": "example", "integer": 1, "number": 1.0, "boolean": True, "array": []}
         if "enum" in param_schema:
@@ -883,7 +887,7 @@ class DescriptionQualityChecker:
         }
         overall = sum(scores.values()) / len(scores)
         return {"overall": overall, "dimensions": scores, "grade": "A" if overall > 0.8 else "B" if overall > 0.6 else "C"}
-    
+
     def _check_clarity(self, description: str) -> float:
         if not description:
             return 0.0
@@ -902,29 +906,29 @@ class DynamicToolRegistry:
         self._versions: Dict[str, List[str]] = {}
         self._lock = asyncio.Lock()
         self._change_callbacks: List[Callable] = []
-    
+
     async def register(self, schema: ToolSchema, version: str = None, replace: bool = False) -> RegistrationResult:
         async with self._lock:
             if schema.name in self._tools and not replace:
                 return RegistrationResult(success=False, error=f"Tool exists. Use replace=True.")
-            
+
             if version is None:
                 version = self._generate_version(schema.name)
-            
+
             if not self._validate_schema(schema):
                 return RegistrationResult(success=False, error="Invalid schema")
-            
+
             self._tools[schema.name] = schema
             self._versions.setdefault(schema.name, []).append(version)
-            
+
             await self._notify_change({"type": "register", "tool": schema.name, "version": version})
             return RegistrationResult(success=True, tool_name=schema.name, version=version)
-    
+
     async def unregister(self, tool_name: str, version: str = None) -> UnregistrationResult:
         async with self._lock:
             if tool_name not in self._tools:
                 return UnregistrationResult(success=False, error="Tool not found")
-            
+
             if version is None:
                 del self._tools[tool_name]
                 del self._versions[tool_name]
@@ -934,10 +938,10 @@ class DynamicToolRegistry:
                 if not self._versions.get(tool_name):
                     del self._tools[tool_name]
                     del self._versions[tool_name]
-            
+
             await self._notify_change({"type": "unregister", "tool": tool_name})
             return UnregistrationResult(success=True)
-    
+
     def _generate_version(self, tool_name: str) -> str:
         versions = self._versions.get(tool_name, [])
         if not versions:
@@ -953,16 +957,16 @@ class ToolVersionManager:
     def __init__(self, registry: DynamicToolRegistry):
         self.registry = registry
         self._deprecation_schedule: Dict[str, DeprecationInfo] = {}
-    
+
     async def deprecate(self, tool_name: str, version: str, sunset_date: datetime, migration_guide: str = None):
         self._deprecation_schedule[f"{tool_name}:{version}"] = DeprecationInfo(
             tool_name, version, datetime.now(), sunset_date, migration_guide
         )
-    
+
     def is_deprecated(self, tool_name: str, version: str) -> bool:
         info = self._deprecation_schedule.get(f"{tool_name}:{version}")
         return datetime.now() >= info.deprecated_at if info else False
-    
+
     def get_migration_guide(self, tool_name: str, version: str) -> Optional[str]:
         info = self._deprecation_schedule.get(f"{tool_name}:{version}")
         return info.migration_guide if info else None
@@ -976,7 +980,7 @@ class ToolVersionManager:
 class GlobTool:
     name = "Glob"
     description = "Find files by matching patterns. Supports ** for recursive, * for wildcards."
-    
+
     parameters = {
         "type": "object",
         "properties": {
@@ -987,22 +991,22 @@ class GlobTool:
         },
         "required": ["pattern"]
     }
-    
+
     def execute(self, pattern: str, base_path: str = ".", include_hidden: bool = False, max_results: int = 1000) -> ToolResult:
         from pathlib import Path
         try:
             base = Path(base_path).resolve()
             if not base.exists():
                 return ToolResult(success=False, error={"code": "PATH_NOT_FOUND", "message": f"Path not found: {base_path}"})
-            
+
             results = list(base.glob(pattern)) if "**" not in pattern else list(base.rglob(pattern.replace("**/", "*")))
-            
+
             if not include_hidden:
                 results = [r for r in results if not any(p.startswith('.') for p in r.parts)]
-            
+
             truncated = len(results) > max_results
             results = results[:max_results]
-            
+
             return ToolResult(success=True, data={
                 "matches": [str(r) for r in results],
                 "count": len(results),
@@ -1018,7 +1022,7 @@ class GlobTool:
 class EditTool:
     name = "Edit"
     description = "Make a partial edit to an existing file."
-    
+
     parameters = {
         "type": "object",
         "properties": {
@@ -1029,22 +1033,22 @@ class EditTool:
         },
         "required": ["path", "old_string", "new_string"]
     }
-    
+
     def execute(self, path: str, old_string: str, new_string: str, replace_all: bool = False) -> ToolResult:
         from pathlib import Path
         try:
             full_path = Path(path)
             if not full_path.exists():
                 return ToolResult(success=False, error={"code": "FILE_NOT_FOUND", "message": f"File not found: {path}"})
-            
+
             content = full_path.read_text(encoding='utf-8')
             if old_string not in content:
                 return ToolResult(success=False, error={"code": "STRING_NOT_FOUND", "message": "old_string not found in file"})
-            
+
             count = content.count(old_string)
             new_content = content.replace(old_string, new_string, 1 if not replace_all else -1)
             full_path.write_text(new_content, encoding='utf-8')
-            
+
             return ToolResult(success=True, data={"path": str(full_path), "replacements": count if replace_all else 1})
         except Exception as e:
             return ToolResult(success=False, error={"code": "EDIT_ERROR", "message": str(e)})
@@ -1056,7 +1060,7 @@ class EditTool:
 class EnhancedBashTool:
     DANGEROUS_COMMANDS = {"rm -rf /", "mkfs", ":(){:|:&};:", "> /etc/passwd"}
     BLOCKED_PATHS = {"/etc/passwd", "/etc/shadow"}
-    
+
     def validate_command(self, command: str) -> bool:
         for dangerous in self.DANGEROUS_COMMANDS:
             if dangerous in command:
@@ -1065,27 +1069,27 @@ class EnhancedBashTool:
             if blocked in command:
                 return False
         return True
-    
+
     async def execute(self, command: str, timeout: int = 30, working_directory: str = ".") -> ToolResult:
         if not self.validate_command(command):
             return ToolResult(success=False, error={"code": "COMMAND_REJECTED", "message": "Command contains dangerous patterns"})
-        
+
         import asyncio
         import resource
-        
+
         def set_limits():
             max_mem = 512 * 1024 * 1024
             resource.setrlimit(resource.RLIMIT_AS, (max_mem, max_mem))
             resource.setrlimit(resource.RLIMIT_FSIZE, (100 * 1024 * 1024, 100 * 1024 * 1024))
             resource.setrlimit(resource.RLIMIT_NPROC, (50, 50))
-        
+
         try:
             process = await asyncio.create_subprocess_shell(
                 command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
                 cwd=working_directory, preexec_fn=set_limits
             )
             stdout, stderr = await asyncio.wait_for(process.communicate(), timeout=timeout)
-            
+
             return ToolResult(
                 success=process.returncode == 0,
                 data={"stdout": stdout.decode('utf-8', errors='replace'),
@@ -1111,19 +1115,19 @@ graph TB
         C[Search Tools] --> D
         E[Git Tools] --> D
     end
-    
+
     subgraph "Adapter Layer"
         D --> F[Tool Registry]
         F --> G[Schema Validator]
         G --> H[Permission Controller]
     end
-    
+
     subgraph "Execution Layer"
         H --> I[Sandbox Manager]
         I --> J[Resource Monitor]
         J --> K[Result Processor]
     end
-    
+
     subgraph "Integration Layer"
         K --> L[LLM Interface]
         L --> M[Context Manager]
@@ -1148,16 +1152,16 @@ class gsd2ToolRegistry:
         self._tools: Dict[str, gsd2Tool] = {}
         self._categories: Dict[str, List[str]] = {}
         self._lock = asyncio.Lock()
-    
+
     async def register(self, tool: gsd2Tool, allow_override: bool = False) -> bool:
         async with self._lock:
             if tool.name in self._tools and not allow_override:
                 raise ValueError(f"Tool '{tool.name}' already registered")
-            
+
             self._tools[tool.name] = tool
             self._categories.setdefault(tool.category, []).append(tool.name)
             return True
-    
+
     async def unregister(self, tool_name: str) -> bool:
         async with self._lock:
             if tool_name not in self._tools:
@@ -1167,15 +1171,15 @@ class gsd2ToolRegistry:
                 self._categories[tool.category].remove(tool_name)
             del self._tools[tool_name]
             return True
-    
+
     async def execute(self, tool_name: str, arguments: dict) -> dict:
         if tool_name not in self._tools:
             return {"success": False, "error": {"code": "TOOL_NOT_FOUND", "message": f"Tool '{tool_name}' not found"}}
-        
+
         tool = self._tools[tool_name]
         if not tool.enabled:
             return {"success": False, "error": {"code": "TOOL_DISABLED", "message": f"Tool '{tool_name}' is disabled"}}
-        
+
         try:
             validated_args = self._validate_arguments(arguments, tool.schema)
             if asyncio.iscoroutinefunction(tool.handler):
@@ -1185,7 +1189,7 @@ class gsd2ToolRegistry:
             return result
         except Exception as e:
             return {"success": False, "error": {"code": "EXECUTION_ERROR", "message": str(e)}}
-    
+
     def _validate_arguments(self, args: dict, schema: dict) -> dict:
         validated = {}
         for key, value in args.items():
@@ -1195,7 +1199,7 @@ class gsd2ToolRegistry:
             if required not in validated:
                 raise ValueError(f"Missing required parameter: {required}")
         return validated
-    
+
     def list_tools(self, category: str = None) -> List[dict]:
         tools = self._tools
         if category:
@@ -1214,14 +1218,14 @@ class gsd2Sandbox:
         self.working_dir: Optional[Path] = None
         self._initialized = False
         self._metrics = {}
-    
+
     async def initialize(self, working_dir: Path = None) -> bool:
         self.working_dir = working_dir or Path(f"/tmp/gsd2-sandbox-{self.id}")
         self.working_dir.mkdir(parents=True, exist_ok=True)
         self._apply_resource_limits()
         self._initialized = True
         return True
-    
+
     def _apply_resource_limits(self):
         import resource
         max_memory = self.config.get("max_memory_mb", 512) * 1024 * 1024
@@ -1229,13 +1233,13 @@ class gsd2Sandbox:
         resource.setrlimit(resource.RLIMIT_AS, (max_memory, max_memory))
         resource.setrlimit(resource.RLIMIT_CPU, (max_time, max_time))
         resource.setrlimit(resource.RLIMIT_NPROC, (50, 50))
-    
+
     async def execute(self, command: str, timeout: int = None) -> dict:
         if not self._initialized:
             return {"success": False, "error": "Sandbox not initialized"}
-        
+
         timeout = timeout or self.config.get("max_execution_time_sec", 60)
-        
+
         try:
             process = await asyncio.create_subprocess_shell(
                 command,
@@ -1244,7 +1248,7 @@ class gsd2Sandbox:
                 cwd=str(self.working_dir),
                 env={**os.environ, "GSD2_SANDBOX_ID": self.id}
             )
-            
+
             try:
                 stdout, stderr = await asyncio.wait_for(process.communicate(), timeout=timeout)
                 self._metrics["exit_code"] = process.returncode
@@ -1267,7 +1271,7 @@ class gsd2SandboxManager:
         self.config = config or {}
         self._sandboxes: Dict[str, gsd2Sandbox] = {}
         self._pool: asyncio.Queue = asyncio.Queue()
-    
+
     async def acquire(self) -> gsd2Sandbox:
         try:
             sandbox = self._pool.get_nowait()
@@ -1277,7 +1281,7 @@ class gsd2SandboxManager:
             await sandbox.initialize()
             self._sandboxes[sandbox.id] = sandbox
             return sandbox
-    
+
     async def release(self, sandbox: gsd2Sandbox):
         if sandbox._metrics.get("timed_out"):
             await sandbox.cleanup()
@@ -1287,7 +1291,7 @@ class gsd2SandboxManager:
             await self._pool.put(sandbox)
         else:
             await sandbox.cleanup()
-    
+
     async def cleanup_all(self):
         for sandbox in self._sandboxes.values():
             await sandbox.cleanup()
@@ -1308,51 +1312,51 @@ class gsd2Executor:
         self.registry = gsd2ToolRegistry()
         self.sandbox_manager = gsd2SandboxManager(self.config.get("sandbox"))
         self._stats = {"total": 0, "success": 0, "failure": 0, "timeout": 0}
-    
+
     async def execute_tool(self, tool_name: str, arguments: dict) -> dict:
         self._stats["total"] += 1
         result = await self.registry.execute(tool_name, arguments)
-        
+
         if result.get("success"):
             self._stats["success"] += 1
         elif result.get("timed_out"):
             self._stats["timeout"] += 1
         else:
             self._stats["failure"] += 1
-        
+
         return result
-    
+
     async def execute_chain(self, tool_calls: List[dict], context: dict = None) -> List[dict]:
         results = []
         chain_context = context or {}
-        
+
         for i, call in enumerate(tool_calls):
             resolved_args = self._resolve_references(call.get("arguments", {}), chain_context)
             result = await self.execute_tool(call["name"], resolved_args)
             results.append(result)
-            
+
             chain_context[f"result_{i}"] = result
             chain_context["last_result"] = result
-            
+
             if not result.get("success"):
                 error_strategy = call.get("error_strategy", "stop")
                 if error_strategy == "stop":
                     for _ in tool_calls[i+1:]:
                         results.append({"success": False, "error": {"code": "CHAIN_ABORTED", "message": f"Tool {call['name']} failed"}})
                     break
-        
+
         return results
-    
+
     async def execute_parallel(self, tool_calls: List[dict], max_concurrency: int = 5) -> List[dict]:
         semaphore = asyncio.Semaphore(max_concurrency)
-        
+
         async def execute_one(call: dict, index: int):
             async with semaphore:
                 return (index, await self.execute_tool(call["name"], call.get("arguments", {})))
-        
+
         tasks = [execute_one(call, i) for i, call in enumerate(tool_calls)]
         completed = await asyncio.gather(*tasks, return_exceptions=True)
-        
+
         results = [None] * len(tool_calls)
         for item in completed:
             if isinstance(item, Exception):
@@ -1361,7 +1365,7 @@ class gsd2Executor:
                 index, result = item
                 results[index] = result
         return results
-    
+
     def _resolve_references(self, args: dict, context: dict) -> dict:
         resolved = {}
         for key, value in args.items():
@@ -1372,7 +1376,7 @@ class gsd2Executor:
             else:
                 resolved[key] = value
         return resolved
-    
+
     def _resolve_path(self, path: List[str], context: dict) -> Any:
         current = context
         for segment in path:
@@ -1392,7 +1396,7 @@ class gsd2FileTools:
     def __init__(self, registry: gsd2ToolRegistry):
         self.registry = registry
         self._register_tools()
-    
+
     def _register_tools(self):
         # Read tool
         self.registry.register(gsd2Tool(
@@ -1410,7 +1414,7 @@ class gsd2FileTools:
             },
             handler=self._read_handler
         ))
-        
+
         # Write tool
         self.registry.register(gsd2Tool(
             name="write",
@@ -1426,7 +1430,7 @@ class gsd2FileTools:
             },
             handler=self._write_handler
         ))
-        
+
         # Edit tool
         self.registry.register(gsd2Tool(
             name="edit",
@@ -1443,19 +1447,19 @@ class gsd2FileTools:
             },
             handler=self._edit_handler
         ))
-    
+
     async def _read_handler(self, path: str, offset: int = 1, limit: int = 500) -> dict:
         from pathlib import Path
         try:
             file_path = Path(path)
             if not file_path.exists():
                 return {"success": False, "error": {"code": "FILE_NOT_FOUND", "message": f"File not found: {path}"}}
-            
+
             content = file_path.read_text(encoding='utf-8')
             lines = content.splitlines()
             start = max(0, offset - 1)
             end = min(start + limit, len(lines))
-            
+
             return {
                 "success": True,
                 "data": {
@@ -1470,7 +1474,7 @@ class gsd2FileTools:
             return {"success": False, "error": {"code": "PERMISSION_DENIED", "message": f"Permission denied: {path}"}}
         except Exception as e:
             return {"success": False, "error": {"code": "READ_ERROR", "message": str(e)}}
-    
+
     async def _write_handler(self, path: str, content: str) -> dict:
         from pathlib import Path
         try:
@@ -1480,18 +1484,18 @@ class gsd2FileTools:
             return {"success": True, "data": {"path": str(file_path.absolute()), "bytes_written": len(content.encode('utf-8'))}}
         except Exception as e:
             return {"success": False, "error": {"code": "WRITE_ERROR", "message": str(e)}}
-    
+
     async def _edit_handler(self, path: str, old_string: str, new_string: str) -> dict:
         from pathlib import Path
         try:
             file_path = Path(path)
             if not file_path.exists():
                 return {"success": False, "error": {"code": "FILE_NOT_FOUND", "message": f"File not found: {path}"}}
-            
+
             content = file_path.read_text(encoding='utf-8')
             if old_string not in content:
                 return {"success": False, "error": {"code": "STRING_NOT_FOUND", "message": "old_string not found"}}
-            
+
             new_content = content.replace(old_string, new_string, 1)
             file_path.write_text(new_content, encoding='utf-8')
             return {"success": True, "data": {"path": str(file_path.absolute()), "replacements": 1}}

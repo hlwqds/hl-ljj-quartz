@@ -9,8 +9,8 @@ tags:
   - troubleshooting
 ---
 
-> [!info] eBPF 2026 深度探索系列
-> 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+> [!info] eBPF 2026 深度探索系列 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+>
 > 1. [[2026-04-08-ebpf-deep-dive-ch1-registers-and-instructions|第一章：寄存器与指令集]]
 > 2. [[2026-04-08-ebpf-deep-dive-ch1-5-function-calls|第一.五章：四种函数调用与动态内存]]
 > 3. [[2026-04-08-ebpf-deep-dive-ch1-6-the-verifier|第一.六章：验证器 (Verifier) 的底层逻辑]]
@@ -62,6 +62,7 @@ tags:
 > 49. [[2026-04-09-ebpf-deep-dive-ch40-network-protocols-deep-dive|第四十章：网络协议深度解析——TCP/UDP/QUIC 的 eBPF 视角]]
 > 50. [[2026-04-09-ebpf-deep-dive-ch41-memory-safety-and-vulnerabilities|第四十一章：eBPF 内存安全与漏洞分析]]
 > 51. [[2026-04-09-ebpf-deep-dive-ch42-service-mesh-integration|第四十二章：eBPF 与 Service Mesh 深度集成]]
+
 ---
 
 ## 1. 概述：当内核拒绝你的代码
@@ -140,24 +141,26 @@ sudo dmesg | grep -A 50 'bpf:'
 
 每行的含义：
 
-| 字段 | 含义 |
-|------|------|
-| 行号 (如 `0:`, `1:`) | 指令在程序中的位置 |
-| 括号内数字 (如 `(18)`) | eBPF 指令 opcode |
-| `R1=ctx` | R1 寄存器类型为 context |
-| `R10=fp0` | R10 为帧指针（frame pointer），偏移为 0 |
+| 字段                       | 含义                                        |
+| -------------------------- | ------------------------------------------- |
+| 行号 (如 `0:`, `1:`)       | 指令在程序中的位置                          |
+| 括号内数字 (如 `(18)`)     | eBPF 指令 opcode                            |
+| `R1=ctx`                   | R1 寄存器类型为 context                     |
+| `R10=fp0`                  | R10 为帧指针（frame pointer），偏移为 0     |
 | `inv(id=0,umax_value=...)` | 寄存器为不可知标量（invalid），包含值域范围 |
-| `commit N` | 条件跳转的目标指令号 |
+| `commit N`                 | 条件跳转的目标指令号                        |
 
 ### 2.3 典型报错：空指针异常
 
 **C 代码：**
+
 ```c
 struct val *v = bpf_map_lookup_elem(&map, &key);
 u32 data = v->data; // ❌ 未检查 v 是否为 NULL
 ```
 
 **验证器日志：**
+
 ```
 R0=map_value_or_null(map=...,off=0)
 access to map_value_or_null ptr 'R0' without null check
@@ -166,6 +169,7 @@ access to map_value_or_null ptr 'R0' without null check
 **诊断**：验证器将 `bpf_map_lookup_elem` 的返回寄存器 R0 标记为 `map_value_or_null` 类型。在通过 `if (v)` 检查前，禁止一切偏移访问。验证器在每条执行路径上都要求空指针被显式检查。
 
 **修复：**
+
 ```c
 struct val *v = bpf_map_lookup_elem(&map, &key);
 if (!v)
@@ -183,6 +187,7 @@ math between pointer and scalar
 **原因**：你尝试对一个指针增加一个"来源不明"的变量，验证器无法确定运算结果是否仍在合法内存范围内。
 
 **修复对策**：使用掩码操作显式约束变量范围：
+
 ```c
 // ❌ 错误：offset 来源不明确
 void *ptr = base + offset;
@@ -205,6 +210,7 @@ invalid read from stack off=-8 size=8
 **原因**：eBPF 栈大小为 512 字节，且只能以 1/2/4/8 字节对齐的方式访问。访问偏移量超过 512 或未对齐时会被拒绝。
 
 **修复：**
+
 ```c
 // ❌ 错误：偏移超出栈范围
 bpf_probe_read_kernel(buf, 256, (void *)addr);  // buf 占 256 字节
@@ -229,6 +235,7 @@ complexity limit reached
 **原因**：验证器的时间复杂度约为 O(instrs^2)。当指令数超过 ~100 万条（由验证器探索的路径数决定）时，会触发复杂度上限。
 
 **修复策略**：
+
 1. 使用 `static __noinline` 拆分函数为子程序
 2. 减少嵌套循环和深层条件分支
 3. 提前返回，减少探索路径数
@@ -363,17 +370,17 @@ sudo bpftrace -e 'usdt:/usr/bin/python3:function__entry { printf("entry: %s\n", 
 
 ### 4.2 bpftrace 内置变量
 
-| 变量 | 含义 |
-|------|------|
-| `pid` | 当前进程 PID |
-| `tid` | 当前线程 TID |
-| `comm` | 进程名 |
-| `nsecs` | 纳秒级时间戳 |
-| `cpu` | 当前 CPU 编号 |
-| `retval` | 返回值（kretprobe） |
-| `arg0` ~ `arg5` | 函数参数 |
-| `curtask` | 当前 task_struct 指针 |
-| `rand` | 随机数（用于采样） |
+| 变量            | 含义                  |
+| --------------- | --------------------- |
+| `pid`           | 当前进程 PID          |
+| `tid`           | 当前线程 TID          |
+| `comm`          | 进程名                |
+| `nsecs`         | 纳秒级时间戳          |
+| `cpu`           | 当前 CPU 编号         |
+| `retval`        | 返回值（kretprobe）   |
+| `arg0` ~ `arg5` | 函数参数              |
+| `curtask`       | 当前 task_struct 指针 |
+| `rand`          | 随机数（用于采样）    |
 
 ### 4.3 BCC 工具集常用命令
 
@@ -404,14 +411,14 @@ sudo killsnoop-bpfcc
 
 ### 4.4 bpftrace 与 BCC 的对比选择
 
-| 维度 | bpftrace | BCC |
-|------|----------|-----|
-| 上手难度 | 低（单行命令） | 中（需写 Python/C） |
-| 灵活性 | 中（受限的表达式） | 高（完整编程语言） |
-| 性能开销 | 略高（运行时编译） | 较低（可预编译） |
-| 适用场景 | 快速原型、临时调试 | 生产级工具开发 |
-| 数据聚合 | 内置 map 统计 | 需手动实现 |
-| 复杂逻辑 | 不支持复杂控制流 | 支持完整 C 逻辑 |
+| 维度     | bpftrace           | BCC                 |
+| -------- | ------------------ | ------------------- |
+| 上手难度 | 低（单行命令）     | 中（需写 Python/C） |
+| 灵活性   | 中（受限的表达式） | 高（完整编程语言）  |
+| 性能开销 | 略高（运行时编译） | 较低（可预编译）    |
+| 适用场景 | 快速原型、临时调试 | 生产级工具开发      |
+| 数据聚合 | 内置 map 统计      | 需手动实现          |
+| 复杂逻辑 | 不支持复杂控制流   | 支持完整 C 逻辑     |
 
 ---
 
@@ -530,18 +537,18 @@ __builtin_memset(buf, 0, sizeof(buf));  // ✅ 显式初始化
 
 ### 5.7 验证器拒绝原因速查表
 
-| 报错信息 | 根因 | 修复方向 |
-|----------|------|----------|
-| `R0 invalid mem access 'map_value_or_null'` | 未做空指针检查 | 添加 `if (!ptr) return;` |
-| `math between pointer and scalar` | 指针运算中的偏移未约束 | 掩码或范围检查 |
-| `invalid read from stack off=X size=Y` | 栈访问越界或未对齐 | 检查偏移和对齐 |
-| `BPF program is too large` | 验证复杂度超限 | `__noinline` 拆分函数 |
-| `unknown func` | Helper 函数不存在或版本不兼容 | 检查内核版本与 BTF |
-| `invalid access to map value` | Map 值类型不匹配 | 统一类型定义 |
-| `R1 type=inv expected=ptr` | 参数类型不是指针 | 检查参数来源 |
-| `call to unknown helper` | 程序类型不允许该 helper | 检查 prog_type 约束 |
-| `unbounded memory access` | 内存访问偏移未约束 | 添加边界检查 |
-| `misaligned stack access` | 栈访问未按 1/2/4/8 对齐 | 调整偏移量对齐 |
+| 报错信息                                    | 根因                          | 修复方向                 |
+| ------------------------------------------- | ----------------------------- | ------------------------ |
+| `R0 invalid mem access 'map_value_or_null'` | 未做空指针检查                | 添加 `if (!ptr) return;` |
+| `math between pointer and scalar`           | 指针运算中的偏移未约束        | 掩码或范围检查           |
+| `invalid read from stack off=X size=Y`      | 栈访问越界或未对齐            | 检查偏移和对齐           |
+| `BPF program is too large`                  | 验证复杂度超限                | `__noinline` 拆分函数    |
+| `unknown func`                              | Helper 函数不存在或版本不兼容 | 检查内核版本与 BTF       |
+| `invalid access to map value`               | Map 值类型不匹配              | 统一类型定义             |
+| `R1 type=inv expected=ptr`                  | 参数类型不是指针              | 检查参数来源             |
+| `call to unknown helper`                    | 程序类型不允许该 helper       | 检查 prog_type 约束      |
+| `unbounded memory access`                   | 内存访问偏移未约束            | 添加边界检查             |
+| `misaligned stack access`                   | 栈访问未按 1/2/4/8 对齐       | 调整偏移量对齐           |
 
 ---
 
@@ -621,11 +628,13 @@ bpftool prog run id <ID> data_in <hex_data> data_out <out_file> repeat 10000
 **问题 1：JIT 编译后性能反而下降**
 
 某些 eBPF 指令序列在 JIT 后生成的机器码效率不如预期。常见原因：
+
 - 验证器强制插入的安全边界检查增加了开销
 - 指令调度不利于 CPU 流水线
 - 分支预测失败率高
 
 **排查方法**：
+
 ```bash
 # 对比字节码和 JIT 机器码的指令数量
 bpftool prog dump xlated id <ID> | wc -l
@@ -751,12 +760,10 @@ sudo sysctl --system
 ```json
 // .vscode/settings.json
 {
-    "clangd.arguments": [
-        "--query-driver=/usr/bin/clang"
-    ],
-    "files.associations": {
-        "*.bpf.c": "c"
-    }
+  "clangd.arguments": ["--query-driver=/usr/bin/clang"],
+  "files.associations": {
+    "*.bpf.c": "c"
+  }
 }
 ```
 
@@ -771,6 +778,7 @@ sudo sysctl --system
 ### Q2：为什么在内核 5.x 上能加载的程序在 6.x 上被拒绝？
 
 内核版本升级会带来验证器策略的收紧。常见变化包括：
+
 - **6.1+**：更严格的 kptr 引用计数检查
 - **6.3+**：加强了 `bpf_probe_read_kernel` 的内存边界验证
 - **6.5+**：新的 `bpf_kptr` 子系统改变了 Map 指针的安全模型
@@ -780,6 +788,7 @@ sudo sysctl --system
 ### Q3：bpf_printk 的输出为什么会丢失或乱序？
 
 `bpf_printk` 底层使用 per-CPU 的环形缓冲区，在多 CPU 并发场景下：
+
 - 不同 CPU 上的输出顺序取决于调度时序
 - 缓冲区满时新日志会覆盖旧日志
 - 高频调用时日志可能来不及消费
@@ -874,13 +883,13 @@ ls -la /sys/fs/bpf/
 
 ### 调试工具链选型指南
 
-| 场景 | 推荐工具 | 理由 |
-|------|----------|------|
-| 验证器报错分析 | `bpftool` + Verifier Log | 查看真实字节码和寄存器状态 |
-| 快速原型验证 | `bpftrace` 单行命令 | 无需编译，秒级启动 |
-| 生产级追踪 | `bpf_ringbuf` + libbpf | 高性能、可结构化输出 |
-| 性能分析 | `perf` + `bpftool prog show` | 指令级热点定位 |
-| 跨版本兼容 | `bpftool btf dump` + CO-RE | BTF 类型对比 |
-| CI/CD 集成 | `bpftool prog load` 自动化 | 非交互式加载验证 |
+| 场景           | 推荐工具                     | 理由                       |
+| -------------- | ---------------------------- | -------------------------- |
+| 验证器报错分析 | `bpftool` + Verifier Log     | 查看真实字节码和寄存器状态 |
+| 快速原型验证   | `bpftrace` 单行命令          | 无需编译，秒级启动         |
+| 生产级追踪     | `bpf_ringbuf` + libbpf       | 高性能、可结构化输出       |
+| 性能分析       | `perf` + `bpftool prog show` | 指令级热点定位             |
+| 跨版本兼容     | `bpftool btf dump` + CO-RE   | BTF 类型对比               |
+| CI/CD 集成     | `bpftool prog load` 自动化   | 非交互式加载验证           |
 
 在 2026 年的 eBPF 生态中，调试工具已经非常成熟。关键不是"用什么工具"，而是建立**系统化的调试思维**：先理解验证器的视角，再定位问题根源，最后用最小化的修改通过安全审查。这套方法论将在后续的[[2026-04-08-ebpf-deep-dive-ch22-testing-and-ci-cd|第二十二章：测试与 CI/CD 实战]]中得到进一步的工程化升华。

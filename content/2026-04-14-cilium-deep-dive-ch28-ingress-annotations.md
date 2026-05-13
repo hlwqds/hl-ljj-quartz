@@ -12,12 +12,8 @@ tags:
   - networking
 ---
 
-> [!info] Cilium 2026 深度探索系列
-> 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
-> ...
-> 26. [[2026-04-14-cilium-deep-dive-ch26-ingress|第二十六章：Cilium Ingress Controller]]
-> 27. [[2026-04-14-cilium-deep-dive-ch27-gateway-api|第二十七章：Gateway API]]
-> 28. **第二十八章：Ingress 注解详解** ←
+> [!info] Cilium 2026 深度探索系列 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+> ... 26. [[2026-04-14-cilium-deep-dive-ch26-ingress|第二十六章：Cilium Ingress Controller]] 27. [[2026-04-14-cilium-deep-dive-ch27-gateway-api|第二十七章：Gateway API]] 28. **第二十八章：Ingress 注解详解** ←
 
 ---
 
@@ -27,15 +23,15 @@ Cilium Ingress 通过注解（Annotations）提供丰富的流量管理功能。
 
 ### 1.1 注解分类
 
-| 类别 | 注解前缀 | 功能 |
-|:---|:---|:---|
-| 流量管理 | `cilium.io/ingress-` | 流量分割、负载均衡、会话亲和 |
-| TLS 配置 | `cilium.io/ingress-tls-` | TLS 版本、加密套件 |
-| CORS | `cilium.io/ingress-cors-` | 跨域资源共享配置 |
-| 限速 | `cilium.io/ingress-rate-limit-` | 请求速率限制 |
-| 代理 | `cilium.io/ingress-proxy-` | 超时、缓冲、重试 |
-| 路径 | `cilium.io/ingress-rewrite-` | URL 重写 |
-| 注解兼容 | `nginx.ingress.kubernetes.io/` | Nginx Ingress 兼容 |
+| 类别     | 注解前缀                        | 功能                         |
+| :------- | :------------------------------ | :--------------------------- |
+| 流量管理 | `cilium.io/ingress-`            | 流量分割、负载均衡、会话亲和 |
+| TLS 配置 | `cilium.io/ingress-tls-`        | TLS 版本、加密套件           |
+| CORS     | `cilium.io/ingress-cors-`       | 跨域资源共享配置             |
+| 限速     | `cilium.io/ingress-rate-limit-` | 请求速率限制                 |
+| 代理     | `cilium.io/ingress-proxy-`      | 超时、缓冲、重试             |
+| 路径     | `cilium.io/ingress-rewrite-`    | URL 重写                     |
+| 注解兼容 | `nginx.ingress.kubernetes.io/`  | Nginx Ingress 兼容           |
 
 ---
 
@@ -60,16 +56,16 @@ metadata:
 spec:
   ingressClassName: cilium
   rules:
-  - host: app.example.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: weighted-backend
-            port:
-              number: 80
+    - host: app.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: weighted-backend
+                port:
+                  number: 80
 ```
 
 ### 2.2 基于 header 的流量分割
@@ -89,16 +85,16 @@ metadata:
 spec:
   ingressClassName: cilium
   rules:
-  - host: api.example.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: default-service
-            port:
-              number: 80
+    - host: api.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: default-service
+                port:
+                  number: 80
 ```
 
 ### 2.3 基于 Cookie 的流量分割
@@ -118,16 +114,16 @@ metadata:
 spec:
   ingressClassName: cilium
   rules:
-  - host: app.example.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: regular-service
-            port:
-              number: 80
+    - host: app.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: regular-service
+                port:
+                  number: 80
 ```
 
 ### 2.4 渐进式金丝雀发布
@@ -146,16 +142,16 @@ metadata:
 spec:
   ingressClassName: cilium
   rules:
-  - host: app.example.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: stable-service
-            port:
-              number: 80
+    - host: app.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: stable-service
+                port:
+                  number: 80
 ```
 
 ---
@@ -174,22 +170,22 @@ metadata:
     cilium.io/ingress-session-affinity: cookie
     # Cookie 配置
     cilium.io/ingress-session-cookie-name: session_id
-    cilium.io/ingress-session-cookie-hash: sha1    # sha1/sha256/md5
+    cilium.io/ingress-session-cookie-hash: sha1 # sha1/sha256/md5
     cilium.io/ingress-session-cookie-path: /
     cilium.io/ingress-session-cookie-max-age: 3600
 spec:
   ingressClassName: cilium
   rules:
-  - host: app.example.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: stateful-app
-            port:
-              number: 80
+    - host: app.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: stateful-app
+                port:
+                  number: 80
 ```
 
 ### 3.2 基于 Client-IP 的亲和
@@ -205,16 +201,16 @@ metadata:
 spec:
   ingressClassName: cilium
   rules:
-  - host: app.example.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: sticky-app
-            port:
-              number: 80
+    - host: app.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: sticky-app
+                port:
+                  number: 80
 ```
 
 ---
@@ -242,16 +238,16 @@ metadata:
 spec:
   ingressClassName: cilium
   rules:
-  - host: api.example.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: api-backend
-            port:
-              number: 80
+    - host: api.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: api-backend
+                port:
+                  number: 80
 ```
 
 ### 4.2 高级 CORS 配置
@@ -265,22 +261,22 @@ metadata:
     # 允许凭证（Cookie/Authorization）
     cilium.io/ingress-cors-allow-credentials: "true"
     # CORS 模式
-    cilium.io/ingress-cors-mode: "default"   # default/rewrite
+    cilium.io/ingress-cors-mode: "default" # default/rewrite
     # 匹配所有来源（生产谨慎使用）
     cilium.io/ingress-cors-allow-origin: "*"
 spec:
   ingressClassName: cilium
   rules:
-  - host: public-api.example.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: public-api
-            port:
-              number: 80
+    - host: public-api.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: public-api
+                port:
+                  number: 80
 ```
 
 ---
@@ -296,8 +292,8 @@ metadata:
   name: rate-limited
   annotations:
     # 请求速率限制
-    cilium.io/ingress-rate-limit: "100"           # 每窗口请求数
-    cilium.io/ingress-rate-limit-window: "1s"     # 时间窗口
+    cilium.io/ingress-rate-limit: "100" # 每窗口请求数
+    cilium.io/ingress-rate-limit-window: "1s" # 时间窗口
     # 限速响应码（默认 429）
     cilium.io/ingress-rate-limit-status-code: "429"
     # 限速响应内容
@@ -305,16 +301,16 @@ metadata:
 spec:
   ingressClassName: cilium
   rules:
-  - host: api.example.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: api-backend
-            port:
-              number: 80
+    - host: api.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: api-backend
+                port:
+                  number: 80
 ```
 
 ### 5.2 基于 IP 的限速
@@ -333,16 +329,16 @@ metadata:
 spec:
   ingressClassName: cilium
   rules:
-  - host: api.example.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: api-backend
-            port:
-              number: 80
+    - host: api.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: api-backend
+                port:
+                  number: 80
 ```
 
 ### 5.3 基于 Service 的限速
@@ -362,23 +358,23 @@ metadata:
 spec:
   ingressClassName: cilium
   rules:
-  - host: app.example.com
-    http:
-      paths:
-      - path: /a
-        pathType: Prefix
-        backend:
-          service:
-            name: service-a
-            port:
-              number: 80
-      - path: /b
-        pathType: Prefix
-        backend:
-          service:
-            name: service-b
-            port:
-              number: 80
+    - host: app.example.com
+      http:
+        paths:
+          - path: /a
+            pathType: Prefix
+            backend:
+              service:
+                name: service-a
+                port:
+                  number: 80
+          - path: /b
+            pathType: Prefix
+            backend:
+              service:
+                name: service-b
+                port:
+                  number: 80
 ```
 
 ---
@@ -400,20 +396,20 @@ metadata:
 spec:
   ingressClassName: cilium
   tls:
-  - hosts:
-    - secure.example.com
-    secretName: secure-tls
+    - hosts:
+        - secure.example.com
+      secretName: secure-tls
   rules:
-  - host: secure.example.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: secure-backend
-            port:
-              number: 80
+    - host: secure.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: secure-backend
+                port:
+                  number: 80
 ```
 
 ### 6.2 加密套件配置
@@ -432,20 +428,20 @@ metadata:
 spec:
   ingressClassName: cilium
   tls:
-  - hosts:
-    - secure.example.com
-    secretName: secure-tls
+    - hosts:
+        - secure.example.com
+      secretName: secure-tls
   rules:
-  - host: secure.example.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: secure-backend
-            port:
-              number: 80
+    - host: secure.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: secure-backend
+                port:
+                  number: 80
 ```
 
 ### 6.3 HTTP 到 HTTPS 重定向
@@ -463,16 +459,16 @@ metadata:
 spec:
   ingressClassName: cilium
   rules:
-  - host: app.example.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: app-backend
-            port:
-              number: 80
+    - host: app.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: app-backend
+                port:
+                  number: 80
 ```
 
 ---
@@ -492,16 +488,16 @@ metadata:
 spec:
   ingressClassName: cilium
   rules:
-  - host: api.example.com
-    http:
-      paths:
-      - path: /v1
-        pathType: ImplementationSpecific
-        backend:
-          service:
-            name: api-backend
-            port:
-              number: 8080
+    - host: api.example.com
+      http:
+        paths:
+          - path: /v1
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: api-backend
+                port:
+                  number: 8080
 ```
 
 ### 7.2 正则路径重写
@@ -518,16 +514,16 @@ metadata:
 spec:
   ingressClassName: cilium
   rules:
-  - host: api.example.com
-    http:
-      paths:
-      - path: /users
-        pathType: ImplementationSpecific
-        backend:
-          service:
-            name: user-api
-            port:
-              number: 8080
+    - host: api.example.com
+      http:
+        paths:
+          - path: /users
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: user-api
+                port:
+                  number: 8080
 ```
 
 ### 7.3 Nginx 兼容的路径重写
@@ -544,16 +540,16 @@ metadata:
 spec:
   ingressClassName: cilium
   rules:
-  - host: api.example.com
-    http:
-      paths:
-      - path: /v1(/|$)(.*)
-        pathType: ImplementationSpecific
-        backend:
-          service:
-            name: api-backend
-            port:
-              number: 8080
+    - host: api.example.com
+      http:
+        paths:
+          - path: /v1(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: api-backend
+                port:
+                  number: 8080
 ```
 
 ---
@@ -577,16 +573,16 @@ metadata:
 spec:
   ingressClassName: cilium
   rules:
-  - host: api.example.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: api-backend
-            port:
-              number: 80
+    - host: api.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: api-backend
+                port:
+                  number: 80
 ```
 
 ### 8.2 缓冲配置
@@ -604,16 +600,16 @@ metadata:
 spec:
   ingressClassName: cilium
   rules:
-  - host: api.example.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: api-backend
-            port:
-              number: 80
+    - host: api.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: api-backend
+                port:
+                  number: 80
 ```
 
 ### 8.3 重试配置
@@ -633,16 +629,16 @@ metadata:
 spec:
   ingressClassName: cilium
   rules:
-  - host: api.example.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: api-backend
-            port:
-              number: 80
+    - host: api.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: api-backend
+                port:
+                  number: 80
 ```
 
 ---
@@ -668,16 +664,16 @@ metadata:
 spec:
   ingressClassName: cilium
   rules:
-  - host: api.example.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: api-backend
-            port:
-              number: 80
+    - host: api.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: api-backend
+                port:
+                  number: 80
 ```
 
 ### 9.2 响应头修改
@@ -699,16 +695,16 @@ metadata:
 spec:
   ingressClassName: cilium
   rules:
-  - host: api.example.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: api-backend
-            port:
-              number: 80
+    - host: api.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: api-backend
+                port:
+                  number: 80
 ```
 
 ---
@@ -731,16 +727,16 @@ metadata:
 spec:
   ingressClassName: cilium
   rules:
-  - host: app.example.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: web-backend
-            port:
-              number: 80
+    - host: app.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web-backend
+                port:
+                  number: 80
 ```
 
 ### 10.2 X-Frame-Options
@@ -757,16 +753,16 @@ metadata:
 spec:
   ingressClassName: cilium
   rules:
-  - host: app.example.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: web-backend
-            port:
-              number: 80
+    - host: app.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web-backend
+                port:
+                  number: 80
 ```
 
 ---
@@ -781,58 +777,58 @@ metadata:
   annotations:
     # TLS 配置
     cilium.io/ingress-tls-min-version: "TLSv1.3"
-    
+
     # 流量分割（金丝雀 10%）
     cilium.io/ingress-canary-weight: "10"
-    
+
     # CORS
     cilium.io/ingress-cors-allow-origin: "https://cafe.example.com"
     cilium.io/ingress-cors-allow-methods: "GET,POST,PUT,DELETE,OPTIONS"
     cilium.io/ingress-cors-allow-headers: "Authorization,Content-Type"
     cilium.io/ingress-cors-max-age: "3600"
-    
+
     # 限速
     cilium.io/ingress-rate-limit: "1000"
     cilium.io/ingress-rate-limit-window: "1s"
-    
+
     # 代理超时
     cilium.io/ingress-proxy-connect-timeout: "5s"
     cilium.io/ingress-proxy-header-timeout: "30s"
-    
+
     # 安全头
     cilium.io/ingress-x-frame-options: "DENY"
     cilium.io/ingress-content-security-policy: "default-src 'self'"
 spec:
   ingressClassName: cilium
   tls:
-  - hosts:
-    - cafe.example.com
-    secretName: cafe-tls
+    - hosts:
+        - cafe.example.com
+      secretName: cafe-tls
   rules:
-  - host: cafe.example.com
-    http:
-      paths:
-      - path: /tea
-        pathType: Prefix
-        backend:
-          service:
-            name: tea-svc
-            port:
-              number: 80
-      - path: /coffee
-        pathType: Prefix
-        backend:
-          service:
-            name: coffee-svc
-            port:
-              number: 80
-      - path: /api
-        pathType: Prefix
-        backend:
-          service:
-            name: api-svc
-            port:
-              number: 80
+    - host: cafe.example.com
+      http:
+        paths:
+          - path: /tea
+            pathType: Prefix
+            backend:
+              service:
+                name: tea-svc
+                port:
+                  number: 80
+          - path: /coffee
+            pathType: Prefix
+            backend:
+              service:
+                name: coffee-svc
+                port:
+                  number: 80
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: api-svc
+                port:
+                  number: 80
 ```
 
 ---
@@ -851,12 +847,12 @@ kubectl exec -n kube-system ds/cilium -- cilium ingress get
 
 ### 12.2 常见问题
 
-| 问题 | 可能原因 | 解决方案 |
-|:---|:---|:---|
-| 限速不生效 | 注解格式错误 | 检查 JSON/YAML 格式 |
-| CORS 失败 | 来源不匹配 | 确认 origin 列表正确 |
-| 路径重写失败 | 正则不匹配 | 使用 `kubectl logs` 检查 |
-| TLS 错误 | 证书未加载 | 检查 Secret 是否存在 |
+| 问题         | 可能原因     | 解决方案                 |
+| :----------- | :----------- | :----------------------- |
+| 限速不生效   | 注解格式错误 | 检查 JSON/YAML 格式      |
+| CORS 失败    | 来源不匹配   | 确认 origin 列表正确     |
+| 路径重写失败 | 正则不匹配   | 使用 `kubectl logs` 检查 |
+| TLS 错误     | 证书未加载   | 检查 Secret 是否存在     |
 
 ---
 
@@ -874,13 +870,13 @@ kubectl exec -n kube-system ds/cilium -- cilium ingress get
 
 **注解速查表**：
 
-| 类别 | 常用注解 |
-|:---|:---|
-| 流量分割 | `cilium.io/ingress-canary-weight` |
-| 会话亲和 | `cilium.io/ingress-session-affinity` |
-| CORS | `cilium.io/ingress-cors-allow-origin` |
-| 限速 | `cilium.io/ingress-rate-limit` |
-| TLS | `cilium.io/ingress-tls-min-version` |
-| 路径重写 | `cilium.io/ingress-rewrite-target` |
+| 类别     | 常用注解                              |
+| :------- | :------------------------------------ |
+| 流量分割 | `cilium.io/ingress-canary-weight`     |
+| 会话亲和 | `cilium.io/ingress-session-affinity`  |
+| CORS     | `cilium.io/ingress-cors-allow-origin` |
+| 限速     | `cilium.io/ingress-rate-limit`        |
+| TLS      | `cilium.io/ingress-tls-min-version`   |
+| 路径重写 | `cilium.io/ingress-rewrite-target`    |
 
 **下一章**：Cert-Manager 集成，自动化 TLS 证书管理。

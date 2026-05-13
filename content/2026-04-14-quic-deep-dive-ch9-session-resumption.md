@@ -39,10 +39,10 @@ Session Resumption 的优势：
 
 ### 1.2 TLS Session Resumption 发展历程
 
-| 版本 | 机制 | 局限性 |
-|------|------|--------|
-| TLS 1.2 | Session ID / Session Ticket | 无前向保密，有 replay 风险 |
-| TLS 1.3 | PSK + Session Ticket | 有 0-RTT，但存在 replay 风险 |
+| 版本    | 机制                        | 局限性                       |
+| ------- | --------------------------- | ---------------------------- |
+| TLS 1.2 | Session ID / Session Ticket | 无前向保密，有 replay 风险   |
+| TLS 1.3 | PSK + Session Ticket        | 有 0-RTT，但存在 replay 风险 |
 
 QUIC 使用 TLS 1.3 的 PSK 机制实现 Session Resumption。
 
@@ -190,14 +190,14 @@ TLS 1.3 的设计：
 
 ### 4.1 两种恢复方式对比
 
-| 特性 | 0-RTT Resumption | 1-RTT Resumption |
-|------|------------------|------------------|
-| 握手延迟 | ~0.5-RTT | 1-RTT |
-| 前向保密 | ❌ 无 | ✅ 有 |
-| 可发送数据时机 | 握手期间 | 握手完成后 |
-| 实现复杂度 | 高 | 低 |
-| 重放风险 | ⚠️ 有 | ✅ 无 |
-| 适用场景 | 重复连接、幂等请求 | 安全性敏感场景 |
+| 特性           | 0-RTT Resumption   | 1-RTT Resumption |
+| -------------- | ------------------ | ---------------- |
+| 握手延迟       | ~0.5-RTT           | 1-RTT            |
+| 前向保密       | ❌ 无              | ✅ 有            |
+| 可发送数据时机 | 握手期间           | 握手完成后       |
+| 实现复杂度     | 高                 | 低               |
+| 重放风险       | ⚠️ 有              | ✅ 无            |
+| 适用场景       | 重复连接、幂等请求 | 安全性敏感场景   |
 
 ### 4.2 1-RTT Resumption 的标准流程
 
@@ -234,12 +234,14 @@ Client                                               Server
 ### 4.3 选型建议
 
 **使用 0-RTT Resumption**：
+
 - 重复连接到同一服务端
 - 请求幂等（GET、只读 API）
 - 对延迟极度敏感
 - 数据安全性要求相对较低
 
 **使用 1-RTT Resumption**：
+
 - 安全性要求高的场景
 - 包含敏感状态变更的请求
 - 首次连接（无 Session Ticket）
@@ -251,10 +253,10 @@ Client                                               Server
 
 ### 5.1 有状态 vs 无状态
 
-| 类型 | 服务端存储 | Ticket 内容 |
-|------|-----------|------------|
-| 有状态 | 会话在服务端内存 | 会话 ID（需服务端查询） |
-| 无状态 | 会话在 Ticket 中加密 | 完整状态（自包含） |
+| 类型   | 服务端存储           | Ticket 内容             |
+| ------ | -------------------- | ----------------------- |
+| 有状态 | 会话在服务端内存     | 会话 ID（需服务端查询） |
+| 无状态 | 会话在 Ticket 中加密 | 完整状态（自包含）      |
 
 ### 5.2 无状态 Session Ticket 结构
 
@@ -317,6 +319,7 @@ ticket_lifetime:  Ticket 的最大有效期（通常 24-48 小时）
 ### 6.2 单向性
 
 Session Resumption 是单向的：
+
 - 客户端可以随时使用 Session Ticket 重连
 - 服务端不能"推送"新 Session Ticket 给客户端
 - Session Ticket 可以更新（每次连接可获取新 ticket）
@@ -368,6 +371,7 @@ Session Resumption 要求参数一致性：
 ### 7.2 CID 变化的影响
 
 Session Ticket 中不包含 CID：
+
 - CID 是路径标识，不是会话标识
 - Session Ticket 绑定的是会话密钥材料，不是地址
 - 重连时生成新的 CID

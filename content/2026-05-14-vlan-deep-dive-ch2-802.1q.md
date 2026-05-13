@@ -23,16 +23,16 @@ IEEE 802.1Q 是由 IEEE 802.1 工作组制定的虚拟局域网（VLAN）标准�
 
 ### 1.2 802.1Q vs ISL 对比
 
-| 特性 | IEEE 802.1Q | Cisco ISL |
-|------|------------|-----------|
-| 标准类型 | IEEE 国际标准 | Cisco 私有协议 |
-| 标签位置 | 帧内部插入（Internal Tagging） | 帧外部封装（External Tagging） |
-| VLAN ID 范围 | 0-4095（12-bit） | 0-4095（12-bit） |
-| 支持 STP | 是（通过 GVRP） | 是 |
-| 多厂商支持 | 是 | 否 |
-| 帧标记开销 | 4 字节 | 30 字节（26 字节头 + 4 字节 CRC） |
-| 本征 VLAN（Native VLAN） | 支持 | 不支持 |
-| 标准化年份 | 1998 | 1990 年代初 |
+| 特性                     | IEEE 802.1Q                    | Cisco ISL                         |
+| ------------------------ | ------------------------------ | --------------------------------- |
+| 标准类型                 | IEEE 国际标准                  | Cisco 私有协议                    |
+| 标签位置                 | 帧内部插入（Internal Tagging） | 帧外部封装（External Tagging）    |
+| VLAN ID 范围             | 0-4095（12-bit）               | 0-4095（12-bit）                  |
+| 支持 STP                 | 是（通过 GVRP）                | 是                                |
+| 多厂商支持               | 是                             | 否                                |
+| 帧标记开销               | 4 字节                         | 30 字节（26 字节头 + 4 字节 CRC） |
+| 本征 VLAN（Native VLAN） | 支持                           | 不支持                            |
+| 标准化年份               | 1998                           | 1990 年代初                       |
 
 802.1Q 以其简洁的 4 字节标签开销和开放的标准生态，逐渐成为行业共识。现代网络设备几乎全部支持 802.1Q，Cisco 也在其设备上默认使用 802.1Q 而非 ISL。
 
@@ -154,6 +154,7 @@ packet
 ```
 
 **字段说明**：
+
 - **Dest MAC**：目标 MAC 地址，6 字节
 - **Src MAC**：源 MAC 地址，6 字节
 - **Ether Type**：以太网类型，0x0800=IPv4，0x0806=ARP，0x86DD=IPv6，2 字节
@@ -174,6 +175,7 @@ packet
 ```
 
 **关键变化**：
+
 - 帧长度从 1518 增加到 1522 字节（+4 字节标签）
 - EtherType 字段被"推后"了 4 字节
 - 接收端通过 TPID=0x8100 识别这是一个带 VLAN 标签的帧
@@ -192,6 +194,7 @@ Q-in-Q（也称 802.1Q-in-802.1Q）允许在已有标签的基础上再打一层
 ```
 
 **双标签帧结构说明**：
+
 - **外层标签**（靠近 Dest MAC）：SP-VLAN（Service Provider VLAN），由服务提供商添加
 - **内层标签**（靠近 EtherType）：CE-VLAN（Customer Edge VLAN），由客户网络添加
 - **TPID 复用**：外层和内层 TPID 都是 `0x8100`
@@ -199,15 +202,15 @@ Q-in-Q（也称 802.1Q-in-802.1Q）允许在已有标签的基础上再打一层
 
 ### 3.4 三种帧格式对比表
 
-| 特性 | 标准帧（Untagged） | 单标签帧（802.1Q） | 双标签帧（Q-in-Q） |
-|------|-------------------|-------------------|-------------------|
-| 总长度 | 64-1518 字节 | 68-1522 字节 | 72-1526 字节 |
-| VLAN 标签数 | 0 | 1 | 2 |
-| 标签开销 | 0 字节 | 4 字节 | 8 字节 |
-| MTU 支持 | 1500 | 1500（实际可用 1496） | 1500（实际可用 1492） |
-| VID 识别 | 无 | 1 个 VID | 2 个 VID（外层+内层） |
-| 应用场景 | 接入端口 | 标准 Trunk/接入 | 服务商 VLAN 嵌套 |
-| TPID 位置 | N/A | 紧跟 Src MAC | 紧跟 Src MAC（外层） |
+| 特性        | 标准帧（Untagged） | 单标签帧（802.1Q）    | 双标签帧（Q-in-Q）    |
+| ----------- | ------------------ | --------------------- | --------------------- |
+| 总长度      | 64-1518 字节       | 68-1522 字节          | 72-1526 字节          |
+| VLAN 标签数 | 0                  | 1                     | 2                     |
+| 标签开销    | 0 字节             | 4 字节                | 8 字节                |
+| MTU 支持    | 1500               | 1500（实际可用 1496） | 1500（实际可用 1492） |
+| VID 识别    | 无                 | 1 个 VID              | 2 个 VID（外层+内层） |
+| 应用场景    | 接入端口           | 标准 Trunk/接入       | 服务商 VLAN 嵌套      |
+| TPID 位置   | N/A                | 紧跟 Src MAC          | 紧跟 Src MAC（外层）  |
 
 ### 3.5 帧格式解析代码示例
 
@@ -246,14 +249,14 @@ struct vlan_ethhdr {
 void parse_ethernet_frame(const uint8_t *frame, int len) {
     struct ethhdr *eth = (struct ethhdr *)frame;
     uint16_t proto = ntohs(eth->h_proto);
-    
+
     printf("Dest MAC: %02x:%02x:%02x:%02x:%02x:%02x\n",
            eth->h_dest[0], eth->h_dest[1], eth->h_dest[2],
            eth->h_dest[3], eth->h_dest[4], eth->h_dest[5]);
     printf("Src MAC:  %02x:%02x:%02x:%02x:%02x:%02x\n",
            eth->h_source[0], eth->h_source[1], eth->h_source[2],
            eth->h_source[3], eth->h_source[4], eth->h_source[5]);
-    
+
     if (proto == ETH_P_8021Q) {
         // 帧带 VLAN 标签
         struct vlan_hdr *vlan = (struct vlan_hdr *)(frame + sizeof(struct ethhdr));
@@ -261,13 +264,13 @@ void parse_ethernet_frame(const uint8_t *frame, int len) {
         uint16_t vid = tci & 0x0FFF;
         uint8_t  pcp  = (tci >> 13) & 0x7;
         uint8_t  dei  = (tci >> 12) & 0x1;
-        
+
         printf("VLAN Tag Found:\n");
         printf("  TPID:  0x%04x (802.1Q VLAN)\n", ntohs(vlan->tpid));
         printf("  VID:   %u\n", vid);
         printf("  PCP:   %u\n", pcp);
         printf("  DEI:   %u\n", dei);
-        
+
         // 获取实际的上层协议
         uint16_t *next_proto = (uint16_t *)((uint8_t *)vlan + sizeof(struct vlan_hdr));
         proto = ntohs(*next_proto);
@@ -302,6 +305,7 @@ void parse_ethernet_frame(const uint8_t *frame, int len) {
 ```
 
 这导致**有效载荷被压缩**：
+
 - 实际 Payload 可用空间 = 1500 - 4 = **1496 字节**
 - 某些旧设备仅支持标准 1518 帧长，接收 1522 帧会被丢弃
 
@@ -311,13 +315,13 @@ void parse_ethernet_frame(const uint8_t *frame, int len) {
 flowchart LR
     A["标准帧<br/>64-1518B"] --> B["无 VLAN 标签"]
     A --> C["Payload=1500B"]
-    
+
     D["802.1Q 单标签帧<br/>68-1522B"] --> E["VLAN 标签 +4B"]
     D --> F["Payload=1496B"]
-    
+
     G["802.1Q 双标签帧<br/>72-1526B"] --> H["双 VLAN 标签 +8B"]
     G --> I["Payload=1492B"]
-    
+
     style A fill:#90EE90
     style D fill:#FFD700
     style G fill:#FF6B6B
@@ -327,12 +331,12 @@ flowchart LR
 
 现代数据中心常使用 **Jumbo Frame**（巨型帧），标准 MTU 为 **9000 字节**。VLAN 标签对 Jumbo Frame 的影响如下：
 
-| 帧类型 | 最大 MTU | VLAN 开销 | 实际 Payload |
-|--------|---------|-----------|-------------|
-| 标准帧 | 1518 字节 | 0 | 1500 |
-| 标准 Jumbo | 9018 字节 | 0 | 9000 |
-| 802.1Q 单标签 Jumbo | 9022 字节 | 4 | 9000（仍保持） |
-| 802.1Q 双标签 Jumbo | 9026 字节 | 8 | 9000（仍保持） |
+| 帧类型              | 最大 MTU  | VLAN 开销 | 实际 Payload   |
+| ------------------- | --------- | --------- | -------------- |
+| 标准帧              | 1518 字节 | 0         | 1500           |
+| 标准 Jumbo          | 9018 字节 | 0         | 9000           |
+| 802.1Q 单标签 Jumbo | 9022 字节 | 4         | 9000（仍保持） |
+| 802.1Q 双标签 Jumbo | 9026 字节 | 8         | 9000（仍保持） |
 
 **重要结论**：由于 Jumbo Frame 本身就远大于标准 MTU，VLAN 标签的 4-8 字节开销不会造成有效载荷减少。9000 字节的 Payload 空间减去 4-8 字节标签后仍有大量余量。
 
@@ -376,12 +380,12 @@ def calculate_path_mtu(src_ip, dst_ip, dst_port=80):
     # 这里仅展示概念
     max_mtu = 1500
     suggested_mtu = max_mtu - 40  # 减去 IP 头
-    
+
     # 如果路径中存在 1500 MTU 限制的设备
     # 802.1Q 标签会使实际可用空间变为 1496
     vlan_overhead = 4
     effective_payload = max_mtu - vlan_overhead - 40  # IPv4 头
-    
+
     return effective_payload
 
 def mss_clamping(mtu, has_vlan=False):
@@ -392,10 +396,10 @@ def mss_clamping(mtu, has_vlan=False):
     ip_header = 20
     tcp_header = 20
     overhead = ip_header + tcp_header
-    
+
     if has_vlan:
         overhead += 4  # 802.1Q 标签
-    
+
     mss = mtu - overhead
     return mss
 
@@ -415,16 +419,16 @@ IEEE 802.1p 是 802.1Q 标准的一部分，定义了 **3 位的 PCP（Priority 
 
 ### 5.2 PCP 值与优先级对照
 
-| PCP 值 | 优先级 | 缩写 | 典型应用 | 802.1Q-2014 命名 |
-|--------|--------|------|---------|-----------------|
-| 0 | 最低 | BK | 后台流量 | BE (Best Effort) |
-| 1 | 低 | BK | 后台流量 | BK (Background) |
-| 2 | 中低 | EE | 优秀努力 | EE (Excellent Effort) |
-| 3 | 中 | CA | 关键应用 | CA (Critical Applications) |
-| 4 | 中高 | VI | 视频 < 100ms 延迟 | VI (Video) |
-| 5 | 高 | VO | 语音 < 10ms 延迟 | VO (Voice) |
-| 6 | 最高 | IC | 网络控制 | IC (Internetwork Control) |
-| 7 | 最高 | CS7 | 帧中继网络控制 | NC (Network Control) |
+| PCP 值 | 优先级 | 缩写 | 典型应用          | 802.1Q-2014 命名           |
+| ------ | ------ | ---- | ----------------- | -------------------------- |
+| 0      | 最低   | BK   | 后台流量          | BE (Best Effort)           |
+| 1      | 低     | BK   | 后台流量          | BK (Background)            |
+| 2      | 中低   | EE   | 优秀努力          | EE (Excellent Effort)      |
+| 3      | 中     | CA   | 关键应用          | CA (Critical Applications) |
+| 4      | 中高   | VI   | 视频 < 100ms 延迟 | VI (Video)                 |
+| 5      | 高     | VO   | 语音 < 10ms 延迟  | VO (Voice)                 |
+| 6      | 最高   | IC   | 网络控制          | IC (Internetwork Control)  |
+| 7      | 最高   | CS7  | 帧中继网络控制    | NC (Network Control)       |
 
 ### 5.3 PCP 在 TCI 中的位置
 
@@ -457,13 +461,13 @@ void parse_tci(uint16_t tci) {
     uint16_t pcp = (tci >> 13) & 0x7;  // 取 bits 15-13
     uint16_t dei = (tci >> 12) & 0x1; // 取 bit 12
     uint16_t vid = tci & 0x0FFF;       // 取 bits 11-0
-    
+
     const char *priority_name[] = {
         "BE (Best Effort)", "BK (Background)", "EE (Excellent Effort)",
         "CA (Critical Apps)", "VI (Video)", "VO (Voice)",
         "IC (Internetwork Control)", "NC (Network Control)"
     };
-    
+
     printf("TCI: 0x%04x\n", tci);
     printf("  PCP: %u (%s)\n", pcp, priority_name[pcp]);
     printf("  DEI: %u\n", dei);
@@ -485,14 +489,14 @@ flowchart TD
     B --> |PCP=4/5| D["高优先级队列\n(WFQ)"]
     B --> |PCP=2/3| E["中优先级队列"]
     B --> |PCP=0/1| F["低优先级队列\n(Best Effort)"]
-    
+
     C --> G[" egress shaping / policing"]
     D --> G
     E --> G
     F --> G
-    
+
     G --> H["发送"]
-    
+
     style C fill:#FF6B6B,color:#000
     style D fill:#FFD700,color:#000
     style E fill:#90EE90,color:#000
@@ -530,16 +534,16 @@ iface eth0.10 inet static
 在实际网络部署中，需要将 IP 层的 DiffServ DSCP 值映射到 802.1p PCP：
 
 | DSCP 值 | DSCP 名称 | IP 优先级 | 建议 PCP |
-|---------|----------|----------|---------|
-| 0 | BE / CS0 | 0 | 0 |
-| 46 | EF | 5 | 5 |
-| 34 | AF41 | 4 | 4 |
-| 26 | AF31 | 3 | 3 |
-| 18 | AF21 | 2 | 2 |
-| 10 | AF11 | 1 | 1 |
-| 8 | CS1 | 1 | 1 |
-| 48 | CS6 | 6 | 6 |
-| 56 | CS7 | 7 | 7 |
+| ------- | --------- | --------- | -------- |
+| 0       | BE / CS0  | 0         | 0        |
+| 46      | EF        | 5         | 5        |
+| 34      | AF41      | 4         | 4        |
+| 26      | AF31      | 3         | 3        |
+| 18      | AF21      | 2         | 2        |
+| 10      | AF11      | 1         | 1        |
+| 8       | CS1       | 1         | 1        |
+| 48      | CS6       | 6         | 6        |
+| 56      | CS7       | 7         | 7        |
 
 ---
 
@@ -573,7 +577,7 @@ flowchart LR
     B --> C["Ingress Processing"]
     C --> D["添加 VLAN 标签\nTPID=0x8100\nVID=10"]
     D --> E["内部交换\n(带 VLAN 标签)"]
-    
+
     style A fill:#90EE90
     style E fill:#FFD700
 ```
@@ -593,24 +597,24 @@ int xdp_vlan_tag(struct xdp_md *ctx)
     void *data     = (void *)(long)ctx->data;
     void *data_end  = (void *)(long)ctx->data_end;
     struct ethhdr *eth = data;
-    
+
     if ((void *)(eth + 1) > data_end)
         return XDP_PASS;
-    
+
     // 检查是否已有 VLAN 标签
     if (eth->h_proto == __constant_htons(ETH_P_8021Q) ||
         eth->h_proto == __constant_htons(ETH_P_8021AD)) {
         // 已有标签，透传
         return XDP_PASS;
     }
-    
+
     // 仅对特定 VLAN ID 打标签
     uint16_t target_vid = 100;
-    
+
     // 移动以太网头，为 VLAN 标签腾出空间
     // 注意：实际需要 push VLAN 头，这里仅演示概念
     // 真实实现需要使用 bpf_vlan_push() helper
-    
+
     return XDP_PASS;
 }
 ```
@@ -641,18 +645,18 @@ flowchart LR
     B --> C["Egress Processing"]
     C --> D["移除 VLAN 标签"]
     D --> E["PC2 接收\nUntagged 帧"]
-    
+
     style A fill:#FFD700
     style E fill:#90EE90
 ```
 
 ### 6.3 交换机的标签行为矩阵
 
-| 端口模式 | 收到 Untagged 帧 | 收到 Tagged 帧 | 发出 Untagged 帧 | 发出 Tagged 帧 |
-|---------|-----------------|---------------|-----------------|---------------|
-| **Access** | 打标签（PVID） | 通常丢弃（可配置 allow） | 去标签 | 去标签后发出 |
-| **Trunk** | 打标签（Native VLAN） | 查 VLAN 表转发 | 去标签（仅 Native VLAN） | 带标签发出 |
-| **Hybrid** | 打标签（可配置） | 查 VLAN 表转发 | 可配置去标签/带标签 | 可配置去标签/带标签 |
+| 端口模式   | 收到 Untagged 帧      | 收到 Tagged 帧           | 发出 Untagged 帧         | 发出 Tagged 帧      |
+| ---------- | --------------------- | ------------------------ | ------------------------ | ------------------- |
+| **Access** | 打标签（PVID）        | 通常丢弃（可配置 allow） | 去标签                   | 去标签后发出        |
+| **Trunk**  | 打标签（Native VLAN） | 查 VLAN 表转发           | 去标签（仅 Native VLAN） | 带标签发出          |
+| **Hybrid** | 打标签（可配置）      | 查 VLAN 表转发           | 可配置去标签/带标签      | 可配置去标签/带标签 |
 
 ### 6.4 Cisco 交换机标签操作配置
 
@@ -733,12 +737,12 @@ flowchart LR
         A["收到 Untagged 帧"] --> B["打标签: VLAN 999"]
         A2["需要发出 VLAN 999"] --> C["去标签: 变为 Untagged"]
     end
-    
+
     subgraph Right["Trunk Port 互连"]
         B --> D["带 VLAN=999 标签\n在 Trunk 上传输"]
         D --> C
     end
-    
+
     style A fill:#FF6B6B
     style C fill:#90EE90
     style D fill:#FFD700
@@ -787,11 +791,11 @@ switchport trunk native vlan 999
 交换机 A（Trunk）:
   看到外层 VID=999 -> 转发到 trunk
   （去除外层标签？不，因为目标是 trunk）
-  
+
 交换机 B（连接目标服务器）:
   看到内层 VID=10 -> 转发到 VLAN 10 中的端口
   目标服务器收到帧，看起来像是来自 VLAN 10
-  
+
 攻击者成功访问了不属于自己 VLAN 的资源！
 ```
 
@@ -812,11 +816,11 @@ Q-in-Q 帧（CE-VLAN + SP-VLAN）：
 
 #### 7.4.2 Q-in-Q TPID 值
 
-| TPID 值 | 标准 | 说明 |
-|---------|------|------|
-| `0x8100` | 802.1Q | 标准 VLAN 标签（客户侧 CE-VLAN） |
-| `0x88A8` | 802.1AD | 服务提供商标签（SP-VLAN） |
-| `0x9100` | 某些厂商私有 | 旧版 Q-in-Q 实现 |
+| TPID 值  | 标准         | 说明                             |
+| -------- | ------------ | -------------------------------- |
+| `0x8100` | 802.1Q       | 标准 VLAN 标签（客户侧 CE-VLAN） |
+| `0x88A8` | 802.1AD      | 服务提供商标签（SP-VLAN）        |
+| `0x9100` | 某些厂商私有 | 旧版 Q-in-Q 实现                 |
 
 #### 7.4.3 Q-in-Q 配置示例
 
@@ -854,13 +858,13 @@ tcpdump -i eth0 -nn -v 'vlan and vlan'
 
 ### 7.5 本征 VLAN 与 Q-in-Q 对比
 
-| 特性 | Native VLAN | Q-in-Q（802.1AD） |
-|------|------------|------------------|
-| 标签数量 | 0 或 1 | 2（CE + SP） |
-| 标签位置 | 无额外标签 | 外层 SP + 内层 CE |
-| 使用场景 | Trunk 端口回退 | 服务提供商隧道 |
-| 安全性 | 中等（需配置 Native VLAN） | 高（客户隔离） |
-| 典型应用 | 交换机间链路 | MPLS/VPN 接入 |
+| 特性     | Native VLAN                | Q-in-Q（802.1AD） |
+| -------- | -------------------------- | ----------------- |
+| 标签数量 | 0 或 1                     | 2（CE + SP）      |
+| 标签位置 | 无额外标签                 | 外层 SP + 内层 CE |
+| 使用场景 | Trunk 端口回退             | 服务提供商隧道    |
+| 安全性   | 中等（需配置 Native VLAN） | 高（客户隔离）    |
+| 典型应用 | 交换机间链路               | MPLS/VPN 接入     |
 
 ---
 
@@ -881,17 +885,17 @@ flowchart TB
         A2["Port 2"] --- L1
         A3["Port 3"] --- L1
     end
-    
+
     subgraph SwitchB["核心交换机 B"]
         B1["Port 1"] --- L2["LACP Bundle"]
         B2["Port 2"] --- L2
         B3["Port 3"] --- L2
     end
-    
+
     L1 --- L2
-    
+
     L1 --> |"VLAN 10, 20, 30 带标签"| V["所有 VLAN 标签\n在各成员链路上保持一致"]
-    
+
     style L1 fill:#FFD700
     style L2 fill:#FFD700
 ```
@@ -941,14 +945,14 @@ cat /proc/net/bonding/bond0
 
 ### 8.4 LACP 负载均衡与 VLAN 标签关系
 
-| 负载均衡算法 | 哈希输入 | 对 VLAN 的影响 |
-|------------|---------|---------------|
-| src-mac | 源 MAC | 不同源 MAC 的帧分布到不同成员 |
-| dst-mac | 目标 MAC | 同 VLAN 内相同目标的帧走同一链路 |
-| src-dst-mac | 源+目标 MAC | 流量分布均匀 |
-| src-ip | 源 IP | 不同源 IP 分布到不同成员 |
-| dst-ip | 目标 IP | 同 VLAN 内相同目标 IP 走同一链路 |
-| src-dst-ip | 源+目标 IP | 最均匀的分布 |
+| 负载均衡算法 | 哈希输入    | 对 VLAN 的影响                   |
+| ------------ | ----------- | -------------------------------- |
+| src-mac      | 源 MAC      | 不同源 MAC 的帧分布到不同成员    |
+| dst-mac      | 目标 MAC    | 同 VLAN 内相同目标的帧走同一链路 |
+| src-dst-mac  | 源+目标 MAC | 流量分布均匀                     |
+| src-ip       | 源 IP       | 不同源 IP 分布到不同成员         |
+| dst-ip       | 目标 IP     | 同 VLAN 内相同目标 IP 走同一链路 |
+| src-dst-ip   | 源+目标 IP  | 最均匀的分布                     |
 
 **重要**：负载均衡算法应包含 VLAN 信息，否则同一 VLAN 的流量可能都走单一成员链路：
 
@@ -1005,29 +1009,29 @@ interface Port-channel1
 
 ### 9.2 DTP 模式
 
-| DTP 模式 | 行为 | 协商结果 |
-|---------|------|---------|
-| **switchport mode trunk** | 强制为 Trunk，不协商 | 始终为 Trunk |
-| **switchport mode access** | 强制为 Access，不协商 | 始终为 Access |
-| **switchport mode dynamic auto** | 被动等待对端请求 | 仅当对端请求时成为 Trunk |
-| **switchport mode dynamic desirable** | 主动请求成为 Trunk | 对端为 auto/desirable/trunk 时成为 Trunk |
+| DTP 模式                              | 行为                  | 协商结果                                 |
+| ------------------------------------- | --------------------- | ---------------------------------------- |
+| **switchport mode trunk**             | 强制为 Trunk，不协商  | 始终为 Trunk                             |
+| **switchport mode access**            | 强制为 Access，不协商 | 始终为 Access                            |
+| **switchport mode dynamic auto**      | 被动等待对端请求      | 仅当对端请求时成为 Trunk                 |
+| **switchport mode dynamic desirable** | 主动请求成为 Trunk    | 对端为 auto/desirable/trunk 时成为 Trunk |
 
 ### 9.3 DTP 协商状态机
 
 ```mermaid
 flowchart TD
     A["端口状态"] --> B{"DTP 模式"}
-    
+
     B --> |"dynamic desirable"| C{"检查邻居"}
     B --> |"dynamic auto"| D{"等待邻居"}
     B --> |"trunk"| E["强制 Trunk"]
     B --> |"access"| F["强制 Access"]
-    
+
     C --> |"邻居=trunk/ desirable/auto"| G["成为 Trunk"]
     C --> |"邻居=access"| H["成为 Access"]
     D --> |"邻居=trunk/desirable"| G
     D --> |"邻居=access"| I["保持 Access"]
-    
+
     style G fill:#90EE90
     style I fill:#90EE90
     style E fill:#FFD700
@@ -1045,6 +1049,7 @@ DTP 帧结构：
 ```
 
 DTP 载荷包含：
+
 - **域（Domain）**：VLAN 域名
 - **状态（Status）**：Trunk 状态
 - **类型（Type）**：协商类型（desirable, auto 等）
@@ -1102,12 +1107,12 @@ show interface GigabitEthernet0/1 trunk
 
 ### 9.6 DTP 与其他协商协议对比
 
-| 协议 | 厂商 | 类型 | 用途 |
-|------|------|------|------|
-| DTP | Cisco 私有 | Trunk 协商 | 自动协商 Trunk 链路 |
+| 协议 | 厂商         | 类型         | 用途                  |
+| ---- | ------------ | ------------ | --------------------- |
+| DTP  | Cisco 私有   | Trunk 协商   | 自动协商 Trunk 链路   |
 | LACP | IEEE 802.3ad | 链路聚合协商 | 自动协商 EtherChannel |
-| LLDP | IEEE 802.1AB | 邻居发现 | 发现直连设备信息 |
-| CDP | Cisco 私有 | 邻居发现 | Cisco 设备间交换信息 |
+| LLDP | IEEE 802.1AB | 邻居发现     | 发现直连设备信息      |
+| CDP  | Cisco 私有   | 邻居发现     | Cisco 设备间交换信息  |
 
 ---
 
@@ -1185,13 +1190,13 @@ Type: IPv4 (0x0800)
 
 ### 10.5 Wireshark 过滤器语法
 
-| 过滤器 | 说明 |
-|-------|------|
-| `vlan.id == 10` | 显示 VLAN ID = 10 的帧 |
-| `vlan.pcp > 3` | 显示 PCP > 3 的帧 |
-| `vlan && ip.src == 192.168.1.0/24` | VLAN 10 中特定源 IP |
-| `not vlan` | 仅显示无 VLAN 标签的帧 |
-| `frame.len > 1522` | 可能的双标签帧 |
+| 过滤器                             | 说明                   |
+| ---------------------------------- | ---------------------- |
+| `vlan.id == 10`                    | 显示 VLAN ID = 10 的帧 |
+| `vlan.pcp > 3`                     | 显示 PCP > 3 的帧      |
+| `vlan && ip.src == 192.168.1.0/24` | VLAN 10 中特定源 IP    |
+| `not vlan`                         | 仅显示无 VLAN 标签的帧 |
+| `frame.len > 1522`                 | 可能的双标签帧         |
 
 ### 10.6 捕获 802.1Q 帧的 Python 脚本
 
@@ -1203,18 +1208,18 @@ Type: IPv4 (0x0800)
 from scapy.all import *
 from scapy.layers.l2 import Dot1Q, Ether
 
-def create_vlan_frame(vid, pcp=0, dst_mac="ff:ff:ff:ff:ff:ff", 
+def create_vlan_frame(vid, pcp=0, dst_mac="ff:ff:ff:ff:ff:ff",
                        src_mac="00:11:22:33:44:55", payload=None):
     """
     创建 802.1Q 帧
     """
     if payload is None:
         payload = IP(dst="192.168.1.1")/ICMP()
-    
+
     frame = Ether(dst=dst_mac, src=src_mac)
     frame = frame / Dot1Q(vlan=vid, prio=pcp)
     frame = frame / payload
-    
+
     return frame
 
 def send_vlan_frame(vid, pcp=0):
@@ -1234,17 +1239,17 @@ def create_qinq_frame(sp_vid, ce_vid, src_mac="00:11:22:33:44:55"):
     frame = frame / Dot1Q(vlan=sp_vid)  # 外层 SP-VLAN
     frame = frame / Dot1Q(vlan=ce_vid)   # 内层 CE-VLAN
     frame = frame / IP(dst="10.0.0.1") / TCP(dport=80)
-    
+
     return frame
 
 # 发送不同优先级的帧进行测试
 if __name__ == "__main__":
     # 发送 VLAN 10, PCP=0 的帧
     send_vlan_frame(vid=10, pcp=0)
-    
+
     # 发送 VLAN 10, PCP=5（语音优先级）
     send_vlan_frame(vid=10, pcp=5)
-    
+
     # 发送 Q-in-Q 双标签帧
     qinq = create_qinq_frame(sp_vid=100, ce_vid=20)
     print(f"Q-in-Q 帧: SP-VLAN=100, CE-VLAN=20")
@@ -1259,7 +1264,7 @@ if __name__ == "__main__":
 tcpdump -i eth0 -nn -v 'vlan 10 and icmp' -c 10
 
 # 输出示例：
-# 11:22:33.444455 IP 192.168.10.100 > 192.168.10.1: ICMP echo request, 
+# 11:22:33.444455 IP 192.168.10.100 > 192.168.10.1: ICMP echo request,
 #    id 0x1234, seq 1, length 64
 #     802.1Q Virtual LAN, PRI: 0, ID: 10
 #         000. .... .... .... = Priority: 0 (Best Effort)
@@ -1281,37 +1286,37 @@ def analyze_vlan_frames(pcap_file):
     分析 pcap 文件中的所有 VLAN 帧
     """
     packets = rdpcap(pcap_file)
-    
+
     vlan_stats = {
         'total': 0,
         'vlan_ids': set(),
         'pcp_distribution': {i: 0 for i in range(8)},
         'qinq_count': 0,
     }
-    
+
     for pkt in packets:
         if Dot1Q in pkt:
             vlan_stats['total'] += 1
-            
+
             # 提取 VLAN 标签
             vlans = [pkt[Dot1Q]]
-            
+
             # 检查是否有 Q-in-Q（多层标签）
             if Dot1Q in pkt[Dot1Q].payload:
                 inner_vlan = pkt[Dot1Q].payload
                 vlans.append(inner_vlan)
                 vlan_stats['qinq_count'] += 1
-            
+
             for vlan in vlans:
                 vid = vlan.vlan
                 pcp = vlan.prio
-                
+
                 vlan_stats['vlan_ids'].add(vid)
                 vlan_stats['pcp_distribution'][pcp] += 1
-                
+
                 print(f"VLAN ID: {vid:4d} | PCP: {pcp} | "
                       f"{'SP-VLAN' if vlans.index(vlan) == 0 else 'CE-VLAN'}")
-    
+
     print("\n=== 统计摘要 ===")
     print(f"总 VLAN 帧数: {vlan_stats['total']}")
     print(f"Q-in-Q 帧数:  {vlan_stats['qinq_count']}")
@@ -1332,41 +1337,41 @@ if __name__ == "__main__":
 
 ### 关键数值速查
 
-| 参数 | 值 |
-|------|-----|
-| 标签总长度 | 4 字节（32 位） |
-| TPID 值 | `0x8100` |
-| VID 长度 | 12 位 |
-| VID 范围 | 0-4095 |
-| 可用 VLAN 数 | 4094（VLAN 1-4094） |
-| PCP 长度 | 3 位 |
-| PCP 范围 | 0-7 |
-| DEI/CFI 长度 | 1 位 |
-| 帧最大长度（单标签） | 1522 字节 |
-| 帧最大长度（双标签） | 1526 字节 |
+| 参数                 | 值                  |
+| -------------------- | ------------------- |
+| 标签总长度           | 4 字节（32 位）     |
+| TPID 值              | `0x8100`            |
+| VID 长度             | 12 位               |
+| VID 范围             | 0-4095              |
+| 可用 VLAN 数         | 4094（VLAN 1-4094） |
+| PCP 长度             | 3 位                |
+| PCP 范围             | 0-7                 |
+| DEI/CFI 长度         | 1 位                |
+| 帧最大长度（单标签） | 1522 字节           |
+| 帧最大长度（双标签） | 1526 字节           |
 
 ### VLAN 特殊 VID
 
-| VID | 含义 |
-|-----|------|
-| 0 | 仅用于优先级标记，不表示实际 VLAN |
-| 1 | 默认 VLAN（通常不可删除） |
-| 2-1001 | 正常 VLAN 范围（可配置） |
-| 1002-1005 | 保留（FDDI、TR 等） |
-| 1006-4094 | 扩展 VLAN 范围 |
-| 4095 | 保留 |
+| VID       | 含义                              |
+| --------- | --------------------------------- |
+| 0         | 仅用于优先级标记，不表示实际 VLAN |
+| 1         | 默认 VLAN（通常不可删除）         |
+| 2-1001    | 正常 VLAN 范围（可配置）          |
+| 1002-1005 | 保留（FDDI、TR 等）               |
+| 1006-4094 | 扩展 VLAN 范围                    |
+| 4095      | 保留                              |
 
 ### 常见 EtherType 值
 
-| EtherType | 协议 |
-|-----------|------|
-| `0x0800` | IPv4 |
-| `0x0806` | ARP |
-| `0x86DD` | IPv6 |
-| `0x8100` | 802.1Q VLAN 标签 |
-| `0x88A8` | 802.1AD（Q-in-Q Provider Tag） |
-| `0x9100` | 旧版 Q-in-Q |
-| `0x9200` | QinQ |
+| EtherType | 协议                           |
+| --------- | ------------------------------ |
+| `0x0800`  | IPv4                           |
+| `0x0806`  | ARP                            |
+| `0x86DD`  | IPv6                           |
+| `0x8100`  | 802.1Q VLAN 标签               |
+| `0x88A8`  | 802.1AD（Q-in-Q Provider Tag） |
+| `0x9100`  | 旧版 Q-in-Q                    |
+| `0x9200`  | QinQ                           |
 
 ---
 
@@ -1384,8 +1389,8 @@ if __name__ == "__main__":
 8. **DTP 协议**：Cisco 私有协商协议及安全加固
 9. **实战分析**：Wireshark 抓包验证与 Python 脚本
 
-802.1Q 作为现代网络的基础协议，掌握其细节对于网络工程师、安全工程师和系统管理员都至关重要。理解标签的每一个位元，才能在复杂的多租户、云原生网络环境中游刃有余。
+   802.1Q 作为现代网络的基础协议，掌握其细节对于网络工程师、安全工程师和系统管理员都至关重要。理解标签的每一个位元，才能在复杂的多租户、云原生网络环境中游刃有余。
 
 ---
 
-*系列文章导航：[Ch1: VLAN 基础概念与架构](/vlan-deep-dive-ch1) | Ch2: 802.1Q 标签详解 | [Ch3: VLAN 间路由](/vlan-deep-dive-ch3)*
+_系列文章导航：[Ch1: VLAN 基础概念与架构](/vlan-deep-dive-ch1) | Ch2: 802.1Q 标签详解 | [Ch3: VLAN 间路由](/vlan-deep-dive-ch3)_

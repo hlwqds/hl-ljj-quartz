@@ -41,26 +41,26 @@ Key properties:
 
 Typical locator sizes:
 
-| Prefix Length | Bits for Function+Arg | Example |
-|---------------|----------------------|---------|
-| /48 | 80 | Large deployments with many SIDs |
-| /64 | 64 | Standard node locator |
-| /80 | 48 | Function-rich deployments |
-| /96 | 32 | Heavy function/argument use |
+| Prefix Length | Bits for Function+Arg | Example                          |
+| ------------- | --------------------- | -------------------------------- |
+| /48           | 80                    | Large deployments with many SIDs |
+| /64           | 64                    | Standard node locator            |
+| /80           | 48                    | Function-rich deployments        |
+| /96           | 32                    | Heavy function/argument use      |
 
 ### 5.2.3 Function (16 bits)
 
 The **Function** is a 16-bit identifier that specifies the behavior at the node. RFC 8986 defines a base set of behaviors:
 
-| Function Code | Name | Description |
-|--------------|------|-------------|
-| 0x0000 | End | Transit through node (SRv6 endpoint) |
-| 0x0001 | End.X | Forward via specific layer-3 neighbor |
-| 0x0002 | End.T | Lookup in specific IPv6 table |
-| 0x0003 | End.B6.Encaps | Encapsulate and forward |
-| 0x0004 | End.B6.Encaps.Red | Reduced encapsulation |
-| 0x0005 | End.BM | Behavior with Meta |
-| 0x0006-0xFFFF | Flex | Operator-defined behaviors |
+| Function Code | Name              | Description                           |
+| ------------- | ----------------- | ------------------------------------- |
+| 0x0000        | End               | Transit through node (SRv6 endpoint)  |
+| 0x0001        | End.X             | Forward via specific layer-3 neighbor |
+| 0x0002        | End.T             | Lookup in specific IPv6 table         |
+| 0x0003        | End.B6.Encaps     | Encapsulate and forward               |
+| 0x0004        | End.B6.Encaps.Red | Reduced encapsulation                 |
+| 0x0005        | End.BM            | Behavior with Meta                    |
+| 0x0006-0xFFFF | Flex              | Operator-defined behaviors            |
 
 These base behaviors are the primitives from which complex network programs are composed.
 
@@ -91,7 +91,7 @@ Argument: None
 
 SID = FC00:0:1:0000:0000:0000:0000:0001
          |_________locator________|F|
-         
+
 Full address: FC00:0:1::1/128
 ```
 
@@ -112,7 +112,7 @@ Argument: Interface identifier (16 bits)
 
 SID = FC00:0:1:0001:0000:0000:0000:0005
          |________loc________|F|Arg
-         
+
 Full address: FC00:0:1:1::5/128
 ```
 
@@ -127,7 +127,7 @@ Argument: VRF ID (16 bits)
 
 SID = FC00:0:2:0005:0000:0000:0000:00VRF
          |________loc________|F|Arg = VRF ID
-         
+
 Full address: FC00:0:2:5::100/128 (for VRF 0x100)
 ```
 
@@ -188,13 +188,13 @@ In this example, five 16-bit micro-SIDs are encoded in a single 128-bit address,
 
 ### 5.4.3 uSID vs. Vanilla SRv6 Comparison
 
-| Aspect | Vanilla SRv6 | uSID |
-|--------|-------------|------|
-| SID size (effective) | 128 bits | 16 bits |
-| SID allocation | Per-SID IPv6 | Block-based |
-| Transit FIB entries | Full 128-bit | Compressed blocks |
-| Human readability | High | Low |
-| Standardization | RFC 8986 | IETF draft |
+| Aspect               | Vanilla SRv6 | uSID              |
+| -------------------- | ------------ | ----------------- |
+| SID size (effective) | 128 bits     | 16 bits           |
+| SID allocation       | Per-SID IPv6 | Block-based       |
+| Transit FIB entries  | Full 128-bit | Compressed blocks |
+| Human readability    | High         | Low               |
+| Standardization      | RFC 8986     | IETF draft        |
 
 uSID is particularly attractive for:
 
@@ -371,13 +371,13 @@ Division by function:
   /48 for infrastructure (loopbacks, links)
   /48 for services (VPN, Internet)
   /48 for overlays (cloud interconnect)
-  
+
 Division by region:
   /56 for each region (Americas, EMEA, APAC)
-  
+
 Division by node:
   /64 for each node
-  
+
 Example R1 locator:
   2001:db8:1234:0001::/64
 ```

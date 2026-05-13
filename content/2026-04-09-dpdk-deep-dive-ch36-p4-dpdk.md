@@ -15,6 +15,7 @@ description: "深入解析 P4 语言架构、可编程数据面流水线、behav
 ### 1.1 什么是 P4
 
 **P4** (Programming Protocol-independent Packet Processors) 是一种：
+
 - **领域特定语言**：专门用于网络数据包处理
 - **协议无关**：不绑定特定协议，可定义任意包头解析
 - **可编程数据面**：在 NIC、交换机、路由器上运行
@@ -22,13 +23,13 @@ description: "深入解析 P4 语言架构、可编程数据面流水线、behav
 
 ### 1.2 P4 vs eBPF
 
-| 特性 | P4 | eBPF |
-|------|-----|------|
-| **目标** | 协议无关包处理 | 内核任意计算 |
-| **运行环境** | NIC/Switch/Software (BMv2) | Linux Kernel |
-| **状态支持** | tables、registers | maps、per-CPU state |
-| **包修改** | 完整解析/修改 | 有限（skb 直接访问） |
-| **适用场景** | 交换机、路由器 | 网络观测、安全 |
+| 特性         | P4                         | eBPF                 |
+| ------------ | -------------------------- | -------------------- |
+| **目标**     | 协议无关包处理             | 内核任意计算         |
+| **运行环境** | NIC/Switch/Software (BMv2) | Linux Kernel         |
+| **状态支持** | tables、registers          | maps、per-CPU state  |
+| **包修改**   | 完整解析/修改              | 有限（skb 直接访问） |
+| **适用场景** | 交换机、路由器             | 网络观测、安全       |
 
 ### 1.3 P4 生态
 
@@ -408,17 +409,17 @@ p4c-dpdk -p4v 16 -o myprogram.dpdk.json myprogram.p4
 
 ### 4.3 DPDK P4 限制
 
-| 功能 | 支持 | 说明 |
-|------|------|------|
-| Basic Parsing | ✅ | Ethernet, IPv4, TCP/UDP |
-| LPM/Exact Tables | ✅ | Hash + CMA |
-| Hash Actions | ✅ | |
-| Checksum Update | ✅ | |
-| Direct Counters | ✅ | |
-| Direct Meters | ✅ | |
-| Stateful Registers | ✅ | |
-| Clone/Recirculate | ⚠️ | 受限于 DPDK 架构 |
-| Traffic Manager | ❌ | 需要额外实现 |
+| 功能               | 支持 | 说明                    |
+| ------------------ | ---- | ----------------------- |
+| Basic Parsing      | ✅   | Ethernet, IPv4, TCP/UDP |
+| LPM/Exact Tables   | ✅   | Hash + CMA              |
+| Hash Actions       | ✅   |                         |
+| Checksum Update    | ✅   |                         |
+| Direct Counters    | ✅   |                         |
+| Direct Meters      | ✅   |                         |
+| Stateful Registers | ✅   |                         |
+| Clone/Recirculate  | ⚠️   | 受限于 DPDK 架构        |
+| Traffic Manager    | ❌   | 需要额外实现            |
 
 ## 5. 实际案例
 

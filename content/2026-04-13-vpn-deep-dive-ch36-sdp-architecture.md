@@ -5,8 +5,8 @@ tags: [vpn, series, sdp, software-defined-perimeter, darknet, zero-trust]
 description: "SDP 软件定义边界深度解析——CSA 提出的零信任架构、Controller/Gateway/Client 三角架构、Darknet 暗网、SPP 协议、与 VPN 对比"
 ---
 
-> [!info] VPN 技术深度探索系列
-> 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+> [!info] VPN 技术深度探索系列 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-vpn-deep-dive-ch35-gost|第三十五章：gost 代理工具]]
 > 2. **第三十六章：SDP 软件定义边界**
 > 3. [[2026-04-13-vpn-deep-dive-ch37-ztna|第三十七章：零信任网络 ZTNA]]

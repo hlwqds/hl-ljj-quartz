@@ -21,7 +21,7 @@ graph TB
         A3["Database"]
         A1 --> A2 --> A3
     end
-    
+
     subgraph "微服务架构"
         B1["API Gateway"]
         B2["Planning Agent"]
@@ -43,16 +43,16 @@ graph TB
 
 **架构选择对照表：**
 
-| 维度 | 单体架构 | 微服务架构 |
-|------|---------|-----------|
-| 部署复杂度 | 低 | 中高 |
-| 扩展性 | 垂直扩展为主 | 水平扩展 |
-| 故障隔离 | 差 | 好 |
-| 技术栈灵活性 | 低 | 高 |
-| 团队规模适配 | <10人 | >10人 |
-| 调试难度 | 低 | 高 |
-| 资源利用率 | 较低 | 较高 |
-| 交付速度 | 慢（全量部署） | 快（增量部署） |
+| 维度         | 单体架构       | 微服务架构     |
+| ------------ | -------------- | -------------- |
+| 部署复杂度   | 低             | 中高           |
+| 扩展性       | 垂直扩展为主   | 水平扩展       |
+| 故障隔离     | 差             | 好             |
+| 技术栈灵活性 | 低             | 高             |
+| 团队规模适配 | <10人          | >10人          |
+| 调试难度     | 低             | 高             |
+| 资源利用率   | 较低           | 较高           |
+| 交付速度     | 慢（全量部署） | 快（增量部署） |
 
 ### 1.2 部署模式选择
 
@@ -96,30 +96,30 @@ graph TB
             LB["负载均衡器<br/>(AWS ALB)"]
             CDN["CDN<br/>(CloudFront)"]
         end
-        
+
         subgraph "网关层"
             GW["API Gateway<br/>(Kong/Nginx)"]
         end
-        
+
         subgraph "核心服务层"
             PL["Planning Service<br/>x3 副本"]
             EX["Execution Service<br/>x5 副本"]
             MM["Memory Service<br/>x2 副本"]
         end
-        
+
         subgraph "推理层"
             GW2["Worker Gateway"]
             W1["Worker 1<br/>(A100)"]
             W2["Worker 2<br/>(A100)"]
             W3["Worker N<br/>(A100)"]
         end
-        
+
         subgraph "数据层"
             PG["PostgreSQL<br/>(主从)"]
             RD["Redis Cluster"]
             S3["Object Storage"]
         end
-        
+
         CDN --> LB
         LB --> GW
         GW --> PL
@@ -701,16 +701,16 @@ helm rollback gsd2 1
 
 **容量规划表：**
 
-| 服务 | 实例数 | CPU/实例 | 内存/实例 | GPU/实例 | 存储/实例 | 总 CPU | 总内存 | 总 GPU |
-|------|--------|---------|-----------|---------|-----------|--------|--------|--------|
-| Planning Service | 3 | 2 cores | 2 GB | - | - | 6 cores | 6 GB | - |
-| Execution Service | 5 | 4 cores | 4 GB | - | - | 20 cores | 20 GB | - |
-| Inference Worker | 5 | 8 cores | 32 GB | 1xA100 | 100 GB | 40 cores | 160 GB | 5xA100 |
-| Memory Service | 2 | 2 cores | 16 GB | - | 50 GB | 4 cores | 32 GB | - |
-| PostgreSQL Primary | 1 | 4 cores | 8 GB | - | 100 GB | 4 cores | 8 GB | - |
-| PostgreSQL Replica | 2 | 2 cores | 4 GB | - | 100 GB | 4 cores | 8 GB | - |
-| Redis Master | 1 | 2 cores | 4 GB | - | 10 GB | 2 cores | 4 GB | - |
-| Redis Replica | 2 | 1 core | 2 GB | - | 10 GB | 2 cores | 4 GB | - |
+| 服务               | 实例数 | CPU/实例 | 内存/实例 | GPU/实例 | 存储/实例 | 总 CPU   | 总内存 | 总 GPU |
+| ------------------ | ------ | -------- | --------- | -------- | --------- | -------- | ------ | ------ |
+| Planning Service   | 3      | 2 cores  | 2 GB      | -        | -         | 6 cores  | 6 GB   | -      |
+| Execution Service  | 5      | 4 cores  | 4 GB      | -        | -         | 20 cores | 20 GB  | -      |
+| Inference Worker   | 5      | 8 cores  | 32 GB     | 1xA100   | 100 GB    | 40 cores | 160 GB | 5xA100 |
+| Memory Service     | 2      | 2 cores  | 16 GB     | -        | 50 GB     | 4 cores  | 32 GB  | -      |
+| PostgreSQL Primary | 1      | 4 cores  | 8 GB      | -        | 100 GB    | 4 cores  | 8 GB   | -      |
+| PostgreSQL Replica | 2      | 2 cores  | 4 GB      | -        | 100 GB    | 4 cores  | 8 GB   | -      |
+| Redis Master       | 1      | 2 cores  | 4 GB      | -        | 10 GB     | 2 cores  | 4 GB   | -      |
+| Redis Replica      | 2      | 1 core   | 2 GB      | -        | 10 GB     | 2 cores  | 4 GB   | -      |
 
 **节点池规划：**
 
@@ -732,7 +732,7 @@ nodeGroups:
 
   # GPU 节点组
   - name: gpu-node-group
-    instanceType: p4d.24xlarge  # 8xA100
+    instanceType: p4d.24xlarge # 8xA100
     desiredCapacity: 1
     minSize: 0
     maxSize: 3
@@ -912,12 +912,12 @@ def collect_gpu_metrics():
     """采集所有 GPU 的利用率指标"""
     device_count = pynvml.nvmlDeviceGetCount()
     total_util = 0
-    
+
     for i in range(device_count):
         handle = pynvml.nvmlDeviceGetHandleByIndex(i)
         util = pynvml.nvmlDeviceGetUtilizationRates(handle)
         total_util += util.gpu
-    
+
     avg_util = total_util / device_count if device_count > 0 else 0
     gpu_utilization.labels(
         namespace='gsd2',
@@ -1045,7 +1045,7 @@ graph TB
             RD1["Redis<br/>Cluster"]
         end
     end
-    
+
     subgraph "Region: eu-west-1 (Secondary)"
         subgraph "eu-west-1 部署"
             GW2["API Gateway"]
@@ -1057,7 +1057,7 @@ graph TB
             RD2["Redis<br/>Replica"]
         end
     end
-    
+
     subgraph "Region: ap-southeast-1 (Tertiary)"
         subgraph "ap-southeast-1 部署"
             GW3["API Gateway"]
@@ -1069,7 +1069,7 @@ graph TB
             RD3["Redis<br/>Replica"]
         end
     end
-    
+
     LB1 --> GW1
     LB1 -.->|健康检查| GW2
     LB1 -.->|健康检查| GW3
@@ -1107,7 +1107,7 @@ class DatabaseRegion(Enum):
 class DatabaseRouter:
     def __init__(self):
         self.current_region = os.getenv("DEPLOY_REGION", DatabaseRegion.PRIMARY.value)
-        
+
     def get_read_endpoint(self) -> str:
         """根据负载和延迟选择读副本"""
         endpoints = {
@@ -1121,11 +1121,11 @@ class DatabaseRouter:
             return local_endpoint
         # 否则随机选择
         return random.choice(list(endpoints.values()))
-    
+
     def get_write_endpoint(self) -> str:
         """写操作只能到主库"""
         return os.getenv("PRIMARY_ENDPOINT")
-    
+
     def is_read_query(self, query: str) -> bool:
         """判断是否为只读查询"""
         read_keywords = ['SELECT', 'SHOW', 'DESCRIBE', 'EXPLAIN']
@@ -1140,13 +1140,13 @@ GPU 实例成本是 Code Agent 部署的主要开销。通过合理组合 Spot I
 
 **实例类型选择对照表：**
 
-| 实例类型 | 可用性 | 成本折扣 | 适用场景 | 注意事项 |
-|---------|-------|---------|---------|---------|
-| On-Demand | 100% | 1x | 核心服务、无法中断的工作 | 基准价格 |
-| Reserved 1yr | 100% | 0.6x | 稳定负载的核心服务 | 需预付 |
-| Reserved 3yr | 100% | 0.4x | 长期稳定的服务 | 长期承诺 |
-| Spot | 90-99% | 0.2-0.3x | 非关键 Worker、批处理 | 可能被中断 |
-| Savings Plans | 100% | 0.5-0.7x | 可预测的工作负载 | 灵活实例类型 |
+| 实例类型      | 可用性 | 成本折扣 | 适用场景                 | 注意事项     |
+| ------------- | ------ | -------- | ------------------------ | ------------ |
+| On-Demand     | 100%   | 1x       | 核心服务、无法中断的工作 | 基准价格     |
+| Reserved 1yr  | 100%   | 0.6x     | 稳定负载的核心服务       | 需预付       |
+| Reserved 3yr  | 100%   | 0.4x     | 长期稳定的服务           | 长期承诺     |
+| Spot          | 90-99% | 0.2-0.3x | 非关键 Worker、批处理    | 可能被中断   |
+| Savings Plans | 100%   | 0.5-0.7x | 可预测的工作负载         | 灵活实例类型 |
 
 **成本优化架构：**
 
@@ -1159,18 +1159,18 @@ graph TB
         RS4["Reserved Instance<br/>PostgreSQL"]
         RS5["Reserved Instance<br/>Redis"]
     end
-    
+
     subgraph "弹性 Worker (Spot + On-Demand)"
         SW1["Spot Worker Pool A<br/>10x A100"]
         SW2["Spot Worker Pool B<br/>5x A100"]
         OD1["On-Demand Workers<br/>2x A100"]
     end
-    
+
     subgraph "扩缩容控制"
         SC["Spot Fleet Controller"]
         AS["Auto Scaling"]
     end
-    
+
     AS --> RS1
     AS --> RS2
     AS --> RS3
@@ -1225,14 +1225,14 @@ import torch
 def load_quantized_model(model_name: str, quantization_config: dict):
     """
     加载量化模型以减少显存占用和推理延迟
-    
+
     量化选项对比：
     - FP16: 原始精度，半精度浮点
     - INT8: 8位整数量化，~50% 显存 reduction
     - INT4: 4位整数量化，~75% 显存 reduction
     """
     quant_mode = quantization_config.get("mode", "fp16")
-    
+
     if quant_mode == "int8":
         bnb_config = BitsAndBytesConfig(
             load_in_8bit=True,
@@ -1248,7 +1248,7 @@ def load_quantized_model(model_name: str, quantization_config: dict):
         )
     else:
         bnb_config = None
-    
+
     model = AutoModelForCausalLM.from_pretrained(
         model_name,
         quantization_config=bnb_config,
@@ -1306,35 +1306,35 @@ class BatchInferenceEngine:
         self.batch_size = batch_size
         self.queue = asyncio.Queue()
         self.pending = []
-        
+
     async def add_request(self, prompt: str, request_id: str):
         """添加推理请求"""
         future = asyncio.Future()
         await self.queue.put((request_id, prompt, future))
         return await future
-    
+
     async def process_batch(self):
         """批处理推理"""
         batch = []
         futures = []
-        
+
         # 收集最多 batch_size 个请求
         while len(batch) < self.batch_size and not self.queue.empty():
             request_id, prompt, future = await self.queue.get()
             batch.append(prompt)
             futures.append((request_id, future))
-        
+
         if not batch:
             return
-        
+
         # 批量推理
         sampling_params = SamplingParams(temperature=0.7, max_tokens=1024)
         outputs = self.llm.generate(batch, sampling_params)
-        
+
         # 分发结果
         for (request_id, future), output in zip(futures, outputs):
             future.set_result(output.outputs[0].text)
-    
+
     async def run(self):
         """启动批处理循环"""
         while True:
@@ -1346,15 +1346,15 @@ class BatchInferenceEngine:
 
 **显存优化技术对照表：**
 
-| 技术 | 显存 reduction | 性能影响 | 适用场景 |
-|------|---------------|---------|---------|
-| FP16 推理 | 50% | 几乎无 | 通用场景 |
-| INT8 量化 | 60% | <5% 精度损失 | 生产环境 |
-| INT4 量化 | 75% | 5-10% 精度损失 | 成本敏感场景 |
-| KV Cache 量化 | 30-40% | 几乎无 | 长上下文场景 |
-| CUDA Graph | 0% | 10-20% 提升 | 所有 GPU 推理 |
-| Flash Attention | 0% | 2-3x 提升 | 长序列场景 |
-| speculative Decoding | 0% | 2-3x 提升 | 生成任务 |
+| 技术                 | 显存 reduction | 性能影响       | 适用场景      |
+| -------------------- | -------------- | -------------- | ------------- |
+| FP16 推理            | 50%            | 几乎无         | 通用场景      |
+| INT8 量化            | 60%            | <5% 精度损失   | 生产环境      |
+| INT4 量化            | 75%            | 5-10% 精度损失 | 成本敏感场景  |
+| KV Cache 量化        | 30-40%         | 几乎无         | 长上下文场景  |
+| CUDA Graph           | 0%             | 10-20% 提升    | 所有 GPU 推理 |
+| Flash Attention      | 0%             | 2-3x 提升      | 长序列场景    |
+| speculative Decoding | 0%             | 2-3x 提升      | 生成任务      |
 
 ## 5. 监控与可观测性
 
@@ -1370,30 +1370,30 @@ graph TB
         S3["Inference Worker"]
         S4["Memory Service"]
     end
-    
+
     subgraph "指标采集"
         EM1["Exporters"]
         EM2["NodeExporter"]
         EM3["GPUExporter"]
     end
-    
+
     subgraph "数据存储"
         PM["Prometheus"]
         ELK["Elasticsearch"]
         JA["Jaeger"]
     end
-    
+
     subgraph "可视化"
         GF["Grafana"]
         KB["Kibana"]
         JG["Jaeger UI"]
     end
-    
+
     subgraph "告警"
         AM["AlertManager"]
         AT["Alert Triage"]
     end
-    
+
     S1 --> EM1
     S2 --> EM1
     S3 --> EM1
@@ -1403,13 +1403,13 @@ graph TB
     EM1 --> PM
     PM --> GF
     PM --> AM
-    
+
     S1 --> ELK
     S2 --> ELK
     S3 --> ELK
     S4 --> ELK
     ELK --> KB
-    
+
     S1 --> JA
     S2 --> JA
     S3 --> JA
@@ -1571,7 +1571,7 @@ import traceback
 
 class StructuredFormatter(logging.Formatter):
     """结构化日志格式器"""
-    
+
     def format(self, record: logging.LogRecord) -> str:
         log_data = {
             "timestamp": datetime.utcnow().isoformat() + "Z",
@@ -1583,23 +1583,23 @@ class StructuredFormatter(logging.Formatter):
             "function": record.funcName,
             "line": record.lineno,
         }
-        
+
         # 添加请求 ID
         if hasattr(record, 'request_id'):
             log_data['request_id'] = record.request_id
-            
+
         # 添加用户 ID
         if hasattr(record, 'user_id'):
             log_data['user_id'] = record.user_id
-            
+
         # 添加任务 ID
         if hasattr(record, 'task_id'):
             log_data['task_id'] = record.task_id
-        
+
         # 添加额外字段
         if hasattr(record, 'extra_data'):
             log_data.update(record.extra_data)
-        
+
         # 添加异常信息
         if record.exc_info:
             log_data['exception'] = {
@@ -1607,38 +1607,38 @@ class StructuredFormatter(logging.Formatter):
                 'message': str(record.exc_info[1]) if record.exc_info[1] else None,
                 'traceback': traceback.format_exception(*record.exc_info)
             }
-        
+
         return json.dumps(log_data, ensure_ascii=False)
 
 def setup_logging(service_name: str, log_level: str = "INFO"):
     """配置日志"""
     logger = logging.getLogger()
     logger.setLevel(getattr(logging, log_level.upper()))
-    
+
     # Console handler
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setFormatter(StructuredFormatter())
     logger.addHandler(console_handler)
-    
+
     return logger
 
 class LogContext:
     """日志上下文管理器"""
     _context = {}
-    
+
     def __init__(self, **kwargs):
         self.context = kwargs
-        
+
     def __enter__(self):
         for key, value in self.context.items():
             LogContext._context[key] = value
         return self
-        
+
     def __exit__(self, exc_type, exc_val, exc_tb):
         for key in self.context.keys():
             LogContext._context.pop(key, None)
         return False
-    
+
     @staticmethod
     def get_context() -> Dict[str, Any]:
         return LogContext._context.copy()
@@ -1669,7 +1669,7 @@ data:
         time_format %Y-%m-%dT%H:%M:%S.%NZ
       </parse>
     </source>
-    
+
     # 添加 Kubernetes 元数据
     <filter kubernetes.**>
       @type kubernetes_metadata
@@ -1678,7 +1678,7 @@ data:
       skip_container_metadata false
       skip_master_url true
     </filter>
-    
+
     # 解析应用日志
     <filter kubernetes.var.log.containers.gsd2**.log>
       @type parser
@@ -1687,7 +1687,7 @@ data:
         @type json
       </parse>
     </filter>
-    
+
     # 输出到 Elasticsearch
     <match kubernetes.**>
       @type elasticsearch
@@ -1727,19 +1727,19 @@ def setup_tracing(service_name: str, jaeger_endpoint: str):
     """配置链路追踪"""
     # 创建 TracerProvider
     provider = TracerProvider()
-    
+
     # 配置 Jaeger exporter
     jaeger_exporter = JaegerExporter(
         agent_host_name=jaeger_endpoint,
         agent_port=6831,
     )
-    
+
     # 添加 span processor
     provider.add_span_processor(BatchSpanProcessor(jaeger_exporter))
-    
+
     # 设置全局 tracer provider
     trace.set_tracer_provider(provider)
-    
+
     return trace.get_tracer(service_name)
 
 def trace_async(tracer, span_name: str, attributes: dict = None):
@@ -1767,12 +1767,12 @@ def trace_async(tracer, span_name: str, attributes: dict = None):
 class TracingContext:
     """链路追踪上下文"""
     _current_span = None
-    
+
     @classmethod
     def inject_context(cls, carrier: dict):
         """注入上下文到 carrier"""
         TraceContextTextMapPropagator().inject(carrier)
-        
+
     @classmethod
     def extract_context(cls, carrier: dict):
         """从 carrier 提取上下文"""
@@ -1966,7 +1966,7 @@ graph TB
         LB --> P2
         LB --> P3
     end
-    
+
     subgraph "Pod 故障状态"
         LB2["负载均衡器"]
         P1A["Planning Pod 1<br/>✗ 已终止"]
@@ -1994,7 +1994,7 @@ metadata:
   name: planning-service-pdb
   namespace: gsd2
 spec:
-  minAvailable: 2  # 至少保持 2 个可用实例
+  minAvailable: 2 # 至少保持 2 个可用实例
   selector:
     matchLabels:
       app: planning-service
@@ -2005,7 +2005,7 @@ metadata:
   name: inference-worker-pdb
   namespace: gsd2
 spec:
-  maxUnavailable: 1  # 最多 1 个实例不可用
+  maxUnavailable: 1 # 最多 1 个实例不可用
   selector:
     matchLabels:
       app: inference-worker
@@ -2041,14 +2041,14 @@ class CircuitBreakerConfig:
 class CircuitBreaker:
     """
     熔断器实现
-    
+
     状态转换：
     CLOSED -> OPEN: 失败次数达到阈值
     OPEN -> HALF_OPEN: 熔断超时
     HALF_OPEN -> CLOSED: 成功次数达到阈值
     HALF_OPEN -> OPEN: 再次失败
     """
-    
+
     def __init__(self, name: str, config: CircuitBreakerConfig):
         self.name = name
         self.config = config
@@ -2057,32 +2057,32 @@ class CircuitBreaker:
         self.success_count = 0
         self.last_failure_time: Optional[float] = None
         self._half_open_semaphore = asyncio.Semaphore(config.half_open_max_calls)
-    
+
     async def call(self, func: Callable[..., T], *args, **kwargs) -> T:
         """执行带熔断保护的调用"""
         if not self._can_execute():
             raise CircuitOpenError(f"Circuit {self.name} is OPEN")
-        
+
         async with self._half_open_semaphore:
             if self.state == CircuitState.HALF_OPEN:
                 return await self._execute_half_open(func, *args, **kwargs)
             return await self._execute_normal(func, *args, **kwargs)
-    
+
     def _can_execute(self) -> bool:
         """检查是否可以执行请求"""
         if self.state == CircuitState.CLOSED:
             return True
-        
+
         if self.state == CircuitState.OPEN:
             # 检查超时
             if time.time() - self.last_failure_time >= self.config.timeout:
                 self._transition_to_half_open()
                 return True
             return False
-        
+
         # HALF_OPEN 状态由信号量控制
         return True
-    
+
     async def _execute_normal(self, func: Callable[..., T], *args, **kwargs) -> T:
         """正常状态执行"""
         try:
@@ -2092,7 +2092,7 @@ class CircuitBreaker:
         except Exception as e:
             self._on_failure()
             raise
-    
+
     async def _execute_half_open(self, func: Callable[..., T], *args, **kwargs) -> T:
         """半开状态执行"""
         try:
@@ -2102,42 +2102,42 @@ class CircuitBreaker:
         except Exception as e:
             self._transition_to_open()
             raise
-    
+
     def _on_success(self):
         """成功回调"""
         self.failure_count = 0
         if self.state != CircuitState.CLOSED:
             logger.info(f"Circuit {self.name}: Reset to CLOSED on success")
-    
+
     def _on_failure(self):
         """失败回调"""
         self.failure_count += 1
         self.last_failure_time = time.time()
-        
+
         if self.failure_count >= self.config.failure_threshold:
             self._transition_to_open()
-        
+
         logger.warning(f"Circuit {self.name}: Failure {self.failure_count}/{self.config.failure_threshold}")
-    
+
     def _on_success_in_half_open(self):
         """半开状态成功回调"""
         self.success_count += 1
         if self.success_count >= self.config.success_threshold:
             self._transition_to_closed()
             logger.info(f"Circuit {self.name}: Reset to CLOSED after {self.success_count} successes")
-    
+
     def _transition_to_open(self):
         """转换到 OPEN 状态"""
         self.state = CircuitState.OPEN
         self.success_count = 0
         logger.warning(f"Circuit {self.name}: Transitioned to OPEN")
-    
+
     def _transition_to_half_open(self):
         """转换到 HALF_OPEN 状态"""
         self.state = CircuitState.HALF_OPEN
         self.failure_count = 0
         logger.info(f"Circuit {self.name}: Transitioned to HALF_OPEN")
-    
+
     def _transition_to_closed(self):
         """转换到 CLOSED 状态"""
         self.state = CircuitState.CLOSED
@@ -2179,7 +2179,7 @@ class InferenceClient:
     def __init__(self, endpoint: str):
         self.endpoint = endpoint
         self.circuit = inference_circuit
-    
+
     async def infer(self, prompt: str, model: str) -> str:
         """带熔断保护的推理调用"""
         async def _do_inference():
@@ -2190,7 +2190,7 @@ class InferenceClient:
                     timeout=aiohttp.ClientTimeout(total=30)
                 ) as resp:
                     return await resp.json()
-        
+
         try:
             return await self.circuit.call(_do_inference)
         except CircuitOpenError:
@@ -2223,22 +2223,22 @@ class RateLimitConfig:
 class TokenBucketRateLimiter:
     """
     令牌桶限流器
-    
+
     - rate: 稳定的令牌补充速率
     - burst: 桶的容量，允许突发
     """
-    
+
     def __init__(self, config: RateLimitConfig):
         self.rate = config.rate
         self.burst = config.burst
         self.tokens = float(config.burst)
         self.last_update = time.time()
         self._lock = asyncio.Lock()
-    
+
     async def acquire(self, tokens: int = 1) -> bool:
         """
         获取令牌
-        
+
         Returns:
             True: 获取成功
             False: 被限流
@@ -2249,64 +2249,64 @@ class TokenBucketRateLimiter:
             elapsed = now - self.last_update
             self.tokens = min(self.burst, self.tokens + elapsed * self.rate)
             self.last_update = now
-            
+
             if self.tokens >= tokens:
                 self.tokens -= tokens
                 return True
             return False
-    
+
     async def wait_for_token(self, tokens: int = 1, timeout: Optional[float] = None):
         """等待获取令牌"""
         start_time = time.time()
-        
+
         while True:
             if await self.acquire(tokens):
                 return
-            
+
             if timeout and (time.time() - start_time) >= timeout:
                 raise TimeoutError(f"Rate limit timeout after {timeout}s")
-            
+
             await asyncio.sleep(0.01)  # 避免 busy loop
 
 class SlidingWindowRateLimiter:
     """
     滑动窗口限流器
-    
+
     更精确的限流实现，基于时间窗口内的请求计数
     """
-    
+
     def __init__(self, max_requests: int, window_seconds: float):
         self.max_requests = max_requests
         self.window_seconds = window_seconds
         self.requests = deque()
         self._lock = asyncio.Lock()
-    
+
     async def is_allowed(self) -> bool:
         """检查请求是否允许"""
         async with self._lock:
             now = time.time()
             cutoff = now - self.window_seconds
-            
+
             # 清理过期的请求记录
             while self.requests and self.requests[0] < cutoff:
                 self.requests.popleft()
-            
+
             if len(self.requests) < self.max_requests:
                 self.requests.append(now)
                 return True
             return False
-    
+
     async def acquire(self, timeout: Optional[float] = None) -> bool:
         """获取限流许可"""
         start_time = time.time()
-        
+
         while True:
             if await self.is_allowed():
                 return True
-            
+
             if timeout and (time.time() - start_time) >= timeout:
                 return False
-            
+
             await asyncio.sleep(0.01)
 
 # Kubernetes Ingress 限流注解
@@ -2353,35 +2353,35 @@ def retry_async(config: Optional[RetryConfig] = None):
     """异步函数重试装饰器"""
     if config is None:
         config = RetryConfig()
-    
+
     def decorator(func: Callable[..., T]) -> Callable[..., T]:
         @functools.wraps(func)
         async def wrapper(*args, **kwargs) -> T:
             last_exception = None
-            
+
             for attempt in range(1, config.max_attempts + 1):
                 try:
                     return await func(*args, **kwargs)
                 except config.retryable_exceptions as e:
                     last_exception = e
-                    
+
                     if attempt == config.max_attempts:
                         logger.error(f"All {config.max_attempts} attempts failed for {func.__name__}")
                         raise
-                    
+
                     delay = min(
                         config.initial_delay * (config.exponential_base ** (attempt - 1)),
                         config.max_delay
                     )
-                    
+
                     logger.warning(
                         f"Attempt {attempt}/{config.max_attempts} failed for {func.__name__}: {e}. "
                         f"Retrying in {delay:.1f}s..."
                     )
                     await asyncio.sleep(delay)
-            
+
             raise last_exception
-        
+
         return wrapper
     return decorator
 
@@ -2419,20 +2419,20 @@ stringData:
   database-username: "gsd2_prod"
   database-password: "actual-password-here"
   database-url: "postgresql://gsd2_prod:password@postgres:5432/gsd2_prod"
-  
+
   # Redis 凭证
   redis-password: "redis-password-here"
   redis-url: "redis://:password@redis:6379/0"
-  
+
   # JWT 密钥
   jwt-secret: "your-256-bit-secret-key-here"
   jwt-access-token-expire-minutes: "30"
   jwt-refresh-token-expire-days: "7"
-  
+
   # 外部 API 密钥
   openai-api-key: "sk-xxxxx"
   huggingface-token: "hf_xxxxx"
-  
+
   # S3 存储
   aws-access-key-id: "AKIAXXXXX"
   aws-secret-access-key: "xxxxx"
@@ -2500,21 +2500,21 @@ data:
   log_level: "INFO"
   log_format: "json"
   environment: "production"
-  
+
   # 服务配置
   max_concurrent_tasks: "100"
   task_timeout_seconds: "300"
   worker_prefetch_count: "10"
-  
+
   # 模型配置
   default_model: "code-agent-v1"
   max_tokens: "4096"
   temperature: "0.7"
-  
+
   # 缓存配置
   cache_ttl_seconds: "3600"
   cache_max_size_mb: "1024"
-  
+
   # 限流配置
   rate_limit_requests_per_second: "100"
   rate_limit_burst: "200"
@@ -2526,7 +2526,7 @@ metadata:
   name: gsd2-config-override
   namespace: gsd2
 data:
-  log_level: "DEBUG"  # 覆盖默认配置
+  log_level: "DEBUG" # 覆盖默认配置
 ```
 
 ### 7.3 应用配置加载
@@ -2547,7 +2547,7 @@ class DatabaseSettings(BaseModel):
     pool_size: int = Field(default=20)
     max_overflow: int = Field(default=10)
     echo: bool = Field(default=False)
-    
+
     @property
     def url(self) -> str:
         return f"postgresql://{self.username}:{self.password}@{self.host}:{self.port}/{self.name}"
@@ -2558,7 +2558,7 @@ class RedisSettings(BaseModel):
     password: Optional[str] = None
     db: int = Field(default=0)
     pool_size: int = Field(default=50)
-    
+
     @property
     def url(self) -> str:
         if self.password:
@@ -2580,13 +2580,13 @@ class ServiceSettings(BaseModel):
 class Settings(BaseSettings):
     """应用配置"""
     environment: str = Field(default="development")
-    
+
     # 从环境变量或 Secret 加载
     database: DatabaseSettings
     redis: RedisSettings
     jwt: JWTSettings
     service: ServiceSettings
-    
+
     class Config:
         env_file = ".env"
         env_nested_delimiter = "__"
@@ -2628,7 +2628,7 @@ graph TB
             B3["Memory x2"]
         end
     end
-    
+
     subgraph "部署中"
         LB2["负载均衡器"]
         subgraph "Blue 环境 (旧版本)"
@@ -2642,7 +2642,7 @@ graph TB
             D3["Memory x2 v1.2.0"]
         end
     end
-    
+
     subgraph "部署后"
         LB3["负载均衡器"]
         subgraph "Blue 环境 (旧版本 - 待销毁)"
@@ -2752,7 +2752,7 @@ spec:
         - setWeight: 50    # 50%
         - pause: {duration: 10m}
         - setWeight: 100  # 100%
-      
+
       # 流量分析
       canaryAnalysis:
         templates:
@@ -2764,7 +2764,7 @@ spec:
         args:
           - name: service-name
             value: inference-worker-canary
-      
+
       # 流量权重
       canaryMetadata:
         labels:
@@ -2772,14 +2772,14 @@ spec:
       stableMetadata:
         labels:
           version: stable
-      
+
       # HPA 集成
       trafficRouting:
         nginx:
           stableIngress: inference-worker-stable
           additionalIngressAnnotations:
             canary-weight: "10"
-      
+
       # Pod 标签
       podTemplate:
         metadata:
@@ -2833,10 +2833,10 @@ spec:
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxSurge: 1        # 最多超出期望副本数
-      maxUnavailable: 0  # 滚动过程中所有实例保持可用
-  minReadySeconds: 10    # 新 Pod 就绪后等待时间
-  progressDeadlineSeconds: 600  # 部署超时时间
+      maxSurge: 1 # 最多超出期望副本数
+      maxUnavailable: 0 # 滚动过程中所有实例保持可用
+  minReadySeconds: 10 # 新 Pod 就绪后等待时间
+  progressDeadlineSeconds: 600 # 部署超时时间
 ```
 
 ### 8.4 回滚策略
@@ -2887,13 +2887,13 @@ graph TB
             RB1["RBAC: team-alpha"]
             Q1["ResourceQuota: team-alpha"]
         end
-        
+
         subgraph "Tenant: team-beta"
             NS2["namespace: gsd2-beta"]
             RB2["RBAC: team-beta"]
             Q2["ResourceQuota: team-beta"]
         end
-        
+
         subgraph "Tenant: team-gamma"
             NS3["namespace: gsd2-gamma"]
             RB3["RBAC: team-gamma"]
@@ -3044,18 +3044,18 @@ rules:
     resources:
       - group: ""
         resources: ["endpoints", "services"]
-  
+
   # 不记录来自 kube-system 的请求
   - level: None
     namespaces: ["kube-system"]
-  
+
   # 不记录 /healthz 和 /version 的请求
   - level: None
     nonResourceURLs:
       - /healthz*
       - /version
       - /swagger*
-  
+
   # Secret 操作记录元数据（不记录内容）
   - level: Metadata
     resources:
@@ -3064,7 +3064,7 @@ rules:
         verbs: ["create", "update", "patch", "delete"]
     omitStages:
       - RequestReceived
-  
+
   # 认证相关操作记录
   - level: Metadata
     resources:
@@ -3072,7 +3072,7 @@ rules:
         resources: ["tokenreviews"]
       - group: "authorization.k8s.io"
         resources: ["subjectaccessreviews"]
-  
+
   # 生产环境 Deployment 操作记录完整请求和响应
   - level: RequestResponse
     namespaces: ["gsd2", "gsd2-team-alpha", "gsd2-team-beta"]
@@ -3082,7 +3082,7 @@ rules:
       - group: ""
         resources: ["pods", "services", "configmaps", "secrets"]
     verbs: ["create", "update", "patch", "delete"]
-  
+
   # 其他操作记录请求级别
   - level: Request
     resources:
@@ -3095,7 +3095,7 @@ rules:
 
 ```sql
 -- 查询敏感操作
-SELECT 
+SELECT
     timestamp,
     user.username,
     objectRef.namespace,
@@ -3105,7 +3105,7 @@ SELECT
     stage,
     requestObject
 FROM audit_logs
-WHERE 
+WHERE
     verb IN ('create', 'update', 'delete')
     AND (
         objectRef.resource = 'secrets'
@@ -3140,45 +3140,45 @@ graph TB
         WAF["AWS WAF"]
         LB["Global Accelerator + ALB"]
     end
-    
+
     subgraph "Kubernetes 集群 (EKS)"
         subgraph "命名空间: gsd2"
             subgraph "Ingress (Nginx)"
                 ING["Ingress Controller"]
             end
-            
+
             subgraph "核心服务"
                 GW["API Gateway<br/>(Kong)"]
                 PL["Planning Service<br/>3 副本"]
                 EX["Execution Service<br/>5 副本"]
                 MM["Memory Service<br/>2 副本"]
             end
-            
+
             subgraph "推理服务"
                 WG["Worker Gateway"]
                 W1["Worker Pool A<br/>10x A100"]
                 W2["Worker Pool B<br/>5x A100 Spot"]
             end
         end
-        
+
         subgraph "基础设施"
             MON["Prometheus<br/>Grafana"]
             TRACING["Jaeger"]
             LOGGING["Fluentd<br/>Elasticsearch<br/>Kibana"]
         end
     end
-    
+
     subgraph "数据层"
         RDS["RDS PostgreSQL<br/>Multi-AZ"]
         DC["DocumentDB<br/>(Memory)"]
         RSC["ElastiCache Redis<br/>Cluster"]
         S3["S3<br/>(Models/Artifacts)"]
     end
-    
+
     subgraph "外部服务"
         EXT["外部 API<br/>(OpenAI, HF)"]
     end
-    
+
     CDN --> WAF
     WAF --> LB
     LB --> ING
@@ -3223,18 +3223,18 @@ resource "aws_eks_cluster" "gsd2" {
   name     = "gsd2-prod"
   role_arn = aws_iam_role.eks_cluster.arn
   version  = "1.29"
-  
+
   vpc_config {
     subnet_ids              = concat(var.private_subnet_ids, var.public_subnet_ids)
     endpoint_private_access = true
     endpoint_public_access  = true
     public_access_cidrs     = ["0.0.0.0/0"]
   }
-  
+
   kubernetes_network_config {
     service_ipv4_cidr = "172.20.0.0/16"
   }
-  
+
   depends_on = [
     aws_iam_role_policy_attachment.eks_cluster_policy
   ]
@@ -3246,19 +3246,19 @@ resource "aws_eks_node_group" "cpu_nodes" {
   node_group_name = "cpu-nodes"
   node_role_arn   = aws_iam_role.eks_nodes.arn
   subnet_ids      = var.private_subnet_ids
-  
+
   scaling_config {
     desired_size = 5
     max_size     = 15
     min_size     = 3
   }
-  
+
   instance_types = ["m6i.2xlarge"]
-  
+
   labels = {
     "node-type" = "cpu-optimized"
   }
-  
+
   taint {
     key    = "node-type"
     value  = "cpu"
@@ -3272,20 +3272,20 @@ resource "aws_eks_node_group" "gpu_nodes_ondemand" {
   node_group_name = "gpu-nodes-ondemand"
   node_role_arn   = aws_iam_role.eks_nodes.arn
   subnet_ids      = var.private_subnet_ids
-  
+
   scaling_config {
     desired_size = 2
     max_size     = 5
     min_size     = 1
   }
-  
+
   instance_types = ["p4d.24xlarge"]
-  
+
   labels = {
     "node-type" = "gpu"
     "capacity" = "ondemand"
   }
-  
+
   taint {
     key    = "nvidia.com/gpu"
     value  = "present"
@@ -3299,26 +3299,26 @@ resource "aws_eks_node_group" "gpu_nodes_spot" {
   node_group_name = "gpu-nodes-spot"
   node_role_arn   = aws_iam_role.eks_nodes.arn
   subnet_ids      = var.private_subnet_ids
-  
+
   scaling_config {
     desired_size = 5
     max_size     = 20
     min_size     = 0
   }
-  
+
   instance_types = ["p4d.24xlarge", "p3.16xlarge"]
-  
+
   labels = {
     "node-type" = "gpu"
     "capacity"  = "spot"
   }
-  
+
   taint {
     key    = "nvidia.com/gpu"
     value  = "present"
     effect = "NO_SCHEDULE"
   }
-  
+
   # Spot 实例分配策略
   capacity_type = "SPOT"
 }
@@ -3341,15 +3341,15 @@ data:
       external_labels:
         cluster: 'gsd2-production'
         environment: 'prod'
-    
+
     alerting:
       alertmanagers:
         - static_configs:
             - targets: ['alertmanager.monitoring.svc.cluster.local:9093']
-    
+
     rule_files:
       - '/etc/prometheus/rules/*.yaml'
-    
+
     scrape_configs:
       # Kubernetes API Server
       - job_name: 'kubernetes-apiservers'
@@ -3409,17 +3409,17 @@ data:
 
 **月度成本分配表：**
 
-| 类别 | 组件 | 实例类型 | 数量 | 单价/月 | 小计/月 | 占比 |
-|------|------|---------|------|---------|---------|------|
-| 计算 | Planning Service | m6i.2xlarge | 3 | $280 | $840 | 8% |
-| 计算 | Execution Service | m6i.4xlarge | 5 | $560 | $2,800 | 27% |
-| GPU | GPU Workers (OD) | p4d.24xlarge | 2 | $25,000 | $50,000 | 30% |
-| GPU | GPU Workers (Spot) | p4d.24xlarge | 5 | $7,500 | $37,500 | 22% |
-| 数据库 | PostgreSQL Primary | r6i.2xlarge | 1 | $500 | $500 | 5% |
-| 数据库 | PostgreSQL Replica | r6i.xlarge | 2 | $250 | $500 | 5% |
-| 缓存 | Redis Cluster | r6g.large | 3 | $120 | $360 | 2% |
-| 存储 | S3 + EBS | - | - | - | $500 | 1% |
-| **合计** | | | | | **$93,000** | 100% |
+| 类别     | 组件               | 实例类型     | 数量 | 单价/月 | 小计/月     | 占比 |
+| -------- | ------------------ | ------------ | ---- | ------- | ----------- | ---- |
+| 计算     | Planning Service   | m6i.2xlarge  | 3    | $280    | $840        | 8%   |
+| 计算     | Execution Service  | m6i.4xlarge  | 5    | $560    | $2,800      | 27%  |
+| GPU      | GPU Workers (OD)   | p4d.24xlarge | 2    | $25,000 | $50,000     | 30%  |
+| GPU      | GPU Workers (Spot) | p4d.24xlarge | 5    | $7,500  | $37,500     | 22%  |
+| 数据库   | PostgreSQL Primary | r6i.2xlarge  | 1    | $500    | $500        | 5%   |
+| 数据库   | PostgreSQL Replica | r6i.xlarge   | 2    | $250    | $500        | 5%   |
+| 缓存     | Redis Cluster      | r6g.large    | 3    | $120    | $360        | 2%   |
+| 存储     | S3 + EBS           | -            | -    | -       | $500        | 1%   |
+| **合计** |                    |              |      |         | **$93,000** | 100% |
 
 **成本优化措施：**
 
@@ -3452,6 +3452,7 @@ sum(aws_storage_cost{service="gsd2"}) by (storage_type)
 ## gsd2 生产部署检查清单
 
 ### 部署前
+
 - [ ] 所有单元测试通过 (>95% 覆盖率)
 - [ ] 集成测试通过 (数据库、Redis、外部 API)
 - [ ] 性能测试达标 (P99 < 2s, QPS > 1000)
@@ -3460,6 +3461,7 @@ sum(aws_storage_cost{service="gsd2"}) by (storage_type)
 - [ ] 回滚计划已制定
 
 ### 基础设施
+
 - [ ] Kubernetes 集群健康 (所有节点 Ready)
 - [ ] 数据库主从同步正常
 - [ ] Redis Cluster 健康
@@ -3467,6 +3469,7 @@ sum(aws_storage_cost{service="gsd2"}) by (storage_type)
 - [ ] 外部 API 凭证有效
 
 ### 监控告警
+
 - [ ] Prometheus 指标采集正常
 - [ ] Grafana Dashboard 可访问
 - [ ] AlertManager 告警通道正常
@@ -3474,12 +3477,14 @@ sum(aws_storage_cost{service="gsd2"}) by (storage_type)
 - [ ] 链路追踪正常 (Jaeger)
 
 ### 配置验证
+
 - [ ] ConfigMap 配置正确
 - [ ] Secret 已正确配置
 - [ ] 环境变量正确
 - [ ] 资源限制设置合理
 
 ### 部署执行
+
 - [ ] 通知相关团队
 - [ ] 开启部署窗口
 - [ ] 执行蓝绿/金丝雀部署
@@ -3488,6 +3493,7 @@ sum(aws_storage_cost{service="gsd2"}) by (storage_type)
 - [ ] 验证流量正常
 
 ### 部署后
+
 - [ ] 确认所有 Pod 运行正常
 - [ ] 确认无告警触发
 - [ ] 验证业务功能正常

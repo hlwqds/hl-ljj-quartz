@@ -12,8 +12,8 @@ tags:
 description: "深入解析 Suricata 的 TLS 解析系统：tls 配置、证书解析、SNI/ALPN 日志、TLS 状态机、以及 TLS 检测关键字的源码实现"
 ---
 
-> [!info] Suricata 2026 深度探索系列
-> 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Suricata 2026 深度探索系列 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-15-suricata-deep-dive-ch1-overview|第一章：Suricata 概述]]
 > 2. [[2026-04-15-suricata-deep-dive-ch2-config|第二章：Suricata 配置系统]]
 > 3. [[2026-04-15-suricata-deep-dive-ch3-runmodes|第三章：Runmodes 运行模式]]
@@ -76,13 +76,13 @@ graph TD
 
 ### 1.1 TLS 协议特性
 
-| 特性 | 描述 |
-|:---|:---|
-| **传输协议** | TCP |
-| **端口** | 443 (HTTPS), 465 (SMTPS), 993 (IMAPS), 995 (POP3S) |
-| **版本** | TLS 1.0, 1.1, 1.2, 1.3 |
-| **握手类型** | RSA, DHE, ECDHE |
-| **证书格式** | X.509 DER/PEM |
+| 特性         | 描述                                               |
+| :----------- | :------------------------------------------------- |
+| **传输协议** | TCP                                                |
+| **端口**     | 443 (HTTPS), 465 (SMTPS), 993 (IMAPS), 995 (POP3S) |
+| **版本**     | TLS 1.0, 1.1, 1.2, 1.3                             |
+| **握手类型** | RSA, DHE, ECDHE                                    |
+| **证书格式** | X.509 DER/PEM                                      |
 
 ### 1.2 TLS 处理流程
 
@@ -100,7 +100,7 @@ sequenceDiagram
     TLS->>State: Extract SNI, JA3
     State-->>TLS: State Updated
     TLS->>Detect: Run Detection
-    
+
     TLS->>TLS: Server Certificate
     TLS->>TLS: Parse Certificate
     TLS->>State: Store Certificate
@@ -125,7 +125,7 @@ typedef struct SSLRecord_ {
 #define SSL_CONTENT_TYPE_HANDSHAKE          22
 #define SSL_CONTENT_TYPE_APPLICATION_DATA    23
 #define SSL_CONTENT_TYPE_HEARTBEAT          24
-    
+
     /* TLS Version */
     uint8_t version_major;
     uint8_t version_minor;
@@ -134,14 +134,14 @@ typedef struct SSLRecord_ {
 #define SSL_VERSION_TLS1_1 0x0302
 #define SSL_VERSION_TLS1_2 0x0303
 #define SSL_VERSION_TLS1_3 0x0304
-    
+
     /* 长度 */
     uint16_t length;
-    
+
     /* 数据 */
     uint8_t *data;
     uint32_t data_len;
-    
+
     /* 链表 */
     struct SSLRecord_ *next;
 } SSLRecord;
@@ -163,14 +163,14 @@ typedef struct SSLHandshake_ {
 #define SSL_HANDSHAKE_TYPE_CERT_VERIFY      15
 #define SSL_HANDSHAKE_TYPE_CLIENT_KEY_EX   16
 #define SSL_HANDSHAKE_TYPE_FINISHED        20
-    
+
     /* 握手长度 */
     uint32_t length;
-    
+
     /* 数据 */
     uint8_t *data;
     uint32_t data_len;
-    
+
     /* 握手消息 */
     union {
         SSLClientHello *client_hello;
@@ -187,51 +187,51 @@ typedef struct SSLHandshake_ {
 typedef struct SSLClientHello_ {
     /* 版本 */
     uint16_t version;
-    
+
     /* Random */
     uint8_t random[32];
-    
+
     /* Session ID */
     uint8_t *session_id;
     uint8_t session_id_len;
-    
+
     /* Cipher Suites */
     uint16_t *cipher_suites;
     uint16_t cipher_suites_len;
-    
+
     /* Compression Methods */
     uint8_t *compression_methods;
     uint8_t compression_methods_len;
-    
+
     /* Extensions */
     SSLExtension *extensions;
     uint16_t extensions_len;
-    
+
     /* SNI (Server Name Indication) */
     char *sni;
     uint16_t sni_len;
     uint8_t sni_type;
-    
+
     /* Supported Versions (TLS 1.3) */
     uint16_t *supported_versions;
     uint8_t supported_versions_len;
-    
+
     /* Supported Groups (TLS 1.3) */
     uint16_t *supported_groups;
     uint16_t supported_groups_len;
-    
+
     /* Signature Algorithms (TLS 1.3) */
     uint16_t *sig_algs;
     uint16_t sig_algs_len;
-    
+
     /* ALPN */
     char **alpn;
     uint8_t alpn_len;
-    
+
     /* JA3 */
     char *ja3_str;
     char ja3_hash[33];
-    
+
 } SSLClientHello;
 ```
 
@@ -242,36 +242,36 @@ typedef struct SSLClientHello_ {
 typedef struct SSLCertificate_ {
     /* 证书长度 */
     uint32_t cert_length;
-    
+
     /* 证书数据 */
     uint8_t *cert_data;
     uint32_t cert_data_len;
-    
+
     /* 解析后的证书信息 */
     char *subject;
     char *issuer;
     char *serial_number;
-    
+
     /* 有效期 */
     time_t not_before;
     time_t not_after;
-    
+
     /* 主体信息 */
     char *subject_common;
     char *subject_org;
     char **subject_alt_names;
     uint16_t subject_alt_names_len;
-    
+
     /* 公钥信息 */
     uint8_t *public_key;
     uint32_t public_key_len;
     char *public_key_algorithm;
-    
+
     /* 指纹 */
     char *fingerprint_md5;
     char *fingerprint_sha1;
     char *fingerprint_sha256;
-    
+
     /* 链表 */
     struct SSLCertificate_ *next;
 } SSLCertificate;
@@ -293,35 +293,35 @@ typedef struct SSLState_ {
 #define TLS_STATE_FINISHED             10
 #define TLS_STATE_ESTABLISHED          11
 #define TLS_STATE_ERROR                12
-    
+
     /* 当前版本 */
     uint16_t version;
-    
+
     /* Client Hello 信息 */
     SSLClientHello *client_hello;
-    
+
     /* Server Hello 信息 */
     SSLServerHello *server_hello;
-    
+
     /* 证书链 */
     SSLCertificate *server_cert;
     SSLCertificate *client_cert;
-    
+
     /* JA3 指纹 */
     char *ja3_str;
     char ja3_hash[33];
-    
+
     /* Session Info */
     uint8_t *session_id;
     uint8_t session_id_len;
     uint8_t *session_id_client;
     uint8_t session_id_client_len;
-    
+
     /* 加密参数 */
     uint8_t *client_random;
     uint8_t *server_random;
     uint8_t *master_secret;
-    
+
     /* 标志位 */
     uint32_t flags;
 #define TLS_FLAG_CLIENT_HELLO_EOF      0x01
@@ -331,11 +331,11 @@ typedef struct SSLState_ {
 #define TLS_FLAG_SSLV3                 0x10
 #define TLS_FLAG_TLS1_3                0x20
 #define TLS_FLAG_PSK                   0x40
-    
+
     /* 链表 */
     SSLRecord *record;
     SSLHandshake *handshake;
-    
+
 } SSLState;
 ```
 
@@ -355,13 +355,13 @@ static int SSLPortConfig(void)
                                 "443",
                                 3,  /* 最小检测长度 */
                                 SSLProbingParser);
-    
+
     /* 其他 TLS 端口 */
     AppLayerProtoDetectPRegister(ALPROTO_TLS, IPPROTO_TCP, "465", 3, SSLProbingParser);
     AppLayerProtoDetectPRegister(ALPROTO_TLS, IPPROTO_TCP, "993", 3, SSLProbingParser);
     AppLayerProtoDetectPRegister(ALPROTO_TLS, IPPROTO_TCP, "995", 3, SSLProbingParser);
     AppLayerProtoDetectPRegister(ALPROTO_TLS, IPPROTO_TCP, "8443", 3, SSLProbingParser);
-    
+
     return 0;
 }
 ```
@@ -377,14 +377,14 @@ static AppLayerProtoDetectResult SSLProbingParser(
     if (input_len < 5) {
         return APP_LAYER_PROTO_DETECT_FAILED;
     }
-    
+
     /* 检查 Content Type */
     uint8_t content_type = input[0];
     if (content_type < SSL_CONTENT_TYPE_CHANGE_CIPHER_SPEC ||
         content_type > SSL_CONTENT_TYPE_HEARTBEAT) {
         return APP_LAYER_PROTO_DETECT_FAILED;
     }
-    
+
     /* 检查 TLS Version */
     /* TLS 1.0: 03 01
        TLS 1.1: 03 02
@@ -394,32 +394,32 @@ static AppLayerProtoDetectResult SSLProbingParser(
     if (input[1] != 0x03) {
         return APP_LAYER_PROTO_DETECT_FAILED;
     }
-    
+
     if (input[2] > 0x03) {
         return APP_LAYER_PROTO_DETECT_FAILED;
     }
-    
+
     /* 检查长度 */
     uint16_t length = *((uint16_t *)(input + 3));
     length = ntohs(length);
-    
+
     if (length > 18433) {  /* 2^14 + 2^8 最大记录长度 */
         return APP_LAYER_PROTO_DETECT_FAILED;
     }
-    
+
     /* 对于 Client Hello，检查是否有足够的数据 */
     if (content_type == SSL_CONTENT_TYPE_HANDSHAKE) {
         if (input_len < 6) {
             return APP_LAYER_PROTO_DETECT_INCOMPLETE;
         }
-        
+
         /* 检查握手类型 */
         uint8_t handshake_type = input[5];
         if (handshake_type == SSL_HANDSHAKE_TYPE_CLIENT_HELLO) {
             return APP_LAYER_PROTO_DETECT_SUCCESS;
         }
     }
-    
+
     return APP_LAYER_PROTO_DETECT_SUCCESS;
 }
 ```
@@ -432,7 +432,7 @@ static AppLayerProtoDetectResult SSLProbingParser(
 
 ```c
 // src/app-layer-ssl.c — 解析 TLS 记录
-static int SSLParseRecord(SSLState *state, uint8_t *input, 
+static int SSLParseRecord(SSLState *state, uint8_t *input,
                           uint32_t input_len, uint8_t direction)
 {
     /* 解析 TLS 记录头 */
@@ -440,31 +440,31 @@ static int SSLParseRecord(SSLState *state, uint8_t *input,
     if (record == NULL) {
         return -1;
     }
-    
+
     /* Content Type */
     record->content_type = input[0];
-    
+
     /* Version */
     record->version_major = input[1];
     record->version_minor = input[2];
     record->version = (input[1] << 8) | input[2];
-    
+
     /* Length */
     record->length = *((uint16_t *)(input + 3));
     record->length = ntohs(record->length);
-    
+
     /* 检查数据长度 */
     if (record->length > input_len - 5) {
         SCLogDebug("TLS record length mismatch");
         SCFree(record);
         return -1;
     }
-    
+
     /* 复制数据 */
     record->data = SCMalloc(record->length);
     memcpy(record->data, input + 5, record->length);
     record->data_len = record->length;
-    
+
     /* 添加到记录链表 */
     if (state->record == NULL) {
         state->record = record;
@@ -475,10 +475,10 @@ static int SSLParseRecord(SSLState *state, uint8_t *input,
         }
         last->next = record;
     }
-    
+
     /* 更新状态 */
     state->flags |= TLS_FLAG_SSLV3;
-    
+
     /* 根据 Content Type 处理 */
     switch (record->content_type) {
         case SSL_CONTENT_TYPE_HANDSHAKE:
@@ -492,7 +492,7 @@ static int SSLParseRecord(SSLState *state, uint8_t *input,
         case SSL_CONTENT_TYPE_HEARTBEAT:
             return SSLParseHeartbeat(state, record->data, record->data_len);
     }
-    
+
     return 0;
 }
 ```
@@ -506,61 +506,61 @@ static int SSLParseHandshake(SSLState *state, uint8_t *input,
 {
     uint8_t *ptr = input;
     uint32_t remaining = input_len;
-    
+
     while (remaining > 4) {
         /* 解析握手头 */
         SSLHandshake hs;
         hs.type = ptr[0];
-        
+
         /* 握手长度 (3 字节) */
         hs.length = (ptr[1] << 16) | (ptr[2] << 8) | ptr[3];
-        
+
         if (hs.length > remaining - 4) {
             /* 握手消息不完整 */
             return -1;
         }
-        
+
         hs.data = ptr + 4;
         hs.data_len = hs.length;
-        
+
         /* 根据类型解析 */
         switch (hs.type) {
             case SSL_HANDSHAKE_TYPE_CLIENT_HELLO:
                 SSLParseClientHello(state, hs.data, hs.data_len);
                 state->state = TLS_STATE_CLIENT_HELLO;
                 break;
-                
+
             case SSL_HANDSHAKE_TYPE_SERVER_HELLO:
                 SSLParseServerHello(state, hs.data, hs.data_len);
                 state->state = TLS_STATE_SERVER_HELLO;
                 break;
-                
+
             case SSL_HANDSHAKE_TYPE_CERTIFICATE:
                 SSLParseCertificate(state, hs.data, hs.data_len);
                 state->state = TLS_STATE_CERTIFICATE;
                 break;
-                
+
             case SSL_HANDSHAKE_TYPE_SERVER_KEY_EXCHANGE:
                 state->state = TLS_STATE_SERVER_KEY_EXCHANGE;
                 break;
-                
+
             case SSL_HANDSHAKE_TYPE_SERVER_HELLO_DONE:
                 state->state = TLS_STATE_SERVER_HELLO_DONE;
                 break;
-                
+
             case SSL_HANDSHAKE_TYPE_CLIENT_KEY_EXCHANGE:
                 state->state = TLS_STATE_CLIENT_KEY_EXCHANGE;
                 break;
-                
+
             case SSL_HANDSHAKE_TYPE_FINISHED:
                 state->state = TLS_STATE_FINISHED;
                 break;
         }
-        
+
         ptr += 4 + hs.length;
         remaining -= 4 + hs.length;
     }
-    
+
     return 0;
 }
 ```
@@ -576,10 +576,10 @@ static int SSLParseClientHello(SSLState *state, uint8_t *input,
     if (ch == NULL) {
         return -1;
     }
-    
+
     uint8_t *ptr = input;
     uint32_t offset = 0;
-    
+
     /* 解析版本 */
     if (offset + 2 > input_len) {
         SCFree(ch);
@@ -588,7 +588,7 @@ static int SSLParseClientHello(SSLState *state, uint8_t *input,
     ch->version = *((uint16_t *)(input + offset));
     ch->version = ntohs(ch->version);
     offset += 2;
-    
+
     /* 解析 Random (32 字节) */
     if (offset + 32 > input_len) {
         SCFree(ch);
@@ -597,7 +597,7 @@ static int SSLParseClientHello(SSLState *state, uint8_t *input,
     memcpy(ch->random, input + offset, 32);
     state->client_random = ch->random;
     offset += 32;
-    
+
     /* 解析 Session ID */
     if (offset + 1 > input_len) {
         SCFree(ch);
@@ -605,7 +605,7 @@ static int SSLParseClientHello(SSLState *state, uint8_t *input,
     }
     ch->session_id_len = input[offset];
     offset += 1;
-    
+
     if (ch->session_id_len > 0) {
         if (offset + ch->session_id_len > input_len) {
             SCFree(ch);
@@ -615,7 +615,7 @@ static int SSLParseClientHello(SSLState *state, uint8_t *input,
         memcpy(ch->session_id, input + offset, ch->session_id_len);
         offset += ch->session_id_len;
     }
-    
+
     /* 解析 Cipher Suites */
     if (offset + 2 > input_len) {
         SCFree(ch);
@@ -624,7 +624,7 @@ static int SSLParseClientHello(SSLState *state, uint8_t *input,
     ch->cipher_suites_len = *((uint16_t *)(input + offset));
     ch->cipher_suites_len = ntohs(ch->cipher_suites_len);
     offset += 2;
-    
+
     if (offset + ch->cipher_suites_len > input_len) {
         SCFree(ch);
         return -1;
@@ -632,7 +632,7 @@ static int SSLParseClientHello(SSLState *state, uint8_t *input,
     ch->cipher_suites = SCMalloc(ch->cipher_suites_len);
     memcpy(ch->cipher_suites, input + offset, ch->cipher_suites_len);
     offset += ch->cipher_suites_len;
-    
+
     /* 解析 Compression Methods */
     if (offset + 1 > input_len) {
         SCFree(ch);
@@ -640,7 +640,7 @@ static int SSLParseClientHello(SSLState *state, uint8_t *input,
     }
     ch->compression_methods_len = input[offset];
     offset += 1;
-    
+
     if (offset + ch->compression_methods_len > input_len) {
         SCFree(ch);
         return -1;
@@ -648,31 +648,31 @@ static int SSLParseClientHello(SSLState *state, uint8_t *input,
     ch->compression_methods = SCMalloc(ch->compression_methods_len);
     memcpy(ch->compression_methods, input + offset, ch->compression_methods_len);
     offset += ch->compression_methods_len;
-    
+
     /* 解析 Extensions */
     if (offset + 2 > input_len) {
         state->client_hello = ch;
         return 0;  /* 没有扩展是正常的 */
     }
-    
+
     uint16_t extensions_len = *((uint16_t *)(input + offset));
     extensions_len = ntohs(extensions_len);
     offset += 2;
-    
+
     if (offset + extensions_len > input_len) {
         SCFree(ch);
         return -1;
     }
-    
+
     /* 解析扩展 */
     SSLParseClientHelloExtensions(ch, input + offset, extensions_len);
-    
+
     /* 生成 JA3 指纹 */
     SSLGenerateJA3(state, ch);
-    
+
     state->client_hello = ch;
     state->flags |= TLS_FLAG_CLIENT_HELLO_EOF;
-    
+
     return 0;
 }
 ```
@@ -686,48 +686,48 @@ static int SSLParseClientHelloExtensions(SSLClientHello *ch,
 {
     uint8_t *ptr = input;
     uint32_t offset = 0;
-    
+
     while (offset + 4 < input_len) {
         /* 扩展类型 */
         uint16_t ext_type = *((uint16_t *)ptr);
         ext_type = ntohs(ext_type);
         ptr += 2;
-        
+
         /* 扩展长度 */
         uint16_t ext_len = *((uint16_t *)ptr);
         ext_len = ntohs(ext_len);
         ptr += 2;
-        
+
         if (offset + 4 + ext_len > input_len) {
             break;
         }
-        
+
         switch (ext_type) {
             case 0x0000:  /* SNI */
                 SSLParseSNIExtension(ch, ptr, ext_len);
                 break;
-                
+
             case 0x0010:  /* Application Layer Protocol Negotiation */
                 SSLParseALPNExtension(ch, ptr, ext_len);
                 break;
-                
+
             case 0x002B:  /* Supported Versions (TLS 1.3) */
                 SSLParseSupportedVersionsExtension(ch, ptr, ext_len);
                 break;
-                
+
             case 0x000D:  /* Signature Algorithms */
                 SSLParseSigAlgsExtension(ch, ptr, ext_len);
                 break;
-                
+
             case 0x000A:  /* Supported Groups */
                 SSLParseSupportedGroupsExtension(ch, ptr, ext_len);
                 break;
         }
-        
+
         ptr += ext_len;
         offset += 4 + ext_len;
     }
-    
+
     return 0;
 }
 
@@ -738,25 +738,25 @@ static int SSLParseSNIExtension(SSLClientHello *ch, uint8_t *input,
     if (input_len < 2) {
         return -1;
     }
-    
+
     /* SNI 列表长度 */
     uint16_t sni_list_len = *((uint16_t *)input);
     sni_list_len = ntohs(sni_list_len);
-    
+
     if (input_len < 2 + sni_list_len) {
         return -1;
     }
-    
+
     uint8_t *ptr = input + 2;
     uint16_t offset = 0;
-    
+
     while (offset + 3 < sni_list_len) {
         /* SNI 类型 */
         uint8_t sni_type = ptr[0];
         /* SNI 长度 */
         uint16_t sni_len = *((uint16_t *)(ptr + 1));
         sni_len = ntohs(sni_len);
-        
+
         if (sni_type == 0) {  /* hostname */
             ch->sni = SCMalloc(sni_len + 1);
             memcpy(ch->sni, ptr + 3, sni_len);
@@ -765,11 +765,11 @@ static int SSLParseSNIExtension(SSLClientHello *ch, uint8_t *input,
             ch->sni_type = sni_type;
             break;
         }
-        
+
         ptr += 3 + sni_len;
         offset += 3 + sni_len;
     }
-    
+
     return 0;
 }
 ```
@@ -785,38 +785,38 @@ static int SSLParseCertificate(SSLState *state, uint8_t *input,
     if (input_len < 3) {
         return -1;
     }
-    
+
     uint32_t cert_chain_len = (input[0] << 16) | (input[1] << 8) | input[2];
     uint8_t *ptr = input + 3;
     uint32_t offset = 3;
-    
+
     /* 解析每个证书 */
     SSLCertificate *prev_cert = NULL;
-    
+
     while (offset < 3 + cert_chain_len && offset + 3 < input_len) {
         /* 证书长度 */
         uint32_t cert_len = (ptr[0] << 16) | (ptr[1] << 8) | ptr[2];
         ptr += 3;
         offset += 3;
-        
+
         if (cert_len > input_len - offset) {
             break;
         }
-        
+
         /* 分配证书结构 */
         SSLCertificate *cert = SCCalloc(1, sizeof(SSLCertificate));
         if (cert == NULL) {
             return -1;
         }
-        
+
         cert->cert_data = SCMalloc(cert_len);
         memcpy(cert->cert_data, ptr, cert_len);
         cert->cert_data_len = cert_len;
         cert->cert_length = cert_len;
-        
+
         /* 解析证书内容 */
         SSLCertificateParse(cert, cert->cert_data, cert->cert_data_len);
-        
+
         /* 添加到链表 */
         if (prev_cert == NULL) {
             state->server_cert = cert;
@@ -824,13 +824,13 @@ static int SSLParseCertificate(SSLState *state, uint8_t *input,
             prev_cert->next = cert;
         }
         prev_cert = cert;
-        
+
         ptr += cert_len;
         offset += cert_len;
     }
-    
+
     state->flags |= TLS_FLAG_CERT_EOF;
-    
+
     return 0;
 }
 
@@ -840,21 +840,21 @@ static int SSLCertificateParse(SSLCertificate *cert, uint8_t *input,
 {
     /* 解析 ASN.1 DER 格式的 X.509 证书 */
     /* 简化版解析 - 实际实现更复杂 */
-    
+
     /* 计算指纹 */
     cert->fingerprint_md5 = SCMalloc(33);
     certificatemd5(input, input_len, cert->fingerprint_md5);
-    
+
     cert->fingerprint_sha1 = SCMalloc(41);
     certificatesha1(input, input_len, cert->fingerprint_sha1);
-    
+
     cert->fingerprint_sha256 = SCMalloc(65);
     certificatesha256(input, input_len, cert->fingerprint_sha256);
-    
+
     /* 解析基本信息 */
     /* 实际需要 ASN.1 解码，这里是简化版本 */
     ParseX509BasicFields(cert, input, input_len);
-    
+
     return 0;
 }
 ```
@@ -873,14 +873,14 @@ static void SSLGenerateJA3(SSLState *state, SSLClientHello *ch)
 {
     /* JA3 字符串格式:
        TLS版本,Cipher Suites,Extensions,Elliptic Curves,Elliptic Curve Formats */
-    
+
     char ja3_str[1024];
     int ja3_len = 0;
-    
+
     /* TLS 版本 */
     ja3_len += snprintf(ja3_str + ja3_len, sizeof(ja3_str) - ja3_len,
                         "%u,", ch->version);
-    
+
     /* Cipher Suites */
     ja3_len += snprintf(ja3_str + ja3_len, sizeof(ja3_str) - ja3_len,
                         "%u", ch->cipher_suites_len / 2);
@@ -890,7 +890,7 @@ static void SSLGenerateJA3(SSLState *state, SSLClientHello *ch)
                             "-%u", cipher);
     }
     ja3_len += snprintf(ja3_str + ja3_len, sizeof(ja3_str) - ja3_len, ",");
-    
+
     /* Extensions */
     ja3_len += snprintf(ja3_str + ja3_len, sizeof(ja3_str) - ja3_len,
                         "%u", ch->extensions_len / 4);
@@ -900,10 +900,10 @@ static void SSLGenerateJA3(SSLState *state, SSLClientHello *ch)
                             "-%u", 0);
     }
     ja3_len += snprintf(ja3_str + ja3_len, sizeof(ja3_str) - ja3_len, ",");
-    
+
     /* 存储 JA3 字符串 */
     state->ja3_str = SCStrdup(ja3_str);
-    
+
     /* 计算 MD5 哈希 */
     certificatemd5((uint8_t *)ja3_str, strlen(ja3_str), state->ja3_hash);
     state->ja3_hash[32] = '\0';
@@ -923,20 +923,20 @@ app-layer:
     tls:
       # 是否启用 TLS 解析
       enabled: yes
-      
+
       # 检测端口
       detection-ports:
         toserver: [443]
         toclient: [443]
-      
+
       # 是否记录证书信息
       extended: yes
       log-certificate-subjects: yes
       log-certificate-fingerprint: yes
-      
+
       # JA3 指纹
       ja3-fingerprints: yes
-      
+
       # 检测加密流量
       encrypthandling: yes
 ```
@@ -953,19 +953,19 @@ static int TLSLoadConfig(TLSConfig *cfg, YamlNode *node)
         cfg->enabled = 0;
         return 0;
     }
-    
+
     /* 解析 extended */
     const char *extended = YamlNodeLookup(node, "extended");
     if (extended && strcmp(extended, "yes") == 0) {
         cfg->flags |= TLS_CFG_EXTENDED;
     }
-    
+
     /* 解析 JA3 */
     const char *ja3 = YamlNodeLookup(node, "ja3-fingerprints");
     if (ja3 && strcmp(ja3, "yes") == 0) {
         cfg->flags |= TLS_CFG_JA3;
     }
-    
+
     /* 解析检测端口 */
     YamlNode *ports = YamlNodeLookup(node, "detection-ports");
     if (ports) {
@@ -974,7 +974,7 @@ static int TLSLoadConfig(TLSConfig *cfg, YamlNode *node)
         cfg->ports_toclient = ParsePorts(
             YamlNodeLookup(ports, "toclient"));
     }
-    
+
     return 0;
 }
 ```
@@ -985,19 +985,19 @@ static int TLSLoadConfig(TLSConfig *cfg, YamlNode *node)
 
 ### 7.1 tls 检测关键字列表
 
-| 关键字 | 描述 | 匹配位置 |
-|:---|:---|:---|
-| `tls.sni` | Server Name Indication | Client Hello |
-| `tls.subject` | 证书主题 | 证书 |
-| `tls.issuer` | 证书颁发者 | 证书 |
-| `tls.fingerprint` | 证书指纹 | 证书 |
-| `tls.serial` | 证书序列号 | 证书 |
-| `tls.version` | TLS 版本 | 握手 |
-| `tls.ja3_hash` | JA3 指纹 | Client Hello |
-| `tls.ja3_str` | JA3 字符串 | Client Hello |
-| `tls.cert_subject` | 证书主题 | 证书 |
-| `tls.cert_issuer` | 证书颁发者 | 证书 |
-| `tls.alpn` | ALPN 协议 | Client/Server Hello |
+| 关键字             | 描述                   | 匹配位置            |
+| :----------------- | :--------------------- | :------------------ |
+| `tls.sni`          | Server Name Indication | Client Hello        |
+| `tls.subject`      | 证书主题               | 证书                |
+| `tls.issuer`       | 证书颁发者             | 证书                |
+| `tls.fingerprint`  | 证书指纹               | 证书                |
+| `tls.serial`       | 证书序列号             | 证书                |
+| `tls.version`      | TLS 版本               | 握手                |
+| `tls.ja3_hash`     | JA3 指纹               | Client Hello        |
+| `tls.ja3_str`      | JA3 字符串             | Client Hello        |
+| `tls.cert_subject` | 证书主题               | 证书                |
+| `tls.cert_issuer`  | 证书颁发者             | 证书                |
+| `tls.alpn`         | ALPN 协议              | Client/Server Hello |
 
 ### 7.2 tls.sni 检测实现
 
@@ -1007,12 +1007,12 @@ typedef struct DetectTlsSNIData_ {
     /* SNI 模式 */
     char *sni;
     size_t sni_len;
-    
+
     /* 匹配选项 */
     uint8_t flags;
 #define TLS_SNI_MPM      0x01
 #define TLS_SNI_NEGATE   0x02
-    
+
     /* MPM 上下文 */
     MpmCtx *mpm_ctx;
 } DetectTlsSNIData;
@@ -1024,18 +1024,18 @@ static int DetectTlsSNIMatch(DetectEngineThreadCtx *det_ctx,
     if (ssl_state == NULL) {
         return 0;
     }
-    
+
     SSLClientHello *ch = ssl_state->client_hello;
     if (ch == NULL || ch->sni == NULL) {
         return 0;
     }
-    
+
     DetectTlsSNIData *data = (DetectTlsSNIData *)s->tls_sni;
-    
+
     /* 比较 SNI */
     int cmp_len = (ch->sni_len < data->sni_len) ? ch->sni_len : data->sni_len;
     int result = memcmp(ch->sni, data->sni, cmp_len);
-    
+
     if (data->flags & TLS_SNI_NEGATE) {
         return !result;
     }
@@ -1053,11 +1053,11 @@ typedef struct DetectTlsFingerprintData_ {
 #define TLS_FINGERPRINT_MD5   0
 #define TLS_FINGERPRINT_SHA1  1
 #define TLS_FINGERPRINT_SHA256 2
-    
+
     /* 指纹值 */
     char *fingerprint;
     size_t fingerprint_len;
-    
+
     /* 匹配选项 */
     uint8_t negate;
 } DetectTlsFingerprintData;
@@ -1069,15 +1069,15 @@ static int DetectTlsFingerprintMatch(DetectEngineThreadCtx *det_ctx,
     if (ssl_state == NULL) {
         return 0;
     }
-    
+
     SSLCertificate *cert = ssl_state->server_cert;
     if (cert == NULL) {
         return 0;
     }
-    
-    DetectTlsFingerprintData *data = 
+
+    DetectTlsFingerprintData *data =
         (DetectTlsFingerprintData *)s->tls_fingerprint;
-    
+
     /* 获取指纹 */
     const char *cert_fingerprint = NULL;
     switch (data->fingerprint_type) {
@@ -1091,14 +1091,14 @@ static int DetectTlsFingerprintMatch(DetectEngineThreadCtx *det_ctx,
             cert_fingerprint = cert->fingerprint_sha256;
             break;
     }
-    
+
     if (cert_fingerprint == NULL) {
         return 0;
     }
-    
+
     /* 比较指纹 */
     int result = strcmp(cert_fingerprint, data->fingerprint);
-    
+
     if (data->negate) {
         return !result;
     }
@@ -1113,10 +1113,10 @@ static int DetectTlsFingerprintMatch(DetectEngineThreadCtx *det_ctx,
 typedef struct DetectTlsVersionData_ {
     /* TLS 版本 */
     uint16_t version;
-    
+
     /* 版本名称 */
     char *version_str;
-    
+
     /* 匹配选项 */
     uint8_t negate;
 } DetectTlsVersionData;
@@ -1128,12 +1128,12 @@ static int DetectTlsVersionMatch(DetectEngineThreadCtx *det_ctx,
     if (ssl_state == NULL) {
         return 0;
     }
-    
+
     DetectTlsVersionData *data = (DetectTlsVersionData *)s->tls_version;
-    
+
     /* 比较版本 */
     int result = (ssl_state->version == data->version);
-    
+
     if (data->negate) {
         return !result;
     }
@@ -1149,31 +1149,28 @@ static int DetectTlsVersionMatch(DetectEngineThreadCtx *det_ctx,
 
 ```json
 {
-    "timestamp": "2026-04-15T16:00:00.000000+0000",
-    "event_type": "tls",
-    "src_ip": "192.168.1.100",
-    "src_port": 54321,
-    "dest_ip": "93.184.216.34",
-    "dest_port": 443,
-    "tls": {
-        "version": "TLS 1.2",
-        "老大": "0x0303",
-        "subject": "CN=example.com,O=Example Corp,L=San Francisco,ST=California,C=US",
-        "issuer": "CN=DigiCert SHA2 Extended Validation Server CA,O=DigiCert Inc,C=US",
-        "serial": "04:AB:CD:EF:12:34:56:78:90:AB:CD:EF:12:34:56:78",
-        "fingerprint": {
-            "sha256": "A1:B2:C3:D4:E5:F6:A7:B8:C9:D0:E1:F2:A3:B4:C5:D6:E7:F8:A9:B0"
-        },
-        "sni": "example.com",
-        "ja3": {
-            "hash": "e7ee88310dc0d9df4b4c1b2bb2f7b1c8",
-            "string": "769,47-53-5-10-49161-49196-49171-49199-156-157-47-53-5-10-49161-49196-49171-49199-156-157-49171-49199-47-53-5-10-49161-49196-49171-49199-156-157-47-53-5-10-49161-49196-49171-49199-156-157-49171-49199,0-23-13-10-35-16-22-45,23-43"
-        },
-        "ALPN": [
-            "h2",
-            "http/1.1"
-        ]
-    }
+  "timestamp": "2026-04-15T16:00:00.000000+0000",
+  "event_type": "tls",
+  "src_ip": "192.168.1.100",
+  "src_port": 54321,
+  "dest_ip": "93.184.216.34",
+  "dest_port": 443,
+  "tls": {
+    "version": "TLS 1.2",
+    "老大": "0x0303",
+    "subject": "CN=example.com,O=Example Corp,L=San Francisco,ST=California,C=US",
+    "issuer": "CN=DigiCert SHA2 Extended Validation Server CA,O=DigiCert Inc,C=US",
+    "serial": "04:AB:CD:EF:12:34:56:78:90:AB:CD:EF:12:34:56:78",
+    "fingerprint": {
+      "sha256": "A1:B2:C3:D4:E5:F6:A7:B8:C9:D0:E1:F2:A3:B4:C5:D6:E7:F8:A9:B0"
+    },
+    "sni": "example.com",
+    "ja3": {
+      "hash": "e7ee88310dc0d9df4b4c1b2bb2f7b1c8",
+      "string": "769,47-53-5-10-49161-49196-49171-49199-156-157-47-53-5-10-49161-49196-49171-49199-156-157-49171-49199-47-53-5-10-49161-49196-49171-49199-156-157-47-53-5-10-49161-49196-49171-49199-156-157-49171-49199,0-23-13-10-35-16-22-45,23-43"
+    },
+    "ALPN": ["h2", "http/1.1"]
+  }
 }
 ```
 
@@ -1185,21 +1182,21 @@ static int JsonTlsLogger(ThreadVars *tv, void *thread_data,
                          const Packet *p, Flow *f, void *state, void *tx)
 {
     SSLState *ssl_state = (SSLState *)state;
-    
+
     /* 创建 JSON 对象 */
     json_t *js = json_object();
-    
+
     /* 版本信息 */
     const char *version_str = SSLVersionToString(ssl_state->version);
     json_object_set_new(js, "version", json_string(version_str));
     json_object_set_new(js, "老大", json_integer(ssl_state->version));
-    
+
     /* SNI */
     if (ssl_state->client_hello && ssl_state->client_hello->sni) {
-        json_object_set_new(js, "sni", 
+        json_object_set_new(js, "sni",
             json_string(ssl_state->client_hello->sni));
     }
-    
+
     /* JA3 */
     if (ssl_state->ja3_hash) {
         json_t *ja3 = json_object();
@@ -1209,11 +1206,11 @@ static int JsonTlsLogger(ThreadVars *tv, void *thread_data,
         }
         json_object_set_new(js, "ja3", ja3);
     }
-    
+
     /* 证书信息 */
     if (ssl_state->server_cert) {
         SSLCertificate *cert = ssl_state->server_cert;
-        
+
         if (cert->subject) {
             json_object_set_new(js, "subject", json_string(cert->subject));
         }
@@ -1223,29 +1220,29 @@ static int JsonTlsLogger(ThreadVars *tv, void *thread_data,
         if (cert->serial_number) {
             json_object_set_new(js, "serial", json_string(cert->serial_number));
         }
-        
+
         /* 指纹 */
         if (cert->fingerprint_sha256) {
             json_t *fingerprint = json_object();
-            json_object_set_new(fingerprint, "sha256", 
+            json_object_set_new(fingerprint, "sha256",
                 json_string(cert->fingerprint_sha256));
             json_object_set_new(js, "fingerprint", fingerprint);
         }
     }
-    
+
     /* ALPN */
     if (ssl_state->client_hello && ssl_state->client_hello->alpn) {
         json_t *alpn = json_array();
         for (int i = 0; i < ssl_state->client_hello->alpn_len; i++) {
-            json_array_append_new(alpn, 
+            json_array_append_new(alpn,
                 json_string(ssl_state->client_hello->alpn[i]));
         }
         json_object_set_new(js, "ALPN", alpn);
     }
-    
+
     /* 输出 JSON */
     OutputJsonBuffer(js, thread_data);
-    
+
     json_decref(js);
     return 0;
 }
@@ -1260,6 +1257,7 @@ static int JsonTlsLogger(ThreadVars *tv, void *thread_data,
 **问题**：TLS 流量未被解析
 
 **排查步骤**：
+
 1. 检查 `app-layer.protocols.tls.enabled` 是否为 `yes`
 2. 检查 detection-ports 是否包含目标端口
 3. 查看 Suricata 日志中的 SSL 错误
@@ -1269,6 +1267,7 @@ static int JsonTlsLogger(ThreadVars *tv, void *thread_data,
 **问题**：证书主题/颁发者未记录
 
 **排查步骤**：
+
 1. 检查 `app-layer.protocols.tls.extended` 是否为 `yes`
 2. 确认证书可以完整解析
 3. 检查证书格式是否为有效的 DER/PEM
@@ -1278,6 +1277,7 @@ static int JsonTlsLogger(ThreadVars *tv, void *thread_data,
 **问题**：JA3 指纹未生成
 
 **排查步骤**：
+
 1. 检查 `app-layer.protocols.tls.ja3-fingerprints` 是否为 `yes`
 2. 确认 Client Hello 可以完整解析
 3. 检查是否为加密流量（会话恢复场景）

@@ -45,6 +45,7 @@ Frame 11+: QUIC 1-RTT (Short Header)
 ```
 
 Wireshark's QUIC dissector parses:
+
 - Packet headers (long/short)
 - Frames (all types)
 - CRYPTO content (TLS records)
@@ -300,6 +301,7 @@ Common causes:
 ### 48.7.3 Packet Loss Detection
 
 In Wireshark:
+
 ```
 # Check for gaps in packet numbers
 Frame 1: Packet Number 0
@@ -414,6 +416,7 @@ Wireshark is essential for QUIC debugging:
 - **Expert Info**: Quick identification of problems
 
 Key debugging scenarios:
+
 1. Version/ALPN mismatches in crypto frames
 2. Packet loss via gaps in packet numbers
 3. Retransmissions via duplicate CRYPTO offsets

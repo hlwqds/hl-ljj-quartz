@@ -12,12 +12,8 @@ tags:
   - security
 ---
 
-> [!info] Cilium 2026 深度探索系列
-> 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
-> ...
-> 28. [[2026-04-14-cilium-deep-dive-ch28-ingress-annotations|第二十八章：Ingress 注解详解]]
-> 29. [[2026-04-14-cilium-deep-dive-ch29-cert-manager|第二十九章：Cert-Manager 与 TLS 自动化]]
-> 30. **第三十章：多租户隔离** ←
+> [!info] Cilium 2026 深度探索系列 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+> ... 28. [[2026-04-14-cilium-deep-dive-ch28-ingress-annotations|第二十八章：Ingress 注解详解]] 29. [[2026-04-14-cilium-deep-dive-ch29-cert-manager|第二十九章：Cert-Manager 与 TLS 自动化]] 30. **第三十章：多租户隔离** ←
 
 ---
 
@@ -53,13 +49,13 @@ tags:
 
 ### 1.1 多租户隔离层级
 
-| 层级 | 隔离方式 | 说明 |
-|:---|:---|:---|
-| **命名空间** | Namespace 资源 | 资源逻辑隔离 |
-| **网络** | CiliumNetworkPolicy | 流量访问控制 |
-| **身份** | RBAC | 权限控制 |
-| **资源** | ResourceQuota | CPU/内存配额 |
-| **存储** | StorageClass/PVC | 数据隔离 |
+| 层级         | 隔离方式            | 说明         |
+| :----------- | :------------------ | :----------- |
+| **命名空间** | Namespace 资源      | 资源逻辑隔离 |
+| **网络**     | CiliumNetworkPolicy | 流量访问控制 |
+| **身份**     | RBAC                | 权限控制     |
+| **资源**     | ResourceQuota       | CPU/内存配额 |
+| **存储**     | StorageClass/PVC    | 数据隔离     |
 
 ---
 
@@ -164,13 +160,13 @@ spec:
     matchLabels:
       tenant: a
   ingress:
-  - fromEndpoints:
-    - matchLabels:
-        tenant: a
+    - fromEndpoints:
+        - matchLabels:
+            tenant: a
   egress:
-  - toEndpoints:
-    - matchLabels:
-        tenant: a
+    - toEndpoints:
+        - matchLabels:
+            tenant: a
 ```
 
 ### 3.3 租户间完全隔离验证
@@ -203,22 +199,22 @@ spec:
       app: api
       tenant: a
   ingress:
-  - fromEndpoints:
-    - matchLabels:
-        app: frontend
-        tenant: a
-    # L7 HTTP 策略
-    l7Protocols:
-    - http:
-        # 只允许特定路径
-        method: "GET"
-        path: "/api/v[0-9]+"
-        # 允许的 Header
-        headerMatches:
-        - name: "Authorization"
-          secret:
-            name: api-auth
-            namespace: tenant-a
+    - fromEndpoints:
+        - matchLabels:
+            app: frontend
+            tenant: a
+      # L7 HTTP 策略
+      l7Protocols:
+        - http:
+            # 只允许特定路径
+            method: "GET"
+            path: "/api/v[0-9]+"
+            # 允许的 Header
+            headerMatches:
+              - name: "Authorization"
+                secret:
+                  name: api-auth
+                  namespace: tenant-a
 ```
 
 ### 4.2 金融租户严格隔离
@@ -237,33 +233,33 @@ spec:
       tenant: fintech
   # 入口完全隔离
   ingress:
-  - fromEndpoints:
-    - matchLabels:
-        app: payment-gateway
-        tenant: fintech
-    l7Protocols:
-    - http:
-        method: "POST"
-        path: "/payments"
-        headerMatches:
-        - name: "X-Tenant-ID"
-          values:
-          - "fintech"
+    - fromEndpoints:
+        - matchLabels:
+            app: payment-gateway
+            tenant: fintech
+      l7Protocols:
+        - http:
+            method: "POST"
+            path: "/payments"
+            headerMatches:
+              - name: "X-Tenant-ID"
+                values:
+                  - "fintech"
   egress:
-  - toEndpoints:
-    - matchLabels:
-        k8s:io.kubernetes.pod.namespace: fintech
-        app: database
-    ports:
-    - port: "5432"
-      protocol: TCP
-  - toEndpoints:
-    - matchLabels:
-        k8s:io.kubernetes.pod.namespace: kube-system
-        k8s-app: kube-dns
-    ports:
-    - port: "53"
-      protocol: UDP
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: fintech
+            app: database
+      ports:
+        - port: "5432"
+          protocol: TCP
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      ports:
+        - port: "53"
+          protocol: UDP
 ```
 
 ---
@@ -280,26 +276,26 @@ metadata:
   name: tenant-a-admin
   namespace: tenant-a
 rules:
-# 管理 Pod
-- apiGroups: [""]
-  resources: ["pods"]
-  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
-# 管理 Service
-- apiGroups: [""]
-  resources: ["services"]
-  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
-# 管理 ConfigMap
-- apiGroups: [""]
-  resources: ["configmaps"]
-  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
-# 管理 CiliumNetworkPolicy
-- apiGroups: ["cilium.io"]
-  resources: ["ciliumnetworkpolicies"]
-  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
-# 管理 Ingress
-- apiGroups: ["networking.k8s.io"]
-  resources: ["ingresses"]
-  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  # 管理 Pod
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  # 管理 Service
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  # 管理 ConfigMap
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  # 管理 CiliumNetworkPolicy
+  - apiGroups: ["cilium.io"]
+    resources: ["ciliumnetworkpolicies"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  # 管理 Ingress
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["ingresses"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
 ```
 
 ### 5.2 租户开发者 Role
@@ -312,23 +308,23 @@ metadata:
   name: tenant-a-developer
   namespace: tenant-a
 rules:
-# 只读 Pod
-- apiGroups: [""]
-  resources: ["pods"]
-  verbs: ["get", "list", "watch"]
-# 只读 Service
-- apiGroups: [""]
-  resources: ["services"]
-  verbs: ["get", "list", "watch"]
-# 读取日志
-- apiGroups: [""]
-  resources: ["pods/log"]
-  verbs: ["get"]
-# 执行命令（受限）
-- apiGroups: [""]
-  resources: ["pods/exec"]
-  verbs: ["create"]
-  resourceNames: ["*-app"]
+  # 只读 Pod
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+  # 只读 Service
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["get", "list", "watch"]
+  # 读取日志
+  - apiGroups: [""]
+    resources: ["pods/log"]
+    verbs: ["get"]
+  # 执行命令（受限）
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]
+    resourceNames: ["*-app"]
 ```
 
 ### 5.3 租户 ServiceAccount
@@ -347,9 +343,9 @@ metadata:
   name: tenant-a-admin-binding
   namespace: tenant-a
 subjects:
-- kind: ServiceAccount
-  name: tenant-a-admin
-  namespace: tenant-a
+  - kind: ServiceAccount
+    name: tenant-a-admin
+    namespace: tenant-a
 roleRef:
   kind: Role
   name: tenant-a-admin
@@ -399,19 +395,19 @@ metadata:
   namespace: tenant-a
 spec:
   limits:
-  - type: Container
-    default:
-      cpu: "500m"
-      memory: "512Mi"
-    defaultRequest:
-      cpu: "100m"
-      memory: "128Mi"
-    max:
-      cpu: "4"
-      memory: "8Gi"
-    min:
-      cpu: "50m"
-      memory: "64Mi"
+    - type: Container
+      default:
+        cpu: "500m"
+        memory: "512Mi"
+      defaultRequest:
+        cpu: "100m"
+        memory: "128Mi"
+      max:
+        cpu: "4"
+        memory: "8Gi"
+      min:
+        cpu: "50m"
+        memory: "64Mi"
 ```
 
 ---
@@ -430,26 +426,26 @@ metadata:
 spec:
   gatewayClassName: cilium
   listeners:
-  # 租户 A 的监听器
-  - name: tenant-a
-    port: 80
-    protocol: HTTP
-    allowedRoutes:
-      namespaces:
-        from: Selector
-        selector:
-          matchLabels:
-            tenant: a
-  # 租户 B 的监听器
-  - name: tenant-b
-    port: 80
-    protocol: HTTP
-    allowedRoutes:
-      namespaces:
-        from: Selector
-        selector:
-          matchLabels:
-            tenant: b
+    # 租户 A 的监听器
+    - name: tenant-a
+      port: 80
+      protocol: HTTP
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels:
+              tenant: a
+    # 租户 B 的监听器
+    - name: tenant-b
+      port: 80
+      protocol: HTTP
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels:
+              tenant: b
 ```
 
 ### 7.2 路由权限控制
@@ -463,15 +459,15 @@ metadata:
   namespace: tenant-a
 spec:
   parentRefs:
-  - name: shared-gateway
-    namespace: ingress
-    sectionName: tenant-a
+    - name: shared-gateway
+      namespace: ingress
+      sectionName: tenant-a
   hostnames:
-  - "tenant-a.example.com"
+    - "tenant-a.example.com"
   rules:
-  - backendRefs:
-    - name: tenant-a-backend
-      port: 80
+    - backendRefs:
+        - name: tenant-a-backend
+          port: 80
 ---
 # 租户 B 的 Route（无法绑定到 tenant-a 的监听器）
 apiVersion: gateway.networking.k8s.io/v1
@@ -481,15 +477,15 @@ metadata:
   namespace: tenant-b
 spec:
   parentRefs:
-  - name: shared-gateway
-    namespace: ingress
-    sectionName: tenant-b
+    - name: shared-gateway
+      namespace: ingress
+      sectionName: tenant-b
   hostnames:
-  - "tenant-b.example.com"
+    - "tenant-b.example.com"
   rules:
-  - backendRefs:
-    - name: tenant-b-backend
-      port: 80
+    - backendRefs:
+        - name: tenant-b-backend
+          port: 80
 ```
 
 ### 7.3 Route RBAC
@@ -502,10 +498,10 @@ metadata:
   name: tenant-a-route-admin
   namespace: tenant-a
 rules:
-- apiGroups: ["gateway.networking.k8s.io"]
-  resources: ["httproutes"]
-  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
-  resourceNames: ["tenant-a-*"]
+  - apiGroups: ["gateway.networking.k8s.io"]
+    resources: ["httproutes"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+    resourceNames: ["tenant-a-*"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -513,9 +509,9 @@ metadata:
   name: tenant-a-route-admin-binding
   namespace: tenant-a
 subjects:
-- kind: ServiceAccount
-  name: tenant-a-admin
-  namespace: tenant-a
+  - kind: ServiceAccount
+    name: tenant-a-admin
+    namespace: tenant-a
 roleRef:
   kind: Role
   name: tenant-a-route-admin
@@ -543,20 +539,20 @@ spec:
       app: shared-database
       type: postgres
   ingress:
-  # 允许租户 A 的应用服务器
-  - fromEndpoints:
-    - matchLabels:
-        tenant: a
-        app: application
-    ports:
-    - port: "5432"
-  # 允许租户 B 的应用服务器
-  - fromEndpoints:
-    - matchLabels:
-        tenant: b
-        app: application
-    ports:
-    - port: "5432"
+    # 允许租户 A 的应用服务器
+    - fromEndpoints:
+        - matchLabels:
+            tenant: a
+            app: application
+      ports:
+        - port: "5432"
+    # 允许租户 B 的应用服务器
+    - fromEndpoints:
+        - matchLabels:
+            tenant: b
+            app: application
+      ports:
+        - port: "5432"
 ```
 
 ### 8.2 服务网格跨租户
@@ -574,12 +570,12 @@ spec:
       app: shared-service
       tenant: a
   ingress:
-  - fromNamespace:
-      matchLabels:
-        tenant: b
-    # 必须有 mTLS 身份
-    authentication:
-      mode: required
+    - fromNamespace:
+        matchLabels:
+          tenant: b
+      # 必须有 mTLS 身份
+      authentication:
+        mode: required
 ```
 
 ---
@@ -600,21 +596,21 @@ spec:
     matchLabels:
       app: user-service
   ingress:
-  - fromEndpoints:
-    - matchLabels:
-        app: api-gateway
+    - fromEndpoints:
+        - matchLabels:
+            app: api-gateway
   egress:
-  - toEndpoints:
-    - matchLabels:
-        app: user-database
-    ports:
-    - port: "3306"
-  - toEndpoints:
-    - matchLabels:
-        k8s:io.kubernetes.pod.namespace: kube-system
-        k8s-app: kube-dns
-    ports:
-    - port: "53"
+    - toEndpoints:
+        - matchLabels:
+            app: user-database
+      ports:
+        - port: "3306"
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      ports:
+        - port: "53"
 ---
 # 订单中心命名空间策略
 apiVersion: cilium.io/v2
@@ -627,27 +623,27 @@ spec:
     matchLabels:
       app: order-service
   ingress:
-  - fromEndpoints:
-    - matchLabels:
-        app: api-gateway
+    - fromEndpoints:
+        - matchLabels:
+            app: api-gateway
   egress:
-  - toEndpoints:
-    - matchLabels:
-        app: order-database
-    ports:
-    - port: "3306"
-  - toEndpoints:
-    - matchLabels:
-        app: user-service
-        namespace: user-center
-    ports:
-    - port: "8080"
-  - toEndpoints:
-    - matchLabels:
-        k8s:io.kubernetes.pod.namespace: kube-system
-        k8s-app: kube-dns
-    ports:
-    - port: "53"
+    - toEndpoints:
+        - matchLabels:
+            app: order-database
+      ports:
+        - port: "3306"
+    - toEndpoints:
+        - matchLabels:
+            app: user-service
+            namespace: user-center
+      ports:
+        - port: "8080"
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      ports:
+        - port: "53"
 ```
 
 ### 9.2 开发/测试/生产隔离
@@ -665,27 +661,27 @@ spec:
       environment: production
   # 严格入站规则
   ingress:
-  - fromEndpoints:
-    - matchLabels:
-        environment: production
-        namespace: prod
+    - fromEndpoints:
+        - matchLabels:
+            environment: production
+            namespace: prod
   # 限制出站
   egress:
-  - toEndpoints:
-    - matchLabels:
-        environment: production
-        namespace: prod
-    ports:
-    - port: "53"
-      protocol: UDP
-    - port: "443"
-      protocol: TCP
-  - toEndpoints:
-    - matchLabels:
-        k8s:io.kubernetes.pod.namespace: kube-system
-    ports:
-    - port: "53"
-      protocol: UDP
+    - toEndpoints:
+        - matchLabels:
+            environment: production
+            namespace: prod
+      ports:
+        - port: "53"
+          protocol: UDP
+        - port: "443"
+          protocol: TCP
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+      ports:
+        - port: "53"
+          protocol: UDP
 ```
 
 ---
@@ -732,12 +728,12 @@ spec:
     matchLabels:
       app: sensitive
   ingress:
-  - from:
-    - endpointSelector:
-        matchLabels:
-          app: authorized
-    # 记录所有匹配的事件
-    auditing: true
+    - from:
+        - endpointSelector:
+            matchLabels:
+              app: authorized
+      # 记录所有匹配的事件
+      auditing: true
 ```
 
 ---
@@ -746,12 +742,12 @@ spec:
 
 ### 11.1 常见问题
 
-| 问题 | 可能原因 | 解决方案 |
-|:---|:---|:---|
-| 跨租户通信失败 | 默认拒绝策略 | 添加 allow 规则 |
-| 策略不生效 | 选择器错误 | 检查 label 匹配 |
-| DNS 解析失败 | 缺少 DNS 规则 | 添加 kube-dns 允许 |
-| 服务无法访问 | RBAC 权限不足 | 检查 RoleBinding |
+| 问题           | 可能原因      | 解决方案           |
+| :------------- | :------------ | :----------------- |
+| 跨租户通信失败 | 默认拒绝策略  | 添加 allow 规则    |
+| 策略不生效     | 选择器错误    | 检查 label 匹配    |
+| DNS 解析失败   | 缺少 DNS 规则 | 添加 kube-dns 允许 |
+| 服务无法访问   | RBAC 权限不足 | 检查 RoleBinding   |
 
 ### 11.2 调试命令
 
@@ -780,7 +776,7 @@ hubble observe --type drop --from-labels tenant=a
 
 ```
 命名空间: tenant-{name}
-标签: 
+标签:
   tenant: {name}
   environment: {dev|staging|prod}
 
@@ -868,13 +864,13 @@ spec:
 
 **隔离层级总结**：
 
-| 层级 | 机制 | 防护范围 |
-|:---|:---|:---|
-| 命名空间 | Namespace | 资源逻辑隔离 |
-| 网络 | CiliumNetworkPolicy | 流量访问控制 |
-| 身份 | RBAC/ServiceAccount | API 操作权限 |
-| 资源 | ResourceQuota/LimitRange | 资源使用限制 |
-| 存储 | StorageClass/PVC | 数据隔离 |
+| 层级     | 机制                     | 防护范围     |
+| :------- | :----------------------- | :----------- |
+| 命名空间 | Namespace                | 资源逻辑隔离 |
+| 网络     | CiliumNetworkPolicy      | 流量访问控制 |
+| 身份     | RBAC/ServiceAccount      | API 操作权限 |
+| 资源     | ResourceQuota/LimitRange | 资源使用限制 |
+| 存储     | StorageClass/PVC         | 数据隔离     |
 
 **下一章节预告**：Cilium Ambient Mode（无 Sidecar 零信任网格），详解 Waypoint Proxy 和 L4/L7 策略在 Ambient 模式下的应用。
 
@@ -884,12 +880,12 @@ spec:
 
 Part VI（Ingress 与 Gateway API）涵盖了 Cilium 入口流量的核心内容：
 
-| 章节 | 主题 | 核心价值 |
-|:---|:---|:---|
-| 26 | Ingress Controller | eBPF 数据面实现的高性能入口 |
-| 27 | Gateway API | 下一代标准入口 API |
-| 28 | Ingress 注解 | 流量管理、CORS、限速配置 |
-| 29 | Cert-Manager | TLS 证书自动化 |
-| 30 | 多租户隔离 | 命名空间级安全隔离 |
+| 章节 | 主题               | 核心价值                    |
+| :--- | :----------------- | :-------------------------- |
+| 26   | Ingress Controller | eBPF 数据面实现的高性能入口 |
+| 27   | Gateway API        | 下一代标准入口 API          |
+| 28   | Ingress 注解       | 流量管理、CORS、限速配置    |
+| 29   | Cert-Manager       | TLS 证书自动化              |
+| 30   | 多租户隔离         | 命名空间级安全隔离          |
 
 这三个部分共同构成了 Cilium 完整的**入口流量 + 安全隔离**体系。

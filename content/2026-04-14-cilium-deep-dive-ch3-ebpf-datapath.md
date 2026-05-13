@@ -11,8 +11,8 @@ tags:
   - kubernetes
 ---
 
-> [!info] Cilium 2026 深度探索系列
-> 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+> [!info] Cilium 2026 深度探索系列 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+>
 > 1. [[2026-04-14-cilium-deep-dive-ch1-cilium-overview|第一章：Cilium 概述]]
 > 2. [[2026-04-14-cilium-deep-dive-ch2-architecture|第二章：Cilium 架构]]
 > 3. **第三章：eBPF 数据面** ←
@@ -83,7 +83,7 @@ XDP（Express Data Path）是 Linux 内核中**最早的可编程点**，位于�
 
 XDP 路径：
   NIC 驱动 → [XDP 程序执行] → 分配 skb → 放入内核协议栈 → ...
-  
+
 XDP 快速路径（Drop/Redirect）：
   NIC 驱动 → [XDP 程序执行] → 直接丢弃或重定向 → 【不分配 skb】
 ```
@@ -106,12 +106,12 @@ enum xdp_action {
 
 **典型使用场景：**
 
-| 场景 | XDP 处理 | 说明 |
-|:---|:---|:---|
-| **DDoS 防护** | XDP_DROP | 在 skb 分配前丢弃，节省 CPU |
-| **LoadBalancer DSR** | XDP_REDIRECT | 直接重定向到后端 Pod，绕过协议栈 |
-| **包镜像** | XDP_PASS + 克隆 | 复制一份到镜像接口 |
-| **限速** | XDP_DROP（基于令牌桶） | 丢弃超过阈值的包 |
+| 场景                 | XDP 处理               | 说明                             |
+| :------------------- | :--------------------- | :------------------------------- |
+| **DDoS 防护**        | XDP_DROP               | 在 skb 分配前丢弃，节省 CPU      |
+| **LoadBalancer DSR** | XDP_REDIRECT           | 直接重定向到后端 Pod，绕过协议栈 |
+| **包镜像**           | XDP_PASS + 克隆        | 复制一份到镜像接口               |
+| **限速**             | XDP_DROP（基于令牌桶） | 丢弃超过阈值的包                 |
 
 ### 2.3 Cilium 中的 XDP
 
@@ -190,19 +190,19 @@ handle_ingress_ipv4(struct ctlum_hdr *hdr) {
     // 1. 查找目标 Endpoint
     struct ctlum_endpoint_key ep_key = {};
     ep_key.ip4 = hdr->dst;
-    
+
     struct ctlum_endpoint_value *ep = map_lookup_elem(&cilium_endpoints, &ep_key);
     if (!ep)
         return CTLM_FRAME_DROP;
-    
+
     // 2. 验证发送方身份
     if (!validate_identity(hdr->src))
         return CTLM_FRAME_DROP_POLICY;
-    
+
     // 3. 执行 L7 策略（如有）
     if (ep->l7_policy)
         return handle_l7_policy(hdr, ep);
-    
+
     // 4. 转发到本地 Pod
     return redirect(ep->ifindex);
 }
@@ -241,10 +241,10 @@ Cilium 可以在**进程级别**拦截 `connect()`、`bind()`、`sendmsg()` 等 
 
 ### 4.2 两种 Socket 劫持模式
 
-| 模式 | Hook 点 | 用途 |
-|:---|:---|:---|
-| **socket redirect** | `sockops` 或 `sk_msg` | 将 TCP/UDP 连接重定向到 Sockmap，实现透明加速 |
-| **socket policy** | `connect()` / `bind()` | 在连接建立前检查策略，决定是否允许 |
+| 模式                | Hook 点                | 用途                                          |
+| :------------------ | :--------------------- | :-------------------------------------------- |
+| **socket redirect** | `sockops` 或 `sk_msg`  | 将 TCP/UDP 连接重定向到 Sockmap，实现透明加速 |
+| **socket policy**   | `connect()` / `bind()` | 在连接建立前检查策略，决定是否允许            |
 
 ### 4.3 Sockmap：TCP 连接优化
 
@@ -252,7 +252,7 @@ Sockmap 允许 Cilium 将两个 socket 直接映射在一起，让数据**在两
 
 ```
 未使用 Sockmap：
-  Pod A (进程) → send() → 内核协议栈 → TCP 协议处理 → NIC → 
+  Pod A (进程) → send() → 内核协议栈 → TCP 协议处理 → NIC →
               ← recv() ← 内核协议栈 ← TCP 协议处理 ← NIC ← Pod B
 
 使用 Sockmap（Cilium 透明加速）：
@@ -363,13 +363,13 @@ External Client → NodePort → Pod
 
 ### 7.1 核心 Map 速查
 
-| Map | 类型 | Key | Value | 用途 |
-|:---|:---|:---|:---|:---|
-| `cilium_services` | Hash / LPM | `{addr, port, proto}` | `svc_val` (backends) | Service 查找 |
-| `cilium_endpoints` | Hash | `{ip}` | `{ifindex, mac, identity}` | Endpoint 元数据 |
-| `cilium_ipcache` | LPM Trie | `{ip/prefix}` | `{identity, node_ip}` | IP → Identity |
-| `cilium_policy` | LPM Trie | `{identity, port}` | `policy_result` | 安全策略 |
-| `cilium_tunnel_map` | Hash | `{node_ip}` | `{tunnel_endpoint}` | 隧道端点 |
+| Map                 | 类型       | Key                   | Value                      | 用途            |
+| :------------------ | :--------- | :-------------------- | :------------------------- | :-------------- |
+| `cilium_services`   | Hash / LPM | `{addr, port, proto}` | `svc_val` (backends)       | Service 查找    |
+| `cilium_endpoints`  | Hash       | `{ip}`                | `{ifindex, mac, identity}` | Endpoint 元数据 |
+| `cilium_ipcache`    | LPM Trie   | `{ip/prefix}`         | `{identity, node_ip}`      | IP → Identity   |
+| `cilium_policy`     | LPM Trie   | `{identity, port}`    | `policy_result`            | 安全策略        |
+| `cilium_tunnel_map` | Hash       | `{node_ip}`           | `{tunnel_endpoint}`        | 隧道端点        |
 
 ### 7.2 Map 查找性能
 
@@ -388,12 +388,12 @@ kubectl -n kube-system exec ds/cilium -- \
 
 ## 8. 章节总结
 
-| eBPF Hook | 位置 | Cilium 职责 |
-|:---|:---|:---|
-| **XDP** | 网卡驱动，最早点 | DDoS 防护、NodePort DSR |
-| **TC Ingress** | 路由决策后 | Service 查找、策略执行、隧道解封装 |
-| **Socket Hook** | 系统调用层 | 进程级策略、Sockmap 加速 |
-| **TC Egress** | 发出前 | NAT、隧道封装、出口策略 |
+| eBPF Hook       | 位置             | Cilium 职责                        |
+| :-------------- | :--------------- | :--------------------------------- |
+| **XDP**         | 网卡驱动，最早点 | DDoS 防护、NodePort DSR            |
+| **TC Ingress**  | 路由决策后       | Service 查找、策略执行、隧道解封装 |
+| **Socket Hook** | 系统调用层       | 进程级策略、Sockmap 加速           |
+| **TC Egress**   | 发出前           | NAT、隧道封装、出口策略            |
 
 **下一章**：Kube-Proxy 替代——Cilium 如何用 eBPF 实现比 kube-proxy 更高效的 Service 负载均衡。
 

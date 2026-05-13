@@ -1,7 +1,7 @@
 ---
 title: "DPDK 第四十一章：NVIDIA DOCA 与 DPU 编程框架"
 date: 2026-04-09 17:00:00
-tags: [dpdk, nvidia, doca, dpu, bluefield,-sdk, programming]
+tags: [dpdk, nvidia, doca, dpu, bluefield, -sdk, programming]
 description: "深入解析 NVIDIA DOCA SDK：架构、组件、编程模型，以及在 BlueField DPU 上开发 DPDK 应用的方法"
 ---
 
@@ -91,16 +91,16 @@ DOCA 是 NVIDIA 为 BlueField DPU 提供的统一软件开发套件：
 
 ### 2.2 核心组件
 
-| 组件 | 功能 | 底层技术 |
-|------|------|----------|
-| **DOCA Flow** | 流水线处理 | rte_flow 兼容 |
-| **DOCA DPA** | Data Path Architecture | 可编程管线 |
-| **DOCA NetFlow** | 网络流导出 | IPFIX |
-| **DOCA DPI** | 深度包检测 | RegEx 引擎 |
-| **DOCA Crypto** | 加密加速 | IPsec/TLS |
-| **DOCA Storage** | 存储加速 | NVMe-oF |
-| **DOCA Spark** | 内存数据库 | KV Store |
-| **DOCA Comm Net** | 集合通信 | RDMA/UCX |
+| 组件              | 功能                   | 底层技术      |
+| ----------------- | ---------------------- | ------------- |
+| **DOCA Flow**     | 流水线处理             | rte_flow 兼容 |
+| **DOCA DPA**      | Data Path Architecture | 可编程管线    |
+| **DOCA NetFlow**  | 网络流导出             | IPFIX         |
+| **DOCA DPI**      | 深度包检测             | RegEx 引擎    |
+| **DOCA Crypto**   | 加密加速               | IPsec/TLS     |
+| **DOCA Storage**  | 存储加速               | NVMe-oF       |
+| **DOCA Spark**    | 内存数据库             | KV Store      |
+| **DOCA Comm Net** | 集合通信               | RDMA/UCX      |
 
 ## 3. DOCA 开发环境
 
@@ -374,13 +374,13 @@ doca_storage_export_start(backend);
 
 ## 8. DOCA 与其他框架对比
 
-| 特性 | DOCA | IPDK | P4 |
-|------|------|------|-----|
-| **厂商** | NVIDIA | Intel (开源) | 通用 |
-| **硬件** | BlueField | E810/FlexRip | Tofino/软件 |
-| **语言** | C/DPDK/P4 | P4+YANG | P4 |
-| **Flow** | DOCA Flow | SDE/PDK | P4 |
-| **生态** | NVIDIA AI/Cloud | 开放网络 | 多厂商 |
+| 特性     | DOCA            | IPDK         | P4          |
+| -------- | --------------- | ------------ | ----------- |
+| **厂商** | NVIDIA          | Intel (开源) | 通用        |
+| **硬件** | BlueField       | E810/FlexRip | Tofino/软件 |
+| **语言** | C/DPDK/P4       | P4+YANG      | P4          |
+| **Flow** | DOCA Flow       | SDE/PDK      | P4          |
+| **生态** | NVIDIA AI/Cloud | 开放网络     | 多厂商      |
 
 ## 9. 总结
 

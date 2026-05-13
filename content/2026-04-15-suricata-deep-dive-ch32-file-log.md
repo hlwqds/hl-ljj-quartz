@@ -12,8 +12,8 @@ tags:
 description: "深入解析 Suricata 的文件日志系统：filedata 配置、文件提取、MD5/SHA1 计算、文件日志输出、以及源码实现"
 ---
 
-> [!info] Suricata 2026 深度探索系列
-> 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Suricata 2026 深度探索系列 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-15-suricata-deep-dive-ch1-overview|第一章：Suricata 概述]]
 > 2. [[2026-04-15-suricata-deep-dive-ch2-config|第二章：Suricata 配置系统]]
 > 3. [[2026-04-15-suricata-deep-dive-ch3-runmodes|第三章：Runmodes 运行模式]]
@@ -62,27 +62,27 @@ graph TD
         F["文件识别"]
         E["文件提取"]
     end
-    
+
     subgraph "文件处理"
         H["文件哈希计算"]
         M["MIME 类型检测"]
         S2["存储决策"]
     end
-    
+
     subgraph "文件输出"
         L["文件日志"]
         F2["文件存储"]
         E2["EVE JSON"]
     end
-    
+
     P --> S
     S --> F
     F --> E
-    
+
     E --> H
     H --> M
     M --> S2
-    
+
     S2 --> L
     S2 --> F2
     S2 --> E2
@@ -99,16 +99,16 @@ graph TD
 outputs:
   - files-json:
       enabled: yes
-      
+
       # 输出文件
       filename: files-json.log
-      
+
       # 是否记录所有文件（不仅是告警）
       log-all: no
-      
+
       # 文件存储目录
       store-dir: /var/log/suricata/files
-      
+
       # 保留文件时间（秒）
       max-filesize: 10MB
 ```
@@ -120,19 +120,19 @@ outputs:
 file-extraction:
   # 是否启用文件提取
   enabled: yes
-  
+
   # 存储目录
   store-dir: /var/log/suricata/files
-  
+
   # 最大文件大小
   max-file-size: 10MB
-  
+
   # 文件完整性校验
   hashes:
     - md5
     - sha1
     - sha256
-    
+
   # 协议配置
   protocols:
     http:
@@ -145,13 +145,13 @@ file-extraction:
         - image/jpeg
         - image/png
         - video/mp4
-        
+
     smb:
       enabled: yes
-      
+
     ftp:
       enabled: yes
-      
+
     smtp:
       enabled: yes
 ```
@@ -163,7 +163,7 @@ file-extraction:
 file-config:
   # 启用 magic 检测
   magic-check: yes
-  
+
   # 文件类型白名单
   type-whitelist:
     - application/pdf
@@ -173,7 +173,7 @@ file-config:
     - image/jpeg
     - image/png
     - video/x-msvideo
-    
+
   # 黑名单
   type-blacklist:
     - text/plain
@@ -189,7 +189,7 @@ file-config:
 {
   "timestamp": "2026-04-15T10:23:45.123456Z",
   "event_type": "fileinfo",
-  
+
   "fileinfo": {
     "filename": "/downloads/malware.exe",
     "gaps": "no",
@@ -202,7 +202,7 @@ file-config:
     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "magic": "PE32 executable"
   },
-  
+
   "src_ip": "192.168.1.100",
   "src_port": 54321,
   "dest_ip": "93.184.216.34",
@@ -214,17 +214,17 @@ file-config:
 
 ### 3.2 文件信息字段
 
-|| 字段 | 说明 |
-|:-----|:-----|:-----|
-| `filename` | 文件名 | 提取自协议（如 HTTP URL） |
-| `size` | 文件大小 | 字节数 |
-| `type` | MIME 类型 | 协议识别或 magic 检测 |
-| `md5` | MD5 哈希 | 文件完整性校验 |
-| `sha1` | SHA1 哈希 | 更强的完整性校验 |
-| `sha256` | SHA256 哈希 | 强完整性校验 |
-| `magic` | Magic 描述 | libmagic 识别结果 |
-| `gaps` | 是否有缺失 | 流重组是否有间隙 |
-| `stored` | 是否存储 | 文件是否保存到磁盘 |
+|            | 字段        | 说明                      |
+| :--------- | :---------- | :------------------------ |
+| `filename` | 文件名      | 提取自协议（如 HTTP URL） |
+| `size`     | 文件大小    | 字节数                    |
+| `type`     | MIME 类型   | 协议识别或 magic 检测     |
+| `md5`      | MD5 哈希    | 文件完整性校验            |
+| `sha1`     | SHA1 哈希   | 更强的完整性校验          |
+| `sha256`   | SHA256 哈希 | 强完整性校验              |
+| `magic`    | Magic 描述  | libmagic 识别结果         |
+| `gaps`     | 是否有缺失  | 流重组是否有间隙          |
+| `stored`   | 是否存储    | 文件是否保存到磁盘        |
 
 ---
 
@@ -238,21 +238,21 @@ typedef struct FileHashes_ {
     /* MD5 哈希 */
     uint8_t md5[16];
     char md5_str[33];  // 32 + 1
-    
+
     /* SHA1 哈希 */
     uint8_t sha1[20];
     char sha1_str[41];  // 40 + 1
-    
+
     /* SHA256 哈希 */
     uint8_t sha256[32];
     char sha256_str[65];  // 64 + 1
-    
+
     /* 文件大小 */
     uint64_t size;
-    
+
     /* 创建时间 */
     struct timeval tv;
-    
+
 } FileHashes;
 ```
 
@@ -266,17 +266,17 @@ static void FileHashCompute(File *file, uint8_t *data, uint32_t data_len)
     if (file->hash_flags & FILE_HASH_MD5) {
         MD5_Update(&file->md5_ctx, data, data_len);
     }
-    
+
     /* 更新 SHA1 */
     if (file->hash_flags & FILE_HASH_SHA1) {
         SHA1_Update(&file->sha1_ctx, data, data_len);
     }
-    
+
     /* 更新 SHA256 */
     if (file->hash_flags & FILE_HASH_SHA256) {
         SHA256_Update(&file->sha256_ctx, data, data_len);
     }
-    
+
     /* 更新文件大小 */
     file->size += data_len;
 }
@@ -289,13 +289,13 @@ static void FileHashFinalize(File *file)
         MD5_Final(file->md5, &file->md5_ctx);
         PrintHexString(file->md5_str, 33, file->md5, 16);
     }
-    
+
     /* 完成 SHA1 */
     if (file->hash_flags & FILE_HASH_SHA1) {
         SHA1_Final(file->sha1, &file->sha1_ctx);
         PrintHexString(file->sha1_str, 41, file->sha1, 20);
     }
-    
+
     /* 完成 SHA256 */
     if (file->hash_flags & FILE_HASH_SHA256) {
         SHA256_Final(file->sha256, &file->sha256_ctx);
@@ -316,16 +316,16 @@ static int FileStore(File *file)
         file->store_dir,
         file->sha256_str,
         file->filename);
-    
+
     /* 创建目录 */
     CreateDirectoryTree(file->store_dir);
-    
+
     /* 写入文件 */
     FILE *fp = fopen(filepath, "wb");
     if (fp == NULL) {
         return -1;
     }
-    
+
     /* 写入存储的文件数据 */
     for (uint32_t i = 0; i < file->content_data_cnt; i++) {
         fwrite(file->content_data[i]->data,
@@ -333,12 +333,12 @@ static int FileStore(File *file)
                file->content_data[i]->len,
                fp);
     }
-    
+
     fclose(fp);
-    
+
     /* 标记为已存储 */
     file->flags |= FILE_STORED;
-    
+
     return 0;
 }
 ```
@@ -355,16 +355,16 @@ file-extraction:
   protocols:
     http:
       enabled: yes
-      
+
       # 提取请求体中的文件
       extract-request-body: yes
-      
+
       # 提取响应体中的文件
       extract-response-body: yes
-      
+
       # 文件大小限制
       max-file-size: 50MB
-      
+
       # 文件类型白名单
       type-whitelist:
         - application/octet-stream
@@ -379,13 +379,13 @@ file-extraction:
   protocols:
     smtp:
       enabled: yes
-      
+
       # 提取附件
       extract-attachments: yes
-      
+
       # 附件存储目录
       attachment-dir: /var/log/suricata/attachments
-      
+
       # 文件类型白名单
       type-whitelist:
         - application/pdf
@@ -401,10 +401,10 @@ file-extraction:
   protocols:
     smb:
       enabled: yes
-      
+
       # SMB 文件传输
       stream-depth: 1MB
-      
+
       # 文件大小限制
       max-file-size: 100MB
 ```
@@ -424,19 +424,19 @@ static OutputInitResult OutputFiledataLogInit(ConfNode *conf)
     if (ctx == NULL) {
         return ResultInitFail;
     }
-    
+
     /* 解析配置 */
     const char *filename = ConfNodeLookupChildValue(conf, "filename");
     if (filename != NULL) {
         ctx->filename = SCStrdup(filename);
     }
-    
+
     /* 存储目录 */
     const char *store_dir = ConfNodeLookupChildValue(conf, "store-dir");
     if (store_dir != NULL) {
         ctx->store_dir = SCStrdup(store_dir);
     }
-    
+
     /* 哈希配置 */
     const char *hash_str = ConfNodeLookupChildValue(conf, "hash");
     if (hash_str != NULL) {
@@ -450,10 +450,10 @@ static OutputInitResult OutputFiledataLogInit(ConfNode *conf)
             ctx->hash_flags |= FILE_HASH_SHA256;
         }
     }
-    
+
     /* 注册输出 */
     OutputRegisterFiledataLogger(&ctx->module, ctx);
-    
+
     return ResultOk;
 }
 ```
@@ -465,21 +465,21 @@ static OutputInitResult OutputFiledataLogInit(ConfNode *conf)
 static int OutputFiledataLog(ThreadVars *tv, void *data, File *file)
 {
     OutputFiledataLogContext *ctx = (OutputFiledataLogContext *)data;
-    
+
     /* 创建 JSON 对象 */
     Json派roto *js = Json派rotoNew();
-    
+
     /* 添加时间戳 */
     char timestamp[64];
     CreateUtcIsoTimeStamp(file->created, timestamp, sizeof(timestamp));
     Json派rotoSetString(js, "timestamp", timestamp);
     Json派rotoSetString(js, "event_type", "fileinfo");
-    
+
     /* 添加文件信息 */
     Json派rotoSetString(js, "filename", file->name);
     Json派rotoSetUint(js, "size", file->size);
     Json派rotoSetString(js, "type", file->magic);
-    
+
     /* 添加哈希 */
     if (ctx->hash_flags & FILE_HASH_MD5) {
         Json派rotoSetString(js, "md5", file->md5_str);
@@ -490,22 +490,22 @@ static int OutputFiledataLog(ThreadVars *tv, void *data, File *file)
     if (ctx->hash_flags & FILE_HASH_SHA256) {
         Json派rotoSetString(js, "sha256", file->sha256_str);
     }
-    
+
     /* 添加 Flow 信息 */
     char srcip[46], dstip[46];
     Flow *f = file->flow;
-    
+
     if (f != NULL) {
         PrintInet(AF_INET, &f->src, srcip, sizeof(srcip));
         PrintInet(AF_INET, &f->dst, dstip, sizeof(dstip));
-        
+
         Json派rotoSetString(js, "src_ip", srcip);
         Json派rotoSetUint(js, "src_port", f->sp);
         Json派toSetString(js, "dest_ip", dstip);
         Json派rotoSetUint(js, "dest_port", f->dp);
         Json派rotoSetString(js, "proto", "TCP");
     }
-    
+
     /* 写入文件 */
     FILE *fp = fopen(ctx->filename, "a");
     if (fp != NULL) {
@@ -514,7 +514,7 @@ static int OutputFiledataLog(ThreadVars *tv, void *data, File *file)
         fclose(fp);
         SCFree(json_str);
     }
-    
+
     Json派rotoFree(js);
     return 0;
 }
@@ -531,16 +531,16 @@ static int OutputFiledataLog(ThreadVars *tv, void *data, File *file)
 file-extraction:
   # 全局启用
   enabled: yes
-  
+
   # 存储目录
   store-dir: /var/log/suricata/files
-  
+
   # 自动清理
   auto-flushing: yes
-  
+
   # 目录配额（文件数）
   quota: 100000
-  
+
   # 目录配额（字节）
   size-quota: 10GB
 ```
@@ -551,14 +551,14 @@ file-extraction:
 # suricata.yaml
 file-extraction:
   store-dir: /var/log/suricata/files
-  
+
   # Rotation 配置
   rotation:
     enabled: yes
-    
+
     # 时间基础
-    time-reap: 3600  # 1 小时
-    
+    time-reap: 3600 # 1 小时
+
     # 大小基础
     size-reap: 1GB
 ```
@@ -574,26 +574,25 @@ file-extraction:
 outputs:
   - eve-log:
       enabled: yes
-      
+
       types:
         - files:
             # 包含哈希字段
             hashes: md5,sha1,sha256
-            
----
 
+---
 # suricata.rules
 # 使用文件哈希检测恶意软件
 alert http any any -> $EXTERNAL_NET any (
-    msg:"MALWARE Downloaded - Known Bad MD5";
-    file-data; md5:d41d8cd98f00b204e9800998ecf8427e;
-    sid:2000001; rev:1;
+msg:"MALWARE Downloaded - Known Bad MD5";
+file-data; md5:d41d8cd98f00b204e9800998ecf8427e;
+sid:2000001; rev:1;
 )
 
 alert http any any -> $EXTERNAL_NET any (
-    msg:"MALWARE Downloaded - Known Bad SHA256";
-    file-data; sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855;
-    sid:2000002; rev:1;
+msg:"MALWARE Downloaded - Known Bad SHA256";
+file-data; sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855;
+sid:2000002; rev:1;
 )
 ```
 
@@ -603,15 +602,15 @@ alert http any any -> $EXTERNAL_NET any (
 # suricata.rules
 # 检测可疑文件名
 alert http any any -> $EXTERNAL_NET any (
-    msg:"SUSPICIOUS Download - Double Extension";
-    file-data; filename:"*.pdf.exe";
-    sid:2000010; rev:1;
+msg:"SUSPICIOUS Download - Double Extension";
+file-data; filename:"*.pdf.exe";
+sid:2000010; rev:1;
 )
 
 alert http any any -> $EXTERNAL_NET any (
-    msg:"SUSPICIOUS Download - System File";
-    file-data; filename:"*.scr";
-    sid:2000011; rev:1;
+msg:"SUSPICIOUS Download - System File";
+file-data; filename:"*.scr";
+sid:2000011; rev:1;
 )
 ```
 
@@ -626,7 +625,7 @@ alert http any any -> $EXTERNAL_NET any (
 file-extraction:
   # 大文件不存储内容
   large-file-size: 50MB
-  
+
   # 只记录元数据
   log-metadata-only: yes
 ```
@@ -638,7 +637,7 @@ file-extraction:
 file-extraction:
   # 使用单独的磁盘
   store-dir: /mnt/storage/suricata/files
-  
+
   # 使用 SSD
   device: /dev/ssd1
 ```
@@ -650,6 +649,7 @@ file-extraction:
 ### 10.1 文件提取失败
 
 **检查**：
+
 - 确认 `file-extraction.enabled: yes`
 - 检查协议配置（如 `http.enabled: yes`）
 - 查看 `stream.reassembly.depth` 是否足够
@@ -657,27 +657,30 @@ file-extraction:
 ### 10.2 哈希不一致
 
 **原因**：
+
 - 流有间隙（`gaps: yes`）
 - 文件被截断
 
 **解决**：
+
 ```yaml
 stream:
   reassembly:
-    depth: 0  # 不限制重组深度
+    depth: 0 # 不限制重组深度
 ```
 
 ### 10.3 存储目录满
 
 **解决**：
+
 ```yaml
 file-extraction:
   auto-flushing: yes
   size-quota: 100GB
-  
+
   # 定期清理
   cleanup:
     enabled: yes
-    interval: 86400  # 每天
-    older-than: 604800  # 7 天
+    interval: 86400 # 每天
+    older-than: 604800 # 7 天
 ```

@@ -10,8 +10,8 @@ tags:
 description: "深入解析 Zeek RDP 分析器——RDP::Info record、RDP 连接日志、加密级别、屏幕截图提取"
 ---
 
-> [!info] Zeek 2026 深度探索系列
-> 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Zeek 2026 深度探索系列 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-15-zeek-deep-dive-ch1-overview|第一章：Zeek 概述]]
 > 2. [[2026-04-15-zeek-deep-dive-ch2-installation|第二章：安装部署]]
 > 3. [[2026-04-15-zeek-deep-dive-ch3-config|第三章：配置系统]]
@@ -471,15 +471,16 @@ event rdp_connect_request(c: connection, cookie: string)
 
 本章介绍了 Zeek RDP 分析器的核心能力：
 
-| 组件 | 说明 |
-|------|------|
-| **RDP::Info** | RDP 日志核心 record，包含连接信息、加密级别、客户端信息 |
-| **rdp_connect_request** | RDP 连接请求事件，包含用户名 cookie |
-| **rdp_connect_response** | RDP 连接响应事件，包含结果和协议信息 |
-| **加密级别** | 检测 None/Low/High 加密 |
-| **NLA 检测** | 检测是否使用网络级身份验证 |
+| 组件                     | 说明                                                    |
+| ------------------------ | ------------------------------------------------------- |
+| **RDP::Info**            | RDP 日志核心 record，包含连接信息、加密级别、客户端信息 |
+| **rdp_connect_request**  | RDP 连接请求事件，包含用户名 cookie                     |
+| **rdp_connect_response** | RDP 连接响应事件，包含结果和协议信息                    |
+| **加密级别**             | 检测 None/Low/High 加密                                 |
+| **NLA 检测**             | 检测是否使用网络级身份验证                              |
 
 RDP 日志对于检测：
+
 - RDP 暴力破解
 - 横向移动
 - 异常时段连接

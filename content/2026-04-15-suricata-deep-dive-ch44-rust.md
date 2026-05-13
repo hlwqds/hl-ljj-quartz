@@ -11,13 +11,8 @@ tags:
 description: "深入解析 Suricata Rust 扩展系统：suricata-rust crate、Rust Parser 开发、FFI 绑定、AppLayer 扩展、自定义日志、以及插件编译与部署"
 ---
 
-> [!info] Suricata 2026 深度探索系列
-> 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
-> ...
-> 42. [[2026-04-15-suricata-deep-dive-ch42-dataset|第四十二章：Dataset 与动态列表]]
-> 43. [[2026-04-15-suricata-deep-dive-ch43-app-layer-register|第四十三章：自定义协议 Parser]]
-> 44. **第四十四章：Rust 扩展**
-> 45. [[2026-04-15-suricata-deep-dive-ch45-cluster|第四十五章：集群模式]]
+> [!info] Suricata 2026 深度探索系列 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+> ... 42. [[2026-04-15-suricata-deep-dive-ch42-dataset|第四十二章：Dataset 与动态列表]] 43. [[2026-04-15-suricata-deep-dive-ch43-app-layer-register|第四十三章：自定义协议 Parser]] 44. **第四十四章：Rust 扩展** 45. [[2026-04-15-suricata-deep-dive-ch45-cluster|第四十五章：集群模式]]
 
 ---
 
@@ -50,13 +45,13 @@ graph TD
 
 ### 1.1 Rust 在 Suricata 中的角色
 
-| 组件 | 语言 | 说明 |
-|:---|:---|:---|
-| **协议解析** | Rust | HTTP/2、DNS-over-HTTPS、TLS 1.3 |
-| **检测字段** | Rust | AppLayer 注册、关键字匹配 |
-| **日志系统** | Rust | EVE JSON 结构化输出 |
-| **核心框架** | C | Flow、Packet、Threading |
-| **规则解析** | C + Rust | YARA + Rust |
+| 组件         | 语言     | 说明                            |
+| :----------- | :------- | :------------------------------ |
+| **协议解析** | Rust     | HTTP/2、DNS-over-HTTPS、TLS 1.3 |
+| **检测字段** | Rust     | AppLayer 注册、关键字匹配       |
+| **日志系统** | Rust     | EVE JSON 结构化输出             |
+| **核心框架** | C        | Flow、Packet、Threading         |
+| **规则解析** | C + Rust | YARA + Rust                     |
 
 ### 1.2 suricata-rust crate
 

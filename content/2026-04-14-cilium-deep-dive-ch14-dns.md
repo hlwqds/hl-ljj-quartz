@@ -12,8 +12,8 @@ tags:
   - security
 ---
 
-> [!info] Cilium 2026 深度探索系列
-> 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+> [!info] Cilium 2026 深度探索系列 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+>
 > 1. [[2026-04-14-cilium-deep-dive-ch1-cilium-overview|第一章：Cilium 概述]]
 > 2. [[2026-04-14-cilium-deep-dive-ch2-architecture|第二章：Cilium 架构]]
 > 3. [[2026-04-14-cilium-deep-dive-ch3-ebpf-datapath|第三章：eBPF 数据面]]
@@ -51,14 +51,14 @@ spec:
     matchLabels:
       app: webserver
   egress:
-  - toPorts:
-    - port: "53"
-      protocol: UDP
-      rules:
-        dns:
-        - matchPattern: "*.example.com"      # 允许访问 *.example.com
-        - matchPattern: "api.internal.net"   # 允许访问内部 API
-        - matchPattern: "kubernetes.default" # 允许 K8s API
+    - toPorts:
+        - port: "53"
+          protocol: UDP
+          rules:
+            dns:
+              - matchPattern: "*.example.com" # 允许访问 *.example.com
+              - matchPattern: "api.internal.net" # 允许访问内部 API
+              - matchPattern: "kubernetes.default" # 允许 K8s API
 ```
 
 ### 1.1 DNS 策略工作原理
@@ -87,13 +87,13 @@ spec:
 
 ### 1.2 DNS 策略 vs 传统出口策略
 
-| 特性 | IP 级别出口策略 | DNS 策略 |
-|:---|:---|:---|
-| **匹配依据** | 固定 IP | 域名（动态 IP） |
-| **灵活性** | 静态 | 动态 DNS 响应 |
-| **管理复杂度** | 高（需要维护 IP 列表） | 低（基于域名） |
-| **云环境适配** | 差（IP 可能变化） | 好（域名不变） |
-| **数据泄露防护** | 有限 | 完整 |
+| 特性             | IP 级别出口策略        | DNS 策略        |
+| :--------------- | :--------------------- | :-------------- |
+| **匹配依据**     | 固定 IP                | 域名（动态 IP） |
+| **灵活性**       | 静态                   | 动态 DNS 响应   |
+| **管理复杂度**   | 高（需要维护 IP 列表） | 低（基于域名）  |
+| **云环境适配**   | 差（IP 可能变化）      | 好（域名不变）  |
+| **数据泄露防护** | 有限                   | 完整            |
 
 ---
 
@@ -106,21 +106,21 @@ FQDN 策略使用 `matchPattern` 进行域名匹配，支持通配符：
 ```yaml
 # matchPattern 匹配规则
 dns:
-# 精确匹配
-- matchPattern: "api.example.com"
+  # 精确匹配
+  - matchPattern: "api.example.com"
 
-# 单级通配符 (*.example.com)
-- matchPattern: "*.example.com"
-# 匹配：api.example.com, www.example.com, docs.example.com
-# 不匹配：foo.bar.example.com
+  # 单级通配符 (*.example.com)
+  - matchPattern: "*.example.com"
+  # 匹配：api.example.com, www.example.com, docs.example.com
+  # 不匹配：foo.bar.example.com
 
-# 多级通配符 (**.example.com 或 *.api.example.com)
-- matchPattern: "*.api.example.com"
-# 匹配：v1.api.example.com, v2.api.example.com
-# 不匹配：example.com 本身
+  # 多级通配符 (**.example.com 或 *.api.example.com)
+  - matchPattern: "*.api.example.com"
+  # 匹配：v1.api.example.com, v2.api.example.com
+  # 不匹配：example.com 本身
 
-# 前缀匹配（以特定字符串开头）
-- matchPattern: "github.*"
+  # 前缀匹配（以特定字符串开头）
+  - matchPattern: "github.*"
 # 匹配：github.com, github.io, githubusercontent.com
 ```
 
@@ -137,18 +137,18 @@ spec:
     matchLabels:
       app: webserver
   egress:
-  - toPorts:
-    - port: "53"
-      protocol: UDP
-      rules:
-        dns:
-        # 允许访问 Google API
-        - matchPattern: "*.googleapis.com"
-        # 允许访问 AWS S3
-        - matchPattern: "*.s3.amazonaws.com"
-        # 允许访问 GitHub
-        - matchPattern: "github.com"
-        - matchPattern: "*.github.com"
+    - toPorts:
+        - port: "53"
+          protocol: UDP
+          rules:
+            dns:
+              # 允许访问 Google API
+              - matchPattern: "*.googleapis.com"
+              # 允许访问 AWS S3
+              - matchPattern: "*.s3.amazonaws.com"
+              # 允许访问 GitHub
+              - matchPattern: "github.com"
+              - matchPattern: "*.github.com"
 ```
 
 ### 2.3 Kubernetes 内部域名
@@ -164,20 +164,20 @@ spec:
     matchLabels:
       app: frontend
   egress:
-  # 允许访问 Kubernetes API
-  - toPorts:
-    - port: "53"
-      protocol: UDP
-      rules:
-        dns:
-        # ClusterIP Service
-        - matchPattern: "*.svc.cluster.local"
-        # kube-dns
-        - matchPattern: "kubernetes.default"
-        - matchPattern: "kubernetes.default.svc.cluster.local"
-        # 特定 Service
-        - matchPattern: "api-server.default.svc.cluster.local"
-        - matchPattern: "postgres.database.svc.cluster.local"
+    # 允许访问 Kubernetes API
+    - toPorts:
+        - port: "53"
+          protocol: UDP
+          rules:
+            dns:
+              # ClusterIP Service
+              - matchPattern: "*.svc.cluster.local"
+              # kube-dns
+              - matchPattern: "kubernetes.default"
+              - matchPattern: "kubernetes.default.svc.cluster.local"
+              # 特定 Service
+              - matchPattern: "api-server.default.svc.cluster.local"
+              - matchPattern: "postgres.database.svc.cluster.local"
 ```
 
 ---
@@ -229,12 +229,12 @@ spec:
     matchLabels:
       app: webserver
   egress:
-  - toPorts:
-    - port: "53"
-      protocol: UDP
-      rules:
-        dns:
-        - matchPattern: "*.example.com"
+    - toPorts:
+        - port: "53"
+          protocol: UDP
+          rules:
+            dns:
+              - matchPattern: "*.example.com"
 ```
 
 **工作流程**：
@@ -264,20 +264,20 @@ spec:
     matchLabels:
       app: restricted-app
   egress:
-  # DNS 规则：只允许特定域名解析
-  - toPorts:
-    - port: "53"
-      protocol: UDP
-      rules:
-        dns:
-        - matchPattern: "*.internal.corp"
-        - matchPattern: "api.partner.com"
-        - matchPattern: "storage.googleapis.com"
-  
-  # 除了 DNS，还需要允许实际流量
-  - toCidrs:
-    - "0.0.0.0/0"
-    # 需要配合 IP 规则限制
+    # DNS 规则：只允许特定域名解析
+    - toPorts:
+        - port: "53"
+          protocol: UDP
+          rules:
+            dns:
+              - matchPattern: "*.internal.corp"
+              - matchPattern: "api.partner.com"
+              - matchPattern: "storage.googleapis.com"
+
+    # 除了 DNS，还需要允许实际流量
+    - toCidrs:
+        - "0.0.0.0/0"
+      # 需要配合 IP 规则限制
 ```
 
 ### 4.2 完整出口策略示例
@@ -293,22 +293,22 @@ spec:
     matchLabels:
       app: microservice
   egress:
-  # 规则1: DNS 查询（必须）
-  - toPorts:
-    - port: "53"
-      protocol: UDP
-      rules:
-        dns:
-        # 内部服务
-        - matchPattern: "*.svc.cluster.local"
-        - matchPattern: "kubernetes.default"
-        # 合作伙伴 API
-        - matchPattern: "*.partner-api.io"
-        # 云服务
-        - matchPattern: "*.s3.amazonaws.com"
-        - matchPattern: "*.storage.googleapis.com"
-        - matchPattern: "auth0.com"
-  
+    # 规则1: DNS 查询（必须）
+    - toPorts:
+        - port: "53"
+          protocol: UDP
+          rules:
+            dns:
+              # 内部服务
+              - matchPattern: "*.svc.cluster.local"
+              - matchPattern: "kubernetes.default"
+              # 合作伙伴 API
+              - matchPattern: "*.partner-api.io"
+              # 云服务
+              - matchPattern: "*.s3.amazonaws.com"
+              - matchPattern: "*.storage.googleapis.com"
+              - matchPattern: "auth0.com"
+
   # 规则2: 允许解析的 IP 访问
   # Cilium 会自动将 DNS 规则转换为 IP 规则
   # 无需手动配置
@@ -327,16 +327,16 @@ spec:
     matchLabels:
       app: webserver
   egress:
-  - toPorts:
-    - port: "53"
-      protocol: UDP
-      rules:
-        dns:
-        # 允许所有 *.com 域名
-        - matchPattern: "*.com"
-        # 但排除某些域名
-        - matchPattern: "!example.com"
-        - matchPattern: "!*.example.com"
+    - toPorts:
+        - port: "53"
+          protocol: UDP
+          rules:
+            dns:
+              # 允许所有 *.com 域名
+              - matchPattern: "*.com"
+              # 但排除某些域名
+              - matchPattern: "!example.com"
+              - matchPattern: "!*.example.com"
 ```
 
 ---
@@ -356,46 +356,46 @@ spec:
     matchLabels:
       app: order-service
   egress:
-  # 允许访问用户服务
-  - toPorts:
-    - port: "53"
-      protocol: UDP
-      rules:
-        dns:
-        - matchPattern: "user-service.*"
-        - matchPattern: "user-service.default.svc.cluster.local"
-  
-  # 允许访问产品目录服务
-  - toPorts:
-    - port: "53"
-      protocol: UDP
-      rules:
-        dns:
-        - matchPattern: "catalog-service.*"
-  
-  # 允许访问支付服务
-  - toPorts:
-    - port: "53"
-      protocol: UDP
-      rules:
-        dns:
-        - matchPattern: "payment-service.*"
-  
-  # 允许访问数据库
-  - toPorts:
-    - port: "53"
-      protocol: UDP
-      rules:
-        dns:
-        - matchPattern: "postgres.database.svc.cluster.local"
-  
-  # 允许 DNS
-  - toPorts:
-    - port: "53"
-      protocol: UDP
-    toEndpoints:
-    - matchLabels:
-        k8s-app: kube-dns
+    # 允许访问用户服务
+    - toPorts:
+        - port: "53"
+          protocol: UDP
+          rules:
+            dns:
+              - matchPattern: "user-service.*"
+              - matchPattern: "user-service.default.svc.cluster.local"
+
+    # 允许访问产品目录服务
+    - toPorts:
+        - port: "53"
+          protocol: UDP
+          rules:
+            dns:
+              - matchPattern: "catalog-service.*"
+
+    # 允许访问支付服务
+    - toPorts:
+        - port: "53"
+          protocol: UDP
+          rules:
+            dns:
+              - matchPattern: "payment-service.*"
+
+    # 允许访问数据库
+    - toPorts:
+        - port: "53"
+          protocol: UDP
+          rules:
+            dns:
+              - matchPattern: "postgres.database.svc.cluster.local"
+
+    # 允许 DNS
+    - toPorts:
+        - port: "53"
+          protocol: UDP
+      toEndpoints:
+        - matchLabels:
+            k8s-app: kube-dns
 ```
 
 ### 5.2 防止数据泄露
@@ -411,22 +411,22 @@ spec:
     matchLabels:
       app: secure-app
   egress:
-  # 只允许访问已知的白名单域名
-  - toPorts:
-    - port: "53"
-      protocol: UDP
-      rules:
-        dns:
-        # 内部服务
-        - matchPattern: "*.internal.corp"
-        # 已批准的云服务
-        - matchPattern: "*.office365.com"
-        - matchPattern: "*.microsoftonline.com"
-        
-  # 显式拒绝其他所有出口
-  - toCidrs:
-    - "0.0.0.0/0"
-    # 这将阻止所有其他 IP 流量
+    # 只允许访问已知的白名单域名
+    - toPorts:
+        - port: "53"
+          protocol: UDP
+          rules:
+            dns:
+              # 内部服务
+              - matchPattern: "*.internal.corp"
+              # 已批准的云服务
+              - matchPattern: "*.office365.com"
+              - matchPattern: "*.microsoftonline.com"
+
+    # 显式拒绝其他所有出口
+    - toCidrs:
+        - "0.0.0.0/0"
+      # 这将阻止所有其他 IP 流量
 ```
 
 ### 5.3 开发/生产环境隔离
@@ -443,24 +443,24 @@ spec:
       app: production-app
       environment: production
   egress:
-  # 只允许内部服务
-  - toPorts:
-    - port: "53"
-      protocol: UDP
-      rules:
-        dns:
-        - matchPattern: "*.prod.svc.cluster.local"
-        - matchPattern: "*.svc.cluster.local"
-        - matchPattern: "kubernetes.default"
-  
-  # 外部 API（白名单）
-  - toPorts:
-    - port: "443"
-      protocol: TCP
-      rules:
-        dns:
-        - matchPattern: "api.stripe.com"
-        - matchPattern: "*.pagerduty.com"
+    # 只允许内部服务
+    - toPorts:
+        - port: "53"
+          protocol: UDP
+          rules:
+            dns:
+              - matchPattern: "*.prod.svc.cluster.local"
+              - matchPattern: "*.svc.cluster.local"
+              - matchPattern: "kubernetes.default"
+
+    # 外部 API（白名单）
+    - toPorts:
+        - port: "443"
+          protocol: TCP
+          rules:
+            dns:
+              - matchPattern: "api.stripe.com"
+              - matchPattern: "*.pagerduty.com"
 ```
 
 ---
@@ -526,13 +526,13 @@ spec:
     matchLabels:
       app: webserver
   egress:
-  - toPorts:
-    - port: "443"
-      protocol: TCP
-      rules:
-        dns:
-        - matchPattern: "api.example.com"
-        # Cilium 会自动跟踪 IP 变化
+    - toPorts:
+        - port: "443"
+          protocol: TCP
+          rules:
+            dns:
+              - matchPattern: "api.example.com"
+            # Cilium 会自动跟踪 IP 变化
 ```
 
 ---
@@ -552,14 +552,14 @@ spec:
     matchLabels:
       app: webserver
   egress:
-  - toPorts:
-    - port: "53"
-      protocol: UDP
-      rules:
-        dns:
-        - matchPattern: "*"
-          # 允许所有域名解析
-          # 使用系统配置的 DNS 服务器
+    - toPorts:
+        - port: "53"
+          protocol: UDP
+          rules:
+            dns:
+              - matchPattern: "*"
+                # 允许所有域名解析
+                # 使用系统配置的 DNS 服务器
 ```
 
 ### 7.2 指定上游 DNS
@@ -622,21 +622,21 @@ spec:
     matchLabels:
       app: web-frontend
   egress:
-  # DNS 查询
-  - toPorts:
-    - port: "53"
-      protocol: UDP
-      rules:
-        dns:
-        # 内部 K8s 服务
-        - matchPattern: "*.svc.cluster.local"
-        - matchPattern: "kubernetes.default"
-        # 外部 API（白名单）
-        - matchPattern: "api.stripe.com"
-        - matchPattern: "*.auth0.com"
-        - matchPattern: "cdn.jsdelivr.net"
-        - matchPattern: "fonts.googleapis.com"
-        - matchPattern: "*.googleapis.com"
+    # DNS 查询
+    - toPorts:
+        - port: "53"
+          protocol: UDP
+          rules:
+            dns:
+              # 内部 K8s 服务
+              - matchPattern: "*.svc.cluster.local"
+              - matchPattern: "kubernetes.default"
+              # 外部 API（白名单）
+              - matchPattern: "api.stripe.com"
+              - matchPattern: "*.auth0.com"
+              - matchPattern: "cdn.jsdelivr.net"
+              - matchPattern: "fonts.googleapis.com"
+              - matchPattern: "*.googleapis.com"
 ```
 
 ### 8.2 数据库只读副本访问
@@ -652,22 +652,22 @@ spec:
     matchLabels:
       app: database-client
   egress:
-  # DNS 查询（只允许数据库域名）
-  - toPorts:
-    - port: "53"
-      protocol: UDP
-      rules:
-        dns:
-        - matchPattern: "postgres-primary.database.svc.cluster.local"
-        - matchPattern: "postgres-replica.database.svc.cluster.local"
-  
-  # 数据库端口
-  - toPorts:
-    - port: "5432"
-      protocol: TCP
-    toEndpoints:
-    - matchLabels:
-        app: postgres
+    # DNS 查询（只允许数据库域名）
+    - toPorts:
+        - port: "53"
+          protocol: UDP
+          rules:
+            dns:
+              - matchPattern: "postgres-primary.database.svc.cluster.local"
+              - matchPattern: "postgres-replica.database.svc.cluster.local"
+
+    # 数据库端口
+    - toPorts:
+        - port: "5432"
+          protocol: TCP
+      toEndpoints:
+        - matchLabels:
+            app: postgres
 ```
 
 ### 8.3 CI/CD 部署策略
@@ -683,34 +683,34 @@ spec:
     matchLabels:
       app: cicd-runner
   egress:
-  # DNS
-  - toPorts:
-    - port: "53"
-      protocol: UDP
-      rules:
-        dns:
-        - matchPattern: "registry-*.docker.io"
-        - matchPattern: "ghcr.io"
-        - matchPattern: "*.github.com"
-        - matchPattern: "*.githubusercontent.com"
-        - matchPattern: "kubernetes.default"
-  
-  # Docker Registry
-  - toPorts:
-    - port: "443"
-      protocol: TCP
-      rules:
-        dns:
-        - matchPattern: "*.docker.io"
-        - matchPattern: "ghcr.io"
-  
-  # Git
-  - toPorts:
-    - port: "22"
-      protocol: TCP
-    toCidrs:
-    - "0.0.0.0/0"
-    # 限制特定 IP 范围更好
+    # DNS
+    - toPorts:
+        - port: "53"
+          protocol: UDP
+          rules:
+            dns:
+              - matchPattern: "registry-*.docker.io"
+              - matchPattern: "ghcr.io"
+              - matchPattern: "*.github.com"
+              - matchPattern: "*.githubusercontent.com"
+              - matchPattern: "kubernetes.default"
+
+    # Docker Registry
+    - toPorts:
+        - port: "443"
+          protocol: TCP
+          rules:
+            dns:
+              - matchPattern: "*.docker.io"
+              - matchPattern: "ghcr.io"
+
+    # Git
+    - toPorts:
+        - port: "22"
+          protocol: TCP
+      toCidrs:
+        - "0.0.0.0/0"
+      # 限制特定 IP 范围更好
 ```
 
 ---
@@ -765,7 +765,7 @@ kubectl -n kube-system exec ds/cilium -- \
 # 解决: 确保 DNS 规则存在且包含目标端口
 
 # 问题3: DNS 缓存导致策略不即时生效
-# 解决: 
+# 解决:
 #    kubectl -n kube-system exec ds/cilium -- \
 #        cilium-dbgfqdn cache delete <domain>
 
@@ -779,12 +779,12 @@ kubectl -n kube-system exec ds/cilium -- \
 
 DNS 策略是 Cilium 出口流量控制的核心：
 
-| 功能 | 说明 |
-|:---|:---|
-| **FQDN 匹配** | 支持通配符和精确匹配 |
-| **DNS 劫持** | eBPF 拦截 DNS 查询并执行策略 |
-| **动态 IP 转换** | 自动将域名转换为 IP 规则 |
-| **缓存管理** | 维护域名→IP 映射缓存 |
-| **L7 检测** | 基于域名的细粒度出口控制 |
+| 功能             | 说明                         |
+| :--------------- | :--------------------------- |
+| **FQDN 匹配**    | 支持通配符和精确匹配         |
+| **DNS 劫持**     | eBPF 拦截 DNS 查询并执行策略 |
+| **动态 IP 转换** | 自动将域名转换为 IP 规则     |
+| **缓存管理**     | 维护域名→IP 映射缓存         |
+| **L7 检测**      | 基于域名的细粒度出口控制     |
 
 DNS 策略使得**基于域名而非 IP** 的出口控制成为可能，大大简化了云原生环境中的网络安全策略管理。

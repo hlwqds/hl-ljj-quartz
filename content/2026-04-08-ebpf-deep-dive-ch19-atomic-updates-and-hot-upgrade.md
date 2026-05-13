@@ -9,8 +9,8 @@ tags:
   - bpf-links
 ---
 
-> [!info] eBPF 2026 深度探索系列
-> 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+> [!info] eBPF 2026 深度探索系列 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+>
 > 1. [[2026-04-08-ebpf-deep-dive-ch1-registers-and-instructions|第一章：寄存器与指令集]]
 > 2. [[2026-04-08-ebpf-deep-dive-ch1-5-function-calls|第一.五章：四种函数调用与动态内存]]
 > 3. [[2026-04-08-ebpf-deep-dive-ch1-6-the-verifier|第一.六章：验证器 (Verifier) 的底层逻辑]]
@@ -62,6 +62,7 @@ tags:
 > 49. [[2026-04-09-ebpf-deep-dive-ch40-network-protocols-deep-dive|第四十章：网络协议深度解析——TCP/UDP/QUIC 的 eBPF 视角]]
 > 50. [[2026-04-09-ebpf-deep-dive-ch41-memory-safety-and-vulnerabilities|第四十一章：eBPF 内存安全与漏洞分析]]
 > 51. [[2026-04-09-ebpf-deep-dive-ch42-service-mesh-integration|第四十二章：eBPF 与 Service Mesh 深度集成]]
+
 ---
 
 ## 1. 概述：追求零宕机的更新
@@ -74,13 +75,13 @@ tags:
 
 在电信级和金融级场景下，eBPF 程序承担着数据面关键路径的职责：
 
-| 场景 | 程序类型 | 中断后果 | 恢复难度 |
-|------|---------|---------|---------|
-| 5G UPF 流量转发 | XDP/TC | 数据面中断，影响百万级用户 | 秒级 |
-| DDoS 防御 | XDP + TC | 攻击流量直接穿透到后端 | 分钟级 |
-| 微服务 mTLS | SOCKMAP/CGROUP_SKB | 服务间通信中断 | 秒级 |
-| 容器网络策略 | CGROUP_SKB | 跨命名空间流量异常 | 分钟级 |
-| 全链路追踪 | kprobe/uprobe | 追踪数据断档，影响 SLI | 分钟级 |
+| 场景            | 程序类型           | 中断后果                   | 恢复难度 |
+| --------------- | ------------------ | -------------------------- | -------- |
+| 5G UPF 流量转发 | XDP/TC             | 数据面中断，影响百万级用户 | 秒级     |
+| DDoS 防御       | XDP + TC           | 攻击流量直接穿透到后端     | 分钟级   |
+| 微服务 mTLS     | SOCKMAP/CGROUP_SKB | 服务间通信中断             | 秒级     |
+| 容器网络策略    | CGROUP_SKB         | 跨命名空间流量异常         | 分钟级   |
+| 全链路追踪      | kprobe/uprobe      | 追踪数据断档，影响 SLI     | 分钟级   |
 
 ### 1.2 三种更新模式对比
 
@@ -222,15 +223,15 @@ cleanup:
 
 ### 2.4 不同程序类型的 Link 更新支持
 
-| 程序类型 | 原子更新支持 | 内核版本 | 备注 |
-|---------|------------|---------|------|
-| XDP | 完整支持 | 5.7+ | 最常用场景 |
-| TC (cls_bpf) | 完整支持 | 5.7+ | 替代传统 `tc filter replace` |
-| kprobe/kretprobe | 完整支持 | 5.7+ | 追踪场景 |
-| cgroup/skb | 完整支持 | 5.7+ | 容器网络策略 |
-| LSM | 完整支持 | 6.2+ | 安全钩子 |
-| fentry/fexit | 完整支持 | 5.5+ | BPF-to-BPF 调用 |
-| flow_dissector | 完整支持 | 5.7+ | 流量分发 |
+| 程序类型         | 原子更新支持 | 内核版本 | 备注                         |
+| ---------------- | ------------ | -------- | ---------------------------- |
+| XDP              | 完整支持     | 5.7+     | 最常用场景                   |
+| TC (cls_bpf)     | 完整支持     | 5.7+     | 替代传统 `tc filter replace` |
+| kprobe/kretprobe | 完整支持     | 5.7+     | 追踪场景                     |
+| cgroup/skb       | 完整支持     | 5.7+     | 容器网络策略                 |
+| LSM              | 完整支持     | 6.2+     | 安全钩子                     |
+| fentry/fexit     | 完整支持     | 5.5+     | BPF-to-BPF 调用              |
+| flow_dissector   | 完整支持     | 5.7+     | 流量分发                     |
 
 > [!warning] 重要提示
 > 只有通过 `bpf_program__attach_xxx()` 创建的 Link 才支持 `bpf_link_update`。使用传统 `bpf_prog_attach()` 或 Netlink/TC 命令行方式挂载的程序，必须先迁移到 Link 模式。
@@ -290,13 +291,13 @@ sendmsg(sock_fd, &msg, 0);
 
 ### 3.3 Map 兼容性矩阵
 
-| Map 类型 | 直接复用 | 风险点 |
-|---------|---------|-------|
-| `HASH` / `LRU_HASH` | 直接复用 | 仅在 key/value 大小变化时需要迁移 |
-| `ARRAY` / `PERCPU_ARRAY` | 直接复用 | 数组大小不可变 |
-| `RINGBUF` | 需要新建 | 旧 ringbuf 未读数据丢失 |
-| `PERF_EVENT_ARRAY` | 需要新建 | 事件 buffer 不可跨程序共享 |
-| `BLOOM_FILTER` | 需要重建 | 新旧状态不兼容 |
+| Map 类型                 | 直接复用 | 风险点                            |
+| ------------------------ | -------- | --------------------------------- |
+| `HASH` / `LRU_HASH`      | 直接复用 | 仅在 key/value 大小变化时需要迁移 |
+| `ARRAY` / `PERCPU_ARRAY` | 直接复用 | 数组大小不可变                    |
+| `RINGBUF`                | 需要新建 | 旧 ringbuf 未读数据丢失           |
+| `PERF_EVENT_ARRAY`       | 需要新建 | 事件 buffer 不可跨程序共享        |
+| `BLOOM_FILTER`           | 需要重建 | 新旧状态不兼容                    |
 
 > [!tip] Schema 迁移策略
 > 当 Map value 结构体新增字段时，推荐 **双写 + 后台迁移**：新程序同时写入新旧两个 Map，后台任务异步迁移旧数据，完成后切换并回收旧 Map。
@@ -466,13 +467,13 @@ int attach_freplace(struct bpf_object *target_obj, const char *repl_path) {
 
 ### 5.3 Freplace vs 完整程序替换
 
-| 维度 | bpf_link_update | Freplace |
-|------|----------------|----------|
-| 粒度 | 整个 BPF 程序 | 单个 `__noinline` 函数 |
-| 数据共享 | 需显式 Map 继承 | 自动共享目标 Maps |
-| 内核要求 | 5.7+ | 5.10+ |
+| 维度     | bpf_link_update      | Freplace                 |
+| -------- | -------------------- | ------------------------ |
+| 粒度     | 整个 BPF 程序        | 单个 `__noinline` 函数   |
+| 数据共享 | 需显式 Map 继承      | 自动共享目标 Maps        |
+| 内核要求 | 5.7+                 | 5.10+                    |
 | 性能开销 | 一次 trampoline 跳转 | 每个替换函数额外一次跳转 |
-| 适用场景 | 大版本升级、架构变更 | Bug 修复、策略微调 |
+| 适用场景 | 大版本升级、架构变更 | Bug 修复、策略微调       |
 
 ---
 
@@ -552,12 +553,12 @@ static const struct {
 
 ### 7.3 常见陷阱
 
-| 陷阱 | 现象 | 解决方案 |
-|------|------|---------|
-| Map FD 泄漏 | 升级后 FD 数量增加 | `bpf_object__close()` 确保释放 |
-| 循环依赖更新 | A 依赖 B 的 Map，B 也依赖 A | 拓扑排序确定更新顺序 |
-| Ringbuf 数据丢失 | 升级后丢失最近 N 秒数据 | 升级前 drain 旧 ringbuf |
-| 竞态条件覆盖 | 两进程同时更新同一 Link | 始终使用 CAS 模式 |
+| 陷阱             | 现象                        | 解决方案                       |
+| ---------------- | --------------------------- | ------------------------------ |
+| Map FD 泄漏      | 升级后 FD 数量增加          | `bpf_object__close()` 确保释放 |
+| 循环依赖更新     | A 依赖 B 的 Map，B 也依赖 A | 拓扑排序确定更新顺序           |
+| Ringbuf 数据丢失 | 升级后丢失最近 N 秒数据     | 升级前 drain 旧 ringbuf        |
+| 竞态条件覆盖     | 两进程同时更新同一 Link     | 始终使用 CAS 模式              |
 
 ---
 

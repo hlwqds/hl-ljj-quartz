@@ -12,8 +12,8 @@ tags:
   - cnc
 ---
 
-> [!info] Cilium 2026 深度探索系列
-> 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+> [!info] Cilium 2026 深度探索系列 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+>
 > 1. [[2026-04-14-cilium-deep-dive-ch1-cilium-overview|第一章：Cilium 概述]]
 > 2. [[2026-04-14-cilium-deep-dive-ch2-architecture|第二章：Cilium 架构]]
 > 3. [[2026-04-14-cilium-deep-dive-ch3-ebpf-datapath|第三章：eBPF 数据面]]
@@ -82,14 +82,14 @@ Cilium Agent
 
 ### 1.2 Hubble 的核心能力
 
-| 能力 | 描述 | 数据来源 |
-|:---|:---|:---|
-| **Flow 可视化** | 实时查看所有网络流量（入口/出口/转发） | eBPF perf ring |
-| **服务依赖图** | 自动发现服务间调用拓扑关系 | Flow 聚合 |
-| **策略可视化** | 展示策略匹配结果（允许/拒绝/审计） | eBPF verdict hook |
-| **L7 观测** | HTTP/gRPC/DNS 等 L7 协议请求追踪 | Envoy/L7 proxy |
-| **网络指标** | 延迟、吞吐、连接数等 Prometheus 指标 | Metrics API |
-| **分布式追踪** | 与 OpenTelemetry 集成的 Trace | OTel exporter |
+| 能力            | 描述                                   | 数据来源          |
+| :-------------- | :------------------------------------- | :---------------- |
+| **Flow 可视化** | 实时查看所有网络流量（入口/出口/转发） | eBPF perf ring    |
+| **服务依赖图**  | 自动发现服务间调用拓扑关系             | Flow 聚合         |
+| **策略可视化**  | 展示策略匹配结果（允许/拒绝/审计）     | eBPF verdict hook |
+| **L7 观测**     | HTTP/gRPC/DNS 等 L7 协议请求追踪       | Envoy/L7 proxy    |
+| **网络指标**    | 延迟、吞吐、连接数等 Prometheus 指标   | Metrics API       |
+| **分布式追踪**  | 与 OpenTelemetry 集成的 Trace          | OTel exporter     |
 
 ---
 
@@ -187,18 +187,18 @@ Hubble 的 Flow 数据来源于 Cilium eBPF 数据面的多个 Hook 点：
 
 每个 Flow 事件包含：
 
-| 字段 | 描述 |
-|:---|:---|
-| `source` | 源 IP、端口、Pod、Namespace、身份 |
-| `destination` | 目标 IP、端口、Pod、Namespace、身份 |
-| `layer` | 事件层级（L2/L3/L4/L7） |
-| `verdict` | 流量判定（forwarded、dropped、audited） |
-| `timestamp` | 事件时间戳 |
-| `DNS` | DNS 查询域名（如果适用） |
-| `http` | HTTP 方法/路径/状态码（如果适用） |
-| `traffic_direction` | 入口或出口 |
-| `namespace` | 源/目标命名空间 |
-| `pod_name` | 源/目标 Pod 名称 |
+| 字段                | 描述                                    |
+| :------------------ | :-------------------------------------- |
+| `source`            | 源 IP、端口、Pod、Namespace、身份       |
+| `destination`       | 目标 IP、端口、Pod、Namespace、身份     |
+| `layer`             | 事件层级（L2/L3/L4/L7）                 |
+| `verdict`           | 流量判定（forwarded、dropped、audited） |
+| `timestamp`         | 事件时间戳                              |
+| `DNS`               | DNS 查询域名（如果适用）                |
+| `http`              | HTTP 方法/路径/状态码（如果适用）       |
+| `traffic_direction` | 入口或出口                              |
+| `namespace`         | 源/目标命名空间                         |
+| `pod_name`          | 源/目标 Pod 名称                        |
 
 ### 2.4 Hubble Relay（可选组件）
 
@@ -218,10 +218,11 @@ spec:
         - name: relay
           image: quay.io/cilium/hubble-relay:latest
           ports:
-            - containerPort: 4245  # gRPC API
+            - containerPort: 4245 # gRPC API
 ```
 
 Hubble Relay 的作用：
+
 - 聚合集群中所有节点的 Hubble Server Flow 数据
 - 提供统一的 gRPC API 端点（`:4245`）
 - 支持跨 ClusterMesh 的多集群 Flow 聚合
@@ -274,13 +275,13 @@ hubble config view
 
 每个 Flow 都有一个 verdict（判定结果）：
 
-| Verdict | 描述 | 产生阶段 |
-|:---|:---|:---|
-| `FORWARDED` | 流量被允许并转发 | Policy verdict |
-| `DROPPED` | 流量被策略拒绝丢弃 | Policy verdict |
-| `AUDITED` | 流量匹配审计规则（记录但不丢弃） | Policy verdict |
-| `ERROR` | 处理过程中发生错误 | Various |
-| `TRANSLATED` | NAT/端口转换完成 | NAT handling |
+| Verdict      | 描述                             | 产生阶段       |
+| :----------- | :------------------------------- | :------------- |
+| `FORWARDED`  | 流量被允许并转发                 | Policy verdict |
+| `DROPPED`    | 流量被策略拒绝丢弃               | Policy verdict |
+| `AUDITED`    | 流量匹配审计规则（记录但不丢弃） | Policy verdict |
+| `ERROR`      | 处理过程中发生错误               | Various        |
+| `TRANSLATED` | NAT/端口转换完成                 | NAT handling   |
 
 ### 3.3 Flow 与 Kubernetes 元数据富化
 
@@ -296,21 +297,25 @@ hubble config view
       "namespace": "production",
       "pod_name": "api-gateway-7d8f9c6b5-xk9pq",
       "labels": ["app=api-gateway", "version=v2"],
-      "workloads": [{
-        "kind": "Deployment",
-        "name": "api-gateway",
-        "namespace": "production"
-      }]
+      "workloads": [
+        {
+          "kind": "Deployment",
+          "name": "api-gateway",
+          "namespace": "production"
+        }
+      ]
     },
     "destination": {
       "namespace": "production",
       "pod_name": "backend-service-6b7c8d9e4-m2n8p",
       "labels": ["app=backend-service"],
-      "workloads": [{
-        "kind": "Deployment",
-        "name": "backend-service",
-        "namespace": "production"
-      }]
+      "workloads": [
+        {
+          "kind": "Deployment",
+          "name": "backend-service",
+          "namespace": "production"
+        }
+      ]
     },
     "layer": {
       "spec": {
@@ -455,7 +460,7 @@ hubble observe --service backend-service:8080
 ```bash
 # 生成服务依赖矩阵
 hubble observe --format json | jq -r '
-  .source.namespace + "/" + .source.pod_name + " -> " + 
+  .source.namespace + "/" + .source.pod_name + " -> " +
   .destination.namespace + "/" + .destination.pod_name
 ' | sort | uniq -c | sort -rn
 
@@ -489,14 +494,14 @@ hubble observe --protocol http --format json | jq -r '
 
 ## 6. Hubble 与其他观测工具对比
 
-| 维度 | Hubble | Cilium + Prometheus | DeepFlow | Suricata |
-|:---|:---|:---|:---|:---|
-| **数据来源** | eBPF Flow | eBPF Metrics | eBPF + AF_XDP | AF_XDP/pcap |
-| **部署复杂度** | 低（内置） | 低 | 中 | 中 |
-| **L7 可见性** | HTTP/gRPC/DNS | 有限 | 完整 | 深度包检测 |
-| **存储** | 实时/短时 | Prometheus | ClickHouse | Eve JSON |
-| **延迟开销** | 极低 | 极低 | 低 | 中 |
-| **分布式追踪** | OpenTelemetry | 否 | 是 | 否 |
+| 维度           | Hubble        | Cilium + Prometheus | DeepFlow      | Suricata    |
+| :------------- | :------------ | :------------------ | :------------ | :---------- |
+| **数据来源**   | eBPF Flow     | eBPF Metrics        | eBPF + AF_XDP | AF_XDP/pcap |
+| **部署复杂度** | 低（内置）    | 低                  | 中            | 中          |
+| **L7 可见性**  | HTTP/gRPC/DNS | 有限                | 完整          | 深度包检测  |
+| **存储**       | 实时/短时     | Prometheus          | ClickHouse    | Eve JSON    |
+| **延迟开销**   | 极低          | 极低                | 低            | 中          |
+| **分布式追踪** | OpenTelemetry | 否                  | 是            | 否          |
 
 ---
 

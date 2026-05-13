@@ -41,14 +41,14 @@ description: "深入解析 VPP RSS 与多队列：Receive Side Scaling、对称�
 
 ### 1.2 RSS vs 多队列区别
 
-| 特性 | RSS | 多队列（静态） |
-|------|-----|----------------|
-| **分发策略** | 基于 5-tuple 哈希 | 固定绑定 |
-| **负载均衡** | 自动 | 手动配置 |
-| **对称性** | 可能不对称 | N/A |
-| **CPU 利用率** | 高 | 中 |
-| **配置复杂度** | 中 | 低 |
-| **适用场景** | 通用 | 确定性延迟 |
+| 特性           | RSS               | 多队列（静态） |
+| -------------- | ----------------- | -------------- |
+| **分发策略**   | 基于 5-tuple 哈希 | 固定绑定       |
+| **负载均衡**   | 自动              | 手动配置       |
+| **对称性**     | 可能不对称        | N/A            |
+| **CPU 利用率** | 高                | 中             |
+| **配置复杂度** | 中                | 低             |
+| **适用场景**   | 通用              | 确定性延迟     |
 
 ### 1.3 VPP RSS 支持
 
@@ -84,7 +84,7 @@ ethtool -x eth0
 # RX flow hash indirection table:
 # HW function idx: 0x0
 # ...
-# 
+#
 # RSS hash configuration:
 #   IP src:  Y
 #   IP dst:  Y
@@ -119,21 +119,21 @@ static_always_inline u32
 symmetric_hash (u32 src_ip, u32 dst_ip, u16 src_port, u16 dst_port)
 {
     u32 hash;
-    
+
     // 确保 src_ip <= dst_ip（按数值排序）
     if (src_ip > dst_ip) {
         swap(src_ip, dst_ip);
         swap(src_port, dst_port);
     }
-    
+
     // TOEPLITZ 哈希（Intel 常用）
     // 或者使用其他对称哈希算法
-    
+
     hash = (src_ip & 0x0000FFFF) ^
            (dst_ip >> 16) ^
            src_port ^
            (dst_port << 1);
-    
+
     return hash;
 }
 
@@ -150,14 +150,14 @@ get_packet_queue (vlib_buffer_t *b)
 {
     ip4_header_t *ip = vlib_buffer_get_current(b);
     tcp_header_t *tcp = (tcp_header_t *)(ip + 1);
-    
+
     u32 hash = symmetric_hash(
         ip->src_address.as_u32,
         ip->dst_address.as_u32,
         tcp->src_port,
         tcp->dst_port
     );
-    
+
     return hash % num_workers;
 }
 ```
@@ -183,7 +183,7 @@ toeplitz_hash (const void *data, int len)
 {
     const u8 *bytes = data;
     u32 hash = 0;
-    
+
     for (int i = 0; i < len; i++) {
         // 将数据位与 key 位异或
         for (int bit = 0; bit < 8; bit++) {
@@ -192,7 +192,7 @@ toeplitz_hash (const void *data, int len)
             }
         }
     }
-    
+
     return hash;
 }
 
@@ -207,13 +207,13 @@ rss_5tuple_hash (ip4_header_t *ip, l4_header_t *l4)
         u16 dst_port;
         u8  proto;
     } __attribute__((packed)) tuple;
-    
+
     tuple.src_ip = ip->src_address.as_u32;
     tuple.dst_ip = ip->dst_address.as_u32;
     tuple.src_port = l4->src_port;
     tuple.dst_port = l4->dst_port;
     tuple.proto = ip->protocol;
-    
+
     return toeplitz_hash(&tuple, sizeof(tuple));
 }
 ```
@@ -238,7 +238,7 @@ dpdk {
         num-rx-queues 8
         num-tx-queues 8
     }
-    
+
     dev TenGigabitEthernet0/0/1 {
         num-rx-queues 4
         num-tx-queues 4
@@ -284,7 +284,7 @@ vppctl show rss
 #   Hash fields: IP 4-tuple
 #   Number of queues: 4
 #   Indirection table: 64 entries
-#   
+#
 #   Queue mapping:
 #     Queue 0: worker 0 (CPU 1)
 #     Queue 1: worker 1 (CPU 2)
@@ -316,19 +316,19 @@ vppctl show interface TenGigabitEthernet0/0/0 queue-stats
 
 # 示例输出：
 # Interface: TenGigabitEthernet0/0/0
-# 
+#
 # RX Queue 0:
 #   Packets: 12345678
 #   Bytes: 987654321
 #   Drops: 0
 #   Errors: 0
-# 
+#
 # RX Queue 1:
 #   Packets: 23456789
 #   Bytes: 876543210
 #   Drops: 10
 #   Errors: 0
-# 
+#
 # ...
 
 # 负载均衡分析
@@ -487,25 +487,25 @@ static clib_error_t *
 rss_init (vnet_main_t *vnm, vlib_main_t *vm)
 {
     rss_config_t *rss = &rss_main;
-    
+
     // 从 NIC 读取 RSS 能力
     rss->num_queues = vnet_hw_interface_get_rx_queue_count();
-    
+
     // 读取当前 RSS key
     if (dpdk_get_rss_key(sw_if_index, rss->key, sizeof(rss->key)) != 0) {
         // 使用默认 key
         memcpy(rss->key, default_toeplitz_key, sizeof(default_toeplitz_key));
     }
-    
+
     // 初始化 indirection table
     for (int i = 0; i < 64; i++) {
         rss->indirection_table[i] = i % rss->num_queues;
     }
-    
+
     // 启用 RSS
     rss->enabled = 1;
     rss->hash_fields = RSS_HASH_FIELDS_5_TUPLE;
-    
+
     return 0;
 }
 ```
@@ -522,19 +522,19 @@ rss_dispatch (vlib_main_t *vm, vlib_buffer_t **b, u32 n_buffers)
     u32 queue_indices[8];
     u32 n_per_queue[8] = {0};
     u32 *to_next[8];
-    
+
     // 收集每个包应该去的队列
     for (u32 i = 0; i < n_buffers; i++) {
         buf = b[i];
         ip4_header_t *ip = vlib_buffer_get_current(buf);
-        
+
         u32 hash = rss_calculate_hash(ip, buf);
         u32 queue = hash % rss_main.num_queues;
-        
+
         queue_indices[i] = queue;
         n_per_queue[queue]++;
     }
-    
+
     // 分配每个队列的输出缓冲
     for (u32 q = 0; q < rss_main.num_queues; q++) {
         if (n_per_queue[q] > 0) {
@@ -542,7 +542,7 @@ rss_dispatch (vlib_main_t *vm, vlib_buffer_t **b, u32 n_buffers)
             to_next[q] = vlib_buffer_alloc(vm, n_per_queue[q]);
         }
     }
-    
+
     // 按队列分发包
     for (u32 i = 0; i < n_buffers; i++) {
         u32 q = queue_indices[i];
@@ -552,7 +552,7 @@ rss_dispatch (vlib_main_t *vm, vlib_buffer_t **b, u32 n_buffers)
         };
         vlib_buffer_copy(vm, &args);
     }
-    
+
     // 分发到各 worker
     for (u32 q = 0; q < rss_main.num_queues; q++) {
         if (n_per_queue[q] > 0) {
@@ -560,7 +560,7 @@ rss_dispatch (vlib_main_t *vm, vlib_buffer_t **b, u32 n_buffers)
             dispatch_to_node(vm, worker_node[q], to_next[q], n_per_queue[q]);
         }
     }
-    
+
     return n_buffers;
 }
 ```
@@ -575,24 +575,24 @@ VLIB_NODE_FUNCTION_MULTIARCH(dpdk_input_node)
     vlib_buffer_t *bufs[VLIB_FRAME_SIZE], **b = bufs;
     u32 n_rx, n_left;
     u32 nexts[VLIB_FRAME_SIZE];
-    
+
     // 从 NIC 接收包
     n_rx = dpdk_rx_queue_pop(vm, rx_queue_id, b, VLIB_FRAME_SIZE);
-    
+
     if (n_rx == 0)
         return 0;
-    
+
     // 应用 RSS
     if (rss_enabled) {
         u32 *hash_values = vec_allocate(n_rx);
-        
+
         for (u32 i = 0; i < n_rx; i++) {
             hash_values[i] = rss_calculate_hash_for_buffer(b[i]);
         }
-        
+
         // 按队列分类
         rss_classify_and_dispatch(vm, b, nexts, hash_values, n_rx);
-        
+
         vec_free(hash_values);
     } else {
         // 非 RSS 模式：所有包发送到同一队列
@@ -600,10 +600,10 @@ VLIB_NODE_FUNCTION_MULTIARCH(dpdk_input_node)
             nexts[i] = 0; // 默认 next
         }
     }
-    
+
     // 分发到下一节点
     vlib_dispatch(vm, b, nexts, n_rx);
-    
+
     return n_rx;
 }
 ```
@@ -642,7 +642,7 @@ vppctl show flow
 # Flow-based LB:
 #   Active flows: 50000
 #   Flow table size: 131072
-#   
+#
 #   Flow distribution:
 #     Queue 0: 12500 flows
 #     Queue 1: 12500 flows
@@ -657,7 +657,7 @@ vppctl show flow
 dpdk {
     # Flow table 大小
     flow-table-size 131072
-    
+
     # Flow timeout (秒)
     flow-timeout 300
 }
@@ -693,7 +693,7 @@ always_inline flow_entry_t *
 flow_lookup (flow_table_t *ft, vlib_buffer_t *b)
 {
     ip4_header_t *ip = vlib_buffer_get_current(b);
-    
+
     // 计算 flow hash (5-tuple)
     u32 hash = symmetric_hash(
         ip->src_address.as_u32,
@@ -702,15 +702,15 @@ flow_lookup (flow_table_t *ft, vlib_buffer_t *b)
         get_l4_dst_port(b),
         ip->protocol
     );
-    
+
     // 查找 flow table
     u32 index = hash & ft->hash_mask;
-    
+
     // 检查是否命中
     if (ft->entries[index].flow_id == hash) {
         return &ft->entries[index];
     }
-    
+
     // Flow 不存在，创建新 flow
     return flow_create(ft, hash, b);
 }
@@ -720,10 +720,10 @@ always_inline flow_entry_t *
 flow_create (flow_table_t *ft, u32 hash, vlib_buffer_t *b)
 {
     u32 index = hash & ft->hash_mask;
-    
+
     // 选择最少使用的队列
     u32 queue = select_least_loaded_queue();
-    
+
     // 创建 flow entry
     flow_entry_t *entry = &ft->entries[index];
     entry->flow_id = hash;
@@ -731,9 +731,9 @@ flow_create (flow_table_t *ft, u32 hash, vlib_buffer_t *b)
     entry->last_seen = clib_time_now();
     entry->packet_count = 1;
     entry->state = FLOW_ACTIVE;
-    
+
     ft->active_flows++;
-    
+
     return entry;
 }
 ```
@@ -786,17 +786,17 @@ always_inline u32
 fair_poll_scheduler (void)
 {
     static u32 current_queue = 0;
-    
+
     // 找到下一个有数据的队列
     for (u32 attempt = 0; attempt < num_queues; attempt++) {
         u32 q = (current_queue + attempt) % num_queues;
-        
+
         if (queue_stats[q].packets > 0) {
             current_queue = (q + 1) % num_queues;
             return q;
         }
     }
-    
+
     // 没有队列有数据，等待
     return 0xFFFFFFFF;
 }
@@ -807,7 +807,7 @@ weighted_fair_scheduler (u32 weights[])
 {
     static u32 current_queue = 0;
     static u32 *credits = NULL;
-    
+
     // 初始化
     if (credits == NULL) {
         credits = vec_allocate(num_queues);
@@ -815,23 +815,23 @@ weighted_fair_scheduler (u32 weights[])
             credits[i] = weights[i];
         }
     }
-    
+
     // 找到有 credits 的队列
     for (u32 attempt = 0; attempt < num_queues; attempt++) {
         u32 q = (current_queue + attempt) % num_queues;
-        
+
         if (credits[q] > 0) {
             credits[q]--;
             current_queue = (q + 1) % num_queues;
             return q;
         }
     }
-    
+
     // 重置 credits
     for (u32 i = 0; i < num_queues; i++) {
         credits[i] = weights[i];
     }
-    
+
     return 0;
 }
 ```
@@ -855,10 +855,10 @@ echo "Balancing $NUM_QUEUES queues across $NUM_CPUS CPUs"
 for ((q=0; q<NUM_QUEUES; q++)); do
     # 计算目标 CPU
     CPU=$((q % NUM_CPUS))
-    
+
     # 获取 IRQ 号
     IRQ=$(grep -m 1 "$INTERFACE.*queue-$q" /proc/interrupts | awk '{print $1}' | tr -d ':')
-    
+
     if [ -n "$IRQ" ]; then
         # 设置 CPU 亲和性
         MASK=$((1 << CPU))
@@ -900,13 +900,13 @@ done
 
 ### 8.1 常见问题
 
-| 问题 | 症状 | 解决 |
-|------|------|------|
-| **RSS 不均衡** | 某个队列包数明显多 | 更换 RSS key，重配 indirection table |
-| **连接分裂** | TCP 重传多 | 确认使用对称 RSS |
-| **丢包** | 队列 drop 计数器高 | 增加队列深度 |
-| **CPU 利用率不均** | 部分 CPU 100% | 重新分配队列亲和性 |
-| **哈希冲突** | 大量流走同一队列 | 使用 flow-based LB |
+| 问题               | 症状               | 解决                                 |
+| ------------------ | ------------------ | ------------------------------------ |
+| **RSS 不均衡**     | 某个队列包数明显多 | 更换 RSS key，重配 indirection table |
+| **连接分裂**       | TCP 重传多         | 确认使用对称 RSS                     |
+| **丢包**           | 队列 drop 计数器高 | 增加队列深度                         |
+| **CPU 利用率不均** | 部分 CPU 100%      | 重新分配队列亲和性                   |
+| **哈希冲突**       | 大量流走同一队列   | 使用 flow-based LB                   |
 
 ### 8.2 诊断命令
 
@@ -1007,12 +1007,14 @@ echo "=== Done ==="
 ---
 
 > [!tip] 最佳实践
+>
 > 1. 队列数建议设置为 CPU 核心数（或略少）
 > 2. 确保 RSS 是对称的，否则 TCP 连接会分裂
 > 3. 定期检查队列均衡性，单队列包数不应超过平均值 20%
 > 4. NUMA 场景下，确保队列绑定到 NIC 所在 socket 的 CPU
 
 > [!warning] 注意事项
+>
 > - RSS 不均衡时先检查流量是否足够多（流数 >> 队列数）
 > - 更换 RSS key 会短暂影响流量分布
 > - 队列绑定需要系统级配置，VPP 自身不管理 IRQ 亲和性

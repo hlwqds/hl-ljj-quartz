@@ -5,8 +5,8 @@ tags: [rdma, series, memory-region, protection-domain, lkey, rkey, memory-window
 description: "深入理解 RDMA 内存注册机制、虚拟地址与物理地址映射、lkey/rkey 权限控制、Memory Window 与远程访问控制"
 ---
 
-> [!info] RDMA 深度探索系列
-> 0. [[2026-04-13-rdma-deep-dive-series-index|全栈学习路径总览]]
+> [!info] RDMA 深度探索系列 0. [[2026-04-13-rdma-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-rdma-deep-dive-ch1-rdma-overview|第一章：RDMA 概述]]
 > 2. [[2026-04-13-rdma-deep-dive-ch2-rdma-architecture|第二章：RDMA 架构]]
 > 3. [[2026-04-13-rdma-deep-dive-ch3-infiniband|第三章：InfiniBand 架构]]
@@ -43,12 +43,12 @@ RDMA 操作需要将本地虚拟地址转换为物理地址，供 HCA 执行 DMA
 
 ### 1.1 内存注册解决的问题
 
-| 问题 | 解决方案 |
-|------|---------|
-| 虚拟地址 → 物理地址 | 页表遍历，HCA 直接使用物理地址 |
-| 内存被换页 (page out) | 锁页，确保物理页常驻内存 |
-| 内存被其他进程访问 | PD 隔离，不同 PD 之间无法交叉访问 |
-| 远程访问权限控制 | lkey/rkey 验证，本地/远程权限分离 |
+| 问题                  | 解决方案                          |
+| --------------------- | --------------------------------- |
+| 虚拟地址 → 物理地址   | 页表遍历，HCA 直接使用物理地址    |
+| 内存被换页 (page out) | 锁页，确保物理页常驻内存          |
+| 内存被其他进程访问    | PD 隔离，不同 PD 之间无法交叉访问 |
+| 远程访问权限控制      | lkey/rkey 验证，本地/远程权限分离 |
 
 ---
 
@@ -87,12 +87,12 @@ struct ibv_mr *mr = ibv_reg_mr_iova2(pd, buf, size,
 
 ### 2.3 访问权限
 
-| 权限标志 | 说明 | 使用场景 |
-|---------|------|---------|
-| `IBV_ACCESS_LOCAL_WRITE` | 本地可写 | Send/Recv 需要本地写入 |
-| `IBV_ACCESS_REMOTE_WRITE` | 远程可写 (rkey) | RDMA Write |
-| `IBV_ACCESS_REMOTE_READ` | 远程可读 (rkey) | RDMA Read |
-| `IBV_ACCESS_MR_BIND` | 可绑定 Memory Window | MW 动态权限控制 |
+| 权限标志                  | 说明                 | 使用场景               |
+| ------------------------- | -------------------- | ---------------------- |
+| `IBV_ACCESS_LOCAL_WRITE`  | 本地可写             | Send/Recv 需要本地写入 |
+| `IBV_ACCESS_REMOTE_WRITE` | 远程可写 (rkey)      | RDMA Write             |
+| `IBV_ACCESS_REMOTE_READ`  | 远程可读 (rkey)      | RDMA Read              |
+| `IBV_ACCESS_MR_BIND`      | 可绑定 Memory Window | MW 动态权限控制        |
 
 ### 2.4 lkey 与 rkey
 
@@ -176,12 +176,12 @@ ibv_bind_mw(qp, mw, &bind_attr);
 
 ### 3.3 MR vs MW
 
-| 特性 | Memory Region | Memory Window |
-|------|--------------|---------------|
-| 粒度 | 整个 region | 可部分绑定 |
-| rkey 生命周期 | 创建后固定 | 可动态分配 |
-| 权限 | 创建时确定 | 绑定时可调整 |
-| 用途 | 固定、长期的内存区域 | 动态、短期的访问授权 |
+| 特性          | Memory Region        | Memory Window        |
+| ------------- | -------------------- | -------------------- |
+| 粒度          | 整个 region          | 可部分绑定           |
+| rkey 生命周期 | 创建后固定           | 可动态分配           |
+| 权限          | 创建时确定           | 绑定时可调整         |
+| 用途          | 固定、长期的内存区域 | 动态、短期的访问授权 |
 
 ---
 

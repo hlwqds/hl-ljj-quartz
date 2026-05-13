@@ -5,8 +5,8 @@ tags: [p4, series, tofino, intel, architecture, pipeline, mau, tcam, sram, tna, 
 description: "Intel Tofino 1 芯片深度解析——Tofino 交换芯片架构、MAU (Match-Action Unit) 流水线、RAM/TCAM 资源分布、Gate List、Packet Clock、Tofino Studio IDE"
 ---
 
-> [!info] P4 深度探索系列
-> 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+> [!info] P4 深度探索系列 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-14-p4-deep-dive-ch1-p4-overview|第一章：P4 概述——诞生背景与协议无关包处理]]
 > 2. [[2026-04-14-p4-deep-dive-ch2-p4-architecture|第二章：P4 架构模型——PSA/V1Model、Ingress/Egress]]
 > 3. [[2026-04-14-p4-deep-dive-ch3-p4-vs-ebpf|第三章：P4 vs eBPF——适用场景与硬件/软件对比]]
@@ -50,13 +50,13 @@ Tofino Cl (2023)    --> 25.6Tbps / Cloud Indigenous 版本
 
 ### 1.1 Tofino 的核心优势
 
-| 优势 | 描述 |
-|------|------|
-| **线速可编程** | 6.5Tbps 下所有端口线速处理 |
-| **确定延迟** | <1μs 端到端延迟 |
-| **超大资源** | 数百万表项、TCAM、SRAM |
-| **协议无关** | 任意协议支持 (Ethernet, IP, VXLAN, SRv6...) |
-| **IntelliTap** | 硬件级数据平面可观测性 |
+| 优势           | 描述                                        |
+| -------------- | ------------------------------------------- |
+| **线速可编程** | 6.5Tbps 下所有端口线速处理                  |
+| **确定延迟**   | <1μs 端到端延迟                             |
+| **超大资源**   | 数百万表项、TCAM、SRAM                      |
+| **协议无关**   | 任意协议支持 (Ethernet, IP, VXLAN, SRv6...) |
+| **IntelliTap** | 硬件级数据平面可观测性                      |
 
 ### 1.2 Tofino 1 规格
 
@@ -305,22 +305,22 @@ Tofino 子系统:
 
 每个 MAU Stage 的资源：
 
-| 资源类型 | 容量 | 说明 |
-|----------|------|------|
-| **Hash Unit** | 2 per stage | CRC, xxHash, identity |
-| **TCAM** | 4K entries/stage | Ternary match |
-| **SRAM (Exact)** | 16K entries/stage | Exact match |
-| **ALU** | 4 per stage | Action execution |
-| **Action Memory** | 4K instructions | Action program |
+| 资源类型          | 容量              | 说明                  |
+| ----------------- | ----------------- | --------------------- |
+| **Hash Unit**     | 2 per stage       | CRC, xxHash, identity |
+| **TCAM**          | 4K entries/stage  | Ternary match         |
+| **SRAM (Exact)**  | 16K entries/stage | Exact match           |
+| **ALU**           | 4 per stage       | Action execution      |
+| **Action Memory** | 4K instructions   | Action program        |
 
 总资源 (单 Pipe)：
 
-| 资源 | 32 Stage 总计 | 说明 |
-|------|---------------|------|
-| TCAM | 128K entries | ~48Mb |
-| SRAM | 512K entries | ~64MB |
-| Hash Units | 64 | 所有 stage |
-| ALU | 128 | 4 x 32 |
+| 资源       | 32 Stage 总计 | 说明       |
+| ---------- | ------------- | ---------- |
+| TCAM       | 128K entries  | ~48Mb      |
+| SRAM       | 512K entries  | ~64MB      |
+| Hash Units | 64            | 所有 stage |
+| ALU        | 128           | 4 x 32     |
 
 ### 3.3 MAU 查找类型
 
@@ -398,7 +398,7 @@ parser IngressParser(packet_in packet,
                      out headers h,
                      inout metadata m,
                      in PSA_ParserInputMetadata_t istd) {
-    
+
     // 解析状态机
     state start {
         packet.extract(h.ethernet);
@@ -409,7 +409,7 @@ parser IngressParser(packet_in packet,
             default: accept;
         }
     }
-    
+
     state parse_ipv4 {
         packet.extract(h.ipv4);
         transition select(h.ipv4.protocol) {
@@ -420,7 +420,7 @@ parser IngressParser(packet_in packet,
             default: accept;
         }
     }
-    
+
     state parse_ipv6 {
         packet.extract(h.ipv6);
         transition select(h.ipv6.nextHdr) {
@@ -434,12 +434,12 @@ parser IngressParser(packet_in packet,
             default: accept;
         }
     }
-    
+
     state parse_tcp {
         packet.extract(h.tcp);
         transition accept;
     }
-    
+
     state parse_udp {
         packet.extract(h.udp);
         transition select(h.udp.dstPort) {
@@ -448,7 +448,7 @@ parser IngressParser(packet_in packet,
             default: accept;
         }
     }
-    
+
     // IPv6 Extension Headers (可变长度)
     state parse_hop_by_hop {
         packet.extract(h.hop_by_hop);
@@ -566,19 +566,19 @@ Port 0
 
 全局资源:
 - 8K Unicast Queues
-- 2K Multicast Queues  
+- 2K Multicast Queues
 - 128 Clone Sessions
 - 16 Traffic Classes
 ```
 
 ### 5.3 调度机制
 
-| 调度类型 | 描述 | 用途 |
-|----------|------|------|
-| **Strict Priority (SP)** | 严格优先级 | 实时流量 (VoIP) |
-| **Weighted Fair Queuing (WFQ)** | 加权公平队列 | 带宽分配 |
-| **Deficit Weighted Round Robin (DWRR)** | 信用值加权 | 公平调度 |
-| **Enhanced Transmission Selection (ETS)** | 带宽保证 | DCB / RoCE |
+| 调度类型                                  | 描述         | 用途            |
+| ----------------------------------------- | ------------ | --------------- |
+| **Strict Priority (SP)**                  | 严格优先级   | 实时流量 (VoIP) |
+| **Weighted Fair Queuing (WFQ)**           | 加权公平队列 | 带宽分配        |
+| **Deficit Weighted Round Robin (DWRR)**   | 信用值加权   | 公平调度        |
+| **Enhanced Transmission Selection (ETS)** | 带宽保证     | DCB / RoCE      |
 
 ### 5.4 QoS 映射
 
@@ -588,12 +588,12 @@ control QoSProcessing(inout headers h,
                      inout metadata m,
                      in PSA_ingress_input_metadata_t istd,
                      inout PSA_ingress_output_metadata_t ostd) {
-    
+
     // DSCP -> TC 映射
     action set_tc(bit<3> tc) {
         ostd.qos_class = tc;
     }
-    
+
     // 基于 DSCP 设置 TC
     table dscp_to_tc {
         key = {
@@ -614,12 +614,12 @@ control QoSProcessing(inout headers h,
             0x00: set_tc(0);
         }
     }
-    
+
     // CoS -> 队列映射
     action set_qid(bit<3> qid) {
         ostd.enq_qid = qid;
     }
-    
+
     apply {
         dscp_to_tc.apply();
     }
@@ -664,7 +664,7 @@ def estimate_resources(p4_program):
     """
     估算 P4 程序在 Tofino 上的资源使用
     """
-    
+
     # 表资源估算
     resources = {
         'tcam_entries': 0,
@@ -672,29 +672,29 @@ def estimate_resources(p4_program):
         'hash_units': 0,
         'alue_instructions': 0,
     }
-    
+
     for table in p4_program.tables:
         key = table.key
-        
+
         if key.match_type == 'lpm':
             # LPM -> TCAM + SRAM
             resources['tcam_entries'] += table.size * 1.5  # TCAM overhead
             resources['sram_entries'] += table.size
             resources['hash_units'] += 1
-            
+
         elif key.match_type == 'exact':
             # Exact -> SRAM
             resources['sram_entries'] += table.size
             resources['hash_units'] += 1
-            
+
         elif key.match_type == 'ternary':
             # Ternary -> TCAM
             resources['tcam_entries'] += table.size * 2  # TCAM 压缩
             resources['hash_units'] += 1
-        
+
         # Action 指令
         resources['alue_instructions'] += len(table.actions)
-    
+
     return resources
 
 # 示例输出
@@ -899,12 +899,12 @@ Egress 延迟:
 
 ### 8.3 可靠性特性
 
-| 特性 | 描述 |
-|------|------|
-| **ECC** | TCAM/SRAM ECC 纠错 |
-| **SerDes FEC** | Reed-Solomon / Firecode |
-| **Port Failover** | 硬件快速故障切换 |
-| **Packet Corruption** | 检测与丢弃 |
+| 特性                  | 描述                    |
+| --------------------- | ----------------------- |
+| **ECC**               | TCAM/SRAM ECC 纠错      |
+| **SerDes FEC**        | Reed-Solomon / Firecode |
+| **Port Failover**     | 硬件快速故障切换        |
+| **Packet Corruption** | 检测与丢弃              |
 
 ---
 

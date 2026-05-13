@@ -13,8 +13,8 @@ tags:
 description: "深入解析 Suricata 的 Stream 深度配置：stream.depth、stream.reassembly.depth、重组内存限制、以及不同检测场景下的深度配置策略"
 ---
 
-> [!info] Suricata 2026 深度探索系列
-> 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Suricata 2026 深度探索系列 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-15-suricata-deep-dive-ch1-overview|第一章：Suricata 概述]]
 > 2. [[2026-04-15-suricata-deep-dive-ch2-config|第二章：Suricata 配置系统]]
 > 3. [[2026-04-15-suricata-deep-dive-ch3-runmodes|第三章：Runmodes 运行模式]]
@@ -76,7 +76,7 @@ graph TD
     P3 --> D1
     P4 --> |"超过深度"| D1
     PN --> |"超过深度"| D1
-    
+
     D1 --> R1
     D2 --> R2
     R1 -.-> |"部分"| R3
@@ -84,10 +84,10 @@ graph TD
 
 ### 1.1 两种深度的区别
 
-| 配置项 | 作用域 | 影响 | 默认值 |
-|:------|:------|:-----|:------|
+| 配置项                    | 作用域   | 影响                       | 默认值        |
+| :------------------------ | :------- | :------------------------- | :------------ |
 | `stream.reassembly.depth` | 重组引擎 | 控制 Stream 缓冲区的数据量 | 1048576 (1MB) |
-| `stream.depth` | 检测引擎 | 控制应用层检测的深度 | 1048576 (1MB) |
+| `stream.depth`            | 检测引擎 | 控制应用层检测的深度       | 1048576 (1MB) |
 
 ### 1.2 为什么需要深度限制
 
@@ -120,15 +120,15 @@ stream:
   reassembly:
     # 重组深度（字节数）
     # 控制每个方向的最大重组数据量
-    depth: 1048576  # 1MB
-    
+    depth: 1048576 # 1MB
+
     # 分方向深度（可选）
     toserver-depth: 1048576
     toclient-depth: 1048576
-    
+
     # 内存限制
     memcap: 256mb
-    
+
     # 队列初始长度
     initial-queuelen: 256
 ```
@@ -141,13 +141,13 @@ static int StreamReassemblyCheckDepth(TcpStream *stream, uint32_t seq)
 {
     uint64_t abs_seq = STREAM_BASE_OFFSET(stream) + seq;
     uint64_t depth_limit = STREAM_REASSEMBLY_DEPTH(stream);
-    
+
     /* 检查是否超过深度限制 */
     if (abs_seq > depth_limit) {
         /* 超过深度，丢弃或截断 */
         return -1;
     }
-    
+
     return 0;
 }
 
@@ -159,19 +159,19 @@ static int StreamReassemblyInsertData(TcpStream *stream,
 {
     uint64_t seg_end = (uint64_t)seg->seq + data_len;
     uint64_t depth = STREAM_REASSEMBLY_DEPTH(stream);
-    
+
     if (seg_end > depth) {
         /* 超过深度，截断 */
         if (seg->seq >= depth) {
             /* 完全超出，丢弃 */
             return 0;
         }
-        
+
         /* 部分超出，截断数据 */
         uint32_t allowed_len = (uint32_t)(depth - seg->seq);
         data_len = allowed_len;
     }
-    
+
     /* 继续插入逻辑 */
     return StreamReassemblyInsertSegment(stream, seg, data, data_len);
 }
@@ -188,8 +188,9 @@ static int StreamReassemblyInsertData(TcpStream *stream,
 stream:
   # 检测深度
   # 控制应用层检测引擎处理的数据量
-  depth: 1048576  # 1MB
-  
+  depth: 1048576 # 1MB
+
+
   # 也可以在规则中使用
   # flow:established; stream-depth: 1024;
 ```
@@ -207,19 +208,19 @@ int DetectEngineInspectStream(ThreadVars *thv,
     /* 检查是否超过检测深度 */
     uint64_t current_offset = STREAM_APP_PROGRESS(&ssn->to_server);
     uint64_t depth = StreamDepthGetSize();
-    
+
     if (current_offset + data_len > depth) {
         /* 超过深度，只检测到深度位置 */
         uint32_t allowed_len = (uint32_t)(depth - current_offset);
-        
+
         if (allowed_len == 0) {
             /* 完全超过，跳过检测 */
             return 0;
         }
-        
+
         data_len = allowed_len;
     }
-    
+
     /* 执行检测 */
     return DetectEngineRunInspect(det_ctx, f, data, data_len);
 }
@@ -245,18 +246,18 @@ stream.reassembly.depth = 1048576 (1MB)
 typedef struct StreamReassemblyConfig_ {
     /* 内存上限 */
     uint64_t memcap;
-    
+
     /* 重组深度 */
     uint32_t depth;
     uint32_t toserver_depth;
     uint32_t toclient_depth;
-    
+
     /* 紧急模式阈值 */
     uint32_t emergency_memcap;
-    
+
     /* 清理窗口 */
     uint32_t prune_window;
-    
+
 } StreamReassemblyConfig;
 ```
 
@@ -269,16 +270,16 @@ static void StreamReassemblyEmergencyResize(void)
     if (stream_config.reassembly_memcap_emerg >= stream_config.reassembly_memcap) {
         return;
     }
-    
+
     /* 紧急模式：缩小深度限制 */
     uint32_t new_depth = stream_config.reassembly_depth / 2;
-    
+
     if (new_depth < 65536) {
         new_depth = 65536;  /* 最小 64KB */
     }
-    
+
     stream_config.reassembly_depth = new_depth;
-    
+
     SCLogWarning("Stream reassembly depth reduced to %u in emergency mode",
                   new_depth);
 }
@@ -295,12 +296,12 @@ static void StreamReassemblyEmergencyResize(void)
 # 适用于文件传输活跃的环境
 stream:
   reassembly:
-    depth: 2097152       # 2MB - 覆盖大多数文件传输
+    depth: 2097152 # 2MB - 覆盖大多数文件传输
     memcap: 512mb
-    
+
     # 分方向配置
-    toserver-depth: 262144   # 256KB - 请求通常较小
-    toclient-depth: 2097152  # 2MB - 响应可能很大
+    toserver-depth: 262144 # 256KB - 请求通常较小
+    toclient-depth: 2097152 # 2MB - 响应可能很大
 ```
 
 ### 5.2 场景二：Web 服务检测
@@ -310,11 +311,11 @@ stream:
 # 适用于 HTTP/HTTPS 检测为主的环境
 stream:
   reassembly:
-    depth: 32768        # 32KB - 覆盖大多数 HTTP 请求/响应头
+    depth: 32768 # 32KB - 覆盖大多数 HTTP 请求/响应头
     memcap: 256mb
-    
-    toserver-depth: 16384   # 16KB - HTTP 请求头
-    toclient-depth: 32768   # 32KB - HTTP 响应头 + 部分 body
+
+    toserver-depth: 16384 # 16KB - HTTP 请求头
+    toclient-depth: 32768 # 32KB - HTTP 响应头 + 部分 body
 ```
 
 ### 5.3 场景三：DNS 检测
@@ -324,9 +325,9 @@ stream:
 # 适用于 DNS 服务器监控
 stream:
   reassembly:
-    depth: 4096         # 4KB - DNS 查询/响应通常很小
+    depth: 4096 # 4KB - DNS 查询/响应通常很小
     memcap: 128mb
-    
+
     # DNS 使用 UDP，但可能触发流重组（TCP DNS）
     toserver-depth: 4096
     toclient-depth: 4096
@@ -339,11 +340,11 @@ stream:
 # 适用于资源受限环境
 stream:
   reassembly:
-    depth: 262144       # 256KB
+    depth: 262144 # 256KB
     memcap: 128mb
-    
+
     # 紧急模式进一步缩小
-    emergency-depth: 65536  # 64KB
+    emergency-depth: 65536 # 64KB
 ```
 
 ---
@@ -358,8 +359,8 @@ stream:
 # suricata.yaml
 # 规则示例
 alert http any any -> any any (msg:"Large HTTP POST"; \
-    http.request_body; stream-depth:1024; pcre:"/^.{1000,}$/"; \
-    sid:1000001; rev:1;)
+http.request_body; stream-depth:1024; pcre:"/^.{1000,}$/"; \
+sid:1000001; rev:1;)
 ```
 
 ### 6.2 深度与规则匹配流程
@@ -372,12 +373,12 @@ graph TD
         D["检测引擎"]
         R["规则匹配"]
     end
-    
+
     subgraph "深度检查"
         DC["当前数据偏移<br/>vs<br/>stream-depth"]
         O["超出深度"]
     end
-    
+
     P --> S
     S --> D
     D --> DC
@@ -393,11 +394,11 @@ graph TD
 
 ### 7.1 计数器
 
-| 计数器 | 说明 |
-|:------|:----|
-| `stream.tcp.reassembly_depth_greater` | 超过重组深度的数据包 |
+| 计数器                                 | 说明                 |
+| :------------------------------------- | :------------------- |
+| `stream.tcp.reassembly_depth_greater`  | 超过重组深度的数据包 |
 | `stream.tcp.reassembly_depth_exceeded` | 完全超出深度的数据包 |
-| `stream.tcp.reassembly_memcap_enter` | 进入内存紧急模式 |
+| `stream.tcp.reassembly_memcap_enter`   | 进入内存紧急模式     |
 
 ### 7.2 事件类型
 
@@ -430,9 +431,9 @@ stream.tcp.reassembly_depth_exceeded   | 12
 ```yaml
 stream:
   reassembly:
-    depth: 10485760      # 10MB - 覆盖绝大多数场景
+    depth: 10485760 # 10MB - 覆盖绝大多数场景
     memcap: 512mb
-    emergency-depth: 1048576  # 1MB
+    emergency-depth: 1048576 # 1MB
 ```
 
 ### 8.2 平衡配置（推荐）
@@ -440,9 +441,9 @@ stream:
 ```yaml
 stream:
   reassembly:
-    depth: 1048576       # 1MB - 平衡覆盖和性能
+    depth: 1048576 # 1MB - 平衡覆盖和性能
     memcap: 256mb
-    emergency-depth: 262144  # 256KB
+    emergency-depth: 262144 # 256KB
 ```
 
 ### 8.3 激进配置（高性能）
@@ -450,9 +451,9 @@ stream:
 ```yaml
 stream:
   reassembly:
-    depth: 262144        # 256KB - 关注早期威胁
+    depth: 262144 # 256KB - 关注早期威胁
     memcap: 128mb
-    emergency-depth: 65536  # 64KB
+    emergency-depth: 65536 # 64KB
 ```
 
 ### 8.4 调优步骤
@@ -486,11 +487,12 @@ graph TD
 **原因**：攻击载荷在流的后半部分
 
 **解决**：
+
 ```yaml
 # 增加重组深度
 stream:
   reassembly:
-    depth: 2097152  # 2MB
+    depth: 2097152 # 2MB
 ```
 
 ### 9.2 深度太大导致内存耗尽
@@ -500,12 +502,13 @@ stream:
 **原因**：同时处理大量大流
 
 **解决**：
+
 ```yaml
 # 减小深度并增加 memcap
 stream:
   reassembly:
-    depth: 262144     # 256KB
-    memcap: 512mb     # 更大内存限制
+    depth: 262144 # 256KB
+    memcap: 512mb # 更大内存限制
 ```
 
 ### 9.3 深度与 memcap 不匹配
@@ -515,6 +518,7 @@ stream:
 **原因**：深度太大或 memcap 太小
 
 **解决**：
+
 ```
 建议比例：memcap / depth >= 100
 示例：256mb / 1mb = 256 个并发流

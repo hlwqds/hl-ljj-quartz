@@ -5,8 +5,8 @@ tags: [p4, series, deparser, packet-emit, checksum, hdrChecksum, ipv4, p4-16]
 description: "P4 Deparser 深度解析——包重组原理、emit 操作、Header 发射顺序、Checksum 验证与重新计算 (IPv4/TCP/UDP)、packet_out、Deparser 与 Parser 的对称性"
 ---
 
-> [!info] P4 深度探索系列
-> 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+> [!info] P4 深度探索系列 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-14-p4-deep-dive-ch1-p4-overview|第一章：P4 概述——诞生背景与协议无关包处理]]
 > 2. [[2026-04-14-p4-deep-dive-ch2-p4-architecture|第二章：P4 架构模型——PSA/V1Model、Ingress/Egress]]
 > 3. [[2026-04-14-p4-deep-dive-ch3-p4-vs-ebpf|第三章：P4 vs eBPF——适用场景与硬件/软件对比]]
@@ -24,10 +24,10 @@ description: "P4 Deparser 深度解析——包重组原理、emit 操作、Head
 
 **Deparser** 是 P4 流水线中最后一个阶段，负责将处理后的 Header 重新**组装**成完整的数据包并输出到线缆。它的功能与 Parser 相反：
 
-| 阶段 | 功能 | 数据方向 |
-|------|------|---------|
-| Parser | 从数据包提取 Header | 线缆 → 程序 |
-| Deparser | 将 Header 重新组装 | 程序 → 线缆 |
+| 阶段     | 功能                | 数据方向    |
+| -------- | ------------------- | ----------- |
+| Parser   | 从数据包提取 Header | 线缆 → 程序 |
+| Deparser | 将 Header 重新组装  | 程序 → 线缆 |
 
 Deparser 的核心操作是 `packet.emit()`——将 Header 的值写回到数据包的输出缓冲区。
 
@@ -109,19 +109,19 @@ control DeparserImpl(packet_out packet, in headers_t h) {
     apply {
         // Ethernet 最先发射（除非有 PPPoE 等封装）
         packet.emit(h.ethernet);
-        
+
         // VLAN Header（如果存在）
         if (h.vlan.isValid()) {
             packet.emit(h.vlan);
         }
-        
+
         // IP Header
         if (h.ipv4.isValid()) {
             packet.emit(h.ipv4);
         } else if (h.ipv6.isValid()) {
             packet.emit(h.ipv6);
         }
-        
+
         // 传输层 Header
         if (h.tcp.isValid()) {
             packet.emit(h.tcp);
@@ -167,10 +167,10 @@ apply {
 
 P4 提供两种 Checksum 操作：
 
-| 操作 | 用途 |
-|------|------|
+| 操作                | 用途                               |
+| ------------------- | ---------------------------------- |
 | `verify_checksum()` | 在 Parser 中验证 Checksum 是否正确 |
-| `update_checksum()` | 在 Control 中重新计算 Checksum |
+| `update_checksum()` | 在 Control 中重新计算 Checksum     |
 
 ### 4.3 update_checksum() 语法
 
@@ -187,10 +187,10 @@ update_checksum(
 
 ```c
 control Ingress(inout headers h, inout metadata m) {
-    
+
     action decrement_ttl() {
         h.ipv4.ttl = h.ipv4.ttl - 1;
-        
+
         // 重新计算 IPv4 Header Checksum
         update_checksum(
             h.ipv4.isValid(),
@@ -211,7 +211,7 @@ control Ingress(inout headers h, inout metadata m) {
             HashAlgorithm.csum16
         );
     }
-    
+
     apply {
         if (h.ipv4.isValid()) {
             decrement_ttl();
@@ -255,7 +255,7 @@ update_checksum(
 // 如果 TTL 只在 > 1 时递减
 action decrement_ttl() {
     h.ipv4.ttl = h.ipv4.ttl - 1;
-    
+
     // 仅当 TTL 变化时才重新计算 Checksum
     if (h.ipv4.ttl > 0) {
         update_checksum(true,
@@ -287,7 +287,7 @@ verify_checksum(
 ```c
 state parse_ipv4 {
     packet.extract(h.ipv4);
-    
+
     // 验证 IPv4 Header Checksum
     verify_checksum(
         true,  // 始终验证
@@ -308,7 +308,7 @@ state parse_ipv4 {
         HashAlgorithm.csum16,
         error.IPv4ChecksumError
     );
-    
+
     transition select(h.ipv4.protocol) {
         6: parse_tcp;
         17: parse_udp;
@@ -341,17 +341,17 @@ control DeparserImpl(packet_out packet, in headers_t h) {
     apply {
         // 发射 Ethernet
         packet.emit(h.ethernet);
-        
+
         // 发射 VLAN（如果存在）
         if (h.vlan.isValid()) {
             packet.emit(h.vlan);
         }
-        
+
         // 发射 IPv4
         if (h.ipv4.isValid()) {
             packet.emit(h.ipv4);
         }
-        
+
         // 发射传输层
         if (h.tcp.isValid()) {
             packet.emit(h.tcp);
@@ -366,24 +366,24 @@ control DeparserImpl(packet_out packet, in headers_t h) {
 
 ```c
 control DeparserImpl(packet_out packet, in headers_t h) {
-    
+
     // Checksum 重新计算在 Ingress/Egress 中完成
     // Deparser 只需要按顺序发射
-    
+
     apply {
         packet.emit(h.ethernet);
-        
+
         if (h.vlan.isValid()) {
             packet.emit(h.vlan);
         }
-        
+
         if (h.ipv4.isValid()) {
             packet.emit(h.ipv4);
-            
+
             // 注意：IPv4 Checksum 的重新计算应该在 Ingress 中完成
             // Deparser 发射时，h.ipv4.hdrChecksum 已经是更新后的值
         }
-        
+
         if (h.tcp.isValid()) {
             packet.emit(h.tcp);
         } else if (h.udp.isValid()) {
@@ -400,7 +400,7 @@ control DeparserImpl(packet_out packet, in headers_t h) {
     apply {
         // 最外层：Ethernet
         packet.emit(h.outer_ethernet);
-        
+
         // VLAN 标签（可能多个）
         if (h.vlans[0].isValid()) {
             packet.emit(h.vlans[0]);
@@ -408,7 +408,7 @@ control DeparserImpl(packet_out packet, in headers_t h) {
         if (h.vlans[1].isValid()) {
             packet.emit(h.vlans[1]);
         }
-        
+
         // MPLS 标签栈
         if (h.mpls[0].isValid()) {
             packet.emit(h.mpls[0]);
@@ -416,13 +416,13 @@ control DeparserImpl(packet_out packet, in headers_t h) {
         if (h.mpls[1].isValid()) {
             packet.emit(h.mpls[1]);
         }
-        
+
         // IPv4 或 IPv6
         if (h.ipv4.isValid()) {
             packet.emit(h.ipv4);
         } else if (h.ipv6.isValid()) {
             packet.emit(h.ipv6);
-            
+
             // IPv6 Extension Headers
             if (h.ipv6_hop_by_hop.isValid()) {
                 packet.emit(h.ipv6_hop_by_hop);
@@ -437,14 +437,14 @@ control DeparserImpl(packet_out packet, in headers_t h) {
                 packet.emit(h.ipv6_dest_options);
             }
         }
-        
+
         // 传输层
         if (h.tcp.isValid()) {
             packet.emit(h.tcp);
         } else if (h.udp.isValid()) {
             packet.emit(h.udp);
         }
-        
+
         // 应用层（如 VXLAN）
         if (h.vxlan.isValid()) {
             packet.emit(h.vxlan);
@@ -464,7 +464,7 @@ control DeparserImpl(packet_out packet, in headers_t h) {
 ```
 Parser:                          Deparser:
 extract() 消耗数据包字节         emit()  添加数据包字节
-                                 
+
   packet_in                        packet_out
       │                               ▲
       ▼                               │
@@ -520,12 +520,12 @@ apply {
 
 ### 8.2 Checksum 计算位置
 
-| Checksum 类型 | 计算位置 | 理由 |
-|--------------|---------|------|
-| IPv4 Header | Ingress | TTL 修改在 Ingress 完成 |
-| TCP Checksum | Ingress 或 Egress | 取决于封装变化 |
-| UDP Checksum | 同上 | 同上 |
-| VXLAN Checksum | Egress | 内部 Header 在 Egress 添加 |
+| Checksum 类型  | 计算位置          | 理由                       |
+| -------------- | ----------------- | -------------------------- |
+| IPv4 Header    | Ingress           | TTL 修改在 Ingress 完成    |
+| TCP Checksum   | Ingress 或 Egress | 取决于封装变化             |
+| UDP Checksum   | 同上              | 同上                       |
+| VXLAN Checksum | Egress            | 内部 Header 在 Egress 添加 |
 
 ### 8.3 IPv6 的 Checksum
 
@@ -547,14 +547,14 @@ IPv6: 无 Header Checksum（依赖链路层校验）
 ```c
 apply {
     packet.emit(h.outer_ethernet);
-    
+
     // 根据配置决定是否添加 VLAN
     if (m.add_vlan_tag) {
         h.vlan.setValid();
         h.vlan.vid = m.vlan_id;
         packet.emit(h.vlan);
     }
-    
+
     packet.emit(h.inner_ethernet);
     packet.emit(h.ipv4);
 }
@@ -567,16 +567,16 @@ apply {
 control DeparserImpl(packet_out packet, in headers_t h) {
     apply {
         packet.emit(h.ethernet);
-        
+
         // 在 IPv4 之前添加 MPLS（推送）
         if (m.add_mpls_label) {
             // 使用 push_front 在数据包前面添加空间
             packet.push_front(4);  // 添加 4 字节（MPLS 标签）
-            
+
             // 手动写入 MPLS 标签值
             // 注意：P4 不直接支持此操作，需在 Ingress/Egress 准备
         }
-        
+
         packet.emit(h.ipv4);
     }
 }
@@ -629,7 +629,7 @@ parser MyParser(packet_in pkt, out headers_t h, inout metadata_t m) {
 }
 
 // ========== Ingress Control ==========
-control MyIngress(inout headers h, inout metadata_t m, 
+control MyIngress(inout headers h, inout metadata_t m,
                   inout standard_metadata_t sm) {
     action drop() { mark_to_drop(sm); }
     action ipv4_forward(bit<48> dmac, bit<9> port) {
@@ -682,6 +682,7 @@ V1Switch(
 7. **Invalid Header 处理**：Parser 设置 Invalid，Deparser 跳过
 
 至此，**Part II: P4 语言详解**（第 6-10 章）全部完成。我们涵盖了：
+
 - Ch6: Header 与 Packet — Header 类型、Valid/Invalid、Header Stack
 - Ch7: Parser — 状态机、transition、Error 处理、分片解析
 - Ch8: Match-Action — Table、Action、Key、Match Kind

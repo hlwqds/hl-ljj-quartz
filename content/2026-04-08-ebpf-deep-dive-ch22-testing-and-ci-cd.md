@@ -9,8 +9,8 @@ tags:
   - quality-assurance
 ---
 
-> [!info] eBPF 2026 深度探索系列
-> 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+> [!info] eBPF 2026 深度探索系列 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+>
 > 1. [[2026-04-08-ebpf-deep-dive-ch1-registers-and-instructions|第一章：寄存器与指令集]]
 > 2. [[2026-04-08-ebpf-deep-dive-ch1-5-function-calls|第一.五章：四种函数调用与动态内存]]
 > 3. [[2026-04-08-ebpf-deep-dive-ch1-6-the-verifier|第一.六章：验证器 (Verifier) 的底层逻辑]]
@@ -62,6 +62,7 @@ tags:
 > 49. [[2026-04-09-ebpf-deep-dive-ch40-network-protocols-deep-dive|第四十章：网络协议深度解析——TCP/UDP/QUIC 的 eBPF 视角]]
 > 50. [[2026-04-09-ebpf-deep-dive-ch41-memory-safety-and-vulnerabilities|第四十一章：eBPF 内存安全与漏洞分析]]
 > 51. [[2026-04-09-ebpf-deep-dive-ch42-service-mesh-integration|第四十二章：eBPF 与 Service Mesh 深度集成]]
+
 ---
 
 ## 1. 概述：为什么 eBPF 的测试如此特殊？
@@ -72,13 +73,13 @@ tags:
 
 与用户态程序测试相比，eBPF 测试面临以下独特挑战：
 
-| 挑战维度 | 用户态程序 | eBPF 程序 |
-|---------|----------|----------|
-| 运行环境 | 标准库 + OS 系统调用 | 特定版本的 Linux 内核 |
-| 安全检查 | 编译期类型检查 | Verifier 运行时验证 |
-| 依赖关系 | 可用容器/虚拟环境隔离 | BTF、kfunc、Helper 版本绑定 |
-| 回归风险 | 依赖变更导致 API 不兼容 | 内核升级导致 Verifier 拒绝加载 |
-| 测试权限 | 普通用户即可运行 | 大部分场景需要 `CAP_BPF` 或 root |
+| 挑战维度 | 用户态程序              | eBPF 程序                        |
+| -------- | ----------------------- | -------------------------------- |
+| 运行环境 | 标准库 + OS 系统调用    | 特定版本的 Linux 内核            |
+| 安全检查 | 编译期类型检查          | Verifier 运行时验证              |
+| 依赖关系 | 可用容器/虚拟环境隔离   | BTF、kfunc、Helper 版本绑定      |
+| 回归风险 | 依赖变更导致 API 不兼容 | 内核升级导致 Verifier 拒绝加载   |
+| 测试权限 | 普通用户即可运行        | 大部分场景需要 `CAP_BPF` 或 root |
 
 ### 测试金字塔
 
@@ -113,6 +114,7 @@ BPF_PROG_RUN 是内核提供的 `bpf_prog_test_run` 系列接口，允许在不�
 4. 返回执行结果（返回值、输出数据、指令执行数等）
 
 **适用场景**：
+
 - XDP / TC 程序的报文过滤逻辑验证
 - cgroup_skb 程序的网络策略检查
 - Socket filter 的匹配规则校验
@@ -120,6 +122,7 @@ BPF_PROG_RUN 是内核提供的 `bpf_prog_test_run` 系列接口，允许在不�
 **优点**：极速反馈，无需 Root 权限（部分场景），适合算法逻辑的单元测试。
 
 **局限性**：
+
 - 无法测试需要访问内核状态（Map、per-CPU 变量）的复杂交互
 - 不支持所有程序类型（如 kprobe、tracepoint 类型无法使用此机制）
 - 模拟的 Context 与真实环境存在微妙差异
@@ -367,10 +370,10 @@ on:
   push:
     branches: [main, develop]
     paths:
-      - 'src/**.bpf.c'
-      - 'src/**.c'
-      - 'src/**.h'
-      - 'Makefile'
+      - "src/**.bpf.c"
+      - "src/**.c"
+      - "src/**.h"
+      - "Makefile"
   pull_request:
     branches: [main]
 
@@ -540,8 +543,8 @@ jobs:
         distro:
           - { name: "ubuntu-20.04", btf: "5.4" }
           - { name: "ubuntu-22.04", btf: "5.15" }
-          - { name: "debian-12",   btf: "6.1" }
-          - { name: "fedora-39",   btf: "6.6" }
+          - { name: "debian-12", btf: "6.1" }
+          - { name: "fedora-39", btf: "6.6" }
     steps:
       - uses: actions/checkout@v4
 
@@ -675,11 +678,11 @@ CO-RE（Compile Once - Run Everywhere）的核心理念是：BPF 程序编译一
 
 CO-RE 测试的三个关键维度：
 
-| 维度 | 验证目标 | 工具 |
-|------|---------|------|
-| BTF 结构匹配 | 目标类型的偏移量在不同内核间是否一致 | `bpftool btf dump`、`pahole` |
-| 字段重定位 | `btf_field_reloc` 是否能正确处理字段偏移差异 | `bpftool gen skeleton` 验证 |
-| kfunc 可用性 | 目标内核是否包含所需的 kfunc | `bpftool btf dump` 搜索 `FUNC_PROTO` |
+| 维度         | 验证目标                                     | 工具                                 |
+| ------------ | -------------------------------------------- | ------------------------------------ |
+| BTF 结构匹配 | 目标类型的偏移量在不同内核间是否一致         | `bpftool btf dump`、`pahole`         |
+| 字段重定位   | `btf_field_reloc` 是否能正确处理字段偏移差异 | `bpftool gen skeleton` 验证          |
+| kfunc 可用性 | 目标内核是否包含所需的 kfunc                 | `bpftool btf dump` 搜索 `FUNC_PROTO` |
 
 ### 5.2 BTFHub 集成测试
 
@@ -1009,10 +1012,10 @@ diff vmlinux_types_current.h vmlinux_types_target.h | grep "offset:"
 ```yaml
 # 增量测试：仅在 BPF 源码变更时触发全量测试
 kernel-matrix:
-    needs: compile
-    if: |
-      github.event_name == 'push' &&
-      steps.compile.outputs.bpf_changed == 'true'
+  needs: compile
+  if: |
+    github.event_name == 'push' &&
+    steps.compile.outputs.bpf_changed == 'true'
 ```
 
 ### Q4: 如何在 CI 中模拟网络流量进行 XDP/TC 测试？
@@ -1126,17 +1129,17 @@ mindmap
 
 ### 最佳实践清单
 
-| 编号 | 实践 | 优先级 |
-|------|------|--------|
-| 1 | 使用 `BPF_PROG_RUN` 对所有 XDP/TC 程序编写单元测试 | P0 |
-| 2 | 使用 netns 隔离进行集成测试，覆盖 load + attach 路径 | P0 |
-| 3 | 在 CI 中至少覆盖 3 个内核版本（LTS + 当前稳定版） | P0 |
-| 4 | 使用 BTFHub 验证 CO-RE 兼容性 | P1 |
-| 5 | 设置 Verifier 指令复杂度阈值（建议 < 100万） | P1 |
-| 6 | 使用 `bpftool prog profile` 收集代码覆盖率 | P2 |
-| 7 | 建立 Verifier 错误模式的自动检测 | P2 |
-| 8 | 使用多版本 LLVM（至少 14 和 17）交叉编译验证 | P1 |
-| 9 | 在 main 分支推送时触发完整内核矩阵测试 | P1 |
-| 10 | 缓存内核镜像和 BTF 文件以加速 CI | P2 |
+| 编号 | 实践                                                 | 优先级 |
+| ---- | ---------------------------------------------------- | ------ |
+| 1    | 使用 `BPF_PROG_RUN` 对所有 XDP/TC 程序编写单元测试   | P0     |
+| 2    | 使用 netns 隔离进行集成测试，覆盖 load + attach 路径 | P0     |
+| 3    | 在 CI 中至少覆盖 3 个内核版本（LTS + 当前稳定版）    | P0     |
+| 4    | 使用 BTFHub 验证 CO-RE 兼容性                        | P1     |
+| 5    | 设置 Verifier 指令复杂度阈值（建议 < 100万）         | P1     |
+| 6    | 使用 `bpftool prog profile` 收集代码覆盖率           | P2     |
+| 7    | 建立 Verifier 错误模式的自动检测                     | P2     |
+| 8    | 使用多版本 LLVM（至少 14 和 17）交叉编译验证         | P1     |
+| 9    | 在 main 分支推送时触发完整内核矩阵测试               | P1     |
+| 10   | 缓存内核镜像和 BTF 文件以加速 CI                     | P2     |
 
 通过 `BPF_PROG_RUN` 解决逻辑正确性，通过网络命名空间解决集成可靠性，通过微型 VM 解决内核兼容性，是 2026 年构建健壮 eBPF 生态的不二法门。

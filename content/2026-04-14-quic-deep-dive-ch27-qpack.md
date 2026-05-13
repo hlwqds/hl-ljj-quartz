@@ -185,6 +185,7 @@ The dynamic table is bounded by the `SETTINGS_QPACK_MAX_TABLE_CAPACITY` setting.
 ### 27.5.2 Table Capacity vs. Size
 
 QPACK distinguishes between:
+
 - **Table capacity**: Maximum memory allocated for the table
 - **Table size**: Current actual memory used
 
@@ -234,6 +235,7 @@ The critical innovation in QPACK is handling out-of-order header blocks.
 ### 27.7.1 Header Block and Insert Count
 
 A header block consists of:
+
 1. Encoded header field instructions
 2. An absolute **Insert Count** value
 3. A **Largest Reference** (the highest entry index referenced)
@@ -373,14 +375,14 @@ QPACK's design accommodates QUIC's fundamental property: streams are independent
 Scenario:
   Stream 1: Encoder sends header referencing dynamic entry 65
   Stream 2: Decoder hasn't received dynamic entry 65 yet
-  
+
   If HPACK: Stream 2 header decode fails
   If QPACK: Stream 2 blocked until entry 65 arrives
 ```
 
 ### 27.10.2 Solution: Pre-emptive Table Updates
 
-The encoder MUST send dynamic table updates on the QPACK control stream *before* referencing them in header blocks:
+The encoder MUST send dynamic table updates on the QPACK control stream _before_ referencing them in header blocks:
 
 ```
 1. Encoder learns :path = /api/v1/users from response

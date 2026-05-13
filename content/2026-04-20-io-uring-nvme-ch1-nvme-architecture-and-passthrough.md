@@ -1,7 +1,19 @@
 ---
 title: io_uring × NVMe 深度探索 Ch1：NVMe 架构与 io_uring passthrough
 date: 2026-04-20 09:00:00
-tags: [io_uring, NVMe, Storage, PCIe, Passthrough, Kernel Bypass, High Performance, Admin Commands, IO Commands, Block Layer]
+tags:
+  [
+    io_uring,
+    NVMe,
+    Storage,
+    PCIe,
+    Passthrough,
+    Kernel Bypass,
+    High Performance,
+    Admin Commands,
+    IO Commands,
+    Block Layer,
+  ]
 description: 深入讲解 NVMe 硬件架构：PCIe 寄存器模型、Submission Queue / Completion Queue、命令格式，以及 io_uring passthrough 如何绕过文件系统直接操作 NVMe。
 ---
 

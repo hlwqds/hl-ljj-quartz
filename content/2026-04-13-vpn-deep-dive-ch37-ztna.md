@@ -5,8 +5,8 @@ tags: [vpn, series, ztna, zero-trust, beyondcorp, zero-trust-architecture]
 description: "零信任网络 ZTNA 深度解析——BeyondCorp、Google 实践、ZTNA vs VPN、身份优先的访问模型、SDP 与 ZTNA 关系、Gartner CARTA"
 ---
 
-> [!info] VPN 技术深度探索系列
-> 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+> [!info] VPN 技术深度探索系列 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-vpn-deep-dive-ch36-sdp-architecture|第三十六章：SDP 软件定义边界]]
 > 2. **第三十七章：零信任网络 ZTNA**
 > 3. [[2026-04-13-vpn-deep-dive-ch38-spiffe|第三十八章：SPIFFE 身份体系]]

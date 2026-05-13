@@ -13,8 +13,8 @@ tags:
 description: "深入解析 Zeek TLS 分析器——TLS::Info record、证书信息、SNI/JA3/JARM 指纹、日志输出、TLS 脚本事件"
 ---
 
-> [!info] Zeek 2026 深度探索系列
-> 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Zeek 2026 深度探索系列 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-15-zeek-deep-dive-ch1-overview|第一章：Zeek 概述]]
 > 2. [[2026-04-15-zeek-deep-dive-ch2-installation|第二章：安装部署]]
 > 3. [[2026-04-15-zeek-deep-dive-ch3-config|第三章：配置系统]]
@@ -541,16 +541,17 @@ event ssl_certificate(c: connection, cert: X509, chain: bool)
 
 本章介绍了 Zeek TLS 分析器的核心能力：
 
-| 组件 | 说明 |
-|------|------|
-| **SSL::Info** | TLS 日志核心 record，包含连接、证书、指纹信息 |
-| **ssl_client_hello** | TLS ClientHello 事件，可提取 SNI、JA3 |
-| **ssl_server_hello** | TLS ServerHello 事件 |
-| **ssl_certificate** | 证书解析事件，包含完整的证书字段 |
-| **JA3** | 客户端指纹，用于恶意软件检测 |
-| **JARM** | 服务器指纹，用于服务识别 |
+| 组件                 | 说明                                          |
+| -------------------- | --------------------------------------------- |
+| **SSL::Info**        | TLS 日志核心 record，包含连接、证书、指纹信息 |
+| **ssl_client_hello** | TLS ClientHello 事件，可提取 SNI、JA3         |
+| **ssl_server_hello** | TLS ServerHello 事件                          |
+| **ssl_certificate**  | 证书解析事件，包含完整的证书字段              |
+| **JA3**              | 客户端指纹，用于恶意软件检测                  |
+| **JARM**             | 服务器指纹，用于服务识别                      |
 
 TLS 日志可用于：
+
 - 恶意软件 TLS 特征检测
 - 证书过期/自签名监控
 - TLS 版本合规检测

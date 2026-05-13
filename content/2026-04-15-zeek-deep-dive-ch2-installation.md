@@ -10,8 +10,8 @@ tags:
 description: "Zeek 安装部署完全指南——从源码编译、依赖库安装、版本选择，到 zeekctl 部署和首次运行"
 ---
 
-> [!info] Zeek 2026 深度探索系列
-> 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Zeek 2026 深度探索系列 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-15-zeek-deep-dive-ch1-overview|第一章：Zeek 概述]]
 > 2. **第二章：安装部署**
 > 3. [[2026-04-15-zeek-deep-dive-ch3-config|第三章：配置系统]]
@@ -24,11 +24,11 @@ description: "Zeek 安装部署完全指南——从源码编译、依赖库安�
 
 Zeek 提供三种安装方式：
 
-| 方式 | 适用场景 | 优点 | 缺点 |
-| :--- | :--- | :--- | :--- |
-| **包管理器** | 快速体验 | 一键安装，自动依赖 | 版本可能过时 |
-| **ZeekMetaPkg** | 生产环境 | 保持更新，官方维护 | 依赖较多 |
-| **源码编译** | 深度定制/开发 | 灵活配置，最新特性 | 编译时间长 |
+| 方式            | 适用场景      | 优点               | 缺点         |
+| :-------------- | :------------ | :----------------- | :----------- |
+| **包管理器**    | 快速体验      | 一键安装，自动依赖 | 版本可能过时 |
+| **ZeekMetaPkg** | 生产环境      | 保持更新，官方维护 | 依赖较多     |
+| **源码编译**    | 深度定制/开发 | 灵活配置，最新特性 | 编译时间长   |
 
 ---
 
@@ -70,14 +70,14 @@ brew install cmake flex bison openssl zlib libpcap maxminddb geoip
 
 ### 2.2 可选依赖（增强功能）
 
-| 功能 | 依赖 | 配置选项 |
-| :--- | :--- | :--- |
-| **AF_XDP 支持** | libbpf + linux-headers | `--enable-af-xdp` |
-| **PF_RING 支持** | PF_RING DNA | `--enable-pf-ring` |
-| **Redis Writer** | hiredis | `--enable-redis` |
-| **Broker 通信** | OpenSSL + CMake | 默认启用 |
-| **GSSAPI (Kerberos)** | libkrb5 | 默认启用 |
-| **GeoIP2** | libmaxminddb | 默认启用 |
+| 功能                  | 依赖                   | 配置选项           |
+| :-------------------- | :--------------------- | :----------------- |
+| **AF_XDP 支持**       | libbpf + linux-headers | `--enable-af-xdp`  |
+| **PF_RING 支持**      | PF_RING DNA            | `--enable-pf-ring` |
+| **Redis Writer**      | hiredis                | `--enable-redis`   |
+| **Broker 通信**       | OpenSSL + CMake        | 默认启用           |
+| **GSSAPI (Kerberos)** | libkrb5                | 默认启用           |
+| **GeoIP2**            | libmaxminddb           | 默认启用           |
 
 ### 2.3 依赖验证脚本
 
@@ -192,11 +192,11 @@ cd zeek-7.0.1
 
 **LTS 版本对比**：
 
-| 版本 | 发布日期 | 支持截止 | 关键特性 |
-| :--- | :--- | :--- | :--- |
-| 7.0.x | 2024-Q4 | 2026-Q4 | AF_XDP、Modern C++ |
-| 6.2.x | 2023-Q2 | 2025-Q2 | Broker 稳定、JSON 流 |
-| 5.2.x | 2022-Q1 | 2024-Q1 | 初步现代化 |
+| 版本  | 发布日期 | 支持截止 | 关键特性             |
+| :---- | :------- | :------- | :------------------- |
+| 7.0.x | 2024-Q4  | 2026-Q4  | AF_XDP、Modern C++   |
+| 6.2.x | 2023-Q2  | 2025-Q2  | Broker 稳定、JSON 流 |
+| 5.2.x | 2022-Q1  | 2024-Q1  | 初步现代化           |
 
 ### 5.3 配置（cmake）
 
@@ -220,14 +220,14 @@ cmake .. -LH
 
 **关键 CMake 选项**：
 
-| 选项 | 默认 | 说明 |
-| :--- | :--- | :--- |
-| `CMAKE_INSTALL_PREFIX` | `/usr/local/zeek` | 安装根目录 |
-| `CMAKE_BUILD_TYPE` | `Release` | Release/Debug |
-| `ENABLE_AF_XDP` | `OFF` | 启用 AF_XDP 支持 |
-| `ENABLE_REDIS` | `OFF` | 启用 Redis Writer |
-| `ENABLE_PERFTOOLS` | `OFF` | gperftools 内存 profiling |
-| `BUILD_TESTING` | `ON` | 构建测试套件 |
+| 选项                   | 默认              | 说明                      |
+| :--------------------- | :---------------- | :------------------------ |
+| `CMAKE_INSTALL_PREFIX` | `/usr/local/zeek` | 安装根目录                |
+| `CMAKE_BUILD_TYPE`     | `Release`         | Release/Debug             |
+| `ENABLE_AF_XDP`        | `OFF`             | 启用 AF_XDP 支持          |
+| `ENABLE_REDIS`         | `OFF`             | 启用 Redis Writer         |
+| `ENABLE_PERFTOOLS`     | `OFF`             | gperftools 内存 profiling |
+| `BUILD_TESTING`        | `ON`              | 构建测试套件              |
 
 ### 5.4 编译
 
@@ -243,6 +243,7 @@ btest
 ```
 
 编译时间（参考）：
+
 - 首次编译：15-30 分钟（8核机器）
 - 增量编译：2-5 分钟
 
@@ -429,7 +430,7 @@ docker run --rm \
 
 ```yaml
 # docker-compose.yml
-version: '3.8'
+version: "3.8"
 services:
   zeek:
     image: zeek/zeek:latest

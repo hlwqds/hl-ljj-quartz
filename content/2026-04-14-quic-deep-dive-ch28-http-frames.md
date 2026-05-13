@@ -22,27 +22,28 @@ HTTP/3 Frame:
 ```
 
 The QUIC layer provides:
+
 - Stream identification (which stream the frame belongs to)
 - Length delimitation (QUIC STREAM frame includes length)
 - Delivery ordering within a stream (QUIC delivers stream data in order)
 
-HTTP/3 only needs to define the frame *types* and their payload formats.
+HTTP/3 only needs to define the frame _types_ and their payload formats.
 
 ## 28.2 HTTP/3 Frame Types
 
 RFC 9114 defines the following frame types:
 
-| Frame Type | Value | Use |
-|---|---|---|
-| DATA | 0x00 | Request/response body |
-| HEADERS | 0x01 | Compressed header block |
-| CANCEL_PUSH | 0x03 | Cancel server push |
-| SETTINGS | 0x04 | Connection configuration |
-| PUSH_PROMISE | 0x05 | Server push initiation |
-| GOAWAY | 0x07 | Graceful connection close |
-| MAX_PUSH_ID | 0x0D | Limit push streams |
-| DUPLICATE_PUSH | 0x0E | Duplicate a push promise |
-| RESERVED | 0x09, 0x0F | (formerly HEADERS, keep-alive) |
+| Frame Type     | Value      | Use                            |
+| -------------- | ---------- | ------------------------------ |
+| DATA           | 0x00       | Request/response body          |
+| HEADERS        | 0x01       | Compressed header block        |
+| CANCEL_PUSH    | 0x03       | Cancel server push             |
+| SETTINGS       | 0x04       | Connection configuration       |
+| PUSH_PROMISE   | 0x05       | Server push initiation         |
+| GOAWAY         | 0x07       | Graceful connection close      |
+| MAX_PUSH_ID    | 0x0D       | Limit push streams             |
+| DUPLICATE_PUSH | 0x0E       | Duplicate a push promise       |
+| RESERVED       | 0x09, 0x0F | (formerly HEADERS, keep-alive) |
 
 ### 28.2.1 Frame Type Registry
 
@@ -137,13 +138,13 @@ SETTINGS Frame {
 
 Defined SETTINGS parameters:
 
-| Setting | ID | Default | Description |
-|---|---|---|---|
-| SETTINGS_MAX_FIELD_SECTION_SIZE | 0x06 | 16384 | Max header section size |
-| SETTINGS_QPACK_MAX_TABLE_CAPACITY | 0x03 | 0 | Dynamic table capacity |
-| SETTINGS_QPACK_BLOCKED_STREAMS | 0x07 | 0 | Max blocked streams |
-| SETTINGS_ENABLE_H3_DATAGRAM | 0x33 | 0 | Enable HTTP Datagram |
-| (reserved) | 0x09 | | Formerly MAX_FRAME_SIZE |
+| Setting                           | ID   | Default | Description             |
+| --------------------------------- | ---- | ------- | ----------------------- |
+| SETTINGS_MAX_FIELD_SECTION_SIZE   | 0x06 | 16384   | Max header section size |
+| SETTINGS_QPACK_MAX_TABLE_CAPACITY | 0x03 | 0       | Dynamic table capacity  |
+| SETTINGS_QPACK_BLOCKED_STREAMS    | 0x07 | 0       | Max blocked streams     |
+| SETTINGS_ENABLE_H3_DATAGRAM       | 0x33 | 0       | Enable HTTP Datagram    |
+| (reserved)                        | 0x09 |         | Formerly MAX_FRAME_SIZE |
 
 ```
 Example:
@@ -283,12 +284,12 @@ This reuses the same promised response for a different request context.
 
 HTTP/3 also supports WebTransport (RFC 9298), which defines additional frame types:
 
-| Frame Type | Value | Use |
-|---|---|---|
-| WT_DATA | 0x00 | WebTransport data |
-| WT_HEADERS | 0x01 | WebTransport headers |
-| WT_ACKNOWLEDGE | 0x02 | WebTransport ACK |
-| WT_CLOSE | 0x03 | WebTransport session close |
+| Frame Type     | Value | Use                        |
+| -------------- | ----- | -------------------------- |
+| WT_DATA        | 0x00  | WebTransport data          |
+| WT_HEADERS     | 0x01  | WebTransport headers       |
+| WT_ACKNOWLEDGE | 0x02  | WebTransport ACK           |
+| WT_CLOSE       | 0x03  | WebTransport session close |
 
 ## 28.12 Frame Ordering Rules
 
@@ -479,18 +480,19 @@ HTTP/3 frames don't have built-in padding. Use QUIC's `PADDING` frame if needed 
 
 HTTP/3 frames are carried on QUIC streams:
 
-| Frame | Purpose | Stream |
-|---|---|---|
-| DATA | Message body | Request/response |
-| HEADERS | QPACK-encoded headers | Request/response |
-| SETTINGS | Connection configuration | Stream 0 |
-| PUSH_PROMISE | Server push initiation | Server push |
-| CANCEL_PUSH | Cancel server push | Request |
-| GOAWAY | Graceful shutdown | Stream 0 |
-| MAX_PUSH_ID | Limit push streams | Request |
-| DUPLICATE_PUSH | Duplicate push promise | Request/response |
+| Frame          | Purpose                  | Stream           |
+| -------------- | ------------------------ | ---------------- |
+| DATA           | Message body             | Request/response |
+| HEADERS        | QPACK-encoded headers    | Request/response |
+| SETTINGS       | Connection configuration | Stream 0         |
+| PUSH_PROMISE   | Server push initiation   | Server push      |
+| CANCEL_PUSH    | Cancel server push       | Request          |
+| GOAWAY         | Graceful shutdown        | Stream 0         |
+| MAX_PUSH_ID    | Limit push streams       | Request          |
+| DUPLICATE_PUSH | Duplicate push promise   | Request/response |
 
 Key differences from HTTP/2:
+
 - No explicit length-prefixed framing (relies on QUIC STREAM)
 - SETTINGS is first frame on Stream 0
 - HEADERS no longer carries stream dependency info (not needed with QUIC streams)

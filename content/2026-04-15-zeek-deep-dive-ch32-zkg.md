@@ -9,14 +9,8 @@ tags:
   - customization
 ---
 
-> [!info] Zeek 2026 深度探索系列
-> 0. [[zeek-deep-dive-overview|全栈学习路径总览]]
-> ...
-> 29. [[zeek-deep-dive-ch29-logging-frameworks|第二十九章：日志框架与输出机制]]
-> 30. [[zeek-deep-dive-ch30-plugin-scripting|第三十章：第三方插件与脚本扩展体系]]
-> 31. [[zeek-deep-dive-ch31-custom-protocol-parsers|第三十一章：自定义协议解析器开发]]
-> 32. **第三十二章：事件引擎与日志定制**
-> 33. [[zeek-deep-dive-ch33-performance-tuning|第三十三章：性能调优与高级配置]]
+> [!info] Zeek 2026 深度探索系列 0. [[zeek-deep-dive-overview|全栈学习路径总览]]
+> ... 29. [[zeek-deep-dive-ch29-logging-frameworks|第二十九章：日志框架与输出机制]] 30. [[zeek-deep-dive-ch30-plugin-scripting|第三十章：第三方插件与脚本扩展体系]] 31. [[zeek-deep-dive-ch31-custom-protocol-parsers|第三十一章：自定义协议解析器开发]] 32. **第三十二章：事件引擎与日志定制** 33. [[zeek-deep-dive-ch33-performance-tuning|第三十三章：性能调优与高级配置]]
 
 ---
 
@@ -34,7 +28,7 @@ graph LR
         H["Event<br/>Handlers"]
         L["Logs"]
     end
-    
+
     N --> P
     P --> A
     A -->|Enqueue| E
@@ -55,19 +49,19 @@ graph TB
         T["Timer Queue"]
         T2["Deferred Queue"]
     end
-    
+
     subgraph "Dispatch Loop"
         D["Dispatcher"]
         H1["Handler 1"]
         H2["Handler 2"]
         H3["Handler N"]
     end
-    
+
     Q -->|pop| D
     D -->|dispatch| H1
     D -->|dispatch| H2
     D -->|dispatch| H3
-    
+
     note["每个事件按优先级顺序触发所有 Handler"]
 ```
 
@@ -75,11 +69,11 @@ graph TB
 
 Zeek 事件有**3 个优先级**：
 
-| 优先级 | 值 | 触发时机 | 用途 |
-| :--- | :--- | :--- | :--- |
-| **HIGH** | 0 | 立即处理 | 关键状态更新、阻止后续处理 |
-| **NORMAL** | 1 | 普通顺序 | 大部分事件处理 |
-| **LOW** | 2 | 最后处理 | 统计、最终状态记录 |
+| 优先级     | 值  | 触发时机 | 用途                       |
+| :--------- | :-- | :------- | :------------------------- |
+| **HIGH**   | 0   | 立即处理 | 关键状态更新、阻止后续处理 |
+| **NORMAL** | 1   | 普通顺序 | 大部分事件处理             |
+| **LOW**    | 2   | 最后处理 | 统计、最终状态记录         |
 
 ```zeek
 # 优先级示例
@@ -107,15 +101,15 @@ class EventManager {
 public:
     // 入队事件（从 C++ 层调用）
     void Enqueue(const Event* e, double time = 0);
-    
+
     // 立即分发（同步处理）
     void Dispatch(Event* e);
-    
+
     // 注册事件类型
-    void Register(const char* name, 
+    void Register(const char* name,
                   const std::type_info& argsig,
                   EventHandler* handler);
-    
+
     // 禁用/启用事件
     void Disable(const char* name);
     void Enable(const char* name);
@@ -228,7 +222,7 @@ module MyModule;
 
 export {
     redef enum Log::ID += { MY_LOG };
-    
+
     type Info: record {
         ts: time       &log;
         uid: string    &log;
@@ -262,13 +256,13 @@ event some_event(c: connection) {
 
 ### 4.2 日志 Writers
 
-| Writer | 输出格式 | 配置方式 |
-| :--- | :--- | :--- |
-| **ASCII** | 键值对 (key=value) | 默认 |
-| **JSON** | JSON Lines | `$writer=Log::WRITER_JSON` |
-| **CSV** | 逗号分隔 | `$writer=Log::WRITER_CSV` |
-| **Elasticsearch** | HTTP POST | `$writer=Log::WRITER_ASCII, $dest=...` |
-| **Syslog** | RFC 5424 | `$writer=Log::WRITER_SYSLOG` |
+| Writer            | 输出格式           | 配置方式                               |
+| :---------------- | :----------------- | :------------------------------------- |
+| **ASCII**         | 键值对 (key=value) | 默认                                   |
+| **JSON**          | JSON Lines         | `$writer=Log::WRITER_JSON`             |
+| **CSV**           | 逗号分隔           | `$writer=Log::WRITER_CSV`              |
+| **Elasticsearch** | HTTP POST          | `$writer=Log::WRITER_ASCII, $dest=...` |
+| **Syslog**        | RFC 5424           | `$writer=Log::WRITER_SYSLOG`           |
 
 ### 4.3 多目标日志输出
 
@@ -283,7 +277,7 @@ event zeek_init() {
         $dest=Log::WRITER_ASCII,  # 需要在 zeekctl 中配置
         $config=table(["host"] = "elasticsearch.example.com")
     ]);
-    
+
     # 同时写到本地文件和远程
     Log::add_filter(HTTP::LOG, [
         $name="http-remote",
@@ -315,7 +309,7 @@ event connection_state_remove(c: connection) {
 event suspicious_activity(c: connection) {
     # 动态禁用后续 HTTP 日志
     Log::disable_stream(HTTP::LOG);
-    
+
     # 但保留我们自己的日志
     Log::write(MY_LOG, [$ts=network_time(), $c=c, $reason="Suspicious HTTP activity"]);
 }
@@ -347,7 +341,7 @@ log_compression = gzip
 # 按日期组织日志
 event zeek_init() {
     local timestamp = strftime("%Y%m%d", network_time());
-    
+
     Log::create_stream(MY_LOG, [
         $columns=Info,
         $path=fmt("my-log-%s", timestamp)  # 动态路径
@@ -382,7 +376,7 @@ event zeek_init() {
             return Site::is_internal_addr(info$id$orig_h);
         }
     ]);
-    
+
     Log::add_filter(CONNECTION_LOG, [
         $name="external-only",
         $path="conn-external",
@@ -452,7 +446,7 @@ graph LR
         E3["复杂正则<br/>~1ms"]
         E4["外部查询<br/>~10ms+"]
     end
-    
+
     E1 --> E2 --> E3 --> E4
 ```
 
@@ -463,7 +457,7 @@ graph LR
 event packet_in(c: connection, p: pkt_hdr) {
     # 差：频繁字符串格式化
     local msg = fmt("Packet: %s -> %s", p$ip$src, p$ip$dst);
-    
+
     # 好：只在需要时格式化
     when ( need_detailed_log ) {
         local msg = fmt("Packet: %s -> %s", p$ip$src, p$ip$dst);
@@ -493,7 +487,7 @@ global buffer: vector of Info;
 event http_request(c: connection, method: string, uri: string, version: string) {
     # 添加到缓冲区
     buffer += [$ts=network_time(), $c=c, $method=method];
-    
+
     # 达到阈值时刷新
     if ( |buffer| >= 1000 ) {
         event flush();
@@ -502,12 +496,12 @@ event http_request(c: connection, method: string, uri: string, version: string) 
 
 event BufferedLogger::flush() {
     if ( |buffer| == 0 ) return;
-    
+
     # 批量写入
     for ( i in buffer ) {
         Log::write(MY_LOG, buffer[i]);
     }
-    
+
     buffer = vector();
 }
 ```
@@ -525,14 +519,14 @@ graph TB
         Z2["Zeek Proxy"]
         Z3["Zeek Proxy"]
     end
-    
+
     subgraph "Logging Infrastructure"
         K["Kafka<br/>Cluster"]
         E["Logstash"]
         ES["Elasticsearch"]
         G["Grafana"]
     end
-    
+
     Z1 -->|TCP+TLS| K
     Z2 -->|TCP+TLS| K
     Z3 -->|TCP+TLS| K
@@ -550,7 +544,7 @@ module ClusterLogger;
 
 export {
     redef enum Log::ID += { CLUSTER_LOG };
-    
+
     type Info: record {
         ts: time      &log;
         source_node: string &log;

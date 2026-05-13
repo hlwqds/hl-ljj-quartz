@@ -558,15 +558,15 @@ vpp# set interface feature arc ip4-multicast gigabitEthernet0/8/0 enable
 
 VPP L3 转发核心组件：
 
-| 组件 | 功能 | 关键算法 |
-|------|------|----------|
-| **FIB** | 路由表 | LC-trie |
+| 组件          | 功能          | 关键算法     |
+| ------------- | ------------- | ------------ |
+| **FIB**       | 路由表        | LC-trie      |
 | **IP4 Input** | IPv4 输入处理 | TTL/Checksum |
-| **IP6 Input** | IPv6 输入处理 | Hop Limit |
-| **ARP** | IPv4 邻居解析 | 动态/静态 |
-| **NDP** | IPv6 邻居解析 | 邻居通告 |
-| **Rewrite** | 封装处理 | L2 头写入 |
-| **ECMP** | 负载均衡 | Hash 选择 |
+| **IP6 Input** | IPv6 输入处理 | Hop Limit    |
+| **ARP**       | IPv4 邻居解析 | 动态/静态    |
+| **NDP**       | IPv6 邻居解析 | 邻居通告     |
+| **Rewrite**   | 封装处理      | L2 头写入    |
+| **ECMP**      | 负载均衡      | Hash 选择    |
 
 查找流程：
 

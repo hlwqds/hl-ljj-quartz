@@ -13,12 +13,12 @@ description: 使用 DPDK 在雷电拓展坞 + Mellanox MCX4121A 环境下验证 
 
 ### 理论值
 
-| 指标 | 数值 |
-|------|------|
-| 以太网速率 | 25 Gbps |
-| 线速吞吐 | ~3.0 Mpps（64B 小包） |
-| 大包吞吐 | ~2.98 GB/s（1518B，含开销约 23.8 Gbps） |
-| PCIe 带宽上限 | 8GT/s x4 ≈ 32 Gbps |
+| 指标          | 数值                                    |
+| ------------- | --------------------------------------- |
+| 以太网速率    | 25 Gbps                                 |
+| 线速吞吐      | ~3.0 Mpps（64B 小包）                   |
+| 大包吞吐      | ~2.98 GB/s（1518B，含开销约 23.8 Gbps） |
+| PCIe 带宽上限 | 8GT/s x4 ≈ 32 Gbps                      |
 
 ## 环境信息
 
@@ -39,13 +39,13 @@ description: 使用 DPDK 在雷电拓展坞 + Mellanox MCX4121A 环境下验证 
 sudo dnf install -y meson ninja-build libibverbs-devel rdma-core-devel numactl-devel
 ```
 
-| 包名 | 用途 |
-|------|------|
-| meson | DPDK 构建系统 |
-| ninja-build | 编译后端 |
-| libibverbs-devel | RDMA 动词库（Mellanox 驱动需要） |
-| rdma-core-devel | RDMA 核心开发头文件 |
-| numactl-devel | NUMA 内存策略（DPDK Hugepages 分配需要） |
+| 包名             | 用途                                     |
+| ---------------- | ---------------------------------------- |
+| meson            | DPDK 构建系统                            |
+| ninja-build      | 编译后端                                 |
+| libibverbs-devel | RDMA 动词库（Mellanox 驱动需要）         |
+| rdma-core-devel  | RDMA 核心开发头文件                      |
+| numactl-devel    | NUMA 内存策略（DPDK Hugepages 分配需要） |
 
 ## DPDK 编译
 
@@ -65,6 +65,7 @@ meson setup build
 ```
 
 验证 mlx5 驱动已启用：
+
 ```bash
 ls build/drivers/net/ | grep mlx
 # 输出：mlx4  mlx5
@@ -167,6 +168,7 @@ sudo ~/code/dpdk/usertools/dpdk-devbind.py -b vfio-pci --noiommu-mode 0000:52:00
 ```
 
 **验证绑定：**
+
 ```bash
 $ ~/code/dpdk/usertools/dpdk-devbind.py --status
 Network devices using DPDK-compatible driver
@@ -188,6 +190,7 @@ sudo ~/code/dpdk/build/app/dpdk-testpmd -l 0-1 -n 4 --iova-mode=va \
 ### 问题 1：IOMMU 未启用，mlx5 无法在 noiommu VA 模式下工作
 
 **现象：**
+
 ```
 PCI_BUS: Expecting 'PA' IOVA mode but current mode is 'VA', not initializing
 testpmd: No probed ethernet devices
@@ -196,6 +199,7 @@ testpmd: No probed ethernet devices
 **原因：** Mellanox mlx5 驱动要求物理地址（PA）IOVA 模式，但 noiommu 模式下只能使用虚拟地址（VA）模式。
 
 **检查 IOMMU 状态：**
+
 ```bash
 ls /sys/kernel/iommu_groups/ | wc -l
 # 输出 0 表示 IOMMU 未启用
@@ -365,42 +369,42 @@ testpmd> port config 0 rx_offload check_sum on # 开启校验和卸载
 
 ### 测试配置
 
-| 参数 | 值 |
-|------|-----|
-| 内核 | 6.19.11-200.fc43.x86_64 |
-| 转发模式 | flowgen（主动发包） |
-| 端口拓扑 | paired（双口 DAC 直连） |
-| 转发核心 | 3 cores（lcore 1-3） |
-| RX/TX 描述符 | 1024 |
-| 流数量 | 1024 flows |
-| 统计周期 | 30s（取稳定后第二周期） |
-| 连接方式 | SFP28 DAC 直连铜缆 |
+| 参数         | 值                      |
+| ------------ | ----------------------- |
+| 内核         | 6.19.11-200.fc43.x86_64 |
+| 转发模式     | flowgen（主动发包）     |
+| 端口拓扑     | paired（双口 DAC 直连） |
+| 转发核心     | 3 cores（lcore 1-3）    |
+| RX/TX 描述符 | 1024                    |
+| 流数量       | 1024 flows              |
+| 统计周期     | 30s（取稳定后第二周期） |
+| 连接方式     | SFP28 DAC 直连铜缆      |
 
 ### 理论参考值
 
-| 包长 | 线速 pps | 线速 Gbps | 备注 |
-|------|----------|-----------|------|
-| 64B | 29.76 Mpps | 15.24 | 最苛刻，帧间隔 12.8B |
-| 128B | 15.33 Mpps | 18.84 | |
-| 256B | 7.89 Mpps | 21.68 | |
-| 512B | 4.04 Mpps | 24.12 | |
-| 1024B | 2.05 Mpps | 25.15 | |
-| 1280B | 1.64 Mpps | 25.22 | |
-| 1518B | 1.39 Mpps | 25.24 | MTU 帧，接近上限 |
+| 包长  | 线速 pps   | 线速 Gbps | 备注                 |
+| ----- | ---------- | --------- | -------------------- |
+| 64B   | 29.76 Mpps | 15.24     | 最苛刻，帧间隔 12.8B |
+| 128B  | 15.33 Mpps | 18.84     |                      |
+| 256B  | 7.89 Mpps  | 21.68     |                      |
+| 512B  | 4.04 Mpps  | 24.12     |                      |
+| 1024B | 2.05 Mpps  | 25.15     |                      |
+| 1280B | 1.64 Mpps  | 25.22     |                      |
+| 1518B | 1.39 Mpps  | 25.24     | MTU 帧，接近上限     |
 
 ### 实测结果
 
 ### 实测结果
 
-| 包长 | 实测 pps | 实测 Gbps | pps 达标率 | bps 达标率 | 备注 |
-|------|----------|-----------|-----------|-----------|------|
-| 64B | 2.99 Mpps | 1.44 | 10.1% | 9.4% | CPU 软件瓶颈 |
-| 128B | 2.74 Mpps | 2.72 | 17.9% | 14.4% | |
-| 256B | 2.37 Mpps | 4.78 | 30.1% | 22.1% | |
-| 512B | 1.71 Mpps | 6.95 | 42.3% | 28.8% | |
-| 1024B | 1.06 Mpps | 8.61 | 51.5% | 34.2% | |
-| 1280B | 0.90 Mpps | 9.20 | 55.0% | 36.5% | |
-| 1518B | 0.76 Mpps | 9.18 | 54.5% | 36.4% | 带宽瓶颈 |
+| 包长  | 实测 pps  | 实测 Gbps | pps 达标率 | bps 达标率 | 备注         |
+| ----- | --------- | --------- | ---------- | ---------- | ------------ |
+| 64B   | 2.99 Mpps | 1.44      | 10.1%      | 9.4%       | CPU 软件瓶颈 |
+| 128B  | 2.74 Mpps | 2.72      | 17.9%      | 14.4%      |              |
+| 256B  | 2.37 Mpps | 4.78      | 30.1%      | 22.1%      |              |
+| 512B  | 1.71 Mpps | 6.95      | 42.3%      | 28.8%      |              |
+| 1024B | 1.06 Mpps | 8.61      | 51.5%      | 34.2%      |              |
+| 1280B | 0.90 Mpps | 9.20      | 55.0%      | 36.5%      |              |
+| 1518B | 0.76 Mpps | 9.18      | 54.5%      | 36.4%      | 带宽瓶颈     |
 
 **关键指标：**
 
@@ -430,13 +434,13 @@ testpmd> port config 0 rx_offload check_sum on # 开启校验和卸载
 
 ### 已知限制
 
-| 限制 | 影响 | 实测影响 |
-|------|------|----------|
-| PCIe x4 共享上行 | 双口总带宽上限 ~32 Gbps | 聚合 18.4 Gbps（57.5%） |
-| ASMedia 桥接 DMA mask 32-bit | IOMMU group DMA 降级 | trust_tb + iommu=nopt 已解决 |
-| Thunderbolt untrusted 标记 | DMA 强制走 SWIOTLB | trust_tb.ko 已清除 |
-| CPU 软件转发（flowgen） | 小包 pps 上限 ~3 Mpps | 64B 达标率 10.1% |
-| mlx5_core 共存模式 | 不能使用 vfio-pci 直通 | 需保持 mlx5_core 驱动 |
+| 限制                         | 影响                    | 实测影响                     |
+| ---------------------------- | ----------------------- | ---------------------------- |
+| PCIe x4 共享上行             | 双口总带宽上限 ~32 Gbps | 聚合 18.4 Gbps（57.5%）      |
+| ASMedia 桥接 DMA mask 32-bit | IOMMU group DMA 降级    | trust_tb + iommu=nopt 已解决 |
+| Thunderbolt untrusted 标记   | DMA 强制走 SWIOTLB      | trust_tb.ko 已清除           |
+| CPU 软件转发（flowgen）      | 小包 pps 上限 ~3 Mpps   | 64B 达标率 10.1%             |
+| mlx5_core 共存模式           | 不能使用 vfio-pci 直通  | 需保持 mlx5_core 驱动        |
 
 ### 问题 2：noiommu 模式下 VFIO 绑定失败
 
@@ -514,6 +518,7 @@ sudo grubby --update-kernel=ALL --remove-args="swiotlb=524288"
 ```
 
 **原理：** 在非 passthrough 模式下：
+
 - IOMMU DMA API 为 DPDK mempool 的每个物理页分配一个 32-bit 总线地址
 - IOMMU 页表记录：`bus_addr (32-bit) → phys_addr (64-bit)` 的映射
 - Mellanox 设备使用 32-bit bus_addr 发起 DMA，IOMMU 硬件自动翻译到 64-bit 物理地址
@@ -609,7 +614,6 @@ PCI-DMA: Using software bounce buffering for IO (SWIOTLB)
    内核 DMA 子系统对所有标记为 `untrusted` 的设备强制使用 SWIOTLB，即使 IOMMU 硬件翻译已启用。这是 Thunderclap 攻击（2019 NDSS 论文）的防护措施 — bounce buffer 确保设备只能访问内核专门分配的内存，不能通过 DMA 读写任意系统内存。
 
 3. **SWIOTLB bounce buffer 容量不足**
-
    - 默认 swiotlb 大小为 64MB（32768 slots），分配在 DMA32 zone（< 4GB）
    - DPDK mempool 分配在 `0x101caf000`（~4.03GB），超出 32-bit DMA 范围 28.7MB
    - MR 注册需要为 368MB mempool 创建 DMA 映射，UMR 页表本身需要 720KB 连续 swiotlb 空间
@@ -623,12 +627,12 @@ PCI-DMA: Using software bounce buffering for IO (SWIOTLB)
 
 以下是尝试过但无效的方案：
 
-| 方案 | 内核参数 | 结果 | 原因 |
-|------|---------|------|------|
-| IOMMU DMA 翻译 | `intel_iommu=on iommu=nopt` | 无效 | untrusted 设备仍走 swiotlb |
-| 增大 swiotlb | `swiotlb=524288` | 无效 | DMA32 zone 空间不足，反而加剧碎片化 |
-| 禁用 swiotlb 预分配 | 移除 `swiotlb=524288` | 无效 | swiotlb 默认 64MB 仍然不够 |
-| 强制 IOMMU 翻译 | `iommu=nopt` + 无 swiotlb | 无效 | DMA API 对 untrusted 设备始终选 swiotlb |
+| 方案                | 内核参数                    | 结果 | 原因                                    |
+| ------------------- | --------------------------- | ---- | --------------------------------------- |
+| IOMMU DMA 翻译      | `intel_iommu=on iommu=nopt` | 无效 | untrusted 设备仍走 swiotlb              |
+| 增大 swiotlb        | `swiotlb=524288`            | 无效 | DMA32 zone 空间不足，反而加剧碎片化     |
+| 禁用 swiotlb 预分配 | 移除 `swiotlb=524288`       | 无效 | swiotlb 默认 64MB 仍然不够              |
+| 强制 IOMMU 翻译     | `iommu=nopt` + 无 swiotlb   | 无效 | DMA API 对 untrusted 设备始终选 swiotlb |
 
 **`pci_dev->untrusted` 标记无法通过用户空间配置：**
 
@@ -726,22 +730,22 @@ Mellanox MCX4121A (双口 25GbE)
 
 ### 各层级带宽对比
 
-| 层级 | 带宽 | 是否构成瓶颈 |
-|------|------|-------------|
-| 25GbE 以太网单口 | 25 Gbps | — |
-| PCIe 3.0 x4 | ~32 Gbps (方向性) | 单口不瓶颈，双口同时满载（50 Gbps）会瓶颈 |
-| Thunderbolt 4 隧道 | 40 Gbps (总带宽，双向复用) | 双口同时满载时会瓶颈 |
-| IOMMU DMA 翻译 | 硬件翻译，延迟 ~100ns | 不瓶颈 |
-| PCIe 3.0 x4 × 双口 | 理论共享 32 Gbps | **双口同时跑满是硬上限** |
+| 层级               | 带宽                       | 是否构成瓶颈                              |
+| ------------------ | -------------------------- | ----------------------------------------- |
+| 25GbE 以太网单口   | 25 Gbps                    | —                                         |
+| PCIe 3.0 x4        | ~32 Gbps (方向性)          | 单口不瓶颈，双口同时满载（50 Gbps）会瓶颈 |
+| Thunderbolt 4 隧道 | 40 Gbps (总带宽，双向复用) | 双口同时满载时会瓶颈                      |
+| IOMMU DMA 翻译     | 硬件翻译，延迟 ~100ns      | 不瓶颈                                    |
+| PCIe 3.0 x4 × 双口 | 理论共享 32 Gbps           | **双口同时跑满是硬上限**                  |
 
 ### 理论上限预估
 
-| 场景 | 预估吞吐上限 | 瓶颈因素 |
-|------|-------------|----------|
-| 单口收发 | ~25 Gbps | Thunderbolt 隧道 (40 Gbps) 有余量 |
-| 单口 64B 小包 | ~25 Mpps (受限于 CPU 2 lcore) | 软件转发瓶颈 |
-| 双口同时满载 | ~32 Gbps 总计 | PCIe 3.0 x4 共享带宽 |
-| 双口 1518B 大包 | 各 ~16 Gbps | 带宽平分 |
+| 场景            | 预估吞吐上限                  | 瓶颈因素                          |
+| --------------- | ----------------------------- | --------------------------------- |
+| 单口收发        | ~25 Gbps                      | Thunderbolt 隧道 (40 Gbps) 有余量 |
+| 单口 64B 小包   | ~25 Mpps (受限于 CPU 2 lcore) | 软件转发瓶颈                      |
+| 双口同时满载    | ~32 Gbps 总计                 | PCIe 3.0 x4 共享带宽              |
+| 双口 1518B 大包 | 各 ~16 Gbps                   | 带宽平分                          |
 
 **结论：** 单口测试应能接近 25GbE 线速，双口同时跑满受限于 PCIe x4 共享带宽（约 32 Gbps），总吞吐上限约为线速的 64%。
 
@@ -781,14 +785,14 @@ ACPI 标记 Thunderbolt root port 为 external_facing
 
 ### 已知限制
 
-| 限制 | 影响 | 缓解措施 |
-|------|------|----------|
-| Thunderbolt untrusted 标记 | DMA 被强制走 SWIOTLB，DPDK MR 注册失败 | 加载 `trust_tb` 内核模块清除标记 |
+| 限制                                         | 影响                                      | 缓解措施                                     |
+| -------------------------------------------- | ----------------------------------------- | -------------------------------------------- |
+| Thunderbolt untrusted 标记                   | DMA 被强制走 SWIOTLB，DPDK MR 注册失败    | 加载 `trust_tb` 内核模块清除标记             |
 | IOMMU group 共享（桥接芯片 + 双口 Mellanox） | ASMedia 32-bit DMA mask 导致组内 DMA 降级 | 清除 untrusted 后 IOMMU 硬件自动处理地址翻译 |
-| PCIe 3.0 x4 共享带宽 | 双口同时满载上限 ~32 Gbps | 单口测试不受影响 |
-| CPU 核心数限制（2 lcore） | 64B 小包 pps 可能不达标 | 增加核心分配或接受软件瓶颈 |
-| Thunderbolt 隧道协议开销 | 实际可用带宽略低于 40 Gbps | 不影响单口测试结论 |
-| trust_tb 禁用安全防护 | 降低对恶意 Thunderbolt 设备的 DMA 防护 | 仅在信任的硬件上使用 |
+| PCIe 3.0 x4 共享带宽                         | 双口同时满载上限 ~32 Gbps                 | 单口测试不受影响                             |
+| CPU 核心数限制（2 lcore）                    | 64B 小包 pps 可能不达标                   | 增加核心分配或接受软件瓶颈                   |
+| Thunderbolt 隧道协议开销                     | 实际可用带宽略低于 40 Gbps                | 不影响单口测试结论                           |
+| trust_tb 禁用安全防护                        | 降低对恶意 Thunderbolt 设备的 DMA 防护    | 仅在信任的硬件上使用                         |
 
 ### 下一步
 
@@ -800,6 +804,7 @@ ACPI 标记 Thunderbolt root port 为 external_facing
 - ~~运行双口吞吐测试~~ 已完成（DAC 直连，flowgen 模式，7 种包长）
 
 **可能的进一步优化：**
+
 1. 单口测试（不共享 PCIe x4 带宽），预计单口大包可接近 15-16 Gbps
 2. 使用 `pktgen` 替代 testpmd flowgen，CPU 包生成效率更高
 3. 增加 lcore 数量（当前 3 个转发核心），可能提升小包 pps

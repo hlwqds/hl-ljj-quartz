@@ -262,12 +262,12 @@ docker run --cap-add=NET_ADMIN --network=host nicolaka/tcpdump -i eth0
 
 ### 4.3 tpacket_v3 vs tpacket_v2
 
-| 特性 | tpacket_v2 | tpacket_v3 |
-|------|------------|------------|
+| 特性     | tpacket_v2                          | tpacket_v3            |
+| -------- | ----------------------------------- | --------------------- |
 | 内存布局 | 环形缓冲（每个 ring slot 大小固定） | 灵活大小的块（block） |
-| 延时 | 中等（等待固定大小块） | 低（单个包即可上圈） |
-| 内存效率 | 低（slot 必须 >= max packet size） | 高（block 按需分配） |
-| 用途 | 通用抓包 | 超高吞吐（100Gbps+） |
+| 延时     | 中等（等待固定大小块）              | 低（单个包即可上圈）  |
+| 内存效率 | 低（slot 必须 >= max packet size）  | 高（block 按需分配）  |
+| 用途     | 通用抓包                            | 超高吞吐（100Gbps+）  |
 
 ### 4.4 XDP vs AF_PACKET
 
@@ -275,7 +275,7 @@ docker run --cap-add=NET_ADMIN --network=host nicolaka/tcpdump -i eth0
 XDP：网络驱动的最早期（在 skb 分配之前），可丢弃包
      优点：最早机会过滤，最高性能
      缺点：只能丢弃/转发，不能完整分析（内存受限）
-     
+
 AF_PACKET：在 TCP/IP stack 之前（kernel 5.8+ 支持 tpacket_v3）
            优点：零拷贝，完整包，高性能
            缺点：仍需 softirq，无法完全绕过 kernel

@@ -5,8 +5,8 @@ tags: [vpn, series, networking, security, tunnel, openvpn, ssl, tls, tun, tap, e
 description: "OpenVPN 深度解析——SSL VPN 架构、TUN/TAP 虚拟设备、OpenSSL 加密、证书认证、easy-rsa 证书生成、客户端配置、协议工作原理"
 ---
 
-> [!info] VPN 技术深度探索系列
-> 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+> [!info] VPN 技术深度探索系列 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-vpn-deep-dive-ch1-vpn-fundamentals|VPN 基础概念]]
 > 2. [[2026-04-13-vpn-deep-dive-ch2-tunnel-basics|第二章：隧道技术基础]]
 > 3. [[2026-04-13-vpn-deep-dive-ch3-crypto-fundamentals|第三章：密码学基础]]
@@ -30,30 +30,30 @@ graph TB
         App["应用程序"]
         App --> TUN["TUN 设备<br/>(L3 VPN)"]
         App --> TAP["TAP 设备<br/>(L2 VPN)"]
-        
+
         TUN --> OVP["OpenVPN 进程<br/>(用户态)"]
         TAP --> OVP
-        
+
         OVP --> SSL["OpenSSL<br/>(TLS 1.2/1.3)"]
         SSL --> UDP["UDP/TCP<br/>(1194)"]
         UDP --> IP["IP 网络"]
     end
-    
+
     style TUN fill:#3b82f6,color:#fff
     style TAP fill:#10b981,color:#fff
     style OVP fill:#f59f00,stroke:#333
 ```
 
-| 属性 | OpenVPN |
-|------|---------|
-| **类型** | SSL VPN (用户态实现) |
-| **License** | GPL v2 (开源) |
-| **隧道类型** | TUN (L3) / TAP (L2) |
-| **传输层** | UDP (默认) / TCP |
-| **默认端口** | 1194 (UDP) / 443 (TCP 混淆) |
-| **加密** | OpenSSL (AES-256-GCM, ChaCha20-Poly1305) |
-| **认证** | 证书、用户名/密码、双因素 |
-| **平台** | Linux, Windows, macOS, iOS, Android |
+| 属性         | OpenVPN                                  |
+| ------------ | ---------------------------------------- |
+| **类型**     | SSL VPN (用户态实现)                     |
+| **License**  | GPL v2 (开源)                            |
+| **隧道类型** | TUN (L3) / TAP (L2)                      |
+| **传输层**   | UDP (默认) / TCP                         |
+| **默认端口** | 1194 (UDP) / 443 (TCP 混淆)              |
+| **加密**     | OpenSSL (AES-256-GCM, ChaCha20-Poly1305) |
+| **认证**     | 证书、用户名/密码、双因素                |
+| **平台**     | Linux, Windows, macOS, iOS, Android      |
 
 ---
 
@@ -63,16 +63,16 @@ graph TB
 
 OpenVPN 支持两种虚拟网络设备模式，类似于 [[2026-04-13-vpn-deep-dive-ch2-tunnel-basics|第二章：隧道技术基础]] 中介绍的 tun/tap 设备：
 
-| 维度 | TUN 模式 | TAP 模式 |
-|------|----------|----------|
-| **OSI 层** | L3 (网络层) | L2 (数据链路层) |
-| **抽象对象** | 点对点隧道 | 以太网桥接 |
-| **封装内容** | IP 数据包 | Ethernet 帧 |
-| **IP 分配** | 每个客户端一个 IP | 每个客户端一个 MAC + IP |
-| **广播流量** | 不支持 | 支持 |
-| **典型用途** | 远程访问 IP VPN | 站点到站点 L2VPN |
-| **性能** | 略优 | 略低 |
-| **MTU** | ~1500 (需调整) | ~1500 |
+| 维度         | TUN 模式          | TAP 模式                |
+| ------------ | ----------------- | ----------------------- |
+| **OSI 层**   | L3 (网络层)       | L2 (数据链路层)         |
+| **抽象对象** | 点对点隧道        | 以太网桥接              |
+| **封装内容** | IP 数据包         | Ethernet 帧             |
+| **IP 分配**  | 每个客户端一个 IP | 每个客户端一个 MAC + IP |
+| **广播流量** | 不支持            | 支持                    |
+| **典型用途** | 远程访问 IP VPN   | 站点到站点 L2VPN        |
+| **性能**     | 略优              | 略低                    |
+| **MTU**      | ~1500 (需调整)    | ~1500                   |
 
 ```
 TUN 模式（路由模式）：
@@ -594,14 +594,14 @@ openssl x509 -noout -dates -in server.crt
 
 ## 9. 性能特性
 
-| 指标 | TUN 模式 | TAP 模式 |
-|------|----------|----------|
-| **吞吐量** | ~500 Mbps (CPU 绑定) | ~300 Mbps |
-| **延迟** | 低 | 低 |
-| **CPU 开销** | OpenSSL 加密 | OpenSSL + Ethernet 开销 |
-| **MTU** | 1500 (tun) | 1500 (tap) |
-| **分片** | 少 | 多（Ethernet 广播） |
-| **并发连接** | ~1000/服务器 | ~500/服务器 |
+| 指标         | TUN 模式             | TAP 模式                |
+| ------------ | -------------------- | ----------------------- |
+| **吞吐量**   | ~500 Mbps (CPU 绑定) | ~300 Mbps               |
+| **延迟**     | 低                   | 低                      |
+| **CPU 开销** | OpenSSL 加密         | OpenSSL + Ethernet 开销 |
+| **MTU**      | 1500 (tun)           | 1500 (tap)              |
+| **分片**     | 少                   | 多（Ethernet 广播）     |
+| **并发连接** | ~1000/服务器         | ~500/服务器             |
 
 ```bash
 # 性能优化配置
@@ -623,21 +623,22 @@ net.ipv4.tcp_window_scaling = 1
 
 ## 10. 总结
 
-| 维度 | 结论 |
-|------|------|
-| **协议定位** | SSL VPN，用户态实现，跨平台 |
-| **设备模式** | TUN (L3) 路由模式 / TAP (L2) 桥接模式 |
-| **加密** | OpenSSL，AES-GCM/ChaCha20-Poly1305 |
-| **认证** | 证书（PKI）+ 用户名密码 + tls-auth |
-| **优势** | NAT 穿透好，易调试，跨平台 |
-| **劣势** | 用户态性能低于内核协议栈（如 WireGuard） |
-| **适用场景** | 远程访问，跨 NAT 环境 |
+| 维度         | 结论                                     |
+| ------------ | ---------------------------------------- |
+| **协议定位** | SSL VPN，用户态实现，跨平台              |
+| **设备模式** | TUN (L3) 路由模式 / TAP (L2) 桥接模式    |
+| **加密**     | OpenSSL，AES-GCM/ChaCha20-Poly1305       |
+| **认证**     | 证书（PKI）+ 用户名密码 + tls-auth       |
+| **优势**     | NAT 穿透好，易调试，跨平台               |
+| **劣势**     | 用户态性能低于内核协议栈（如 WireGuard） |
+| **适用场景** | 远程访问，跨 NAT 环境                    |
 
 **下一章预告：** [[2026-04-13-vpn-deep-dive-ch12-openvpn-advanced|OpenVPN 高级特性]] — tls-auth、compression、redirect-gateway、Multi-client、CBCD、OVPN 进阶配置。
 
 ---
 
 > [!quote] 参考文献
+>
 > - OpenVPN Community Resources - https://community.openvpn.net
 > - RFC 6101 - The Secure Sockets Layer (SSL) Protocol
 > - [[2026-04-13-vpn-deep-dive-ch2-tunnel-basics|隧道技术基础 (本系列)]] — tun/tap 设备原理

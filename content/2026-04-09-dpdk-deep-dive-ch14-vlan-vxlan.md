@@ -5,10 +5,8 @@ tags: [dpdk, series, vlan, vxlan, tunnel, qinq, vlan-offload, overlay-network]
 description: "深入理解 DPDK 网络隧道——802.1Q VLAN、QinQ 双标签、VXLAN 封装格式、Overlay 网络、以及 tunnel offload 机制"
 ---
 
-> [!info] DPDK 深度探索系列
-> 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
-> 1-13. 前十三章已完成
-> 14. **第十四章：VLAN/VXLAN 隧道与报头封装**
+> [!info] DPDK 深度探索系列 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
+> 1-13. 前十三章已完成 14. **第十四章：VLAN/VXLAN 隧道与报头封装**
 
 ---
 
@@ -16,13 +14,13 @@ description: "深入理解 DPDK 网络隧道——802.1Q VLAN、QinQ 双标签�
 
 ### 1.1 VLAN vs VXLAN
 
-| 特性 | VLAN | VXLAN |
-|------|------|-------|
-| **标识数量** | 4096 | 1600 万 (2^24) |
-| **网络范围** | 本地（L2 broadcast domain） | 跨 L3 网络（Overlay） |
-| **封装位置** | 交换机/路由器 | VTEP（隧道端点） |
-| **头部开销** | 4 字节 | 50 字节（外部 Ethernet + IP + UDP + VXLAN） |
-| **三层互通** | 需要 VLAN 间路由 | 天然跨三层 |
+| 特性         | VLAN                        | VXLAN                                       |
+| ------------ | --------------------------- | ------------------------------------------- |
+| **标识数量** | 4096                        | 1600 万 (2^24)                              |
+| **网络范围** | 本地（L2 broadcast domain） | 跨 L3 网络（Overlay）                       |
+| **封装位置** | 交换机/路由器               | VTEP（隧道端点）                            |
+| **头部开销** | 4 字节                      | 50 字节（外部 Ethernet + IP + UDP + VXLAN） |
+| **三层互通** | 需要 VLAN 间路由            | 天然跨三层                                  |
 
 ### 1.2 典型报文格式
 
@@ -44,11 +42,11 @@ flowchart TB
     end
 ```
 
-| 对比 | 普通 Ethernet | VLAN (802.1Q) | VXLAN (Overlay) |
-|------|-------------|---------------|-----------------|
-| **额外开销** | 0B | +4B (VLAN tag) | +50B (Eth+IP+UDP+VXLAN) |
-| **网络标识** | 无 | 12-bit VLAN ID (4096) | 24-bit VNI (1600万) |
-| **跨 L3** | 不支持 | 不支持 | 支持 (UDP 封装) |
+| 对比         | 普通 Ethernet | VLAN (802.1Q)         | VXLAN (Overlay)         |
+| ------------ | ------------- | --------------------- | ----------------------- |
+| **额外开销** | 0B            | +4B (VLAN tag)        | +50B (Eth+IP+UDP+VXLAN) |
+| **网络标识** | 无            | 12-bit VLAN ID (4096) | 24-bit VNI (1600万)     |
+| **跨 L3**    | 不支持        | 不支持                | 支持 (UDP 封装)         |
 
 ---
 
@@ -420,15 +418,15 @@ parse_vxlan(struct rte_udp_hdr *udp)
 
 ### 3.3 VXLAN 完整封装
 
-| 字段 | 大小 | 说明 |
-|------|------|------|
-| **Outer Ethernet** | 14B | DMAC(6B) + SMAC(6B) + EtherType=0x0800 |
-| **Outer IP** | 20B | Src=VTEP-A IP, Dst=VTEP-B IP, Proto=17(UDP) |
-| **Outer UDP** | 8B | SrcPort(动态), DstPort=4789, Checksum(可选) |
-| **VXLAN Header** | 8B | Word 0: Flags(1B) + Reserved(3B), Word 1: VNI(3B) + Reserved(1B) |
-| **Inner Ethernet** | 14B | 原始帧的 DMAC + SMAC + EtherType |
-| **Inner IP** | 20B | VM 之间的原始 IP 头 |
-| **Inner L4 + Payload** | ... | 原始 TCP/UDP 头及数据 |
+| 字段                   | 大小 | 说明                                                             |
+| ---------------------- | ---- | ---------------------------------------------------------------- |
+| **Outer Ethernet**     | 14B  | DMAC(6B) + SMAC(6B) + EtherType=0x0800                           |
+| **Outer IP**           | 20B  | Src=VTEP-A IP, Dst=VTEP-B IP, Proto=17(UDP)                      |
+| **Outer UDP**          | 8B   | SrcPort(动态), DstPort=4789, Checksum(可选)                      |
+| **VXLAN Header**       | 8B   | Word 0: Flags(1B) + Reserved(3B), Word 1: VNI(3B) + Reserved(1B) |
+| **Inner Ethernet**     | 14B  | 原始帧的 DMAC + SMAC + EtherType                                 |
+| **Inner IP**           | 20B  | VM 之间的原始 IP 头                                              |
+| **Inner L4 + Payload** | ...  | 原始 TCP/UDP 头及数据                                            |
 
 > **Total Outer Overhead: 50 bytes** (14 + 20 + 8 + 8)，每个 VXLAN 包都额外携带 50 字节的外层头。对于大量小包（如 64B 的 TCP ACK），开销比例高达 78%。
 
@@ -704,15 +702,15 @@ struct rte_geneve_hdr {
 
 ### 5.1 特性对比表
 
-| 特性 | VLAN | VXLAN | GENEVE |
-|------|------|-------|--------|
-| **ID 空间** | 4096 | 1600 万 | 1600 万 |
-| **封装位置** | L2 交换机 | VTEP | VTEP |
-| **外层协议** | - | UDP | UDP |
-| **Header 大小** | 4B | 8B | 8B+ |
-| **L2 扩展** | 本地 | 跨 L3 | 跨 L3 |
-| **可扩展性** | 无 | 固定 | TLV 选项 |
-| **硬件支持** | 广泛 | 较好 | 一般 |
+| 特性            | VLAN      | VXLAN   | GENEVE   |
+| --------------- | --------- | ------- | -------- |
+| **ID 空间**     | 4096      | 1600 万 | 1600 万  |
+| **封装位置**    | L2 交换机 | VTEP    | VTEP     |
+| **外层协议**    | -         | UDP     | UDP      |
+| **Header 大小** | 4B        | 8B      | 8B+      |
+| **L2 扩展**     | 本地      | 跨 L3   | 跨 L3    |
+| **可扩展性**    | 无        | 固定    | TLV 选项 |
+| **硬件支持**    | 广泛      | 较好    | 一般     |
 
 ### 5.2 选型指南
 
@@ -977,6 +975,7 @@ setup_tenant_flows(uint16_t port_id, struct tenant_config *tenant)
 ---
 
 > [!tip] 参考文献
+>
 > - IEEE 802.1Q, "IEEE Standard for Local and Metropolitan Area Networks"
 > - RFC 7348, "VXLAN: A Framework for Overlaying Virtualized Layer 2 Networks"
 > - RFC 7637, "NVGRE: Network Virtualization Using Generic Routing Encapsulation"

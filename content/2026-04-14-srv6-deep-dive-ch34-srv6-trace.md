@@ -9,13 +9,9 @@ tags:
   - operations
 ---
 
-> [!info] SRv6 2026 深度探索系列
-> 0. [[2026-04-14-srv6-comprehensive-learning-roadmap|SRv6 全栈学习路径总览]]
-> ...
-> 33. [[2026-04-14-srv6-deep-dive-ch33-srv6-debug|第三三章：SRv6 常见错误与 Debug 实战]]
-> **34. 第三四章：SRv6 Traceroute 与路径追踪**
-> 35. [[2026-04-14-srv6-deep-dive-ch35-srv6-perf|第三五章：SRv6 性能监控与基准测试]]
-> 36. [[2026-04-14-srv6-deep-dive-ch36-srv6-tools|第三六章：SRv6 工具链与模拟器]]
+> [!info] SRv6 2026 深度探索系列 0. [[2026-04-14-srv6-comprehensive-learning-roadmap|SRv6 全栈学习路径总览]]
+> ... 33. [[2026-04-14-srv6-deep-dive-ch33-srv6-debug|第三三章：SRv6 常见错误与 Debug 实战]]
+> **34. 第三四章：SRv6 Traceroute 与路径追踪** 35. [[2026-04-14-srv6-deep-dive-ch35-srv6-perf|第三五章：SRv6 性能监控与基准测试]] 36. [[2026-04-14-srv6-deep-dive-ch36-srv6-tools|第三六章：SRv6 工具链与模拟器]]
 
 ---
 
@@ -35,7 +31,7 @@ graph LR
         A1["TTL=2"] -->|"ICMP Time Exceeded"| R2["R2 返回"]
         A2["TTL=3"] -->|"ICMP Time Exceeded"| R3["R3 返回"]
     end
-    
+
     subgraph "SRv6 traceroute"
         B["SRv6 Probe<br/>SL=3"] -->|"每 End 减 SL"| N1["N1: SL=2"]
         N1 -->|"ICMP w/ SID"| N2["N2: SL=1"]
@@ -61,18 +57,18 @@ sequenceDiagram
     participant P1 as 中间节点
     participant P2 as 中间节点
     participant PE2 as Egress PE
-    
+
     Note over C,PE2: Probe 1: SL=3
     C->>PE1: SRv6 Probe (DA=S1::, SL=3)
     Note over PE1: End behavior<br/>SL=2, 返回 ICMP
     PE1-->>C: ICMPv6 (Segment=S1::)
-    
+
     Note over C,PE2: Probe 2: SL=2
     C->>PE1: SRv6 Probe (DA=S2::, SL=2)
     PE1->>P1: SRv6 (DA=S2::, SL=2)
     Note over P1: End behavior<br/>SL=1, 返回 ICMP
     P1-->>C: ICMPv6 (Segment=S2::)
-    
+
     Note over C,PE2: Probe 3: SL=1
     C->>PE1: SRv6 Probe (DA=S3::, SL=1)
     PE1->>P1->>P2: SRv6 (DA=S3::, SL=1)
@@ -90,7 +86,7 @@ ICMPv6 Header:
   Type: 2 (Time Exceeded) 或 3 (Dest Unreachable)
   Code: 0
   Checksum: <icmp-checksum>
-  
+
 SRv6 Traceroute Extension (RFC 9088):
   - Original Address: 探测包的源 IPv6 地址
   - Original Segment List: 原始 Segment 列表
@@ -211,13 +207,13 @@ traceroute srv6 segment-list <sid-list>
 
 传统 traceroute 是**主动探测**，而 Path Tracing 是**被动记录**：
 
-| 特性 | Traceroute | Path Tracing |
-| :--- | :--- | :--- |
-| 方式 | 主动发送探测包 | 数据包携带元数据 |
-| 开销 | 每跳需返回 ICMP | 内嵌于数据流 |
-| 精度 | 依赖探测频率 | 100% 覆盖 |
-| 延迟影响 | 引入额外延迟 | 无 |
-| 适用场景 | 故障诊断 | 持续监控 |
+| 特性     | Traceroute      | Path Tracing     |
+| :------- | :-------------- | :--------------- |
+| 方式     | 主动发送探测包  | 数据包携带元数据 |
+| 开销     | 每跳需返回 ICMP | 内嵌于数据流     |
+| 精度     | 依赖探测频率    | 100% 覆盖        |
+| 延迟影响 | 引入额外延迟    | 无               |
+| 适用场景 | 故障诊断        | 持续监控         |
 
 ### 4.2 SRv6 IOAM 路径追踪
 
@@ -229,7 +225,7 @@ graph LR
     B --> C["P2<br/>追加节点元数据"]
     C --> D["P3<br/>追加节点元数据"]
     D --> E["Egress PE<br/>收集并上报"]
-    
+
     E -->|"gNMI/Telemetry"| M["监控平台"]
 ```
 
@@ -255,12 +251,12 @@ system-view
 srv6
   ioam enable
   ioam trace-type node-id-timestamp
-  
+
 # 配置 IOAM 导出
 ioam profile <profile-id>
   export-to collector <collector-ip>
   export-protocol gRPC
-  
+
 # 查看 IOAM 统计数据
 display srv6 ioam statistics
 display srv6 ioam trace
@@ -280,22 +276,22 @@ graph TD
         N3["P-2"]
         N4["PE-B"]
     end
-    
+
     subgraph "采集层"
         T1["Telemetry Collector"]
         K["Kafka"]
     end
-    
+
     subgraph "分析层"
         TSD["时序数据库<br/>InfluxDB / TimescaleDB"]
         G["Grafana"]
     end
-    
+
     N1 -->|"gNMI Streaming"| T1
     N2 -->|"gNMI Streaming"| T1
     N3 -->|"gNMI Streaming"| T1
     N4 -->|"gNMI Streaming"| T1
-    
+
     T1 --> K
     K --> TSD
     TSD --> G
@@ -384,23 +380,26 @@ set services output analytics grpc destination <collector-ip>
 > [!example] 场景：traceroute 显示前 3 跳正常，第 4 跳超时，第 5-6 跳正常
 >
 > **可能原因**：
+>
 > 1. 第 4 跳节点未使能 SRv6 traceroute response
 > 2. ICMP rate-limit 导致探测包被丢弃
 > 3. 节点处于低功耗状态（休眠/省电模式）
 >
 > **排查过程**：
+>
 > ```bash
 > # Step 1: 检查超时跳节点的 traceroute 配置
 > show segment-routing srv6 forwarding trace-options
-> 
+>
 > # Step 2: 检查 ICMP rate-limit
 > show system stats icmp | include "rate-limit"
-> 
+>
 > # Step 3: 检查节点 SRv6 功能
 > show srv6 interface
 > ```
 >
 > **解决方案**：
+>
 > - 启用节点的 traceroute response 功能
 > - 调整 ICMP rate-limit 配置
 > - 检查节点电源管理策略
@@ -410,15 +409,17 @@ set services output analytics grpc destination <collector-ip>
 > [!example] 场景：traceroute 路径与实际配置不符
 >
 > **根因分析**：
+>
 > - IGP 收敛期间路径临时变化
 > - ECMP 负载均衡导致不同探测走不同路径
 > - 节点重新上线后 SID 状态未完全恢复
 >
 > **解决方案**：
+>
 > ```bash
 > # 多次 traceroute 确认稳定性
 > traceroute segment-routing srv6 <dest> repeat 10
-> 
+>
 > # 检查 IGP 邻居状态
 > show isis neighbor
 > show ospf3 neighbor
@@ -465,7 +466,7 @@ def parse_traceroute_output(output: str, src: str, dst: str):
     """解析 traceroute 输出"""
     lines = output.strip().split('\n')
     hop_count = 0
-    
+
     for line in lines:
         # 解析 hop 行（各厂商格式略有不同）
         match = re.search(r'\d+\s+(\S+).*?([\d.]+)\s*ms', line)
@@ -473,13 +474,13 @@ def parse_traceroute_output(output: str, src: str, dst: str):
             hop_count += 1
             sid = match.group(1)
             latency = float(match.group(2))
-            
+
             srv6_path_latency.labels(
                 source=src,
                 destination=dst,
                 hop=sid
             ).set(latency)
-    
+
     srv6_path_hops.labels(source=src, destination=dst).set(hop_count)
 
 def collect_traceroute_metrics(targets: list):
@@ -487,7 +488,7 @@ def collect_traceroute_metrics(targets: list):
     for src, dst in targets:
         try:
             result = subprocess.run(
-                ['ssh', f'admin@{src}', 
+                ['ssh', f'admin@{src}',
                  f'traceroute segment-routing srv6 {dst}'],
                 capture_output=True, text=True, timeout=60
             )
@@ -497,13 +498,13 @@ def collect_traceroute_metrics(targets: list):
 
 if __name__ == "__main__":
     start_http_server(9100)
-    
+
     # 配置监控目标
     MONITOR_TARGETS = [
         ("pe-a", "2001:db8::10"),
         ("pe-b", "2001:db8::20"),
     ]
-    
+
     while True:
         collect_traceroute_metrics(MONITOR_TARGETS)
         time.sleep(60)  # 每分钟采集一次
@@ -597,18 +598,18 @@ nohup traceroute segment-routing srv6 <dest> repeat 1000 > /var/log/srv6_trace.l
 
 ### 9.1 Traceroute 使用场景
 
-| 场景 | 推荐方法 | 工具 |
-| :--- | :--- | :--- |
-| 快速故障定位 | 主动 traceroute | 各厂商 CLI |
+| 场景         | 推荐方法                 | 工具              |
+| :----------- | :----------------------- | :---------------- |
+| 快速故障定位 | 主动 traceroute          | 各厂商 CLI        |
 | 持续路径监控 | Path Tracing + Telemetry | gNMI + Prometheus |
-| 性能基准测试 | 多次 traceroute 统计 | 自定义脚本 |
-| 路径变更检测 | 定时 traceroute 对比 | 自动化监控 |
+| 性能基准测试 | 多次 traceroute 统计     | 自定义脚本        |
+| 路径变更检测 | 定时 traceroute 对比     | 自动化监控        |
 
 ### 9.2 常见问题与解决方案
 
-| 问题 | 原因 | 解决方案 |
-| :--- | :--- | :--- |
-| Traceroute 无响应 | 中间节点未使能 | 启用 SRv6 traceroute response |
-| 延迟波动大 | 链路拥塞/路由动荡 | 结合 telemetry 分析 |
-| SID 显示不一致 | ECMP 负载均衡 | 使用固定源端口重复探测 |
-| 超时跳不固定 | 链路不稳定 | 物理层检查 |
+| 问题              | 原因              | 解决方案                      |
+| :---------------- | :---------------- | :---------------------------- |
+| Traceroute 无响应 | 中间节点未使能    | 启用 SRv6 traceroute response |
+| 延迟波动大        | 链路拥塞/路由动荡 | 结合 telemetry 分析           |
+| SID 显示不一致    | ECMP 负载均衡     | 使用固定源端口重复探测        |
+| 超时跳不固定      | 链路不稳定        | 物理层检查                    |

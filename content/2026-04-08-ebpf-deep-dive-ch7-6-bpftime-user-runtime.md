@@ -9,8 +9,8 @@ tags:
   - uprobe
 ---
 
-> [!info] eBPF 2026 深度探索系列
-> 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+> [!info] eBPF 2026 深度探索系列 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+>
 > 1. [[2026-04-08-ebpf-deep-dive-ch1-registers-and-instructions|第一章：寄存器与指令集]]
 > 2. [[2026-04-08-ebpf-deep-dive-ch1-5-function-calls|第一.五章：四种函数调用与动态内存]]
 > 3. [[2026-04-08-ebpf-deep-dive-ch1-6-the-verifier|第一.六章：验证器 (Verifier) 的底层逻辑]]
@@ -62,6 +62,7 @@ tags:
 > 49. [[2026-04-09-ebpf-deep-dive-ch40-network-protocols-deep-dive|第四十章：网络协议深度解析——TCP/UDP/QUIC 的 eBPF 视角]]
 > 50. [[2026-04-09-ebpf-deep-dive-ch41-memory-safety-and-vulnerabilities|第四十一章：eBPF 内存安全与漏洞分析]]
 > 51. [[2026-04-09-ebpf-deep-dive-ch42-service-mesh-integration|第四十二章：eBPF 与 Service Mesh 深度集成]]
+
 ---
 
 # 第七章.6：bpftime 与用户态 eBPF 加速
@@ -206,15 +207,15 @@ graph LR
 
 ### 3.2 Map 类型支持
 
-| Map 类型 | bpftime 支持 | 实现方式 |
-|:---|:---|:---|
-| `BPF_MAP_TYPE_HASH` | 支持 | 共享内存 + spinlock |
-| `BPF_MAP_TYPE_ARRAY` | 支持 | 共享内存直接索引 |
-| `BPF_MAP_TYPE_PERCPU_ARRAY` | 支持 | 每个线程独立区域 |
-| `BPF_MAP_TYPE_RINGBUF` | 支持 | 用户态 Ring Buffer |
-| `BPF_MAP_TYPE_LPM_TRIE` | 支持 | 共享内存 LPM 树 |
-| `BPF_MAP_TYPE_STACK` | 支持 | 无锁栈 |
-| `BPF_MAP_TYPE_QUEUE` | 支持 | 无锁队列 |
+| Map 类型                    | bpftime 支持 | 实现方式            |
+| :-------------------------- | :----------- | :------------------ |
+| `BPF_MAP_TYPE_HASH`         | 支持         | 共享内存 + spinlock |
+| `BPF_MAP_TYPE_ARRAY`        | 支持         | 共享内存直接索引    |
+| `BPF_MAP_TYPE_PERCPU_ARRAY` | 支持         | 每个线程独立区域    |
+| `BPF_MAP_TYPE_RINGBUF`      | 支持         | 用户态 Ring Buffer  |
+| `BPF_MAP_TYPE_LPM_TRIE`     | 支持         | 共享内存 LPM 树     |
+| `BPF_MAP_TYPE_STACK`        | 支持         | 无锁栈              |
+| `BPF_MAP_TYPE_QUEUE`        | 支持         | 无锁队列            |
 
 ---
 
@@ -309,21 +310,21 @@ int main() {
 
 ### 5.1 微基准对比
 
-| 场景 | 内核 uprobe | bpftime | 提升倍数 |
-|:---|:---|:---|:---|
-| 空函数追踪 | ~3500ns | ~32ns | **109x** |
-| SSL 流量捕获 | ~5200ns | ~150ns | **34x** |
-| Map 更新操作 | ~800ns | ~120ns | **6.7x** |
-| malloc 追踪 | ~2800ns | ~45ns | **62x** |
-| JSON 解析追踪 | ~3100ns | ~60ns | **52x** |
+| 场景          | 内核 uprobe | bpftime | 提升倍数 |
+| :------------ | :---------- | :------ | :------- |
+| 空函数追踪    | ~3500ns     | ~32ns   | **109x** |
+| SSL 流量捕获  | ~5200ns     | ~150ns  | **34x**  |
+| Map 更新操作  | ~800ns      | ~120ns  | **6.7x** |
+| malloc 追踪   | ~2800ns     | ~45ns   | **62x**  |
+| JSON 解析追踪 | ~3100ns     | ~60ns   | **52x**  |
 
 ### 5.2 应用级吞吐量影响
 
-| 应用场景 | 无探针 | 内核 uprobe | bpftime |
-|:---|:---|:---|:---|
-| Nginx (静态文件) | 100K req/s | 85K req/s (-15%) | 99K req/s (-1%) |
-| Redis (GET/SET) | 500K ops/s | 320K ops/s (-36%) | 490K ops/s (-2%) |
-| PostgreSQL (TPS) | 12000 TPS | 9500 TPS (-21%) | 11800 TPS (-1.7%) |
+| 应用场景         | 无探针     | 内核 uprobe       | bpftime           |
+| :--------------- | :--------- | :---------------- | :---------------- |
+| Nginx (静态文件) | 100K req/s | 85K req/s (-15%)  | 99K req/s (-1%)   |
+| Redis (GET/SET)  | 500K ops/s | 320K ops/s (-36%) | 490K ops/s (-2%)  |
+| PostgreSQL (TPS) | 12000 TPS  | 9500 TPS (-21%)   | 11800 TPS (-1.7%) |
 
 ---
 
@@ -391,13 +392,13 @@ int main() {
 
 ### 7.1 权限与环境限制
 
-| 限制 | 原因 | 解决方案 |
-|:---|:---|:---|
-| **PTRACE scope** | `/proc/sys/kernel/yama/ptrace_scope` | 降级为 LD_PRELOAD 或 CRI 注入 |
-| **W^X 策略** | SELinux/AppArmor 阻止可写+可执行内存 | 使用 `execmem` SELinux 布尔值 |
-| **静态链接** | LD_PRELOAD 无法注入 | 使用 PTRACE 或静态链接模式 |
-| **符号剥离** | Stripped 二进制无法通过函数名定位 | 使用 ELF 解析工具手动计算偏移 |
-| **容器 Capability** | 缺少 `SYS_PTRACE` | 使用 CRI 集成或特权 Pod |
+| 限制                | 原因                                 | 解决方案                      |
+| :------------------ | :----------------------------------- | :---------------------------- |
+| **PTRACE scope**    | `/proc/sys/kernel/yama/ptrace_scope` | 降级为 LD_PRELOAD 或 CRI 注入 |
+| **W^X 策略**        | SELinux/AppArmor 阻止可写+可执行内存 | 使用 `execmem` SELinux 布尔值 |
+| **静态链接**        | LD_PRELOAD 无法注入                  | 使用 PTRACE 或静态链接模式    |
+| **符号剥离**        | Stripped 二进制无法通过函数名定位    | 使用 ELF 解析工具手动计算偏移 |
+| **容器 Capability** | 缺少 `SYS_PTRACE`                    | 使用 CRI 集成或特权 Pod       |
 
 ### 7.2 安全性考虑
 
@@ -455,22 +456,22 @@ BPF 字节码 (ELF .text)
 
 ### 8.3 寄存器映射
 
-| BPF 寄存器 | x86_64 寄存器 | 用途 |
-|:---|:---|:---|
-| `r0` | `rax` | 返回值 |
-| `r1-r5` | `rdi, rsi, rdx, rcx, r8` | 函数参数 |
-| `r6-r9` | `rbx, r13, r14, r15` | 被调用者保存 |
-| `r10` | `rbp` | 栈帧指针（只读） |
+| BPF 寄存器 | x86_64 寄存器            | 用途             |
+| :--------- | :----------------------- | :--------------- |
+| `r0`       | `rax`                    | 返回值           |
+| `r1-r5`    | `rdi, rsi, rdx, rcx, r8` | 函数参数         |
+| `r6-r9`    | `rbx, r13, r14, r15`     | 被调用者保存     |
+| `r10`      | `rbp`                    | 栈帧指针（只读） |
 
 ### 8.4 JIT vs 解释器性能差异
 
-| 指令类型 | JIT 延迟 | 解释器延迟 |
-|:---|:---|:---|
-| ALU (add/sub/mul) | ~1ns | ~5ns |
-| 内存加载 (ldxw) | ~2ns | ~10ns |
-| 条件分支 | ~1ns | ~8ns |
-| 函数调用 (helper) | ~50ns | ~80ns |
-| Map 查找 | ~120ns | ~150ns |
+| 指令类型          | JIT 延迟 | 解释器延迟 |
+| :---------------- | :------- | :--------- |
+| ALU (add/sub/mul) | ~1ns     | ~5ns       |
+| 内存加载 (ldxw)   | ~2ns     | ~10ns      |
+| 条件分支          | ~1ns     | ~8ns       |
+| 函数调用 (helper) | ~50ns    | ~80ns      |
+| Map 查找          | ~120ns   | ~150ns     |
 
 ---
 
@@ -566,14 +567,14 @@ static inline void *per_cpu_ptr(void *base, int cpu, size_t size) {
 
 ### 10.1 常见错误及解决
 
-| 错误信息 | 原因 | 解决方案 |
-|:---|:---|:---|
-| `Permission denied (PTRACE)` | ptrace_scope ≠ 0 | `sudo sysctl kernel.yama.ptrace_scope=0` |
-| `Cannot allocate RWX memory` | SELinux/AppArmor 阻止 | `sudo setsebool -P domain_can_mmap_shared_pages 1` |
-| `Symbol not found: SSL_write` | 符号被 strip | 使用 `objdump -T` 查找动态符号 |
-| `ELF parse error` | 静态链接二进制 | 使用 PTRACE 注入模式 |
-| `JIT compilation failed` | BPF 指令序列过于复杂 | 使用 `--interp` 解释器模式 |
-| `SHM already exists` | 上次异常退出未清理 | `rm /dev/shm/bpftime.*` |
+| 错误信息                      | 原因                  | 解决方案                                           |
+| :---------------------------- | :-------------------- | :------------------------------------------------- |
+| `Permission denied (PTRACE)`  | ptrace_scope ≠ 0      | `sudo sysctl kernel.yama.ptrace_scope=0`           |
+| `Cannot allocate RWX memory`  | SELinux/AppArmor 阻止 | `sudo setsebool -P domain_can_mmap_shared_pages 1` |
+| `Symbol not found: SSL_write` | 符号被 strip          | 使用 `objdump -T` 查找动态符号                     |
+| `ELF parse error`             | 静态链接二进制        | 使用 PTRACE 注入模式                               |
+| `JIT compilation failed`      | BPF 指令序列过于复杂  | 使用 `--interp` 解释器模式                         |
+| `SHM already exists`          | 上次异常退出未清理    | `rm /dev/shm/bpftime.*`                            |
 
 ### 10.2 调试命令
 

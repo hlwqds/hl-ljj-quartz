@@ -12,12 +12,8 @@ tags:
 description: "深入解析 Zeek 丢包处理——丢包检测、Intel E810 配置、DAG 卡、Tee 模式、流量镜像、故障排除"
 ---
 
-> [!info] Zeek 2026 深度探索系列
-> 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
-> ...
-> 27. [[2026-04-15-zeek-deep-dive-ch27-communication|第二十七章：通信]]
-> 28. [[2026-04-15-zeek-deep-dive-ch28-load-balancing|第二十八章：负载均衡]]
-> 29. **第二十九章：丢包处理**
+> [!info] Zeek 2026 深度探索系列 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
+> ... 27. [[2026-04-15-zeek-deep-dive-ch27-communication|第二十七章：通信]] 28. [[2026-04-15-zeek-deep-dive-ch28-load-balancing|第二十八章：负载均衡]] 29. **第二十九章：丢包处理**
 
 ---
 
@@ -60,12 +56,12 @@ description: "深入解析 Zeek 丢包处理——丢包检测、Intel E810 配�
 
 ### 1.1 丢包影响
 
-| 丢包类型 | 影响 | 严重程度 |
-|:---|:---|:---|
-| 丢连接开始 | 无法跟踪完整会话 | 高 |
-| 丢应用层数据 | 丢失关键 payload | 高 |
-| 丢 Keep-Alive | 会话超时 | 中 |
-| 丢 FIN/RST | 会话关闭延迟 | 低 |
+| 丢包类型      | 影响             | 严重程度 |
+| :------------ | :--------------- | :------- |
+| 丢连接开始    | 无法跟踪完整会话 | 高       |
+| 丢应用层数据  | 丢失关键 payload | 高       |
+| 丢 Keep-Alive | 会话超时         | 中       |
+| 丢 FIN/RST    | 会话关闭延迟     | 低       |
 
 ---
 
@@ -716,15 +712,15 @@ ps -o rss,vsz $(pidof zeek-worker) | awk '{print "RSS: " $1 " KB, VSZ: " $2 " KB
 
 ### 6.3 常见问题与解决方案
 
-| 问题 | 原因 | 解决方案 |
-|:---|:---|:---|
-| PF_RING 丢包 | DMA 缓冲区小 | 增加 `pf_ring` 内存 |
-| AF_PACKET 丢包 | 环形缓冲区小 | 增加 `num_blocks` |
-| RSS 不均 | 哈希分布问题 | 调整 `indir_table` |
-| 处理延迟 | CPU 瓶颈 | 增加 Worker 数 |
-| 中断风暴 | 多核调度问题 | CPU 亲和 |
-| 内存不足 | mmap 过大 | 调整缓冲区大小 |
-| 连接超时 | Proxy 过载 | 增加 Proxy 数 |
+| 问题           | 原因         | 解决方案            |
+| :------------- | :----------- | :------------------ |
+| PF_RING 丢包   | DMA 缓冲区小 | 增加 `pf_ring` 内存 |
+| AF_PACKET 丢包 | 环形缓冲区小 | 增加 `num_blocks`   |
+| RSS 不均       | 哈希分布问题 | 调整 `indir_table`  |
+| 处理延迟       | CPU 瓶颈     | 增加 Worker 数      |
+| 中断风暴       | 多核调度问题 | CPU 亲和            |
+| 内存不足       | mmap 过大    | 调整缓冲区大小      |
+| 连接超时       | Proxy 过载   | 增加 Proxy 数       |
 
 ### 6.4 优化参数
 
@@ -839,13 +835,13 @@ redef CaptureLoss::auto_failover = T;
 
 本章介绍了 Zeek 集群丢包处理的核心内容：
 
-| 丢包类型 | 检测方法 | 解决方案 |
-|:---|:---|:---|
-| **NIC 丢包** | ethtool 统计 | 调整队列、RSS |
-| **驱动丢包** | PF_RING/AF_PACKET 统计 | 增加缓冲区 |
-| **内核丢包** | /proc/net/* | 调整 sysctl |
-| **应用丢包** | capture_loss.log | 增加 Worker |
-| **集群丢包** | Broker 状态 | HA 配置 |
+| 丢包类型     | 检测方法               | 解决方案      |
+| :----------- | :--------------------- | :------------ |
+| **NIC 丢包** | ethtool 统计           | 调整队列、RSS |
+| **驱动丢包** | PF_RING/AF_PACKET 统计 | 增加缓冲区    |
+| **内核丢包** | /proc/net/\*           | 调整 sysctl   |
+| **应用丢包** | capture_loss.log       | 增加 Worker   |
+| **集群丢包** | Broker 状态            | HA 配置       |
 
 丢包处理的核心是**监控 -> 定位 -> 优化**的循环过程。通过合理的架构设计和参数调优，可以将丢包率控制在极低水平（< 0.01%）。
 
@@ -855,13 +851,13 @@ redef CaptureLoss::auto_failover = T;
 
 本部分（第二十五至二十九章）系统介绍了 Zeek 集群的核心内容：
 
-| 章节 | 主题 | 关键点 |
-|:---|:---|:---|
+| 章节     | 主题     | 关键点                           |
+| :------- | :------- | :------------------------------- |
 | **ch25** | 集群架构 | Manager/Proxy/Worker/Logger 角色 |
-| **ch26** | 集群配置 | node.cfg、cluster-layout.zeek |
-| **ch27** | 通信 | Broker 通信框架、发布订阅、RPC |
-| **ch28** | 负载均衡 | PF_RING、AF_PACKET、Flow 哈希 |
-| **ch29** | 丢包处理 | 丢包检测、Intel E810、DAG 卡 |
+| **ch26** | 集群配置 | node.cfg、cluster-layout.zeek    |
+| **ch27** | 通信     | Broker 通信框架、发布订阅、RPC   |
+| **ch28** | 负载均衡 | PF_RING、AF_PACKET、Flow 哈希    |
+| **ch29** | 丢包处理 | 丢包检测、Intel E810、DAG 卡     |
 
 ---
 

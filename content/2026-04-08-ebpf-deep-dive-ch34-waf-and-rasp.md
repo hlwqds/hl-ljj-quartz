@@ -9,8 +9,8 @@ tags:
   - injection-attack
 ---
 
-> [!info] eBPF 2026 深度探索系列
-> 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+> [!info] eBPF 2026 深度探索系列 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+>
 > 1. [[2026-04-08-ebpf-deep-dive-ch1-registers-and-instructions|第一章：寄存器与指令集]]
 > 2. [[2026-04-08-ebpf-deep-dive-ch1-5-function-calls|第一.五章：四种函数调用与动态内存]]
 > 3. [[2026-04-08-ebpf-deep-dive-ch1-6-the-verifier|第一.六章：验证器 (Verifier) 的底层逻辑]]
@@ -62,6 +62,7 @@ tags:
 > 49. [[2026-04-09-ebpf-deep-dive-ch40-network-protocols-deep-dive|第四十章：网络协议深度解析——TCP/UDP/QUIC 的 eBPF 视角]]
 > 50. [[2026-04-09-ebpf-deep-dive-ch41-memory-safety-and-vulnerabilities|第四十一章：eBPF 内存安全与漏洞分析]]
 > 51. [[2026-04-09-ebpf-deep-dive-ch42-service-mesh-integration|第四十二章：eBPF 与 Service Mesh 深度集成]]
+
 ---
 
 ## 1. 概述：安全边界的深度下沉
@@ -91,13 +92,13 @@ graph TB
     style NIC fill:#99ff99
 ```
 
-| 维度 | 传统 WAF | eBPF WAF | eBPF RASP |
-|:---|:---|:---|:---|
+| 维度         | 传统 WAF    | eBPF WAF       | eBPF RASP         |
+| :----------- | :---------- | :------------- | :---------------- |
 | **防御层级** | 应用层 (L7) | 网络层 (L2-L4) | 应用内部 (函数级) |
-| **延迟** | 1-10ms | 0.01-0.1μs | 0.1-1μs |
-| **吞吐量** | 10-50Gbps | 100-400Gbps | 无限制 |
-| **CPU 开销** | 高 (用户态) | 极低 (内核态) | 低 |
-| **绕过风险** | 编码绕过 | 难以绕过 | 无法绕过 |
+| **延迟**     | 1-10ms      | 0.01-0.1μs     | 0.1-1μs           |
+| **吞吐量**   | 10-50Gbps   | 100-400Gbps    | 无限制            |
+| **CPU 开销** | 高 (用户态) | 极低 (内核态)  | 低                |
+| **绕过风险** | 编码绕过    | 难以绕过       | 无法绕过          |
 
 ---
 
@@ -220,14 +221,14 @@ int xdp_waf_engine(struct xdp_md *ctx) {
 
 ### 3.2 RASP vs WAF vs 传统 Agent 对比
 
-| 维度 | 传统 WAF | Java Agent RASP | eBPF RASP |
-|:---|:---|:---|:---|
-| **部署方式** | 反向代理 | JVM -javaagent | 内核态 BPF 探针 |
-| **语言支持** | 所有 | 仅 Java | 所有（uprobe 通用） |
-| **性能影响** | 1-10ms 延迟 | 5-15% 吞吐下降 | < 1% 吞吐下降 |
-| **启动开销** | 无 | 增加启动时间 | 零（动态加载） |
-| **绕过难度** | 中（编码绕过） | 低（运行时拦截） | 极高（内核级拦截） |
-| **0-day 防护** | 需更新规则 | 需更新 Agent | 动态下发探针 |
+| 维度           | 传统 WAF       | Java Agent RASP  | eBPF RASP           |
+| :------------- | :------------- | :--------------- | :------------------ |
+| **部署方式**   | 反向代理       | JVM -javaagent   | 内核态 BPF 探针     |
+| **语言支持**   | 所有           | 仅 Java          | 所有（uprobe 通用） |
+| **性能影响**   | 1-10ms 延迟    | 5-15% 吞吐下降   | < 1% 吞吐下降       |
+| **启动开销**   | 无             | 增加启动时间     | 零（动态加载）      |
+| **绕过难度**   | 中（编码绕过） | 低（运行时拦截） | 极高（内核级拦截）  |
+| **0-day 防护** | 需更新规则     | 需更新 Agent     | 动态下发探针        |
 
 ### 3.3 RASP 代码：拦截危险的系统调用
 

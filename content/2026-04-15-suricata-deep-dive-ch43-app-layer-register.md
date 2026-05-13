@@ -11,14 +11,8 @@ tags:
 description: "深入解析 Suricata 自定义协议解析器开发：AppLayer Register 框架、State 状态机、Probe 探测、RegisterTosser、Parser 生命周期、以及 Rust 插件集成"
 ---
 
-> [!info] Suricata 2026 深度探索系列
-> 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
-> ...
-> 41. [[2026-04-15-suricata-deep-dive-ch41-iprep|第四十一章：IP 信誉系统]]
-> 42. [[2026-04-15-suricata-deep-dive-ch42-dataset|第四十二章：Dataset 与动态列表]]
-> 43. **第四十三章：自定义协议 Parser**
-> 44. [[2026-04-15-suricata-deep-dive-ch44-rust|第四十四章：Rust 扩展]]
-> 45. [[2026-04-15-suricata-deep-dive-ch45-cluster|第四十五章：集群模式]]
+> [!info] Suricata 2026 深度探索系列 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+> ... 41. [[2026-04-15-suricata-deep-dive-ch41-iprep|第四十一章：IP 信誉系统]] 42. [[2026-04-15-suricata-deep-dive-ch42-dataset|第四十二章：Dataset 与动态列表]] 43. **第四十三章：自定义协议 Parser** 44. [[2026-04-15-suricata-deep-dive-ch44-rust|第四十四章：Rust 扩展]] 45. [[2026-04-15-suricata-deep-dive-ch45-cluster|第四十五章：集群模式]]
 
 ---
 
@@ -52,13 +46,13 @@ graph TD
 
 ### 1.1 AppLayer 组件
 
-| 组件 | 作用 | 示例 |
-|:---|:---|:---|
-| **Protocol Detection (Probe)** | 识别协议类型 | HTTP Probing → 检测 "GET/HTTP" |
-| **State Machine** | 维护协议状态 | TCP Stream → HTTP Request/Response |
-| **Parser** | 解析协议数据 | HTTP POST /files/upload |
-| **Logger** | 输出结构化日志 | EVE JSON {event_type: http} |
-| **Detector** | 提供检测字段 | http.host, http.uri |
+| 组件                           | 作用           | 示例                               |
+| :----------------------------- | :------------- | :--------------------------------- |
+| **Protocol Detection (Probe)** | 识别协议类型   | HTTP Probing → 检测 "GET/HTTP"     |
+| **State Machine**              | 维护协议状态   | TCP Stream → HTTP Request/Response |
+| **Parser**                     | 解析协议数据   | HTTP POST /files/upload            |
+| **Logger**                     | 输出结构化日志 | EVE JSON {event_type: http}        |
+| **Detector**                   | 提供检测字段   | http.host, http.uri                |
 
 ### 1.2 解析流程
 
@@ -198,6 +192,7 @@ AppLayerProtocol *AppLayerFindProtocol(const char *name, uint8_t ipproto)
 ### 3.1 示例：自定义游戏协议 "GameX"
 
 假设我们要开发一个自定义游戏协议检测器，支持：
+
 - 端口 9999
 - 消息格式：`[HEADER(4)][TYPE(2)][LEN(4)][DATA(LEN)]`
 - HEADER: `0x47 0x58 0x50 0x4C` ("GXPL")
@@ -687,11 +682,11 @@ app-layer:
       # 检测配置
       detection:
         enabled: yes
-        trace: no              # 调试追踪
+        trace: no # 调试追踪
       # 日志配置
       log:
         enabled: yes
-        extented: yes          # 详细日志
+        extented: yes # 详细日志
 ```
 
 ### 8.2 编译集成

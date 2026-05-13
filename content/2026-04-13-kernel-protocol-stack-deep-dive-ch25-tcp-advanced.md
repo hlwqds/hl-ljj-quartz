@@ -1,12 +1,13 @@
 ---
 title: "Kernel Protocol Stack 深度探索 (二十五)：TCP 高级特性"
 date: 2026-04-13
-tags: [linux, kernel, networking, series, tcp, sack, dsack, tfo, fast-open, mptcp, tcp-mark, time-stamp]
+tags:
+  [linux, kernel, networking, series, tcp, sack, dsack, tfo, fast-open, mptcp, tcp-mark, time-stamp]
 description: "深入解析 TCP 高级特性——SACK/DSACK 选择性确认、TFO TCP快速打开、MPTCP多路径传输、TCP mark、timestamp 等"
 ---
 
-> [!info] Kernel Protocol Stack 深度探索系列
-> 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Kernel Protocol Stack 深度探索系列 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-kernel-protocol-stack-deep-dive-ch1-skbuff|第一章：sk_buff 与数据包生命周期]]
 > 2. [[2026-04-13-kernel-protocol-stack-deep-dive-ch2-netdevice|第二章：Netdevice 与网卡抽象]]
 > 3. [[2026-04-13-kernel-protocol-stack-deep-dive-ch3-ring-buffer|第三章：Ring Buffer 与 DMA]]
@@ -117,10 +118,10 @@ static void tcp_send_sack(struct sock *sk)
     if (tp->opt.sack_ok && tp->eiserver) {
         // 构造 SACK 选项
         unsigned char *ptr = tp->opt.tcp_options;
-        
+
         *ptr++ = TCPOPT_SACK;
         *ptr++ = (TCPOLEN_SACK + TCPOLEN_TSTAMP_ALIGNED);
-        
+
         // 添加每个乱序块的边界
         for (skb_it = skb_peek(&tp->out_of_order_queue);
              skb_it != (struct sk_buff *)&tp->out_of_order_queue;
@@ -148,6 +149,7 @@ DSACK 是 SACK 的扩展，用于报告重复接收的数据。当发送方收�
 ### 3.2 DSACK 选项
 
 DSACK 使用 SACK 选项，但携带一个特殊含义：
+
 - 第一个 SACK 块的左边界 > 右边界（不合法，正常 SACK 无此情况）
 
 实际上 DSACK 在第一个 SACK 块中填充接收到的重复数据范围。
@@ -267,6 +269,7 @@ static int tcp_rcv_fast_open_synack(struct sock *sk, struct sk_buff *skb,
 ### 5.1 原理
 
 Timestamp 选项用于：
+
 - RTTM（Round Trip Time Measurement）：精确测量 RTT
 - PAWS（Protection Against Wrapped Sequence numbers）：防止序列号回绕
 
@@ -369,6 +372,7 @@ sysctl -w net.ipv4.tcp_adv_win_scale = 7
 ### 7.1 概念
 
 MPTCP 允许在多个路径上同时传输数据，提供：
+
 - 更高的吞吐量（多路径聚合）
 - 容错性（一条路径断开不影响连接）
 - 更好的资源利用
@@ -597,15 +601,15 @@ setsockopt(sock, IPPROTO_TCP, TCP_CORK, &val, sizeof(val));
 
 ## 14. 总结
 
-| 特性 | RFC | 用途 | 内核默认值 |
-|------|-----|------|-----------|
-| SACK | RFC 2017 | 选择性确认，改进重传 | 启用 |
-| DSACK | RFC 3465 | 检测重复传输 | 启用 |
-| TFO | RFC 7413 | 减少连接延迟 | 客户端启用 |
-| Timestamp | RFC 7323 | RTTM + PAWS | 启用 |
-| Window Scaling | RFC 7323 | 扩大窗口 | 启用 |
-| MPTCP | RFC 8684 | 多路径传输 | 可选模块 |
-| Keepalive | - | 空闲检测 | 2小时空闲 |
-| TCP-AO | RFC 5925 | 安全认证 | 可选 |
+| 特性           | RFC      | 用途                 | 内核默认值 |
+| -------------- | -------- | -------------------- | ---------- |
+| SACK           | RFC 2017 | 选择性确认，改进重传 | 启用       |
+| DSACK          | RFC 3465 | 检测重复传输         | 启用       |
+| TFO            | RFC 7413 | 减少连接延迟         | 客户端启用 |
+| Timestamp      | RFC 7323 | RTTM + PAWS          | 启用       |
+| Window Scaling | RFC 7323 | 扩大窗口             | 启用       |
+| MPTCP          | RFC 8684 | 多路径传输           | 可选模块   |
+| Keepalive      | -        | 空闲检测             | 2小时空闲  |
+| TCP-AO         | RFC 5925 | 安全认证             | 可选       |
 
 这些高级特性让 TCP 能够适应从低俗拨号到 100GbE 的各种网络环境，是现代互联网的基石。

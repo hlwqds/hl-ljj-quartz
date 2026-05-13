@@ -10,8 +10,8 @@ tags:
   - performance
 ---
 
-> [!info] eBPF 2026 深度探索系列
-> 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+> [!info] eBPF 2026 深度探索系列 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+>
 > 1. [[2026-04-08-ebpf-deep-dive-ch1-registers-and-instructions|第一章：寄存器与指令集]]
 > 2. [[2026-04-08-ebpf-deep-dive-ch1-5-function-calls|第一.五章：四种函数调用与动态内存]]
 > 3. [[2026-04-08-ebpf-deep-dive-ch1-6-the-verifier|第一.六章：验证器 (Verifier) 的底层逻辑]]
@@ -63,6 +63,7 @@ tags:
 > 49. [[2026-04-09-ebpf-deep-dive-ch40-network-protocols-deep-dive|第四十章：网络协议深度解析——TCP/UDP/QUIC 的 eBPF 视角]]
 > 50. [[2026-04-09-ebpf-deep-dive-ch41-memory-safety-and-vulnerabilities|第四十一章：eBPF 内存安全与漏洞分析]]
 > 51. [[2026-04-09-ebpf-deep-dive-ch42-service-mesh-integration|第四十二章：eBPF 与 Service Mesh 深度集成]]
+
 ---
 
 ## 1. 概述：突破 400G 网络的瓶颈
@@ -75,10 +76,10 @@ tags:
 
 在 400Gbps 线速下，每秒处理约 6000 万个小包（64 字节）。即使 eBPF 的 XDP 路径已极度优化，主机 CPU 仍需消耗 4-8 个核心来处理纯网络逻辑。对于 AI 推理集群等计算密集型场景，这是不可接受的浪费。
 
-| 方案 | CPU 占用 | 延迟 | 吞吐上限 |
-|:---|:---|:---|:---|
-| 传统内核协议栈 | 8-16 核 | 10-50μs | ~50Mpps |
-| XDP (Native) | 2-4 核 | 1-5μs | ~100Mpps |
+| 方案                   | CPU 占用 | 延迟          | 吞吐上限 |
+| :--------------------- | :------- | :------------ | :------- |
+| 传统内核协议栈         | 8-16 核  | 10-50μs       | ~50Mpps  |
+| XDP (Native)           | 2-4 核   | 1-5μs         | ~100Mpps |
 | XDP (Hardware Offload) | **0 核** | **0.1-0.5μs** | **线速** |
 
 ### 1.2 硬件卸载的演进历程
@@ -131,14 +132,14 @@ graph TB
 
 硬件资源（如 SRAM、逻辑单元）远比 CPU 珍贵，因此卸载程序必须遵循更严格的约束：
 
-| 约束维度 | 主机 eBPF | 硬件卸载 eBPF |
-|:---|:---|:---|
-| **指令数量** | ~100 万条 | 通常 512-4096 条 |
-| **Map 类型** | 全量 (30+ 种) | Hash, Array, Cgroup Storage |
-| **Helper 函数** | 200+ | < 20 种基础函数 |
-| **循环** | 有界循环支持 | 通常不支持循环 |
-| **栈大小** | 512 字节 | 128-256 字节 |
-| **程序类型** | XDP/TC/LSM/kprobe... | 仅 XDP |
+| 约束维度        | 主机 eBPF            | 硬件卸载 eBPF               |
+| :-------------- | :------------------- | :-------------------------- |
+| **指令数量**    | ~100 万条            | 通常 512-4096 条            |
+| **Map 类型**    | 全量 (30+ 种)        | Hash, Array, Cgroup Storage |
+| **Helper 函数** | 200+                 | < 20 种基础函数             |
+| **循环**        | 有界循环支持         | 通常不支持循环              |
+| **栈大小**      | 512 字节             | 128-256 字节                |
+| **程序类型**    | XDP/TC/LSM/kprobe... | 仅 XDP                      |
 
 ### 2.3 硬件验证器的特殊规则
 
@@ -325,13 +326,13 @@ int main() {
 
 ### 5.1 主流 SmartNIC 平台对比
 
-| 平台 | 处理器架构 | eBPF 支持度 | 特色能力 | 典型应用 |
-|:---|:---|:---|:---|:---|
-| **NVIDIA BlueField-3** | ARM Cortex + 流量处理器 | 完整 XDP offload | DOCA SDK、NVLink | 存储网络、GPU Direct |
-| **AMD Pensando DPU** | P4 + eBPF 融合引擎 | XDP + 自定义 Map | 分布式防火墙、零信任 | 零信任网络、微分段 |
-| **Intel IPU E2100** | Xeon-D + FPGA | XDP offload | SR-IOV + OVS 卸载 | 电信 NFV、5G UPF |
-| **FPGA (Xilinx/Intel)** | 可编程逻辑 | eBPF→Verilog 综合 | 亚微秒延迟、可定制管线 | 高频交易、国防 |
-| **华为鲲鹏智能网卡** | ARM + 自研 NPU | XDP + 自研扩展 | 国产化替代、RDMA | 金融、政务云 |
+| 平台                    | 处理器架构              | eBPF 支持度       | 特色能力               | 典型应用             |
+| :---------------------- | :---------------------- | :---------------- | :--------------------- | :------------------- |
+| **NVIDIA BlueField-3**  | ARM Cortex + 流量处理器 | 完整 XDP offload  | DOCA SDK、NVLink       | 存储网络、GPU Direct |
+| **AMD Pensando DPU**    | P4 + eBPF 融合引擎      | XDP + 自定义 Map  | 分布式防火墙、零信任   | 零信任网络、微分段   |
+| **Intel IPU E2100**     | Xeon-D + FPGA           | XDP offload       | SR-IOV + OVS 卸载      | 电信 NFV、5G UPF     |
+| **FPGA (Xilinx/Intel)** | 可编程逻辑              | eBPF→Verilog 综合 | 亚微秒延迟、可定制管线 | 高频交易、国防       |
+| **华为鲲鹏智能网卡**    | ARM + 自研 NPU          | XDP + 自研扩展    | 国产化替代、RDMA       | 金融、政务云         |
 
 ### 5.2 FPGA 模式的特殊优势
 
@@ -355,6 +356,7 @@ graph LR
 ```
 
 **FPGA eBPF 综合流程**：
+
 1. **前端**：标准 LLVM 编译 eBPF C 代码为 eBPF 字节码
 2. **中端**：自定义 Pass 将 eBPF 指令映射为数据流图（DFG）
 3. **后端**：FPGA 综合工具将 DFG 转换为 Verilog/HDL
@@ -366,12 +368,12 @@ graph LR
 
 ### 6.1 常见问题诊断表
 
-| 现象 | 可能原因 | 诊断命令 |
-|:---|:---|:---|
-| `bpftool load` 失败 | 指令数超限 | `readelf -S prog.o` 查看段大小 |
+| 现象                 | 可能原因           | 诊断命令                                  |
+| :------------------- | :----------------- | :---------------------------------------- |
+| `bpftool load` 失败  | 指令数超限         | `readelf -S prog.o` 查看段大小            |
 | 程序加载成功但不生效 | 驱动不支持 offload | `ethtool -k ens2f0 \| grep hw-tc-offload` |
-| 报文未被过滤 | Map 未同步到硬件 | `bpftool map dump` 对比硬件统计 |
-| 性能未提升 | PCIe 瓶颈 | `lspci -vvv` 检查 PCIe 链路宽度 |
+| 报文未被过滤         | Map 未同步到硬件   | `bpftool map dump` 对比硬件统计           |
+| 性能未提升           | PCIe 瓶颈          | `lspci -vvv` 检查 PCIe 链路宽度           |
 
 ### 6.2 硬件计数器读取
 
@@ -406,6 +408,7 @@ graph TB
 ```
 
 **分流原则**：
+
 - **硬件层**：状态无关的快速路径（ACL、限速、基础路由）
 - **主机层**：需要访问用户态状态或复杂解析的逻辑（HTTP 解析、gRPC 路由）
 - **Map 同步**：硬件和主机通过共享 Map（或用户态同步）保持策略一致
@@ -440,6 +443,7 @@ graph TB
 ```
 
 **部署效果**：
+
 - 总带宽：400Gbps × 4 = 1.6Tbps
 - SmartNIC 层过滤：99.5% 的攻击流量（SYN Flood、UDP Flood）
 - 主机 XDP 层过滤：剩余 0.5% 中的 80%（HTTP 异常）
@@ -447,13 +451,13 @@ graph TB
 
 ### 9.2 成本分析
 
-| 项目 | 传统方案 | eBPF 硬件卸载 |
-|:---|:---|:---|
-| 防御带宽 | 100Gbps (硬件防火墙) | 1.6Tbps (SmartNIC) |
-| 设备成本 | $200K (专用防火墙 × 16) | $80K (SmartNIC × 40) |
-| CPU 占用 | 32 核 (4 核/100G) | 0 核 |
-| 年电费 | $50K | $5K |
-| 总 TCO (3年) | $1.1M | $0.5M |
+| 项目         | 传统方案                | eBPF 硬件卸载        |
+| :----------- | :---------------------- | :------------------- |
+| 防御带宽     | 100Gbps (硬件防火墙)    | 1.6Tbps (SmartNIC)   |
+| 设备成本     | $200K (专用防火墙 × 16) | $80K (SmartNIC × 40) |
+| CPU 占用     | 32 核 (4 核/100G)       | 0 核                 |
+| 年电费       | $50K                    | $5K                  |
+| 总 TCO (3年) | $1.1M                   | $0.5M                |
 
 ---
 
@@ -485,13 +489,13 @@ dmesg | grep -i "offload\|hw_bpf\|tc_offload"
 
 ### 10.2 常见卸载失败原因与解决方案
 
-| 失败现象 | 可能原因 | 解决方案 |
-|:---|:---|:---|
-| `bpftool net show` 无 hw_offload | 网卡未开启硬件卸载 | `ethtool -K eth0 hw-tc-offload on` |
-| 程序加载成功但无流量命中 | 流量未进入硬件管线 | 检查 RSS 队列映射和 steering 模式 |
-| Map 查找返回全零 | 硬件 Map 未同步 | 手动调用 `bpftool map update` 同步 |
-| 特定 Helper 报错 | 硬件不支持该 Helper | 查阅网卡厂商的 BPF 能力矩阵 |
-| 性能无提升 | 程序未被卸载（fallback 到 SW） | 使用 `bpftool prog show` 确认运行位置 |
+| 失败现象                         | 可能原因                       | 解决方案                              |
+| :------------------------------- | :----------------------------- | :------------------------------------ |
+| `bpftool net show` 无 hw_offload | 网卡未开启硬件卸载             | `ethtool -K eth0 hw-tc-offload on`    |
+| 程序加载成功但无流量命中         | 流量未进入硬件管线             | 检查 RSS 队列映射和 steering 模式     |
+| Map 查找返回全零                 | 硬件 Map 未同步                | 手动调用 `bpftool map update` 同步    |
+| 特定 Helper 报错                 | 硬件不支持该 Helper            | 查阅网卡厂商的 BPF 能力矩阵           |
+| 性能无提升                       | 程序未被卸载（fallback 到 SW） | 使用 `bpftool prog show` 确认运行位置 |
 
 ### 10.3 性能基准测试方法
 

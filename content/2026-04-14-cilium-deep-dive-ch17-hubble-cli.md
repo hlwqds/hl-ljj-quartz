@@ -12,8 +12,8 @@ tags:
   - troubleshooting
 ---
 
-> [!info] Cilium 2026 深度探索系列
-> 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+> [!info] Cilium 2026 深度探索系列 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+>
 > 1. [[2026-04-14-cilium-deep-dive-ch1-cilium-overview|第一章：Cilium 概述]]
 > 2. [[2026-04-14-cilium-deep-dive-ch2-architecture|第二章：Cilium 架构]]
 > 3. [[2026-04-14-cilium-deep-dive-ch3-ebpf-datapath|第三章：eBPF 数据面]]
@@ -309,7 +309,7 @@ hubble endpoint get 512
 # Status: OK
 # Pod: production/frontend-5f9b8c7d6-l3m4n
 # Labels: app=frontend,version=v2
-# Policy: 
+# Policy:
 #   Ingress: ALLOWED (2 rules)
 #   Egress: ALLOWED (1 rule)
 ```
@@ -537,7 +537,7 @@ hubble observe --verdict DROPPED --follow --output json | while read flow; do
   DROP_REASON=$(echo "$flow" | jq -r '.drop_reason // "UNKNOWN"')
   SOURCE=$(echo "$flow" | jq -r '.source.pod_name // "unknown"')
   DEST=$(echo "$flow" | jq -r '.destination.pod_name // "unknown"')
-  
+
   kubectl create event \
     --namespace production \
     --message "Dropped traffic from $SOURCE to $DEST: $DROP_REASON" \
@@ -600,6 +600,7 @@ Hubble CLI 提供了强大的命令行流量分析能力：
 6. **hubble record/play**：流量录制回放
 
 CLI 工具特别适合：
+
 - 快速排错和调试
 - 脚本化和自动化
 - CI/CD 集成

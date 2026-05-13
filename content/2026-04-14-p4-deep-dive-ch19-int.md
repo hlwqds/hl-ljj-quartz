@@ -1,12 +1,13 @@
 ---
 title: "P4 深度探索 (十九)：INT——In-band Network Telemetry 随流检测"
 date: 2026-04-14
-tags: [p4, series, int, in-band-network-telemetry, telemetry, network-observability, p4-16, metadata]
+tags:
+  [p4, series, int, in-band-network-telemetry, telemetry, network-observability, p4-16, metadata]
 description: "P4 INT (In-band Network Telemetry) 深度解析——随流遥测架构、INT Header 格式、Metadata 收集与插入、Hop-by-Hop vs End-to-End INT、INT 在 Tofino 上的实现、Telemetry 收集器"
 ---
 
-> [!info] P4 深度探索系列
-> 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+> [!info] P4 深度探索系列 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-14-p4-deep-dive-ch1-p4-overview|第一章：P4 概述——诞生背景与协议无关包处理]]
 > 2. [[2026-04-14-p4-deep-dive-ch2-p4-architecture|第二章：P4 架构模型——PSA/V1Model、Ingress/Egress]]
 > 3. [[2026-04-14-p4-deep-dive-ch3-p4-vs-ebpf|第三章：P4 vs eBPF——适用场景与硬件/软件对比]]
@@ -113,19 +114,19 @@ INT 完整架构:
 
 ### 2.2 INT Metadata 类型
 
-| Metadata 类型 | 描述 |
-|--------------|------|
-| Switch ID | 交换机标识 |
-| Ingress Port | 入端口 |
-| Egress Port | 出端口 |
-| Hop Timestamp | 时间戳（纳秒/微秒） |
-| Queue Depth | 队列深度（包数或字节） |
-| Queue Occupancy | 队列占用率 (0-100%) |
-| Congestion ECN | ECN 拥塞标记 |
-| Hop Latency | 本跳延迟 |
-| Processing Delay | 处理延迟 |
-| Hop Count | 跳数 |
-| Flow ID | 流标识符 |
+| Metadata 类型    | 描述                   |
+| ---------------- | ---------------------- |
+| Switch ID        | 交换机标识             |
+| Ingress Port     | 入端口                 |
+| Egress Port      | 出端口                 |
+| Hop Timestamp    | 时间戳（纳秒/微秒）    |
+| Queue Depth      | 队列深度（包数或字节） |
+| Queue Occupancy  | 队列占用率 (0-100%)    |
+| Congestion ECN   | ECN 拥塞标记           |
+| Hop Latency      | 本跳延迟               |
+| Processing Delay | 处理延迟               |
+| Hop Count        | 跳数                   |
+| Flow ID          | 流标识符               |
 
 ---
 
@@ -787,14 +788,13 @@ control Egress(
 
 本章介绍了 **INT (In-band Network Telemetry)** 随流遥测技术：
 
-| 概念 | 描述 |
-|------|------|
-| **INT** | In-band Network Telemetry，随数据包携带的实时遥测数据 |
-| **INT Header** | 位于 UDP 6081 或 Hop-by-Hop Option 中 |
-| **Instruction Bitmap** | 指定需要收集哪些 Metadata |
-| **Hop-by-Hop INT** | 每跳插入/追加 Metadata |
-| **End-to-End INT** | 仅源/宿插入/收集 Metadata |
-| **INT Collector** | 接收并聚合 INT 数据 |
+| 概念                   | 描述                                                  |
+| ---------------------- | ----------------------------------------------------- |
+| **INT**                | In-band Network Telemetry，随数据包携带的实时遥测数据 |
+| **INT Header**         | 位于 UDP 6081 或 Hop-by-Hop Option 中                 |
+| **Instruction Bitmap** | 指定需要收集哪些 Metadata                             |
+| **Hop-by-Hop INT**     | 每跳插入/追加 Metadata                                |
+| **End-to-End INT**     | 仅源/宿插入/收集 Metadata                             |
+| **INT Collector**      | 接收并聚合 INT 数据                                   |
 
 INT 是 P4 在**网络可观测性**领域最重要的应用之一，它让网络运维人员能够精确地看到每个数据包在网络中的"旅程"——包括每跳的延迟、队列深度、ECN 状态等关键指标。
-

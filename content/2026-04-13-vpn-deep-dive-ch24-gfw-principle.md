@@ -5,8 +5,8 @@ tags: [vpn, series, gfw, censorship, dpi, firewall, china]
 description: "中国防火长城（GFW）深度解析——DPI 深度包检测、关键字过滤、IP 封锁、DNS 污染、连接重置、SNI 过滤、TLS 指纹识别，了解审查系统的技术实现"
 ---
 
-> [!info] VPN 技术深度探索系列
-> 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+> [!info] VPN 技术深度探索系列 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-vpn-deep-dive-ch23-wireguard-cloud|WireGuard 云端方案]]
 > 2. **第二十四章：GFW 工作原理**
 > 3. [[2026-04-13-vpn-deep-dive-ch25-shadowsocks|第二十五章：Shadowsocks 原理]]
@@ -113,7 +113,7 @@ TCP RST 攻击原理：
 正常 TCP 连接：
 Client ──────────────────────────────▶ Server
          [Src Port: 54321, Seq: 1000]
-         
+
 Client ◀───────────────────────────────── Server
          [Dst Port: 54321, Seq: 2000, ACK: 1001]
 
@@ -135,6 +135,7 @@ Server ◀── TCP RST ──────────────────�
 ```
 
 **TCP RST 包特征：**
+
 - TTL 通常设置为 64 或 128（与真实 Server 的 TTL 不同）
 - IP ID 可能为 0（GFW 生成的包特征）
 - Window Size 通常为 0
@@ -162,7 +163,7 @@ Client ──── DNS Query: facebook.com ─────▶ DNS Resolver
                                         │
 Client ◀─── DNS Response: 8.7.8.8 ────── DNS Resolver
          (GFW 伪造的响应，返回错误 IP)
-         
+
 真实响应被 GFW 丢弃或延迟到无法使用
 ```
 
@@ -311,14 +312,14 @@ SNI 在 TLS 握手中的位置：
 TCP 握手完成后：
 
 Client ──── TLS ClientHello ────────────────────────────────────▶ Server
-           │                                                       
-           │ Extension: server_name                               
-           │   server_name: "facebook.com"  (明文！)              
-           │                                                       
+           │
+           │ Extension: server_name
+           │   server_name: "facebook.com"  (明文！)
+           │
 Server ◀─── TLS ServerHello + Certificate ─────────────────────── Client
-           │                                                       
-           │ Certificate 中包含域名                               
-           │                                                       
+           │
+           │ Certificate 中包含域名
+           │
 
 GFW 可以解析 ClientHello 中的 SNI 字段：
 ┌─────────────────────────────────────────────────────────────────┐
@@ -339,6 +340,7 @@ GFW 可以解析 ClientHello 中的 SNI 字段：
 ### 5.2 TLS 指纹识别
 
 GFW 不仅检测 SNI，还会分析 TLS ClientHello 的**指纹特征**，包括：
+
 - 支持的密码套件列表及其顺序
 - 支持的 TLS 扩展及其顺序
 - elliptic_curves 列表

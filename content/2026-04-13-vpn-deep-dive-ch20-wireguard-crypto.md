@@ -5,8 +5,8 @@ tags: [vpn, series, wireguard, cryptography, chacha20, curve25519, blake2s]
 description: "WireGuard 密码学深度解析——ChaCha20-Poly1305 AEAD 对称加密、Curve25519 椭圆曲线 Diffie-Hellman、BLAKE2s 哈希函数、HKDF 密钥派生、WireGuard 的固定加密套件设计哲学"
 ---
 
-> [!info] VPN 技术深度探索系列
-> 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+> [!info] VPN 技术深度探索系列 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-vpn-deep-dive-ch1-vpn-fundamentals|VPN 基础概念]]
 > 2. [[2026-04-13-vpn-deep-dive-ch18-ipsec-troubleshooting|第十八章：IPSec 排错]]
 > 3. [[2026-04-13-vpn-deep-dive-ch19-wireguard-protocol|第十九章：WireGuard 协议详解]]

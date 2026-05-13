@@ -5,16 +5,16 @@ tags: [p4, series, vlan, vxlan, overlay, underlay, network-virtualization, tunne
 description: "P4 VLAN/VXLAN 编程深度解析——802.1Q VLAN Tagging、Native VLAN vs Q-in-Q、VXLAN Tunnel、Overlay/Underlay 网络分离、VTEP 封装/解封装、EVPN 集成"
 ---
 
-> [!info] P4 深度探索系列
-> 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+> [!info] P4 深度探索系列 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-14-p4-deep-dive-ch1-p4-overview|第一章：P4 概述——诞生背景与协议无关包处理]]
 > 2. [[2026-04-14-p4-deep-dive-ch2-p4-architecture|第二章：P4 架构模型——PSA/V1Model、Ingress/Egress]]
 > 3. [[2026-04-14-p4-deep-dive-ch3-p4-vs-ebpf|第三章：P4 vs eBPF——适用场景与硬件/软件对比]]
-> ...
-> 30. [[2026-04-14-p4-deep-dive-ch30-p4-control-plane-advanced|第三十章：P4 控制面高级主题]]
-> 31. [[2026-04-14-p4-deep-dive-ch31-basic-routing|第三十一章：P4 基础路由编程]]
-> 32. [[2026-04-14-p4-deep-dive-ch32-access-list|第三十二章：P4 ACL 编程]]
-> 33. **第三十三章：P4 VLAN/VXLAN 编程——VLAN Tagging、VXLAN Tunnel、Overlay/Underlay**
+>    ...
+> 4. [[2026-04-14-p4-deep-dive-ch30-p4-control-plane-advanced|第三十章：P4 控制面高级主题]]
+> 5. [[2026-04-14-p4-deep-dive-ch31-basic-routing|第三十一章：P4 基础路由编程]]
+> 6. [[2026-04-14-p4-deep-dive-ch32-access-list|第三十二章：P4 ACL 编程]]
+> 7. **第三十三章：P4 VLAN/VXLAN 编程——VLAN Tagging、VXLAN Tunnel、Overlay/Underlay**
 
 ---
 
@@ -47,13 +47,13 @@ Overlay/Underlay 双层网络架构:
 
 ### 1.1 VLAN vs VXLAN
 
-| 特性 | VLAN | VXLAN |
-|------|------|-------|
-| **ID 空间** | 12-bit (4,094) | 24-bit (16M) |
-| **网络范围** | L2广播域**本地** | L2广播域**跨网络** |
-| **封装** | 802.1Q Tag | UDP + VXLAN Header |
-| **Underlay 依赖** | 无 | 需要 IP 网络 |
-| **典型用途** | 数据中心接入 | 多租户/跨 Pod |
+| 特性              | VLAN             | VXLAN              |
+| ----------------- | ---------------- | ------------------ |
+| **ID 空间**       | 12-bit (4,094)   | 24-bit (16M)       |
+| **网络范围**      | L2广播域**本地** | L2广播域**跨网络** |
+| **封装**          | 802.1Q Tag       | UDP + VXLAN Header |
+| **Underlay 依赖** | 无               | 需要 IP 网络       |
+| **典型用途**      | 数据中心接入     | 多租户/跨 Pod      |
 
 ---
 
@@ -629,24 +629,24 @@ table tenant_acl {
 
 ### 6.2 VLAN/VXLAN 隔离对比
 
-| 隔离层级 | VLAN | VXLAN |
-|---------|------|-------|
-| **L2 隔离** | VID (12-bit) | VNI (24-bit) |
-| **L3 隔离** | VRF-Lite | VRF (共享 Underlay) |
-| **租户数量** | ~4K | 16M |
-| **跨 Pod 扩展** | ❌ | ✅ |
-| **封装开销** | 4 bytes | 54 bytes (outer header) |
+| 隔离层级        | VLAN         | VXLAN                   |
+| --------------- | ------------ | ----------------------- |
+| **L2 隔离**     | VID (12-bit) | VNI (24-bit)            |
+| **L3 隔离**     | VRF-Lite     | VRF (共享 Underlay)     |
+| **租户数量**    | ~4K          | 16M                     |
+| **跨 Pod 扩展** | ❌           | ✅                      |
+| **封装开销**    | 4 bytes      | 54 bytes (outer header) |
 
 ---
 
 ## 7. 常见问题与排查
 
-| 问题 | 原因 | 解决方案 |
-|------|------|---------|
-| VXLAN 包被丢弃 | VTEP 未注册 | 检查 VTEP 发现机制 |
-| VLAN 内泛洪 | MAC 学习泛洪 | 启用 MAC 地址同步 |
-| MTU 问题 | VXLAN 封装后超 MTU | 增大物理接口 MTU |
-| VNI 冲突 | 多租户 VNI 重叠 | 确保 VNI 全局唯一 |
+| 问题           | 原因               | 解决方案           |
+| -------------- | ------------------ | ------------------ |
+| VXLAN 包被丢弃 | VTEP 未注册        | 检查 VTEP 发现机制 |
+| VLAN 内泛洪    | MAC 学习泛洪       | 启用 MAC 地址同步  |
+| MTU 问题       | VXLAN 封装后超 MTU | 增大物理接口 MTU   |
+| VNI 冲突       | 多租户 VNI 重叠    | 确保 VNI 全局唯一  |
 
 ---
 

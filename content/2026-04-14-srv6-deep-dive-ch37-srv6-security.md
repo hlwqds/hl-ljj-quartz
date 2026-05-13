@@ -9,14 +9,9 @@ tags:
   - threat
 ---
 
-> [!info] SRv6 2026 深度探索系列
-> 0. [[2026-04-14-srv6-comprehensive-learning-roadmap|SRv6 全栈学习路径总览]]
-> ...
-> 36. [[2026-04-14-srv6-deep-dive-ch36-srv6-tools|第三六章：SRv6 工具链与模拟器]]
-> **37. 第三七章：SRv6 安全威胁与防护机制**
-> 38. [[2026-04-14-srv6-deep-dive-ch38-srv6-security-rfc|第三八章：SRv6 Source Address Validation 与 uRPF]]
-> 39. [[2026-04-14-srv6-deep-dive-ch39-srv6-ipsec|第三九章：SRv6 + IPsec 端到端加密]]
-> 40. [[2026-04-14-srv6-deep-dive-ch40-srv6-perf|第四十章：SRv6 转发性能与 TCAM]]
+> [!info] SRv6 2026 深度探索系列 0. [[2026-04-14-srv6-comprehensive-learning-roadmap|SRv6 全栈学习路径总览]]
+> ... 36. [[2026-04-14-srv6-deep-dive-ch36-srv6-tools|第三六章：SRv6 工具链与模拟器]]
+> **37. 第三七章：SRv6 安全威胁与防护机制** 38. [[2026-04-14-srv6-deep-dive-ch38-srv6-security-rfc|第三八章：SRv6 Source Address Validation 与 uRPF]] 39. [[2026-04-14-srv6-deep-dive-ch39-srv6-ipsec|第三九章：SRv6 + IPsec 端到端加密]] 40. [[2026-04-14-srv6-deep-dive-ch40-srv6-perf|第四十章：SRv6 转发性能与 TCAM]]
 
 ---
 
@@ -33,7 +28,7 @@ graph TD
         D["拒绝服务<br/>DoS / DDoS"]
         E["拓扑泄露<br/>Topology Leakage"]
     end
-    
+
     subgraph "防护机制"
         F["ICV 完整性校验"]
         G["SAVAL / uRPF"]
@@ -41,13 +36,13 @@ graph TD
         I["ACL / Rate Limiting"]
         J["加密封装"]
     end
-    
+
     A --> F
     B --> F
     C --> H
     D --> I
     E --> J
-    
+
     style A fill:#ff6b6b,color:#000
     style B fill:#ff6b6b,color:#000
     style C fill:#ffd43b,color:#000
@@ -74,12 +69,12 @@ graph TD
 
 SRv6 安全相关 RFC 和草案：
 
-| 文档 | 主题 | 状态 |
-| :--- | :--- | :--- |
-| RFC 8754 | SRv6 Handoff to Other Networks | Proposed Standard |
-| RFC 8986 | SRv6 Network Programming | Proposed Standard |
-| draft-ietf-spring-srv6-security | SRv6 Security | Internet-Draft |
-| draft-ietf-spring-srh-validation | SRH Validation | Internet-Draft |
+| 文档                             | 主题                           | 状态              |
+| :------------------------------- | :----------------------------- | :---------------- |
+| RFC 8754                         | SRv6 Handoff to Other Networks | Proposed Standard |
+| RFC 8986                         | SRv6 Network Programming       | Proposed Standard |
+| draft-ietf-spring-srv6-security  | SRv6 Security                  | Internet-Draft    |
+| draft-ietf-spring-srh-validation | SRH Validation                 | Internet-Draft    |
 
 ---
 
@@ -109,7 +104,7 @@ SRv6 安全相关 RFC 和草案：
 IPv6 Header:
   Source: 2001:db8::attacker
   Destination: FC00:0:1:1::1  (伪造的 End SID)
-  
+
 SRH:
   Segments Left: 1
   Segment List[0]: FC00:0:1:1::1   # 伪造的中间节点
@@ -121,12 +116,12 @@ SRH:
 
 中间人攻击者修改 SRH 中的 Segment Left 或 Segment List：
 
-| 攻击类型 | 修改内容 | 后果 |
-| :--- | :--- | :--- |
-| SL 修改 | Segments Left 值被篡改 | 路径跳跃错误 |
-| Segment 替换 | Segment List 中 SID 被替换 | 流量重定向 |
-| ICV 破坏 | 修改后重新计算 ICV | ICV 校验失败 |
-| Flag 篡改 | PSP/USP Flag 被修改 | 转发行为异常 |
+| 攻击类型     | 修改内容                   | 后果         |
+| :----------- | :------------------------- | :----------- |
+| SL 修改      | Segments Left 值被篡改     | 路径跳跃错误 |
+| Segment 替换 | Segment List 中 SID 被替换 | 流量重定向   |
+| ICV 破坏     | 修改后重新计算 ICV         | ICV 校验失败 |
+| Flag 篡改    | PSP/USP Flag 被修改        | 转发行为异常 |
 
 ### 2.3 重放攻击 (Replay Attack)
 
@@ -145,7 +140,7 @@ graph LR
     A["攻击者"] -->|大量 SRv6 包| B["入口节点"]
     A -->|放大攻击| C["反射节点"]
     A -->|分段洪水| D["TCAM 溢出"]
-    
+
     style A fill:#ff6b6b,color:#000
     style D fill:#ff6b6b,color:#000
 ```
@@ -228,7 +223,7 @@ set protocols segment-routing-srv6 icv key-chain SRV6-KEY-CHAIN
 set protocols segment-routing-srv6 icv algorithm aes-128-gcm
 
 # 配置密钥链
-set security authentication key-chain SRV6-KEY-CHAIN key 1 
+set security authentication key-chain SRV6-KEY-CHAIN key 1
     key-string "juniper456"
     algorithm aes-128-gcm
     lifetime start-time 2024-01-01.00:00:00
@@ -255,12 +250,12 @@ graph TD
 
 ### 4.1 SRv6 ACL 分类
 
-| ACL 类型 | 作用 | 典型部署位置 |
-| :--- | :--- | :--- |
-| SRv6 入口 ACL | 过滤伪造 SID 流量 | Ingress PE / Edge Router |
-| SRv6 转发 ACL | 控制 Segment 栈深度 | 核心节点 |
-| SRv6 出口 ACL | 验证目标 SID 合法性 | Egress PE |
-| SRv6 Segment ACL | 基于 SID 的精细控制 | 全网节点 |
+| ACL 类型         | 作用                | 典型部署位置             |
+| :--------------- | :------------------ | :----------------------- |
+| SRv6 入口 ACL    | 过滤伪造 SID 流量   | Ingress PE / Edge Router |
+| SRv6 转发 ACL    | 控制 Segment 栈深度 | 核心节点                 |
+| SRv6 出口 ACL    | 验证目标 SID 合法性 | Egress PE                |
+| SRv6 Segment ACL | 基于 SID 的精细控制 | 全网节点                 |
 
 ### 4.2 Cisco IOS-XR SRv6 ACL 配置
 
@@ -270,14 +265,14 @@ ipv6 access-list SRV6-SECURITY
   # 允许已知 SID 范围
   permit srv6 any FC00:0:1::/32 any
   permit srv6 any FC00:0:2::/32 any
-  
+
   # 允许特定行为
   permit srv6 behavior end any any
   permit srv6 behavior end-x any any
-  
+
   # 拒绝所有其他 SRv6 流量
   deny srv6 any any any
-  
+
   # 允许普通 IPv6（非 SRv6）
   permit ipv6 any any
 
@@ -290,7 +285,7 @@ interface GigabitEthernet 0/0/0/0
 
 ```bash
 # 创建 SRv6 过滤策略
-set firewall family inet6 filter SRV6-FILTER term 1 
+set firewall family inet6 filter SRV6-FILTER term 1
     from next-header 43
     from srv6-segment FC00:0:1::/32
     then accept
@@ -324,7 +319,7 @@ acl ipv6 name SRV6-SECURITY
   rule 10 permit srv6 segment FC00:0:2::/32
   rule 15 permit srv6 behavior end
   rule 20 permit srv6 behavior end-x
-  rule 25 deny srv6 
+  rule 25 deny srv6
   rule 30 permit ipv6
 
 # 应用到接口
@@ -340,7 +335,7 @@ interface GigabitEthernet 0/0/0
 # Cisco IOS-XR: 限制 Segment 栈深度
 segment-routing srv6
   max-segments 8
-  
+
 # Juniper Junos: Segment 深度策略
 set system sr-srv6 max-segments 8
 
@@ -365,12 +360,12 @@ graph TD
         D["IPv6 外层"]
         E["以太网"]
     end
-    
+
     A --> B
     B --> C
     C --> D
     D --> E
-    
+
     style A fill:#ffd43b,color:#000
     style B fill:#51cf66,color:#000
     style C fill:#4dabf7,color:#000
@@ -379,11 +374,11 @@ graph TD
 
 ### 5.2 SRv6 + IPsec 封装顺序
 
-| 模式 | 封装顺序 | 使用场景 |
-| :--- | :--- | :--- |
-| 路由协议加密 | IPsec -> SRv6 | Overlay 网络 |
-| 传输模式 | SRv6 (传输) + IPsec | 端到端安全 |
-| 隧道模式 | IPsec -> SRv6 -> IPsec | 双层加密 |
+| 模式         | 封装顺序               | 使用场景     |
+| :----------- | :--------------------- | :----------- |
+| 路由协议加密 | IPsec -> SRv6          | Overlay 网络 |
+| 传输模式     | SRv6 (传输) + IPsec    | 端到端安全   |
+| 隧道模式     | IPsec -> SRv6 -> IPsec | 双层加密     |
 
 ### 5.3 配置示例
 
@@ -395,7 +390,7 @@ crypto ipsec profile SRV6-IPSEC
   set transform-set ESP-AES-GCM-256
   set pfs group14
   set security-association lifetime seconds 3600
-  
+
 # 配置 SRv6 并应用 IPsec
 segment-routing srv6
   encap ipsec
@@ -432,13 +427,13 @@ segment-routing srv6
 
 ### 6.2 SID 管理安全规范
 
-| 规范 | 说明 | 优先级 |
-| :--- | :--- | :--- |
-| SID 范围隔离 | 生产/测试/管理 SID 分离 | 必须 |
-| SID 分配最小化 | 按需分配，避免过度分配 | 必须 |
-| SID 生命周期管理 | 定期轮换、撤销过期 SID | 应该 |
-| SID 监控 | 检测异常 SID 访问 | 应该 |
-| SID 秘密管理 | 保护 ICV 密钥安全 | 必须 |
+| 规范             | 说明                    | 优先级 |
+| :--------------- | :---------------------- | :----- |
+| SID 范围隔离     | 生产/测试/管理 SID 分离 | 必须   |
+| SID 分配最小化   | 按需分配，避免过度分配  | 必须   |
+| SID 生命周期管理 | 定期轮换、撤销过期 SID  | 应该   |
+| SID 监控         | 检测异常 SID 访问       | 应该   |
+| SID 秘密管理     | 保护 ICV 密钥安全       | 必须   |
 
 ### 6.3 监控与响应
 
@@ -461,6 +456,7 @@ show system commit server-events | match SRV6
 ## 7. 总结：SRv6 安全 checklist
 
 > [!tip] SRv6 部署安全 checklist
+>
 > - [ ] 启用 ICV 完整性校验（跨 AS 流量）
 > - [ ] 配置 uRPF/SAVAL 防止源地址伪造
 > - [ ] 部署 SRv6 ACL 过滤非法 SID

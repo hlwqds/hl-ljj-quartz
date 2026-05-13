@@ -1,14 +1,23 @@
 ---
 title: "Kernel Protocol Stack 深度探索 (四十五)：网络性能调优"
 date: 2026-04-13
-tags: [linux, kernel, networking, series, tuning, sysctl, ring-buffer, interrupt-coalescing, tcp-congestion, buffer-tuning]
+tags:
+  [
+    linux,
+    kernel,
+    networking,
+    series,
+    tuning,
+    sysctl,
+    ring-buffer,
+    interrupt-coalescing,
+    tcp-congestion,
+    buffer-tuning,
+  ]
 description: "深入解析 Linux 网络性能调优——sysctl 参数、ring buffer 大小、interrupt coalescing、TCP 拥塞控制选择、内存分配优化，以及常见瓶颈的诊断与解决方法"
 ---
 
-> [!info] Kernel Protocol Stack 深度探索系列
-> 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
-> 44. [[2026-04-13-kernel-protocol-stack-deep-dive-ch44-offload|第四十四章：硬件 offload]]
-> 45. **第四十五章：网络性能调优**
+> [!info] Kernel Protocol Stack 深度探索系列 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]] 44. [[2026-04-13-kernel-protocol-stack-deep-dive-ch44-offload|第四十四章：硬件 offload]] 45. **第四十五章：网络性能调优**
 
 ---
 
@@ -245,13 +254,13 @@ ethtool -C eth0 adaptive-rx on adaptive-tx on
 
 ### 4.3 Coalescing 参数选择
 
-| 场景 | rx-usecs | 特点 |
-|------|----------|------|
-| **超低延迟** | 1-10 | 几乎无合并，CPU 负载高 |
-| **低延迟** | 20-50 | 轻微增加延迟，大幅降低 CPU |
-| **均衡** | 50-100 | 典型生产环境 |
-| **高吞吐** | 100-200 | 大量合并，CPU 最省 |
-| **bulk transfer** | 200+ | 最大吞吐 |
+| 场景              | rx-usecs | 特点                       |
+| ----------------- | -------- | -------------------------- |
+| **超低延迟**      | 1-10     | 几乎无合并，CPU 负载高     |
+| **低延迟**        | 20-50    | 轻微增加延迟，大幅降低 CPU |
+| **均衡**          | 50-100   | 典型生产环境               |
+| **高吞吐**        | 100-200  | 大量合并，CPU 最省         |
+| **bulk transfer** | 200+     | 最大吞吐                   |
 
 ---
 
@@ -269,12 +278,12 @@ sysctl net.ipv4.tcp_available_congestion_control
 
 ### 5.2 常见算法对比
 
-| 算法 | 适用场景 | 特点 |
-|------|---------|------|
-| **cubic** | 通用（默认） | 丢包驱动，pkt retransmit |
-| **bbr** | 高带宽高延迟、跨国 | 基于模型，BDP 探测，不依赖丢包 |
-| **reno** | 简单/老系统 | 经典，但效率低 |
-| **htcp** | 高带宽 | 快速收敛 |
+| 算法      | 适用场景           | 特点                           |
+| --------- | ------------------ | ------------------------------ |
+| **cubic** | 通用（默认）       | 丢包驱动，pkt retransmit       |
+| **bbr**   | 高带宽高延迟、跨国 | 基于模型，BDP 探测，不依赖丢包 |
+| **reno**  | 简单/老系统        | 经典，但效率低                 |
+| **htcp**  | 高带宽             | 快速收敛                       |
 
 ### 5.3 BBR 配置
 
@@ -372,7 +381,7 @@ cat /proc/net/sockstat
 # SOCK: inuse 12345 orphan 0 tw 123 alloc 456 mem 789
 ```
 
-### 7.2 _page_pool（RX）
+### 7.2 \_page_pool（RX）
 
 page_pool 是内核 4.6+ 引入的内存分配优化，用于 RX path：
 

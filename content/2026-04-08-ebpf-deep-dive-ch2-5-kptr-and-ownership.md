@@ -9,8 +9,8 @@ tags:
   - btf
 ---
 
-> [!info] eBPF 2026 深度探索系列
-> 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+> [!info] eBPF 2026 深度探索系列 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+>
 > 1. [[2026-04-08-ebpf-deep-dive-ch1-registers-and-instructions|第一章：寄存器与指令集]]
 > 2. [[2026-04-08-ebpf-deep-dive-ch1-5-function-calls|第一.五章：四种函数调用与动态内存]]
 > 3. [[2026-04-08-ebpf-deep-dive-ch1-6-the-verifier|第一.六章：验证器 (Verifier) 的底层逻辑]]
@@ -102,11 +102,11 @@ graph LR
 
 eBPF 的指针类型经历了三个阶段的演进：
 
-| 类型 | 引入版本 | 生命周期管理 | 可存入 Map | 可修改 |
-| :--- | :--- | :--- | :--- | :--- |
-| **PTR_TO_BTF_ID** | Linux 5.x | **无**（只读引用） | ✅ (有限) | ❌ 只读 |
-| **Unreferenced kptr** | Linux 6.1 | **不管理**（指向内核对象） | ✅ | 需 RCU 保护 |
-| **Referenced kptr** | Linux 6.1 | **Verifier 强制追踪** | ✅ | 通过 `bpf_kptr_xchg` |
+| 类型                  | 引入版本  | 生命周期管理               | 可存入 Map | 可修改               |
+| :-------------------- | :-------- | :------------------------- | :--------- | :------------------- |
+| **PTR_TO_BTF_ID**     | Linux 5.x | **无**（只读引用）         | ✅ (有限)  | ❌ 只读              |
+| **Unreferenced kptr** | Linux 6.1 | **不管理**（指向内核对象） | ✅         | 需 RCU 保护          |
+| **Referenced kptr**   | Linux 6.1 | **Verifier 强制追踪**      | ✅         | 通过 `bpf_kptr_xchg` |
 
 ### 2.2 PTR_TO_BTF_ID：只读 BTF 指针
 
@@ -186,14 +186,14 @@ stateDiagram-v2
 
 ### 3.3 与 C malloc 的对比
 
-| 特性 | C `malloc/free` | `bpf_obj_new/drop` |
-| :--- | :--- | :--- |
-| **泄漏检测** | 运行时工具 (valgrind) | **编译时 Verifier** |
-| **Double Free** | 运行时崩溃 | **编译时拒绝** |
-| **类型安全** | 无 | BTF 类型检查 |
-| **内存位置** | 内核堆 (kmalloc) | 内核 BPF 对象分配器 |
-| **最大大小** | 无限制 | 受 `BPF_OBJ_ALLOC_SIZE_MAX` 限制 |
-| **使用条件** | 需要 `CAP_SYS_ADMIN` | 需要 `CAP_BPF` |
+| 特性            | C `malloc/free`       | `bpf_obj_new/drop`               |
+| :-------------- | :-------------------- | :------------------------------- |
+| **泄漏检测**    | 运行时工具 (valgrind) | **编译时 Verifier**              |
+| **Double Free** | 运行时崩溃            | **编译时拒绝**                   |
+| **类型安全**    | 无                    | BTF 类型检查                     |
+| **内存位置**    | 内核堆 (kmalloc)      | 内核 BPF 对象分配器              |
+| **最大大小**    | 无限制                | 受 `BPF_OBJ_ALLOC_SIZE_MAX` 限制 |
+| **使用条件**    | 需要 `CAP_SYS_ADMIN`  | 需要 `CAP_BPF`                   |
 
 ---
 
@@ -224,6 +224,7 @@ return old_value
 ```
 
 **关键保证：**
+
 1. **不泄漏**：旧指针被返回给调用者，调用者必须处理它
 2. **原子性**：多核同时交换不会丢失任何指针
 3. **所有权转移**：新指针 p 的所有权转移给 Map，旧指针 old_p 的所有权转移给调用者
@@ -446,6 +447,7 @@ int get_task(struct pt_regs *ctx) {
 ```
 
 > [!important] Referenced vs Unreferenced 的核心区别
+>
 > - **Referenced kptr (`__kptr_ref`)**：对象由 eBPF 分配，Verifier 追踪所有权。释放用 `bpf_obj_drop`。
 > - **Unreferenced kptr (`__kptr`)**：对象由内核管理，eBPF 只是"借用"。获取用 `bpf_task_acquire`，释放用 `bpf_task_release`。
 
@@ -473,12 +475,12 @@ flowchart TD
 
 ### 7.2 常见错误信息
 
-| 错误信息 | 含义 | 解决方案 |
-| :--- | :--- | :--- |
-| `Unreleased reference` | 分配的对象未释放或未转移 | 在函数返回前 `bpf_obj_drop` 或存入容器 |
-| `invalid kptr access` | 对非所有权指针执行非法操作 | 使用 `bpf_kptr_xchg` 而非直接赋值 |
-| `R1 type=ptr expected=percpu_ptr` | kptr 类型与 Map 类型不匹配 | 检查 BTF 声明是否匹配 |
-| `cannot store referenced kptr into local` | 局部变量不支持受引用 kptr | 使用容器 (list_head/rb_root) |
+| 错误信息                                  | 含义                       | 解决方案                               |
+| :---------------------------------------- | :------------------------- | :------------------------------------- |
+| `Unreleased reference`                    | 分配的对象未释放或未转移   | 在函数返回前 `bpf_obj_drop` 或存入容器 |
+| `invalid kptr access`                     | 对非所有权指针执行非法操作 | 使用 `bpf_kptr_xchg` 而非直接赋值      |
+| `R1 type=ptr expected=percpu_ptr`         | kptr 类型与 Map 类型不匹配 | 检查 BTF 声明是否匹配                  |
+| `cannot store referenced kptr into local` | 局部变量不支持受引用 kptr  | 使用容器 (list_head/rb_root)           |
 
 ---
 
@@ -487,6 +489,7 @@ flowchart TD
 **Q1: kptr 与 Rust 的所有权模型有什么关系？**
 
 概念上非常相似。eBPF 的 kptr 所有权模型借鉴了 Rust 的核心理念：
+
 - **唯一所有权 (Unique Ownership)**：每个 `bpf_obj_new` 的结果只有一个 owner
 - **移动语义 (Move Semantics)**：`bpf_kptr_xchg` 是一次所有权"移动"
 - **编译时检查**：Verifier 在加载时（而非运行时）确保所有权规则
@@ -500,6 +503,7 @@ flowchart TD
 **Q3: 可以在多个 Map 之间共享同一个 kptr 吗？**
 
 不能直接共享。一个 kptr 在同一时间只能被一个容器"拥有"。要实现共享，你需要：
+
 1. 从容器 A 中 `bpf_kptr_xchg` 取出
 2. 存入容器 B
 3. 所有操作必须在同一个 spin_lock 保护下完成

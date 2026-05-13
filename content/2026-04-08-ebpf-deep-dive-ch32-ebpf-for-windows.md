@@ -10,8 +10,8 @@ tags:
   - cybersecurity
 ---
 
-> [!info] eBPF 2026 深度探索系列
-> 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+> [!info] eBPF 2026 深度探索系列 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+>
 > 1. [[2026-04-08-ebpf-deep-dive-ch1-registers-and-instructions|第一章：寄存器与指令集]]
 > 2. [[2026-04-08-ebpf-deep-dive-ch1-5-function-calls|第一.五章：四种函数调用与动态内存]]
 > 3. [[2026-04-08-ebpf-deep-dive-ch1-6-the-verifier|第一.六章：验证器 (Verifier) 的底层逻辑]]
@@ -63,6 +63,7 @@ tags:
 > 49. [[2026-04-09-ebpf-deep-dive-ch40-network-protocols-deep-dive|第四十章：网络协议深度解析——TCP/UDP/QUIC 的 eBPF 视角]]
 > 50. [[2026-04-09-ebpf-deep-dive-ch41-memory-safety-and-vulnerabilities|第四十一章：eBPF 内存安全与漏洞分析]]
 > 51. [[2026-04-09-ebpf-deep-dive-ch42-service-mesh-integration|第四十二章：eBPF 与 Service Mesh 深度集成]]
+
 ---
 
 ## 1. 概述：打破 Linux 的疆界
@@ -137,17 +138,17 @@ graph TB
 
 ### 3.1 详细对比表
 
-| 特性 | Linux eBPF | Windows eBPF |
-|:---|:---|:---|
-| **指令集** | 64 位 eBPF 指令 | 64 位 eBPF 指令 |
-| **Map 类型** | 全量支持 (30+ 种) | 核心支持 (Hash, Array, RingBuf, PerCPU) |
-| **网络上下文** | `struct __sk_buff` | `NET_BUFFER_LIST` (封装后) |
-| **Hook 点** | XDP, TC, LSM, kprobe, uprobe | XDP (基于 NDIS), Socket, CGROUP |
-| **权限模型** | CAP_BPF / Root | Administrator / 系统服务权限 |
-| **验证器** | Linux 内核验证器 | PREVAIL 验证器 |
-| **安全隔离** | BPF 沙箱 | HVCI + VBS 双重隔离 |
-| **包结构** | `sk_buff` | `NET_BUFFER_LIST` → `NBL` |
-| **程序类型** | 15+ 种 | XDP, Socket, CGROUP, 等约 8 种 |
+| 特性           | Linux eBPF                   | Windows eBPF                            |
+| :------------- | :--------------------------- | :-------------------------------------- |
+| **指令集**     | 64 位 eBPF 指令              | 64 位 eBPF 指令                         |
+| **Map 类型**   | 全量支持 (30+ 种)            | 核心支持 (Hash, Array, RingBuf, PerCPU) |
+| **网络上下文** | `struct __sk_buff`           | `NET_BUFFER_LIST` (封装后)              |
+| **Hook 点**    | XDP, TC, LSM, kprobe, uprobe | XDP (基于 NDIS), Socket, CGROUP         |
+| **权限模型**   | CAP_BPF / Root               | Administrator / 系统服务权限            |
+| **验证器**     | Linux 内核验证器             | PREVAIL 验证器                          |
+| **安全隔离**   | BPF 沙箱                     | HVCI + VBS 双重隔离                     |
+| **包结构**     | `sk_buff`                    | `NET_BUFFER_LIST` → `NBL`               |
+| **程序类型**   | 15+ 种                       | XDP, Socket, CGROUP, 等约 8 种          |
 
 ### 3.2 数据结构映射
 
@@ -313,13 +314,13 @@ int main() {
 
 Windows 使用 **PREVAIL** 验证器而非 Linux 的内核验证器。两者的设计哲学不同：
 
-| 维度 | Linux 内核验证器 | PREVAIL 验证器 |
-|:---|:---|:---|
-| **运行位置** | 内核态 | 用户态 |
-| **验证方法** | 模拟执行 + 路径枚举 | 抽象解释 (Abstract Interpretation) |
-| **确定性** | 必须证明所有路径安全 | 证明抽象域上的安全性 |
-| **性能** | 可能成为瓶颈 | 通常更快 |
-| **限制性** | 更严格 | 略宽松（允许更多模式） |
+| 维度         | Linux 内核验证器     | PREVAIL 验证器                     |
+| :----------- | :------------------- | :--------------------------------- |
+| **运行位置** | 内核态               | 用户态                             |
+| **验证方法** | 模拟执行 + 路径枚举  | 抽象解释 (Abstract Interpretation) |
+| **确定性**   | 必须证明所有路径安全 | 证明抽象域上的安全性               |
+| **性能**     | 可能成为瓶颈         | 通常更快                           |
+| **限制性**   | 更严格               | 略宽松（允许更多模式）             |
 
 PREVAIL 使用**抽象解释**技术，通过计算程序的"抽象状态"来验证安全性，而非枚举每一条可能的执行路径。这使得它在处理复杂控制流时比 Linux 验证器更高效。
 
@@ -354,11 +355,11 @@ ebpfctl list
 
 ### 7.2 性能基准
 
-| 场景 | Linux (XDP) | Windows (XDP via NDIS) | 差异原因 |
-|:---|:---|:---|:---|
-| 简单 ACL 过滤 | 12Mpps/core | 8Mpps/core | NDIS 路径开销 |
-| L3/L4 负载均衡 | 10Mpps/core | 7Mpps/core | NBL 封装层 |
-| Map 查找 + 统计 | 9Mpps/core | 6Mpps/core | Map 实现差异 |
+| 场景            | Linux (XDP) | Windows (XDP via NDIS) | 差异原因      |
+| :-------------- | :---------- | :--------------------- | :------------ |
+| 简单 ACL 过滤   | 12Mpps/core | 8Mpps/core             | NDIS 路径开销 |
+| L3/L4 负载均衡  | 10Mpps/core | 7Mpps/core             | NBL 封装层    |
+| Map 查找 + 统计 | 9Mpps/core  | 6Mpps/core             | Map 实现差异  |
 
 ## 9. 与 Linux 互通性实战指南
 
@@ -462,15 +463,15 @@ echo "Windows: build/windows-loader.exe + build/firewall.bpf.o"
 
 ### 8.3 平台差异处理策略
 
-| 差异点 | Linux | Windows | 处理方式 |
-|:---|:---|:---|:---|
-| **程序类型** | XDP (native) | XDP (NDIS wrapper) | 使用相同的 SEC 名称 |
-| **Map 类型** | BPF_MAP_TYPE_HASH | BPF_MAP_TYPE_HASH | 完全兼容 |
-| **Helper 函数** | bpf_get_current_pid_tgid() | bpf_get_current_pid_tgid() | API 兼容 |
-| **网络头定义** | `<linux/if_ether.h>` | 自定义定义 | 封装在 `types.h` 中 |
-| **字节序** | 通常小端 | 小端 | 无差异 |
-| **加载方式** | `bpf_prog_load()` syscall | `ebpf_api_load_program()` | 封装在平台抽象层 |
-| **错误码** | errno | Win32 HRESULT | 平台抽象层统一转换 |
+| 差异点          | Linux                      | Windows                    | 处理方式            |
+| :-------------- | :------------------------- | :------------------------- | :------------------ |
+| **程序类型**    | XDP (native)               | XDP (NDIS wrapper)         | 使用相同的 SEC 名称 |
+| **Map 类型**    | BPF_MAP_TYPE_HASH          | BPF_MAP_TYPE_HASH          | 完全兼容            |
+| **Helper 函数** | bpf_get_current_pid_tgid() | bpf_get_current_pid_tgid() | API 兼容            |
+| **网络头定义**  | `<linux/if_ether.h>`       | 自定义定义                 | 封装在 `types.h` 中 |
+| **字节序**      | 通常小端                   | 小端                       | 无差异              |
+| **加载方式**    | `bpf_prog_load()` syscall  | `ebpf_api_load_program()`  | 封装在平台抽象层    |
+| **错误码**      | errno                      | Win32 HRESULT              | 平台抽象层统一转换  |
 
 ### 8.4 GitHub Actions 跨平台 CI
 

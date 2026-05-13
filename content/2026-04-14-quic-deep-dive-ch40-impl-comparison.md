@@ -26,14 +26,14 @@ tags:
 
 ### 1.1 主流 QUIC 实现
 
-| 实现 | 开发方 | 语言 | 许可证 | 维护状态 |
-|------|--------|------|--------|----------|
-| msquic | Microsoft | C | MIT | 活跃 |
-| quiche | Cloudflare | Rust | BSD-2 | 活跃 |
-| lsquic | LiteSpeed | C | GPLv3 | 活跃 |
-| ngtcp2 | Tatsuhiro Tsujikawa | C/C++ | MIT | 非常活跃 |
-| quic-go | quic-go 社区 | Go | MIT | 活跃 |
-| quicly | Fastly | Go + C | MIT | 活跃 |
+| 实现    | 开发方              | 语言   | 许可证 | 维护状态 |
+| ------- | ------------------- | ------ | ------ | -------- |
+| msquic  | Microsoft           | C      | MIT    | 活跃     |
+| quiche  | Cloudflare          | Rust   | BSD-2  | 活跃     |
+| lsquic  | LiteSpeed           | C      | GPLv3  | 活跃     |
+| ngtcp2  | Tatsuhiro Tsujikawa | C/C++  | MIT    | 非常活跃 |
+| quic-go | quic-go 社区        | Go     | MIT    | 活跃     |
+| quicly  | Fastly              | Go + C | MIT    | 活跃     |
 
 ---
 
@@ -41,40 +41,40 @@ tags:
 
 ### 2.1 RFC 9000 符合性
 
-| 功能 | msquic | quiche | lsquic | ngtcp2 | quic-go | quicly |
-|------|--------|--------|--------|--------|---------|--------|
-| Long Header 包 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Short Header 包 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| 0-RTT | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| 1-RTT 密钥更新 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| 连接迁移 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| 地址验证 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| PATH_CHALLENGE/RESPONSE | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| 丢包检测 (PTO) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| ECN 支持 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| 连接关闭 (CONNECTION_CLOSE) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| 功能                        | msquic | quiche | lsquic | ngtcp2 | quic-go | quicly |
+| --------------------------- | ------ | ------ | ------ | ------ | ------- | ------ |
+| Long Header 包              | ✅     | ✅     | ✅     | ✅     | ✅      | ✅     |
+| Short Header 包             | ✅     | ✅     | ✅     | ✅     | ✅      | ✅     |
+| 0-RTT                       | ✅     | ✅     | ✅     | ✅     | ✅      | ✅     |
+| 1-RTT 密钥更新              | ✅     | ✅     | ✅     | ✅     | ✅      | ✅     |
+| 连接迁移                    | ✅     | ✅     | ✅     | ✅     | ✅      | ✅     |
+| 地址验证                    | ✅     | ✅     | ✅     | ✅     | ✅      | ✅     |
+| PATH_CHALLENGE/RESPONSE     | ✅     | ✅     | ✅     | ✅     | ✅      | ✅     |
+| 丢包检测 (PTO)              | ✅     | ✅     | ✅     | ✅     | ✅      | ✅     |
+| ECN 支持                    | ✅     | ✅     | ✅     | ✅     | ✅      | ✅     |
+| 连接关闭 (CONNECTION_CLOSE) | ✅     | ✅     | ✅     | ✅     | ✅      | ✅     |
 
 ### 2.2 HTTP/3 支持
 
-| 功能 | msquic | quiche | lsquic | ngtcp2 | quic-go | quicly |
-|------|--------|--------|--------|--------|---------|--------|
-| QPACK 编码器 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| QPACK 解码器 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| HTTP 帧 (HEADERS/DATA) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| SETTINGS 帧 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| GOAWAY 帧 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| PRIORITY 帧 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Server Push | ❌ | ❌ | ❌ | ✅ | ✅ | ✅ |
+| 功能                   | msquic | quiche | lsquic | ngtcp2 | quic-go | quicly |
+| ---------------------- | ------ | ------ | ------ | ------ | ------- | ------ |
+| QPACK 编码器           | ✅     | ✅     | ✅     | ✅     | ✅      | ✅     |
+| QPACK 解码器           | ✅     | ✅     | ✅     | ✅     | ✅      | ✅     |
+| HTTP 帧 (HEADERS/DATA) | ✅     | ✅     | ✅     | ✅     | ✅      | ✅     |
+| SETTINGS 帧            | ✅     | ✅     | ✅     | ✅     | ✅      | ✅     |
+| GOAWAY 帧              | ✅     | ✅     | ✅     | ✅     | ✅      | ✅     |
+| PRIORITY 帧            | ✅     | ✅     | ✅     | ✅     | ✅      | ✅     |
+| Server Push            | ❌     | ❌     | ❌     | ✅     | ✅      | ✅     |
 
 ### 2.3 拥塞控制算法
 
-| 算法 | msquic | quiche | lsquic | ngtcp2 | quic-go | quicly |
-|------|--------|--------|--------|--------|---------|--------|
-| CUBIC | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Reno | ✅ | ❌ | ✅ | ✅ | ❌ | ❌ |
-| BBR | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ |
-| COPA | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| 可插拔接口 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| 算法       | msquic | quiche | lsquic | ngtcp2 | quic-go | quicly |
+| ---------- | ------ | ------ | ------ | ------ | ------- | ------ |
+| CUBIC      | ✅     | ✅     | ✅     | ✅     | ✅      | ✅     |
+| Reno       | ✅     | ❌     | ✅     | ✅     | ❌      | ❌     |
+| BBR        | ✅     | ✅     | ✅     | ✅     | ❌      | ✅     |
+| COPA       | ❌     | ❌     | ❌     | ❌     | ❌      | ❌     |
+| 可插拔接口 | ✅     | ✅     | ✅     | ✅     | ✅      | ✅     |
 
 ---
 
@@ -155,37 +155,37 @@ quicly       | 1.2            | 3.7
 
 ### 4.1 API 风格
 
-| 实现 | API 风格 | 语言绑定 | 文档质量 |
-|------|----------|----------|----------|
-| msquic | C 回调 | C | 中等 |
-| quiche | Rust async | Rust | 良好 |
-| lsquic | C 回调 | C | 一般 |
-| ngtcp2 | C 回调 | C/C++ | 良好 |
-| quic-go | Go 接口 | Go | 优秀 |
-| quicly | Go 接口 | Go | 良好 |
+| 实现    | API 风格   | 语言绑定 | 文档质量 |
+| ------- | ---------- | -------- | -------- |
+| msquic  | C 回调     | C        | 中等     |
+| quiche  | Rust async | Rust     | 良好     |
+| lsquic  | C 回调     | C        | 一般     |
+| ngtcp2  | C 回调     | C/C++    | 良好     |
+| quic-go | Go 接口    | Go       | 优秀     |
+| quicly  | Go 接口    | Go       | 良好     |
 
 ### 4.2 API 复杂度评分 (1-5)
 
-| 功能 | msquic | quiche | lsquic | ngtcp2 | quic-go | quicly |
-|------|--------|--------|--------|--------|---------|--------|
-| 连接建立 | 3 | 3 | 4 | 3 | 2 | 2 |
-| Stream 操作 | 3 | 3 | 3 | 3 | 2 | 2 |
-| 错误处理 | 4 | 2 | 4 | 3 | 2 | 2 |
-| 配置管理 | 3 | 3 | 3 | 3 | 2 | 2 |
-| 生命周期 | 4 | 2 | 4 | 4 | 2 | 2 |
+| 功能        | msquic | quiche | lsquic | ngtcp2 | quic-go | quicly |
+| ----------- | ------ | ------ | ------ | ------ | ------- | ------ |
+| 连接建立    | 3      | 3      | 4      | 3      | 2       | 2      |
+| Stream 操作 | 3      | 3      | 3      | 3      | 2       | 2      |
+| 错误处理    | 4      | 2      | 4      | 3      | 2       | 2      |
+| 配置管理    | 3      | 3      | 3      | 3      | 2       | 2      |
+| 生命周期    | 4      | 2      | 4      | 4      | 2       | 2      |
 
 （分数越高越复杂，2-3 为适中）
 
 ### 4.3 Hello World 示例行数
 
-| 实现 | 服务端 | 客户端 |
-|------|--------|--------|
-| msquic | ~80 | ~70 |
-| quiche | ~60 | ~55 |
-| lsquic | ~65 | ~60 |
-| ngtcp2 | ~90 | ~85 |
-| quic-go | ~40 | ~35 |
-| quicly | ~45 | ~40 |
+| 实现    | 服务端 | 客户端 |
+| ------- | ------ | ------ |
+| msquic  | ~80    | ~70    |
+| quiche  | ~60    | ~55    |
+| lsquic  | ~65    | ~60    |
+| ngtcp2  | ~90    | ~85    |
+| quic-go | ~40    | ~35    |
+| quicly  | ~45    | ~40    |
 
 ---
 
@@ -193,38 +193,38 @@ quicly       | 1.2            | 3.7
 
 ### 5.1 操作系统支持
 
-| 实现 | Linux | Windows | macOS | FreeBSD | 移动端 |
-|------|-------|---------|-------|---------|--------|
-| msquic | ✅ | ✅ | ⚙️ | ❌ | ⚙️ |
-| quiche | ✅ | ⚙️ | ⚙️ | ❌ | ❌ |
-| lsquic | ✅ | ❌ | ❌ | ❌ | ❌ |
-| ngtcp2 | ✅ | ⚙️ | ✅ | ✅ | ❌ |
-| quic-go | ✅ | ✅ | ✅ | ✅ | ✅ |
-| quicly | ✅ | ⚙️ | ⚙️ | ❌ | ❌ |
+| 实现    | Linux | Windows | macOS | FreeBSD | 移动端 |
+| ------- | ----- | ------- | ----- | ------- | ------ |
+| msquic  | ✅    | ✅      | ⚙️    | ❌      | ⚙️     |
+| quiche  | ✅    | ⚙️      | ⚙️    | ❌      | ❌     |
+| lsquic  | ✅    | ❌      | ❌    | ❌      | ❌     |
+| ngtcp2  | ✅    | ⚙️      | ✅    | ✅      | ❌     |
+| quic-go | ✅    | ✅      | ✅    | ✅      | ✅     |
+| quicly  | ✅    | ⚙️      | ⚙️    | ❌      | ❌     |
 
 （✅ = 完全支持，⚙️ = 部分支持/需要额外工作，❌ = 不支持）
 
 ### 5.2 架构支持
 
-| 实现 | x86_64 | ARM64 | MIPS | RISC-V |
-|------|--------|-------|------|--------|
-| msquic | ✅ | ✅ | ❌ | ❌ |
-| quiche | ✅ | ✅ | ✅ | ✅ |
-| lsquic | ✅ | ✅ | ❌ | ❌ |
-| ngtcp2 | ✅ | ✅ | ❌ | ⚙️ |
-| quic-go | ✅ | ✅ | ✅ | ✅ |
-| quicly | ✅ | ✅ | ❌ | ❌ |
+| 实现    | x86_64 | ARM64 | MIPS | RISC-V |
+| ------- | ------ | ----- | ---- | ------ |
+| msquic  | ✅     | ✅    | ❌   | ❌     |
+| quiche  | ✅     | ✅    | ✅   | ✅     |
+| lsquic  | ✅     | ✅    | ❌   | ❌     |
+| ngtcp2  | ✅     | ✅    | ❌   | ⚙️     |
+| quic-go | ✅     | ✅    | ✅   | ✅     |
+| quicly  | ✅     | ✅    | ❌   | ❌     |
 
 ### 5.3 依赖管理
 
-| 实现 | 外部依赖 | 最小依赖数 |
-|------|----------|------------|
-| msquic | BoringSSL, Windows APIs | 高 |
-| quiche | BoringSSL, tokio | 中 |
-| lsquic | picotls (内置) | 低 |
-| ngtcp2 | OpenSSL/BoringSSL | 中 |
-| quic-go | 无 | 零 |
-| quicly | ngtcp2, OpenSSL | 中 |
+| 实现    | 外部依赖                | 最小依赖数 |
+| ------- | ----------------------- | ---------- |
+| msquic  | BoringSSL, Windows APIs | 高         |
+| quiche  | BoringSSL, tokio        | 中         |
+| lsquic  | picotls (内置)          | 低         |
+| ngtcp2  | OpenSSL/BoringSSL       | 中         |
+| quic-go | 无                      | 零         |
+| quicly  | ngtcp2, OpenSSL         | 中         |
 
 ---
 
@@ -232,25 +232,25 @@ quicly       | 1.2            | 3.7
 
 ### 6.1 使用该实现的知名项目
 
-| 实现 | 使用项目 |
-|------|----------|
-| msquic | Azure Data Lake Storage, Windows HTTP.SYS, Edge Browser |
-| quiche | Cloudflare Edge Network, curl |
-| lsquic | OpenLiteSpeed, LiteSpeed Web Server |
-| ngtcp2 | nginx (quic branch), h2o, curl |
-| quic-go | 多个开源项目 |
-| quicly | Fastly CDN |
+| 实现    | 使用项目                                                |
+| ------- | ------------------------------------------------------- |
+| msquic  | Azure Data Lake Storage, Windows HTTP.SYS, Edge Browser |
+| quiche  | Cloudflare Edge Network, curl                           |
+| lsquic  | OpenLiteSpeed, LiteSpeed Web Server                     |
+| ngtcp2  | nginx (quic branch), h2o, curl                          |
+| quic-go | 多个开源项目                                            |
+| quicly  | Fastly CDN                                              |
 
 ### 6.2 性能调优难度
 
-| 实现 | 调优参数数量 | 调优文档 | 自动化调优 |
-|------|-------------|----------|------------|
-| msquic | 高 | 中 | 部分 |
-| quiche | 中 | 中 | ❌ |
-| lsquic | 中 | 低 | ❌ |
-| ngtcp2 | 高 | 良好 | ❌ |
-| quic-go | 低 | 良好 | ❌ |
-| quicly | 中 | 良好 | ❌ |
+| 实现    | 调优参数数量 | 调优文档 | 自动化调优 |
+| ------- | ------------ | -------- | ---------- |
+| msquic  | 高           | 中       | 部分       |
+| quiche  | 中           | 中       | ❌         |
+| lsquic  | 中           | 低       | ❌         |
+| ngtcp2  | 高           | 良好     | ❌         |
+| quic-go | 低           | 良好     | ❌         |
+| quicly  | 中           | 良好     | ❌         |
 
 ---
 
@@ -258,14 +258,14 @@ quicly       | 1.2            | 3.7
 
 ### 7.1 加密实现
 
-| 实现 | TLS 库 | AES-NI | AVX | ChaCha20 |
-|------|--------|--------|-----|----------|
-| msquic | BoringSSL | ✅ | ✅ | ✅ |
-| quiche | BoringSSL | ✅ | ✅ | ✅ |
-| lsquic | picotls | ✅ | ❌ | ✅ |
-| ngtcp2 | OpenSSL/BoringSSL | ✅ | ✅ | ✅ |
-| quic-go | Go crypto | ✅ | ✅ | ✅ |
-| quicly | OpenSSL | ✅ | ✅ | ✅ |
+| 实现    | TLS 库            | AES-NI | AVX | ChaCha20 |
+| ------- | ----------------- | ------ | --- | -------- |
+| msquic  | BoringSSL         | ✅     | ✅  | ✅       |
+| quiche  | BoringSSL         | ✅     | ✅  | ✅       |
+| lsquic  | picotls           | ✅     | ❌  | ✅       |
+| ngtcp2  | OpenSSL/BoringSSL | ✅     | ✅  | ✅       |
+| quic-go | Go crypto         | ✅     | ✅  | ✅       |
+| quicly  | OpenSSL           | ✅     | ✅  | ✅       |
 
 ### 7.2 已知漏洞
 
@@ -277,27 +277,27 @@ quicly       | 1.2            | 3.7
 
 ### 8.1 场景推荐矩阵
 
-| 场景 | 推荐实现 | 备选 |
-|------|----------|------|
-| Windows 桌面应用 | msquic | quic-go |
-| Linux 高性能服务器 | ngtcp2 | quiche |
-| Cloudflare 边缘节点 | quiche | ngtcp2 |
-| Web 服务器 (LiteSpeed) | lsquic | ngtcp2 |
-| Go 微服务 | quic-go | quicly |
-| Fastly CDN 边缘 | quicly | ngtcp2 |
-| 嵌入式/IoT | quiche | quic-go |
-| 移动端 | quic-go | msquic |
+| 场景                   | 推荐实现 | 备选    |
+| ---------------------- | -------- | ------- |
+| Windows 桌面应用       | msquic   | quic-go |
+| Linux 高性能服务器     | ngtcp2   | quiche  |
+| Cloudflare 边缘节点    | quiche   | ngtcp2  |
+| Web 服务器 (LiteSpeed) | lsquic   | ngtcp2  |
+| Go 微服务              | quic-go  | quicly  |
+| Fastly CDN 边缘        | quicly   | ngtcp2  |
+| 嵌入式/IoT             | quiche   | quic-go |
+| 移动端                 | quic-go  | msquic  |
 
 ### 8.2 不适合的场景
 
-| 实现 | 不适合场景 |
-|------|-----------|
-| msquic | Linux 服务器、嵌入式 |
-| quiche | Windows 桌面应用、资源受限环境 |
-| lsquic | 客户端库、跨平台需求 |
-| ngtcp2 | 快速原型开发、简单客户端 |
-| quic-go | 超高吞吐量场景 |
-| quicly | 纯 Go 环境、无 CGO 支持 |
+| 实现    | 不适合场景                     |
+| ------- | ------------------------------ |
+| msquic  | Linux 服务器、嵌入式           |
+| quiche  | Windows 桌面应用、资源受限环境 |
+| lsquic  | 客户端库、跨平台需求           |
+| ngtcp2  | 快速原型开发、简单客户端       |
+| quic-go | 超高吞吐量场景                 |
+| quicly  | 纯 Go 环境、无 CGO 支持        |
 
 ---
 
@@ -305,25 +305,25 @@ quicly       | 1.2            | 3.7
 
 ### 9.1 路线图重点
 
-| 实现 | 2026 路线图重点 |
-|------|----------------|
-| msquic | 多路径 QUIC、Kernel bypass 优化 |
-| quiche | MPQUIC、更完善的 HTTP/3 |
-| lsquic | 性能优化、BBR 改进 |
-| ngtcp2 | RFC 9000 完善、QUIC v2 支持 |
-| quic-go | 性能提升、更好地 GC |
-| quicly | 更好的 Go 集成 |
+| 实现    | 2026 路线图重点                 |
+| ------- | ------------------------------- |
+| msquic  | 多路径 QUIC、Kernel bypass 优化 |
+| quiche  | MPQUIC、更完善的 HTTP/3         |
+| lsquic  | 性能优化、BBR 改进              |
+| ngtcp2  | RFC 9000 完善、QUIC v2 支持     |
+| quic-go | 性能提升、更好地 GC             |
+| quicly  | 更好的 Go 集成                  |
 
 ### 9.2 标准化进展
 
-| 特性 | 状态 | 实现支持 |
-|------|------|----------|
-| RFC 9000 (基本) | ✅ | 全部 |
-| RFC 9001 (TLS) | ✅ | 全部 |
-| RFC 9002 (丢包检测) | ✅ | 全部 |
-| DATAGRAM 扩展 | ✅ | 全部 |
-| MPQUIC | 草案 | quiche 实验性 |
-| QUIC v2 | 起草中 | ngtcp2 实验性 |
+| 特性                | 状态   | 实现支持      |
+| ------------------- | ------ | ------------- |
+| RFC 9000 (基本)     | ✅     | 全部          |
+| RFC 9001 (TLS)      | ✅     | 全部          |
+| RFC 9002 (丢包检测) | ✅     | 全部          |
+| DATAGRAM 扩展       | ✅     | 全部          |
+| MPQUIC              | 草案   | quiche 实验性 |
+| QUIC v2             | 起草中 | ngtcp2 实验性 |
 
 ---
 

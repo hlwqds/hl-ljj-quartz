@@ -1,12 +1,13 @@
 ---
 title: "Kernel Protocol Stack 深度探索 (二十一)：TCP 头部结构"
 date: 2026-04-13
-tags: [linux, kernel, networking, series, tcp, header, transmission-control-protocol, options, checksum]
+tags:
+  [linux, kernel, networking, series, tcp, header, transmission-control-protocol, options, checksum]
 description: "深入解析 TCP 协议头部——标准字段、选项、标志位、校验和计算、MSS/WS/TSopt/SACK/UTO 等选项详解"
 ---
 
-> [!info] Kernel Protocol Stack 深度探索系列
-> 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Kernel Protocol Stack 深度探索系列 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-kernel-protocol-stack-deep-dive-ch1-skbuff|第一章：sk_buff 与数据包生命周期]]
 > 2. [[2026-04-13-kernel-protocol-stack-deep-dive-ch2-netdevice|第二章：Netdevice 与网卡抽象]]
 > 3. [[2026-04-13-kernel-protocol-stack-deep-dive-ch3-ring-buffer|第三章：Ring Buffer 与 DMA]]
@@ -34,6 +35,7 @@ description: "深入解析 TCP 协议头部——标准字段、选项、标志�
 ## 1. 概述：TCP 头部
 
 TCP（Transmission Control Protocol，传输控制协议）是面向连接的可靠传输协议，提供：
+
 - 面向连接：三次握手建立连接，四次挥手断开
 - 可靠传输：确认、重传、序列号
 - 流量控制：滑动窗口机制
@@ -69,19 +71,19 @@ TCP（Transmission Control Protocol，传输控制协议）是面向连接的可
 
 ### 2.2 字段说明
 
-| 字段 | 位宽 | 说明 |
-|------|------|------|
-| Source Port | 16 | 源端口号 |
-| Destination Port | 16 | 目的端口号 |
-| Sequence Number | 32 | 序列号，当前包的第一个字节编号 |
-| Acknowledgment Number | 32 | 确认号，期望收到的下一个字节编号 |
-| Data Offset | 4 | TCP 头部长度（4 字节为单位） |
-| Reserved | 6 | 保留字段，必须为 0 |
-| Flags | 6 | URG/ACK/PSH/RST/SYN/FIN |
-| Window | 16 | 接收窗口大小，流量控制 |
-| Checksum | 16 | 校验和 |
-| Urgent Pointer | 16 | 紧急数据指针 |
-| Options | 可变 | TCP 选项 |
+| 字段                  | 位宽 | 说明                             |
+| --------------------- | ---- | -------------------------------- |
+| Source Port           | 16   | 源端口号                         |
+| Destination Port      | 16   | 目的端口号                       |
+| Sequence Number       | 32   | 序列号，当前包的第一个字节编号   |
+| Acknowledgment Number | 32   | 确认号，期望收到的下一个字节编号 |
+| Data Offset           | 4    | TCP 头部长度（4 字节为单位）     |
+| Reserved              | 6    | 保留字段，必须为 0               |
+| Flags                 | 6    | URG/ACK/PSH/RST/SYN/FIN          |
+| Window                | 16   | 接收窗口大小，流量控制           |
+| Checksum              | 16   | 校验和                           |
+| Urgent Pointer        | 16   | 紧急数据指针                     |
+| Options               | 可变 | TCP 选项                         |
 
 ### 2.3 内核 TCP 头结构
 
@@ -123,34 +125,34 @@ struct tcphdr {
 
 ### 3.1 六种标志位
 
-| 标志 | 名称 | 说明 |
-|------|------|------|
-| URG | Urgent | 紧急指针有效 |
-| ACK | Acknowledgment | 确认号有效 |
-| PSH | Push | 催促接收，立即交付应用层 |
-| RST | Reset | 重置连接 |
-| SYN | Synchronize | 同步序列号（建立连接） |
-| FIN | Finish | 结束连接 |
+| 标志 | 名称           | 说明                     |
+| ---- | -------------- | ------------------------ |
+| URG  | Urgent         | 紧急指针有效             |
+| ACK  | Acknowledgment | 确认号有效               |
+| PSH  | Push           | 催促接收，立即交付应用层 |
+| RST  | Reset          | 重置连接                 |
+| SYN  | Synchronize    | 同步序列号（建立连接）   |
+| FIN  | Finish         | 结束连接                 |
 
 ### 3.2 ECN 标志位
 
-| 标志 | 名称 | 说明 |
-|------|------|------|
-| ECE | ECN-Echo | ECN 拥塞提醒回显 |
-| CWR | Congestion Window Reduced | 拥塞窗口已减小 |
+| 标志 | 名称                      | 说明             |
+| ---- | ------------------------- | ---------------- |
+| ECE  | ECN-Echo                  | ECN 拥塞提醒回显 |
+| CWR  | Congestion Window Reduced | 拥塞窗口已减小   |
 
 ### 3.3 常见组合
 
-| 组合 | 含义 |
-|------|------|
-| SYN | 连接建立请求 |
-| SYN+ACK | 同意建立连接 |
-| ACK | 确认 |
-| FIN | 关闭连接请求 |
-| FIN+ACK | 同意关闭连接 |
-| RST | 突然重置（错误） |
-| PSH+ACK | 数据尽快交付 |
-| PSH+ACK+URG | 紧急数据 |
+| 组合        | 含义             |
+| ----------- | ---------------- |
+| SYN         | 连接建立请求     |
+| SYN+ACK     | 同意建立连接     |
+| ACK         | 确认             |
+| FIN         | 关闭连接请求     |
+| FIN+ACK     | 同意关闭连接     |
+| RST         | 突然重置（错误） |
+| PSH+ACK     | 数据尽快交付     |
+| PSH+ACK+URG | 紧急数据         |
 
 ---
 
@@ -171,17 +173,17 @@ struct tcphdr {
 
 ### 4.2 常见选项
 
-| Kind | 名称 | 长度 | 说明 |
-|------|------|------|------|
-| 0 | End of Options | 1 | 选项列表结束 |
-| 1 | NOP | 1 | 无操作，对齐用 |
-| 2 | MSS | 4 | 最大报文段大小 |
-| 3 | Window Scale | 3 | 窗口扩大因子 |
-| 4 | SACK Permitted | 2 | 支持 SACK |
-| 5 | SACK | 可变 | 选择性确认 |
-| 8 | Timestamps | 10 | 时间戳 |
-| 28 | UTO | 4 | 用户超时 |
-| 29 | AO | 可变 | 认证选项 |
+| Kind | 名称           | 长度 | 说明           |
+| ---- | -------------- | ---- | -------------- |
+| 0    | End of Options | 1    | 选项列表结束   |
+| 1    | NOP            | 1    | 无操作，对齐用 |
+| 2    | MSS            | 4    | 最大报文段大小 |
+| 3    | Window Scale   | 3    | 窗口扩大因子   |
+| 4    | SACK Permitted | 2    | 支持 SACK      |
+| 5    | SACK           | 可变 | 选择性确认     |
+| 8    | Timestamps     | 10   | 时间戳         |
+| 28   | UTO            | 4    | 用户超时       |
+| 29   | AO             | 可变 | 认证选项       |
 
 ### 4.3 MSS 选项（Kind=2）
 
@@ -265,11 +267,11 @@ static void tcp_parse_options(struct sock *sk, struct sk_buff *skb,
     struct inet_connection_sock *icsk = inet_csk(sk);
     int length = th->doff * 4 - TCP_MIN_HLEN;
     unsigned char *ptr = (unsigned char *)(th + 1);
-    
+
     while (length > 0) {
         int opcode = *ptr++;
         int opsize;
-        
+
         switch (opcode) {
         case TCPOPT_EOL:
             return;
@@ -394,8 +396,8 @@ ESTAB      0      0      10.0.0.1:22          10.0.0.2:45678
 tcpdump -i eth0 'tcp[tcpflags] == tcp-syn' -v
 
 # 详细输出
-# 18:00:00.123456 IP 10.0.0.1.45678 > 10.0.0.2.22: Flags [S], 
-#     seq 12345, win 65535, options [mss 1460, sackOK, 
+# 18:00:00.123456 IP 10.0.0.1.45678 > 10.0.0.2.22: Flags [S],
+#     seq 12345, win 65535, options [mss 1460, sackOK,
 #     TS val 100 ecr 0, nop, wscale 7], length 0
 ```
 
@@ -423,11 +425,11 @@ sysctl net.ipv4.tcp_window_scaling
 
 ### 7.1 序列号作用
 
-| 作用 | 说明 |
-|------|------|
-| 可靠性 | 确认已接收的数据 |
-| 有序性 | 检测乱序 |
-| 流量控制 | 配合窗口大小 |
+| 作用     | 说明               |
+| -------- | ------------------ |
+| 可靠性   | 确认已接收的数据   |
+| 有序性   | 检测乱序           |
+| 流量控制 | 配合窗口大小       |
 | 连接建立 | SYN 占用一个序列号 |
 | 连接关闭 | FIN 占用一个序列号 |
 
@@ -511,7 +513,7 @@ void tcp_rcv_space_adjust(struct sock *sk)
 {
     int rcv_wnd = tcp_receive_window(sk);
     struct tcp_sock *tp = tcp_sk(sk);
-    
+
     // 发送窗口更新（不含 ACK）
     if (rcv_wnd > tp->rcv_wnd)
         tp->rcv_wnd = rcv_wnd;
@@ -555,6 +557,7 @@ recv(sock, buffer, size, MSG_OOB);
 TCP 头部结构要点：
 
 **固定字段（20 字节）：**
+
 1. 源/目的端口（各 2 字节）
 2. 序列号（4 字节）
 3. 确认号（4 字节）
@@ -563,12 +566,14 @@ TCP 头部结构要点：
 6. 校验和 + 紧急指针（4 字节）
 
 **关键选项：**
+
 1. MSS：协商最大报文段
 2. Window Scale：扩展窗口
 3. SACK：选择性确认
 4. Timestamps：RTT 测量
 
 **重要机制：**
+
 1. 序列号用于可靠传输和有序交付
 2. 校验和覆盖 Pseudo Header + TCP 头 + 数据
 3. 窗口机制实现流量控制

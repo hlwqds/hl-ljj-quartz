@@ -1,16 +1,27 @@
 ---
 title: "VPN 技术深度探索 (十七)：IPSec 策略配置"
 date: 2026-04-13
-tags: [vpn, series, networking, security, ipsec, xfrm, spd, sad, route-based-vpn, policy-based-vpn, strongswan, vti, xfrmi]
+tags:
+  [
+    vpn,
+    series,
+    networking,
+    security,
+    ipsec,
+    xfrm,
+    spd,
+    sad,
+    route-based-vpn,
+    policy-based-vpn,
+    strongswan,
+    vti,
+    xfrmi,
+  ]
 description: "IPSec 策略配置全景——ip xfrm 命令详解、SPD/SAD 管理、策略路由与路由 VPN 对比、VTI/XFRMI 虚拟接口、strongSwan swanctl 配置范式、多隧道/高可用部署架构"
 ---
 
-> [!info] VPN 技术深度探索系列
-> 14. [[2026-04-13-vpn-deep-dive-ch14-ipsec-overview|IPSec 体系概述]]
-> 15. [[2026-04-13-vpn-deep-dive-ch15-ipsec-ike|IKE 密钥交换]]
-> 16. [[2026-04-13-vpn-deep-dive-ch16-ipsec-esp|AH 与 ESP 协议]]
-> **17. IPSec 策略配置（本章）**
-> 18. [[2026-04-13-vpn-deep-dive-ch18-ipsec-troubleshooting|IPSec 排错]]
+> [!info] VPN 技术深度探索系列 14. [[2026-04-13-vpn-deep-dive-ch14-ipsec-overview|IPSec 体系概述]] 15. [[2026-04-13-vpn-deep-dive-ch15-ipsec-ike|IKE 密钥交换]] 16. [[2026-04-13-vpn-deep-dive-ch16-ipsec-esp|AH 与 ESP 协议]]
+> **17. IPSec 策略配置（本章）** 18. [[2026-04-13-vpn-deep-dive-ch18-ipsec-troubleshooting|IPSec 排错]]
 
 ---
 
@@ -342,14 +353,14 @@ connections {
 
 ### 5.1 VTI vs XFRMI 对比
 
-| 特性 | VTI | XFRMI |
-|------|-----|-------|
-| 内核版本 | 3.6+ | 4.19+ |
-| 隔离粒度 | 按 src/dst IP 对 | 按 if_id（接口 ID） |
-| 支持协议 | IPv4 only | IPv4 + IPv6 |
-| SA 绑定方式 | MARK | if_id |
-| 支持多隧道同 IP 对 | 否 | 是（不同 if_id） |
-| 硬件卸载 | 有限 | 更好支持 |
+| 特性               | VTI              | XFRMI               |
+| ------------------ | ---------------- | ------------------- |
+| 内核版本           | 3.6+             | 4.19+               |
+| 隔离粒度           | 按 src/dst IP 对 | 按 if_id（接口 ID） |
+| 支持协议           | IPv4 only        | IPv4 + IPv6         |
+| SA 绑定方式        | MARK             | if_id               |
+| 支持多隧道同 IP 对 | 否               | 是（不同 if_id）    |
+| 硬件卸载           | 有限             | 更好支持            |
 
 ### 5.2 XFRMI 配置
 

@@ -13,8 +13,8 @@ tags:
 description: "深入解析 Suricata 多模式匹配（MPM）引擎：AC（Aho-Corasick）/Bm（Boyer-Moore）/Hyperscan 三种算法的原理、源码实现、以及配置选择策略"
 ---
 
-> [!info] Suricata 2026 深度探索系列
-> 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Suricata 2026 深度探索系列 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-15-suricata-deep-dive-ch1-overview|第一章：Suricata 概述]]
 > 2. [[2026-04-15-suricata-deep-dive-ch2-config|第二章：Suricata 配置系统]]
 > 3. [[2026-04-15-suricata-deep-dive-ch3-runmodes|第三章：Runmodes 运行模式]]
@@ -59,13 +59,13 @@ description: "深入解析 Suricata 多模式匹配（MPM）引擎：AC（Aho-Co
 
 ### 1.2 Suricata 支持的 MPM 算法
 
-| 算法 | 特点 | 性能 | 场景 |
-| :--- | :--- | :--- | :--- |
-| **AC** | Aho-Corasick，完全确定性自动机 | 高（固定 O(n)） | 通用场景，默认推荐 |
-| **Bm** | Boyer-Moore，逆向匹配 | 中等（最坏 O(nm)） | 短模式集 |
-| **Hyperscan** | Intel SIMD 加速 | 最高 | 超大规模规则集（>10K 规则） |
-| **AC-BS** | AC + Bm 优化 | 高 | 中等规模规则集 |
-| **AC-OC** | AC + 最佳覆盖 | 高 | 平衡场景 |
+| 算法          | 特点                           | 性能               | 场景                        |
+| :------------ | :----------------------------- | :----------------- | :-------------------------- |
+| **AC**        | Aho-Corasick，完全确定性自动机 | 高（固定 O(n)）    | 通用场景，默认推荐          |
+| **Bm**        | Boyer-Moore，逆向匹配          | 中等（最坏 O(nm)） | 短模式集                    |
+| **Hyperscan** | Intel SIMD 加速                | 最高               | 超大规模规则集（>10K 规则） |
+| **AC-BS**     | AC + Bm 优化                   | 高                 | 中等规模规则集              |
+| **AC-OC**     | AC + 最佳覆盖                  | 高                 | 平衡场景                    |
 
 ---
 
@@ -110,19 +110,19 @@ typedef struct MpmACCtx_ {
     /* 1. goto 函数（成功跳转）*/
     // 当状态接收到特定字符时，转移到下一个状态
     // 如果没有对应字符，从 root 重试
-    
+
     /* 2. failure 函数（失败跳转）*/
     // 当 goto 失败时，跳转到最长后缀的节点
     // 例如：从 "abc" 失败后，跳转到 "bc" 或 "c" 或 root
-    
+
     /* 3. output 函数（输出匹配）*/
     // 当到达某个状态时，输出所有以该状态结尾的模式
-    
+
     /* AC 节点数组 */
     MpmACNode *next_state;           // goto 表
     MpmACNode *failure;              // failure 链接
     uint32_t *output;                // 输出模式列表
-    
+
     /* 统计 */
     uint32_t size;                   // 状态数
     uint32_t pattern_count;          // 模式数
@@ -136,41 +136,41 @@ typedef struct MpmACCtx_ {
 MpmCtx *MpmACInit(void)
 {
     MpmACCtx *ctx = SCCalloc(1, sizeof(MpmACCtx));
-    
+
     /* 初始化根节点 */
     ctx->next_state = SCCalloc(256, sizeof(MpmACNode));
     ctx->failure = SCCalloc(256, sizeof(MpmACNode));
     ctx->output = SCCalloc(256, sizeof(uint32_t));
     ctx->size = 1;  // root = 0
-    
+
     /* 初始化根节点的 failure 指向自己 */
     ctx->failure[0] = 0;
-    
+
     return (MpmCtx *)ctx;
 }
 
 // src/util-mpm-ac.c — 添加模式
-int MpmACAddPattern(MpmCtx *mpm_ctx, uint8_t *pattern, 
+int MpmACAddPattern(MpmCtx *mpm_ctx, uint8_t *pattern,
                     uint16_t pattern_len, uint32_t pid)
 {
     MpmACCtx *ctx = (MpmACCtx *)mpm_ctx;
-    
+
     /* 插入 Trie 树 */
     int state = 0;
     for (int i = 0; i < pattern_len; i++) {
         int c = pattern[i];
-        
+
         if (ctx->next_state[state * 256 + c] == 0) {
             /* 创建新节点 */
             ctx->next_state[state * 256 + c] = ctx->size++;
         }
-        
+
         state = ctx->next_state[state * 256 + c];
     }
-    
+
     /* 添加输出标记 */
     ctx->output[state] = pid;
-    
+
     return 0;
 }
 
@@ -180,7 +180,7 @@ int MpmACBuild(MpmCtx *mpm_ctx)
     MpmACCtx *ctx = (MpmACCtx *)mpm_ctx;
     uint32_t queue[1024];
     int qhead = 0, qtail = 0;
-    
+
     /* BFS 遍历构建 failure 链接 */
     for (int c = 0; c < 256; c++) {
         if (ctx->next_state[0 * 256 + c] != 0) {
@@ -189,32 +189,32 @@ int MpmACBuild(MpmCtx *mpm_ctx)
             queue[qtail++] = state;
         }
     }
-    
+
     while (qhead < qtail) {
         uint32_t state = queue[qhead++];
-        
+
         for (int c = 0; c < 256; c++) {
             uint32_t next = ctx->next_state[state * 256 + c];
-            
+
             if (next != 0) {
                 /* 找到 failure 链接 */
                 uint32_t f = ctx->failure[state];
                 while (f != 0 && ctx->next_state[f * 256 + c] == 0) {
                     f = ctx->failure[f];
                 }
-                
+
                 ctx->failure[next] = ctx->next_state[f * 256 + c];
-                
+
                 /* 合并输出 */
                 if (ctx->output[ctx->failure[next]] != 0) {
                     ctx->output[next] = ctx->output[ctx->failure[next]];
                 }
-                
+
                 queue[qtail++] = next;
             }
         }
     }
-    
+
     return 0;
 }
 ```
@@ -229,31 +229,31 @@ int MpmACMatch(MpmCtx *mpm_ctx, MpmThreadCtx *thread_ctx,
     MpmACCtx *ctx = (MpmACCtx *)mpm_ctx;
     int state = 0;
     int matches = 0;
-    
+
     for (uint32_t i = 0; i < text_len; i++) {
         int c = text[i];
-        
+
         /* goto 或 failure */
         while (state != 0 && ctx->next_state[state * 256 + c] == 0) {
             state = ctx->failure[state];
         }
-        
+
         state = ctx->next_state[state * 256 + c];
-        
+
         /* 检查输出 */
         if (ctx->output[state] != 0) {
             /* 匹配到模式！ */
             uint32_t pid = ctx->output[state];
-            
+
             /* 调用回调处理匹配 */
             if (thread_ctx->Callback != NULL) {
                 thread_ctx->Callback(thread_ctx, pid, i);
             }
-            
+
             matches++;
         }
     }
-    
+
     return matches;
 }
 ```
@@ -285,11 +285,11 @@ Pattern: "erawlam"  (逆向)
 typedef struct MpmBmCtx_ {
     /* 坏字符跳转表 */
     int32_t shift[256];              // 每个字符的跳转距离
-    
+
     /* 模式信息 */
     uint8_t *pattern;
     uint16_t pattern_len;
-    
+
     /* 好后缀跳转 */
     int32_t *good_suffix;
 } MpmBmCtx;
@@ -297,20 +297,20 @@ typedef struct MpmBmCtx_ {
 int MpmBmBuild(MpmCtx *mpm_ctx)
 {
     MpmBmCtx *ctx = (MpmBmCtx *)mpm_ctx;
-    
+
     /* 初始化 shift 表为模式长度 */
     for (int i = 0; i < 256; i++) {
         ctx->shift[i] = ctx->pattern_len;
     }
-    
+
     /* 构建坏字符表（从右向左扫描）*/
     for (int i = 0; i < ctx->pattern_len - 1; i++) {
         ctx->shift[(uint8_t)ctx->pattern[i]] = ctx->pattern_len - i - 1;
     }
-    
+
     /* 构建好后缀表 */
     BuildGoodSuffix(ctx);
-    
+
     return 0;
 }
 ```
@@ -325,14 +325,14 @@ int MpmBmMatch(MpmCtx *mpm_ctx, MpmThreadCtx *thread_ctx,
     MpmBmCtx *ctx = (MpmBmCtx *)mpm_ctx;
     int matches = 0;
     int pos = ctx->pattern_len - 1;
-    
+
     while (pos < text_len) {
         /* 逆向比较 */
         int j = ctx->pattern_len - 1;
         while (j >= 0 && text[pos - (ctx->pattern_len - 1 - j)] == ctx->pattern[j]) {
             j--;
         }
-        
+
         if (j < 0) {
             /* 匹配成功 */
             uint32_t pid = ctx->pattern_id;
@@ -347,7 +347,7 @@ int MpmBmMatch(MpmCtx *mpm_ctx, MpmThreadCtx *thread_ctx,
             pos += ctx->shift[bc];
         }
     }
-    
+
     return matches;
 }
 ```
@@ -382,17 +382,17 @@ typedef struct MpmHyperscanCtx_ {
     /* Hyperscan 数据库 */
     hs_database_t *database;          // 编译后的数据库
     hs_compile_error_t *compile_err; // 编译错误
-    
+
     /* 模式信息 */
     hs_pattern *patterns;             // Hyperscan 模式数组
     uint32_t pattern_count;          // 模式数量
-    
+
     /* Scratch 空间 */
     hs_scratch_t *scratch;           // 临时计算空间
-    
+
     /* 匹配回调 */
     void (*match_cb)(uint32_t, uint64_t, uint32_t, uint64_t, void *);
-    
+
     /* flags */
     uint32_t flags;
 #define HS_MODE_BLOCK    0x01   // 块模式
@@ -408,10 +408,10 @@ typedef struct MpmHyperscanCtx_ {
 int MpmHyperscanBuild(MpmCtx *mpm_ctx)
 {
     MpmHyperscanCtx *ctx = (MpmHyperscanCtx *)mpm_ctx;
-    
+
     /* 分配模式数组 */
     ctx->patterns = SCCalloc(ctx->pattern_count, sizeof(hs_pattern));
-    
+
     /* 填充模式信息 */
     for (uint32_t i = 0; i < ctx->pattern_count; i++) {
         ctx->patterns[i].pattern = ctx->pattern_strings[i];
@@ -419,22 +419,22 @@ int MpmHyperscanBuild(MpmCtx *mpm_ctx)
         ctx->patterns[i].flags = HS_FLAG_SINGLEMATCH;
         ctx->patterns[i].id = i;
     }
-    
+
     /* 编译数据库 */
     hs_error_t err = hs_compile(ctx->patterns, ctx->pattern_count,
                                  HS_MODE_BLOCK,  // 块模式
                                  NULL,           // CPU features
                                  &ctx->database,
                                  &ctx->compile_err);
-    
+
     if (err != HS_SUCCESS) {
         SCLogError("Hyperscan compile failed: %s", ctx->compile_err->message);
         return -1;
     }
-    
+
     /* 分配 scratch 空间 */
     hs_alloc_scratch(ctx->database, &ctx->scratch);
-    
+
     return 0;
 }
 ```
@@ -447,22 +447,22 @@ static int MpmHyperscanMatch(MpmCtx *mpm_ctx, MpmThreadCtx *thread_ctx,
                               const uint8_t *text, uint32_t text_len)
 {
     MpmHyperscanCtx *ctx = (MpmHyperscanCtx *)mpm_ctx;
-    
+
     /* Hyperscan 扫描 */
     unsigned int match_count = 0;
-    
+
     hs_error_t err = hs_scan(ctx->database,
                               (const char *)text, text_len,
                               0,                    // flags
                               ctx->scratch,
                               MpmHyperscanCallback, // 回调函数
                               thread_ctx);          // 用户上下文
-    
+
     if (err != HS_SUCCESS) {
         SCLogError("Hyperscan scan failed");
         return -1;
     }
-    
+
     return thread_ctx->match_count;
 }
 
@@ -471,10 +471,10 @@ static int MpmHyperscanCallback(uint32_t id, uint64_t from, uint64_t to,
                                   uint32_t flags, void *ctx)
 {
     MpmThreadCtx *thread_ctx = (MpmThreadCtx *)ctx;
-    
+
     /* 记录匹配 */
     thread_ctx->matches[thread_ctx->match_count++] = id;
-    
+
     /* 返回 0 继续扫描，1 停止扫描 */
     return 0;
 }
@@ -497,21 +497,21 @@ typedef struct MpmCtx_ {
 #define MPM_HYPERSCAN  3
 #define MPM_AC_BS      4
 #define MPM_AC_OS      5
-    
+
     /* 模式计数 */
     uint32_t pattern_cnt;           // 模式数量
     uint32_t max_pattern_len;       // 最大模式长度
-    
+
     /* 跳表/树 */
     void *ctx;                      // 具体算法上下文 (MpmACCtx/MpmBmCtx/...)
-    
+
     /* 模式信息 */
     MpmPattern **patterns;          // 模式数组
-    
+
     /* 统计 */
     uint64_t lookups;               // 查询次数
     uint64_t matches;              // 匹配次数
-    
+
     /* 初始化/添加/编译/匹配函数指针 */
     int (*Init)(struct MpmCtx_ *);
     int (*AddPattern)(struct MpmCtx_ *, struct MpmPattern_ *);
@@ -528,18 +528,18 @@ typedef struct MpmCtx_ {
 typedef struct MpmThreadCtx_ {
     /* 指向父 MpmCtx */
     MpmCtx *mpm_ctx;
-    
+
     /* 匹配结果 */
     uint32_t *matches;              // 匹配的签名 ID
     uint32_t match_count;           // 匹配数量
     uint32_t match_cnt_max;         // 最大匹配数
-    
+
     /* 算法特定的线程数据 */
     void *ctx;                      // AC: 无状态; HS: scratch space
-    
+
     /* 回调函数 */
     int (*Callback)(struct MpmThreadCtx_ *, uint32_t, uint32_t, void *);
-    
+
     /* 统计 */
     uint64_t total_matches;         // 总匹配数
     uint64_t total_inspections;    // 总检查数
@@ -553,7 +553,7 @@ typedef struct MpmThreadCtx_ {
 MpmCtx *MpmFactoryGetCtx(DetectEngineCtx *de_ctx, int mpm_type)
 {
     MpmCtx *mpm_ctx = NULL;
-    
+
     switch (mpm_type) {
         case MPM_AC:
             mpm_ctx = MpmACInit();
@@ -574,7 +574,7 @@ MpmCtx *MpmFactoryGetCtx(DetectEngineCtx *de_ctx, int mpm_type)
             SCLogError("Unknown MPM type: %d", mpm_type);
             return NULL;
     }
-    
+
     return mpm_ctx;
 }
 ```
@@ -595,15 +595,15 @@ detect:
     # b: Boyer-Moore
     # hs: Intel Hyperscan
     algo: auto
-    
+
     # 最小模式长度 (过短的模式影响性能)
     # 有些算法对短模式效率较低
     # pattern-min-length: 3
-    
+
     # 快速模式 (仅 Hyperscan 支持)
     # 使用硬件加速
     # fast-pattern: yes
-    
+
     # 每个规则组的最大模式数
     # max-pattern-id: 1000
 ```
@@ -615,7 +615,7 @@ detect:
 int MpmAutoSelectAlgo(DetectEngineCtx *de_ctx)
 {
     uint32_t sig_count = de_ctx->sig_count;
-    
+
     /* 根据签名数量选择 */
     if (sig_count >= 10000) {
         /* 超大规模：使用 Hyperscan */
@@ -623,12 +623,12 @@ int MpmAutoSelectAlgo(DetectEngineCtx *de_ctx)
             return MPM_HYPERSCAN;
         }
     }
-    
+
     if (sig_count >= 1000) {
         /* 大规模：使用 AC-BS */
         return MPM_AC_BS;
     }
-    
+
     /* 默认使用 AC */
     return MPM_AC;
 }
@@ -641,7 +641,7 @@ int MpmAutoSelectAlgo(DetectEngineCtx *de_ctx)
 detect:
   fast-pattern:
     enabled: yes
-    
+
     # 快速模式优化
     # 对于 Hyperscan，启用硬件加速
     # 对于 AC，使用最佳覆盖优化
@@ -692,21 +692,21 @@ static int MpmPreMatch(DetectEngineThreadCtx *det_ctx,
     if (sgh->mpm_ctx.ctx == NULL) {
         return 0;
     }
-    
+
     /* MPM 匹配 */
     int match_count = MpmMatch(&sgh->mpm_ctx,
                                 &det_ctx->mpm_thread_ctx,
                                 p->payload,
                                 p->payload_len);
-    
+
     if (match_count == 0) {
         /* MPM 未命中，直接返回 */
         return 0;
     }
-    
+
     /* MPM 命中，记录统计 */
     det_ctx->counter_mpm_list += match_count;
-    
+
     return 1;  // 继续详细匹配
 }
 ```
@@ -717,11 +717,11 @@ static int MpmPreMatch(DetectEngineThreadCtx *det_ctx,
 
 ### 8.1 理论性能
 
-| MPM 算法 | 时间复杂度 | 空间复杂度 | 模式数量 | 短模式 | 长模式 |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **AC** | O(n) | O(Σm) | 任意 | 高效 | 高效 |
-| **Bm** | O(n/m) ~ O(nm) | O(σ) | 少量 | 低效 | 高效 |
-| **Hyperscan** | O(n) | 高 | 数十万 | 高效 | 高效 |
+| MPM 算法      | 时间复杂度     | 空间复杂度 | 模式数量 | 短模式 | 长模式 |
+| :------------ | :------------- | :--------- | :------- | :----- | :----- |
+| **AC**        | O(n)           | O(Σm)      | 任意     | 高效   | 高效   |
+| **Bm**        | O(n/m) ~ O(nm) | O(σ)       | 少量     | 低效   | 高效   |
+| **Hyperscan** | O(n)           | 高         | 数十万   | 高效   | 高效   |
 
 注：n=文本长度，m=模式长度，σ=字母表大小
 

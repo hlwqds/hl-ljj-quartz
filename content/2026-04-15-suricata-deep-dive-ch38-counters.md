@@ -11,8 +11,8 @@ tags:
 description: "深入解析 Suricata 性能计数器系统：stats 配置、perf 计数器、TmModule 统计机制、stats.log 与 EVE stats 输出、以及源码映射"
 ---
 
-> [!info] Suricata 2026 深度探索系列
-> 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Suricata 2026 深度探索系列 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-15-suricata-deep-dive-ch1-overview|第一章：Suricata 概述]]
 > 2. [[2026-04-15-suricata-deep-dive-ch2-config|第二章：Suricata 配置系统]]
 > 3. [[2026-04-15-suricata-deep-dive-ch3-runmodes|第三章：Runmodes 运行模式]]
@@ -88,12 +88,12 @@ graph LR
 
 ### 1.1 计数器分类
 
-| 类型 | 范围 | 更新频率 | 用途 |
-|:---|:---|:---|:---|
-| **TM 计数器** | 线程私有 | 每包/每事件 | 单线程性能监控 |
-| **全局计数器** | 全局聚合 | 定时批量同步 | 系统整体性能 |
-| **协议计数器** | 应用层 | 协议解析时 | 流量分析 |
-| **检测计数器** | 检测引擎 | MPM/规则匹配时 | 告警统计 |
+| 类型           | 范围     | 更新频率       | 用途           |
+| :------------- | :------- | :------------- | :------------- |
+| **TM 计数器**  | 线程私有 | 每包/每事件    | 单线程性能监控 |
+| **全局计数器** | 全局聚合 | 定时批量同步   | 系统整体性能   |
+| **协议计数器** | 应用层   | 协议解析时     | 流量分析       |
+| **检测计数器** | 检测引擎 | MPM/规则匹配时 | 告警统计       |
 
 ---
 
@@ -105,12 +105,12 @@ graph LR
 # suricata.yaml
 outputs:
   - stats:
-      enabled: yes                    # 启用统计输出
-      level: 4                         # 详细级别 (0-8)
-      totals: yes                      # 显示总计
-      threads: yes                     # 显示每线程统计
-      null-flags: no                   # 跳过零值计数器
-      intervals: 10                     # 输出间隔（秒）
+      enabled: yes # 启用统计输出
+      level: 4 # 详细级别 (0-8)
+      totals: yes # 显示总计
+      threads: yes # 显示每线程统计
+      null-flags: no # 跳过零值计数器
+      intervals: 10 # 输出间隔（秒）
 ```
 
 ### 2.2 计数器配置文件
@@ -118,9 +118,9 @@ outputs:
 ```yaml
 # suricata.yaml
 counters:
-  interval: 10                         # 收集间隔（秒）
-  add-defaults: yes                    # 添加默认计数器
-  max-ticks: 100000                    # 最大 tick 数
+  interval: 10 # 收集间隔（秒）
+  add-defaults: yes # 添加默认计数器
+  max-ticks: 100000 # 最大 tick 数
 ```
 
 ### 2.3 Perf 计数器配置
@@ -128,7 +128,7 @@ counters:
 ```yaml
 # suricata.yaml
 engine-analysis:
-  stats-every: 30sec                   # 分析统计输出间隔
+  stats-every: 30sec # 分析统计输出间隔
 ```
 
 ---
@@ -200,27 +200,27 @@ StatsCounter *SCStatsRegisterCounter(const char *name,
                                       const char *tm_name)
 {
     StatsCounter *counter = SCCalloc(1, sizeof(StatsCounter));
-    
+
     /* 设置名称 */
     strlcpy(counter->name, name, sizeof(counter->name));
     if (tm_name != NULL) {
         strlcpy(counter->tm_name, tm_name, sizeof(counter->tm_name));
     }
-    
+
     /* 分配线程局部值存储 */
     counter->value = SCPerfAllocateCounter(name, type);
     counter->max = SCPerfAllocateCounter(name "_max", type);
     counter->min = SCPerfAllocateCounter(name "_min", type);
     counter->tot = SCPerfCounterCreate("tot", type);
     counter->cnt = SCPerfCounterCreate("cnt", type);
-    
+
     /* 添加到全局链表 */
     SCMutexLock(&stats_table.lock);
     counter->next = stats_table.head;
     stats_table.head = counter;
     stats_table.nelems++;
     SCMutexUnlock(&stats_table.lock);
-    
+
     return counter;
 }
 ```
@@ -273,27 +273,27 @@ uint64_t PerfTick(struct PerfThreadVars *ptv)
 {
     struct timeval now;
     gettimeofday(&now, NULL);
-    
+
     uint64_t elapsed = (now.tv_sec - ptv->checkpoint_time) * 1000 +
                        (now.tv_usec - ptv->last_processed.tv_usec) / 1000;
-    
+
     /* 更新所有计数器 */
     for (uint32_t i = 0; i < ptv->perf_public_ctx.counter_array_size; i++) {
         PerfCounter *pc = &ptv->perf_public_ctx.counter_array[i];
-        
+
         /* 计算每秒速率 */
         if (elapsed > 0) {
             pc->rate = (double)pc->value / (elapsed / 1000.0);
         }
-        
+
         /* 更新 min/max */
         if (pc->value < pc->min) pc->min = pc->value;
         if (pc->value > pc->max) pc->max = pc->value;
     }
-    
+
     ptv->checkpoint_time = now.tv_sec;
     ptv->last_processed = now;
-    
+
     return elapsed;
 }
 ```
@@ -324,26 +324,26 @@ void *TmThreadStats_1min(ThreadVars *tv)
 {
     /* 输出该线程的 1 分钟统计 */
     TmSlot *s = tv->slots;
-    
+
     while (s != NULL) {
         TmModule *tm = s->tm;
-        
+
         /* 调用模块的统计回调 */
         if (tm->Stats != NULL) {
             TmModuleStats stats;
             memset(&stats, 0, sizeof(stats));
             stats.name = tm->name;
             stats.id = tm->id;
-            
+
             tm->Stats(tv, s->slot_data, &stats);
-            
+
             /* 输出到 stats.log */
             SCPerfLog(tv, &stats);
         }
-        
+
         s = s->slot_next;
     }
-    
+
     return NULL;
 }
 ```
@@ -364,15 +364,15 @@ typedef struct PcapFileStats_ {
 void PcapFileRegisterPerfCounters(ThreadVars *tv, void *data)
 {
     /* 注册读取速度计数器 */
-    tv->perf_counter_id[PERF_COUNT_PKTS] = 
+    tv->perf_counter_id[PERF_COUNT_PKTS] =
         SCPerfRegisterCounter(tv, "pcap.pkts",
                               SC_PERF_TYPE_UINT64, "pcap Reads");
-    
-    tv->perf_counter_id[PERF_COUNT_BYTES] = 
+
+    tv->perf_counter_id[PERF_COUNT_BYTES] =
         SCPerfRegisterCounter(tv, "pcap.bytes",
                               SC_PERF_TYPE_UINT64, "pcap Bytes");
-    
-    tv->perf_counter_id[PERF_COUNT_ERRORS] = 
+
+    tv->perf_counter_id[PERF_COUNT_ERRORS] =
         SCPerfRegisterCounter(tv, "pcap.errors",
                               SC_PERF_TYPE_UINT64, "pcap Errors");
 }
@@ -395,15 +395,15 @@ typedef struct DetectEngineStats_ {
 void DetectEngineRegisterPerfCounters(DetectEngineCtx *de_ctx)
 {
     /* 注册 MPM 性能计数器 */
-    de_ctx->counter_mpm_hits = 
+    de_ctx->counter_mpm_hits =
         SCPerfRegisterCounter(de_ctx->de_ctx, "detect.mpm_hits",
                               SC_PERF_TYPE_UINT64, "MPM Hits");
-    
-    de_ctx->counter_mpm_avg_time = 
+
+    de_ctx->counter_mpm_avg_time =
         SCPerfRegisterCounter(de_ctx->de_ctx, "detect.mpm_avg",
                               SC_PERF_TYPE_DOUBLE, "MPM Avg Time (ms)");
-    
-    de_ctx->counter_detect_time = 
+
+    de_ctx->counter_detect_time =
         SCPerfRegisterCounter(de_ctx->de_ctx, "detect.time",
                               SC_PERF_TYPE_UINT64, "Total Detection Time");
 }
@@ -445,56 +445,56 @@ tcp.members                              | W#01-eth0| 5000
 
 ```c
 // src/output-stats.c — stats.log 输出
-int StatsOutputFTW(struct OutputLoggerThreadData *td, 
+int StatsOutputFTW(struct OutputLoggerThreadData *td,
                    struct timeval *ts)
 {
     /* 输出分隔线 */
     OutputFileWrite(td->ctx->fp, "-------------------------------------------------------------------\n");
-    
+
     /* 输出时间戳 */
     char time_buf[64];
     CreateTimeString(ts, time_buf, sizeof(time_buf));
     OutputFileWrite(td->ctx->fp, "Timestamp: %s\n", time_buf);
     OutputFileWrite(td->ctx->fp, "-------------------------------------------------------------------\n");
-    
+
     /* 输出日期和时间 */
     struct tm *tm = localtime(&ts->tv_sec);
     OutputFileWrite(td->ctx->fp, "Date: %04d/%02d/%02d\n",
                     tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday);
     OutputFileWrite(td->ctx->fp, "Time: %02d:%02d:%02d\n",
                     tm->tm_hour, tm->tm_min, tm->tm_sec);
-    
+
     /* 输出运行时间 */
     uint32_t uptime = (uint32_t)(ts->tv_sec - engine_start_time);
     OutputFileWrite(td->ctx->fp, "Up: %us\n", uptime);
-    
+
     /* 输出表头 */
-    OutputFileWrite(td->ctx->fp, 
+    OutputFileWrite(td->ctx->fp,
         "Counter                                   | TM Name  | Value\n");
     OutputFileWrite(td->ctx->fp,
         "-------------------------------------------|----------|------------------\n");
-    
+
     /* 遍历计数器链表 */
     StatsCounter *counter = stats_table.head;
     while (counter != NULL) {
         /* 获取当前值 */
         uint64_t value = *counter->value;
-        
+
         /* 检查是否为零值（null-flags） */
         if (value == 0 && td->null_flags) {
             counter = counter->next;
             continue;
         }
-        
+
         /* 格式化输出 */
         OutputFileWrite(td->ctx->fp, "%-45s| %-8s | %20"PRIu64"\n",
                         counter->name, counter->tm_name, value);
-        
+
         counter = counter->next;
     }
-    
+
     OutputFileWrite(td->ctx->fp, "-------------------------------------------------------------------\n");
-    
+
     return 0;
 }
 ```
@@ -507,13 +507,13 @@ static void *StatsLogThread(void *arg)
 {
     ThreadVars *tv = (ThreadVars *)arg;
     struct timeval ts;
-    
+
     while (1) {
         /* 等待下一个输出间隔 */
         sleep(output_stats_interval);
-        
+
         gettimeofday(&ts, NULL);
-        
+
         /* 调用所有注册的日志输出 */
         OutputLogger *logger = output_loggers;
         while (logger != NULL) {
@@ -521,7 +521,7 @@ static void *StatsLogThread(void *arg)
             logger = logger->next;
         }
     }
-    
+
     return NULL;
 }
 ```
@@ -534,51 +534,51 @@ static void *StatsLogThread(void *arg)
 
 ```json
 {
-    "timestamp": "2024-01-15T10:30:00.000000+0000",
-    "event_type": "stats",
-    "stats": {
-        "uptime": 3600,
-        "capture": {
-            "pkts": 1000000,
-            "bytes": 1234567890,
-            "errors": 0,
-            "pkts_per_sec": 50000
-        },
-        "decode": {
-            "ipv4": 950000,
-            "ipv6": 50000,
-            "tot": 1000000
-        },
-        "detect": {
-            "alert": 1500,
-            "mpm_hits": 500000,
-            "mpm_misses": 10000,
-            "mpm_avg_time": 0.015,
-            "mpm_max_time": 0.5
-        },
-        "flow": {
-            "wrk": {
-                "work_queue_avg": 0.5,
-                "work_queue_max": 10
-            },
-            "memuse": 52428800,
-            "tcp": 5000
-        },
-        "thread": {
-            "W#01-eth0": {
-                "pkts": 500000,
-                "bytes": 617283945,
-                "drops": 10,
-                "invalid": 0
-            },
-            "W#02-eth0": {
-                "pkts": 500000,
-                "bytes": 617283945,
-                "drops": 5,
-                "invalid": 0
-            }
-        }
+  "timestamp": "2024-01-15T10:30:00.000000+0000",
+  "event_type": "stats",
+  "stats": {
+    "uptime": 3600,
+    "capture": {
+      "pkts": 1000000,
+      "bytes": 1234567890,
+      "errors": 0,
+      "pkts_per_sec": 50000
+    },
+    "decode": {
+      "ipv4": 950000,
+      "ipv6": 50000,
+      "tot": 1000000
+    },
+    "detect": {
+      "alert": 1500,
+      "mpm_hits": 500000,
+      "mpm_misses": 10000,
+      "mpm_avg_time": 0.015,
+      "mpm_max_time": 0.5
+    },
+    "flow": {
+      "wrk": {
+        "work_queue_avg": 0.5,
+        "work_queue_max": 10
+      },
+      "memuse": 52428800,
+      "tcp": 5000
+    },
+    "thread": {
+      "W#01-eth0": {
+        "pkts": 500000,
+        "bytes": 617283945,
+        "drops": 10,
+        "invalid": 0
+      },
+      "W#02-eth0": {
+        "pkts": 500000,
+        "bytes": 617283945,
+        "drops": 5,
+        "invalid": 0
+      }
     }
+  }
 }
 ```
 
@@ -595,33 +595,33 @@ static int JsonStatsLogger(ThreadVars *tv, void *thread_data,
                            const StatsTable *st)
 {
     JsonStatsLogThread *aft = (JsonStatsLogThread *)thread_data;
-    
+
     /* 创建 JSON 对象 */
     json_t *js = json_create_object();
-    
+
     /* 添加 timestamp */
     char time_buf[64];
     CreateIsoTimeString(&st->ts, time_buf, sizeof(time_buf));
     json_set_string(js, "timestamp", time_buf);
-    
+
     /* 添加 event_type */
     json_set_string(js, "event_type", "stats");
-    
+
     /* 添加 stats 对象 */
     json_t *stats_obj = json_create_object();
-    
+
     /* capture 统计 */
     json_t *capture_obj = json_create_object();
     StatsCounter *counter = st->head;
     while (counter != NULL) {
         if (strncmp(counter->name, "capture.", 8) == 0) {
-            json_set_uint64(capture_obj, counter->name + 8, 
+            json_set_uint64(capture_obj, counter->name + 8,
                            *counter->value);
         }
         counter = counter->next;
     }
     json_set_object(js, "capture", capture_obj);
-    
+
     /* detect 统计 */
     json_t *detect_obj = json_create_object();
     counter = st->head;
@@ -633,10 +633,10 @@ static int JsonStatsLogger(ThreadVars *tv, void *thread_data,
         counter = counter->next;
     }
     json_set_object(js, "detect", detect_obj);
-    
+
     /* 输出 JSON */
     OutputJsonBuilder(tv, aft->ctx, js);
-    
+
     return 0;
 }
 ```
@@ -650,9 +650,9 @@ static int JsonStatsLogger(ThreadVars *tv, void *thread_data,
 ```yaml
 # suricata.yaml
 engine-analysis:
-  stats-every: 30sec                   # 分析统计输出间隔
-  rules-fast-pattern: yes             # 分析快速模式规则
-  rules: yes                           # 规则分析
+  stats-every: 30sec # 分析统计输出间隔
+  rules-fast-pattern: yes # 分析快速模式规则
+  rules: yes # 规则分析
 ```
 
 ### 8.2 规则快速模式分析
@@ -665,7 +665,7 @@ void EngineAnalysisRulesFastPattern(const DetectEngineCtx *de_ctx)
     for (uint32_t i = 0; i < de_ctx->sig_array_len; i++) {
         Signature *s = de_ctx->sig_array[i];
         if (s == NULL) continue;
-        
+
         /* 检查是否有 fast pattern */
         if (s->flags & SIG_FLAG_FASTPATTERN) {
             SCLogNotice("Rule %u: selected for fast pattern: '%s'",
@@ -681,13 +681,13 @@ void EngineAnalysisRulesFastPattern(const DetectEngineCtx *de_ctx)
 
 ### 9.1 关键性能指标
 
-| 指标 | 正常范围 | 告警阈值 | 可能原因 |
-|:---|:---|:---|:---|
-| `capture.drops` | < 1% | > 5% | 抓包瓶颈/CPU 负载高 |
-| `detect.alert` | 取决于规则 | 突然增加 | 攻击/扫描活动 |
-| `flow.memuse` | < 70% 配置 | > 90% | 内存泄漏/配置不足 |
-| `stream.memuse` | < 50% 配置 | > 80% | 重组策略问题 |
-| `tcp.members` | 动态 | 接近限制 | 正常/攻击 |
+| 指标            | 正常范围   | 告警阈值 | 可能原因            |
+| :-------------- | :--------- | :------- | :------------------ |
+| `capture.drops` | < 1%       | > 5%     | 抓包瓶颈/CPU 负载高 |
+| `detect.alert`  | 取决于规则 | 突然增加 | 攻击/扫描活动       |
+| `flow.memuse`   | < 70% 配置 | > 90%    | 内存泄漏/配置不足   |
+| `stream.memuse` | < 50% 配置 | > 80%    | 重组策略问题        |
+| `tcp.members`   | 动态       | 接近限制 | 正常/攻击           |
 
 ### 9.2 监控脚本
 
@@ -703,15 +703,15 @@ while true; do
     # 获取最新统计
     LATEST=$(tail -n 20 "$STATS_LOG" | grep "detect.alert" | tail -n 1)
     ALERTS=$(echo "$LATEST" | awk '{print $NF}')
-    
+
     LATEST_DROP=$(tail -n 20 "$STATS_LOG" | grep "capture.drops" | tail -n 1)
     DROPS=$(echo "$LATEST_DROP" | awk '{print $NF}')
-    
+
     # 检查告警
     if [ "$ALERTS" -gt "$ALERT_THRESHOLD" ]; then
         echo "[ALERT] High alert rate: $ALERTS"
     fi
-    
+
     # 检查丢包
     if echo "$DROPS" | grep -q "%"; then
         DROP_PCT=$(echo "$DROPS" | tr -d '%')
@@ -719,7 +719,7 @@ while true; do
             echo "[CRITICAL] High drop rate: $DROPS"
         fi
     fi
-    
+
     sleep 10
 done
 ```
@@ -743,12 +743,12 @@ memuse = Gauge('suricata_memuse_bytes', 'Memory usage', ['module'])
 def parse_stats_log(filepath):
     with open(filepath, 'r') as f:
         content = f.read()
-    
+
     # 解析计数器
     pattern = r'(\S+)\s+\|\s+(\S+)\s+\|\s+(\d+)'
     for match in re.finditer(pattern, content):
         name, tm, value = match.groups()
-        
+
         if name.startswith('capture.pkts'):
             pkts_total.labels(thread=tm).set(value)
         elif 'drops' in name:

@@ -5,8 +5,8 @@ tags: [dpdk, series, kni, kernel, netdev, ioctl, mbuf, virtio, rx-tx]
 description: "深入理解 DPDK KNI 的实现——KNI 与 Linux 内核网络栈的集成、mbuf 与 sk_buff 转换、ioctl 控制通道、收发包路径、以及典型应用场景"
 ---
 
-> [!info] DPDK 深度探索系列
-> 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
+> [!info] DPDK 深度探索系列 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-09-dpdk-deep-dive-ch1-architecture-overview|第一章：架构概述——kernel bypass 原理与 DPDK 定位]]
 > 2. [[2026-04-09-dpdk-deep-dive-ch2-uio-vfio-iommu|第二章：UIO/VFIO/IOMMU 用户态驱动框架]]
 > 3. [[2026-04-09-dpdk-deep-dive-ch3-eal-initialization|第三章：EAL 初始化与 lcore 模型]]
@@ -23,12 +23,12 @@ description: "深入理解 DPDK KNI 的实现——KNI 与 Linux 内核网络栈
 
 DPDK 通过 bypass 内核实现高性能，但这也带来了问题：
 
-| 场景 | 问题 | 解决 |
-|------|------|------|
-| **管理流量** | SSH/Console 无法到达 | KNI 提供控制面 |
-| **内核协议栈** | 需要复用 Linux TCP/IP | KNI 桥接 |
-| **硬件卸载** | 有些处理必须在内核 | KNI 回传内核 |
-| **调试** | 无法用标准工具抓包 | KNI 支持 tcpdump |
+| 场景           | 问题                  | 解决             |
+| -------------- | --------------------- | ---------------- |
+| **管理流量**   | SSH/Console 无法到达  | KNI 提供控制面   |
+| **内核协议栈** | 需要复用 Linux TCP/IP | KNI 桥接         |
+| **硬件卸载**   | 有些处理必须在内核    | KNI 回传内核     |
+| **调试**       | 无法用标准工具抓包    | KNI 支持 tcpdump |
 
 ### 1.1 KNI 在 DPDK 架构中的位置
 
@@ -98,22 +98,22 @@ DPDK 通过 bypass 内核实现高性能，但这也带来了问题：
 
 struct rte_kni {
     char name[RTE_KNI_NAMESIZE];       // 设备名称 "kni0"
-    
+
     struct rte_eth_dev *eth_dev;        // 关联的 ethdev (预留)
-    
+
     // mbuf 内存池（用于 KNI 与内核的数据传输）
     struct rte_mempool *mbuf_pool;
-    
+
     // FIFO 队列（用户态与内核共享）
     struct rte_kni_fifo *tx_q;          // 用户态发送队列（发给内核）
     struct rte_kni_fifo *rx_q;          // 用户态接收队列（从内核接收）
     struct rte_kni_fifo *alloc_q;       // 分配请求队列
     struct rte_kni_fifo *free_q;        // 释放请求队列
-    
+
     // 上下文
     unsigned lcore_id;                   // 处理此 KNI 的 lcore
     uint16_t port_id;                   // 关联的物理端口
-    
+
     // 配置
     struct rte_kni_conf conf;
 };
@@ -130,7 +130,7 @@ struct rte_kni_fifo {
     volatile uint32_t read_idx;         // 读索引
     uint32_t size;                       // FIFO 大小（2^n）
     uint32_t mask;                       // size - 1
-    
+
     void *buffer[];                     // 存储指针的数组
 };
 
@@ -182,50 +182,50 @@ rte_kni_alloc(struct rte_mempool *mbuf_pool,
 {
     struct rte_kni *kni;
     int ret;
-    
+
     // 1. 参数检查
     if (conf == NULL || mbuf_pool == NULL)
         return NULL;
-    
+
     // 2. 分配 KNI 设备
     kni = rte_zmalloc("kni",
                        sizeof(struct rte_kni),
                        RTE_CACHE_LINE_SIZE);
     if (kni == NULL)
         return NULL;
-    
+
     // 3. 复制配置
     memcpy(&kni->conf, conf, sizeof(*conf));
     kni->mbuf_pool = mbuf_pool;
-    
+
     // 4. 分配 FIFO 队列
     kni->tx_q = rte_malloc(NULL,
                              sizeof(struct rte_kni_fifo) +
                              conf->tx_q_size * sizeof(void *),
                              RTE_CACHE_LINE_SIZE);
     // ... 类似分配其他队列
-    
+
     // 5. 初始化 FIFO
     kni_fifo_init(kni->tx_q, conf->tx_q_size);
     kni_fifo_init(kni->rx_q, conf->rx_q_size);
     kni_fifo_init(kni->alloc_q, conf->alloc_q_size);
     kni_fifo_init(kni->free_q, conf->free_q_size);
-    
+
     // 6. 打开 /dev/kni 设备
     kni->kni_fd = open("/dev/kni", O_RDWR);
     if (kni->kni_fd < 0) {
         ret = -errno;
         goto fail;
     }
-    
+
     // 7. 发送 ioctl 创建内核 netdev
     ret = ioctl(kni->kni_fd, RTE_KNI_IOCTL_CREATE, conf);
     if (ret < 0) {
         goto fail;
     }
-    
+
     return kni;
-    
+
 fail:
     rte_kni_free(kni);
     return NULL;
@@ -261,39 +261,39 @@ kni_ioctl_create(unsigned long arg)
 {
     struct kni_dev *kni;
     struct rte_kni_conf conf;
-    
+
     // 1. 复制用户配置
     if (copy_from_user(&conf, (void __user *)arg, sizeof(conf)))
         return -EFAULT;
-    
+
     // 2. 分配 kni_dev 结构
     kni = kzalloc(sizeof(struct kni_dev), GFP_KERNEL);
     if (!kni)
         return -ENOMEM;
-    
+
     // 3. 创建 netdev (虚拟网卡)
     kni->net_dev = alloc_etherdev(sizeof(struct kni_mgmt));
     if (!kni->net_dev) {
         kfree(kni);
         return -ENOMEM;
     }
-    
+
     // 4. 设置 netdev_ops
     kni->net_dev->netdev_ops = &kni_netdev_ops;
     kni->net_dev->ethtool_ops = &kni_ethtool_ops;
-    
+
     // 5. 设置 MAC 和 MTU
     memcpy(kni->net_dev->dev_addr, conf.mac_addr.addr, ETH_ALEN);
     kni->net_dev->mtu = conf.mtu;
-    
+
     // 6. 注册 netdev
     register_netdev(kni->net_dev);
-    
+
     // 7. 建立用户态与内核态共享内存
     //    使用 mmap 将 FIFO 映射到用户态
     kni->tx_q = kni_alloc_fifo(kni, conf.tx_q_size);
     kni->rx_q = kni_alloc_fifo(kni, conf.rx_q_size);
-    
+
     return 0;
 }
 ```
@@ -357,10 +357,10 @@ rte_kni_tx_burst(struct rte_kni *kni,
 {
     uint16_t i;
     struct rte_mbuf *m;
-    
+
     for (i = 0; i < count; i++) {
         m = mbufs[i];
-        
+
         // 1. 从 alloc_q 获取一个 mbuf（替换用）
         //    因为我们要发送 mbuf，需要补充一个到 alloc_q
         struct rte_mbuf *new_m = kni_fifo_get(kni->alloc_q);
@@ -368,15 +368,15 @@ rte_kni_tx_burst(struct rte_kni *kni,
             // 没有可用 mbuf，跳过
             continue;
         }
-        
+
         // 2. 将要发送的 mbuf 放入 tx_q
         kni_fifo_put(kni->tx_q, m);
-        
+
         // 3. 触发内核处理（发送中断）
         //    使用 virtio 或 UIO 中断机制通知内核
         kni_trigger_interrupt(kni);
     }
-    
+
     return i;
 }
 ```
@@ -392,7 +392,7 @@ kni_net_rx(struct kni_dev *kni)
     struct rte_mbuf *m;
     struct sk_buff *skb;
     uint32_t len;
-    
+
     // 1. 从 rx_q 读取 mbuf（用户态发送过来的）
     while ((m = kni_fifo_get(kni->rx_q)) != NULL) {
         // 2. mbuf → sk_buff 转换
@@ -401,18 +401,18 @@ kni_net_rx(struct kni_dev *kni)
             rte_pktmbuf_free(m);
             continue;
         }
-        
+
         // 3. 设置网络包信息
         skb->dev = kni->net_dev;
         skb->protocol = eth_type_trans(skb, ski->net_dev);
-        
+
         // 4. 送入 Linux 网络栈
         netif_rx(skb);
-        
+
         // 5. 将 mbuf 放入 free_q（归还给用户态）
         kni_fifo_put(kni->free_q, m);
     }
-    
+
     return 0;
 }
 
@@ -422,17 +422,17 @@ mbuf_to_skb(const struct rte_mbuf *m)
 {
     struct sk_buff *skb;
     struct rte_mbuf *seg;
-    
+
     // 1. 分配 skb
     skb = alloc_skb(m->pkt_len + LL_RESERVED_SPACE(skb->dev), GFP_ATOMIC);
     if (!skb)
         return NULL;
-    
+
     // 2. 复制数据
     seg = m;
     skb_put(skb, seg->data_len);
     skb_copy_to_linear_data(skb, rte_pktmbuf_mtod(seg, void *), seg->data_len);
-    
+
     // 3. 处理分片
     while ((seg = seg->next)) {
         skb_put(skb, seg->data_len);
@@ -440,11 +440,11 @@ mbuf_to_skb(const struct rte_mbuf *m)
                                         rte_pktmbuf_mtod(seg, void *),
                                         seg->data_len);
     }
-    
+
     // 4. 设置 meta 信息
     skb->pkt_type = PACKET_HOST;
     skb_reset_mac_header(skb);
-    
+
     return skb;
 }
 ```
@@ -459,7 +459,7 @@ kni_net_xmit(struct sk_buff *skb, struct net_device *dev)
 {
     struct kni_dev *kni = netdev_priv(dev);
     struct rte_mbuf *m;
-    
+
     // 1. 检查 rx_q 是否有空间
     if (kni_fifo_free_count(kni->rx_q) < 1) {
         // 队列满，丢弃
@@ -467,25 +467,25 @@ kni_net_xmit(struct sk_buff *skb, struct net_device *dev)
         dev_kfree_skb(skb);
         return NETDEV_TX_OK;
     }
-    
+
     // 2. sk_buff → mbuf 转换
     m = skb_to_mbuf(skb);
     if (!m) {
         dev_kfree_skb(skb);
         return NETDEV_TX_OK;
     }
-    
+
     // 3. 放入 rx_q（用户态将从此队列读取）
     kni_fifo_put(kni->rx_q, m);
-    
+
     // 4. 更新统计
     dev->stats.tx_packets++;
     dev->stats.tx_bytes += skb->len;
-    
+
     // 5. 通知用户态（有数据到达）
     //    写入 doorbell 或发送信号
     kni_user_trigger_interrupt(kni);
-    
+
     return NETDEV_TX_OK;
 }
 
@@ -496,32 +496,32 @@ skb_to_mbuf(const struct sk_buff *skb)
     struct rte_mbuf *m, *prev;
     struct skb_shared_info *shinfo;
     uint32_t data_len;
-    
+
     // 1. 从 free_q 获取 mbuf
     m = kni_fifo_get(kni->free_q);
     if (!m)
         return NULL;
-    
+
     // 2. 复制数据
     data_len = skb->len;
     rte_memcpy(rte_pktmbuf_mtod(m, void *),
                 skb->data,
                 data_len);
-    
+
     // 3. 设置 mbuf 元数据
     m->data_len = data_len;
     m->pkt_len = data_len;
-    
+
     // 4. 处理分片
     shinfo = skb_shinfo(skb);
     if (shinfo->nr_frags) {
         // 有分片，需要构建 mbuf 链
         // ... 处理分片数据
     }
-    
+
     // 5. 释放 skb
     dev_kfree_skb((struct sk_buff *)skb);
-    
+
     return m;
 }
 ```
@@ -538,22 +538,22 @@ rte_kni_rx_burst(struct rte_kni *kni,
 {
     uint16_t i;
     struct rte_mbuf *m;
-    
+
     for (i = 0; i < count; i++) {
         // 1. 从 rx_q 读取 mbuf（内核发送过来的）
         m = kni_fifo_get(kni->rx_q);
         if (m == NULL)
             break;
-        
+
         mbufs[i] = m;
     }
-    
+
     // 2. 将用完的 mbuf 归还到 free_q
     //    这样内核可以重用
     for (int j = 0; j < i; j++) {
         kni_fifo_put(kni->free_q, mbufs[j]);
     }
-    
+
     return i;
 }
 ```
@@ -632,15 +632,15 @@ rte_kni_set_mtu(uint16_t port_id, uint16_t mtu)
 {
     int fd = open("/dev/kni", O_RDWR);
     int ret;
-    
+
     struct rte_kni_conf conf = {
         .port_id = port_id,
         .mtu = mtu,
     };
-    
+
     ret = ioctl(fd, RTE_KNI_IOCTL_CHANGE_MTU, &conf);
     close(fd);
-    
+
     return ret;
 }
 
@@ -650,17 +650,17 @@ kni_ioctl_change_mtu(unsigned long arg)
 {
     struct rte_kni_conf conf;
     struct kni_dev *kni;
-    
+
     if (copy_from_user(&conf, (void __user *)arg, sizeof(conf)))
         return -EFAULT;
-    
+
     kni = kni_get(conf.name);
     if (!kni)
         return -EINVAL;
-    
+
     // 调用内核 API 修改 MTU
     int ret = dev_set_mtu(kni->net_dev, conf.mtu);
-    
+
     return ret;
 }
 ```
@@ -674,15 +674,15 @@ rte_kni_set_mac(uint16_t port_id, struct rte_ether_addr *mac)
 {
     int fd = open("/dev/kni", O_RDWR);
     int ret;
-    
+
     struct rte_kni_conf conf = {
         .port_id = port_id,
     };
     memcpy(conf.mac_addr.addr, mac, ETH_ALEN);
-    
+
     ret = ioctl(fd, RTE_KNI_IOCTL_SET_MAC, &conf);
     close(fd);
-    
+
     return ret;
 }
 
@@ -692,18 +692,18 @@ kni_ioctl_set_mac(unsigned long arg)
 {
     struct rte_kni_conf conf;
     struct kni_dev *kni;
-    
+
     if (copy_from_user(&conf, (void __user *)arg, sizeof(conf)))
         return -EFAULT;
-    
+
     kni = kni_get(conf.name);
     if (!kni)
         return -EINVAL;
-    
+
     // 修改 MAC 地址
     memcpy(kni->net_dev->dev_addr, conf.mac_addr.addr, ETH_ALEN);
     eth_commit_mac_addr_change(kni->net_dev, conf.mac_addr.addr);
-    
+
     return 0;
 }
 ```
@@ -721,10 +721,10 @@ static int
 kni_mmap(struct rte_kni *kni)
 {
     void *addr;
-    
+
     // 1. mmap tx_q
     addr = mmap(0,
-                 kni->tx_q_size * sizeof(void *) + 
+                 kni->tx_q_size * sizeof(void *) +
                  sizeof(struct rte_kni_fifo),
                  PROT_READ | PROT_WRITE,
                  MAP_SHARED,
@@ -733,20 +733,20 @@ kni_mmap(struct rte_kni *kni)
     if (addr == MAP_FAILED)
         return -ENOMEM;
     kni->tx_q = addr;
-    
+
     // 2. mmap rx_q
     addr = mmap(0,
-                 kni->rx_q_size * sizeof(void *) + 
+                 kni->rx_q_size * sizeof(void *) +
                  sizeof(struct rte_kni_fifo),
                  PROT_READ | PROT_WRITE,
                  MAP_SHARED,
                  kni->kni_fd,
                  1);
     // ...
-    
+
     // 3. mmap alloc_q
     // 4. mmap free_q
-    
+
     return 0;
 }
 ```
@@ -762,15 +762,15 @@ kni_mmap(struct file *file, struct vm_area_struct *vma)
     unsigned long pfn;
     unsigned long start = vma->vm_start;
     unsigned long size = vma->vm_end - vma->vm_start;
-    
+
     // 获取物理地址
     unsigned long phys_addr = virt_to_phys(kni->tx_q);
-    
+
     // 映射到用户态
     pfn = phys_addr >> PAGE_SHIFT;
     if (remap_pfn_range(vma, start, pfn, size, PAGE_SHARED))
         return -EAGAIN;
-    
+
     return 0;
 }
 ```
@@ -816,16 +816,16 @@ dhcp_handler(struct rte_kni *kni)
 {
     struct rte_mbuf *mbufs[32];
     uint16_t nb = rte_kni_rx_burst(kni, mbufs, 32);
-    
+
     for (int i = 0; i < nb; i++) {
-        struct rte_ipv4_hdr *ip = 
+        struct rte_ipv4_hdr *ip =
             rte_pktmbuf_mtod_offset(mbufs[i], struct rte_ipv4_hdr *,
                                     sizeof(struct rte_ether_hdr));
-        struct rte_udp_hdr *udp = 
+        struct rte_udp_hdr *udp =
             rte_pktmbuf_mtod_offset(mbufs[i], struct rte_udp_hdr *,
-                                    sizeof(struct rte_ether_hdr) + 
+                                    sizeof(struct rte_ether_hdr) +
                                     sizeof(struct rte_ipv4_hdr));
-        
+
         if (udp->src_port == rte_cpu_to_be_16(68) &&
             udp->dst_port == rte_cpu_to_be_16(67)) {
             // DHCP 请求，构造响应
@@ -907,13 +907,13 @@ kni_net_rx(struct kni_dev *kni)
     struct rte_mbuf *m;
     int nb = 0;
     struct sk_buff *skbs[32];
-    
+
     // 批量从 rx_q 读取
     while ((m = kni_fifo_get(kni->rx_q)) != NULL && nb < 32) {
         skbs[nb] = mbuf_to_skb(m);
         nb++;
     }
-    
+
     // 批量提交到网络栈
     for (int i = 0; i < nb; i++) {
         netif_rx(skbs[i]);
@@ -927,20 +927,20 @@ kni_net_rx(struct kni_dev *kni)
 
 ### 9.1 KNI 的局限性
 
-| 限制 | 说明 |
-|------|------|
-| **单核瓶颈** | 所有 KNI 流量由单个 lcore 处理 |
-| **同步开销** | FIFO + 中断通知机制有延迟 |
-| **内存复制** | mbuf ↔ skb 转换有开销 |
-| **不支持 GSO/TSO** | 需要额外处理 |
+| 限制               | 说明                           |
+| ------------------ | ------------------------------ |
+| **单核瓶颈**       | 所有 KNI 流量由单个 lcore 处理 |
+| **同步开销**       | FIFO + 中断通知机制有延迟      |
+| **内存复制**       | mbuf ↔ skb 转换有开销          |
+| **不支持 GSO/TSO** | 需要额外处理                   |
 
 ### 9.2 替代方案
 
-| 方案 | 描述 | 适用场景 |
-|------|------|----------|
-| **VIRTIO** | 虚拟化标准接口，virtio-net | 虚拟机通信 |
-| **AF_XDP** | 直接访问 XDP，绕过内核 | 高性能数据包捕获 |
-| **Rdma** | 远程直接内存访问 | 跨主机高速通信 |
+| 方案             | 描述                          | 适用场景           |
+| ---------------- | ----------------------------- | ------------------ |
+| **VIRTIO**       | 虚拟化标准接口，virtio-net    | 虚拟机通信         |
+| **AF_XDP**       | 直接访问 XDP，绕过内核        | 高性能数据包捕获   |
+| **Rdma**         | 远程直接内存访问              | 跨主机高速通信     |
 | **用户态协议栈** | DPDK 内置 Failsafe/Terminator | 需要完全用户态控制 |
 
 ---
@@ -972,6 +972,7 @@ kni_net_rx(struct kni_dev *kni)
 ---
 
 > [!tip] 参考文献
+>
 > - Intel, "DPDK KNI Guide", https://doc.dpdk.org/guides/prog_guide/kernel_nic_interface.html
 > - "KNI source code", https://github.com/DPDK/dpdk/tree/main/lib/kni
 > - "kni.ko source code", https://github.com/DPDK/dpdk/tree/main/kernel/linux/kni

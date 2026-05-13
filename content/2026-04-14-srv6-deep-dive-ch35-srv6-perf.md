@@ -10,12 +10,9 @@ tags:
   - monitoring
 ---
 
-> [!info] SRv6 2026 深度探索系列
-> 0. [[2026-04-14-srv6-comprehensive-learning-roadmap|SRv6 全栈学习路径总览]]
-> ...
-> 34. [[2026-04-14-srv6-deep-dive-ch34-srv6-trace|第三四章：SRv6 Traceroute 与路径追踪]]
-> **35. 第三五章：SRv6 性能监控与基准测试**
-> 36. [[2026-04-14-srv6-deep-dive-ch36-srv6-tools|第三六章：SRv6 工具链与模拟器]]
+> [!info] SRv6 2026 深度探索系列 0. [[2026-04-14-srv6-comprehensive-learning-roadmap|SRv6 全栈学习路径总览]]
+> ... 34. [[2026-04-14-srv6-deep-dive-ch34-srv6-trace|第三四章：SRv6 Traceroute 与路径追踪]]
+> **35. 第三五章：SRv6 性能监控与基准测试** 36. [[2026-04-14-srv6-deep-dive-ch36-srv6-tools|第三六章：SRv6 工具链与模拟器]]
 
 ---
 
@@ -32,7 +29,7 @@ graph TD
         D["SID 查找<br/>128-bit vs 32-bit"]
         E["TCAM 深度<br/>Segment 栈限制"]
     end
-    
+
     A -->|"每包"| F["额外 CPU 周期"]
     B -->|"每 Segment"| G["内存访问"]
     C -->|"每跳"| H["加密运算"]
@@ -41,14 +38,14 @@ graph TD
 
 ### 1.1 SRv6 vs SR-MPLS 开销对比
 
-| 指标 | SR-MPLS | SRv6 | 差异 |
-| :--- | :--- | :--- | :--- |
-| 标签栈深度 | 1-4 层 | 1-8 层 | SRv6 更深 |
-| 每层标签大小 | 4 字节 | 16 字节 | SRv6 4x |
-| 标签查找方式 | 32-bit MPLS | 128-bit IPv6 | SRv6 更复杂 |
-| 硬件支持 | 成熟 | 部分成熟 | SR-MPLS 更成熟 |
-| 封装复杂度 | 低 | 中-高 | SR-MPLS 更简单 |
-| uSID 压缩 | N/A | 可选 | SRv6 可优化 |
+| 指标         | SR-MPLS     | SRv6         | 差异           |
+| :----------- | :---------- | :----------- | :------------- |
+| 标签栈深度   | 1-4 层      | 1-8 层       | SRv6 更深      |
+| 每层标签大小 | 4 字节      | 16 字节      | SRv6 4x        |
+| 标签查找方式 | 32-bit MPLS | 128-bit IPv6 | SRv6 更复杂    |
+| 硬件支持     | 成熟        | 部分成熟     | SR-MPLS 更成熟 |
+| 封装复杂度   | 低          | 中-高        | SR-MPLS 更简单 |
+| uSID 压缩    | N/A         | 可选         | SRv6 可优化    |
 
 ---
 
@@ -67,13 +64,13 @@ graph TD
 
 **计算示例：**
 
-| 条件 | IPv6 Only | SRv6 (1 Seg) | SRv6 (3 Seg) |
-| :--- | :--- | :--- | :--- |
-| 原始载荷 | 1500 B | 1500 B | 1500 B |
-| IPv6 头 | 40 B | 40 B | 40 B |
-| SRH 头 | 0 | 16 B | 40 B |
-| 总计 | 1540 B | 1556 B | 1580 B |
-| 开销比 | 2.6% | 3.7% | 5.3% |
+| 条件     | IPv6 Only | SRv6 (1 Seg) | SRv6 (3 Seg) |
+| :------- | :-------- | :----------- | :----------- |
+| 原始载荷 | 1500 B    | 1500 B       | 1500 B       |
+| IPv6 头  | 40 B      | 40 B         | 40 B         |
+| SRH 头   | 0         | 16 B         | 40 B         |
+| 总计     | 1540 B    | 1556 B       | 1580 B       |
+| 开销比   | 2.6%      | 3.7%         | 5.3%         |
 
 ### 2.2 SRH 头开销计算
 
@@ -86,13 +83,13 @@ SRH Header Length = 8 + (16 * Segment_Count) 字节
 
 **Segment 数量与开销关系：**
 
-| Segment 数 | SRH 长度 | 额外 IPv6 扩展头开销 |
-| :--- | :--- | :--- |
-| 1 | 24 字节 | 2 * 8 = 16 (padding to 8-byte aligned) |
-| 2 | 40 字节 | 5 * 8 = 40 |
-| 3 | 56 字节 | 7 * 8 = 56 |
-| 4 | 72 字节 | 9 * 8 = 72 |
-| 8 | 136 字节 | 17 * 8 = 136 |
+| Segment 数 | SRH 长度 | 额外 IPv6 扩展头开销                    |
+| :--------- | :------- | :-------------------------------------- |
+| 1          | 24 字节  | 2 \* 8 = 16 (padding to 8-byte aligned) |
+| 2          | 40 字节  | 5 \* 8 = 40                             |
+| 3          | 56 字节  | 7 \* 8 = 56                             |
+| 4          | 72 字节  | 9 \* 8 = 72                             |
+| 8          | 136 字节 | 17 \* 8 = 136                           |
 
 > [!warning] IPv6 Extension Header 限制
 > RFC 8200 要求每个 IPv6 节点必须支持至少 **1280 字节**的 Extension Header 链。SRv6 SRH 如果过长（> 1240 字节），可能导致某些中间节点无法处理。
@@ -115,11 +112,11 @@ uSID（Micro SID）将多个 SID 压缩到 16 字节（4×4 字节）：
 
 **uSID 节省开销计算：**
 
-| Path | 标准 SID | uSID | 节省 |
-| :--- | :--- | :--- | :--- |
-| 3 层路径 | 48 字节 | 16 字节 | 67% |
-| 5 层路径 | 80 字节 | 16 字节 | 80% |
-| 8 层路径 | 128 字节 | 16 字节 | 88% |
+| Path     | 标准 SID | uSID    | 节省 |
+| :------- | :------- | :------ | :--- |
+| 3 层路径 | 48 字节  | 16 字节 | 67%  |
+| 5 层路径 | 80 字节  | 16 字节 | 80%  |
+| 8 层路径 | 128 字节 | 16 字节 | 88%  |
 
 ---
 
@@ -136,7 +133,7 @@ graph LR
     C --> D["SRH<br/>+N×16 B"]
     D --> E["IPv6 头<br/>40 B"]
     E --> F["Ethernet<br/>14 B"]
-    
+
     F --> G{"总长度 > MTU?"}
     G -->|是| H["分片或丢包 ❌"]
     G -->|否| I["正常转发 ✅"]
@@ -182,13 +179,14 @@ display qos statistics interface GigabitEthernet 0/0/0
 > **症状**：ping -sv6 1500 丢包，但 ping -sv6 500 正常
 >
 > **排查过程**：
+>
 > ```bash
 > # Step 1: 检查路径 MTU
 > ping ipv6 <dest> size 1500 do-not-fragment
-> 
+>
 > # Step 2: 检查 MTU 配置
 > show ipv6 interface | include "MTU"
-> 
+>
 > # Step 3: 检查 SRv6 MTU 配置
 > show srv6 forwarding mtu
 > ```
@@ -196,6 +194,7 @@ display qos statistics interface GigabitEthernet 0/0/0
 > **根因**：Ingress PE SRv6 MTU 设置为 1500，但加上 SRH 后实际包长为 1516，超过了物理接口 MTU
 >
 > **解决方案**：
+>
 > - 增大 SRv6 MTU 到 1516+
 > - 或启用 Path MTU Discovery
 > - 或减小应用层 MTU
@@ -233,11 +232,11 @@ graph TD
         PE2["Egress PE"]
         T2["流量收集器"]
     end
-    
+
     T1 -->|"SRv6 流量"| PE1
     PE1 --> P1 --> P2 --> PE2
     PE2 --> T2
-    
+
     T1 -.->|"控制"| T2
 ```
 
@@ -245,12 +244,12 @@ graph TD
 
 **RFC 2544 基准测试套件（适用于 SRv6）：**
 
-| 测试项 | 描述 | SRv6 特有考量 |
-| :--- | :--- | :--- |
-| Throughput | 最大无丢包速率 | 考虑 SRH 开销 |
-| Latency | 包转发延迟 | 测量 End behavior 延迟 |
-| Frame Loss Rate | 丢包率 | SRH 处理丢包 |
-| Back-to-back | 突发处理能力 | Segment 栈深度 |
+| 测试项          | 描述           | SRv6 特有考量          |
+| :-------------- | :------------- | :--------------------- |
+| Throughput      | 最大无丢包速率 | 考虑 SRH 开销          |
+| Latency         | 包转发延迟     | 测量 End behavior 延迟 |
+| Frame Loss Rate | 丢包率         | SRH 处理丢包           |
+| Back-to-back    | 突发处理能力   | Segment 栈深度         |
 
 **测试命令示例（使用 Cisco IOS-XR）：**
 
@@ -297,13 +296,13 @@ graph TD
         C --> D["IPv6 封装<br/>重写 DA"]
         D --> E["出接口<br/>排队/发送"]
     end
-    
+
     A -->|"< 1 us"| A1["TCAM 查找"]
     B -->|"< 1 us"| B1["SRH 解析"]
     C -->|"2-5 us"| C1["CPU/ASIC"]
     D -->|"< 1 us"| D1["内存写入"]
     E -->|"可变化"| E1["队列深度"]
-    
+
     style C fill:#ffd43b,color:#000
 ```
 
@@ -333,16 +332,16 @@ class PerformanceResult:
 
 def run_iperf3_srv6(test_duration: int = 60) -> PerformanceResult:
     """使用 iperf3 测试 SRv6 吞吐量"""
-    
+
     # 启动 iperf3 服务器
     server = subprocess.Popen(
         ["iperf3", "-s", "-p", "5201", "-6"],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL
     )
-    
+
     time.sleep(2)
-    
+
     # 运行客户端测试
     client = subprocess.run([
         "iperf3", "-c", "2001:db8::1",
@@ -350,9 +349,9 @@ def run_iperf3_srv6(test_duration: int = 60) -> PerformanceResult:
         "-t", str(test_duration),
         "-J"  # JSON 输出
     ], capture_output=True, text=True)
-    
+
     server.terminate()
-    
+
     # 解析结果（简化）
     return PerformanceResult(
         test_name="SRv6 Throughput",
@@ -367,30 +366,30 @@ def run_iperf3_srv6(test_duration: int = 60) -> PerformanceResult:
 def run_traceroute_latency(dest: str, samples: int = 10) -> List[float]:
     """使用 traceroute 测量每跳延迟"""
     latencies = []
-    
+
     for _ in range(samples):
         result = subprocess.run(
-            ["ssh", "admin@pe-a", 
+            ["ssh", "admin@pe-a",
              f"traceroute segment-routing srv6 {dest}"],
             capture_output=True, text=True
         )
-        
+
         # 解析输出获取每跳延迟
         # ... (解析逻辑)
-        
+
         latencies.append(result)
-    
+
     return latencies
 
 def benchmark_srv6_vs_ipv6(dest: str) -> dict:
     """对比 SRv6 和纯 IPv6 性能"""
-    
+
     # SRv6 测试
     srv6_result = run_iperf3_srv6(test_duration=30)
-    
+
     # 纯 IPv6 测试（禁用 SRv6）
     # ... (测试逻辑)
-    
+
     return {
         "srv6": srv6_result,
         "overhead_percent": (
@@ -413,19 +412,19 @@ graph TD
         C["丢包 KPI"]
         D["容量 KPI"]
     end
-    
+
     A --> A1["Mbps / Mpps"]
     A --> A2["线速百分比"]
     A --> A3["HW/SW 转发比"]
-    
+
     B --> B1["Avg / P50 / P99"]
     B --> B2["Jitter"]
     B --> B3["One-way vs Round-trip"]
-    
+
     C --> C1["丢包率"]
     C --> C2["错包率"]
     C --> C3["重传率"]
-    
+
     D --> D1["SID 数量"]
     D --> D2["TCAM 使用率"]
     D --> D3["Segment 栈深度"]
@@ -491,7 +490,7 @@ graph LR
     A -->|"70-85%"| C["查找延迟增加"]
     A -->|"85-95%"| D["TCAM 溢出风险"]
     A -->|"> 95%"| E["SID 分配失败"]
-    
+
     style B fill:#4dabf7,color:#000
     style C fill:#ffd43b,color:#000
     style D fill:#ff6b6b,color:#000
@@ -500,12 +499,12 @@ graph LR
 
 ### 6.2 TCAM 容量规划
 
-| 设备型号 | TCAM SID 容量 | 最大 Segment 栈深度 | 每SID内存 |
-| :--- | :--- | :--- | :--- |
-| Cisco ASR9000 | 64K | 8 | 128 字节 |
-| Juniper MX960 | 128K | 8 | 64 字节 |
-| Huawei NE40E | 32K | 8 | 256 字节 |
-| Juniper PTX1000 | 512K | 16 | 32 字节 |
+| 设备型号        | TCAM SID 容量 | 最大 Segment 栈深度 | 每SID内存 |
+| :-------------- | :------------ | :------------------ | :-------- |
+| Cisco ASR9000   | 64K           | 8                   | 128 字节  |
+| Juniper MX960   | 128K          | 8                   | 64 字节   |
+| Huawei NE40E    | 32K           | 8                   | 256 字节  |
+| Juniper PTX1000 | 512K          | 16                  | 32 字节   |
 
 ```bash
 # 检查 TCAM 使用
@@ -569,11 +568,11 @@ graph TD
     B -->|是| B2["检查 SRH 格式"]
     B -->|是| B3["检查 TCAM 容量"]
     B -->|否| C{"延迟增加?"}
-    
+
     C -->|是| C1["检查队列深度"]
     C -->|是| C2["检查链路利用率"]
     C -->|是| C3["检查 ECMP 负载"]
-    
+
     C -->|否| D{"吞吐量下降?"}
     D -->|是| D1["检查 HW/SW 转发"]
     D -->|是| D2["检查 policer 配置"]
@@ -594,10 +593,10 @@ graph TD
 
 ### 9.2 性能指标阈值
 
-| 指标 | 正常 | 警告 | 严重 |
-| :--- | :--- | :--- | :--- |
-| 丢包率 | < 0.01% | 0.01-0.1% | > 0.1% |
-| 平均延迟 | < 10 ms | 10-50 ms | > 50 ms |
-| P99 延迟 | < 20 ms | 20-100 ms | > 100 ms |
-| TCAM 使用率 | < 70% | 70-85% | > 85% |
-| 吞吐量利用率 | < 60% | 60-80% | > 80% |
+| 指标         | 正常    | 警告      | 严重     |
+| :----------- | :------ | :-------- | :------- |
+| 丢包率       | < 0.01% | 0.01-0.1% | > 0.1%   |
+| 平均延迟     | < 10 ms | 10-50 ms  | > 50 ms  |
+| P99 延迟     | < 20 ms | 20-100 ms | > 100 ms |
+| TCAM 使用率  | < 70%   | 70-85%    | > 85%    |
+| 吞吐量利用率 | < 60%   | 60-80%    | > 80%    |

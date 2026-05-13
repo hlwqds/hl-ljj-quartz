@@ -1,12 +1,13 @@
 ---
 title: "P4 深度探索 (二十一)：BMv2——Behavioral Model v2、软件交换机、p4app 与 P4 语言仿真"
 date: 2026-04-14
-tags: [p4, series, bmv2, behavioral-model, software-switch, p4app, bmv2-ss, mininet, p4runtime,仿真]
+tags:
+  [p4, series, bmv2, behavioral-model, software-switch, p4app, bmv2-ss, mininet, p4runtime, 仿真]
 description: "P4 BMv2 深度解析——Behavioral Model v2 软件交换机架构、BMv2 Simple Switch/Complex Switch、p4app Docker 环境、mininet 集成、P4Runtime 控制面、BMv2 调试工具 pdump/Wireshark"
 ---
 
-> [!info] P4 深度探索系列
-> 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+> [!info] P4 深度探索系列 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-14-p4-deep-dive-ch1-p4-overview|第一章：P4 概述——诞生背景与协议无关包处理]]
 > 2. [[2026-04-14-p4-deep-dive-ch2-p4-architecture|第二章：P4 架构模型——PSA/V1Model、Ingress/Egress]]
 > 3. [[2026-04-14-p4-deep-dive-ch3-p4-vs-ebpf|第三章：P4 vs eBPF——适用场景与硬件/软件对比]]
@@ -57,25 +58,25 @@ P4 Source Code (my_program.p4)
 
 ### 1.1 BMv2 的特点
 
-| 特性 | 描述 |
-|------|------|
-| **开源** | Apache 2.0 许可，可在 GitHub 获取 |
-| **跨平台** | Linux/macOS/Windows (via Docker) |
-| **可移植** | 基于 C++ 实现，依赖 Boost/Thrift |
-| **P4Runtime** | 支持 gRPC 控制面接口 |
-| **PSA/V1Model** | 支持两种架构 |
-| **调试友好** | 内置 pdump/pdjson 日志工具 |
+| 特性            | 描述                              |
+| --------------- | --------------------------------- |
+| **开源**        | Apache 2.0 许可，可在 GitHub 获取 |
+| **跨平台**      | Linux/macOS/Windows (via Docker)  |
+| **可移植**      | 基于 C++ 实现，依赖 Boost/Thrift  |
+| **P4Runtime**   | 支持 gRPC 控制面接口              |
+| **PSA/V1Model** | 支持两种架构                      |
+| **调试友好**    | 内置 pdump/pdjson 日志工具        |
 
 ### 1.2 BMv2 vs 硬件交换机
 
-| 维度 | BMv2 | Tofino/硬件 |
-|------|------|-------------|
-| 吞吐量 | ~10Mpps | ~1000Mpps+ |
-| 延迟 | 10-50μs | <1μs |
-| 表容量 | 受限于 RAM | 数十 M entries |
-| TCAM | 软件模拟 | 原生硬件 |
-| 成本 | 免费 | $10K-$100K+ |
-| 适用场景 | 开发/测试 | 生产部署 |
+| 维度     | BMv2       | Tofino/硬件    |
+| -------- | ---------- | -------------- |
+| 吞吐量   | ~10Mpps    | ~1000Mpps+     |
+| 延迟     | 10-50μs    | <1μs           |
+| 表容量   | 受限于 RAM | 数十 M entries |
+| TCAM     | 软件模拟   | 原生硬件       |
+| 成本     | 免费       | $10K-$100K+    |
+| 适用场景 | 开发/测试  | 生产部署       |
 
 ---
 
@@ -398,12 +399,12 @@ service P4Runtime {
     // 表项操作
     rpc Write(WriteRequest) returns (WriteResponse);
     rpc Read(ReadRequest) returns (stream ReadResponse);
-    
+
     // Packet 操作
     rpc PacketIn(stream PacketOut) returns (stream PacketIn);
-    
+
     // 流消息
-    rpc StreamMessageBstream(stream StreamMessageRequest) 
+    rpc StreamMessageBstream(stream StreamMessageRequest)
         returns (stream StreamMessageResponse);
 }
 ```
@@ -423,27 +424,27 @@ class P4RuntimeClient:
     def __init__(self, address='127.0.0.1:50051'):
         self.channel = grpc.insecure_channel(address)
         self.stub = p4runtime_pb2_grpc.P4RuntimeStub(self.channel)
-        
+
     def get_forwarding_config(self):
         # 获取交换机配置
         req = p4runtime_pb2.GetForwardingStatisticsRequest()
         return self.stub.GetForwardingStatistics(req)
-    
-    def write_table_entry(self, table_name, action_name, 
+
+    def write_table_entry(self, table_name, action_name,
                           match_fields, action_params):
         """写入表项"""
         update = p4runtime_pb2.Update()
         update.type = p4runtime_pb2.Update.INSERT
-        
+
         entry = update.entity.table_entry
         entry.table_id = self.get_table_id(table_name)
-        
+
         # 设置 Match Key
         for field, value in match_fields.items():
             mf = entry.match.add()
             mf.field_id = self.get_field_id(table_name, field)
             mf.exact.value = value
-            
+
         # 设置 Action
         action = entry.action.action
         action.action_id = self.get_action_id(action_name)
@@ -451,48 +452,48 @@ class P4RuntimeClient:
             p = action.params.add()
             p.param_id = self.get_param_id(action_name, name)
             p.value = val
-            
+
         req = p4runtime_pb2.WriteRequest()
         req.device_id = 0
         req.election_id.low = 1
         req.updates.append(update)
-        
+
         return self.stub.Write(req)
-    
+
     def read_table(self, table_name):
         """读取表项"""
         req = p4runtime_pb2.ReadRequest()
         entity = req.entities.add().table_entry
         entity.table_id = self.get_table_id(table_name)
-        
+
         for resp in self.stub.Read(req):
             yield resp
-    
+
     def set_pipeline_config(self, p4info_path, bmv2_json_path):
         """设置流水线配置"""
         with open(p4info_path, 'rb') as f:
             p4info = p4info_pb2.P4Info()
             p4info.ParseFromString(f.read())
-            
+
         with open(bmv2_json_path, 'rb') as f:
             bmv2_json = f.read()
-            
+
         req = p4runtime_pb2.SetPipelineProgramRequest()
         req.device_id = 0
         req.election_id.low = 1
         req.config.p4info.CopyFrom(p4info)
         req.config.bmv2_json_file = bmv2_json
-        
+
         return self.stub.SetPipelineProgram(req)
 
 # 使用示例
 if __name__ == '__main__':
     client = P4RuntimeClient('127.0.0.1:50051')
-    
+
     # 设置流水线配置
-    client.set_pipeline_config('basic_routing.p4info.txt', 
+    client.set_pipeline_config('basic_routing.p4info.txt',
                                'basic_routing.json')
-    
+
     # 写入路由表项
     client.write_table_entry(
         table_name='ipv4_lpm',
@@ -610,7 +611,7 @@ import os
 
 class P4Switch(Switch):
     """P4 BMv2 交换机"""
-    
+
     def __init__(self, name, json_path, p4info_path, **kwargs):
         Switch.__init__(self, name, **kwargs)
         self.json_path = json_path
@@ -619,11 +620,11 @@ class P4Switch(Switch):
             '--json', json_path,
             '--p4info', p4info_path,
         ]
-        
+
     def start(self, controllers):
         """启动 BMv2 交换机"""
         info(f'Starting P4 Switch {self.name}\n')
-        
+
         cmd = [
             'simple_switch',
             '--thrift-port', str(self.thrift_port),
@@ -635,42 +636,42 @@ class P4Switch(Switch):
             '--',
             '--device-id', str(self.dpid)
         ]
-        
+
         self.cmd(' '.join(cmd) + ' &')
         self.waitStartup()
-        
+
 def create_topology():
     """创建 2x2 主机拓扑"""
     net = Mininet(link=TCLink)
-    
+
     # 添加主机
     h1 = net.addHost('h1', mac='00:00:00:00:01:01', ip='10.0.1.1/24')
     h2 = net.addHost('h2', mac='00:00:00:00:01:02', ip='10.0.1.2/24')
     h3 = net.addHost('h3', mac='00:00:00:00:02:01', ip='10.0.2.1/24')
     h4 = net.addHost('h4', mac='00:00:00:00:02:02', ip='10.0.2.2/24')
-    
+
     # 添加 P4 交换机
     s1 = net.addSwitch('s1', cls=P4Switch,
                        json_path='basic_routing.json',
                        p4info_path='basic_routing.p4info.txt')
-    
+
     # 创建链路
     net.addLink(h1, s1)
     net.addLink(h2, s1)
     net.addLink(h3, s1)
     net.addLink(h4, s1)
-    
+
     # 配置路由
     h1.setDefaultRoute('via 10.0.1.254')
     h2.setDefaultRoute('via 10.0.1.254')
     h3.setDefaultRoute('via 10.0.2.254')
     h4.setDefaultRoute('via 10.0.2.254')
-    
+
     net.start()
-    
+
     # 配置交换机的 L3 转发表
     s1.cmd('simple_switch_CLI --thrift-port 9090 < s1_commands.txt')
-    
+
     CLI(net)
     net.stop()
 
@@ -708,13 +709,13 @@ table_dump forward
 
 ### 8.1 与 TNA/PSA 的差异
 
-| 特性 | BMv2 | Tofino/PSA |
-|------|------|------------|
-| 表容量 | 受限 (~100K) | 数十 M |
-| 精确度 | 软件模拟 | 硬件原生 |
-| Parser | 有限并行 | 高度并行 |
-| 性能 | ~10Mpps | 线速 |
-| 支持的 extern | 基础子集 | 全部 |
+| 特性          | BMv2         | Tofino/PSA |
+| ------------- | ------------ | ---------- |
+| 表容量        | 受限 (~100K) | 数十 M     |
+| 精确度        | 软件模拟     | 硬件原生   |
+| Parser        | 有限并行     | 高度并行   |
+| 性能          | ~10Mpps      | 线速       |
+| 支持的 extern | 基础子集     | 全部       |
 
 ### 8.2 已知的限制
 

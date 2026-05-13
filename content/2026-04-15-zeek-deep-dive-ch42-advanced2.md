@@ -70,11 +70,11 @@ event suspicious_activity(c: connection) {
 
 ### 钩子与事件的区别
 
-| 特性 | 事件(Event) | 钩子(Hook) |
-|------|-------------|------------|
+| 特性     | 事件(Event)  | 钩子(Hook)         |
+| -------- | ------------ | ------------------ |
 | 执行顺序 | 按优先级串行 | 串行执行直到被阻止 |
-| 返回值 | 无 | 可选布尔值 |
-| 使用场景 | 通知/日志 | 访问控制/数据验证 |
+| 返回值   | 无           | 可选布尔值         |
+| 使用场景 | 通知/日志    | 访问控制/数据验证  |
 
 ### 钩子定义和使用
 
@@ -86,7 +86,7 @@ hook HTTP::log_hook(rec: HTTP::Info) {
         # 阻止记录OPTIONS请求
         break;
     }
-    
+
     # 添加额外字段
     rec$custom_tag = "inspected";
 }
@@ -170,7 +170,7 @@ type HTTP::Info: record {
 event http_request(c: connection, method: string, original_URI: string, version: string) {
     local http_rec: HTTP::Info =$c$http;
     http_rec$custom_tag = "malware-check";
-    
+
     # 检查威胁情报
     if (original_URI contains ".exe") {
         http_rec$threat_intel = T;
@@ -187,13 +187,13 @@ event http_request(c: connection, method: string, original_URI: string, version:
 print "Connection established";
 
 # 格式化打印
-print fmt("HTTP request: %s %s from %s", 
+print fmt("HTTP request: %s %s from %s",
     method, original_URI, c$id$orig_h);
 
 # 条件打印
 event connection_state_remove(c: connection) {
     if (c$duration > 10 secs) {
-        print fmt("Long connection: %s duration=%s", 
+        print fmt("Long connection: %s duration=%s",
             c$id, c$duration);
     }
 }
@@ -262,7 +262,7 @@ event connection_state_remove(c: connection) {
             $alert="Long suspicious connection"
         ]);
     }
-    
+
     # 清理表
     delete long_connections[c$id$orig_h];
 }
@@ -276,7 +276,7 @@ module DNS_Tunnel;
 
 export {
     redef enum Log::ID += { LOG };
-    
+
     global last_dns_query: table[string] of count;
     threshold_per_domain: count = 50;
 }
@@ -288,7 +288,7 @@ event dns_request(c: connection, msg: dns_msg, query: string, qtype: count) {
     } else {
         last_dns_query[query] = 1;
     }
-    
+
     # 检测高频查询
     if (last_dns_query[query] > threshold_per_domain) {
         Log::write(LOG, [
@@ -300,7 +300,7 @@ event dns_request(c: connection, msg: dns_msg, query: string, qtype: count) {
             $reason="High frequency DNS queries"
         ]);
     }
-    
+
     # 检测异常长的子域名
     local parts = split_string(query, /\./);
     if (|parts| > 5) {
@@ -441,7 +441,7 @@ when (local result = lookup_addr(c$id$orig_h)) {
 
 ```zeek
 # 检查可选字段
-event http_request(c: connection, method: string, 
+event http_request(c: connection, method: string,
                    original_URI: string, version: string) {
     # 安全访问可选字段
     if (c$http?$hostname) {

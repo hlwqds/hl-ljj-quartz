@@ -12,8 +12,8 @@ tags:
   - ebpf
 ---
 
-> [!info] Cilium 2026 深度探索系列
-> 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+> [!info] Cilium 2026 深度探索系列 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+>
 > 1. [[2026-04-14-cilium-deep-dive-ch1-cilium-overview|第一章：Cilium 概述]]
 > 2. [[2026-04-14-cilium-deep-dive-ch2-architecture|第二章：Cilium 架构]]
 > 3. [[2026-04-14-cilium-deep-dive-ch3-ebpf-datapath|第三章：eBPF 数据面]]
@@ -75,13 +75,13 @@ OpenTelemetry（OTel）是 CNCF 的可观测性标准项目，提供了**分布�
 
 ### 1.1 核心概念
 
-| 概念 | 描述 |
-|:---|:---|
-| **Trace** | 完整的请求路径，从开始到结束 |
-| **Span** | Trace 中的一个工作单元 |
+| 概念            | 描述                                   |
+| :-------------- | :------------------------------------- |
+| **Trace**       | 完整的请求路径，从开始到结束           |
+| **Span**        | Trace 中的一个工作单元                 |
 | **SpanContext** | 跨进程传播的上下文（TraceID + SpanID） |
-| **Baggage** | 随请求传播的键值对 |
-| **Exporter** | 导出器，将数据发送到后端 |
+| **Baggage**     | 随请求传播的键值对                     |
+| **Exporter**    | 导出器，将数据发送到后端               |
 
 ### 1.2 Hubble 与 OTel 的关系
 
@@ -209,7 +209,7 @@ spec:
             endpoint: 0.0.0.0:4317
           http:
             endpoint: 0.0.0.0:4318
-    
+
     processors:
       batch:
         timeout: 1s
@@ -217,7 +217,7 @@ spec:
       memory_limiter:
         limit_mib: 512
         spike_limit_mib: 128
-    
+
     exporters:
       jaeger:
         endpoint: jaeger-collector.observability:14250
@@ -225,7 +225,7 @@ spec:
           insecure: true
       prometheus:
         endpoint: "0.0.0.0:8889"
-    
+
     service:
       pipelines:
         traces:
@@ -379,12 +379,12 @@ func handleRequest(ctx context.Context) {
     tracer := otel.Tracer("my-app")
     span := tracer.Start(ctx, "process-order")
     defer span.End()
-    
+
     span.SetAttributes(
         attribute.String("order.id", "12345"),
         attribute.Float64("order.amount", 99.99),
     )
-    
+
     // 业务逻辑会自动传播 TraceContext
     callBackend(span.Context())
 }
@@ -392,10 +392,10 @@ func handleRequest(ctx context.Context) {
 // HTTP 客户端会自动注入 TraceContext headers
 func callBackend(ctx trace.SpanContext) {
     req, _ := http.NewRequest("GET", "http://backend:8080/api", nil)
-    
+
     // OTel 自动注入 TraceContext 到 HTTP headers
     otel.GetTextMapPropagator().Inject(ctx, propagation.HeaderCarrier(req.Header))
-    
+
     http.DefaultClient.Do(req)
 }
 ```
@@ -538,7 +538,7 @@ spec:
         protocols:
           grpc:
             endpoint: 0.0.0.0:4317
-    
+
     processors:
       batch:
         timeout: 1s
@@ -549,13 +549,13 @@ spec:
             - k8s.namespace.name
             - k8s.pod.name
             - k8s.deployment.name
-    
+
     exporters:
       otlp/tempo:
         endpoint: tempo.observability:4317
         tls:
           insecure: true
-    
+
     service:
       pipelines:
         traces:
@@ -576,17 +576,17 @@ processors:
     policies:
       - name: errors-policy
         type: status_code
-        status_code: {status_codes: [ERROR]}
+        status_code: { status_codes: [ERROR] }
       - name: slow-traces-policy
         type: latency
-        latency: {threshold_ms: 1000}
+        latency: { threshold_ms: 1000 }
       - name: probabilistic-policy
         type: probabilistic
-        probabilistic: {sampling_percentage: 10}
+        probabilistic: { sampling_percentage: 10 }
       - name: healthy-policy
         type: status_code
-        status_code: {status_codes: [OK]}
-        combine: {operator: and}
+        status_code: { status_codes: [OK] }
+        combine: { operator: and }
 ```
 
 ### 7.3 TLS 配置
@@ -648,11 +648,11 @@ exporters:
 
 ### 9.1 OTel 开销
 
-| 组件 | 延迟影响 | 资源消耗 |
-|:---|:---|:---|
-| Hubble OTel Exporter | <1ms | CPU +5% |
-| OTel Collector | <5ms | CPU +10%, Memory +100MB |
-| 端到端延迟增加 | 5-10ms | - |
+| 组件                 | 延迟影响 | 资源消耗                |
+| :------------------- | :------- | :---------------------- |
+| Hubble OTel Exporter | <1ms     | CPU +5%                 |
+| OTel Collector       | <5ms     | CPU +10%, Memory +100MB |
+| 端到端延迟增加       | 5-10ms   | -                       |
 
 ### 9.2 容量规划
 
@@ -685,6 +685,7 @@ Hubble 与 OpenTelemetry 的集成将 Cilium 网络可观测性提升到新的�
 4. **多后端支持**：Jaeger、Tempo、Zipkin 等任意选择
 
 集成价值：
+
 - **统一可观测性**：网络层 + 应用层统一视图
 - **根因分析**：从网络延迟到应用瓶颈的完整链路追踪
 - **策略验证**：追踪视角验证网络策略效果

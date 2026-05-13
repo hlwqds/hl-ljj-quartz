@@ -12,8 +12,8 @@ tags:
 description: "深入解析 Zeek SMB 分析器——SMB::Info record、SMB2 协议、文件传输日志、命名管道、NTLM 认证"
 ---
 
-> [!info] Zeek 2026 深度探索系列
-> 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Zeek 2026 深度探索系列 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-15-zeek-deep-dive-ch1-overview|第一章：Zeek 概述]]
 > 2. [[2026-04-15-zeek-deep-dive-ch2-installation|第二章：安装部署]]
 > 3. [[2026-04-15-zeek-deep-dive-ch3-config|第三章：配置系统]]
@@ -509,16 +509,17 @@ event smb_file_open(c: connection, hdr: SMB::Header, fid: string,
 
 本章介绍了 Zeek SMB 分析器的核心能力：
 
-| 组件 | 说明 |
-|------|------|
-| **SMB::Info** | SMB 日志核心 record，包含会话、命令、文件操作 |
-| **smb_connect** | 树连接事件，检测共享访问 |
-| **smb_file_open** | 文件打开事件 |
-| **smb_write** | 文件写入事件 |
-| **smb_files.log** | SMB 文件传输日志 |
-| **NTLM 认证** | SMB 认证分析 |
+| 组件              | 说明                                          |
+| ----------------- | --------------------------------------------- |
+| **SMB::Info**     | SMB 日志核心 record，包含会话、命令、文件操作 |
+| **smb_connect**   | 树连接事件，检测共享访问                      |
+| **smb_file_open** | 文件打开事件                                  |
+| **smb_write**     | 文件写入事件                                  |
+| **smb_files.log** | SMB 文件传输日志                              |
+| **NTLM 认证**     | SMB 认证分析                                  |
 
 SMB 日志对于检测：
+
 - 横向移动（PSEXEC/WMI）
 - 敏感文件访问
 - 恶意文件传输

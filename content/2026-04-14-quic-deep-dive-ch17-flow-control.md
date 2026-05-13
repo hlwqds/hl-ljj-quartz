@@ -44,14 +44,14 @@ The send side tracks what data has been sent, acknowledged, or is pending retran
 
 ### 17.2.1 Send States Explained
 
-| State | Description |
-|---|---|
-| **OPEN** | Initial state. Application has data to send but flow control may prevent transmission. |
-| **SEND (Ready)** | Stream has data ready to send. The send-side is ready to send but waiting for flow control credit or transmission opportunity. |
-| **SEND (Data Pending)** | Data has been written to the stream and is queued for transmission. |
-| **Data Sent** | All stream data has been transmitted (in STREAM frames) but not all has been acknowledged. |
-| **Data Recvd** | All data has been transmitted and at least some is acknowledged. |
-| **DATA ACKed** | All stream data has been fully acknowledged by the peer. Terminal state for send side. |
+| State                   | Description                                                                                                                    |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| **OPEN**                | Initial state. Application has data to send but flow control may prevent transmission.                                         |
+| **SEND (Ready)**        | Stream has data ready to send. The send-side is ready to send but waiting for flow control credit or transmission opportunity. |
+| **SEND (Data Pending)** | Data has been written to the stream and is queued for transmission.                                                            |
+| **Data Sent**           | All stream data has been transmitted (in STREAM frames) but not all has been acknowledged.                                     |
+| **Data Recvd**          | All data has been transmitted and at least some is acknowledged.                                                               |
+| **DATA ACKed**          | All stream data has been fully acknowledged by the peer. Terminal state for send side.                                         |
 
 ### 17.2.2 State Transitions
 
@@ -96,11 +96,11 @@ The receive side tracks what data has been received, delivered to the applicatio
 
 ### 17.3.1 Receive States Explained
 
-| State | Description |
-|---|---|
-| **RECV** | Initial state. Receiving STREAM frames, buffering out-of-order data. |
-| **RECV DATA RECVD** | All expected data has been received (no gaps in offset sequence). |
-| **DATA READ** | All received data has been delivered to the application. Terminal state for receive side. |
+| State               | Description                                                                               |
+| ------------------- | ----------------------------------------------------------------------------------------- |
+| **RECV**            | Initial state. Receiving STREAM frames, buffering out-of-order data.                      |
+| **RECV DATA RECVD** | All expected data has been received (no gaps in offset sequence).                         |
+| **DATA READ**       | All received data has been delivered to the application. Terminal state for receive side. |
 
 ### 17.3.2 Receive-Side Gap Handling
 
@@ -116,6 +116,7 @@ State: RECV (waiting for offset 1200-1999)
 ```
 
 When a gap is detected, the receive side:
+
 1. Buffers received data (in memory or disk)
 2. Waits for retransmission of missing data
 3. Does NOT deliver any data past the gap to the application
@@ -198,6 +199,7 @@ STOP_SENDING Frame {
 ```
 
 Use cases:
+
 - Application received enough data and doesn't need the rest
 - Application encountered an error processing stream data
 - Stream is not needed but the sender hasn't reset it
@@ -218,6 +220,7 @@ Server can now have up to 100 open bidirectional streams
 ### 17.7.1 Per-Type Limits
 
 Limits are per stream type:
+
 - Client-initiated bidirectional (0, 4, 8, ...)
 - Server-initiated bidirectional (1, 5, 9, ...)
 - Client-initiated unidirectional (2, 6, 10, ...)
@@ -232,6 +235,7 @@ QUIC leaves stream priority to the application layer (HTTP/3). However, the send
 ### 17.8.1 Scheduling Strategies
 
 Common implementations:
+
 - **Round-robin**: Fair sharing across streams
 - **Priority-based**: Some streams get more bandwidth
 - **Head-of-line**: Single stream gets all until blocked
@@ -241,6 +245,7 @@ Most implementations use a variant of **deficit round-robin (DRR)** or similar f
 ### 17.8.2 Frame Selection
 
 When building a packet, the sender may include frames from multiple streams. The packet number space is shared, but each stream's data is independent. Implementations typically:
+
 1. Fill packets with STREAM frames from ready streams
 2. Include CRYPTO frames first (handshake progress)
 3. Include ACK frames when needed
@@ -251,26 +256,27 @@ When building a packet, the sender may include frames from multiple streams. The
 In HTTP/3, stream 0 is reserved for HTTP control messages (QPACK encoded headers). The remaining streams (4, 8, 12, ...) carry HTTP request/response bodies.
 
 HTTP/3 imposes additional semantics:
+
 - Server can close streams 0-3 (reserved) → CONNECTION_CLOSE
 - Clients cannot open more than the advertised `MAX_STREAMS`
 - Servers can send `STREAM_STOPPING` errors
 
 ## 17.10 Stream States Summary
 
-| Send State | Description |
-|---|---|
-| OPEN | Initial state, application can write |
-| SEND Ready | Has data, waiting for transmission opportunity |
-| SEND Data Pending | Data queued, waiting for packet transmission |
-| Data Sent | All data transmitted, awaiting ACK |
-| Data Recvd | Some data acknowledged |
-| DATA ACKed | All data acknowledged (terminal) |
+| Send State        | Description                                    |
+| ----------------- | ---------------------------------------------- |
+| OPEN              | Initial state, application can write           |
+| SEND Ready        | Has data, waiting for transmission opportunity |
+| SEND Data Pending | Data queued, waiting for packet transmission   |
+| Data Sent         | All data transmitted, awaiting ACK             |
+| Data Recvd        | Some data acknowledged                         |
+| DATA ACKed        | All data acknowledged (terminal)               |
 
-| Receive State | Description |
-|---|---|
-| RECV | Receiving and buffering data |
-| RECV DATA RECVD | All data received (gap-free) |
-| DATA READ | All data delivered to application (terminal) |
+| Receive State   | Description                                  |
+| --------------- | -------------------------------------------- |
+| RECV            | Receiving and buffering data                 |
+| RECV DATA RECVD | All data received (gap-free)                 |
+| DATA READ       | All data delivered to application (terminal) |
 
 Stream resets (`STREAM_RESET`) and stop-sending (`STOP_SENDING`) provide asymmetric stream termination when the application no longer needs the stream's data.
 

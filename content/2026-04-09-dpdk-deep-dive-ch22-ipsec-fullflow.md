@@ -5,10 +5,8 @@ tags: [dpdk, series, ipsec, sad, spd, esp, ah, sa, tunnel, transport]
 description: "深入理解 IPsec 完整处理流程——ESP/AH 协议、SAD 安全关联数据库、SPD 安全策略数据库、Tunnel/Transport 模式、IPsec 卸载"
 ---
 
-> [!info] DPDK 深度探索系列
-> 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
-> 1-21. 前二十一章已完成
-> 22. **第二十二章：IPsec 完整处理流程与 SAD/SPD**
+> [!info] DPDK 深度探索系列 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
+> 1-21. 前二十一章已完成 22. **第二十二章：IPsec 完整处理流程与 SAD/SPD**
 
 ---
 
@@ -381,11 +379,11 @@ int nb_found = rte_ipsec_sad_lookup(sad, keys, sa_out, nb_rx);
 
 SPD 是 IPsec 体系中的策略决策层，定义了哪些流量需要 IPsec 保护、哪些可以跳过、哪些应该丢弃。标准的策略动作：
 
-| 动作 | 说明 |
-|------|------|
+| 动作        | 说明                                              |
+| ----------- | ------------------------------------------------- |
 | **PROTECT** | 对流量应用 IPsec 保护（加密/认证），关联到一个 SA |
-| **BYPASS** | 绕过 IPsec，明文放行（用于 IKE 等管理流量） |
-| **DISCARD** | 丢弃流量 |
+| **BYPASS**  | 绕过 IPsec，明文放行（用于 IKE 等管理流量）       |
+| **DISCARD** | 丢弃流量                                          |
 
 ### 3.2 SPD 匹配规则
 
@@ -1161,14 +1159,14 @@ ipsec_gateway_loop(uint16_t port_rx, uint16_t port_tx,
 
 ### 9.2 优化建议
 
-| 优化项 | 说明 | 效果 |
-|--------|------|------|
-| **批量处理** | 使用 `rte_ipsec_pkt_crypto_prepare` 批量准备 crypto op | 3-5x 提升 |
-| **硬件卸载** | Inline 或 QAT 加速，CPU 不参与加密 | 10x+ 提升 |
-| **ESN** | 避免 32-bit 序列号溢出 | 支持长连接 |
-| **连续 mbuf** | 使用单 segment mbuf，减少 DMA 碎片 | 降低延迟 |
-| **多队列并行** | 每个 lcore 独立的 crypto queue pair + IPsec session | 线性扩展 |
-| **inline crypto** | 对于支持 RTE_SECURITY_ACTION_TYPE_INLINE_CRYPTO 的设备 | 最低延迟 |
+| 优化项            | 说明                                                   | 效果       |
+| ----------------- | ------------------------------------------------------ | ---------- |
+| **批量处理**      | 使用 `rte_ipsec_pkt_crypto_prepare` 批量准备 crypto op | 3-5x 提升  |
+| **硬件卸载**      | Inline 或 QAT 加速，CPU 不参与加密                     | 10x+ 提升  |
+| **ESN**           | 避免 32-bit 序列号溢出                                 | 支持长连接 |
+| **连续 mbuf**     | 使用单 segment mbuf，减少 DMA 碎片                     | 降低延迟   |
+| **多队列并行**    | 每个 lcore 独立的 crypto queue pair + IPsec session    | 线性扩展   |
+| **inline crypto** | 对于支持 RTE_SECURITY_ACTION_TYPE_INLINE_CRYPTO 的设备 | 最低延迟   |
 
 ---
 
@@ -1201,6 +1199,7 @@ ipsec_gateway_loop(uint16_t port_rx, uint16_t port_tx,
 ---
 
 > [!tip] 参考文献
+>
 > - RFC 4301, "Security Architecture for IPsec"
 > - RFC 4302, "IP Authentication Header (AH)"
 > - RFC 4303, "Encapsulating Security Payload (ESP)"

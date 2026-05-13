@@ -34,13 +34,13 @@ description: "深入解析 VPP 隧道封装：VXLAN、NVGRE、GENEVE、GRE、IPI
 
 ### 1.2 封装对比
 
-| 隧道 | 外层协议 | VNI/Key | 元数据 | UDP 端口 |
-|------|----------|---------|--------|----------|
-| **VXLAN** | UDP | 24-bit VNI | 无 | 4789 |
-| **NVGRE** | GRE | 24-bit VNI | flow_id | N/A |
-| **GENEVE** | UDP | 24-bit VNI | 可变选项 | 6081 |
-| **GRE** | IP | 32-bit key | 无 | N/A |
-| **IPIP** | IP | 无 | 无 | N/A |
+| 隧道       | 外层协议 | VNI/Key    | 元数据   | UDP 端口 |
+| ---------- | -------- | ---------- | -------- | -------- |
+| **VXLAN**  | UDP      | 24-bit VNI | 无       | 4789     |
+| **NVGRE**  | GRE      | 24-bit VNI | flow_id  | N/A      |
+| **GENEVE** | UDP      | 24-bit VNI | 可变选项 | 6081     |
+| **GRE**    | IP       | 32-bit key | 无       | N/A      |
+| **IPIP**   | IP       | 无         | 无       | N/A      |
 
 ## 2. VXLAN
 
@@ -430,14 +430,14 @@ tunnel_gso(vlib_buffer_t *b, u32 mtu)
 
 隧道封装对比：
 
-| 特性 | VXLAN | NVGRE | GENEVE | GRE | IPIP |
-|------|-------|-------|--------|-----|------|
-| **标准化** | RFC 7348 | MS | IETF draft | RFC 2890 | RFC 1853 |
-| **外层** | UDP | GRE | UDP | IP | IP |
-| **VNI** | 24-bit | 24-bit | 24-bit | 32-bit key | 无 |
-| **元数据** | 无 | flow_id | 可变选项 | 无 | 无 |
-| **硬件支持** | 广泛 | 部分 | 新兴 | 广泛 | 广泛 |
-| **端口** | 4789 | N/A | 6081 | N/A | N/A |
+| 特性         | VXLAN    | NVGRE   | GENEVE     | GRE        | IPIP     |
+| ------------ | -------- | ------- | ---------- | ---------- | -------- |
+| **标准化**   | RFC 7348 | MS      | IETF draft | RFC 2890   | RFC 1853 |
+| **外层**     | UDP      | GRE     | UDP        | IP         | IP       |
+| **VNI**      | 24-bit   | 24-bit  | 24-bit     | 32-bit key | 无       |
+| **元数据**   | 无       | flow_id | 可变选项   | 无         | 无       |
+| **硬件支持** | 广泛     | 部分    | 新兴       | 广泛       | 广泛     |
+| **端口**     | 4789     | N/A     | 6081       | N/A        | N/A      |
 
 选择建议：
 

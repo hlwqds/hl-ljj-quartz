@@ -439,12 +439,12 @@ sysctl -w net.core.wmem_max=16777216
 
 ### 8.1 性能对比
 
-| 配置 | 吞吐量 | PPS | 延迟 |
-|------|--------|-----|------|
-| **virtio-net (kernel)** | ~2 Gbps | ~500K | ~100μs |
-| **virtio-pmd (scalar)** | ~5 Gbps | ~1M | ~50μs |
-| **virtio-pmd (vector)** | ~10 Gbps | ~3M | ~20μs |
-| **vhost-user** | ~15 Gbps | ~5M | ~10μs |
+| 配置                    | 吞吐量   | PPS   | 延迟   |
+| ----------------------- | -------- | ----- | ------ |
+| **virtio-net (kernel)** | ~2 Gbps  | ~500K | ~100μs |
+| **virtio-pmd (scalar)** | ~5 Gbps  | ~1M   | ~50μs  |
+| **virtio-pmd (vector)** | ~10 Gbps | ~3M   | ~20μs  |
+| **vhost-user**          | ~15 Gbps | ~5M   | ~10μs  |
 
 ### 8.2 优化效果
 
@@ -468,13 +468,13 @@ sysctl -w net.core.wmem_max=16777216
 
 Virtio 优化技术：
 
-| 技术 | 效果 | 复杂度 |
-|------|------|--------|
-| **Vector PMD** | 2-3x | 低 |
-| **Batch TX/RX** | 1.5-2x | 中 |
-| **Multi-queue** | 2-4x (多核) | 低 |
-| **Large mbuf** | 减少 CPU | 中 |
-| **中断优化** | 减少 CPU | 中 |
+| 技术            | 效果        | 复杂度 |
+| --------------- | ----------- | ------ |
+| **Vector PMD**  | 2-3x        | 低     |
+| **Batch TX/RX** | 1.5-2x      | 中     |
+| **Multi-queue** | 2-4x (多核) | 低     |
+| **Large mbuf**  | 减少 CPU    | 中     |
+| **中断优化**    | 减少 CPU    | 中     |
 
 关键配置参数：
 

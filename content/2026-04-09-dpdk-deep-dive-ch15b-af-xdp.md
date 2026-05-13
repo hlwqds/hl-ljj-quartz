@@ -5,14 +5,13 @@ tags: [dpdk, series, af-xdp, xdp, ebpf, kernel-bypass, zero-copy, umem, pmd]
 description: "深入理解 DPDK AF_XDP PMD 驱动——从 KNI 到 AF_XDP 的演进、UMEM 共享内存、Ring Buffer 机制、零拷贝/拷贝模式数据路径，以及与 KNI 的全面对比"
 ---
 
-> [!info] DPDK 深度探索系列
-> 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
-> 1-14. 前十四章已完成
-> 15. [[2026-04-09-dpdk-deep-dive-ch15-kni-interface|第十五章：KNI (Kernel NIC Interface)]]（已废弃，历史参考）
+> [!info] DPDK 深度探索系列 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
+> 1-14. 前十四章已完成 15. [[2026-04-09-dpdk-deep-dive-ch15-kni-interface|第十五章：KNI (Kernel NIC Interface)]]（已废弃，历史参考）
 > 15b. **第十五章补充：AF_XDP —— KNI 的现代替代**
 
 > [!tip] 延伸阅读
 > 本章节聚焦于 **DPDK 如何封装 AF_XDP**。如需深入了解 AF_XDP 本身的架构原理、UMEM、数据路径等，请参考：
+>
 > - [[2026-04-25-af-xdp-deep-dive-ch1-architecture-and-principles|AF_XDP 深度探索 Ch1：架构与原理]]
 > - [[2026-04-27-af-xdp-deep-dive-ch3-data-path-analysis|AF_XDP 深度探索 Ch3：数据路径分析]]
 
@@ -24,13 +23,13 @@ description: "深入理解 DPDK AF_XDP PMD 驱动——从 KNI 到 AF_XDP 的演
 
 在[第十五章](2026-04-09-dpdk-deep-dive-ch15-kni-interface)中我们详细分析了 KNI 的架构。KNI 虽然实现了用户态与内核网络栈的通信，但存在几个无法绕过的根本缺陷：
 
-| 问题                    | 说明                                                |
-| --------------------- | ------------------------------------------------- |
-| **内核模块依赖**            | KNI 需要编译内核模块（`rte_kni.ko`），必须与运行内核版本严格匹配          |
+| 问题                    | 说明                                                                         |
+| ----------------------- | ---------------------------------------------------------------------------- |
+| **内核模块依赖**        | KNI 需要编译内核模块（`rte_kni.ko`），必须与运行内核版本严格匹配             |
 | **mbuf ↔ sk_buff 转换** | 即使"零拷贝"模式也需要在 DPDK mbuf 和内核 sk_buff 之间共享内存，转换开销不小 |
-| **4 个 FIFO 瓶颈**       | tx_q/rx_q/alloc_q/free_q 四个无锁 FIFO 成为吞吐量瓶颈        |
-| **维护中断**              | KNI 已在 DPDK 23.11 中被完全移除，不再有官方维护                  |
-| **ioctl 同步**          | 控制接口通过 ioctl 同步调用，每次操作都有用户态/内核态切换                 |
+| **4 个 FIFO 瓶颈**      | tx_q/rx_q/alloc_q/free_q 四个无锁 FIFO 成为吞吐量瓶颈                        |
+| **维护中断**            | KNI 已在 DPDK 23.11 中被完全移除，不再有官方维护                             |
+| **ioctl 同步**          | 控制接口通过 ioctl 同步调用，每次操作都有用户态/内核态切换                   |
 
 ### 1.2 AF_XDP 的优势
 
@@ -56,16 +55,16 @@ AF_XDP（现代方案）：
 
 关键差异总结：
 
-| 维度             | KNI               | AF_XDP                   |
-| -------------- | ----------------- | ------------------------ |
-| **内核模块**       | 需要编译 `rte_kni.ko` | 无需任何内核模块                 |
-| **内核版本**       | 需匹配内核版本           | 内核 >= 4.18 即可            |
-| **数据拷贝**       | mbuf ↔ sk_buff 转换 | 零拷贝（UMEM 直通）             |
-| **通信方式**       | 4 个 FIFO 队列       | Ring Buffer（FQ/CQ/RX/TX） |
-| **控制接口**       | ioctl 系统调用        | 标准 socket API            |
-| **XDP 程序**     | 不涉及               | eBPF 程序重定向               |
-| **DPDK 状态**    | 23.11 已移除         | 活跃维护（`net_af_xdp` PMD）   |
-| **Kubernetes** | 不支持               | 原生支持（Device Plugin）      |
+| 维度           | KNI                   | AF_XDP                       |
+| -------------- | --------------------- | ---------------------------- |
+| **内核模块**   | 需要编译 `rte_kni.ko` | 无需任何内核模块             |
+| **内核版本**   | 需匹配内核版本        | 内核 >= 4.18 即可            |
+| **数据拷贝**   | mbuf ↔ sk_buff 转换   | 零拷贝（UMEM 直通）          |
+| **通信方式**   | 4 个 FIFO 队列        | Ring Buffer（FQ/CQ/RX/TX）   |
+| **控制接口**   | ioctl 系统调用        | 标准 socket API              |
+| **XDP 程序**   | 不涉及                | eBPF 程序重定向              |
+| **DPDK 状态**  | 23.11 已移除          | 活跃维护（`net_af_xdp` PMD） |
+| **Kubernetes** | 不支持                | 原生支持（Device Plugin）    |
 
 ---
 
@@ -134,11 +133,11 @@ Ring Buffer 数据流向：
 5. 内核从 TX Ring 取出发送描述符，DMA 发送后通过 CQ 通知用户 frame 已释放
 ```
 
-| Ring | 方向 | 类型 | 作用 |
-|------|------|------|------|
-| **FQ** (Fill Queue) | 用户 → 内核 | `xsk_ring_prod` | 用户向内核提供空闲 frame 用于接收 |
-| **RX** (RX Ring) | 内核 → 用户 | `xsk_ring_cons` | 内核通知用户有哪些 frame 收到了数据 |
-| **TX** (TX Ring) | 用户 → 内核 | `xsk_ring_prod` | 用户提交待发送的 frame 描述符 |
+| Ring                      | 方向        | 类型            | 作用                                 |
+| ------------------------- | ----------- | --------------- | ------------------------------------ |
+| **FQ** (Fill Queue)       | 用户 → 内核 | `xsk_ring_prod` | 用户向内核提供空闲 frame 用于接收    |
+| **RX** (RX Ring)          | 内核 → 用户 | `xsk_ring_cons` | 内核通知用户有哪些 frame 收到了数据  |
+| **TX** (TX Ring)          | 用户 → 内核 | `xsk_ring_prod` | 用户提交待发送的 frame 描述符        |
 | **CQ** (Completion Queue) | 内核 → 用户 | `xsk_ring_cons` | 内核通知用户哪些 TX frame 已发送完毕 |
 
 ### 2.3 XDP 程序与重定向
@@ -438,6 +437,7 @@ for (i = 0; i < ETH_AF_XDP_NUM_BUFFERS; i++)
 ```
 
 > [!important] 零拷贝 vs Copy 的根本区别
+>
 > - **零拷贝模式**：UMEM 直接映射到 DPDK mempool 的连续内存区域。DPDK mbuf 和内核 XDP 描述符指向同一块物理内存。收包时无需拷贝，只需将 mbuf 指针"附加"到 RX Ring 描述符对应的 UMEM 地址上。
 > - **Copy 模式**：UMEM 使用独立的 memzone 内存。收包时通过 `rte_memcpy()` 将数据从 UMEM frame 拷贝到 DPDK mbuf。额外维护一个 `rte_ring` 来回收 UMEM frame 地址。
 
@@ -532,6 +532,7 @@ af_xdp_rx_cp(void *queue, struct rte_mbuf **bufs, uint16_t nb_pkts)
 ```
 
 Copy 模式的区别：
+
 - 从 mempool 分配独立的 mbuf（不在 UMEM 中）
 - 通过 `rte_memcpy()` 将数据从 UMEM 拷贝到 mbuf
 - 通过 `rte_ring` 回收 UMEM frame 地址供下次使用
@@ -589,6 +590,7 @@ af_xdp_tx_zc(void *queue, struct rte_mbuf **bufs, uint16_t nb_pkts)
 ```
 
 > [!note] TX 快速路径与慢速路径
+>
 > - **快速路径**：当 mbuf 来自 UMEM 关联的 mempool 时，直接将 mbuf 地址转换为 UMEM 描述符地址，**真正的零拷贝**。
 > - **慢速路径**：当 mbuf 来自其他 mempool 时（跨端口转发），需要从 UMEM mempool 分配新 mbuf，拷贝数据后再发送。这不可避免地有一次内存拷贝。
 >
@@ -637,6 +639,7 @@ kick_tx(struct pkt_tx_queue *txq, struct xsk_ring_cons *cq)
 ```
 
 `kick_tx` 做两件事：
+
 1. 从 CQ 回收已发送完成的 frame（零拷贝模式下通过 `rte_pktmbuf_free()` 释放 mbuf）
 2. 如果启用了 `XDP_USE_NEED_WAKEUP`，通过 `send()` 系统调用通知内核有新的 TX 描述符
 
@@ -787,13 +790,13 @@ rte_eth_rx_burst(tap_port_id, 0, bufs, nb_pkts);
   /dev/tap0
 ```
 
-| 方向 | 机制 | 说明 |
-|------|------|------|
-| NIC → DPDK | XDP redirect → AF_XDP RX | 数据面包给 DPDK |
-| NIC → 内核 | XDP_PASS | 管理/控制包放行给内核 |
-| DPDK → NIC | AF_XDP TX Ring → 内核驱动 → DMA | 数据面发包 |
-| DPDK → 内核 | TAP PMD → `/dev/tapX` | 需要内核处理时通过 TAP 注入 |
-| 内核 → DPDK | TAP PMD RX | 内核发出的包通过 TAP 回到 DPDK |
+| 方向        | 机制                            | 说明                           |
+| ----------- | ------------------------------- | ------------------------------ |
+| NIC → DPDK  | XDP redirect → AF_XDP RX        | 数据面包给 DPDK                |
+| NIC → 内核  | XDP_PASS                        | 管理/控制包放行给内核          |
+| DPDK → NIC  | AF_XDP TX Ring → 内核驱动 → DMA | 数据面发包                     |
+| DPDK → 内核 | TAP PMD → `/dev/tapX`           | 需要内核处理时通过 TAP 注入    |
+| 内核 → DPDK | TAP PMD RX                      | 内核发出的包通过 TAP 回到 DPDK |
 
 > [!important] 性能提醒
 > TAP 路径涉及用户态/内核态的 `write()`/`read()` 系统调用，性能远低于 AF_XDP 的 Ring Buffer 方式。只适合低频控制面流量（DNS 查询、偶尔的路由更新等），不要把数据面包给 TAP。
@@ -822,12 +825,12 @@ if (nb_pkts == 0) {
 }
 ```
 
-| 模式              | 条件                               | 行为                        | CPU 开销  | 延迟  |
-| --------------- | -------------------------------- | ------------------------- | ------- | --- |
-| **Busy Poll**   | `busy_budget > 0`（内核 >= 5.11）    | `recvfrom()` 触发 NAPI poll | 高（持续轮询） | 最低  |
-| **Need Wakeup** | `XDP_USE_NEED_WAKEUP`（内核 >= 5.4） | `poll()` 阻塞等待             | 低（可休眠）  | 较低  |
-| **默认轮询**        | 无特殊标志                            | 循环检查 RX Ring              | 最高      | 低   |
-|                 |                                  |                           |         |     |
+| 模式            | 条件                                 | 行为                        | CPU 开销       | 延迟 |
+| --------------- | ------------------------------------ | --------------------------- | -------------- | ---- |
+| **Busy Poll**   | `busy_budget > 0`（内核 >= 5.11）    | `recvfrom()` 触发 NAPI poll | 高（持续轮询） | 最低 |
+| **Need Wakeup** | `XDP_USE_NEED_WAKEUP`（内核 >= 5.4） | `poll()` 阻塞等待           | 低（可休眠）   | 较低 |
+| **默认轮询**    | 无特殊标志                           | 循环检查 RX Ring            | 最高           | 低   |
+|                 |                                      |                             |                |      |
 
 ### 6.2 Busy Polling 优化
 
@@ -902,6 +905,7 @@ if (internals->shared_umem) {
 ```
 
 使用限制：
+
 - 共享 UMEM 的 socket 必须有不同的 `(netdev, queue_id)` 组合
 - 同一网卡的同一队列不能创建两个共享 UMEM 的 socket
 - 最大共享 socket 数 = `mempool_populated_size / ETH_AF_XDP_NUM_BUFFERS`
@@ -949,6 +953,7 @@ if (strnlen(internals->prog_path, PATH_MAX)) {
 ```
 
 自定义程序可以实现：
+
 - 包过滤（只重定向特定流量到 AF_XDP socket）
 - 包修改（修改 header 后重定向）
 - 负载均衡（基于 hash 分发到不同 queue）
@@ -959,11 +964,13 @@ if (strnlen(internals->prog_path, PATH_MAX)) {
 AF_XDP PMD 原生支持 Kubernetes 场景，通过两种方式与 AF_XDP Device Plugin 集成：
 
 **CNI 模式（`use_cni=1`）：**
+
 - 通过 Unix Domain Socket 与 Device Plugin 通信
 - Device Plugin 负责 XDP 程序的加载和管理
 - DPDK 应用无需 CAP_BPF / CAP_NET_ADMIN 权限
 
 **Pinned Map 模式（`use_pinned_map=1`）：**
+
 - 使用预先 pin 的 BPF map
 - 适用于任何外部实体管理 BPF map 的场景
 
@@ -1144,22 +1151,22 @@ ethtool -L eth0 combined 1
 
 ## 10. KNI vs AF_XDP 全面对比
 
-| 维度 | KNI | AF_XDP |
-|------|-----|--------|
-| **内核依赖** | 内核模块 `rte_kni.ko` | 内核 >= 4.18 原生支持 |
-| **数据拷贝** | mbuf ↔ sk_buff 转换 | 零拷贝（UMEM 共享内存） |
-| **通信队列** | 4 个 FIFO（tx/rx/alloc/free） | 4 个 Ring Buffer（FQ/CQ/RX/TX） |
-| **包处理程序** | 内核网络栈原生处理 | XDP eBPF 程序重定向 |
-| **控制接口** | ioctl 系统调用 | 标准 socket API |
-| **DPDK API** | `rte_kni_*` 系列函数 | 标准 `rte_eth_*` API |
-| **多队列** | 每个 KNI 设备一个 | 支持多队列（`queue_count`） |
-| **共享内存** | mbuf 共享（有限） | UMEM 共享（更灵活） |
-| **Kubernetes** | 不支持 | 原生支持（Device Plugin） |
-| **性能** | 中等（~1-2 Mpps） | 高（零拷贝可达线速） |
-| **MTU** | 无特殊限制 | 受页大小限制（~3550B） |
-| **DPDK 版本** | 23.11 移除 | 持续维护 |
-| **PCI 绑定** | 不需要 | 不需要（vdev） |
-| **promisc 模式** | 支持 | use_cni 模式下不支持 |
+| 维度             | KNI                           | AF_XDP                          |
+| ---------------- | ----------------------------- | ------------------------------- |
+| **内核依赖**     | 内核模块 `rte_kni.ko`         | 内核 >= 4.18 原生支持           |
+| **数据拷贝**     | mbuf ↔ sk_buff 转换           | 零拷贝（UMEM 共享内存）         |
+| **通信队列**     | 4 个 FIFO（tx/rx/alloc/free） | 4 个 Ring Buffer（FQ/CQ/RX/TX） |
+| **包处理程序**   | 内核网络栈原生处理            | XDP eBPF 程序重定向             |
+| **控制接口**     | ioctl 系统调用                | 标准 socket API                 |
+| **DPDK API**     | `rte_kni_*` 系列函数          | 标准 `rte_eth_*` API            |
+| **多队列**       | 每个 KNI 设备一个             | 支持多队列（`queue_count`）     |
+| **共享内存**     | mbuf 共享（有限）             | UMEM 共享（更灵活）             |
+| **Kubernetes**   | 不支持                        | 原生支持（Device Plugin）       |
+| **性能**         | 中等（~1-2 Mpps）             | 高（零拷贝可达线速）            |
+| **MTU**          | 无特殊限制                    | 受页大小限制（~3550B）          |
+| **DPDK 版本**    | 23.11 移除                    | 持续维护                        |
+| **PCI 绑定**     | 不需要                        | 不需要（vdev）                  |
+| **promisc 模式** | 支持                          | use_cni 模式下不支持            |
 
 ---
 
@@ -1256,27 +1263,27 @@ ip addr add 10.0.0.1/24 dev eth1
 
 ### 11.3 方案对比
 
-| 维度 | SR-IOV + 原生 PMD | AF_XDP 单网卡 |
-|------|-------------------|--------------|
-| **数据面 TX 性能** | 100%（直接写寄存器） | ~80-90%（走内核驱动） |
-| **数据面 RX 性能** | 100% | ~90-95%（XDP redirect 有微小开销） |
-| **硬件要求** | 网卡必须支持 SR-IOV | 任意网卡，内核 >= 4.18 |
-| **部署复杂度** | 高（VF 创建、绑定、权限） | 低（一行命令） |
-| **控制面性能** | 内核原生，无开销 | 内核原生，无开销 |
-| **权限要求** | root（创建 VF、vfio-pci 绑定） | root（加载 XDP 程序） |
-| **容器支持** | 需要直通 VF | 原生 Device Plugin |
-| **DPDK 代码改动** | 无 | 无 |
-| **典型场景** | 生产网关、性能敏感 | 开发测试、容器/K8s |
+| 维度               | SR-IOV + 原生 PMD              | AF_XDP 单网卡                      |
+| ------------------ | ------------------------------ | ---------------------------------- |
+| **数据面 TX 性能** | 100%（直接写寄存器）           | ~80-90%（走内核驱动）              |
+| **数据面 RX 性能** | 100%                           | ~90-95%（XDP redirect 有微小开销） |
+| **硬件要求**       | 网卡必须支持 SR-IOV            | 任意网卡，内核 >= 4.18             |
+| **部署复杂度**     | 高（VF 创建、绑定、权限）      | 低（一行命令）                     |
+| **控制面性能**     | 内核原生，无开销               | 内核原生，无开销                   |
+| **权限要求**       | root（创建 VF、vfio-pci 绑定） | root（加载 XDP 程序）              |
+| **容器支持**       | 需要直通 VF                    | 原生 Device Plugin                 |
+| **DPDK 代码改动**  | 无                             | 无                                 |
+| **典型场景**       | 生产网关、性能敏感             | 开发测试、容器/K8s                 |
 
 ### 11.4 AF_XDP 的局限
 
-| 局限 | 说明 |
-|------|------|
-| **TX 性能瓶颈** | 发包走内核驱动 + send() 系统调用，无法达到原生 PMD 的性能 |
-| **MTU 限制** | 受 XDP 一包一页限制，大帧不支持 |
-| **Secondary 进程** | RX/TX 不支持 secondary 进程（ring 映射只在 primary） |
-| **队列数限制** | Secondary 进程 IPC 最多 8 个队列（`RTE_MP_MAX_FD_NUM`） |
-| **无法回注内核** | DPDK 处理后的包需要走内核协议栈时，AF_XDP TX 是发到 NIC 出去，不是注入内核。需要 TAP 接口补充 |
+| 局限               | 说明                                                                                          |
+| ------------------ | --------------------------------------------------------------------------------------------- |
+| **TX 性能瓶颈**    | 发包走内核驱动 + send() 系统调用，无法达到原生 PMD 的性能                                     |
+| **MTU 限制**       | 受 XDP 一包一页限制，大帧不支持                                                               |
+| **Secondary 进程** | RX/TX 不支持 secondary 进程（ring 映射只在 primary）                                          |
+| **队列数限制**     | Secondary 进程 IPC 最多 8 个队列（`RTE_MP_MAX_FD_NUM`）                                       |
+| **无法回注内核**   | DPDK 处理后的包需要走内核协议栈时，AF_XDP TX 是发到 NIC 出去，不是注入内核。需要 TAP 接口补充 |
 
 ### 11.5 选型建议
 

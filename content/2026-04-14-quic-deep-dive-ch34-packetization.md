@@ -64,20 +64,20 @@ IP 层
 
 ### 2.1 基本概念
 
-| 概念 | 定义 |
-|------|------|
+| 概念                            | 定义                         |
+| ------------------------------- | ---------------------------- |
 | MTU (Maximum Transmission Unit) | 网络层能传输的最大数据包大小 |
-| MSS (Maximum Segment Size) | TCP/IP 层的最大载荷大小 |
-| 路径 MTU (PMTU) | 路径上所有设备的最小 MTU |
+| MSS (Maximum Segment Size)      | TCP/IP 层的最大载荷大小      |
+| 路径 MTU (PMTU)                 | 路径上所有设备的最小 MTU     |
 
 常见 MTU 值：
 
-| 网络类型 | MTU (bytes) |
-|---------|-------------|
-| 以太网 | 1500 |
-| PPPoE | 1492 |
-| VPN (overhead) | 1400-1500 |
-| 最小建议值 | 1280 (IPv6) |
+| 网络类型       | MTU (bytes) |
+| -------------- | ----------- |
+| 以太网         | 1500        |
+| PPPoE          | 1492        |
+| VPN (overhead) | 1400-1500   |
+| 最小建议值     | 1280 (IPv6) |
 
 ### 2.2 QUIC MTU 计算
 
@@ -88,7 +88,7 @@ QUIC MTU 计算公式：
 
 UDP Payload Max = Path MTU - UDP Header - IP Header
                 = Path MTU - 8 - 20 (IPv4) / 40 (IPv6)
-                
+
 QUIC Packet Max = UDP Payload Max - QUIC Header Overhead
                 - Encryption Overhead
                 - Packet Number Length
@@ -172,6 +172,7 @@ QUIC 不在协议中直接协商 MTU，但传输参数可以携带建议值：
 ### 3.1 IP 分片 vs QUIC 分片
 
 QUIC 避免 IP 层分片，因为：
+
 - IP 分片增加丢包代价（一片丢失，整个包丢失）
 - IP 分片可能被防火墙拦截
 - QUIC 需要更细粒度的丢包检测
@@ -183,7 +184,7 @@ IP 分片：
   大包被网络设备分片
   - 丢失一片 -> 重组失败 -> 整个包丢失
   - 触发重传 -> 浪费带宽
-  
+
 QUIC 避免 IP 分片：
   QUIC 在应用层控制包大小
   - 包大小 < Path MTU
@@ -228,17 +229,17 @@ tls_message = b"TLS handshake data..."
 class Stream reassembly:
     def __init__(self):
         self.buffers = {}  # stream_id -> ReassemblyBuffer
-        
+
     def receive_chunk(self, stream_id, offset, data):
         """接收 STREAM 帧分片"""
         if stream_id not in self.buffers:
             self.buffers[stream_id] = {}
-        
+
         self.buffers[stream_id][offset] = data
-        
+
         # 按 offset 排序并重组
         sorted_offsets = sorted(self.buffers[stream_id].keys())
-        
+
         # 检查连续性
         reassembled = b""
         for off in sorted_offsets:
@@ -247,7 +248,7 @@ class Stream reassembly:
                 reassembled += chunk
             else:
                 break  # 等待中间的分片
-        
+
         return reassembled
 ```
 
@@ -283,7 +284,7 @@ PMTUD 状态机：
                         v
                   +-----------+     ICMP/丢包
                   | Success   | -------------> 增大 MTU
-                  +-----------+     
+                  +-----------+
                         |
                         | 持续成功
                         v
@@ -309,12 +310,12 @@ def send_mtu_probe(size):
     """
     # 确保包大小接近目标 MTU
     padding = size - calculate_header_overhead()
-    
+
     frames = [
         PING(),  # PING 帧触发 ACK
         PADDING(padding),  # 填充到目标大小
     ]
-    
+
     send_packet(frames)
 
 # 收到 ACK 后：
@@ -338,7 +339,7 @@ pkt_count = cwnd_bytes / mtu  # ≈ 6.67 个包
 mtu = 500
 pkt_count = cwnd_bytes / mtu  # = 20 个包
 
-# 更多的小包 -> 
+# 更多的小包 ->
 # - 更多的包头开销
 # - 更频繁的 ACK
 # - 更高的处理开销
@@ -352,10 +353,10 @@ pkt_count = cwnd_bytes / mtu  # = 20 个包
 
 理论上，最佳包大小 = 路径 MTU。但实际选择需要权衡：
 
-| 包大小 | 优点 | 缺点 |
-|--------|------|------|
-| 大包 (接近 MTU) | 效率高、包头开销低 | 丢包代价大、重传多 |
-| 小包 | 丢包代价小、低延迟 | 效率低、拥塞窗口填满慢 |
+| 包大小          | 优点               | 缺点                   |
+| --------------- | ------------------ | ---------------------- |
+| 大包 (接近 MTU) | 效率高、包头开销低 | 丢包代价大、重传多     |
+| 小包            | 丢包代价小、低延迟 | 效率低、拥塞窗口填满慢 |
 
 ### 5.2 握手阶段的包大小
 
@@ -367,11 +368,11 @@ Initial 包大小建议：
 1. 最小 Initial 包：1200 bytes（RFC 9000 要求的最小值）
    - 包含 crypto 数据和传输参数
    - 确保路径 MTU 足够
-   
+
 2. 典型 Initial 包：1200-1500 bytes
    - 携带完整的 TLS ClientHello
    - 最大化握手效率
-   
+
 3. Initial 包过小的影响：
    - TLS 数据分片多
    - 握手延迟增加
@@ -385,12 +386,12 @@ Initial 包大小建议：
 1. 优先填满 MTU：
    - 最大化吞吐量
    - 减少包头开销
-   
+
 2. 低延迟场景使用小包：
    - 交互式应用（SSH、游戏）
    - 语音/视频数据
    - 使用 PING 帧探测 RTT
-   
+
 3. 丢包后的包大小：
    - 丢包后可能切换到更小的包
    - 避免连续丢包
@@ -403,10 +404,10 @@ class PacketSizeStats:
     def __init__(self):
         self.sent_sizes = []  # 发送的包大小
         self.ack_sizes = []   # 收到的 ACK 包大小
-        
+
     def record_sent(self, size):
         self.sent_sizes.append(size)
-        
+
     def analyze(self):
         """分析包大小分布"""
         import statistics
@@ -451,16 +452,16 @@ Coalescing 约束：
 1. 类型限制：
    - 第一个包：Long Header（Initial/Handshake/0-RTT）
    - 后续包：任意类型（Short Header 可以）
-   
+
 2. 加密级别：
    - Initial 之后只能是 Initial（不同 token）
    - Handshake 之后只能是 Handshake 或 Initial
    - 1-RTT 之后可以是 1-RTT 或 Initial
-   
+
 3. 长度编码：
    - 每个包必须有 Length 前缀
    - 接收端按长度解析
-   
+
 4. Packet Number：
    - 每个包有独立的 Packet Number
 ```
@@ -498,22 +499,22 @@ Coalescing 约束：
 def coalesce_packets(*packets):
     """
     将多个包合并到一个 UDP 数据报
-    
+
     规则：
     1. 第一个包必须是 Long Header
     2. 每个包必须有 Length 字段
     """
     result = b""
-    
+
     for i, pkt in enumerate(packets):
         # 确保第一个包是 Long Header
         if i == 0:
             assert is_long_header(pkt), "First packet must be long header"
-        
+
         # 添加 Length 前缀
         pkt_with_length = encode_length(pkt)
         result += pkt_with_length
-        
+
     return result
 
 def parse_coalesced(udp_payload):
@@ -522,18 +523,18 @@ def parse_coalesced(udp_payload):
     """
     packets = []
     offset = 0
-    
+
     while offset < len(udp_payload):
         # 读取 Length
         length, length_bytes = read_varint(udp_payload, offset)
-        
+
         # 提取包
         pkt_end = offset + length_bytes + length
         pkt = udp_payload[offset:pkt_end]
         packets.append(pkt)
-        
+
         offset = pkt_end
-        
+
     return packets
 ```
 
@@ -545,11 +546,11 @@ def parse_coalesced(udp_payload):
 
 QUIC 使用 AEAD 加密，主要开销：
 
-| AEAD 类型 | 认证标签大小 | 说明 |
-|-----------|------------|------|
-| AES-GCM-128 | 16 bytes | 常用 |
-| AES-GCM-256 | 16 bytes | 更安全 |
-| ChaCha20-Poly1305 | 16 bytes | 移动设备友好 |
+| AEAD 类型         | 认证标签大小 | 说明         |
+| ----------------- | ------------ | ------------ |
+| AES-GCM-128       | 16 bytes     | 常用         |
+| AES-GCM-256       | 16 bytes     | 更安全       |
+| ChaCha20-Poly1305 | 16 bytes     | 移动设备友好 |
 
 ### 7.2 头部保护开销
 
@@ -568,7 +569,7 @@ QUIC 包结构：
    +----------------+
    | 移除保护后      |
    +----------------+
-   
+
 实际 packetization：
   Protected Header = [移除保护的头部 XOR sample]
 ```
@@ -587,7 +588,7 @@ UDP Payload = 1500 - 8 - 20 = 1472 bytes
 Long Header QUIC：
   Header (40) + Payload + AEAD Tag (16) = 1472
   Payload = 1472 - 40 - 16 = 1416 bytes
-  
+
 Short Header QUIC：
   Header (20) + Payload + AEAD Tag (16) = 1472
   Payload = 1472 - 20 - 16 = 1436 bytes
@@ -606,37 +607,37 @@ class PMTUDState:
         self.probe_size = 1280
         self.state = "probing"
         self.probe_count = 0
-        
+
     def send_probe(self):
         """发送 MTU 探测包"""
         if self.probe_count >= 3:
             logger.warning("MTU 探测失败次数过多，停止探测")
             return False
-            
+
         # 发送接近目标大小的 PING+PADDING
         probe_packet = create_packet(
             frames=[PING(), PADDING(self.probe_size - overhead)],
             size=self.probe_size
         )
-        
+
         send_packet(probe_packet)
         self.probe_count += 1
-        
+
         # 设置探测超时
         schedule_timeout(
             delay=self.RTT * 2,
             callback=self.on_probe_timeout
         )
-        
+
         return True
-    
+
     def on_probe_success(self):
         """探测成功，增大 MTU"""
         self.current_mtu = self.probe_size
         self.probe_size = min(self.probe_size + 100, 1500)
         self.probe_count = 0
         self.state = "stable"
-        
+
     def on_probe_failure(self):
         """探测失败，减小 MTU"""
         self.probe_size = max(self.probe_size - 100, 1280)
@@ -650,38 +651,38 @@ class PacketSizer:
     def __init__(self, mtu, congestion_window):
         self.mtu = mtu
         self.cwnd = congestion_window
-        
+
     def should_pad(self, packet_size):
         """
         是否填充到 MTU
         """
         if packet_size >= self.mtu:
             return False  # 已经足够大
-        
+
         # 低延迟场景不填充
         if self.is_interactive():
             return False
-            
+
         # 拥塞窗口未填满时填充
         if self.cwnd > packet_size * 2:
             return True
-            
+
         return False
-    
+
     def calculate_optimal_size(self, data_size):
         """
         计算最优包大小
         """
         # 尽量填满 MTU
         max_payload = self.mtu - self.overhead()
-        
+
         if data_size >= max_payload:
             return max_payload
-            
+
         # 数据小于 MTU，根据场景决定
         if self.should_pad(data_size):
             return max_payload  # 填充
-            
+
         return data_size  # 不填充
 ```
 

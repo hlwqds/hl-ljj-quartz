@@ -5,8 +5,8 @@ tags: [rdma, series, send-recv, rdma-read, rdma-write, one-sided, two-sided, zer
 description: "深入对比 RDMA 双边操作 (Send/Recv) 与单边操作 (RDMA Read/Write)，解析何时选用何种操作，以及性能差异的根源"
 ---
 
-> [!info] RDMA 深度探索系列
-> 0. [[2026-04-13-rdma-deep-dive-series-index|全栈学习路径总览]]
+> [!info] RDMA 深度探索系列 0. [[2026-04-13-rdma-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-rdma-deep-dive-ch1-rdma-overview|第一章：RDMA 概述]]
 > 2. [[2026-04-13-rdma-deep-dive-ch2-rdma-architecture|第二章：RDMA 架构]]
 > 3. [[2026-04-13-rdma-deep-dive-ch3-infiniband|第三章：InfiniBand 架构]]
@@ -27,13 +27,13 @@ description: "深入对比 RDMA 双边操作 (Send/Recv) 与单边操作 (RDMA R
 
 ### 1.1 术语定义
 
-| 术语 | 英文 | 说明 |
-|------|------|------|
-| 双边操作 | Two-sided | 需要收发双方参与，发送方 post Send WR，接收方 post Recv WR |
-| 单边操作 | One-sided | 仅发送方参与，远端 CPU 无感知，像访问本地内存一样访问远端 |
-| Send/Recv | - | 双边消息传递，接收方必须事先准备 Recv WR |
-| RDMA Read | - | 单边读，从远端内存读取数据 |
-| RDMA Write | - | 单边写，向远端内存写入数据 |
+| 术语       | 英文      | 说明                                                       |
+| ---------- | --------- | ---------------------------------------------------------- |
+| 双边操作   | Two-sided | 需要收发双方参与，发送方 post Send WR，接收方 post Recv WR |
+| 单边操作   | One-sided | 仅发送方参与，远端 CPU 无感知，像访问本地内存一样访问远端  |
+| Send/Recv  | -         | 双边消息传递，接收方必须事先准备 Recv WR                   |
+| RDMA Read  | -         | 单边读，从远端内存读取数据                                 |
+| RDMA Write | -         | 单边写，向远端内存写入数据                                 |
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -88,10 +88,10 @@ description: "深入对比 RDMA 双边操作 (Send/Recv) 与单边操作 (RDMA R
 ### 1.2 支持的操作类型
 
 | QP 类型 | Send/Recv | RDMA Read | RDMA Write | Atomic |
-|---------|-----------|------------|-------------|--------|
-| RC | ✅ | ✅ | ✅ | ✅ |
-| UD | ✅ | ❌ | ❌ | ❌ |
-| UC | ✅ | ❌ | ✅ | ❌ |
+| ------- | --------- | --------- | ---------- | ------ |
+| RC      | ✅        | ✅        | ✅         | ✅     |
+| UD      | ✅        | ❌        | ❌         | ❌     |
+| UC      | ✅        | ❌        | ✅         | ❌     |
 
 ---
 
@@ -463,12 +463,12 @@ void rdma_write_with_imm(struct ibv_qp *qp, struct peer_info *peer,
 
 ### 5.2 CPU 参与度对比
 
-| 特性 | Send/Recv | RDMA Read | RDMA Write |
-|------|-----------|-----------|------------|
+| 特性       | Send/Recv        | RDMA Read        | RDMA Write       |
+| ---------- | ---------------- | ---------------- | ---------------- |
 | 发送方 CPU | 参与 (post_send) | 参与 (post_send) | 参与 (post_send) |
-| 接收方 CPU | 参与 (处理到达) | **不参与** | **不参与** |
-| 中断/回调 | 双方都需要 | 仅发送方 | 仅发送方 |
-| 内存拷贝 | 1次 (用户→内核) | 0次 (DMA 直通) | 0次 (DMA 直通) |
+| 接收方 CPU | 参与 (处理到达)  | **不参与**       | **不参与**       |
+| 中断/回调  | 双方都需要       | 仅发送方         | 仅发送方         |
+| 内存拷贝   | 1次 (用户→内核)  | 0次 (DMA 直通)   | 0次 (DMA 直通)   |
 
 ### 5.3 带宽利用率
 
@@ -515,14 +515,14 @@ Send/Recv:   ~60-70% (双边确认开销)
 
 ### 6.2 典型场景
 
-| 场景 | 推荐操作 | 原因 |
-|------|----------|------|
-| HPC MPI AllReduce | RDMA Write | 高带宽、低延迟、无须远端感知 |
-| AI 训练 NCCL | RDMA Write | GPU 数据直接传输 |
-| 分布式键值存储 PUT | Send/Recv | 需要远端确认写入成功 |
-| 分布式键值存储 GET | RDMA Read | 只读操作，远端无感知 |
-| 分布式锁 | Atomic | 原子操作保证一致性 |
-| 批量数据传输 | RDMA Write | 最大化带宽利用率 |
+| 场景               | 推荐操作   | 原因                         |
+| ------------------ | ---------- | ---------------------------- |
+| HPC MPI AllReduce  | RDMA Write | 高带宽、低延迟、无须远端感知 |
+| AI 训练 NCCL       | RDMA Write | GPU 数据直接传输             |
+| 分布式键值存储 PUT | Send/Recv  | 需要远端确认写入成功         |
+| 分布式键值存储 GET | RDMA Read  | 只读操作，远端无感知         |
+| 分布式锁           | Atomic     | 原子操作保证一致性           |
+| 批量数据传输       | RDMA Write | 最大化带宽利用率             |
 
 ### 6.3 实际应用：HPC 场景
 

@@ -5,8 +5,8 @@ tags: [vpn, series, wireguard, tailscale, zerotier, netbird, cloud]
 description: "WireGuard 云端与托管方案——Tailscale 零信任 VPN、ZeroTier SDN 虚拟网络、NetBird 开源方案、Cloudflare WireGuard、wg-easy，以及企业自建方案"
 ---
 
-> [!info] VPN 技术深度探索系列
-> 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+> [!info] VPN 技术深度探索系列 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-vpn-deep-dive-ch1-vpn-fundamentals|VPN 基础概念]]
 > 2. [[2026-04-13-vpn-deep-dive-ch18-ipsec-troubleshooting|第十八章：IPSec 排错]]
 > 3. [[2026-04-13-vpn-deep-dive-ch19-wireguard-protocol|第十九章：WireGuard 协议详解]]

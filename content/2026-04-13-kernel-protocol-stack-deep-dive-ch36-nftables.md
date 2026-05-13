@@ -1,15 +1,12 @@
 ---
 title: "Kernel Protocol Stack 深度探索 (三十五)：nftables 新一代防火墙框架"
 date: 2026-04-13
-tags: [linux, kernel, networking, series, nftables, nft, set, map, flowtable, verdict-map, netfilter]
+tags:
+  [linux, kernel, networking, series, nftables, nft, set, map, flowtable, verdict-map, netfilter]
 description: "深入解析 nftables——全新的内核防火墙框架，统一的表/链/规则模型、set/map 数据结构、flowtable 硬件卸载、verdict map、原子规则更新，以及与 iptables 的对比迁移指南"
 ---
 
-> [!info] Kernel Protocol Stack 深度探索系列
-> 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
-> 33. [[2026-04-13-kernel-protocol-stack-deep-dive-ch33-netfilter-hook|第三十三章：Netfilter 框架详解]]
-> 34. [[2026-04-13-kernel-protocol-stack-deep-dive-ch34-iptables-ext|第三十四章：iptables 扩展模块]]
-> 35. **第三十五章：nftables 新一代防火墙框架**
+> [!info] Kernel Protocol Stack 深度探索系列 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]] 33. [[2026-04-13-kernel-protocol-stack-deep-dive-ch33-netfilter-hook|第三十三章：Netfilter 框架详解]] 34. [[2026-04-13-kernel-protocol-stack-deep-dive-ch34-iptables-ext|第三十四章：iptables 扩展模块]] 35. **第三十五章：nftables 新一代防火墙框架**
 
 ---
 
@@ -17,14 +14,14 @@ description: "深入解析 nftables——全新的内核防火墙框架，统一
 
 iptables 存在诸多架构缺陷：
 
-| 问题 | iptables 现状 | nftables 解决方案 |
-|------|-------------|-----------------|
-| 规则原子更新 | iptables-restore 整表替换，非原子 | 批量事务（netlink batch） |
-| 规则扫描效率 | O(n) 线性扫描 | set/map O(1) 哈希/O(log n) rbtree |
-| 多协议族 | 分散：iptables/ip6tables/arptables/ebtables | 统一：单一 nft 命令 |
-| 数据类型 | 无类型系统，字符串拼接 | 强类型：ipv4_addr/inet_proto/tcp_port... |
-| 动态更新集合 | 需要 ipset 外部工具 | 原生 set/map 支持动态增删 |
-| 性能 | iptables 规则越多越慢 | flowtable 可绕过 Netfilter 快速转发 |
+| 问题         | iptables 现状                               | nftables 解决方案                        |
+| ------------ | ------------------------------------------- | ---------------------------------------- |
+| 规则原子更新 | iptables-restore 整表替换，非原子           | 批量事务（netlink batch）                |
+| 规则扫描效率 | O(n) 线性扫描                               | set/map O(1) 哈希/O(log n) rbtree        |
+| 多协议族     | 分散：iptables/ip6tables/arptables/ebtables | 统一：单一 nft 命令                      |
+| 数据类型     | 无类型系统，字符串拼接                      | 强类型：ipv4_addr/inet_proto/tcp_port... |
+| 动态更新集合 | 需要 ipset 外部工具                         | 原生 set/map 支持动态增删                |
+| 性能         | iptables 规则越多越慢                       | flowtable 可绕过 Netfilter 快速转发      |
 
 nftables 于 Linux 3.13 合并主线，内核 5.x+ 已基本完善。
 

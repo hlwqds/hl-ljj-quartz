@@ -76,27 +76,27 @@ Each QUIC stream is a separate ordered byte delivery channel, but streams do not
 
 ## 1.5 QUIC Feature Overview
 
-| Feature | What QUIC Provides |
-|---|---|
-| Connection establishment | 0-RTT or 1-RTT (vs 2-3 RTT for TCP+TLS) |
-| Stream multiplexing | Independent streams without HOL blocking |
-| Packet-level encryption | Every QUIC packet is encrypted |
-| Connection migration | Client can change IP/port without dropping connection |
-| Loss recovery | Per-stream loss recovery, better RTT estimation |
-| Flow control | Per-stream and connection-level flow control |
-| Version negotiation | Built-in mechanism for protocol upgrades |
+| Feature                  | What QUIC Provides                                    |
+| ------------------------ | ----------------------------------------------------- |
+| Connection establishment | 0-RTT or 1-RTT (vs 2-3 RTT for TCP+TLS)               |
+| Stream multiplexing      | Independent streams without HOL blocking              |
+| Packet-level encryption  | Every QUIC packet is encrypted                        |
+| Connection migration     | Client can change IP/port without dropping connection |
+| Loss recovery            | Per-stream loss recovery, better RTT estimation       |
+| Flow control             | Per-stream and connection-level flow control          |
+| Version negotiation      | Built-in mechanism for protocol upgrades              |
 
 ## 1.6 RFC 9000 and the QUIC Family
 
 The IETF published the QUIC standards as a suite of RFCs:
 
-| RFC | Subject |
-|---|---|
+| RFC      | Subject                                            |
+| -------- | -------------------------------------------------- |
 | RFC 9000 | QUIC: A UDP-Based Multiplexed and Secure Transport |
-| RFC 9001 | QUIC: TLS |
-| RFC 9002 | QUIC: Loss Detection and Congestion Control |
-| RFC 9003 | QUIC: Extensions for HTTP/3 |
-| RFC 9004 | QUIC: Datagram Extension |
+| RFC 9001 | QUIC: TLS                                          |
+| RFC 9002 | QUIC: Loss Detection and Congestion Control        |
+| RFC 9003 | QUIC: Extensions for HTTP/3                        |
+| RFC 9004 | QUIC: Datagram Extension                           |
 
 This book focuses on RFC 9000 (the core protocol), with relevant coverage of RFC 9001 (TLS integration) and RFC 9002 (recovery).
 

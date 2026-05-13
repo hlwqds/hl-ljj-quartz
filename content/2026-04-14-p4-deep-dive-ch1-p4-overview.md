@@ -5,8 +5,8 @@ tags: [p4, series, overview, sdn, programmable, data-plane]
 description: "P4 语言诞生背景：2013 年 ONF/NSDI 论文、SDN 演进路径、协议无关包处理（Protocol-Independent Packet Processing）、P4 的设计目标与核心价值、与 OpenFlow 的关系"
 ---
 
-> [!info] P4 深度探索系列
-> 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+> [!info] P4 深度探索系列 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. **第一章：P4 概述——诞生背景、SDN 演进与协议无关包处理**
 > 2. [[2026-04-14-p4-deep-dive-ch2-p4-architecture|第二章：P4 架构模型——PSA/V1Model、Ingress/Egress]]
 > 3. [[2026-04-14-p4-deep-dive-ch3-p4-vs-ebpf|第三章：P4 vs eBPF——适用场景与硬件/软件对比]]
@@ -51,11 +51,11 @@ OpenFlow 解决了"**如何控制已有的转发行为**"，而 P4 解决了"**�
 
 ### 2.2 P4 版本演进
 
-| 版本 | 年份 | 关键变化 |
-|------|------|---------|
-| P4-14 | 2014 | 首个正式版本，声明式 Match-Action 表 |
+| 版本  | 年份 | 关键变化                                                      |
+| ----- | ---- | ------------------------------------------------------------- |
+| P4-14 | 2014 | 首个正式版本，声明式 Match-Action 表                          |
 | P4-16 | 2016 | 引入 Architecture Description（架构描述文件），解耦语言与硬件 |
-| P4-17 | 2023 | 增强的 extern 机制、更多数据类型支持 |
+| P4-17 | 2023 | 增强的 extern 机制、更多数据类型支持                          |
 
 当前主流版本为 **P4-16**，也是本系列的核心语言版本。
 
@@ -67,7 +67,7 @@ P4 语言设计遵循三个核心目标（论文原文称为 "P4 goals"）：
 
 ### 3.1 协议无关性（Protocol Independence）
 
-> *"P4 programs do not depend on any specific network header format."*
+> _"P4 programs do not depend on any specific network header format."_
 
 P4 程序不嵌入任何特定协议的 wire format。你可以在 P4 中定义 IPv4、IPv6、MPLS、VLAN 等任意协议，也可以定义全新的协议——只要你告诉 P4 如何解析（Parser）和序列化（Deparser）它。
 
@@ -79,7 +79,7 @@ P4 程序不嵌入任何特定协议的 wire format。你可以在 P4 中定义 
 
 ### 3.2 可重构性（Reconfigurability）
 
-> *"The behavior of the data plane can be changed by loading a new P4 program."*
+> _"The behavior of the data plane can be changed by loading a new P4 program."_
 
 传统 ASIC 的流水线是"烧死"的，P4 的流水线是"可加载"的。同一个交换机，更换 P4 程序即可改变转发行为——无需更换硬件，无需重启设备（某些架构支持热更新）。
 
@@ -92,18 +92,18 @@ P4 程序不嵌入任何特定协议的 wire format。你可以在 P4 中定义 
 
 ### 3.3 平台无关性（Platform Independence）
 
-> *"P4 programs are compiled for many targets (hardware or software switches)."*
+> _"P4 programs are compiled for many targets (hardware or software switches)."_
 
 P4 程序编译一次，可以部署到多种目标平台：
 
-| 目标 | 类型 | 备注 |
-|------|------|------|
-| BMv2 (Behavioral Model v2) | 软件 | educational/reference |
-| Tofino (Intel) | 硬件 ASIC | 工业级线速交换 |
-| TNA (Tofino Native Architecture) | 硬件架构 | P4-16 + Tofino 特定扩展 |
-| PSA (Portable Switch Architecture) | 参考架构 | P4-16 标准架构定义 |
-| V1Model | 软件参考架构 | BMv2 使用 |
-| P4 DPDK | 软件 | DPDK 上的软件交换机 |
+| 目标                               | 类型         | 备注                    |
+| ---------------------------------- | ------------ | ----------------------- |
+| BMv2 (Behavioral Model v2)         | 软件         | educational/reference   |
+| Tofino (Intel)                     | 硬件 ASIC    | 工业级线速交换          |
+| TNA (Tofino Native Architecture)   | 硬件架构     | P4-16 + Tofino 特定扩展 |
+| PSA (Portable Switch Architecture) | 参考架构     | P4-16 标准架构定义      |
+| V1Model                            | 软件参考架构 | BMv2 使用               |
+| P4 DPDK                            | 软件         | DPDK 上的软件交换机     |
 
 编译器（如 `p4c`）负责将 P4 程序转换为目标平台的后端代码。一个 P4 程序，经过不同后端编译，产生针对软件交换机或硬件 ASIC 的不同输出。
 
@@ -146,12 +146,12 @@ P4 程序编译一次，可以部署到多种目标平台：
 
 很多人混淆 P4 和 OpenFlow，它们定位不同：
 
-| 维度 | OpenFlow | P4 |
-|------|----------|-----|
-| 本质 | 南向接口协议 | 编程语言 + 编译器 + 架构 |
+| 维度     | OpenFlow               | P4                                |
+| -------- | ---------------------- | --------------------------------- |
+| 本质     | 南向接口协议           | 编程语言 + 编译器 + 架构          |
 | 控制对象 | 已有的 Match-Action 表 | Parser/Deparser、流水线、表格定义 |
-| 可表达性 | 受限于芯片预定义表 | 任意数据包处理逻辑 |
-| 典型用途 | 控制器下发流表 | 自定义解析器、新协议实现 |
+| 可表达性 | 受限于芯片预定义表     | 任意数据包处理逻辑                |
+| 典型用途 | 控制器下发流表         | 自定义解析器、新协议实现          |
 
 简单说：**OpenFlow 是"用已有表项编程"，P4 是"自定义表项和解析逻辑"**。两者可以结合使用——P4 定义数据面行为，OpenFlow/P4Runtime 控制表项。
 
@@ -189,13 +189,13 @@ P4 程序编译一次，可以部署到多种目标平台：
 
 ### 6.1 与 eBPF 对比（先概述，详细对比见第三章）
 
-| 维度 | P4 | eBPF |
-|------|-----|------|
-| 工作层级 | 数据面完整流水线 | 内核网络路径（XDP/TC） |
-| 目标平台 | 硬件 ASIC + 软件交换机 | Linux 内核 |
-| 表达力 | Parser + Match-Action 完整流水线 | HOOK 点 + Filter |
-| 性能 | 线速 (Tofino 5Tbps) | 内核路径，受限于内核 |
-| 典型厂商 | Intel/Broadcom | Linux 生态 |
+| 维度     | P4                               | eBPF                   |
+| -------- | -------------------------------- | ---------------------- |
+| 工作层级 | 数据面完整流水线                 | 内核网络路径（XDP/TC） |
+| 目标平台 | 硬件 ASIC + 软件交换机           | Linux 内核             |
+| 表达力   | Parser + Match-Action 完整流水线 | HOOK 点 + Filter       |
+| 性能     | 线速 (Tofino 5Tbps)              | 内核路径，受限于内核   |
+| 典型厂商 | Intel/Broadcom                   | Linux 生态             |
 
 两者不是替代关系——P4 面向硬件级数据面编程，eBPF 面向内核网络路径。**云厂商通常两者结合使用**：P4 处理硬件交换芯片，eBPF 处理主机侧流量。
 
@@ -245,6 +245,7 @@ P4 生态
 ---
 
 > [!tip] 延伸阅读
+>
 > - P4-16 Language Specification: https://p4.org/p4-spec/docs/P4-16-language.html
 > - Bosshart et al., "P4: Programming Protocol-Independent Packet Processors," ACM SIGCOMM CCR, 2014
 > - ONF P4 Working Group: https://opennetworking.org/p4/

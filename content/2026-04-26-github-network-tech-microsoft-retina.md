@@ -42,11 +42,11 @@ Retina 的核心数据面基于 eBPF 程序，在 Kubernetes 节点内核层运�
 
 Retina 提供多层次的网络指标采集能力：
 
-| 层次 | 指标类型 | 示例 |
-|------|----------|------|
-| L2/L3 | 连接统计 | 字节数、包数、PPS |
-| L4 | 传输层 | TCP 重传、连接状态分布 |
-| L7 | 应用层 | HTTP 请求率、DNS 查询延迟、TLS 握手成功率 |
+| 层次  | 指标类型 | 示例                                      |
+| ----- | -------- | ----------------------------------------- |
+| L2/L3 | 连接统计 | 字节数、包数、PPS                         |
+| L4    | 传输层   | TCP 重传、连接状态分布                    |
+| L7    | 应用层   | HTTP 请求率、DNS 查询延迟、TLS 握手成功率 |
 
 ### 与 Cilium 的集成
 
@@ -57,6 +57,7 @@ Retina 最近的更新中已集成 Cilium 作为依赖（`deps(cilium): upgrade 
 ### 1. Kubernetes 网络故障排查
 
 当集群内网络出现问题时，Retina 可以快速定位：
+
 - 哪些 Pod 之间的通信出现问题
 - TCP 重传率高的节点是哪些
 - DNS 解析延迟的根因分析
@@ -64,6 +65,7 @@ Retina 最近的更新中已集成 Cilium 作为依赖（`deps(cilium): upgrade 
 ### 2. 安全监控与异常检测
 
 通过 eBPF 捕获网络元数据，Retina 可以检测：
+
 - 异常连接模式（如内部 Pod 对外部的异常出站流量）
 - 可疑的 DNS 查询（如隧道通信特征）
 - 未加密的敏感流量
@@ -71,6 +73,7 @@ Retina 最近的更新中已集成 Cilium 作为依赖（`deps(cilium): upgrade 
 ### 3. 网络性能分析
 
 结合 Prometheus 和 Grafana，Retina 可以提供：
+
 - 集群级别的网络吞吐量趋势
 - 服务间调用拓扑和依赖关系
 - 网络延迟的 P99/P95 分位数
@@ -92,13 +95,13 @@ helm install retina microsoft/retina \
 
 Retina 和 Cilium Hubble 都提供网络可观测性，但定位不同：
 
-| 维度 | Retina | Hubble |
-|------|--------|--------|
-| 依赖 | 独立运行 | 依赖 Cilium CNI |
-| 数据源 | eBPF（自研） | Cilium eBPF datapath |
-| 指标深度 | L2-L7 全覆盖 | L3-L7 |
-| Kubernetes 兼容性 | 任意 CNI | 仅 Cilium |
-| 生态集成 | Prometheus/Grafana/OTel | Cilium Enterprise |
+| 维度              | Retina                  | Hubble               |
+| ----------------- | ----------------------- | -------------------- |
+| 依赖              | 独立运行                | 依赖 Cilium CNI      |
+| 数据源            | eBPF（自研）            | Cilium eBPF datapath |
+| 指标深度          | L2-L7 全覆盖            | L3-L7                |
+| Kubernetes 兼容性 | 任意 CNI                | 仅 Cilium            |
+| 生态集成          | Prometheus/Grafana/OTel | Cilium Enterprise    |
 
 Retina 的优势在于不依赖特定 CNI，适用于多云环境和混合集群场景。
 

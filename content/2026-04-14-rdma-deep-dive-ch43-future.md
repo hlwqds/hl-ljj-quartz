@@ -1,7 +1,18 @@
 ---
 title: "RDMA 第四十三章：RDMA 未来趋势——CXL·可编程网络·端侧智能与下一代协议演进"
 date: 2026-04-14
-tags: [rdma, future, cxl, programmable-networking, edge-intelligence, in-network-computing, odp, cndp, technology-trends]
+tags:
+  [
+    rdma,
+    future,
+    cxl,
+    programmable-networking,
+    edge-intelligence,
+    in-network-computing,
+    odp,
+    cndp,
+    technology-trends,
+  ]
 description: "展望 RDMA 未来发展方向：CXL 与 RDMA 融合、可编程网络 (Tofino/IPU)、端侧智能、RDMA 技术演进路线图、C NDP 与 ODP、以及在 AI 时代的新应用场景。"
 ---
 
@@ -580,18 +591,18 @@ RDMA 在隐私计算中的应用：
 RDMA 速率演进：
 
   2015: InfiniBand FDR (56 Gb/s) ──────────────────────────────────
-                                                          
+
   2017: InfiniBand EDR (100 Gb/s) ────────────────────────────────
-                                                          
+
   2020: InfiniBand HDR (200 Gb/s) ────────────────────────────────
   2020: RoCE v2 (100 Gb/s) ────────────────────────────────────────
-                                                          
+
   2022: InfiniBand NDR (400 Gb/s) ────────────────────────────────
   2022: RoCE v3 (400 Gb/s) ───────────────────────────────────────
-                                                          
+
   2025: InfiniBand XDR (800 Gb/s) ────────────────────────────────
   2025: Next-Gen RoCE (800 Gb/s) ────────────────────────────────
-                                                          
+
   2028: 1.6 Tb/s RDMA (规划中) ─────────────────────────────────────
 
   对比以太网演进：
@@ -653,6 +664,7 @@ RDMA 软件栈演进趋势：
 ---
 
 > [!tip] 延伸阅读
+>
 > - [[2026-04-14-rdma-deep-dive-ch38-cxl-rdma|第三十八章：CXL 与 RDMA]] —— CXL 详解
 > - [[2026-04-14-rdma-deep-dive-ch39-roce-v3|第三十九章：RoCE v3]] —— 下一代 RoCE
 > - [[2026-04-13-rdma-deep-dive-ch28-nccl|第二十八章：NCCL 与 RDMA]] —— AI 训练通信

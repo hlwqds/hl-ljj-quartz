@@ -89,13 +89,13 @@ With argument space extending into bits 48-127, the architecture scales to most 
 
 ### 12.3.3 uSID vs. Full SID Comparison
 
-| Property | Full 128-bit SID | uSID (32-bit) | Savings |
-|----------|-----------------|---------------|---------|
-| SID size in DA | 128 bits | 128 bits (packed) | Same |
-| SID storage in FIB | 128 bits | 32 bits (mapped) | 75% |
-| SRH segment entry | 128 bits | 32 bits (packed) | 75% |
-| Argument space | Built-in (variable) | Bits 48-127 | Same |
-| Behavior lookup | Full SID table | Locator+function | Simplified |
+| Property           | Full 128-bit SID    | uSID (32-bit)     | Savings    |
+| ------------------ | ------------------- | ----------------- | ---------- |
+| SID size in DA     | 128 bits            | 128 bits (packed) | Same       |
+| SID storage in FIB | 128 bits            | 32 bits (mapped)  | 75%        |
+| SRH segment entry  | 128 bits            | 32 bits (packed)  | 75%        |
+| Argument space     | Built-in (variable) | Bits 48-127       | Same       |
+| Behavior lookup    | Full SID table      | Locator+function  | Simplified |
 
 The key insight: the **packet encoding remains 128 bits** for DA compatibility, but the **SID table storage** and **SRH segment entry encoding** use 32-bit compressed values. This is a SID allocation and FIB design optimization, not a protocol modification.
 
@@ -199,10 +199,10 @@ The Tier 1 lookup (locator-based) handles transit forwarding at line rate. The T
 
 Consider a network with 1,000 nodes, each publishing 10 SIDs (various behaviors):
 
-| Without uSID FIB | With uSID FIB |
-|------------------|---------------|
-| 10,000 SID entries @ 128 bits | 10,000 uSID entries @ 32 bits |
-| 1,280,000 bits stored | 320,000 bits stored |
+| Without uSID FIB                 | With uSID FIB                  |
+| -------------------------------- | ------------------------------ |
+| 10,000 SID entries @ 128 bits    | 10,000 uSID entries @ 32 bits  |
+| 1,280,000 bits stored            | 320,000 bits stored            |
 | ~2,560 TCAM rows (512 bits each) | ~640 TCAM rows (512 bits each) |
 
 Additionally, uSID enables **aggregation**: SIDs sharing the same locator can share a single Tier-1 TCAM entry, with the uSID value determining the specific behavior after FIB lookup.
@@ -302,6 +302,7 @@ Successful uSID deployment requires careful allocation planning:
 5. **Argument Space**: Reserve argument bits for tenant/flow identification
 
 A well-designed allocation scheme enables:
+
 - Route aggregation based on PoP-ID
 - Easy identification of segment source from uSID value
 - Predictable function code mapping across nodes
@@ -350,6 +351,7 @@ uSID issues typically manifest as:
    - Transit nodes forwarding based on unresolved uSID as DA
 
 Debugging tools include:
+
 - `show srv6 sid` - display local SID table with uSID mappings
 - `show srv6 fib` - display FIB entries (both locator and uSID)
 - Packet capture with uSID filter to examine compressed segment lists

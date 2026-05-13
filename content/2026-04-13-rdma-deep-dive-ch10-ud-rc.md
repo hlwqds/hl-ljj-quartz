@@ -5,8 +5,8 @@ tags: [rdma, series, unreliable-datagram, reliable-connection, UD, RC, QP-type]
 description: "深入对比 Unreliable Datagram (UD) 与 Reliable Connection (RC) 的语义、特性、适用场景，以及 RDMA CM 连接建立差异"
 ---
 
-> [!info] RDMA 深度探索系列
-> 0. [[2026-04-13-rdma-deep-dive-series-index|全栈学习路径总览]]
+> [!info] RDMA 深度探索系列 0. [[2026-04-13-rdma-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-rdma-deep-dive-ch1-rdma-overview|第一章：RDMA 概述]]
 > 2. [[2026-04-13-rdma-deep-dive-ch2-rdma-architecture|第二章：RDMA 架构]]
 > 3. [[2026-04-13-rdma-deep-dive-ch3-infiniband|第三章：InfiniBand 架构]]
@@ -24,12 +24,12 @@ description: "深入对比 Unreliable Datagram (UD) 与 Reliable Connection (RC)
 
 RDMA 定义了四种 QP 类型：
 
-| QP Type | 全称 | 可靠性 | 连接性 | 特性 |
-|---------|------|--------|--------|------|
-| `IBV_QPT_RC` | Reliable Connection | ✅ 可靠 | 连接型 | 有序、重传、支持 RDMA Read/Write/Atomic |
-| `IBV_QPT_UD` | Unreliable Datagram | ❌ 不可靠 | 无连接 | 无序、无重传、不支持 RDMA Read/Write |
-| `IBV_QPT_UC` | Unreliable Connection | ❌ 不可靠 | 连接型 | 有序、无重传 |
-| `IBV_QPT_RAW_IP` | Raw IP | - | - | 原始 IP 报文（特殊用途） |
+| QP Type          | 全称                  | 可靠性    | 连接性 | 特性                                    |
+| ---------------- | --------------------- | --------- | ------ | --------------------------------------- |
+| `IBV_QPT_RC`     | Reliable Connection   | ✅ 可靠   | 连接型 | 有序、重传、支持 RDMA Read/Write/Atomic |
+| `IBV_QPT_UD`     | Unreliable Datagram   | ❌ 不可靠 | 无连接 | 无序、无重传、不支持 RDMA Read/Write    |
+| `IBV_QPT_UC`     | Unreliable Connection | ❌ 不可靠 | 连接型 | 有序、无重传                            |
+| `IBV_QPT_RAW_IP` | Raw IP                | -         | -      | 原始 IP 报文（特殊用途）                |
 
 最常用的是 **RC** 和 **UD**。
 
@@ -89,13 +89,13 @@ Client                                  Server
 
 ### 2.3 支持的操作
 
-| 操作 | RC 支持 | 说明 |
-|------|---------|------|
-| Send/Recv | ✅ | 双向消息传递 |
-| RDMA Read | ✅ | One-sided 读（远端无感知） |
-| RDMA Write | ✅ | One-sided 写（远端无感知） |
-| Atomic CAS/Fetch&Add | ✅ | 原子操作 |
-| Send with Imm | ✅ | 带立即数发送 |
+| 操作                 | RC 支持 | 说明                       |
+| -------------------- | ------- | -------------------------- |
+| Send/Recv            | ✅      | 双向消息传递               |
+| RDMA Read            | ✅      | One-sided 读（远端无感知） |
+| RDMA Write           | ✅      | One-sided 写（远端无感知） |
+| Atomic CAS/Fetch&Add | ✅      | 原子操作                   |
+| Send with Imm        | ✅      | 带立即数发送               |
 
 ### 2.4 代码示例
 
@@ -216,29 +216,29 @@ ibv_modify_qp(qp, &attr, IBV_QP_STATE | IBV_QP_PKEY_INDEX |
 
 ### 3.4 支持的操作
 
-| 操作 | UD 支持 | 说明 |
-|------|---------|------|
-| Send/Recv | ✅ | 消息传递 |
-| Send with Imm | ✅ | 带立即数 |
-| RDMA Read | ❌ | 不支持 |
-| RDMA Write | ❌ | 不支持 |
-| Atomic | ❌ | 不支持 |
+| 操作          | UD 支持 | 说明     |
+| ------------- | ------- | -------- |
+| Send/Recv     | ✅      | 消息传递 |
+| Send with Imm | ✅      | 带立即数 |
+| RDMA Read     | ❌      | 不支持   |
+| RDMA Write    | ❌      | 不支持   |
+| Atomic        | ❌      | 不支持   |
 
 ---
 
 ## 4. UD vs RC 对比
 
-| 特性 | UD | RC |
-|------|----|----|
-| **可靠性** | 不可靠，可能丢包 | 可靠，自动重传 |
-| **有序性** | 无序 | 有序 |
-| **连接性** | 无连接（多播天然支持） | 面向连接（1:1） |
-| **RDMA Read/Write** | ❌ 不支持 | ✅ 支持 |
-| **Atomic 操作** | ❌ 不支持 | ✅ 支持 |
-| **多播** | ✅ 原生支持 | ❌ 需要多 QP |
-| **吞吐量** | 较低（无 ACK 确认） | 较高 |
-| **适用场景** | 分布式键值存储、路由协议 | HPC、AI 训练、存储 |
-| **编程复杂度** | 较高（需处理丢包） | 较低（透明可靠） |
+| 特性                | UD                       | RC                 |
+| ------------------- | ------------------------ | ------------------ |
+| **可靠性**          | 不可靠，可能丢包         | 可靠，自动重传     |
+| **有序性**          | 无序                     | 有序               |
+| **连接性**          | 无连接（多播天然支持）   | 面向连接（1:1）    |
+| **RDMA Read/Write** | ❌ 不支持                | ✅ 支持            |
+| **Atomic 操作**     | ❌ 不支持                | ✅ 支持            |
+| **多播**            | ✅ 原生支持              | ❌ 需要多 QP       |
+| **吞吐量**          | 较低（无 ACK 确认）      | 较高               |
+| **适用场景**        | 分布式键值存储、路由协议 | HPC、AI 训练、存储 |
+| **编程复杂度**      | 较高（需处理丢包）       | 较低（透明可靠）   |
 
 ---
 

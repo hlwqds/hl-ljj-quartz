@@ -9,8 +9,8 @@ tags:
   - libbpf
 ---
 
-> [!info] eBPF 2026 深度探索系列
-> 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+> [!info] eBPF 2026 深度探索系列 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+>
 > 1. [[2026-04-08-ebpf-deep-dive-ch1-registers-and-instructions|第一章：寄存器与指令集]]
 > 2. [[2026-04-08-ebpf-deep-dive-ch1-5-function-calls|第一.五章：四种函数调用与动态内存]]
 > 3. [[2026-04-08-ebpf-deep-dive-ch1-6-the-verifier|第一.六章：验证器 (Verifier) 的底层逻辑]]
@@ -127,13 +127,13 @@ BTF 二进制格式 (简化):
 
 ### 2.2 BTF vs DWARF
 
-| 特性 | BTF | DWARF |
-| :--- | :--- | :--- |
-| **体积** | 2-10 MB | 200-500 MB |
-| **加载方式** | 单次 mmap | 逐段解析 |
-| **覆盖范围** | 仅类型布局 | 类型 + 调试信息 + 行号 |
-| **内核内置** | ✅ `/sys/kernel/btf/vmlinux` | ❌ 需要单独安装 |
-| **解析速度** | 极快（毫秒级） | 慢（秒级） |
+| 特性         | BTF                          | DWARF                  |
+| :----------- | :--------------------------- | :--------------------- |
+| **体积**     | 2-10 MB                      | 200-500 MB             |
+| **加载方式** | 单次 mmap                    | 逐段解析               |
+| **覆盖范围** | 仅类型布局                   | 类型 + 调试信息 + 行号 |
+| **内核内置** | ✅ `/sys/kernel/btf/vmlinux` | ❌ 需要单独安装        |
+| **解析速度** | 极快（毫秒级）               | 慢（秒级）             |
 
 BTF 之所以能做到如此紧凑，是因为它**只记录类型布局信息**（结构体成员、偏移量、大小），丢弃了 DWARF 中庞大的调试信息（行号、局部变量、优化信息）。
 
@@ -169,15 +169,15 @@ bpftool btf dump file /sys/kernel/btf/vmlinux | grep -A 50 "STRUCT task_struct"
 
 逐字段解读：
 
-| 字段 | [1] INT | [2] CONST | 含义 |
-| :--- | :--- | :--- | :--- |
-| `[N]` | `[1]` | `[2]` | type_id，递增整数，全局唯一 |
-| kind | `INT` | `CONST` | 类型种类：基础整数 / const 修饰符 |
-| name | `'long unsigned int'` | `'(anon)'` | 类型名，修饰符类无名字 |
-| size | `8` | — | 占 8 字节（仅 INT/STRUCT 等有意义的类型） |
-| nr_bits | `64` | — | 64 位（8 × 8） |
-| encoding | `(none)` | — | 编码方式：SIGNED / CHAR / BOOL / none |
-| type_id | — | `1` | 指向被修饰的基础类型 → [1] long unsigned int |
+| 字段     | [1] INT               | [2] CONST  | 含义                                         |
+| :------- | :-------------------- | :--------- | :------------------------------------------- |
+| `[N]`    | `[1]`                 | `[2]`      | type_id，递增整数，全局唯一                  |
+| kind     | `INT`                 | `CONST`    | 类型种类：基础整数 / const 修饰符            |
+| name     | `'long unsigned int'` | `'(anon)'` | 类型名，修饰符类无名字                       |
+| size     | `8`                   | —          | 占 8 字节（仅 INT/STRUCT 等有意义的类型）    |
+| nr_bits  | `64`                  | —          | 64 位（8 × 8）                               |
+| encoding | `(none)`              | —          | 编码方式：SIGNED / CHAR / BOOL / none        |
+| type_id  | —                     | `1`        | 指向被修饰的基础类型 → [1] long unsigned int |
 
 [2] 合起来就是 `const long unsigned int`。CONST 不重新定义完整的类型信息，只记录一个 `type_id=1` 的引用。内核中几百个 `const unsigned long` 字段都指向同一条记录——这就是 ID 引用的去重效果。
 
@@ -421,13 +421,13 @@ CLANG_BPF_FLAGS += -I$(LIBBPF_INCLUDE)
 
 ### 6.1 不支持的场景
 
-| 场景 | 原因 | 替代方案 |
-| :--- | :--- | :--- |
-| **指针类型变更** | BTF 只记录布局，不记录指针语义 | `bpf_core_type_id_matches` 检查 |
-| **函数签名变更** | Helper 参数数量/类型改变 | `bpf_helper_func_id_matches` 检查 |
-| **新增字段在中间** | 结构体布局变化太复杂 | 逐字段检查 + 降级逻辑 |
-| **Union 类型内部变更** | Union 成员偏移重排 | `bpf_core_field_exists` + 分支 |
-| **BTF 不可用** | 老内核 (< 5.4) 不生成 BTF | 回退到手动偏移 + 条件编译 |
+| 场景                   | 原因                           | 替代方案                          |
+| :--------------------- | :----------------------------- | :-------------------------------- |
+| **指针类型变更**       | BTF 只记录布局，不记录指针语义 | `bpf_core_type_id_matches` 检查   |
+| **函数签名变更**       | Helper 参数数量/类型改变       | `bpf_helper_func_id_matches` 检查 |
+| **新增字段在中间**     | 结构体布局变化太复杂           | 逐字段检查 + 降级逻辑             |
+| **Union 类型内部变更** | Union 成员偏移重排             | `bpf_core_field_exists` + 分支    |
+| **BTF 不可用**         | 老内核 (< 5.4) 不生成 BTF      | 回退到手动偏移 + 条件编译         |
 
 ### 6.2 CO-RE 兼容性策略
 
@@ -457,14 +457,14 @@ if (bpf_helper_func_id_exists("bpf_new_helper")) {
 ### 6.3 多版本支持矩阵
 
 | 内核版本 | BTF | CO-RE | kptr | Ring Buffer | 有界循环 |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| 5.4 | ✅ | ✅ | ❌ | ❌ | ❌ |
-| 5.8 | ✅ | ✅ | ❌ | ✅ | ❌ |
-| 5.10 | ✅ | ✅ | ❌ | ✅ | ❌ |
-| 5.13 | ✅ | ✅ | ❌ | ✅ | ❌ |
-| 6.1 | ✅ | ✅ | ✅ | ✅ | ✅ |
-| 6.3 | ✅ | ✅ | ✅ | ✅ | ✅ |
-| 6.8 | ✅ | ✅ | ✅ | ✅ | ✅ |
+| :------- | :-- | :---- | :--- | :---------- | :------- |
+| 5.4      | ✅  | ✅    | ❌   | ❌          | ❌       |
+| 5.8      | ✅  | ✅    | ❌   | ✅          | ❌       |
+| 5.10     | ✅  | ✅    | ❌   | ✅          | ❌       |
+| 5.13     | ✅  | ✅    | ❌   | ✅          | ❌       |
+| 6.1      | ✅  | ✅    | ✅   | ✅          | ✅       |
+| 6.3      | ✅  | ✅    | ✅   | ✅          | ✅       |
+| 6.8      | ✅  | ✅    | ✅   | ✅          | ✅       |
 
 ```c
 // 在代码中根据内核版本做条件编译
@@ -500,6 +500,7 @@ struct net {
 ```
 
 这类 rename 在内核开发中**并非罕见**：
+
 - `struct task_struct.comm` 历史上叫过 `tcomm`
 - `struct sock.sk_sndmsg_*` 在某个版本被重组
 - `struct net_device` 的字段在 5.12+ 的网络命名空间重构中被大量 rename
@@ -684,13 +685,13 @@ git log --oneline --all -- 'net/core/net_namespace.c' | grep -i rename
 
 手动结构体维护的**最佳实践**：
 
-| 原则 | 说明 |
-|------|------|
-| **只写关心的字段** | 不需要完整定义，只有关心的字段有偏移即可 |
-| **注释版本范围** | 明确标注目录结构体适用于哪个内核版本区间 |
-| **版本条件编译** | 用 `#if LINUX_VERSION_CODE` 或 `bpf_core_field_exists` 分支 |
-| **提交到版本控制** | compat 结构体随项目走，不要每次现场手写 |
-| **优先 BTF 验证** | 加载时用 `bpftool prog load` 带 `--verbose` 确认偏移是否正确 |
+| 原则               | 说明                                                         |
+| ------------------ | ------------------------------------------------------------ |
+| **只写关心的字段** | 不需要完整定义，只有关心的字段有偏移即可                     |
+| **注释版本范围**   | 明确标注目录结构体适用于哪个内核版本区间                     |
+| **版本条件编译**   | 用 `#if LINUX_VERSION_CODE` 或 `bpf_core_field_exists` 分支  |
+| **提交到版本控制** | compat 结构体随项目走，不要每次现场手写                      |
+| **优先 BTF 验证**  | 加载时用 `bpftool prog load` 带 `--verbose` 确认偏移是否正确 |
 
 #### 6.4.5 何时用这个方法
 
@@ -808,11 +809,11 @@ LIBBPF_OPTS(bpf_object__open_file(prog.o, &opts))
 
 ### 9.1 各阶段开销
 
-| 阶段 | 操作 | 典型耗时 |
-| :--- | :--- | :--- |
-| **编译时** | 生成重定位记录 | +50ms（相比非 CO-RE） |
+| 阶段       | 操作              | 典型耗时                    |
+| :--------- | :---------------- | :-------------------------- |
+| **编译时** | 生成重定位记录    | +50ms（相比非 CO-RE）       |
 | **加载时** | BTF 解析 + 重定位 | +1-10ms（取决于重定位数量） |
-| **运行时** | 零额外开销 | 0 ns |
+| **运行时** | 零额外开销        | 0 ns                        |
 
 **结论**：CO-RE 的所有额外工作都发生在程序加载阶段。一旦加载完成，运行时性能与手动编码偏移量完全相同。
 
@@ -824,6 +825,7 @@ bpftool prog dump xlated id 42 | grep core_relo
 ```
 
 重定位数量直接影响加载时间：
+
 - 少于 100 条：加载时间 < 1ms（几乎无感）
 - 100-1000 条：加载时间 1-10ms
 - 超过 1000 条：加载时间可能达到 100ms+
@@ -837,6 +839,7 @@ bpftool prog dump xlated id 42 | grep core_relo
 **Q1: vmlinux.h 太大了（10 万行），会影响编译速度吗？**
 
 会，但影响可控。vmlinux.h 通常 50-100K 行。几个优化建议：
+
 1. **只生成需要的类型**：`bpftool btf dump file ... format c` 只输出所有类型，你可以手动提取需要的子集
 2. **使用 pahole**：`pahole --compile_commands=compile_commands.json` 只提取项目实际用到的类型
 3. **增量生成**：将 vmlinux.h 提交到版本控制，只在内核升级时重新生成
@@ -866,6 +869,7 @@ LIBBPF_DEBUG_LOG_LEVEL=2 ./my_program
 **Q5: 在容器中 CO-RE 有什么特殊注意事项？**
 
 容器通常运行宿主内核，BTF 文件位于宿主机的 `/sys/kernel/btf/vmlinux`。需要确保：
+
 1. 容器挂载了 `/sys/kernel/btf/vmlinux`（需要 `CAP_SYS_ADMIN` 或 `SYS_ADMIN` capability）
 2. libbpf 可以访问到 BTF 文件
 3. 如果容器使用不同内核版本（如 kata-containers），可能需要将宿主 BTF 拷贝到容器中

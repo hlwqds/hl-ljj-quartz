@@ -31,9 +31,10 @@ io_uring 路径：
 
 > [!note]
 > io_uring 和 DPDK 是同一类思想的不同实现：
+>
 > - **DPDK**：网卡 I/O 绕过内核协议栈
 > - **io_uring**：磁盘/网络 I/O 绕过传统 syscall
-> 都是共享内存 + Ring Buffer + 无锁队列的核心模式
+>   都是共享内存 + Ring Buffer + 无锁队列的核心模式
 
 ---
 

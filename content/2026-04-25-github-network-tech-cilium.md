@@ -33,12 +33,12 @@ Cilium 的核心创新在于将 eBPF 程序挂载到内核的网络数据路径�
 
 ### 多层网络模型
 
-| 层级 | 技术 | 能力 |
-|------|------|------|
-| L3/L4 | eBPF | 扁平 IP 互联、NetworkPolicy |
-| L7 | Envoy 集成 | HTTP/gRPC 感知策略、mTLS |
-| 加密 | WireGuard | 传输加密、ClusterMesh 跨集群 |
-| 负载均衡 | eBPF Maglev | 分布式 L4 负载均衡 |
+| 层级     | 技术        | 能力                         |
+| -------- | ----------- | ---------------------------- |
+| L3/L4    | eBPF        | 扁平 IP 互联、NetworkPolicy  |
+| L7       | Envoy 集成  | HTTP/gRPC 感知策略、mTLS     |
+| 加密     | WireGuard   | 传输加密、ClusterMesh 跨集群 |
+| 负载均衡 | eBPF Maglev | 分布式 L4 负载均衡           |
 
 ### 核心功能
 
@@ -88,13 +88,13 @@ cilium connectivity test
 
 相比传统 iptables 方案（如 kube-proxy）：
 
-| 维度 | iptables | Cilium eBPF |
-|------|----------|-------------|
-| 规则扩展性 | O(n) | O(1) 哈希查找 |
-| 最大规则数 | ~10k | 无硬性限制 |
-| 延迟 | 随规则线性增长 | 常数时间 |
-| 可观测性 | 无内置 | Hubble 集成 |
-| 加密 | 外部方案 | WireGuard 原生 |
+| 维度       | iptables       | Cilium eBPF    |
+| ---------- | -------------- | -------------- |
+| 规则扩展性 | O(n)           | O(1) 哈希查找  |
+| 最大规则数 | ~10k           | 无硬性限制     |
+| 延迟       | 随规则线性增长 | 常数时间       |
+| 可观测性   | 无内置         | Hubble 集成    |
+| 加密       | 外部方案       | WireGuard 原生 |
 
 ## 相关资源
 

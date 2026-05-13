@@ -40,12 +40,12 @@ description: "深入解析 VPP CLI 运维接口：vppctl 命令详解、UNIX soc
 
 ### 1.2 运维接口类型
 
-| 接口类型 | 默认地址 | 协议 | 适用场景 |
-|----------|----------|------|----------|
-| **vppctl (CLI)** | `/run/vpp/cli.sock` | Text/ASCII | 日常运维、调试 |
-| **Stats API** | `/run/vpp/stats.sock` | Binary | 程序化监控 |
-| **gRPC API** | `:5001` (可选) | Protocol Buffers | 远程管理、K8s |
-| **REST API** | `:8080` (可选) | JSON/HTTP | Web 管理界面 |
+| 接口类型         | 默认地址              | 协议             | 适用场景       |
+| ---------------- | --------------------- | ---------------- | -------------- |
+| **vppctl (CLI)** | `/run/vpp/cli.sock`   | Text/ASCII       | 日常运维、调试 |
+| **Stats API**    | `/run/vpp/stats.sock` | Binary           | 程序化监控     |
+| **gRPC API**     | `:5001` (可选)        | Protocol Buffers | 远程管理、K8s  |
+| **REST API**     | `:8080` (可选)        | JSON/HTTP        | Web 管理界面   |
 
 ### 1.3 连接方式
 

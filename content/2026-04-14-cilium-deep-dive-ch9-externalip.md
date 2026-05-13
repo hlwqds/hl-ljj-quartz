@@ -12,8 +12,8 @@ tags:
   - networking
 ---
 
-> [!info] Cilium 2026 深度探索系列
-> 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+> [!info] Cilium 2026 深度探索系列 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+>
 > 1. [[2026-04-14-cilium-deep-dive-ch1-cilium-overview|第一章：Cilium 概述]]
 > 2. [[2026-04-14-cilium-deep-dive-ch2-architecture|第二章：Cilium 架构]]
 > 3. [[2026-04-14-cilium-deep-dive-ch3-ebpf-datapath|第三章：eBPF 数据面]]
@@ -36,13 +36,13 @@ kind: Service
 metadata:
   name: my-app
 spec:
-  type: ClusterIP    # 通常是 ClusterIP 或 NodePort
+  type: ClusterIP # 通常是 ClusterIP 或 NodePort
   externalIPs:
-  - 192.168.1.100   # 绑定到节点网卡的 IP
-  - 192.168.1.101
+    - 192.168.1.100 # 绑定到节点网卡的 IP
+    - 192.168.1.101
   ports:
-  - port: 80
-    targetPort: 8080
+    - port: 80
+      targetPort: 8080
 ```
 
 **ExternalIP 的典型使用场景**：
@@ -54,13 +54,13 @@ spec:
 
 ### 1.1 ExternalIP vs LoadBalancer
 
-| 特性 | ExternalIP | LoadBalancer |
-|:---|:---|:---|
-| **IP 来源** | 手动指定/预先分配 | 云厂商/MetalLB 动态分配 |
-| **网络位置** | 绑定到节点网卡 | 通过 LB 转发 |
-| **依赖** | 静态路由 | 云厂商 LB 或 MetalLB |
-| **规模** | 有限（手动管理） | 可扩展 |
-| **高可用** | 依赖外部路由 | 原生 HA |
+| 特性         | ExternalIP        | LoadBalancer            |
+| :----------- | :---------------- | :---------------------- |
+| **IP 来源**  | 手动指定/预先分配 | 云厂商/MetalLB 动态分配 |
+| **网络位置** | 绑定到节点网卡    | 通过 LB 转发            |
+| **依赖**     | 静态路由          | 云厂商 LB 或 MetalLB    |
+| **规模**     | 有限（手动管理）  | 可扩展                  |
+| **高可用**   | 依赖外部路由      | 原生 HA                 |
 
 ---
 
@@ -210,7 +210,7 @@ int cilium_sk_lookup(struct bpf_sk_lookup *ctx) {
     __u16 sport = dst->rt_sport;
 
     // 查找 external_ip service
-    struct bpf_map *external_ip_map = 
+    struct bpf_map *external_ip_map =
         bpf_map_lookup_indirect(&cilium_external_ip_map, 0);
 
     struct external_ip_key key = {
@@ -257,23 +257,23 @@ metadata:
     kubernetes.io/ingress.class: cilium
 spec:
   rules:
-  - host: myapp.example.com
-    http:
-      paths:
-      - path: /api
-        pathType: Prefix
-        backend:
-          service:
-            name: my-api
-            port:
-              number: 80
-      - path: /web
-        pathType: Prefix
-        backend:
-          service:
-            name: my-web
-            port:
-              number: 80
+    - host: myapp.example.com
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: my-api
+                port:
+                  number: 80
+          - path: /web
+            pathType: Prefix
+            backend:
+              service:
+                name: my-web
+                port:
+                  number: 80
 ```
 
 ### 4.2 Cilium Ingress Controller
@@ -326,22 +326,22 @@ metadata:
   name: my-app-ingress
   annotations:
     # Cilium Ingress 特定配置
-    cilium.io/ingress.loadbalancer-mode: "dedicated"  # 专用 LB
-    cilium.io/ingress.backend-protocol: "HTTP"         # 后端协议
-    cilium.io/ingress.tls: "off"                       # TLS 配置
+    cilium.io/ingress.loadbalancer-mode: "dedicated" # 专用 LB
+    cilium.io/ingress.backend-protocol: "HTTP" # 后端协议
+    cilium.io/ingress.tls: "off" # TLS 配置
 spec:
   ingressClassName: cilium
   rules:
-  - host: myapp.example.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: my-app
-            port:
-              number: 80
+    - host: myapp.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: my-app
+                port:
+                  number: 80
 ```
 
 ---
@@ -371,19 +371,19 @@ metadata:
 spec:
   gatewayClassName: cilium
   listeners:
-  - name: https
-    port: 443
-    protocol: HTTPS
-    tls:
-      mode: Terminate
-      certificateRefs:
-      - name: my-cert
-  - name: http
-    port: 80
-    protocol: HTTP
-    allowedRoutes:
-      namespaces:
-        from: All
+    - name: https
+      port: 443
+      protocol: HTTPS
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: my-cert
+    - name: http
+      port: 80
+      protocol: HTTP
+      allowedRoutes:
+        namespaces:
+          from: All
 
 ---
 # HTTPRoute - 路由规则
@@ -393,38 +393,38 @@ metadata:
   name: my-route
 spec:
   parentRefs:
-  - name: my-gateway
-    namespace: gateway-system
+    - name: my-gateway
+      namespace: gateway-system
   rules:
-  - matches:
-    - path:
-        type: PathPrefix
-        value: /api
-    backendRefs:
-    - name: my-api
-      port: 80
-  - matches:
-    - path:
-        type: PathPrefix
-        value: /web
-    backendRefs:
-    - name: my-web
-      port: 80
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api
+      backendRefs:
+        - name: my-api
+          port: 80
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /web
+      backendRefs:
+        - name: my-web
+          port: 80
 ```
 
 ### 5.2 Cilium Gateway API 支持
 
 Cilium Gateway API 是**生产级实现**，支持：
 
-| 功能 | 支持 | 说明 |
-|:---|:---|:---|
-| HTTP Routing | ✅ | Path/Header/Method 匹配 |
-| HTTPS + TLS | ✅ | 证书管理，Let's Encrypt 集成 |
-| TCP/UDP | ✅ | 非 HTTP 协议 |
-| Traffic Splitting | ✅ | 权重基础流量分割 |
-| Header 修改 | ✅ | 添加/移除/修改请求头 |
-| Rate Limiting | ✅ | 基于规则的限流 |
-| mTLS | ✅ | 双向 TLS（via CiliumPolicy） |
+| 功能              | 支持 | 说明                         |
+| :---------------- | :--- | :--------------------------- |
+| HTTP Routing      | ✅   | Path/Header/Method 匹配      |
+| HTTPS + TLS       | ✅   | 证书管理，Let's Encrypt 集成 |
+| TCP/UDP           | ✅   | 非 HTTP 协议                 |
+| Traffic Splitting | ✅   | 权重基础流量分割             |
+| Header 修改       | ✅   | 添加/移除/修改请求头         |
+| Rate Limiting     | ✅   | 基于规则的限流               |
+| mTLS              | ✅   | 双向 TLS（via CiliumPolicy） |
 
 ### 5.3 Cilium Gateway API 配置
 
@@ -446,17 +446,17 @@ metadata:
 spec:
   gatewayClassName: cilium
   listeners:
-  - name: https
-    port: 443
-    protocol: HTTPS
-    tls:
-      mode: Terminate
-      certificateRefs:
-      - kind: Secret
-        name: my-tls-secret
-    allowedRoutes:
-      namespaces:
-        from: All
+    - name: https
+      port: 443
+      protocol: HTTPS
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: my-tls-secret
+      allowedRoutes:
+        namespaces:
+          from: All
 
 ---
 apiVersion: gateway.networking.k8s.io/v1
@@ -465,22 +465,22 @@ metadata:
   name: app-route
 spec:
   parentRefs:
-  - name: cilium-gateway
+    - name: cilium-gateway
   hostnames:
-  - "myapp.example.com"
+    - "myapp.example.com"
   rules:
-  # 流量分割
-  - matches:
-    - path:
-        type: PathPrefix
-        value: /v1
-    backendRefs:
-    - name: my-app-v1
-      port: 80
-      weight: 90
-    - name: my-app-canary
-      port: 80
-      weight: 10
+    # 流量分割
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /v1
+      backendRefs:
+        - name: my-app-v1
+          port: 80
+          weight: 90
+        - name: my-app-canary
+          port: 80
+          weight: 10
 ```
 
 ---
@@ -509,17 +509,17 @@ spec:
     matchLabels:
       app: my-app
   ingress:
-  # 允许来自 ExternalIP 的流量
-  - fromEntities:
-    - remote-node
-  # 或者基于 IP CIDR
-  - fromCIDR:
-    - 192.168.1.0/24
-  # 拒绝其他 ExternalIP
-  - toPorts:
-    - ports:
-      - port: "80"
-        protocol: TCP
+    # 允许来自 ExternalIP 的流量
+    - fromEntities:
+        - remote-node
+    # 或者基于 IP CIDR
+    - fromCIDR:
+        - 192.168.1.0/24
+    # 拒绝其他 ExternalIP
+    - toPorts:
+        - ports:
+            - port: "80"
+              protocol: TCP
 ```
 
 ### 6.3 限制 ExternalIP 使用
@@ -579,26 +579,26 @@ kubectl -n kube-system exec ds/cilium -- \
 
 ### 7.4 常见问题与解决
 
-| 问题 | 原因 | 解决方法 |
-|:---|:---|:---|
-| ExternalIP 无法访问 | 路由未配置 | 配置静态路由或 BGP |
-| sk_lookup 不生效 | 内核版本不支持 | 升级内核至 5.10+ |
-| Ingress 404 | 路由规则错误 | 检查 HTTPRoute 配置 |
-| TLS 证书错误 | 证书未正确引用 | 检查 Secret 和证书 |
-| Gateway 不 Ready | 监听端口冲突 | 检查端口占用 |
-| ExternalIP 流量绕过了策略 | eBPF 程序未加载 | 重启 cilium-agent |
+| 问题                      | 原因            | 解决方法            |
+| :------------------------ | :-------------- | :------------------ |
+| ExternalIP 无法访问       | 路由未配置      | 配置静态路由或 BGP  |
+| sk_lookup 不生效          | 内核版本不支持  | 升级内核至 5.10+    |
+| Ingress 404               | 路由规则错误    | 检查 HTTPRoute 配置 |
+| TLS 证书错误              | 证书未正确引用  | 检查 Secret 和证书  |
+| Gateway 不 Ready          | 监听端口冲突    | 检查端口占用        |
+| ExternalIP 流量绕过了策略 | eBPF 程序未加载 | 重启 cilium-agent   |
 
 ---
 
 ## 8. 章节总结
 
-|| 主题 | 关键点 |
-|:---|:---|:---|
-| **ExternalIP** | 绑定任意 IP 到 Service | 绕过 LoadBalancer，直接路由 |
-| **sk_lookup Hook** | 连接建立时重定向 | eBPF 在 bind/connect 时处理 |
-| **Cilium Ingress** | Envoy-based L7 Ingress | TLS 终止、路由、L7 策略 |
-| **Gateway API** | 标准 Kubernetes Ingress | 角色分离、声明式路由 |
-| **安全控制** | ExternalIP + NetworkPolicy | 限制 ExternalIP 访问 |
+|                    | 主题                       | 关键点                      |
+| :----------------- | :------------------------- | :-------------------------- |
+| **ExternalIP**     | 绑定任意 IP 到 Service     | 绕过 LoadBalancer，直接路由 |
+| **sk_lookup Hook** | 连接建立时重定向           | eBPF 在 bind/connect 时处理 |
+| **Cilium Ingress** | Envoy-based L7 Ingress     | TLS 终止、路由、L7 策略     |
+| **Gateway API**    | 标准 Kubernetes Ingress    | 角色分离、声明式路由        |
+| **安全控制**       | ExternalIP + NetworkPolicy | 限制 ExternalIP 访问        |
 
 **ExternalIP + Ingress 组合**：
 

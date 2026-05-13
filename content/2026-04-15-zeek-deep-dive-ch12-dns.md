@@ -10,8 +10,8 @@ tags:
 description: "深入解析 Zeek DNS 分析器——DNS::Info record、查询/响应日志、AAAA/A/AAAA 记录类型、DNSt隧道检测、DNS 脚本事件"
 ---
 
-> [!info] Zeek 2026 深度探索系列
-> 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Zeek 2026 深度探索系列 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-15-zeek-deep-dive-ch1-overview|第一章：Zeek 概述]]
 > 2. [[2026-04-15-zeek-deep-dive-ch2-installation|第二章：安装部署]]
 > 3. [[2026-04-15-zeek-deep-dive-ch3-config|第三章：配置系统]]
@@ -103,17 +103,17 @@ type DNS::Info = record {
 
 ### 2.2 DNS 查询类型
 
-| qtype | 名称 | 说明 |
-|-------|------|------|
-| 1 | A | IPv4 地址 |
-| 5 | CNAME | 别名记录 |
-| 15 | MX | 邮件交换 |
-| 28 | AAAA | IPv6 地址 |
-| 2 | NS | 域名服务器 |
-| 12 | PTR | 指针记录 |
-| 33 | SRV | 服务定位 |
-| 16 | TXT | 文本记录 |
-| 255 | ANY | 所有记录 |
+| qtype | 名称  | 说明       |
+| ----- | ----- | ---------- |
+| 1     | A     | IPv4 地址  |
+| 5     | CNAME | 别名记录   |
+| 15    | MX    | 邮件交换   |
+| 28    | AAAA  | IPv6 地址  |
+| 2     | NS    | 域名服务器 |
+| 12    | PTR   | 指针记录   |
+| 33    | SRV   | 服务定位   |
+| 16    | TXT   | 文本记录   |
+| 255   | ANY   | 所有记录   |
 
 ### 2.3 dns.log 示例
 
@@ -499,15 +499,16 @@ event dns_reply(c: connection, msg: dns_msg, query: string, qtype: count,
 
 本章介绍了 Zeek DNS 分析器的核心能力：
 
-| 组件 | 说明 |
-|------|------|
-| **DNS::Info** | DNS 日志核心 record，包含查询/响应完整信息 |
-| **dns_request** | DNS 请求事件 |
-| **dns_reply** | DNS 响应事件，包含 answers 和 TTLs |
-| **dns_query** | 单条查询记录事件 |
-| **qtype_name** | 查询类型名称（A/AAAA/MX/TXT 等） |
+| 组件            | 说明                                       |
+| --------------- | ------------------------------------------ |
+| **DNS::Info**   | DNS 日志核心 record，包含查询/响应完整信息 |
+| **dns_request** | DNS 请求事件                               |
+| **dns_reply**   | DNS 响应事件，包含 answers 和 TTLs         |
+| **dns_query**   | 单条查询记录事件                           |
+| **qtype_name**  | 查询类型名称（A/AAAA/MX/TXT 等）           |
 
 DNS 日志是威胁检测的重要数据源，可用于检测：
+
 - DNS 隧道数据外传
 - 恶意域名访问
 - DGA（域名生成算法）

@@ -1,7 +1,7 @@
 ---
 title: "VPP 深入探讨 ch39：P4 可编程数据面"
 date: 2026-04-16 11:20:00
-tags: [vpp, p4, programmable, strangler-fig, pipeline, p4runtime, tna,ida]
+tags: [vpp, p4, programmable, strangler-fig, pipeline, p4runtime, tna, ida]
 description: "深入解析 P4 可编程数据面与 VPP 集成：P4 架构、STRONGMAN/StrangerFig 模式、P4Runtime 控制、VPP P4 流水线、以及混合编程模型"
 ---
 
@@ -15,7 +15,7 @@ description: "深入解析 P4 可编程数据面与 VPP 集成：P4 架构、STR
 ### 1.1 什么是 P4？
 
 ```
-P4 (Programming Protocol-independent Packet Processors) 
+P4 (Programming Protocol-independent Packet Processors)
 = 数据平面编程语言
 
 ┌─────────────────────────────────────────────────────────────┐
@@ -41,14 +41,14 @@ P4 (Programming Protocol-independent Packet Processors)
 
 ### 1.2 P4 vs VPP
 
-|| 特性 | P4 | VPP |
-|------|-----|-----|
-| **编程模型** | 数据流图 | 图节点 |
-| **目标** | 可编程交换机 | 通用数据平面 |
+|              | 特性                  | P4               | VPP |
+| ------------ | --------------------- | ---------------- | --- |
+| **编程模型** | 数据流图              | 图节点           |
+| **目标**     | 可编程交换机          | 通用数据平面     |
 | **硬件支持** | Tofino, Tofino2, eBPF | x86, ARM, RISC-V |
-| **协议栈** | 可自定义 | 内置完整 |
-| **性能** | 硬件级 | 软件级 |
-| **成熟度** | 较新 | 成熟 |
+| **协议栈**   | 可自定义              | 内置完整         |
+| **性能**     | 硬件级                | 软件级           |
+| **成熟度**   | 较新                  | 成熟             |
 
 ### 1.3 P4 + VPP 互补性
 
@@ -128,7 +128,7 @@ parser MyParser(packet_in packet,
             default: accept;
         }
     }
-    
+
     state parse_ipv4 {
         packet.extract(hdr.ipv4);
         transition accept;
@@ -143,19 +143,19 @@ control MyIngress(inout headers_t hdr,
     action drop() {
         mark_to_drop(smeta);
     }
-    
+
     action route_to_vpp() {
         // 重定向到 VPP 处理
         smeta.egress_spec = 255;  // 特殊端口
     }
-    
+
     action ipv4_forward(bit<48> dst_addr, bit<48> src_addr, bit<8> port) {
         hdr.ethernet.src_addr = src_addr;
         hdr.ethernet.dst_addr = dst_addr;
         hdr.ipv4.ttl = hdr.ipv4.ttl - 1;
         smeta.egress_port = port;
     }
-    
+
     table ipv4_lpm {
         key = {
             hdr.ipv4.dst_addr: lpm;
@@ -168,7 +168,7 @@ control MyIngress(inout headers_t hdr,
         default_action = drop;
         size = 65536;
     }
-    
+
     apply {
         if (hdr.ipv4.isValid()) {
             ipv4_lpm.apply();
@@ -368,34 +368,34 @@ class P4RuntimeClient:
     def __init__(self, addr='localhost:50051'):
         self.channel = grpc.insecure_channel(addr)
         self.stub = p4runtime_pb2_grpc.P4RuntimeStub(self.channel)
-        
+
         # Master election (必须)
         self.election_id = (1, 0)
-        
+
     def set_pipeline_config(self, p4info, bmv2_json):
         """设置流水线配置"""
         request = p4runtime_pb2.SetPipelineConfigRequest()
         request.config.p4info.CopyFrom(p4info)
         request.config.cookie = bmv2_json
-        
+
         self.stub.SetPipelineConfig(request)
-        
+
     def write_table_entry(self, table_name, match, action, priority=0):
         """写入表项"""
         update = p4runtime_pb2.Update()
         update.type = p4runtime_pb2.Update.INSERT
-        
+
         # 设置匹配字段
         entry = update.entity.table_entry
         entry.table_id = self.get_table_id(table_name)
         entry.priority = priority
-        
+
         for field, value, mask in match:
             match_field = entry.match.add()
             match_field.field_id = field
             match_field.lpm.value = value
             match_field.lpm.prefix_len = mask
-            
+
         # 设置动作
         action_entry = entry.action.action
         action_entry.action_id = self.get_action_id(action['name'])
@@ -403,18 +403,18 @@ class P4RuntimeClient:
             p = action_entry.params.add()
             p.param_id = param['id']
             p.value = param['value']
-            
+
         self.stub.Write(p4runtime_pb2.WriteRequest(
             updates=[update],
             election_id=self.election_id
         ))
-        
+
     def read_table_entries(self, table_name):
         """读取表项"""
         request = p4runtime_pb2.ReadRequest()
         entity = request.entities.add().table_entry
         entity.table_id = self.get_table_id(table_name)
-        
+
         for response in self.stub.Read(request):
             yield response.entities
 ```
@@ -570,11 +570,11 @@ action vxlan_encap(bit<32> dst_ip, bit<24> vni) {
     hdr.vxlan.setValid();
     hdr.vxlan.flags = 0x08;
     hdr.vxlan.vni = vni;
-    
+
     // 添加外层 UDP
     hdr.outer_udp.setValid();
     hdr.outer_udp.dst_port = 4789;  // Vxlan 端口
-    
+
     // 添加外层 IP
     hdr.outer_ipv4.setValid();
     hdr.outer_ipv4.dst = dst_ip;
@@ -606,7 +606,7 @@ apply {
 // load_balancer.p4
 
 // 负载均衡哈希
-hash<bit<32>>(HashAlgorithm_t.CRC32) 
+hash<bit<32>>(HashAlgorithm_t.CRC32)
     ecmp_hash;
 
 action select_ecmp(bit<16> ecmp_base, bit<16> ecmp_count) {
@@ -617,10 +617,10 @@ action select_ecmp(bit<16> ecmp_base, bit<16> ecmp_count) {
         hdr.tcp.src_port,
         hdr.tcp.dst_port
     });
-    
+
     bit<16> ecmp_index = (bit<16>)(hash % ecmp_count);
     bit<16> nexthop_index = ecmp_base + ecmp_index;
-    
+
     // 设置下一跳
     meta.nexthop = nexthop_index;
 }

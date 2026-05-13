@@ -11,12 +11,8 @@ tags:
   - cloud-native
 ---
 
-> [!info] Cilium 2026 深度探索系列
-> 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
-> ...
-> 22. [[2026-04-14-cilium-deep-dive-ch22-global-services|第二十二章：Global Services]]
-> 23. [[2026-04-14-cilium-deep-dive-ch23-cni-chain|第二十三章：CNI Chaining]]
-> 24. **第二十四章：IPAM** ←
+> [!info] Cilium 2026 深度探索系列 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+> ... 22. [[2026-04-14-cilium-deep-dive-ch22-global-services|第二十二章：Global Services]] 23. [[2026-04-14-cilium-deep-dive-ch23-cni-chain|第二十三章：CNI Chaining]] 24. **第二十四章：IPAM** ←
 
 ---
 
@@ -37,11 +33,11 @@ Cilium 支持多种 IPAM 模式，适应不同的部署场景。
 
 ### 2.1 三种 IPAM 模式
 
-| 模式 | 说明 | 适用场景 |
-|:---|:---|:---|
-| **Cluster Scope** | 集中式 IPAM，集群级别统一管理 | 默认模式，推荐使用 |
-| **Kubernetes Host Scope** | 委托 Kubernetes ( kubelet ) 管理 | 与 kubelet IPAM 配合 |
-| **AWS CNI / Azure CNI / GKE** | 云服务商管理 | 云环境特定 CNI |
+| 模式                          | 说明                             | 适用场景             |
+| :---------------------------- | :------------------------------- | :------------------- |
+| **Cluster Scope**             | 集中式 IPAM，集群级别统一管理    | 默认模式，推荐使用   |
+| **Kubernetes Host Scope**     | 委托 Kubernetes ( kubelet ) 管理 | 与 kubelet IPAM 配合 |
+| **AWS CNI / Azure CNI / GKE** | 云服务商管理                     | 云环境特定 CNI       |
 
 ### 2.2 Cluster Scope IPAM
 
@@ -118,10 +114,10 @@ helm install cilium cilium/cilium \
 
 配置参数：
 
-| 参数 | 说明 | 默认值 |
-|:---|:---|:---|
+| 参数                         | 说明                | 默认值       |
+| :--------------------------- | :------------------ | :----------- |
 | `clusterPoolIPv4PodCIDRList` | 集群范围的 Pod CIDR | `10.0.0.0/8` |
-| `clusterPoolIPv4MaskSize` | 每个节点的子网掩码 | `24` |
+| `clusterPoolIPv4MaskSize`    | 每个节点的子网掩码  | `24`         |
 
 ### 3.2 多集群 CIDR 协调
 
@@ -168,9 +164,9 @@ spec:
   ipv4:
     CIDR: 10.1.0.0/24
   reserved:
-    - "10.1.0.1"    # 网关
-    - "10.1.0.2"    # CoreDNS
-    - "10.1.0.3"    # Ingress
+    - "10.1.0.1" # 网关
+    - "10.1.0.2" # CoreDNS
+    - "10.1.0.3" # Ingress
 ```
 
 ### 4.3 动态 IP 预留
@@ -276,12 +272,12 @@ cilium_eps_map_v2       eps_map                   hash    12  max_entries=65535
 
 Map 说明：
 
-| Map | 说明 |
-|:---|:---|
-| **cilium_ipcache** | IP 到 Endpoint 的映射，包含 Identity |
-| **cilium_lb4_prefixes** | LoadBalancer 前缀范围 |
-| **cilium_lb4_services_v2** | Service 到后端的映射 |
-| **cilium_eps_map_v2** | Endpoint 安全身份映射 |
+| Map                        | 说明                                 |
+| :------------------------- | :----------------------------------- |
+| **cilium_ipcache**         | IP 到 Endpoint 的映射，包含 Identity |
+| **cilium_lb4_prefixes**    | LoadBalancer 前缀范围                |
+| **cilium_lb4_services_v2** | Service 到后端的映射                 |
+| **cilium_eps_map_v2**      | Endpoint 安全身份映射                |
 
 ### 6.2 IPCache 查找
 
@@ -333,10 +329,10 @@ struct ipcache_value_t {
 
 Cilium 通过 `cluster-id` + `VNI` 区分重叠 CIDR：
 
-| 集群 | cluster-id | Pod CIDR | VNI |
-|:---|:---|:---|:---|
-| cluster-A | 1 | 10.1.0.0/16 | 1 |
-| cluster-B | 2 | 10.1.0.0/16 | 2 |
+| 集群      | cluster-id | Pod CIDR    | VNI |
+| :-------- | :--------- | :---------- | :-- |
+| cluster-A | 1          | 10.1.0.0/16 | 1   |
+| cluster-B | 2          | 10.1.0.0/16 | 2   |
 
 即使两个集群的 Pod IP 完全相同（如都是 `10.1.0.5`），通过 VNI 也能正确区分。
 
@@ -386,14 +382,14 @@ hubble observe --ip 10.1.0.15
 
 ## 9. 章节总结
 
-| 概念 | 说明 |
-|:---|:---|
-| **Cluster Scope IPAM** | Cilium 默认模式，集中管理 IP 分配 |
-| **Host Scope IPAM** | 委托 kubelet/主机 CNI 管理 IP |
-| **Pod CIDR** | 每个节点的 IP 块（通常 /24） |
-| **IP 预留** | 保留特定 IP 供基础设施使用 |
-| **VNI** | VXLAN Network Identifier，区分重叠 CIDR |
-| **IPCACHE** | eBPF Map，IP 到 Endpoint 的快速查找 |
+| 概念                   | 说明                                    |
+| :--------------------- | :-------------------------------------- |
+| **Cluster Scope IPAM** | Cilium 默认模式，集中管理 IP 分配       |
+| **Host Scope IPAM**    | 委托 kubelet/主机 CNI 管理 IP           |
+| **Pod CIDR**           | 每个节点的 IP 块（通常 /24）            |
+| **IP 预留**            | 保留特定 IP 供基础设施使用              |
+| **VNI**                | VXLAN Network Identifier，区分重叠 CIDR |
+| **IPCACHE**            | eBPF Map，IP 到 Endpoint 的快速查找     |
 
 **下一章**：探讨 etcd 部署与高可用，了解 kvstore 在 Cilium 中的角色和可靠性设计。
 

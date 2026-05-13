@@ -5,8 +5,8 @@ tags: [rdma, series, echo-server, echo-client, rdma-cm, complete-example]
 description: "从头实现一个完整的 RDMA echo 服务器和客户端，涵盖连接建立、内存注册、收发处理、错误处理，以及完整可编译运行的代码"
 ---
 
-> [!info] RDMA 深度探索系列
-> 0. [[2026-04-13-rdma-deep-dive-series-index|全栈学习路径总览]]
+> [!info] RDMA 深度探索系列 0. [[2026-04-13-rdma-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-rdma-deep-dive-ch1-rdma-overview|第一章：RDMA 概述]]
 > 2. [[2026-04-13-rdma-deep-dive-ch2-rdma-architecture|第二章：RDMA 架构]]
 > 3. [[2026-04-13-rdma-deep-dive-ch3-infiniband|第三章：InfiniBand 架构]]

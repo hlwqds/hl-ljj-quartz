@@ -5,8 +5,8 @@ tags: [p4, series, control, apply, conditionals, action-invocation, pipeline, p4
 description: "P4 Control 编程深度解析——Control Block 结构、apply 方法、条件语句 if-else、Action 调用链、Control 之间的调用、Pipeline 阶段的编排、PSA/V1Model 中的 Ingress/Egress Control"
 ---
 
-> [!info] P4 深度探索系列
-> 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+> [!info] P4 深度探索系列 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-14-p4-deep-dive-ch1-p4-overview|第一章：P4 概述——诞生背景与协议无关包处理]]
 > 2. [[2026-04-14-p4-deep-dive-ch2-p4-architecture|第二章：P4 架构模型——PSA/V1Model、Ingress/Egress]]
 > 3. [[2026-04-14-p4-deep-dive-ch3-p4-vs-ebpf|第三章：P4 vs eBPF——适用场景与硬件/软件对比]]
@@ -24,6 +24,7 @@ description: "P4 Control 编程深度解析——Control Block 结构、apply �
 **Control** 是 P4 程序中负责**业务逻辑编排**的组件。如果说 Parser 是数据包的"解读器"，Table 是"查表器"，那么 Control 就是"决策者"——它决定数据包的流向、应用哪些表、以什么顺序应用。
 
 在 PSA（Portable Switch Architecture）或 V1Model 中，每个数据包会经过：
+
 1. **Parser** — 解析协议头
 2. **Ingress Control** — 入口流水线，决定出口和初始处理
 3. **Egress Control** — 出口流水线，决定最终修改
@@ -41,17 +42,17 @@ Control 编程的核心是 `apply` 块——一个包含条件判断、表查询
 control ControlName(inout headers h,
                     inout metadata m,
                     inout standard_metadata_t sm) {
-    
+
     // ========== 本地声明 ==========
-    
+
     // 动作声明
     action action1(...) { ... }
     action action2(...) { ... }
-    
+
     // 表声明
     table table1 { ... }
     table table2 { ... }
-    
+
     // ========== apply 块 ==========
     apply {
         // 业务逻辑
@@ -65,24 +66,24 @@ control ControlName(inout headers h,
 control MyIngress(inout headers h,
                   inout metadata m,
                   inout standard_metadata_t sm) {
-    
+
     // ----- 动作声明 -----
     action drop() {
         mark_to_drop(sm);
     }
-    
+
     action forward(bit<9> port) {
         sm.egress_spec = port;
     }
-    
+
     action set_dmac(bit<48> dmac) {
         h.ethernet.dstAddr = dmac;
     }
-    
+
     action decrement_ttl() {
         h.ipv4.ttl = h.ipv4.ttl - 1;
     }
-    
+
     // ----- 表声明 -----
     table ipv4_routetable {
         key = { h.ipv4.dstAddr: lpm; }
@@ -92,7 +93,7 @@ control MyIngress(inout headers h,
         }
         default_action = drop;
     }
-    
+
     table mac_rewrite {
         key = { sm.egress_spec: exact; }
         actions = {
@@ -100,17 +101,17 @@ control MyIngress(inout headers h,
             NoAction;
         }
     }
-    
+
     // ----- apply 块 -----
     apply {
         // 1. 路由查找
         ipv4_routetable.apply();
-        
+
         // 2. 如果 TTL > 0，执行后续处理
         if (h.ipv4.ttl > 0) {
             // 3. MAC 重写
             mac_rewrite.apply();
-            
+
             // 4. TTL 递减
             decrement_ttl();
         }
@@ -136,9 +137,9 @@ apply {
 apply {
     // apply() 返回一个结果对象
     // 包含 hit/miss 属性
-    
+
     table_entry_lookup_result = my_table.apply();
-    
+
     if (table_entry_lookup_result.hit) {
         // 表项命中
     } else {
@@ -155,7 +156,7 @@ apply {
     if (h.ipv4.isValid()) {
         ipv4_fib.apply();
     }
-    
+
     // TCP 特定处理
     if (h.tcp.isValid() && ipv4_fib.apply().hit) {
         tcp_policies.apply();
@@ -169,12 +170,12 @@ apply {
 apply {
     // 顺序执行
     // 前一个 apply 的结果可能影响后续行为
-    
+
     // 例：先检查 ACL，再决定是否路由
     acl_deny.apply();  // 如果命中 deny，数据包被丢弃
     // 注意：即使 ACL 命中 deny，ipv4_fib 仍会被执行
     // 如果需要提前退出，需要使用条件 apply
-    
+
     if (!acl_deny.apply().hit) {
         // 仅在 ACL 未命中 deny 时执行路由
         ipv4_fib.apply();
@@ -223,17 +224,17 @@ bit<8> result = if (h.ipv4.ttl > 0) then h.ipv4.ttl else 0;
 ```c
 apply {
     // 多条件组合
-    if (h.tcp.isValid() && 
-        h.tcp.flags[TCP_FLAG_ACK] == 1 && 
+    if (h.tcp.isValid() &&
+        h.tcp.flags[TCP_FLAG_ACK] == 1 &&
         h.tcp.srcPort == 80) {
         http_stats.apply();
     }
-    
+
     // 范围检查
     if (h.tcp.srcPort >= 1024 && h.tcp.srcPort <= 65535) {
         // 临时端口
     }
-    
+
     // 取反条件
     if (!h.tcp.isValid()) {
         // 非 TCP 流量
@@ -258,12 +259,12 @@ apply {
 
 ### 5.2 动作调用与表查询的区别
 
-| 维度 | 直接调用 | 表查询 (apply) |
-|------|---------|---------------|
-| 决策时机 | 编译时静态 | 运行时动态 |
-| 灵活性 | 硬编码 | 控制面可编程 |
-| 性能 | 更高（无查找开销） | 略低（需要查表） |
-| 典型场景 | 固定处理逻辑 | 需要动态配置的处理 |
+| 维度     | 直接调用           | 表查询 (apply)     |
+| -------- | ------------------ | ------------------ |
+| 决策时机 | 编译时静态         | 运行时动态         |
+| 灵活性   | 硬编码             | 控制面可编程       |
+| 性能     | 更高（无查找开销） | 略低（需要查表）   |
+| 典型场景 | 固定处理逻辑       | 需要动态配置的处理 |
 
 ### 5.3 动作调用的限制
 
@@ -309,7 +310,7 @@ control ACL(inout headers h, inout metadata m) {
         }
         actions = { permit; deny; }
     }
-    
+
     apply {
         acl_table.apply();
     }
@@ -319,15 +320,15 @@ control ACL(inout headers h, inout metadata m) {
 control MyIngress(inout headers h,
                   inout metadata m,
                   inout standard_metadata_t sm) {
-    
+
     ACL();  // 实例化 ACL Control
-    
+
     apply {
         // 先执行 ACL 检查
         acl.apply();  // 调用 ACL 实例
-        
+
         // ACL 通过后执行路由
-        if (!acl.acl_table.apply().hit || 
+        if (!acl.acl_table.apply().hit ||
             acl.acl_table.apply().action == permit) {
             ipv4_forward.apply();
         }
@@ -395,43 +396,43 @@ PSA (Portable Switch Architecture) 定义了标准的流水线：
 control Ingress(inout headers h,
                 inout metadata m,
                 inout standard_metadata_t sm) {
-    
+
     // ========== 动作 ==========
     action drop() { mark_to_drop(sm); }
     action forward(bit<9> port) { sm.egress_spec = port; }
-    
+
     // ========== 表 ==========
     table mac_table {
         key = { h.ethernet.srcAddr: exact; }
         actions = { learn_mac; NoAction; }
     }
-    
+
     table vlan_table {
         key = { h.vlan.vid: exact; }
         actions = { set_vlan_info; drop; }
     }
-    
+
     table ipv4_route {
         key = { h.ipv4.dstAddr: lpm; }
         actions = { forward; drop; }
     }
-    
+
     table acl_table {
         key = { h.ipv4.srcAddr: ternary; }
         actions = { permit; drop; }
     }
-    
+
     // ========== apply ==========
     apply {
         // 1. VLAN 验证
         vlan_table.apply();
-        
+
         // 2. MAC 学习
         mac_table.apply();
-        
+
         // 3. ACL 检查
         acl_table.apply();
-        
+
         // 4. IP 路由（ACL 允许后才执行）
         if (acl_table.apply().action != drop) {
             ipv4_route.apply();
@@ -446,37 +447,37 @@ control Ingress(inout headers h,
 control Egress(inout headers h,
                inout metadata m,
                inout standard_metadata_t sm) {
-    
+
     // ========== 动作 ==========
     action add_vlan(bit<12> vid) {
         // 添加 VLAN 标签
     }
-    
+
     action rewrite_mac(bit<48> smac) {
         h.ethernet.srcAddr = smac;
     }
-    
+
     // ========== 表 ==========
     table egress_mac_rewrite {
         key = { sm.egress_port: exact; }
         actions = { rewrite_mac; }
     }
-    
+
     table mirror_table {
         key = { h.ipv4.srcAddr: exact; }
         actions = { mirror_to_cpu; }
     }
-    
+
     // ========== apply ==========
     apply {
         // 1. 出口 MAC 重写
         egress_mac_rewrite.apply();
-        
+
         // 2. 镜像（如果需要）
         if (h.ipv4.isValid()) {
             mirror_table.apply();
         }
-        
+
         // 3. TTL 递减检查
         if (h.ipv4.ttl == 0) {
             // TTL 到期，生成 ICMP 错误
@@ -505,7 +506,7 @@ struct standard_metadata_t {
     bit<16> packet_length;         // 数据包长度
     bit<8>  queue_id;              // 出口队列
     bit<8>  queue_depth;           // 队列深度
-    bit<2>  padding;               // 
+    bit<2>  padding;               //
     // ... 更多字段
 }
 ```
@@ -537,7 +538,7 @@ apply {
         // 命中，处理完成
         return;  // 提前返回（如果架构支持）
     }
-    
+
     // 大表（LPM）后查
     lpm_table.apply();
 }
@@ -614,12 +615,12 @@ apply {
 ```c
 apply {
     auto result = acl.apply();
-    
+
     // 检查命中动作是否为特定动作
     if (result.action == permit) {
         // 允许通过
     }
-    
+
     // 或使用 hit 属性
     if (result.hit) {
         // 命中表项
@@ -644,62 +645,62 @@ apply {
 control Ingress(inout headers h,
                 inout metadata m,
                 inout standard_metadata_t sm) {
-    
+
     // ----- 动作 -----
     action drop() {
         mark_to_drop(sm);
     }
-    
+
     action forward(bit<9> port) {
         sm.egress_spec = port;
     }
-    
+
     action redirect_to_cpu() {
         sm.egress_spec = CPU_PORT;
     }
-    
+
     action set_next_hop(bit<32> nexthop) {
         m.nexthop_id = nexthop;
     }
-    
+
     action decrement_ttl() {
         h.ipv4.ttl = h.ipv4.ttl - 1;
         h.ipv4.hdrChecksum = ipv4_checksum.update(h.ipv4);
     }
-    
+
     // ----- 表 -----
-    
+
     // MAC 学习表
     table smac {
         key = { h.ethernet.srcAddr: exact; }
         actions = { NoAction; }
         default_action = NoAction;
     }
-    
+
     // MAC 转发表
     table dmac {
         key = { h.ethernet.dstAddr: exact; }
         actions = { forward; drop; }
         default_action = drop;
     }
-    
+
     // VLAN 表
     table vlan {
         key = { h.vlan.vid: exact; }
         actions = { set_vlan_info; drop; }
     }
-    
+
     // IPv4 路由表
     table ipv4_fib {
         key = { h.ipv4.dstAddr: lpm; }
-        actions = { 
-            forward; 
+        actions = {
+            forward;
             set_next_hop;
-            drop; 
+            drop;
         }
         default_action = drop;
     }
-    
+
     // ACL 表
     table ipv4_acl {
         key = {
@@ -712,7 +713,7 @@ control Ingress(inout headers h,
         actions = { permit; drop; }
         default_action = permit;
     }
-    
+
     // ----- apply 块 -----
     apply {
         // 1. VLAN 验证
@@ -722,10 +723,10 @@ control Ingress(inout headers h,
                 return;
             }
         }
-        
+
         // 2. MAC 学习
         smac.apply();
-        
+
         // 3. ACL 检查
         if (h.ipv4.isValid()) {
             auto acl_result = ipv4_acl.apply();
@@ -734,15 +735,15 @@ control Ingress(inout headers h,
                 return;
             }
         }
-        
+
         // 4. IP 转发
         if (h.ipv4.isValid()) {
             auto fib_result = ipv4_fib.apply();
-            
+
             if (fib_result.hit) {
                 // 路由命中，执行 TTL 递减
                 decrement_ttl();
-                
+
                 // 5. MAC 转发表（使用路由提供的出口）
                 dmac.apply();
             }
@@ -757,29 +758,29 @@ control Ingress(inout headers h,
 control Egress(inout headers h,
                inout metadata m,
                inout standard_metadata_t sm) {
-    
+
     // ----- 动作 -----
     action add_vlan(bit<12> vid) {
         // VLAN 标签添加逻辑
     }
-    
+
     action mirror(bit<32> session_id) {
         // 镜像逻辑
     }
-    
+
     // ----- 表 -----
     table egress_vlan_rewrite {
         key = { sm.egress_port: exact; }
         actions = { add_vlan; }
     }
-    
+
     // ----- apply 块 -----
     apply {
         // 出口 VLAN 重写
         if (h.vlan.isValid()) {
             egress_vlan_rewrite.apply();
         }
-        
+
         // 多播镜像
         if (sm.clone == 1) {
             mirror(m.mirror_session);

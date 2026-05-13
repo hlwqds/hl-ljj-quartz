@@ -1,7 +1,18 @@
 ---
 title: "RDMA 第三十七章：扩展原子操作——64位原子、FAA、CAS与内存序"
 date: 2026-04-14
-tags: [rdma, extended-atomics, 64-bit, fetch-and-add, compare-and-swap, memory-ordering, one-sided, roce, infiniband]
+tags:
+  [
+    rdma,
+    extended-atomics,
+    64-bit,
+    fetch-and-add,
+    compare-and-swap,
+    memory-ordering,
+    one-sided,
+    roce,
+    infiniband,
+  ]
 description: "详解 RDMA 扩展原子操作：64位 Fetch-Add、Compare-and-Swap、原子掩码操作、内存序语义、以及在分布式数据结构中的应用。"
 ---
 
@@ -50,13 +61,13 @@ RDMA 扩展原子操作类型：
 
 ### 1.3 扩展原子与标准原子的区别
 
-| 特性 | 标准原子 | 扩展原子 |
-|------|---------|---------|
-| 数据宽度 | 32 位 | 64 位/128 位 |
-| 操作类型 | FA, CAS | FA, CAS, Masked FA, Masked CAS |
-| 内存一致性 | 单核单序 | 多核多序 |
-| 硬件要求 | 基本 RDMA | 需要扩展原子支持 |
-| 性能开销 | 略高 | 略高 |
+| 特性       | 标准原子  | 扩展原子                       |
+| ---------- | --------- | ------------------------------ |
+| 数据宽度   | 32 位     | 64 位/128 位                   |
+| 操作类型   | FA, CAS   | FA, CAS, Masked FA, Masked CAS |
+| 内存一致性 | 单核单序  | 多核多序                       |
+| 硬件要求   | 基本 RDMA | 需要扩展原子支持               |
+| 性能开销   | 略高      | 略高                           |
 
 ---
 
@@ -439,6 +450,7 @@ Atomic capabilities:
 ---
 
 > [!tip] 延伸阅读
+>
 > - [[2026-04-13-rdma-deep-dive-ch11-atomics|第十一章：RDMA 原子操作]] —— 标准原子操作介绍
 > - [[2026-04-13-rdma-deep-dive-ch7-queue-pair|第七章：队列对 (QP)]] —— QP 与原子操作的关系
 > - [[2026-04-13-rdma-deep-dive-ch3-infiniband|第三章：InfiniBand 架构]] —— IB 协议层原子支持

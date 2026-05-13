@@ -5,8 +5,8 @@ tags: [linux, kernel, networking, series, iptables, netfilter, firewall, chains,
 description: "深入解析 iptables/Netfilter 框架——5 个钩子点、tables/chains/rules 三层架构、规则匹配、扩展匹配（conntrack、layer7、geoip）、以及数据包处理流程"
 ---
 
-> [!info] Kernel Protocol Stack 深度探索系列
-> 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Kernel Protocol Stack 深度探索系列 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-kernel-protocol-stack-deep-dive-ch1-skbuff|第一章：sk_buff 与数据包生命周期]]
 > 2. [[2026-04-13-kernel-protocol-stack-deep-dive-ch2-netdevice|第二章：Netdevice 与网卡抽象]]
 > 3. [[2026-04-13-kernel-protocol-stack-deep-dive-ch3-ring-buffer|第三章：Ring Buffer 与 DMA]]
@@ -41,7 +41,7 @@ graph LR
     subgraph "数据包流程"
         SKB["sk_buff"]
     end
-    
+
     subgraph "Netfilter Hooks"
         NF_PRE["NF_INET_PRE_ROUTING"]
         NF_LOCAL_IN["NF_INET_LOCAL_IN"]
@@ -49,20 +49,20 @@ graph LR
         NF_LOCAL_OUT["NF_INET_LOCAL_OUT"]
         NF_POST["NF_INET_POST_ROUTING"]
     end
-    
+
     subgraph "Tables"
         T_MANGLE["mangle"]
         T_NAT["nat"]
         T_FILTER["filter"]
         T_RAW["raw"]
     end
-    
+
     SKB --> NF_PRE --> T_MANGLE --> T_NAT --> T_RAW
     SKB --> NF_FORWARD --> T_FILTER
     SKB --> NF_LOCAL_IN --> T_FILTER
     SKB --> NF_LOCAL_OUT --> T_MANGLE --> T_NAT --> T_RAW
     SKB --> NF_POST
-    
+
     style NF_PRE fill:#f59f00,stroke:#333
 ```
 
@@ -84,13 +84,13 @@ enum nf_inet_hooks {
 };
 ```
 
-| 钩子点 | 时机 | 典型用途 |
-|--------|------|---------|
-| PRE_ROUTING | 接收数据包后，路由查找前 | DNAT、conntrack |
-| LOCAL_IN | 数据包目的为本机 | 防火墙 INPUT |
-| FORWARD | 数据包需要转发 | 防火墙 FORWARD |
-| LOCAL_OUT | 本机生成的数据包 | SNAT、mark、policy routing |
-| POST_ROUTING | 数据包发送前 | SNAT、qdisc |
+| 钩子点       | 时机                     | 典型用途                   |
+| ------------ | ------------------------ | -------------------------- |
+| PRE_ROUTING  | 接收数据包后，路由查找前 | DNAT、conntrack            |
+| LOCAL_IN     | 数据包目的为本机         | 防火墙 INPUT               |
+| FORWARD      | 数据包需要转发           | 防火墙 FORWARD             |
+| LOCAL_OUT    | 本机生成的数据包         | SNAT、mark、policy routing |
+| POST_ROUTING | 数据包发送前             | SNAT、qdisc                |
 
 ### 2.2 钩子注册
 
@@ -122,17 +122,17 @@ static unsigned int nf_hook_slow(void *priv,
     struct nf_hook_entries *hooks = state->hook_entries;
     unsigned int verdict;
     int i;
-    
+
     for (i = 0; i < hooks->num_hook_entries; i++) {
         // 调用每个注册的钩子
         verdict = hooks->hooks[i].hook(hooks->hooks[i].priv, skb, state);
-        
+
         if (verdict != NF_ACCEPT && verdict != NF_CONTINUE) {
             // 规则返回非继续值
             return verdict;
         }
     }
-    
+
     return NF_ACCEPT;
 }
 ```
@@ -143,12 +143,12 @@ static unsigned int nf_hook_slow(void *priv,
 
 ### 3.1 Tables
 
-| 表 | 功能 | 钩子点 | 优先级 |
-|----|------|--------|--------|
-| **filter** | 包过滤（accept/drop） | FORWARD, INPUT, OUTPUT | 0 |
-| **nat** | NAT 地址转换 | PRE_ROUTING, POST_ROUTING, LOCAL_OUT | 100 |
-| **mangle** | 包修改（TTL, TOS, mark） | 所有 5 个钩子 | 150 |
-| **raw** | 关闭 conntrack | PRE_ROUTING, LOCAL_OUT | -400 |
+| 表         | 功能                     | 钩子点                               | 优先级 |
+| ---------- | ------------------------ | ------------------------------------ | ------ |
+| **filter** | 包过滤（accept/drop）    | FORWARD, INPUT, OUTPUT               | 0      |
+| **nat**    | NAT 地址转换             | PRE_ROUTING, POST_ROUTING, LOCAL_OUT | 100    |
+| **mangle** | 包修改（TTL, TOS, mark） | 所有 5 个钩子                        | 150    |
+| **raw**    | 关闭 conntrack           | PRE_ROUTING, LOCAL_OUT               | -400   |
 
 ### 3.2 默认 Chains
 
@@ -180,7 +180,7 @@ struct xt_entry_match {
     __u16  match_size;           // 匹配结构大小
     char   name[29];             // 扩展名称
     __u8   revision;
-    
+
     // 用户数据（匹配参数）
     char   data[0];
 };
@@ -189,7 +189,7 @@ struct xt_entry_target {
     __u16  target_size;         // 目标结构大小
     char   name[29];
     __u8   revision;
-    
+
     // 用户数据（目标参数）
     char   data[0];
 };
@@ -431,32 +431,32 @@ flowchart TD
     subgraph "NIC 接收"
         RX["netif_rx<br/>接收数据包"]
     end
-    
+
     subgraph "Netfilter PRE_ROUTING"
         PRE["raw PREROUTING<br/>nat PREROUTING"]
     end
-    
+
     subgraph "路由决策"
         ROUTE["路由查找<br/>ip_route_input"]
     end
-    
+
     subgraph "分发"
-        LOCAL["LOCAL_IN"] 
+        LOCAL["LOCAL_IN"]
         FWD["FORWARD"]
     end
-    
+
     subgraph "Netfilter LOCAL_IN"
         LOCAL_NET["mangle INPUT<br/>filter INPUT"]
     end
-    
+
     subgraph "本地进程"
         APP["应用"]
     end
-    
+
     RX --> PRE --> ROUTE
     ROUTE -->|"目的为本机"| LOCAL --> LOCAL_NET --> APP
     ROUTE -->|"需要转发"| FWD --> APP
-    
+
     style PRE fill:#f59f00,stroke:#333
 ```
 
@@ -467,25 +467,25 @@ flowchart TD
     subgraph "本地进程"
         APP["应用"]
     end
-    
+
     subgraph "Netfilter LOCAL_OUT"
         LOCAL_OUT["raw OUTPUT<br/>mangle OUTPUT<br/>nat OUTPUT<br/>filter OUTPUT"]
     end
-    
+
     subgraph "路由决策"
         ROUTE["路由查找<br/>ip_route_output"]
     end
-    
+
     subgraph "Netfilter POST_ROUTING"
         POST["mangle POSTROUTING<br/>nat POSTROUTING"]
     end
-    
+
     subgraph "NIC 发送"
         TX["dev_queue_xmit<br/>发送数据包"]
     end
-    
+
     APP --> LOCAL_OUT --> ROUTE --> POST --> TX
-    
+
     style POST fill:#f59f00,stroke:#333
 ```
 

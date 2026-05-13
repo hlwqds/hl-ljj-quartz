@@ -119,37 +119,37 @@ MPI 通信模型：
 
 int main(int argc, char** argv) {
     MPI_Init(&argc, &argv);
-    
+
     int rank, size;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
-    
+
     const int N = 1000000;
     double* send_buf = malloc(N * sizeof(double));
     double* recv_buf = malloc(N * sizeof(double));
-    
+
     // 初始化数据
     for (int i = 0; i < N; i++) {
         send_buf[i] = rank + i * 0.001;
     }
-    
+
     double t_start = MPI_Wtime();
-    
+
     if (rank == 0) {
         // MPI_Send 使用 RDMA 传输 (Eager/Rendezvous)
         MPI_Send(send_buf, N, MPI_DOUBLE, 1, 0, MPI_COMM_WORLD);
         printf("Rank 0 sent %d doubles to rank 1\n", N);
     } else if (rank == 1) {
-        MPI_Recv(recv_buf, N, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD, 
+        MPI_Recv(recv_buf, N, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD,
                  MPI_STATUS_IGNORE);
         printf("Rank 1 received %d doubles from rank 0\n", N);
     }
-    
+
     double t_end = MPI_Wtime();
     if (rank == 0) {
         printf("Transfer time: %.3f ms\n", (t_end - t_start) * 1000);
     }
-    
+
     MPI_Finalize();
     return 0;
 }
@@ -165,18 +165,18 @@ void mpi_allreduce_example() {
     int rank, size;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
-    
+
     double local_value = rank + 1.0;
     double global_sum = 0.0;
-    
+
     // 全局求和
     // MPI 内部使用 Ring AllReduce 或 Tree 算法
     // 自动选择最优算法 (基于消息大小和进程数)
     MPI_Allreduce(&local_value, &global_sum, 1, MPI_DOUBLE,
                   MPI_SUM, MPI_COMM_WORLD);
-    
+
     // global_sum = 1 + 2 + 3 + ... + size = size*(size+1)/2
-    
+
     printf("Rank %d: global_sum = %.1f\n", rank, global_sum);
 }
 
@@ -184,17 +184,17 @@ void mpi_allreduce_example() {
 void mpi_broadcast_example() {
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    
+
     int root = 0;
     int data[100];
-    
+
     if (rank == root) {
         // 初始化广播数据
         for (int i = 0; i < 100; i++) {
             data[i] = i * i;
         }
     }
-    
+
     // 广播到所有进程
     // root 进程的数据被发送到所有其他进程
     MPI_Bcast(data, 100, MPI_INT, root, MPI_COMM_WORLD);
@@ -205,15 +205,15 @@ void mpi_allgather_example() {
     int rank, size;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
-    
+
     int local_data = rank * 10;
     int* recv_buffer = malloc(size * sizeof(int));
-    
+
     // 收集所有进程的数据到每个进程
     MPI_Allgather(&local_data, 1, MPI_INT,
                    recv_buffer, 1, MPI_INT,
                    MPI_COMM_WORLD);
-    
+
     // recv_buffer = [0, 10, 20, 30, ...]
 }
 ```
@@ -316,7 +316,7 @@ struct ibv_qp_attr attr = {
     .qp_state = IBV_QPS_INIT,
     .port_num = 1,
     .pkey_index = 0,
-    .qp_access_flags = IBV_ACCESS_REMOTE_READ | 
+    .qp_access_flags = IBV_ACCESS_REMOTE_READ |
                        IBV_ACCESS_REMOTE_WRITE,
 };
 
@@ -340,19 +340,19 @@ struct ibv_mr* mr = ibv_reg_mr(pd, buffer, size,
 void* rdma_event_handler(void* arg) {
     struct rdma_cm_id* cm_id = (struct rdma_cm_id*)arg;
     struct rdma_cm_event* event;
-    
+
     while (rdma_get_cm_event(cm_id->channel, &event) == 0) {
         switch (event->event) {
             case RDMA_CM_EVENT_CONNECT_REQUEST:
                 // 处理连接请求
                 handle_connect_request(event->id);
                 break;
-                
+
             case RDMA_CM_EVENT_ESTABLISHED:
                 // 连接建立完成
                 handle_connection_established(event->id);
                 break;
-                
+
             case RDMA_CM_EVENT_DISCONNECTED:
                 // 连接断开
                 rdma_disconnect(event->id);
@@ -365,17 +365,17 @@ void* rdma_event_handler(void* arg) {
 }
 
 // 建立连接
-int create_rdma_connection(struct rdma_cm_id* cm_id, 
+int create_rdma_connection(struct rdma_cm_id* cm_id,
                            struct sockaddr_in* dst_addr) {
     // 创建 CM ID
     rdma_create_ep(cm_id, NULL, NULL, NULL, RDMA_PS_TCP);
-    
+
     // 解析地址
     rdma_resolve_addr(cm_id, NULL, (struct sockaddr*)dst_addr, 2000);
-    
+
     // 等待连接请求
     // ...
-    
+
     return 0;
 }
 ```

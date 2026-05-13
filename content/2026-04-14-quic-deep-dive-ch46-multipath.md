@@ -77,6 +77,7 @@ Endpoint A                                          Endpoint B
 ```
 
 PATH_CHALLENGE and PATH_RESPONSE verify:
+
 1. The path is actually usable (reachability)
 2. The peer is actually at that address (no spoofing)
 3. NAT/mapping is stable enough (path is viable)
@@ -100,6 +101,7 @@ Path 1 (Cellular):
 ```
 
 Key implications:
+
 - **No ambiguity**: A packet number always refers to one path
 - **Independent ACKs**: Each path acknowledges its own packets
 - **Independent loss detection**: Each path runs its own recovery
@@ -111,6 +113,7 @@ How does QUIC decide which path carries which data?
 ### 46.5.1 Packet Distribution Strategies
 
 **Round Robin**: Distribute packets evenly across paths
+
 ```
 Packet 1 -> Path 0
 Packet 2 -> Path 1
@@ -119,12 +122,14 @@ Packet 4 -> Path 1
 ```
 
 **Weighted Fair Queue**: Based on path capacity
+
 ```
 Path 0 (100 Mbps) -> 70% of packets
 Path 1 (50 Mbps)  -> 30% of packets
 ```
 
 **Low-Latency First**: Send latency-sensitive packets on fastest path
+
 ```
 Video frames -> Path 0 (lower RTT)
 ACKs         -> Path 1 (faster)
@@ -141,15 +146,15 @@ typedef struct {
 } path_state_t;
 
 // Scheduler selects path for next datagram
-quic_path_t* select_path_for_datagram(quic_connection_t *conn, 
+quic_path_t* select_path_for_datagram(quic_connection_t *conn,
                                        size_t datagram_size) {
     path_state_t *best = NULL;
     double best_score = 0;
-    
+
     for (path_state_t *p = conn->paths; p != NULL; p = p->next) {
         // Score based on available capacity and RTT
         double score = (p->cwnd - p->bytes_in_flight) / p->estimated_rtt;
-        
+
         if (score > best_score) {
             best_score = score;
             best = p;
@@ -192,12 +197,12 @@ Endpoint A                                          Endpoint B
 
 These are related but distinct:
 
-| Aspect | Connection Migration | Multipath QUIC |
-|--------|----------------------|----------------|
-| Purpose | Survive network changes | Enhance throughput/resilience |
-| Path count | 1 active at a time | Multiple simultaneously |
-| Active vs standby | Switch completely | All active |
-| Use case | Mobile handoff | Bonding, redundancy |
+| Aspect            | Connection Migration    | Multipath QUIC                |
+| ----------------- | ----------------------- | ----------------------------- |
+| Purpose           | Survive network changes | Enhance throughput/resilience |
+| Path count        | 1 active at a time      | Multiple simultaneously       |
+| Active vs standby | Switch completely       | All active                    |
+| Use case          | Mobile handoff          | Bonding, redundancy           |
 
 Connection migration (Chapter 19) moves a connection from one path to another. Multipath QUIC uses multiple paths concurrently.
 
@@ -206,6 +211,7 @@ Connection migration (Chapter 19) moves a connection from one path to another. M
 ### 46.8.1 Path Validation and Spoofing
 
 An attacker could:
+
 1. Send PATH_CHALLENGE from a spoofed address
 2. Receive PATH_RESPONSE
 3. Claim to own that address
@@ -226,18 +232,19 @@ Each CID is bound to the same cryptographic context via the Initial keys.
 
 ## 46.9 Comparison with Other Multipath Protocols
 
-| Protocol | Layer | Approach |
-|----------|-------|----------|
-| MPTCP | Transport (TCP) | Subflow TCP connections |
-| QUIC Multipath | Transport (QUIC) | Multiple QUIC paths |
-| SCTP | Transport | Multi-homing |
-| LISP | Network | Tunneling |
+| Protocol       | Layer            | Approach                |
+| -------------- | ---------------- | ----------------------- |
+| MPTCP          | Transport (TCP)  | Subflow TCP connections |
+| QUIC Multipath | Transport (QUIC) | Multiple QUIC paths     |
+| SCTP           | Transport        | Multi-homing            |
+| LISP           | Network          | Tunneling               |
 
 Multipath QUIC's advantage: it preserves QUIC's user-space deployment, encryption, and stream multiplexing while adding path diversity.
 
 ## 46.10 Implementation Status
 
 As of 2024:
+
 - **Linux kernel**: Initial multipath QUIC support in early development
 - **Quinn** (Rust): Experimental multipath support
 - **MsQuic**: Multipath work in progress

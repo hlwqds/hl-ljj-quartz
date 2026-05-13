@@ -5,10 +5,8 @@ tags: [dpdk, series, dpu, smartnic, ipu, bluefield, infrastructure-offload, hard
 description: "面向新手的 DPU/SmartNIC 入门——为什么需要 DPU、硬件架构、软件栈、主流产品对比、与 DPDK/VDPA 的关系"
 ---
 
-> [!info] DPDK 深度探索系列
-> 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
-> 1-18. 前十八章已完成
-> 19. [[2026-04-09-dpdk-deep-dive-ch19-vdpa|第十九章：VDPA 数据面加速与驱动]]
+> [!info] DPDK 深度探索系列 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
+> 1-18. 前十八章已完成 19. [[2026-04-09-dpdk-deep-dive-ch19-vdpa|第十九章：VDPA 数据面加速与驱动]]
 > 19b. **第十九章补充：DPU/SmartNIC 基础**
 
 > [!tip] 阅读建议
@@ -54,6 +52,7 @@ description: "面向新手的 DPU/SmartNIC 入门——为什么需要 DPU、硬
 
 > [!note] 一个类比
 > 想象一家餐厅：
+>
 > - **Host CPU** = 厨师（应该专注于做菜）
 > - **基础设施任务** = 洗菜、切菜、洗碗、收银、打扫卫生
 > - **DPU** = 请一个专门的帮厨团队来做这些杂活
@@ -88,11 +87,11 @@ description: "面向新手的 DPU/SmartNIC 入门——为什么需要 DPU、硬
 
 这三个词经常混用，但来源不同：
 
-| 术语 | 全称 | 谁起的 | 含义 |
-|------|------|--------|------|
-| **SmartNIC** | Smart Network Interface Card | 通用 | 带可编程能力的网卡 |
-| **DPU** | Data Processing Unit | NVIDIA | 强调"数据处理"，比 SmartNIC 更通用 |
-| **IPU** | Infrastructure Processing Unit | Intel | 强调"基础设施处理"，定位类似 |
+| 术语         | 全称                           | 谁起的 | 含义                               |
+| ------------ | ------------------------------ | ------ | ---------------------------------- |
+| **SmartNIC** | Smart Network Interface Card   | 通用   | 带可编程能力的网卡                 |
+| **DPU**      | Data Processing Unit           | NVIDIA | 强调"数据处理"，比 SmartNIC 更通用 |
+| **IPU**      | Infrastructure Processing Unit | Intel  | 强调"基础设施处理"，定位类似       |
 
 > [!note] 怎么理解它们的区别？
 > 可以认为 SmartNIC 是大类，DPU 和 IPU 是两家公司给自己的 SmartNIC 起的品牌名。就像"智能手机"是通用词，"iPhone"和"Galaxy"是品牌。本文统一用 **DPU** 指代这一类产品。
@@ -170,13 +169,13 @@ description: "面向新手的 DPU/SmartNIC 入门——为什么需要 DPU、硬
 
 ### 2.2 每一代解决了什么
 
-| 世代              | 解决的问题              | 新引入的问题             |
-| --------------- | ------------------ | ------------------ |
-| **传统 NIC**      | 基础网络连通             | CPU 瓶颈，10G 以下不明显   |
-| **Offload NIC** | 减少 CPU 的重复劳动（校验和等） | 40G+ 时仍不够          |
-| **SmartNIC**    | 自定义网络处理逻辑          | 编程复杂（FPGA），无通用软件生态 |
-| **DPU**         | 运行完整软件栈，通用可编程      | 开发复杂度、管理成本、设备成本    |
-|                 |                    |                    |
+| 世代            | 解决的问题                      | 新引入的问题                     |
+| --------------- | ------------------------------- | -------------------------------- |
+| **传统 NIC**    | 基础网络连通                    | CPU 瓶颈，10G 以下不明显         |
+| **Offload NIC** | 减少 CPU 的重复劳动（校验和等） | 40G+ 时仍不够                    |
+| **SmartNIC**    | 自定义网络处理逻辑              | 编程复杂（FPGA），无通用软件生态 |
+| **DPU**         | 运行完整软件栈，通用可编程      | 开发复杂度、管理成本、设备成本   |
+|                 |                                 |                                  |
 
 ---
 
@@ -250,6 +249,7 @@ BlueField-2 DPU 芯片内部结构
 ```
 
 > [!note] 关键数字
+>
 > - **8 个 ARM A72 核心**：性能约等于一颗低端手机 SoC，足以运行 OVS-DPDK
 > - **16GB DDR4 内存**：DPU 自己的内存，独立于 Host 内存
 > - **2 x 25GbE 网口**：面向外部网络
@@ -392,16 +392,16 @@ Host-DPU 通信方式
 
 ### 5.1 产品对比
 
-| 特性       | NVIDIA BlueField-3      | Intel IPU E2100           | AMD Pensando      |
-| -------- | ----------------------- | ------------------------- | ----------------- |
-| **CPU**  | 16 核 ARM A78 + 8 核 M3   | 16 核 Intel E-core         | 8 核 MIPS P8       |
-| **内存**   | 32GB DDR5               | 16GB DDR4                 | 8GB DDR4          |
-| **网口**   | 2 x 100GbE / 2 x 400GbE | 2 x 100GbE                | 2 x 100GbE        |
-| **PCIe** | Gen5 x16                | Gen4 x16                  | Gen4 x16          |
-| **加速引擎** | crypto, compress, regex | crypto, QAT               | 流表, regex, crypto |
-| **软件框架** | DOCA                    | IPDK                      | Pensando SDK      |
-| **OS**   | Ubuntu (ARM64)          | Linux (x86 管理核 + ARM 数据核) | Linux (MIPS)      |
-| **编程方式** | C + DOCA API            | C + P4 + IPDK             | C + Pensando DSL  |
+| 特性         | NVIDIA BlueField-3      | Intel IPU E2100                 | AMD Pensando        |
+| ------------ | ----------------------- | ------------------------------- | ------------------- |
+| **CPU**      | 16 核 ARM A78 + 8 核 M3 | 16 核 Intel E-core              | 8 核 MIPS P8        |
+| **内存**     | 32GB DDR5               | 16GB DDR4                       | 8GB DDR4            |
+| **网口**     | 2 x 100GbE / 2 x 400GbE | 2 x 100GbE                      | 2 x 100GbE          |
+| **PCIe**     | Gen5 x16                | Gen4 x16                        | Gen4 x16            |
+| **加速引擎** | crypto, compress, regex | crypto, QAT                     | 流表, regex, crypto |
+| **软件框架** | DOCA                    | IPDK                            | Pensando SDK        |
+| **OS**       | Ubuntu (ARM64)          | Linux (x86 管理核 + ARM 数据核) | Linux (MIPS)        |
+| **编程方式** | C + DOCA API            | C + P4 + IPDK                   | C + Pensando DSL    |
 
 ### 5.2 DOCA 框架 (NVIDIA)
 
@@ -638,12 +638,12 @@ VDPA 场景的 DPU 内部视图
 
 ### 8.1 云厂商
 
-| 厂商 | 产品 | DPU 做什么 |
-|------|------|-----------|
-| **AWS** | Nitro Card | 网络虚拟化 (ENI)、EBS 存储加速、安全隔离 |
-| **Azure** | SmartNIC (FPGA) | SDN 转发、分布式防火墙、存储加速 |
-| **阿里云** | eRDMA / 神龙 | ERDMA 协议卸载、存储网络加速、安全 |
-| **Google** | Titanium | 网络卸载、存储加密、远程内存访问 |
+| 厂商       | 产品            | DPU 做什么                               |
+| ---------- | --------------- | ---------------------------------------- |
+| **AWS**    | Nitro Card      | 网络虚拟化 (ENI)、EBS 存储加速、安全隔离 |
+| **Azure**  | SmartNIC (FPGA) | SDN 转发、分布式防火墙、存储加速         |
+| **阿里云** | eRDMA / 神龙    | ERDMA 协议卸载、存储网络加速、安全       |
+| **Google** | Titanium        | 网络卸载、存储加密、远程内存访问         |
 
 ### 8.2 典型使用场景
 
@@ -728,24 +728,24 @@ DPDK 生态中的 DPU 定位
 
 ### 9.2 DPU 不是万能的
 
-| 适合 DPU | 不适合 DPU |
-|----------|-----------|
-| 大规模虚拟化（几十+ VM/机） | 单机或少量 VM |
-| 云/电信基础设施 | 边缘计算（功耗/成本敏感） |
-| 网络密集型应用 | 计算密集型应用（DPU ARM 性能弱） |
-| 安全/合规要求高 | 开发测试环境 |
-| 需要 100Gbps+ 线速 | 1G/10G 小带宽场景 |
+| 适合 DPU                    | 不适合 DPU                       |
+| --------------------------- | -------------------------------- |
+| 大规模虚拟化（几十+ VM/机） | 单机或少量 VM                    |
+| 云/电信基础设施             | 边缘计算（功耗/成本敏感）        |
+| 网络密集型应用              | 计算密集型应用（DPU ARM 性能弱） |
+| 安全/合规要求高             | 开发测试环境                     |
+| 需要 100Gbps+ 线速          | 1G/10G 小带宽场景                |
 
 ### 9.3 DPU vs FPGA
 
-| | DPU | FPGA |
-|---|-----|------|
-| **编程方式** | C/Python (Linux API) | Verilog/VHDL (硬件描述语言) |
-| **开发门槛** | 低（会 Linux 编程即可） | 高（需要硬件设计经验） |
-| **灵活性** | 高（随时更新软件） | 极高（可重新编程硬件逻辑） |
-| **性能** | 高（有专用加速引擎） | 极高（精确到纳秒级时序控制） |
-| **生态** | 快速成长中 | 成熟但小众 |
-| **典型用途** | 通用基础设施卸载 | 协议解析、低延迟交易、网络测试 |
+|              | DPU                     | FPGA                           |
+| ------------ | ----------------------- | ------------------------------ |
+| **编程方式** | C/Python (Linux API)    | Verilog/VHDL (硬件描述语言)    |
+| **开发门槛** | 低（会 Linux 编程即可） | 高（需要硬件设计经验）         |
+| **灵活性**   | 高（随时更新软件）      | 极高（可重新编程硬件逻辑）     |
+| **性能**     | 高（有专用加速引擎）    | 极高（精确到纳秒级时序控制）   |
+| **生态**     | 快速成长中              | 成熟但小众                     |
+| **典型用途** | 通用基础设施卸载        | 协议解析、低延迟交易、网络测试 |
 
 ### 9.4 核心要点回顾
 
@@ -757,6 +757,7 @@ DPDK 生态中的 DPU 定位
 6. **谁在用**：AWS Nitro、Azure SmartNIC、阿里云神龙等
 
 **延伸阅读**：
+
 - [[2026-04-09-dpdk-deep-dive-ch19-vdpa|第十九章：VDPA 数据面加速与驱动]] — VDPA 技术细节
 - [[2026-04-09-dpdk-deep-dive-ch37-smartnic|第三十七章：SmartNIC 进阶]] — P4、Capsule、Barefoot 等进阶主题
 
@@ -765,6 +766,7 @@ DPDK 生态中的 DPU 定位
 ---
 
 > [!tip] 参考文献
+>
 > - NVIDIA, "DOCA Documentation", https://docs.nvidia.com/doca/
 > - NVIDIA, "BlueField DPU Architecture", https://docs.nvidia.com/networking/
 > - Intel, "IPU Architecture", https://www.intel.com/content/www/us/en/products/network/io/infrastructure-processing-units.html

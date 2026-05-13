@@ -141,11 +141,11 @@ my_assert_handler(const char *func, const char *file, int line,
 {
     fprintf(stderr, "ASSERT: %s:%d:%s: %s\n",
             file, line, func, cond);
-    
+
     // 可以选择 dump 更多信息
     rte_dump_stack();
     rte_dump_registers();
-    
+
     // abort 或 longjmp
     abort();
 }
@@ -325,8 +325,8 @@ if (mz == NULL) {
 
 // 遍历所有 memzone
 struct rte_memzone *mz;
-for (mz = rte_memzone_get_start(); 
-     mz < rte_memzone_get_end(); 
+for (mz = rte_memzone_get_start();
+     mz < rte_memzone_get_end();
      mz++) {
     if (mz->addr != NULL) {
         printf("MZ: %s, size: %zu, addr: %p\n",
@@ -346,19 +346,19 @@ mbuf_sanity_check(struct rte_mbuf *mbuf)
         RTE_LOG(ERR, USER1, "NULL mbuf pointer\n");
         return -1;
     }
-    
+
     // 检查 magic number（如果有）
     if (mbuf->magic == 0xDEADBEEF) {
         RTE_LOG(ERR, USER1, "Corrupted mbuf magic\n");
         return -1;
     }
-    
+
     // 检查 headroom/tailroom
     if (mbuf->data_off > mbuf->buf_len) {
         RTE_LOG(ERR, USER1, "Invalid data_off\n");
         return -1;
     }
-    
+
     return 0;
 }
 
@@ -413,9 +413,9 @@ struct rte_eth_stats stats;
 rte_eth_stats_get(port_id, &stats);
 
 printf("Port %u stats:\n", port_id);
-printf("  RX: %lu packets (%lu bytes)\n", 
+printf("  RX: %lu packets (%lu bytes)\n",
        stats.ipackets, stats.ibytes);
-printf("  TX: %lu packets (%lu bytes)\n", 
+printf("  TX: %lu packets (%lu bytes)\n",
        stats.opackets, stats.obytes);
 printf("  RX errors: %lu\n", stats.ierrors);
 printf("  TX errors: %lu\n", stats.oerrors);
@@ -546,11 +546,11 @@ perf report
 void
 process_packet(struct rte_mbuf *pkt)
 {
-    DEBUG_TRACE("Processing packet %p, len=%u", 
+    DEBUG_TRACE("Processing packet %p, len=%u",
                 pkt, rte_pktmbuf_pktlen(pkt));
-    
+
     DEBUG_ASSERT(rte_pktmbuf_pktlen(pkt) > 0);
-    
+
     // ...
 }
 ```

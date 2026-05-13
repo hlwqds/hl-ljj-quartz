@@ -1,7 +1,25 @@
 ---
 title: QUIC & HTTP/3 深度探索 Ch6：性能优化与部署
 date: 2026-05-12 09:00:00
-tags: [QUIC, HTTP/3, Performance, Optimization, Tuning, Deployment, Monitoring, ngtcp2, quiche, msquic, Production, CDN, Load Balancer, Troubleshooting, Best Practices, Tuning]
+tags:
+  [
+    QUIC,
+    HTTP/3,
+    Performance,
+    Optimization,
+    Tuning,
+    Deployment,
+    Monitoring,
+    ngtcp2,
+    quiche,
+    msquic,
+    Production,
+    CDN,
+    Load Balancer,
+    Troubleshooting,
+    Best Practices,
+    Tuning,
+  ]
 description: QUIC & HTTP/3 深度探索 Ch6：性能优化与部署实战——服务器调优、客户端优化、监控排障、主流实现对比、生产部署架构与最佳实践。
 ---
 
@@ -613,14 +631,14 @@ QUIC 监控指标：
 # prometheus_quic.yaml — QUIC 监控
 
 scrape_configs:
-  - job_name: 'quic_server'
+  - job_name: "quic_server"
     static_configs:
-      - targets: ['localhost:9090']
+      - targets: ["localhost:9090"]
     metrics_path: /metrics
 
-  - job_name: 'nginx_quic'
+  - job_name: "nginx_quic"
     static_configs:
-      - targets: ['localhost:8080']
+      - targets: ["localhost:8080"]
     metrics_path: /metrics
 ```
 

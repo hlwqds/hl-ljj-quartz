@@ -1,12 +1,24 @@
 ---
 title: "Kernel Protocol Stack 深度探索 (三十二)：Unix Domain Socket"
 date: 2026-04-13
-tags: [linux, kernel, networking, series, unix-socket, af-unix, uds, ancillary-data, file-descriptor-passing, abstract-socket]
+tags:
+  [
+    linux,
+    kernel,
+    networking,
+    series,
+    unix-socket,
+    af-unix,
+    uds,
+    ancillary-data,
+    file-descriptor-passing,
+    abstract-socket,
+  ]
 description: "深入解析 Unix Domain Socket——本地通信、AF_UNIX 协议、UDS 地址格式、文件描述符传递、ancillary data、抽象 socket 命名空间"
 ---
 
-> [!info] Kernel Protocol Stack 深度探索系列
-> 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Kernel Protocol Stack 深度探索系列 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-kernel-protocol-stack-deep-dive-ch1-skbuff|第一章：sk_buff 与数据包生命周期]]
 > 2. [[2026-04-13-kernel-protocol-stack-deep-dive-ch2-netdevice|第二章：Netdevice 与网卡抽象]]
 > 3. [[2026-04-13-kernel-protocol-stack-deep-dive-ch3-ring-buffer|第三章：Ring Buffer 与 DMA]]
@@ -47,6 +59,7 @@ description: "深入解析 Unix Domain Socket——本地通信、AF_UNIX 协议
 Unix Domain Socket（UDS，AF_UNIX）是运行在同一台主机上的进程间通信（IPC）机制。与网络 socket 不同，UDS 不经过网络协议栈，数据直接在内核中传递，效率更高。
 
 主要特点：
+
 - 同一主机进程间通信，无需网络
 - 支持流式（SOCK_STREAM）和数据报（SOCK_DGRAM）两种模式
 - 支持文件描述符传递（ancillary data）
@@ -400,7 +413,7 @@ recvmsg(sock, &msg, 0);
 for (cmsg = CMSG_FIRSTHDR(&msg); cmsg; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
     if (cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SCM_CREDENTIALS) {
         struct ucred *ucred = (struct ucred *)CMSG_DATA(cmsg);
-        printf("PID=%d UID=%d GID=%d\\n", 
+        printf("PID=%d UID=%d GID=%d\\n",
                ucred->pid, ucred->uid, ucred->gid);
     }
 }
@@ -412,13 +425,13 @@ for (cmsg = CMSG_FIRSTHDR(&msg); cmsg; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
 
 ### 7.1 与文件系统路径对比
 
-| 特性 | 文件系统路径 | 抽象命名空间 |
-|------|-------------|-------------|
-| 生命周期 | 与文件相同 | 与进程生命周期相同 |
-| 清理 | 需要 unlink | 自动清理 |
-| 权限 | 文件系统权限 | 无权限限制 |
-| 可见性 | 所有进程 | 仅同命名空间进程 |
-| 位置 | /tmp, /var/run | 内存中 |
+| 特性     | 文件系统路径   | 抽象命名空间       |
+| -------- | -------------- | ------------------ |
+| 生命周期 | 与文件相同     | 与进程生命周期相同 |
+| 清理     | 需要 unlink    | 自动清理           |
+| 权限     | 文件系统权限   | 无权限限制         |
+| 可见性   | 所有进程       | 仅同命名空间进程   |
+| 位置     | /tmp, /var/run | 内存中             |
 
 ### 7.2 使用场景
 
@@ -442,6 +455,7 @@ bind(sock, (struct sockaddr *)&addr, sizeof(addr));
 ### 8.1 概述
 
 SOCK_SEQPACKET 提供面向连接的序列化数据包，兼具 SOCK_STREAM 和 SOCK_DGRAM 的特点：
+
 - 面向连接（需先 connect/listen/accept）
 - 保留消息边界（不合并/分片）
 - 有序、可靠传输
@@ -470,13 +484,13 @@ int len = recv(client, buf, sizeof(buf), 0);
 
 ### 9.1 性能对比
 
-| 特性 | Unix Domain Socket | 网络 Socket (127.0.0.1) |
-|------|-------------------|----------------------|
-| 数据路径 | 内核直接传递 | 仍经过网络协议栈 |
-| 拷贝次数 | 2 次（用户→内核→用户） | 2 次（相同） |
-| 延迟 | ~1-2 μs | ~3-5 μs |
-| 吞吐量 | 更高 | 略低 |
-| 资源消耗 | 更少 | 略多 |
+| 特性     | Unix Domain Socket     | 网络 Socket (127.0.0.1) |
+| -------- | ---------------------- | ----------------------- |
+| 数据路径 | 内核直接传递           | 仍经过网络协议栈        |
+| 拷贝次数 | 2 次（用户→内核→用户） | 2 次（相同）            |
+| 延迟     | ~1-2 μs                | ~3-5 μs                 |
+| 吞吐量   | 更高                   | 略低                    |
+| 资源消耗 | 更少                   | 略多                    |
 
 ### 9.2 使用场景
 
@@ -519,14 +533,14 @@ ESTAB      0       0       /tmp/server.sock    /tmp/client.sock
 
 ## 11. 总结
 
-| 特性 | 说明 |
-|------|------|
-| AF_UNIX | 本地进程通信协议族 |
-| SOCK_STREAM | 面向连接流式（类似 TCP） |
-| SOCK_DGRAM | 无连接数据报（类似 UDP） |
-| SOCK_SEQPACKET | 面向连接数据包（保留边界） |
-| SCM_RIGHTS | 文件描述符传递 |
-| SCM_CREDENTIALS | 进程凭证传递 |
-| 抽象命名空间 | 以 `\0` 开头的地址 |
+| 特性            | 说明                       |
+| --------------- | -------------------------- |
+| AF_UNIX         | 本地进程通信协议族         |
+| SOCK_STREAM     | 面向连接流式（类似 TCP）   |
+| SOCK_DGRAM      | 无连接数据报（类似 UDP）   |
+| SOCK_SEQPACKET  | 面向连接数据包（保留边界） |
+| SCM_RIGHTS      | 文件描述符传递             |
+| SCM_CREDENTIALS | 进程凭证传递               |
+| 抽象命名空间    | 以 `\0` 开头的地址         |
 
 Unix Domain Socket 是 Linux 本地 IPC 的核心机制，文件描述符传递和抽象命名空间使其在系统服务（如 DBus、systemd）间通信中扮演关键角色。

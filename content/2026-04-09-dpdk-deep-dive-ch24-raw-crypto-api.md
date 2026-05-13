@@ -1,14 +1,23 @@
 ---
 title: "DPDK 深度探索 (二十四)：Raw Crypto API 与自定义协议加密"
 date: 2026-04-09
-tags: [dpdk, series, raw-crypto, symmetric-crypto, asymmetric-crypto, sessionless, crypto-op, xform, user-defined-protocol]
+tags:
+  [
+    dpdk,
+    series,
+    raw-crypto,
+    symmetric-crypto,
+    asymmetric-crypto,
+    sessionless,
+    crypto-op,
+    xform,
+    user-defined-protocol,
+  ]
 description: "深入理解 DPDK Sessionless Crypto API——xform 内联模式、对称/非对称加密操作、批量处理、自定义协议加密"
 ---
 
-> [!info] DPDK 深度探索系列
-> 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
-> 1-23. 前二十三章已完成
-> 24. **第二十四章：Raw Crypto API 与自定义协议加密**
+> [!info] DPDK 深度探索系列 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
+> 1-23. 前二十三章已完成 24. **第二十四章：Raw Crypto API 与自定义协议加密**
 
 ---
 
@@ -178,6 +187,7 @@ struct rte_crypto_sym_op {
 ```
 
 > [!warning] 常见误区
+>
 > - `rte_crypto_sym_op` 的 mbuf 字段是 `m_src` / `m_dst`，不是 `src.m` / `dst.m`
 > - IV 不是 sym_op 的直接字段——它通过 crypto op 的 private data 传递
 > - digest 和 aad 使用 `{ .data, .phys_addr }` 结构，不是简单指针
@@ -1275,14 +1285,14 @@ asym_op->sm2.id.length = 16;
 
 ### 8.2 优化建议
 
-| 优化项 | 说明 | 适用场景 |
-|--------|------|----------|
-| **批量入队** | 一次 enqueue 32-64 条 op | 所有场景 |
-| **xform 预分配** | 使用 pool 而非栈分配 xform | 异步/高并发 |
-| **in-place 加密** | `m_src == m_dst`，减少拷贝 | 大包场景 |
-| **IV 偏移对齐** | `iv_offset` 对齐到 8 字节 | 所有场景 |
-| **密钥缓存行对齐** | 避免伪共享 | 多核并行 |
-| **混合模式** | 静态密钥用 session，动态用 sessionless | 密钥混合场景 |
+| 优化项             | 说明                                   | 适用场景     |
+| ------------------ | -------------------------------------- | ------------ |
+| **批量入队**       | 一次 enqueue 32-64 条 op               | 所有场景     |
+| **xform 预分配**   | 使用 pool 而非栈分配 xform             | 异步/高并发  |
+| **in-place 加密**  | `m_src == m_dst`，减少拷贝             | 大包场景     |
+| **IV 偏移对齐**    | `iv_offset` 对齐到 8 字节              | 所有场景     |
+| **密钥缓存行对齐** | 避免伪共享                             | 多核并行     |
+| **混合模式**       | 静态密钥用 session，动态用 sessionless | 密钥混合场景 |
 
 ---
 
@@ -1315,6 +1325,7 @@ asym_op->sm2.id.length = 16;
 ---
 
 > [!tip] 参考文献
+>
 > - DPDK, "Cryptodev Library", https://doc.dpdk.org/guides/prog_guide/cryptodev.html
 > - DPDK, "Asymmetric Cryptography", https://doc.dpdk.org/guides/prog_guide/cryptodev_asym.html
 > - DPDK source: `lib/cryptodev/rte_crypto_sym.h`, `lib/cryptodev/rte_crypto_asym.h`, `lib/cryptodev/rte_crypto.h`

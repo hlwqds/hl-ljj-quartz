@@ -144,19 +144,19 @@ ethtool -k eth0
 
 ### 3.2 字段解释
 
-| 特性 | 作用 | 依赖 |
-|------|------|------|
-| `tcp-segment-offload` (TSO) | 网卡做 TCP 分片+checksum | scatter-gather |
-| `generic-segment-offload` (GSO) | 分片在协议栈做，checksum 在驱动做 | 无 |
-| `generic-receive-offload` (GRO) | 接收合并多个小包成大包 | 无 |
-| `rx-checksumming` | 网卡验证 RX checksum | 无 |
-| `tx-checksumming` | 网卡算 TX checksum（TCP/UDP/IP） | 无 |
-| `udp-fragmentation-offload` (UFO) | UDP 分片 offload | 无 |
-| `scatter-gather` | 支持 SG list（分散的内存块一次 DMA） | 无 |
-| `esp-hw-offload` | IPSec 加密 offload | 硬件支持 |
-| `vxlan-offload` | VxLAN 封装/解封装 offload | 硬件支持 |
-| `tls-hardware-offload` | TLS 加密 offload | 硬件支持（最新网卡） |
-| `highdma` | 允许 DMA 访问高地址内存 | 硬件+驱动支持 |
+| 特性                              | 作用                                 | 依赖                 |
+| --------------------------------- | ------------------------------------ | -------------------- |
+| `tcp-segment-offload` (TSO)       | 网卡做 TCP 分片+checksum             | scatter-gather       |
+| `generic-segment-offload` (GSO)   | 分片在协议栈做，checksum 在驱动做    | 无                   |
+| `generic-receive-offload` (GRO)   | 接收合并多个小包成大包               | 无                   |
+| `rx-checksumming`                 | 网卡验证 RX checksum                 | 无                   |
+| `tx-checksumming`                 | 网卡算 TX checksum（TCP/UDP/IP）     | 无                   |
+| `udp-fragmentation-offload` (UFO) | UDP 分片 offload                     | 无                   |
+| `scatter-gather`                  | 支持 SG list（分散的内存块一次 DMA） | 无                   |
+| `esp-hw-offload`                  | IPSec 加密 offload                   | 硬件支持             |
+| `vxlan-offload`                   | VxLAN 封装/解封装 offload            | 硬件支持             |
+| `tls-hardware-offload`            | TLS 加密 offload                     | 硬件支持（最新网卡） |
+| `highdma`                         | 允许 DMA 访问高地址内存              | 硬件+驱动支持        |
 
 ---
 

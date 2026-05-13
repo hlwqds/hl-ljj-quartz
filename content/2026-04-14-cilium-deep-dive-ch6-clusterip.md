@@ -11,8 +11,8 @@ tags:
   - load-balancer
 ---
 
-> [!info] Cilium 2026 深度探索系列
-> 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+> [!info] Cilium 2026 深度探索系列 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+>
 > 1. [[2026-04-14-cilium-deep-dive-ch1-cilium-overview|第一章：Cilium 概述]]
 > 2. [[2026-04-14-cilium-deep-dive-ch2-architecture|第二章：Cilium 架构]]
 > 3. [[2026-04-14-cilium-deep-dive-ch3-ebpf-datapath|第三章：eBPF 数据面]]
@@ -64,11 +64,11 @@ kind: Service
 metadata:
   name: my-app
 spec:
-  type: ClusterIP    # 默认类型，可省略
-  clusterIP: 10.96.0.100  # 指定 ClusterIP
+  type: ClusterIP # 默认类型，可省略
+  clusterIP: 10.96.0.100 # 指定 ClusterIP
   ports:
-  - port: 80
-    targetPort: 8080
+    - port: 80
+      targetPort: 8080
 ```
 
 **自动分配的 ClusterIP 范围**由 Kubernetes API Server 的 `--service-cluster-ip-range` 参数控制，Cilium 通过 watch Kubernetes Service 资源获取分配的 IP。
@@ -156,12 +156,12 @@ bpf_map_lookup_elem(&cilium_services, &key)  ← O(1) 查找
 
 Cilium 支持四种负载均衡算法：
 
-| 算法 | 实现 | 说明 |
-|:---|:---|:---|
-| **RR (Round Robin)** | 简单轮询 | 默认，每个请求轮换后端 |
-| **LC (Least Connection)** | 连接计数 | 选择当前连接数最少的后端 |
-| **DSR (Direct Server Return)** | 跳过 SNAT | 响应直接返回客户端，不经过中转 |
-| **Maglev** | 一致性哈希 | 同源 IP 总是映射到同一后端（会话保持） |
+| 算法                           | 实现       | 说明                                   |
+| :----------------------------- | :--------- | :------------------------------------- |
+| **RR (Round Robin)**           | 简单轮询   | 默认，每个请求轮换后端                 |
+| **LC (Least Connection)**      | 连接计数   | 选择当前连接数最少的后端               |
+| **DSR (Direct Server Return)** | 跳过 SNAT  | 响应直接返回客户端，不经过中转         |
+| **Maglev**                     | 一致性哈希 | 同源 IP 总是映射到同一后端（会话保持） |
 
 ```bash
 # 配置负载均衡算法
@@ -251,12 +251,12 @@ spec:
   sessionAffinity: ClientIP
   sessionAffinityConfig:
     clientIP:
-      timeoutSeconds: 10800   # 3 小时超时
+      timeoutSeconds: 10800 # 3 小时超时
   selector:
     app: my-app
   ports:
-  - port: 80
-    targetPort: 8080
+    - port: 80
+      targetPort: 8080
 ```
 
 ### 4.2 Maglev 一致性哈希
@@ -480,24 +480,24 @@ kubectl -n kube-system exec ds/cilium -- \
 
 ### 6.5 常见问题与解决
 
-| 问题 | 原因 | 解决方法 |
-|:---|:---|:---|
-| ClusterIP 无法访问 | kube-proxy 未禁用/冲突 | 确保 `kubeProxyReplacement=strict` |
-| 后端 Pod 无法接收流量 | Endpoint 不存在 | 检查 Pod label 与 Service selector 匹配 |
-| 流量到错误后端 | Session Affinity 过期 | 检查 affinity timeout 配置 |
-| 部分节点不通 | eBPF Map 未同步 | 重启该节点的 cilium-agent |
+| 问题                  | 原因                   | 解决方法                                |
+| :-------------------- | :--------------------- | :-------------------------------------- |
+| ClusterIP 无法访问    | kube-proxy 未禁用/冲突 | 确保 `kubeProxyReplacement=strict`      |
+| 后端 Pod 无法接收流量 | Endpoint 不存在        | 检查 Pod label 与 Service selector 匹配 |
+| 流量到错误后端        | Session Affinity 过期  | 检查 affinity timeout 配置              |
+| 部分节点不通          | eBPF Map 未同步        | 重启该节点的 cilium-agent               |
 
 ---
 
 ## 7. 章节总结
 
-|| 主题 | 关键点 |
-|:---|:---|:---|
-| **ClusterIP 原理** | eBPF Map 替代 iptables | O(1) 查找，绕过内核协议栈 |
-| **Service 映射** | cilium_services + cilium_backend | LPM Map 支持范围存储 |
-| **负载均衡** | RR/LC/DSR/Maglev | 可配置算法，适应不同场景 |
-| **Session 亲和** | Maglev 一致性哈希 | O(1) 查找，支持超时配置 |
-| **跨节点通信** | VXLAN/直接路由 | 自动选择最优路径 |
+|                    | 主题                             | 关键点                    |
+| :----------------- | :------------------------------- | :------------------------ |
+| **ClusterIP 原理** | eBPF Map 替代 iptables           | O(1) 查找，绕过内核协议栈 |
+| **Service 映射**   | cilium_services + cilium_backend | LPM Map 支持范围存储      |
+| **负载均衡**       | RR/LC/DSR/Maglev                 | 可配置算法，适应不同场景  |
+| **Session 亲和**   | Maglev 一致性哈希                | O(1) 查找，支持超时配置   |
+| **跨节点通信**     | VXLAN/直接路由                   | 自动选择最优路径          |
 
 **核心优势**：
 

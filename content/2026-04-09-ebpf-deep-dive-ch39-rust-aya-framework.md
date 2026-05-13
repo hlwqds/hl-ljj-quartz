@@ -9,8 +9,8 @@ tags:
   - toolchain
 ---
 
-> [!info] eBPF 2026 深度探索系列
-> 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+> [!info] eBPF 2026 深度探索系列 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+>
 > 1. [[2026-04-08-ebpf-deep-dive-ch1-registers-and-instructions|第一章：寄存器与指令集]]
 > 2. [[2026-04-08-ebpf-deep-dive-ch1-5-function-calls|第一.五章：四种函数调用与动态内存]]
 > 3. [[2026-04-08-ebpf-deep-dive-ch1-6-the-verifier|第一.六章：验证器 (Verifier) 的底层逻辑]]
@@ -62,6 +62,7 @@ tags:
 > 49. [[2026-04-09-ebpf-deep-dive-ch40-network-protocols-deep-dive|第四十章：网络协议深度解析——TCP/UDP/QUIC 的 eBPF 视角]]
 > 50. [[2026-04-09-ebpf-deep-dive-ch41-memory-safety-and-vulnerabilities|第四十一章：eBPF 内存安全与漏洞分析]]
 > 51. [[2026-04-09-ebpf-deep-dive-ch42-service-mesh-integration|第四十二章：eBPF 与 Service Mesh 深度集成]]
+
 ---
 
 ## 1. 概述：Rust 与 eBPF 的天然契合
@@ -70,16 +71,16 @@ tags:
 
 ### 1.1 为什么选择 Rust 而非 C？
 
-| 维度 | C + libbpf | Rust + Aya | 说明 |
-|:---|:---|:---|:---|
-| **内存安全** | 手动管理，容易出现 Use-After-Free | 编译器保证，不可能出现 UAF | Rust 的核心优势 |
-| **空指针** | 常见错误源 | `Option<T>` 编译期消除 | 减少 NULL dereference |
-| **并发安全** | 手动锁管理 | `Send`/`Sync` trait 编译期检查 | 减少 race condition |
-| **Map 类型安全** | `void *` + 强制转换 | 泛型 `Map<K, V>` | 类型系统保证 |
-| **构建系统** | Makefile + clang | Cargo 生态 | 依赖管理更友好 |
-| **CO-RE 支持** | 手动 BTF 处理 | Aya BTF derive 宏自动生成 | 开发体验大幅提升 |
-| **学习曲线** | 中等 | 较高（需学 Rust） | Rust 入门门槛是主要障碍 |
-| **内核社区接受度** | 最高 | 快速增长 | 2026 年大量新项目选择 Rust |
+| 维度               | C + libbpf                        | Rust + Aya                     | 说明                       |
+| :----------------- | :-------------------------------- | :----------------------------- | :------------------------- |
+| **内存安全**       | 手动管理，容易出现 Use-After-Free | 编译器保证，不可能出现 UAF     | Rust 的核心优势            |
+| **空指针**         | 常见错误源                        | `Option<T>` 编译期消除         | 减少 NULL dereference      |
+| **并发安全**       | 手动锁管理                        | `Send`/`Sync` trait 编译期检查 | 减少 race condition        |
+| **Map 类型安全**   | `void *` + 强制转换               | 泛型 `Map<K, V>`               | 类型系统保证               |
+| **构建系统**       | Makefile + clang                  | Cargo 生态                     | 依赖管理更友好             |
+| **CO-RE 支持**     | 手动 BTF 处理                     | Aya BTF derive 宏自动生成      | 开发体验大幅提升           |
+| **学习曲线**       | 中等                              | 较高（需学 Rust）              | Rust 入门门槛是主要障碍    |
+| **内核社区接受度** | 最高                              | 快速增长                       | 2026 年大量新项目选择 Rust |
 
 ### 1.2 Rust eBPF 生态系统
 
@@ -466,32 +467,32 @@ async fn main() -> Result<(), anyhow::Error> {
 
 ### 4.1 完整功能矩阵
 
-| 功能 | libbpf (C) | Aya (Rust) | 说明 |
-|:---|:---|:---|:---|
-| XDP 程序 | `bpf_program__attach_xdp` | `Xdp::attach()` | 功能等价 |
-| TC 程序 | `bpf_program__attach_tc` | `SchedClassifier::attach()` | 功能等价 |
-| Tracepoint | `bpf_program__attach_tracepoint` | `TracePoint::attach()` | 功能等价 |
-| Kprobe | `bpf_program__attach_kprobe` | `KProbe::attach()` | 功能等价 |
-| Uprobe | `bpf_program__attach_uprobe` | `UProbe::attach()` | 功能等价 |
-| LSM Hook | `bpf_program__attach_lsm` | `Lsm::attach()` | 功能等价 |
-| Perf Event | `bpf_program__attach_perf_event` | `PerfEventArray` | 功能等价 |
-| RingBuf | `bpf_ringbuf` API | `RingBuf<T>` | Rust 类型更安全 |
-| Per-CPU Map | 手动 `bpf_map_lookup_percpu_elem` | `PerCpuArray<T>` | 自动处理 CPU 数组 |
-| CO-RE | `btf__type_by_id` + 手动偏移 | `#[derive(Deserialize)]` + BTF | Aya 自动化程度高 |
-| BTF 生成 | `pahole` | `aya-obj` 内置 | Cargo 集成 |
-| Fentry/Fexit | `bpf_program__attach_trace` | `FEntry::attach()` | 功能等价 |
-| cgroup | `bpf_program__attach_cgroup` | `CgroupSock::attach()` | 功能等价 |
+| 功能         | libbpf (C)                        | Aya (Rust)                     | 说明              |
+| :----------- | :-------------------------------- | :----------------------------- | :---------------- |
+| XDP 程序     | `bpf_program__attach_xdp`         | `Xdp::attach()`                | 功能等价          |
+| TC 程序      | `bpf_program__attach_tc`          | `SchedClassifier::attach()`    | 功能等价          |
+| Tracepoint   | `bpf_program__attach_tracepoint`  | `TracePoint::attach()`         | 功能等价          |
+| Kprobe       | `bpf_program__attach_kprobe`      | `KProbe::attach()`             | 功能等价          |
+| Uprobe       | `bpf_program__attach_uprobe`      | `UProbe::attach()`             | 功能等价          |
+| LSM Hook     | `bpf_program__attach_lsm`         | `Lsm::attach()`                | 功能等价          |
+| Perf Event   | `bpf_program__attach_perf_event`  | `PerfEventArray`               | 功能等价          |
+| RingBuf      | `bpf_ringbuf` API                 | `RingBuf<T>`                   | Rust 类型更安全   |
+| Per-CPU Map  | 手动 `bpf_map_lookup_percpu_elem` | `PerCpuArray<T>`               | 自动处理 CPU 数组 |
+| CO-RE        | `btf__type_by_id` + 手动偏移      | `#[derive(Deserialize)]` + BTF | Aya 自动化程度高  |
+| BTF 生成     | `pahole`                          | `aya-obj` 内置                 | Cargo 集成        |
+| Fentry/Fexit | `bpf_program__attach_trace`       | `FEntry::attach()`             | 功能等价          |
+| cgroup       | `bpf_program__attach_cgroup`      | `CgroupSock::attach()`         | 功能等价          |
 
 ### 4.2 性能对比
 
-| 指标 | C + libbpf | Rust + Aya | 差异 |
-|:---|:---|:---|:---|
-| 编译时间 | ~2s | ~5s | Rust 编译较慢 |
-| 二进制大小 (用户态) | ~50KB | ~2MB | Rust 静态链接 |
-| eBPF 字节码大小 | ~1.5KB | ~2KB | Rust 生成略大 |
-| 运行时性能 | 基准 | 基准 ±2% | JIT 后无差异 |
-| Map 操作延迟 | 基准 | 基准 ±1% | 差异可忽略 |
-| 加载时间 | ~5ms | ~8ms | Rust 初始化略慢 |
+| 指标                | C + libbpf | Rust + Aya | 差异            |
+| :------------------ | :--------- | :--------- | :-------------- |
+| 编译时间            | ~2s        | ~5s        | Rust 编译较慢   |
+| 二进制大小 (用户态) | ~50KB      | ~2MB       | Rust 静态链接   |
+| eBPF 字节码大小     | ~1.5KB     | ~2KB       | Rust 生成略大   |
+| 运行时性能          | 基准       | 基准 ±2%   | JIT 后无差异    |
+| Map 操作延迟        | 基准       | 基准 ±1%   | 差异可忽略      |
+| 加载时间            | ~5ms       | ~8ms       | Rust 初始化略慢 |
 
 ---
 
@@ -689,26 +690,26 @@ graph LR
 
 ### 7.2 常见迁移陷阱
 
-| 陷阱 | 描述 | 解决方案 |
-|:---|:---|:---|
-| **`unsafe` 滥用** | 将 C 代码直接用 unsafe 包裹 | 逐步重构，最小化 unsafe 范围 |
-| **eBPF 不支持全局析构** | Rust 的 `Drop` trait 不可用 | 使用 `ManualDrop` 或避免需要析构的类型 |
-| **Map 类型不匹配** | Rust 的 `HashMap` ≠ eBPF 的 `HashMap` | 使用 `aya_bpf::maps::HashMap` |
-| **字节序转换** | 网络包使用大端序 | 使用 `u16::from_be()` 而非 `ntohs()` |
-| **eBPF 堆分配** | 不支持 `Vec`, `String`, `Box` | 使用栈分配或 Map 存储 |
-| **循环限制** | 验证器限制循环次数 | 使用 `#pragma unroll` 等效或 Aya 的 `loop_count` hint |
+| 陷阱                    | 描述                                  | 解决方案                                              |
+| :---------------------- | :------------------------------------ | :---------------------------------------------------- |
+| **`unsafe` 滥用**       | 将 C 代码直接用 unsafe 包裹           | 逐步重构，最小化 unsafe 范围                          |
+| **eBPF 不支持全局析构** | Rust 的 `Drop` trait 不可用           | 使用 `ManualDrop` 或避免需要析构的类型                |
+| **Map 类型不匹配**      | Rust 的 `HashMap` ≠ eBPF 的 `HashMap` | 使用 `aya_bpf::maps::HashMap`                         |
+| **字节序转换**          | 网络包使用大端序                      | 使用 `u16::from_be()` 而非 `ntohs()`                  |
+| **eBPF 堆分配**         | 不支持 `Vec`, `String`, `Box`         | 使用栈分配或 Map 存储                                 |
+| **循环限制**            | 验证器限制循环次数                    | 使用 `#pragma unroll` 等效或 Aya 的 `loop_count` hint |
 
 ---
 
 ## 8. 2026 年 Rust eBPF 项目案例
 
-| 项目 | 作者/公司 | 功能 | Stars |
-|:---|:---|:---|:---|
-| **Aya** | Aya Contributors | Rust eBPF 框架 | 3.5k+ |
-| **RustyBPF** | Cloudflare | 网络安全工具 | 800+ |
-| **BoringTun (Rust)** | Cloudflare | WireGuard 实现 | 2k+ |
-| **Fubuki** | 独立开发者 | 网络多队列工具 | 500+ |
-| **Tetragon (Rust Agent)** | Isovalent | 安全事件收集 | 部分使用 |
+| 项目                      | 作者/公司        | 功能           | Stars    |
+| :------------------------ | :--------------- | :------------- | :------- |
+| **Aya**                   | Aya Contributors | Rust eBPF 框架 | 3.5k+    |
+| **RustyBPF**              | Cloudflare       | 网络安全工具   | 800+     |
+| **BoringTun (Rust)**      | Cloudflare       | WireGuard 实现 | 2k+      |
+| **Fubuki**                | 独立开发者       | 网络多队列工具 | 500+     |
+| **Tetragon (Rust Agent)** | Isovalent        | 安全事件收集   | 部分使用 |
 
 ---
 

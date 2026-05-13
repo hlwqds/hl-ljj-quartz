@@ -35,12 +35,12 @@ description: "深入解析 DPDK Virtio PMD：virtio 原理、virtqueue、接收 
 
 ### 1.2 Virtio vs 其他 VM 网络方案
 
-| 方案 | 架构 | 性能 | 复杂度 |
-|------|------|------|--------|
-| **e1000** | 软件模拟 | 低 | 低 |
-| **virtio-net** | 半虚拟化 | 中 | 中 |
-| **vhost-net** | kernel 加速 | 高 | 中 |
-| **vhost-user** | 用户态加速 | 最高 | 高 |
+| 方案           | 架构        | 性能 | 复杂度 |
+| -------------- | ----------- | ---- | ------ |
+| **e1000**      | 软件模拟    | 低   | 低     |
+| **virtio-net** | 半虚拟化    | 中   | 中     |
+| **vhost-net**  | kernel 加速 | 高   | 中     |
+| **vhost-user** | 用户态加速  | 最高 | 高     |
 
 ## 2. Virtqueue 架构
 
@@ -74,6 +74,7 @@ Virtqueue 是 Virtio 的核心数据结构，是 Guest 和 Host 之间共享的�
 ```
 
 > [!note] Available vs Used 的方向
+>
 > - **Available Ring**：Guest 告诉 Host "这些 descriptor 可用"，Guest 写、Host 读
 > - **Used Ring**：Host 告诉 Guest "这些 descriptor 我用完了"，Host 写、Guest 读
 
@@ -898,15 +899,15 @@ Virtio 架构：
 
 关键特性：
 
-| 特性 | 说明 |
-|------|------|
-| **Virtqueue** | Descriptor Table + Available Ring + Used Ring 三部分 |
-| **Refill** | Guest 提前提供空闲缓冲区到 Available Ring，Host 填充后放入 Used Ring |
-| **多队列** | VIRTIO_NET_F_MQ，RSS 分散负载到多个 queue pair |
-| **Mergeable RX** | VIRTIO_NET_F_MRG_RXBUF，大包拆成多个 descriptor，用 mbuf chain 组装 |
-| **Scatter-Gather** | TX 多 segment mbuf 映射到 descriptor chain |
-| **Kick 优化** | Event suppression 减少 VM exit 次数 |
-| **vhost-user** | 用户态 Host 后端，性能最高 (详见 VDPA 章节) |
+| 特性               | 说明                                                                 |
+| ------------------ | -------------------------------------------------------------------- |
+| **Virtqueue**      | Descriptor Table + Available Ring + Used Ring 三部分                 |
+| **Refill**         | Guest 提前提供空闲缓冲区到 Available Ring，Host 填充后放入 Used Ring |
+| **多队列**         | VIRTIO_NET_F_MQ，RSS 分散负载到多个 queue pair                       |
+| **Mergeable RX**   | VIRTIO_NET_F_MRG_RXBUF，大包拆成多个 descriptor，用 mbuf chain 组装  |
+| **Scatter-Gather** | TX 多 segment mbuf 映射到 descriptor chain                           |
+| **Kick 优化**      | Event suppression 减少 VM exit 次数                                  |
+| **vhost-user**     | 用户态 Host 后端，性能最高 (详见 VDPA 章节)                          |
 
 ---
 

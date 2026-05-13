@@ -5,8 +5,8 @@ tags: [vpn, series, networking, security, tunnel, vxlan, vni, vtep, overlay, nve
 description: "VXLAN 深度解析——VXLAN 封装格式、VNI (VXLAN Network Identifier)、VTEP 组件、组播/unicast 转发、Linux VXLAN 配置、OVS/DPDK 实现"
 ---
 
-> [!info] VPN 技术深度探索系列
-> 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+> [!info] VPN 技术深度探索系列 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-vpn-deep-dive-ch1-vpn-fundamentals|VPN 基础概念]]
 > 2. [[2026-04-13-vpn-deep-dive-ch2-tunnel-basics|第二章：隧道技术基础]]
 > 3. [[2026-04-13-vpn-deep-dive-ch3-crypto-fundamentals|第三章：密码学基础]]
@@ -20,14 +20,14 @@ description: "VXLAN 深度解析——VXLAN 封装格式、VNI (VXLAN Network Id
 
 **VXLAN (Virtual Extensible LAN)** 是一种overlay 网络协议，设计用于**解决传统 VLAN 在云环境中的局限性**：
 
-| 维度 | VLAN | VXLAN |
-|------|------|-------|
-| **ID 空间** | 12 bits (4,096) | 24 bits (16,777,216) |
-| **隔离方式** | L2 广播域 | L3 IP/UDP 封装 |
-| **网络范围** | 单 L2 域 | 跨 L3 边界 |
-| **组播支持** | 原生 | 需要组播或 Unicast |
-| **MAC 表规模** | 交换机 CAM 表 | VTEP MAC 表 |
-| **典型场景** | 传统园区网 | 云/DCF/容器网络 |
+| 维度           | VLAN            | VXLAN                |
+| -------------- | --------------- | -------------------- |
+| **ID 空间**    | 12 bits (4,096) | 24 bits (16,777,216) |
+| **隔离方式**   | L2 广播域       | L3 IP/UDP 封装       |
+| **网络范围**   | 单 L2 域        | 跨 L3 边界           |
+| **组播支持**   | 原生            | 需要组播或 Unicast   |
+| **MAC 表规模** | 交换机 CAM 表   | VTEP MAC 表          |
+| **典型场景**   | 传统园区网      | 云/DCF/容器网络      |
 
 VXLAN 的核心价值：**在 L3 网络上构建大规模 L2 覆盖网络**，实现 VM/容器的大规模迁移和跨地域部署。
 
@@ -38,7 +38,7 @@ graph TB
         U2["Router/Switch 2"]
         U1 <-->|"IP 路由"| U2
     end
-    
+
     subgraph Overlay1["VXLAN Overlay - VNI 100"]
         VTEP1["VTEP 1"]
         VM1["VM 1"]
@@ -46,7 +46,7 @@ graph TB
         VTEP1 <--> VM1
         VTEP1 <--> VM2
     end
-    
+
     subgraph Overlay2["VXLAN Overlay - VNI 200"]
         VTEP2["VTEP 2"]
         VM3["VM 3"]
@@ -54,9 +54,9 @@ graph TB
         VTEP2 <--> VM3
         VTEP2 <--> VM4
     end
-    
+
     VTEP1 <-..->|"VXLAN 封装 (UDP 4789)"| VTEP2
-    
+
     style Overlay1 fill:#3b82f6,color:#fff
     style Overlay2 fill:#10b981,color:#fff
 ```
@@ -101,12 +101,12 @@ VXLAN 在原始 Ethernet 帧前添加 **8 字节 VXLAN Header**：
 
 ### 2.2 VXLAN Header 字段
 
-| 字段 | 位 | 说明 |
-|------|----|------|
-| **I (I flag)** | 1 | 1=VXLAN NVI 有效，0=保留 |
-| **Reserved** | 23 | 保留字段 |
-| **VNI** | 24 bits | VXLAN Network Identifier (0-16,777,215) |
-| **Reserved** | 8 | 保留字段 |
+| 字段           | 位      | 说明                                    |
+| -------------- | ------- | --------------------------------------- |
+| **I (I flag)** | 1       | 1=VXLAN NVI 有效，0=保留                |
+| **Reserved**   | 23      | 保留字段                                |
+| **VNI**        | 24 bits | VXLAN Network Identifier (0-16,777,215) |
+| **Reserved**   | 8       | 保留字段                                |
 
 ### 2.3 VXLAN vs VLAN 对比
 
@@ -143,11 +143,11 @@ VXLAN 封装：
 
 **VTEP (VXLAN Tunnel End Point)** 是执行 VXLAN 封装/解封装的设备：
 
-| VTEP 类型 | 说明 | 例子 |
-|-----------|------|------|
-| **硬件 VTEP** | 交换机/路由器内置 | Cisco Nexus 9000, VMware NSX-T |
-| **软件 VTEP** | 服务器上的软件实现 | Linux kernel, Open vSwitch |
-| **混合 VTEP** | SmartNIC 卸载 | NVIDIA BlueField |
+| VTEP 类型     | 说明               | 例子                           |
+| ------------- | ------------------ | ------------------------------ |
+| **硬件 VTEP** | 交换机/路由器内置  | Cisco Nexus 9000, VMware NSX-T |
+| **软件 VTEP** | 服务器上的软件实现 | Linux kernel, Open vSwitch     |
+| **混合 VTEP** | SmartNIC 卸载      | NVIDIA BlueField               |
 
 ### 3.2 VTEP 功能
 
@@ -208,22 +208,22 @@ graph TB
         VTEP1_2["VTEP 2"]
         VTEP1_1 <-->|"VNI 10001"| VTEP1_2
     end
-    
+
     subgraph Tenant2["租户 2 - VNI 10002"]
         VTEP2_1["VTEP 3"]
         VTEP2_2["VTEP 4"]
         VTEP2_1 <-->|"VNI 10002"| VTEP2_2
     end
-    
+
     subgraph Shared["共享 Underlay"]
         Router["L3 Router/Switch"]
     end
-    
+
     VTEP1_1 <-->|"UDP 4789"| Router
     VTEP1_2 <-->|"UDP 4789"| Router
     VTEP2_1 <-->|"UDP 4789"| Router
     VTEP2_2 <-->|"UDP 4789"| Router
-    
+
     style Tenant1 fill:#3b82f6,color:#fff
     style Tenant2 fill:#10b981,color:#fff
 ```
@@ -317,6 +317,7 @@ VNI 10003 ↔ 组播组 239.1.1.103
 ### 6.1 EVPN 解决的问题
 
 **EVPN** 是一种基于 BGP 的 VXLAN 控制平面协议，解决了：
+
 - VXLAN 组播扩展性问题
 - MAC 地址学习效率
 - 快速收敛
@@ -329,12 +330,12 @@ EVPN：       控制平面学习 (BGP)，高效
 
 ### 6.2 EVPN 路由类型
 
-| 类型 | 名称 | 用途 |
-|------|------|------|
-| Type 2 | MAC/IP Route | 发布 (MAC + IP + VNI) 映射 |
-| Type 3 | Inclusive Multicast | IGMP JOIN/Leave 成员管理 |
-| Type 4 | Ethernet Segment | ESI（多归属时识别连接） |
-| Type 5 | IP Prefix Route | 路由前缀发布（可选） |
+| 类型   | 名称                | 用途                       |
+| ------ | ------------------- | -------------------------- |
+| Type 2 | MAC/IP Route        | 发布 (MAC + IP + VNI) 映射 |
+| Type 3 | Inclusive Multicast | IGMP JOIN/Leave 成员管理   |
+| Type 4 | Ethernet Segment    | ESI（多归属时识别连接）    |
+| Type 5 | IP Prefix Route     | 路由前缀发布（可选）       |
 
 ### 6.3 EVPN 配置示例
 
@@ -350,7 +351,7 @@ interface nve1
     no shutdown
     source-interface loopback0         # VTEP 源接口
     virtual-name                    # 虚拟名称
-    
+
     ! VNI 到组播组映射
     member vni 10001
         mcast-group 239.1.1.101
@@ -503,15 +504,15 @@ ovs-ofctl dump-flows br0
 
 ### 9.1 Overlay 协议全面对比
 
-|| VXLAN | GENEVE | STT | NVGRE |
-|------|-------|------|------|
-| **封装协议** | UDP | UDP | TCP | UDP |
-| **端口** | 4789 (IANA) | 6081 | - | 47 (GRE) |
-| **网络 ID** | VNI (24-bit) | TNI (24-bit) | TUN (64-bit) | VSID (24-bit) |
-| **灵活性** | 固定 | 可扩展 (TLV) | - | 固定 |
-| **硬件支持** | 广泛 | 新兴 | 有限 | 有限 |
-| **组播** | 原生支持 | 原生支持 | 不支持 | 原生支持 |
-| **典型场景** | 云/DCF/容器 | NFV | 虚拟化 | Windows |
+|              | VXLAN        | GENEVE       | STT          | NVGRE         |
+| ------------ | ------------ | ------------ | ------------ | ------------- |
+| **封装协议** | UDP          | UDP          | TCP          | UDP           |
+| **端口**     | 4789 (IANA)  | 6081         | -            | 47 (GRE)      |
+| **网络 ID**  | VNI (24-bit) | TNI (24-bit) | TUN (64-bit) | VSID (24-bit) |
+| **灵活性**   | 固定         | 可扩展 (TLV) | -            | 固定          |
+| **硬件支持** | 广泛         | 新兴         | 有限         | 有限          |
+| **组播**     | 原生支持     | 原生支持     | 不支持       | 原生支持      |
+| **典型场景** | 云/DCF/容器  | NFV          | 虚拟化       | Windows       |
 
 ### 9.2 VXLAN vs GENEVE
 
@@ -684,13 +685,13 @@ ip link set eth0 mtu 1550
 
 ### 12.1 常见问题
 
-| 问题 | 原因 | 解决 |
-|------|------|------|
-| VM 间不通 | VNI 不匹配 | 确认两端 VNI 相同 |
-| 未知 MAC 泛洪 | FDB 表未学习 | 使用 EVPN 控制平面 |
-| VXLAN 包无法路由 | Underlay 不通 | 检查路由/防火墙 (UDP 4789) |
-| 高延迟 | 分片/软件转发 | 启用硬件卸载 |
-| 组播不通 | Underlay 组播未配置 | 配置 PIM-SM/SSM |
+| 问题             | 原因                | 解决                       |
+| ---------------- | ------------------- | -------------------------- |
+| VM 间不通        | VNI 不匹配          | 确认两端 VNI 相同          |
+| 未知 MAC 泛洪    | FDB 表未学习        | 使用 EVPN 控制平面         |
+| VXLAN 包无法路由 | Underlay 不通       | 检查路由/防火墙 (UDP 4789) |
+| 高延迟           | 分片/软件转发       | 启用硬件卸载               |
+| 组播不通         | Underlay 组播未配置 | 配置 PIM-SM/SSM            |
 
 ### 12.2 排错命令
 
@@ -726,23 +727,24 @@ iptables -L -n | grep 4789
 
 ## 13. 总结
 
-|| VXLAN 关键知识点 |
-|---|---|
-| **定位** | L2 Overlay 协议，封装在 UDP/IP 中 |
-| **VNI** | 24-bit ID（1600 万网络）vs VLAN 4096 |
-| **封装** | UDP 4789 + 8字节 VXLAN Header |
-| **VTEP** | 封装/解封装点，可软/硬实现 |
-| **转发** | Unicast（已知 MAC）/组播（ BUM 流量） |
-| **控制平面** | 数据平面学习（组播）或 EVPN（BGP） |
-| **MTU** | 需要 1550+（50 字节开销） |
-| **优势** | 大规模多租户、跨 L3 迁移 |
-| **典型场景** | 云/DCF/容器网络 |
+|              | VXLAN 关键知识点                      |
+| ------------ | ------------------------------------- |
+| **定位**     | L2 Overlay 协议，封装在 UDP/IP 中     |
+| **VNI**      | 24-bit ID（1600 万网络）vs VLAN 4096  |
+| **封装**     | UDP 4789 + 8字节 VXLAN Header         |
+| **VTEP**     | 封装/解封装点，可软/硬实现            |
+| **转发**     | Unicast（已知 MAC）/组播（ BUM 流量） |
+| **控制平面** | 数据平面学习（组播）或 EVPN（BGP）    |
+| **MTU**      | 需要 1550+（50 字节开销）             |
+| **优势**     | 大规模多租户、跨 L3 迁移              |
+| **典型场景** | 云/DCF/容器网络                       |
 
 **下一章预告：** [[2026-04-13-vpn-deep-dive-ch9-pptp|第九章：PPTP 点对点隧道]] — PPTP 历史、GRE 封装、MPPE 加密。
 
 ---
 
 > [!quote] 参考文献
+>
 > - RFC 7348 - VXLAN: A Framework for Overlaying Virtualized Layer 2 Networks over Layer 3 Networks
 > - RFC 8926 - VXLAN-GPE: VXLAN Generic Protocol Extension
 > - RFC 9205 - The Use of an IANA-Reserved Port Number for VXLAN Packets

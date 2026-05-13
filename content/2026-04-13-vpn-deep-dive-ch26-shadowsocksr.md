@@ -5,8 +5,8 @@ tags: [vpn, series, shadowsocks, ssr, protocol, obfuscation, resistance]
 description: "ShadowsocksR（SSR）深度解析——协议混淆（protocol obfuscation）、TicketAuth、迷耦合设计、对抗 GFW 检测的战术与策略"
 ---
 
-> [!info] VPN 技术深度探索系列
-> 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+> [!info] VPN 技术深度探索系列 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-vpn-deep-dive-ch25-shadowsocks|Shadowsocks 原理]]
 > 2. **第二十六章：ShadowsocksR**
 > 3. [[2026-04-13-vpn-deep-dive-ch27-v2ray|第二十七章：V2Ray 技术体系]]

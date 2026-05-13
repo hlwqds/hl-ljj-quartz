@@ -98,6 +98,7 @@ $ cma_roce_gid_index 2   # 指定使用 GID index 2
 **症状**：`invalid LID` 错误，或拓扑中发现多个节点有相同 LID。
 
 **原因**：
+
 - 子网管理器配置问题导致 LID 分配冲突
 - 手动分配 LID 与 SM 自动分配冲突
 - 多子网场景中 LID 范围重叠
@@ -230,6 +231,7 @@ $ ls /sys/class/infiniband/*/qp/
 **症状**：`IBV_WC_LOC_QP_OP_ERR` 或 `IBV_WC_WR_FLUSH_ERR`。
 
 **原因**：
+
 - `LOC_QP_OP_ERR`：QP 状态不支持该操作（例如在 INIT 状态发送 RDMA Write）
 - `WR_FLUSH_ERR`：对端 QP 被销毁，本端收到已 flush 的 WQE 完成
 
@@ -270,6 +272,7 @@ ibv_poll_cq(cq, N, wc);  // poll out flushed WQE
 **症状**：RDMA Write/Read 操作返回 `IBV_WC_REM_INV_REQ_ERR`，错误码 `0x82` (远端请求无效)。
 
 **原因**：
+
 - 对端的 Memory Region 被注销（mr dereg）
 - 对端应用重启，MR 句柄失效
 - 传递的 rkey 与本端注册的 key 不匹配
@@ -307,6 +310,7 @@ ibv_query_mr(mr)  // 检查 lkey/rkey 是否有效
 **症状**：`IBV_WC_MW_BIND_ERR`，Memory Window 绑定失败。
 
 **原因**：
+
 - MW bind 参数错误（地址对齐、权限）
 - 绑定的 MR 已注销
 - 尝试 bind 只读 MR 但权限包含写
@@ -598,21 +602,21 @@ $ echo 8 > /sys/class/infiniband/mlx5_0/device/sriov_numvfs
 
 ## 7. 常见错误速查表
 
-| 错误码 (hex) | WC Status | 含义 | 解决 |
-|---|---|---|---|
-| `0x01` | LOC_LEN_ERR | SG list 长度不匹配 | 检查 sge count 和 buffer size |
-| `0x02` | LOC_QP_OP_ERR | QP 状态错误 | 检查 QP 是否在 RTS |
-| `0x04` | LOC_EEC_OP_ERR | EEC 错误 | 重置 QP |
-| `0x05` | WR_FLUSH_ERR | 对端 QP 销毁 | 重建 QP，处理 flush WC |
-| `0x06` | MW_BIND_ERR | MW bind 错误 | 检查对齐和权限 |
-| `0x0D` | BAD_RESP_ERR | 响应错误 | 检查协议版本/格式 |
-| `0x10` | LOC_ACCESS_ERR | 本地权限错误 | 检查 MR 权限 |
-| `0x11` | REM_INV_REQ_ERR | 远端 R_KEY 失效 | MR 已注销，更新 rkey |
-| `0x12` | REM_ACCESS_ERR | 远端权限错误 | 检查 access_flags |
-| `0x13` | REM_OP_ERR | 远端不支持的操作 | 检查操作类型 |
-| `0x14` | RETRY_EXC_ERR | 重试耗尽 | 检查链路质量/拥塞 |
-| `0x15` | RNR_RETRY_ERR | RNR 重试耗尽 | 检查对端 recv 队列 |
-| `0x81` | GENERAL_ERR | 通用错误 | 查看具体日志 |
+| 错误码 (hex) | WC Status       | 含义               | 解决                          |
+| ------------ | --------------- | ------------------ | ----------------------------- |
+| `0x01`       | LOC_LEN_ERR     | SG list 长度不匹配 | 检查 sge count 和 buffer size |
+| `0x02`       | LOC_QP_OP_ERR   | QP 状态错误        | 检查 QP 是否在 RTS            |
+| `0x04`       | LOC_EEC_OP_ERR  | EEC 错误           | 重置 QP                       |
+| `0x05`       | WR_FLUSH_ERR    | 对端 QP 销毁       | 重建 QP，处理 flush WC        |
+| `0x06`       | MW_BIND_ERR     | MW bind 错误       | 检查对齐和权限                |
+| `0x0D`       | BAD_RESP_ERR    | 响应错误           | 检查协议版本/格式             |
+| `0x10`       | LOC_ACCESS_ERR  | 本地权限错误       | 检查 MR 权限                  |
+| `0x11`       | REM_INV_REQ_ERR | 远端 R_KEY 失效    | MR 已注销，更新 rkey          |
+| `0x12`       | REM_ACCESS_ERR  | 远端权限错误       | 检查 access_flags             |
+| `0x13`       | REM_OP_ERR      | 远端不支持的操作   | 检查操作类型                  |
+| `0x14`       | RETRY_EXC_ERR   | 重试耗尽           | 检查链路质量/拥塞             |
+| `0x15`       | RNR_RETRY_ERR   | RNR 重试耗尽       | 检查对端 recv 队列            |
+| `0x81`       | GENERAL_ERR     | 通用错误           | 查看具体日志                  |
 
 ---
 

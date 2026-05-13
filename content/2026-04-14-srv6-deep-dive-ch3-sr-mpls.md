@@ -18,10 +18,10 @@ Traditional MPLS LSP:
 
 SR-MPLS explicit path (R1→R4→R3):
   Push Label Stack [16104, 16103]
-  
+
   - Top of stack = 16104 (R4's Node-SID, next hop)
   - Second label = 16103 (R3's Node-SID, final destination)
-  
+
   Processing at each hop:
   - R1: Pushes [16104, 16103], forwards to R4's direction
   - R4: Swaps top label 16104 → (local), now top is 16103
@@ -114,12 +114,12 @@ SID (forward to R3 via shortest path).
 
 Different vendors use different SRGB ranges:
 
-| Vendor   | Default SRGB    | Size      |
-|----------|-----------------|-----------|
-| Cisco    | 16000-23999     | 8,000     |
-| Juniper  | 100000-1048575  | 949,576   |
-| Huawei   | 16000-1048575   | 1,032,560 |
-| Nokia    | 15000-1048575   | 1,033,576 |
+| Vendor  | Default SRGB   | Size      |
+| ------- | -------------- | --------- |
+| Cisco   | 16000-23999    | 8,000     |
+| Juniper | 100000-1048575 | 949,576   |
+| Huawei  | 16000-1048575  | 1,032,560 |
+| Nokia   | 15000-1048575  | 1,033,576 |
 
 When planning an SR-MPLS domain with multi-vendor equipment, SID allocation must account for these different SRGBs. Two approaches exist:
 
@@ -254,13 +254,13 @@ programming with multiple SID lists (weighted ECMP).
 
 ### 6.1 Control Plane Simplification
 
-| Aspect                    | Traditional MPLS (RSVP-TE)     | SR-MPLS                    |
-|---------------------------|--------------------------------|----------------------------|
-| Per-LSP state             | Required at every transit node | None (packet carries path) |
-| Refresh signaling         | RSVP RESV every 30 seconds     | None                       |
-| Path changes              | Re-signal entire LSP           | Re-program head-end only   |
-| Inter-AS                 | Complex RSVP-TE over BGP      | BGP-LS + PCE               |
-| Failure recovery         | RSVP teardown/resignaling     | Local protection (TI-LFA)  |
+| Aspect            | Traditional MPLS (RSVP-TE)     | SR-MPLS                    |
+| ----------------- | ------------------------------ | -------------------------- |
+| Per-LSP state     | Required at every transit node | None (packet carries path) |
+| Refresh signaling | RSVP RESV every 30 seconds     | None                       |
+| Path changes      | Re-signal entire LSP           | Re-program head-end only   |
+| Inter-AS          | Complex RSVP-TE over BGP       | BGP-LS + PCE               |
+| Failure recovery  | RSVP teardown/resignaling      | Local protection (TI-LFA)  |
 
 ### 6.2 Scalability
 

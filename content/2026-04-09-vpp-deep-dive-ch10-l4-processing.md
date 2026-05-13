@@ -686,14 +686,14 @@ sip_alg_handle_invite(ct_session_t *s, u8 *data, u32 len)
 
 L4 处理核心组件：
 
-| 组件 | 功能 | 关键点 |
-|------|------|--------|
+| 组件            | 功能         | 关键点               |
+| --------------- | ------------ | -------------------- |
 | **TCP Session** | TCP 连接管理 | 状态机、序列号、窗口 |
-| **CT** | 连接跟踪 | session 表、超时 |
-| **NAT44/64** | 地址转换 | SNAT/DNAT session |
-| **UDP Stream** | UDP 流管理 | 超时、统计 |
-| **L4 LB** | 负载均衡 | DSR、算法 |
-| **ALG** | 应用层网关 | FTP、SIP |
+| **CT**          | 连接跟踪     | session 表、超时     |
+| **NAT44/64**    | 地址转换     | SNAT/DNAT session    |
+| **UDP Stream**  | UDP 流管理   | 超时、统计           |
+| **L4 LB**       | 负载均衡     | DSR、算法            |
+| **ALG**         | 应用层网关   | FTP、SIP             |
 
 TCP 状态机：
 

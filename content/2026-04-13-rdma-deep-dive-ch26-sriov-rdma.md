@@ -159,10 +159,10 @@ echo ${NUM_VFS} > /sys/bus/pci/devices/${PCI_DEV}/sriov_numvfs
 # 配置每个 VF 的 RDMA 能力
 for i in $(seq 0 $((NUM_VFS-1))); do
     VF_PATH="/sys/bus/pci/devices/${PCI_DEV}/virtfn${i}"
-    
+
     # 启用 RDMA
     echo 1 > ${VF_PATH}/rdma/enable
-    
+
     # 设置带宽限制（可选）
     #echo 25000 > ${VF_PATH}/max_tx_rate  # 25 Gbps
 done
@@ -366,17 +366,17 @@ metadata:
     k8s.v1.cni.cncf.io/networks: rdma-sriov-net
 spec:
   containers:
-  - name: main
-    image: rdma-hpc:latest
-    resources:
-      limits:
-        rdma/rdma: "1"
-    securityContext:
-      capabilities:
-        add: ["IPC_LOCK", "NET_RAW"]
-    env:
-    - name: RDMA_VF_DEVICE
-      value: "/dev/infiniband/uverbs0"
+    - name: main
+      image: rdma-hpc:latest
+      resources:
+        limits:
+          rdma/rdma: "1"
+      securityContext:
+        capabilities:
+          add: ["IPC_LOCK", "NET_RAW"]
+      env:
+        - name: RDMA_VF_DEVICE
+          value: "/dev/infiniband/uverbs0"
 ```
 
 ### 4.4 多网卡 VF 配置
@@ -426,16 +426,16 @@ metadata:
        {"name": "mlx5_1-rdma", "interface": "netrdma1"}]
 spec:
   containers:
-  - name: main
-    image: nvidia/cuda:11.8-runtime-ubi8
-    resources:
-      limits:
-        rdma/mlx5_0: "1"
-        rdma/mlx5_1: "1"
-        nvidia.com/gpu: 4
-    env:
-    - name: NCCL_IB_HCA
-      value: "mlx5_0,mlx5_1"
+    - name: main
+      image: nvidia/cuda:11.8-runtime-ubi8
+      resources:
+        limits:
+          rdma/mlx5_0: "1"
+          rdma/mlx5_1: "1"
+          nvidia.com/gpu: 4
+      env:
+        - name: NCCL_IB_HCA
+          value: "mlx5_0,mlx5_1"
 ```
 
 ---
@@ -465,7 +465,7 @@ metadata:
 spec:
   resourceName: rdma
   vfPolicy:
-    mac: "ec:0d:9a:11:22:44"  # 固定 MAC
+    mac: "ec:0d:9a:11:22:44" # 固定 MAC
 ```
 
 ### 5.2 VF VLAN 配置
@@ -497,7 +497,7 @@ spec:
   capabilities: '{"rdma": true}'
 ```
 
-### 5.3  VF 速率限制
+### 5.3 VF 速率限制
 
 ```bash
 # 设置 VF 最大速率 (单位 Mbps)
@@ -520,8 +520,8 @@ metadata:
 spec:
   resourceName: rdma
   vfPolicy:
-    max_tx_rate: 25000    # 25 Gbps
-    min_tx_rate: 10000    # 10 Gbps
+    max_tx_rate: 25000 # 25 Gbps
+    min_tx_rate: 10000 # 10 Gbps
     Rdma: true
 ```
 
@@ -597,7 +597,7 @@ metadata:
 spec:
   resourceName: rdma
   vfPolicy:
-    SpoofChk: off  # 仅在需要自定义 MAC 时禁用
+    SpoofChk: off # 仅在需要自定义 MAC 时禁用
     Rdma: true
 ```
 

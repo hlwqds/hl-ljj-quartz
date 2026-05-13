@@ -134,44 +134,44 @@ metadata:
   name: vpp-pod
 spec:
   containers:
-  - name: vpp
-    image: vpp:latest
-    ports:
-    - containerPort: 5001  # gRPC
-      name: grpc
-    - containerPort: 9932  # Telemetry
-      name: telemetry
+    - name: vpp
+      image: vpp:latest
+      ports:
+        - containerPort: 5001 # gRPC
+          name: grpc
+        - containerPort: 9932 # Telemetry
+          name: telemetry
 
-    # 存活探针 (Liveness Probe)
-    livenessProbe:
-      tcpSocket:
-        port: 5001
-      initialDelaySeconds: 30
-      periodSeconds: 10
-      timeoutSeconds: 5
-      failureThreshold: 3
+      # 存活探针 (Liveness Probe)
+      livenessProbe:
+        tcpSocket:
+          port: 5001
+        initialDelaySeconds: 30
+        periodSeconds: 10
+        timeoutSeconds: 5
+        failureThreshold: 3
 
-    # 就绪探针 (Readiness Probe)
-    readinessProbe:
-      httpGet:
-        path: /metrics
-        port: 9932
-      initialDelaySeconds: 10
-      periodSeconds: 5
-      timeoutSeconds: 3
-      failureThreshold: 3
+      # 就绪探针 (Readiness Probe)
+      readinessProbe:
+        httpGet:
+          path: /metrics
+          port: 9932
+        initialDelaySeconds: 10
+        periodSeconds: 5
+        timeoutSeconds: 3
+        failureThreshold: 3
 
-    # 启动探针 (Startup Probe)
-    startupProbe:
-      exec:
-        command:
-        - vppctl
-        - show
-        - health
-      initialDelaySeconds: 10
-      periodSeconds: 5
-      timeoutSeconds: 3
-      failureThreshold: 30
+      # 启动探针 (Startup Probe)
+      startupProbe:
+        exec:
+          command:
+            - vppctl
+            - show
+            - health
+        initialDelaySeconds: 10
+        periodSeconds: 5
+        timeoutSeconds: 3
+        failureThreshold: 30
 ```
 
 ### 1.5 Keepalived VRRP 健康检查

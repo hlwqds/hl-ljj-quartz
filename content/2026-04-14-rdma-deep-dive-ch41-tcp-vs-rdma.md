@@ -622,6 +622,7 @@ show congestion-control roce
 ---
 
 > [!tip] 延伸阅读
+>
 > - [[2026-04-13-rdma-deep-dive-ch1-rdma-overview|第一章：RDMA 概述]] —— RDMA 核心价值
 > - [[2026-04-13-rdma-deep-dive-ch2-rdma-architecture|第二章：RDMA 架构]] —— RNIC/CMA/verbs
 > - [[2026-04-13-rdma-deep-dive-ch16-pfc|第十六章：PFC 流控]] —— 无损网络配置

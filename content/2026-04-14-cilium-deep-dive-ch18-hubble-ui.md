@@ -12,8 +12,8 @@ tags:
   - topology
 ---
 
-> [!info] Cilium 2026 深度探索系列
-> 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+> [!info] Cilium 2026 深度探索系列 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+>
 > 1. [[2026-04-14-cilium-deep-dive-ch1-cilium-overview|第一章：Cilium 概述]]
 > 2. [[2026-04-14-cilium-deep-dive-ch2-architecture|第二章：Cilium 架构]]
 > 3. [[2026-04-14-cilium-deep-dive-ch3-ebpf-datapath|第三章：eBPF 数据面]]
@@ -136,13 +136,13 @@ Hubble UI 的主界面分为以下几个区域：
 
 ### 2.2 顶部导航栏
 
-| 元素 | 功能 |
-|:---|:---|
-| **Logo + 标题** | 返回主视图 |
-| **Namespace 选择器** | 过滤特定命名空间 |
-| **时间范围** | 选择时间窗口（实时/5m/15m/1h/自定义） |
-| **过滤器** | 快速添加过滤条件 |
-| **设置图标** | 主题切换、连接配置 |
+| 元素                 | 功能                                  |
+| :------------------- | :------------------------------------ |
+| **Logo + 标题**      | 返回主视图                            |
+| **Namespace 选择器** | 过滤特定命名空间                      |
+| **时间范围**         | 选择时间窗口（实时/5m/15m/1h/自定义） |
+| **过滤器**           | 快速添加过滤条件                      |
+| **设置图标**         | 主题切换、连接配置                    |
 
 ---
 
@@ -182,25 +182,25 @@ Hubble UI 的主界面分为以下几个区域：
 
 ### 3.2 节点类型
 
-| 节点类型 | 描述 | 图标 |
-|:---|:---|:---|
-| **Namespace** | 命名空间聚合节点 | 🏢 |
-| **Service** | Kubernetes Service | 🔷 |
-| **Pod** | Pod 级别视图 | ⬡ |
-| **External** | 集群外部流量 | 🌍 |
+| 节点类型      | 描述               | 图标 |
+| :------------ | :----------------- | :--- |
+| **Namespace** | 命名空间聚合节点   | 🏢   |
+| **Service**   | Kubernetes Service | 🔷   |
+| **Pod**       | Pod 级别视图       | ⬡    |
+| **External**  | 集群外部流量       | 🌍   |
 
 ### 3.3 边的属性
 
 每条边代表服务间的流量，包含以下属性：
 
-| 属性 | 描述 |
-|:---|:---|
-| **方向** | 箭头指向流量方向 |
+| 属性         | 描述                 |
+| :----------- | :------------------- |
+| **方向**     | 箭头指向流量方向     |
 | **流量大小** | 边的粗细表示流量比例 |
-| **协议** | TCP/UDP/HTTP/gRPC |
-| **请求数** | 边上的数字标签 |
-| **丢弃率** | 红色表示有丢弃 |
-| **延迟** | 颜色深浅表示延迟高低 |
+| **协议**     | TCP/UDP/HTTP/gRPC    |
+| **请求数**   | 边上的数字标签       |
+| **丢弃率**   | 红色表示有丢弃       |
+| **延迟**     | 颜色深浅表示延迟高低 |
 
 ### 3.4 拓扑图交互
 
@@ -279,15 +279,15 @@ Hubble UI 的主界面分为以下几个区域：
 
 ### 4.2 列表列说明
 
-| 列 | 描述 |
-|:---|:---|
-| **TIME** | 事件时间戳 |
-| **SOURCE** | 源（Pod/Namespace:Port） |
-| **DESTINATION** | 目标（Pod/Namespace:Port） |
-| **VERDICT** | 判定结果（OK/DROP/AUDIT） |
-| **L7** | L7 协议信息（HTTP/gRPC/DNS/SQL） |
-| **POLICY** | 匹配的策略名称 |
-| **DURATION** | 请求持续时间 |
+| 列              | 描述                             |
+| :-------------- | :------------------------------- |
+| **TIME**        | 事件时间戳                       |
+| **SOURCE**      | 源（Pod/Namespace:Port）         |
+| **DESTINATION** | 目标（Pod/Namespace:Port）       |
+| **VERDICT**     | 判定结果（OK/DROP/AUDIT）        |
+| **L7**          | L7 协议信息（HTTP/gRPC/DNS/SQL） |
+| **POLICY**      | 匹配的策略名称                   |
+| **DURATION**    | 请求持续时间                     |
 
 ### 4.3 过滤选项
 
@@ -347,14 +347,14 @@ Hubble UI 显示关键网络指标：
 
 ### 5.2 指标类型
 
-| 指标 | 描述 | 来源 |
-|:---|:---|:---|
-| **Total Flows** | 总流量数 | Hubble Flow API |
-| **Dropped** | 丢弃的流量数 | Hubble verdict=DROPPED |
-| **Blocked** | 被策略阻止的流量 | Policy verdict |
-| **Avg Latency** | 平均延迟 | L7 Flow 统计 |
-| **P99 Latency** | P99 延迟 | L7 Flow 统计 |
-| **Throughput** | 网络吞吐率 | Interface stats |
+| 指标            | 描述             | 来源                   |
+| :-------------- | :--------------- | :--------------------- |
+| **Total Flows** | 总流量数         | Hubble Flow API        |
+| **Dropped**     | 丢弃的流量数     | Hubble verdict=DROPPED |
+| **Blocked**     | 被策略阻止的流量 | Policy verdict         |
+| **Avg Latency** | 平均延迟         | L7 Flow 统计           |
+| **P99 Latency** | P99 延迟         | L7 Flow 统计           |
+| **Throughput**  | 网络吞吐率       | Interface stats        |
 
 ### 5.3 趋势图
 
@@ -635,6 +635,7 @@ Hubble UI 提供了强大的图形化可观测性能力：
 6. **ClusterMesh Support**：多集群统一观测视图
 
 Hubble UI 的优势：
+
 - **零配置**：开箱即用，自动发现服务拓扑
 - **实时性**：秒级延迟的流量更新
 - **易用性**：非技术人员也能理解网络状态

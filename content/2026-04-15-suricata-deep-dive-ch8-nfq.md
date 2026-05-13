@@ -12,8 +12,8 @@ tags:
 description: "NFQ 是 Suricata IPS 模式的核心，通过 iptables/nftables 将流量重定向到 Suricata 进行检测。本章解析 NFQ 配置、Netfilter 集成、与 PF_RING 高性能抓包模式"
 ---
 
-> [!info] Suricata 2026 深度探索系列
-> 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Suricata 2026 深度探索系列 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-15-suricata-deep-dive-ch1-overview|第一章：Suricata 概述]]
 > 2. [[2026-04-15-suricata-deep-dive-ch2-config|第二章：Suricata 配置系统]]
 > 3. [[2026-04-15-suricata-deep-dive-ch3-runmodes|第三章：Runmodes 运行模式]]
@@ -37,7 +37,7 @@ sequenceDiagram
     participant NFQ as NFQUEUE
     participant SURICATA as Suricata
     participant SERVER as Server
-    
+
     CLIENT->>KERNEL: 数据包
     KERNEL->>NFTABLES: 遍历规则链
     NFTABLES->>NFTABLES: 匹配规则
@@ -51,23 +51,23 @@ sequenceDiagram
 
 ### 1.1 NFQ Verdict
 
-| Verdict | 说明 | 行为 |
-| :--- | :--- | :--- |
-| `NF_ACCEPT` | 接受 | 继续正常转发 |
-| `NF_DROP` | 丢弃 | 静默丢弃数据包 |
+| Verdict     | 说明 | 行为               |
+| :---------- | :--- | :----------------- |
+| `NF_ACCEPT` | 接受 | 继续正常转发       |
+| `NF_DROP`   | 丢弃 | 静默丢弃数据包     |
 | `NF_REPEAT` | 重复 | 重新处理当前数据包 |
-| `NF_QUEUE` | 队列 | 发送到其他队列 |
+| `NF_QUEUE`  | 队列 | 发送到其他队列     |
 
 ### 1.2 NFQ vs AF-PACKET
 
-| 特性 | NFQ | AF-PACKET |
-| :--- | :--- | :--- |
-| **用途** | IPS (Inline) | IDS (Passive) |
-| **流量路径** | 必须经过 Suricata | 流量副本 |
-| **阻断能力** | 原生支持 | 需配合 NFQ |
-| **性能** | 中等 | 高 |
-| **配置复杂度** | 高 (需 iptables) | 低 |
-| **内核版本** | 2.6.14+ | 2.6.27+ |
+| 特性           | NFQ               | AF-PACKET     |
+| :------------- | :---------------- | :------------ |
+| **用途**       | IPS (Inline)      | IDS (Passive) |
+| **流量路径**   | 必须经过 Suricata | 流量副本      |
+| **阻断能力**   | 原生支持          | 需配合 NFQ    |
+| **性能**       | 中等              | 高            |
+| **配置复杂度** | 高 (需 iptables)  | 低            |
+| **内核版本**   | 2.6.14+           | 2.6.27+       |
 
 ---
 
@@ -79,10 +79,10 @@ sequenceDiagram
 # suricata.yaml
 runmode: nfq
 nfq:
-  mode: accept                 # accept/drop/repeat
-  fail-open: yes               # 队列满时是否接受
-  queue_count: 1               # 队列数量
-  queue_length: 1024           # 队列长度
+  mode: accept # accept/drop/repeat
+  fail-open: yes # 队列满时是否接受
+  queue_count: 1 # 队列数量
+  queue_length: 1024 # 队列长度
 ```
 
 ### 2.2 完整配置项
@@ -93,25 +93,25 @@ runmode: nfq
 
 nfq:
   # 工作模式
-  mode: accept                 # accept=放行, drop=丢弃, repeat=重试
-  
+  mode: accept # accept=放行, drop=丢弃, repeat=重试
+
   # 队列配置
-  queue_count: 2                # 创建的队列数量 (建议与 CPU 核心数匹配)
-  queue_length: 2048           # 每个队列长度
-  
+  queue_count: 2 # 创建的队列数量 (建议与 CPU 核心数匹配)
+  queue_length: 2048 # 每个队列长度
+
   # 故障处理
-  fail-open: yes               # 队列满时接受而非丢弃
-  bypass: yes                  # 启用 flow bypass (无需检测的 flow)
-  
+  fail-open: yes # 队列满时接受而非丢弃
+  bypass: yes # 启用 flow bypass (无需检测的 flow)
+
   # 硬件卸载
-  hardware-bypass: yes         # 启用 NIC hardware bypass
-  
+  hardware-bypass: yes # 启用 NIC hardware bypass
+
   # 复制模式 (IDS旁路)
-  copy-mode: interface         # none/interface
-  copy-iface: eth1             # 镜像目标接口
-  
+  copy-mode: interface # none/interface
+  copy-iface: eth1 # 镜像目标接口
+
   # 校验和
-  checksum-checks: 0            # 0=不校验, 1=校验 (NFQ 会校验)
+  checksum-checks: 0 # 0=不校验, 1=校验 (NFQ 会校验)
 ```
 
 ---
@@ -129,7 +129,7 @@ void TmModuleReceiveNFQRegister(void)
     tmm_modules[TMM_RECEIVENFQ].Func = NFQLoop;
     tmm_modules[TMM_RECEIVENFQ].ThreadDeinit = NFQThreadDeinit;
     tmm_modules[TMM_RECEIVENFQ].flags = TM_FLAG_RECEIVE_TM;
-    
+
     /* Verdict 模块 */
     TmModuleVerdictNFQRegister();
 }
@@ -161,7 +161,7 @@ typedef struct NFQThreadContext_ {
 static int NFQConfig(NFQThreadContext **pctx)
 {
     *pctx = SCCalloc(1, sizeof(NFQThreadContext));
-    
+
     /* 读取 mode */
     const char *mode_str;
     if (ConfGet("nfq.mode", &mode_str) == 1) {
@@ -175,12 +175,12 @@ static int NFQConfig(NFQThreadContext **pctx)
             (*pctx)->mode = NFQ_MODE_NAT;
         }
     }
-    
+
     /* 读取 fail-open */
     int fail_open = 0;
     (void)ConfGetBool("nfq.fail-open", &fail_open);
     (*pctx)->fail_open = fail_open;
-    
+
     /* 读取 queue_length */
     const char *ql_str;
     if (ConfGet("nfq.queue-length", &ql_str) == 1) {
@@ -199,28 +199,28 @@ static int NFQCreateQueue(NFQThreadContext *ctx, int qid)
 {
     struct nfq_q_handle *qh;
     struct nfq_handle *h;
-    
+
     /* 创建 NFQ 句柄 */
     h = nfq_open();
     if (!h) {
         SCLogError("nfq_open failed");
         return -1;
     }
-    
+
     /* 解绑内核回调 (使用 userspace 回调) */
     if (nfq_unbind_pf(h, AF_INET) < 0) {
         SCLogError("nfq_unbind_pf failed");
         nfq_close(h);
         return -1;
     }
-    
+
     /* 绑定到协议家族 */
     if (nfq_bind_pf(h, AF_INET) < 0) {
         SCLogError("nfq_bind_pf failed");
         nfq_close(h);
         return -1;
     }
-    
+
     /* 创建队列 */
     qh = nfq_create_queue(h, qid, NFQCallback, ctx);
     if (!qh) {
@@ -228,7 +228,7 @@ static int NFQCreateQueue(NFQThreadContext *ctx, int qid)
         nfq_close(h);
         return -1;
     }
-    
+
     /* 设置队列参数 */
     struct nfq_q_handle qhandle;
     if (ctx->fail_open) {
@@ -236,7 +236,7 @@ static int NFQCreateQueue(NFQThreadContext *ctx, int qid)
         int flags = NFQA_CFG_F_FAIL_OPEN;
         nfq_q_handle_set(qh, flags);
     }
-    
+
     /* 设置 COPY_MODE */
     if (ctx->copy_mode == NFQ_COPY_MODE_PACKET) {
         /* 复制完整数据包 */
@@ -245,19 +245,19 @@ static int NFQCreateQueue(NFQThreadContext *ctx, int qid)
         /* 只复制元数据 */
         nfq_q_handle_set(qh, NFQA_CFG_F_COPY_PACKET, 1);
     }
-    
+
     /* 设置队列长度 */
     nfq_q_handle_set(qh, NFQA_CFG_F_QUEUE_LENGHT, ctx->queue_length);
-    
+
     /* 设置 verdicts 标志 */
     uint32_t flags = NFQA_CFG_F_GSO | NFQA_CFG_F_TCPSEQ | NFQA_CFG_F Sack |
                       NFQA_CFG_F_HWPSEUDOHDR | NFQA_CFG_F_UID |
                       NFQA_CFG_F_MARK;
     nfq_q_handle_set(qh, flags);
-    
+
     ctx->qh = qh;
     ctx->h = h;
-    
+
     return 0;
 }
 ```
@@ -273,16 +273,16 @@ static int NFQCallback(struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
     struct nfqnl_msg_packet_hdr *ph;
     uint32_t id = 0;
     int verdict;
-    
+
     /* 获取数据包元数据 */
     ph = nfq_get_msg_packet_hdr(nfa);
     if (ph) {
         id = ntohl(ph->packet_id);
     }
-    
+
     /* 获取数据包长度 */
     int len = nfq_get_payload(nfa, &data);
-    
+
     /* 获取数据包 */
     struct nfqnl_packet_storage *pkt_storage;
     Packet *p = PacketGetFromQueueOrAlloc();
@@ -290,35 +290,35 @@ static int NFQCallback(struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
         /* 返回 ACCEPT (避免丢包) */
         return ctx->verdict;
     }
-    
+
     /* 设置 Packet 元数据 */
     p->nfq_vf_iif = nfq_get_indev(nfa);     // 输入接口
     p->nfq_vf_oif = nfq_get_outdev(nfa);    // 输出接口
     p->nfq_vf_mark = nfq_get_nfmark(nfa);   // Netfilter mark
     p->nfq_vf_verdict = id;                 // 用于返回 verdict
-    
+
     /* 复制数据 */
     if (len > 0) {
         memcpy(p->ext_buffer, data, len);
         p->datalen = len;
     }
-    
+
     /* 设置 verdict (默认延迟判决) */
     p->nfq_vf_verdicted = 0;
-    
+
     /* 分发到处理管道 */
     if (TmThreadsSlotVar(ctx->tv, p) != TM_ECODE_OK) {
         PacketReturnToPool(p);
         return ctx->verdict;
     }
-    
+
     /* 如果已判决,返回对应 verdict */
     if (p->nfq_vf_verdicted) {
         verdict = p->nfq_vf_verdict2;
     } else {
         verdict = ctx->verdict;
     }
-    
+
     return verdict;
 }
 ```
@@ -332,10 +332,10 @@ static TmEcode NFQVerdict(ThreadVars *tv, Packet *p)
     if (p->nfq_vf_iif == 0) {
         return TM_ECODE_OK;  // 非 NFQ 数据包
     }
-    
+
     /* 获取 NFQ 上下文 */
     NFQThreadContext *ctx = (NFQThreadContext *)tv->ctx;
-    
+
     /* 确定 verdict */
     if (p->nfq_vf_verdicted) {
         /* 已判决 (检测引擎决定) */
@@ -364,10 +364,10 @@ static TmEcode NFQLoop(ThreadVars *tv, void *data)
     NFQThreadContext *ctx = (NFQThreadContext *)data;
     struct nfq_handle *h = ctx->h;
     struct nfq_q_handle *qh = ctx->qh;
-    
+
     int fd = nfq_fd(h);
     uint8_t buf[65535];
-    
+
     while (1) {
         /* 接收数据包 */
         int rv = recv(fd, buf, sizeof(buf), 0);
@@ -375,16 +375,16 @@ static TmEcode NFQLoop(ThreadVars *tv, void *data)
             if (errno == EINTR || errno == EAGAIN) continue;
             break;
         }
-        
+
         /* 处理数据包 */
         nfq_handle_packet(h, buf, rv);
-        
+
         /* 检查退出信号 */
         if (SignalHandlerIsFlagSet(SURIANSIG_TERM)) {
             break;
         }
     }
-    
+
     return TM_ECODE_OK;
 }
 ```
@@ -446,12 +446,12 @@ iptables -I FORWARD -m statistic --mode random --probability 0.125 -j NFQUEUE --
 
 PF_RING 是 DNIF 提供的高性能数据包捕获库，相比 libpcap 有 10 倍性能提升：
 
-| 特性 | libpcap | PF_RING |
-| :--- | :--- | :--- |
-| **性能** | 100Kpps | 10Mpps+ |
-| **内存拷贝** | 2次 | 1次 (或 0次 with ZC) |
-| **DNA/ZC** | 不支持 | 支持零拷贝 |
-| **内核版本** | 无依赖 | 需要 PF_RING 内核模块 |
+| 特性         | libpcap | PF_RING               |
+| :----------- | :------ | :-------------------- |
+| **性能**     | 100Kpps | 10Mpps+               |
+| **内存拷贝** | 2次     | 1次 (或 0次 with ZC)  |
+| **DNA/ZC**   | 不支持  | 支持零拷贝            |
+| **内核版本** | 无依赖  | 需要 PF_RING 内核模块 |
 
 ### 5.2 PF_RING 配置
 
@@ -461,10 +461,10 @@ pf_ring:
   enabled: yes
   interface: eth0
   cluster-id: 99
-  cluster-type: cluster_flow      # cluster_flow/cluster_round_robin
-  balance-cpu: yes               # CPU 负载均衡
+  cluster-type: cluster_flow # cluster_flow/cluster_round_robin
+  balance-cpu: yes # CPU 负载均衡
   # ZC (Zero Copy) 选项
-  use-cards-root: no             # 使用 PF_RING ZC
+  use-cards-root: no # 使用 PF_RING ZC
 ```
 
 ### 5.3 PF_RING 源码
@@ -503,16 +503,16 @@ static int PfringOpen(PfringThreadContext *ctx)
             return -1;
         }
     }
-    
+
     /* 设置集群 */
     if (pfring_set_cluster(ctx->pd, ctx->cluster_id, ctx->cluster_type) != 0) {
         SCLogError("pfring_set_cluster failed");
         return -1;
     }
-    
+
     /* 启用 */
     pfring_enable_ring(ctx->pd);
-    
+
     return 0;
 }
 ```
@@ -523,23 +523,23 @@ static int PfringOpen(PfringThreadContext *ctx)
 
 ### 6.1 NFQ 映射
 
-| YAML 配置 | C 变量 | 源文件 | 说明 |
-| :--- | :--- | :--- | :--- |
-| `nfq.mode` | `NFQThreadContext.mode` | `source-nfq.c` | 工作模式 |
-| `nfq.fail-open` | `NFQA_CFG_F_FAIL_OPEN` | `source-nfq.c` | 故障开放 |
-| `nfq.queue_count` | `nfq_create_queue()` | `source-nfq.c` | 队列数量 |
-| `nfq.queue_length` | `NFQA_CFG_F_QUEUE_LENGHT` | `source-nfq.c` | 队列长度 |
-| `nfq.bypass` | `bypass` | `source-nfq.c` | Flow bypass |
+| YAML 配置          | C 变量                    | 源文件         | 说明        |
+| :----------------- | :------------------------ | :------------- | :---------- |
+| `nfq.mode`         | `NFQThreadContext.mode`   | `source-nfq.c` | 工作模式    |
+| `nfq.fail-open`    | `NFQA_CFG_F_FAIL_OPEN`    | `source-nfq.c` | 故障开放    |
+| `nfq.queue_count`  | `nfq_create_queue()`      | `source-nfq.c` | 队列数量    |
+| `nfq.queue_length` | `NFQA_CFG_F_QUEUE_LENGHT` | `source-nfq.c` | 队列长度    |
+| `nfq.bypass`       | `bypass`                  | `source-nfq.c` | Flow bypass |
 
 ### 6.2 PF_RING 映射
 
-| YAML 配置 | C 变量 | 源文件 | 说明 |
-| :--- | :--- | :--- | :--- |
-| `pf_ring.enabled` | `pfring_open()` | `source-pfring.c` | 启用 PF_RING |
-| `pf_ring.interface` | `device` | `source-pfring.c` | 设备名 |
-| `pf_ring.cluster-id` | `pfring_set_cluster()` | `source-pfring.c` | 集群 ID |
-| `pf_ring.cluster-type` | `cluster_type` | `source-pfring.c` | 集群类型 |
-| `pf_ring.use-cards-root` | `PF_RING_ZC` | `source-pfring.c` | ZC 模式 |
+| YAML 配置                | C 变量                 | 源文件            | 说明         |
+| :----------------------- | :--------------------- | :---------------- | :----------- |
+| `pf_ring.enabled`        | `pfring_open()`        | `source-pfring.c` | 启用 PF_RING |
+| `pf_ring.interface`      | `device`               | `source-pfring.c` | 设备名       |
+| `pf_ring.cluster-id`     | `pfring_set_cluster()` | `source-pfring.c` | 集群 ID      |
+| `pf_ring.cluster-type`   | `cluster_type`         | `source-pfring.c` | 集群类型     |
+| `pf_ring.use-cards-root` | `PF_RING_ZC`           | `source-pfring.c` | ZC 模式      |
 
 ---
 
@@ -551,11 +551,11 @@ static int PfringOpen(PfringThreadContext *ctx)
 # suricata.yaml — NFQ 高性能配置
 nfq:
   mode: accept
-  queue_count: 16               # 与 CPU 核心数匹配
-  queue_length: 8192           # 增大队列
+  queue_count: 16 # 与 CPU 核心数匹配
+  queue_length: 8192 # 增大队列
   fail-open: yes
-  bypass: yes                   # 启用 bypass
-  hardware-bypass: yes         # 硬件 bypass
+  bypass: yes # 启用 bypass
+  hardware-bypass: yes # 硬件 bypass
 ```
 
 ### 7.2 内核参数
@@ -581,12 +581,12 @@ net.ipv6.conf.all.forwarding = 1
 
 ### 8.1 常见错误
 
-| 错误信息 | 原因 | 解决方案 |
-| :--- | :--- | :--- |
-| `nfq_open: Protocol wrong type for socket` | 内核模块未加载 | `modprobe nfnetlink_queue` |
-| `nfq_create_queue: No such file or directory` | 队列号超限 | 检查 `/proc/sys/net/netfilter/` |
-| `nfq_set_mode: Invalid argument` | 权限不足 | `setcap cap_net_admin+ep suricata` |
-| `pfring_open: no such device` | PF_RING 驱动未安装 | 安装 PF_RING 驱动 |
+| 错误信息                                      | 原因               | 解决方案                           |
+| :-------------------------------------------- | :----------------- | :--------------------------------- |
+| `nfq_open: Protocol wrong type for socket`    | 内核模块未加载     | `modprobe nfnetlink_queue`         |
+| `nfq_create_queue: No such file or directory` | 队列号超限         | 检查 `/proc/sys/net/netfilter/`    |
+| `nfq_set_mode: Invalid argument`              | 权限不足           | `setcap cap_net_admin+ep suricata` |
+| `pfring_open: no such device`                 | PF_RING 驱动未安装 | 安装 PF_RING 驱动                  |
 
 ### 8.2 调试方法
 

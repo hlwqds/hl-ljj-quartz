@@ -40,14 +40,14 @@ SR Policy decouples the **path description** (segment list) from the **policy in
 
 Traditional traffic engineering approaches (RSVP-TE, for example) signal paths through the network, reserving resources along the way. SR Policy is fundamentally different:
 
-| Characteristic | RSVP-TE | SR Policy |
-|---------------|---------|-----------|
-| Path Establishment | Per-flow signaling | Source-based programming |
-| State in Network | Per-LSP at every node | Locator-only at transit |
-| Resource Reservation | Required | Not required |
-| Path Computation | Distributed | Centralized (PCE) or Distributed |
-| Rerouting Speed | Slow (re-signal) | Fast (change segment list) |
-| Scale | Poor (per-flow state) | Excellent (per-policy state) |
+| Characteristic       | RSVP-TE               | SR Policy                        |
+| -------------------- | --------------------- | -------------------------------- |
+| Path Establishment   | Per-flow signaling    | Source-based programming         |
+| State in Network     | Per-LSP at every node | Locator-only at transit          |
+| Resource Reservation | Required              | Not required                     |
+| Path Computation     | Distributed           | Centralized (PCE) or Distributed |
+| Rerouting Speed      | Slow (re-signal)      | Fast (change segment list)       |
+| Scale                | Poor (per-flow state) | Excellent (per-policy state)     |
 
 SR Policy achieves scalability because the **network itself doesn't know it's carrying SR Policy**—it just sees IPv6 packets with certain destination addresses. The policy intelligence is at the edges (source and PCE), not in the core.
 
@@ -553,6 +553,7 @@ show segment-routing traffic-eng forwarding
 ```
 
 Key status fields:
+
 - **State**: Operational, Down, Init
 - **Active Path**: Which candidate path is active
 - **Last Computed**: When path was computed

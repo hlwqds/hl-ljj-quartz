@@ -5,8 +5,8 @@ tags: [p4, series, sdn, onos, openflow, stratum, barefoot, control-plane, p4runt
 description: "P4 与 SDN 控制器深度解析——ONOS P4 支持、Barefoot Runtime、OpenFlow 到 P4 Runtime 的演进、Stratum 交换机抽象、P4-Overlay 网络架构、分布式控制面"
 ---
 
-> [!info] P4 深度探索系列
-> 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+> [!info] P4 深度探索系列 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-14-p4-deep-dive-ch1-p4-overview|第一章：P4 概述——诞生背景与协议无关包处理]]
 > 2. [[2026-04-14-p4-deep-dive-ch2-p4-architecture|第二章：P4 架构模型——PSA/V1Model、Ingress/Egress]]
 > 3. [[2026-04-14-p4-deep-dive-ch3-p4-vs-ebpf|第三章：P4 vs eBPF——适用场景与硬件/软件对比]]
@@ -77,14 +77,14 @@ SDN + P4 架构:
 
 ### 1.1 P4 增强 SDN 的能力
 
-| 能力 | 传统 OpenFlow | P4 + SDN |
-|------|---------------|----------|
-| **协议支持** | 固定协议栈 | 任意协议定义 |
-| **Parser** | 固定解析 | 可编程解析 |
-| **Match** | 固定字段 | 可编程匹配 |
-| **Action** | 固定动作 | 可编程动作 |
-| **Telemettry** | Polling | In-band INT |
-| **芯片依赖** | 厂商相关 | 厂商无关 |
+| 能力           | 传统 OpenFlow | P4 + SDN     |
+| -------------- | ------------- | ------------ |
+| **协议支持**   | 固定协议栈    | 任意协议定义 |
+| **Parser**     | 固定解析      | 可编程解析   |
+| **Match**      | 固定字段      | 可编程匹配   |
+| **Action**     | 固定动作      | 可编程动作   |
+| **Telemettry** | Polling       | In-band INT  |
+| **芯片依赖**   | 厂商相关      | 厂商无关     |
 
 ---
 
@@ -121,14 +121,14 @@ OpenFlow 的局限性:
 
 ### 2.2 P4 Runtime 的优势
 
-| 维度 | OpenFlow 1.3 | P4 Runtime |
-|------|--------------|------------|
-| **协议定义** | 固定 | 可编程 |
-| **Parser** | 固定 | 可编程 |
-| **表结构** | 厂商定义 | 程序定义 |
-| **匹配类型** | 12 元组 | 任意字段 |
-| **性能** | ~10K msg/s | ~1M msg/s |
-| **类型安全** | 无 | Protobuf 强类型 |
+| 维度         | OpenFlow 1.3 | P4 Runtime      |
+| ------------ | ------------ | --------------- |
+| **协议定义** | 固定         | 可编程          |
+| **Parser**   | 固定         | 可编程          |
+| **表结构**   | 厂商定义     | 程序定义        |
+| **匹配类型** | 12 元组      | 任意字段        |
+| **性能**     | ~10K msg/s   | ~1M msg/s       |
+| **类型安全** | 无           | Protobuf 强类型 |
 
 ### 2.3 演进路径
 
@@ -204,12 +204,12 @@ Stratum 架构:
 
 ### 3.2 Stratum 接口
 
-| 接口 | 协议 | 用途 |
-|------|------|------|
-| **gNMI** | gRPC | 配置管理 (基于 YANG) |
-| **gNOI** | gRPC | 运营接口 (清算、镜像等) |
-| **P4Runtime** | gRPC | 数据平面表项管理 |
-| **OpenConfig** | YANG Models | 标准化数据模型 |
+| 接口           | 协议        | 用途                    |
+| -------------- | ----------- | ----------------------- |
+| **gNMI**       | gRPC        | 配置管理 (基于 YANG)    |
+| **gNOI**       | gRPC        | 运营接口 (清算、镜像等) |
+| **P4Runtime**  | gRPC        | 数据平面表项管理        |
+| **OpenConfig** | YANG Models | 标准化数据模型          |
 
 ### 3.3 Stratum 部署
 
@@ -403,10 +403,10 @@ from bf_runtime import BFRuntimeClient
 class BarefootController:
     def __init__(self, grpc_addr):
         self.client = BFRuntimeClient(grpc_addr)
-    
+
     def load_pipeline(self, p4_program, p4_config):
         """加载 P4 流水线到 Tofino"""
-        
+
         # Barefoot 专用 API
         self.client.SetForwardingPipelineConfig(
             p4_programs=[{
@@ -415,7 +415,7 @@ class BarefootController:
                 "p4_pipeline_name": "main"
             }]
         )
-    
+
     def insert_with_id(self, table_name, entry):
         """使用表项 ID 快速插入"""
         # Barefoot 支持预分配 ID
@@ -424,10 +424,10 @@ class BarefootController:
             entry=entry,
             entry_id=entry.id  # 预分配 ID 提高性能
         )
-    
+
     def enable_int(self, table_name):
         """启用 INT (In-band Network Telemetry)"""
-        
+
         # Barefoot Runtime 专用 INT 配置
         int_config = {
             "enable_int": True,
@@ -435,19 +435,19 @@ class BarefootController:
             "int_destinations": ["metadata"],
             "int_instructions": [
                 "switch_id",
-                "hop_latency", 
+                "hop_latency",
                 "queue_occupancy"
             ]
         }
-        
+
         self.client.ConfigureINT(int_config)
-    
+
     def batch_insert_optimized(self, entries):
         """优化的批量插入"""
-        
+
         # Barefoot 的批量插入优化
         batch_size = 10000  # 更大的批量
-        
+
         for i in range(0, len(entries), batch_size):
             batch = entries[i:i+batch_size]
             self.client.WritePreambleEntries(batch)
@@ -460,7 +460,7 @@ class BarefootController:
 message BarefootTableConfig {
     bytes tna_info = 1;           // TNA 专用信息
     repeated StageTableConfig stages = 2;  // 多阶段表配置
-    
+
     message StageTableConfig {
         uint32 stage_id = 1;
         uint32 table_id = 2;
@@ -519,7 +519,7 @@ Overlay (P4 封装):
 ```c
 // P4 VXLAN VTEP 实现
 control VxlanVtep(...) {
-    
+
     // VXLAN 封装表
     table vxlan_encap {
         key = {
@@ -530,7 +530,7 @@ control VxlanVtep(...) {
             drop;
         }
     }
-    
+
     // 远程 VTEP 表
     table vxlan_fib {
         key = {
@@ -542,7 +542,7 @@ control VxlanVtep(...) {
             drop;
         }
     }
-    
+
     // 解封装表
     table vxlan_decap {
         key = {
@@ -553,7 +553,7 @@ control VxlanVtep(...) {
             forward_to_inner;
         }
     }
-    
+
     apply {
         if (h.vxlan.isValid()) {
             // 入口: 解封装
@@ -575,27 +575,27 @@ class P4OverlayController:
     def __init__(self, underlay_controller, overlay_controller):
         self.underlay = underlay_controller  # Underlay P4Runtime
         self.overlay = overlay_controller    # Overlay P4Runtime
-    
+
     def add_hosts_to_vni(self, vni, host_macs, host_ips):
         """将主机添加到 VNI"""
-        
+
         # 1. 配置 overlay VTEP
         for mac, ip in zip(host_macs, host_ips):
             self.overlay.insert_mac_entry(mac, ip, vni)
-        
+
         # 2. 配置 underlay 路由
         remote_vtep_ip = self.get_remote_vtep(vni)
         self.underlay.insert_tunnel_route(remote_vtep_ip)
-    
+
     def establish_tunnel(self, src_vtep, dst_vtep):
         """建立 VXLAN 隧道"""
-        
+
         # 1. Underlay 路由到远程 VTEP
         self.underlay.insert_route(
             prefix=dst_vtep.ip,
             nexthop=self.underlay.get_nexthop(dst_vtep)
         )
-        
+
         # 2. Overlay VNI 映射
         self.overlay.insert_vni_mapping(
             vni=self.vnis[src_vtep][dst_vtep],
@@ -650,35 +650,35 @@ class DistributedP4Controller:
         self.node_id = node_id
         self.cluster = RaftCluster(cluster_nodes)
         self.local_p4rt = P4RuntimeClient(...)
-    
+
     def write_with_consensus(self, entries):
         """带共识的写入"""
-        
+
         # 1. 本地预处理
         local_entries = self.prepare_entries(entries)
-        
+
         # 2. 提议到集群
         proposal = self.cluster.propose(
             command="WriteTableEntries",
             data=local_entries,
             term=self.current_term
         )
-        
+
         # 3. 等待共识
         committed = self.cluster.wait_for_commit(proposal)
-        
+
         # 4. 应用到本地设备
         if committed:
             self.local_p4rt.WriteTableEntry(local_entries)
-    
+
     def on_receive_proposal(self, proposal):
         """处理接收到的提议"""
-        
+
         # 验证提议
         if self.validate_proposal(proposal):
             # 应用变更
             self.local_p4rt.WriteTableEntry(proposal.data)
-            
+
             # 确认提议
             self.cluster.ack_proposal(proposal, success=True)
         else:
@@ -698,7 +698,7 @@ class PipelineUpdateManager:
     def __init__(self, p4rt_helper):
         self.p4rt = p4rt_helper
         self.current_pipeline = None
-    
+
     def update_pipeline_atomic(self, new_p4_program, new_p4_config):
         """
         原子更新流水线:
@@ -706,10 +706,10 @@ class PipelineUpdateManager:
         2. 验证
         3. 切换
         """
-        
+
         # 1. 读取当前表项
         current_entries = self.dump_all_entries()
-        
+
         # 2. 加载新流水线配置 (不激活)
         self.p4rt.SetForwardingPipelineConfig(
             p4_info=new_p4_program.p4info,
@@ -717,10 +717,10 @@ class PipelineUpdateManager:
             dev_id=1,
             action=SET_AND_VERIFY  # 验证模式
         )
-        
+
         # 3. 转换表项到新格式
         new_entries = self.translate_entries(current_entries, new_p4_program)
-        
+
         # 4. 原子切换
         self.p4rt.SetForwardingPipelineConfig(
             p4_info=new_p4_program.p4info,
@@ -729,7 +729,7 @@ class PipelineUpdateManager:
             action=RECONCILE_AND_COMMIT,  # 切换并迁移
             entries=new_entries
         )
-        
+
         self.current_pipeline = new_p4_program
 ```
 
@@ -737,11 +737,11 @@ class PipelineUpdateManager:
 
 ## 9. 总结
 
-| SDN 组件 | 技术 | P4 集成方式 |
-|---------|------|------------|
-| **ONOS** | Java | P4Runtime Provider |
-| **Stratum** | Go/C++ | gRPC + P4Runtime |
-| **Barefoot Runtime** | Python/C++ | 优化的 P4Runtime |
-| **OpenDaylight** | Java | P4Runtime Plugin |
+| SDN 组件             | 技术       | P4 集成方式        |
+| -------------------- | ---------- | ------------------ |
+| **ONOS**             | Java       | P4Runtime Provider |
+| **Stratum**          | Go/C++     | gRPC + P4Runtime   |
+| **Barefoot Runtime** | Python/C++ | 优化的 P4Runtime   |
+| **OpenDaylight**     | Java       | P4Runtime Plugin   |
 
 P4 与 SDN 的结合实现了真正的**可编程数据平面 + 集中式控制**的融合，推动网络进入新时代。

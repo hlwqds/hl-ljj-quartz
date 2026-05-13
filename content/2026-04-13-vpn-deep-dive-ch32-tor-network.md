@@ -5,8 +5,8 @@ tags: [vpn, series, tor, onion, anonymity, proxy, censorship, dark-web]
 description: "Tor 洋葱路由网络深度解析——匿名通信原理、Onion Proxy、Tor 浏览器、Entry/Exit 节点、Hidden Services、TOR over TLS/obfs4 混淆与中国使用指南"
 ---
 
-> [!info] VPN 技术深度探索系列
-> 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+> [!info] VPN 技术深度探索系列 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-vpn-deep-dive-ch31-tls-cdn|TLS 伪装与 CDN]]
 > 2. **第三十二章：Tor 网络**
 > 3. [[2026-04-13-vpn-deep-dive-ch33-socks-proxy|第三十三章：SOCKS 代理]]

@@ -9,8 +9,8 @@ tags:
   - bandwidth-management
 ---
 
-> [!info] eBPF 2026 深度探索系列
-> 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+> [!info] eBPF 2026 深度探索系列 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+>
 > 1. [[2026-04-08-ebpf-deep-dive-ch1-registers-and-instructions|第一章：寄存器与指令集]]
 > 2. [[2026-04-08-ebpf-deep-dive-ch1-5-function-calls|第一.五章：四种函数调用与动态内存]]
 > 3. [[2026-04-08-ebpf-deep-dive-ch1-6-the-verifier|第一.六章：验证器 (Verifier) 的底层逻辑]]
@@ -62,6 +62,7 @@ tags:
 > 49. [[2026-04-09-ebpf-deep-dive-ch40-network-protocols-deep-dive|第四十章：网络协议深度解析——TCP/UDP/QUIC 的 eBPF 视角]]
 > 50. [[2026-04-09-ebpf-deep-dive-ch41-memory-safety-and-vulnerabilities|第四十一章：eBPF 内存安全与漏洞分析]]
 > 51. [[2026-04-09-ebpf-deep-dive-ch42-service-mesh-integration|第四十二章：eBPF 与 Service Mesh 深度集成]]
+
 ---
 
 # 第六章：TC (Traffic Control) 流量调度艺术
@@ -95,15 +96,15 @@ graph LR
 
 ### 1.1 TC vs XDP 核心差异
 
-| 维度 | XDP | TC (cls_bpf) |
-|:---|:---|:---|
-| **挂载点** | 驱动层（SKB 构造前） | 协议栈 L2 层（SKB 构造后） |
-| **上下文结构** | `xdp_md`（原始字节指针） | `__sk_buff`（结构化元数据） |
-| **方向** | 仅 Ingress | **Ingress + Egress** |
-| **性能** | 极高（无 SKB 开销） | 高（有 SKB 开销） |
-| **协议解析** | 手动（逐字节） | 可利用 `skb->protocol` 等预解析字段 |
-| **硬件要求** | 需驱动支持 Native | 无特殊要求 |
-| **适用场景** | DDoS 防御、快速转发 | 策略执行、带宽控制、容器网络 |
+| 维度           | XDP                      | TC (cls_bpf)                        |
+| :------------- | :----------------------- | :---------------------------------- |
+| **挂载点**     | 驱动层（SKB 构造前）     | 协议栈 L2 层（SKB 构造后）          |
+| **上下文结构** | `xdp_md`（原始字节指针） | `__sk_buff`（结构化元数据）         |
+| **方向**       | 仅 Ingress               | **Ingress + Egress**                |
+| **性能**       | 极高（无 SKB 开销）      | 高（有 SKB 开销）                   |
+| **协议解析**   | 手动（逐字节）           | 可利用 `skb->protocol` 等预解析字段 |
+| **硬件要求**   | 需驱动支持 Native        | 无特殊要求                          |
+| **适用场景**   | DDoS 防御、快速转发      | 策略执行、带宽控制、容器网络        |
 
 ---
 
@@ -155,7 +156,7 @@ tc filter del dev eth0 ingress
 
 ---
 
-## 3. TC BPF 的 __sk_buff 上下文
+## 3. TC BPF 的 \_\_sk_buff 上下文
 
 ### 3.1 核心字段
 
@@ -225,14 +226,14 @@ int tc_parse(struct __sk_buff *skb) {
 
 现代 TC BPF 推荐使用 **Direct Action** 模式（`tc filter` 命令中的 `da` 标志）。在此模式下，BPF 程序的返回值直接决定报文的处理方式，不需要传统的 class/action 链。
 
-| 返回码 | 值 | 行为 |
-|:---|:---|:---|
-| `TC_ACT_OK` | 0 | 通过，继续后续处理 |
-| `TC_ACT_SHOT` | -1 | **丢弃报文** |
-| `TC_ACT_RECLASSIFY` | 1 | 重新分类（回到 qdisc） |
-| `TC_ACT_PIPE` | 3 | 传递给下一个 filter |
-| `TC_ACT_REDIRECT` | 7 | 重定向到另一个接口 |
-| `TC_ACT_UNSPEC` | -1 | 使用默认动作 |
+| 返回码              | 值  | 行为                   |
+| :------------------ | :-- | :--------------------- |
+| `TC_ACT_OK`         | 0   | 通过，继续后续处理     |
+| `TC_ACT_SHOT`       | -1  | **丢弃报文**           |
+| `TC_ACT_RECLASSIFY` | 1   | 重新分类（回到 qdisc） |
+| `TC_ACT_PIPE`       | 3   | 传递给下一个 filter    |
+| `TC_ACT_REDIRECT`   | 7   | 重定向到另一个接口     |
+| `TC_ACT_UNSPEC`     | -1  | 使用默认动作           |
 
 ### 4.2 cb[]：自定义控制块
 
@@ -409,13 +410,13 @@ tc qdisc add dev eth0 root handle 1: fq \
 
 ### 6.3 EDT vs HTB 性能对比
 
-| 指标 | HTB | EDT + fq |
-|:---|:---|:---|
-| 多核扩展性 | 差（全局锁） | 优（Per-CPU 无锁） |
-| 延迟抖动 | 高（队列调度不精确） | 低（精确时间戳调度） |
-| 配置复杂度 | 高（多层 class/hierarchy） | 低（一个 BPF 程序） |
-| 精度 | ~1ms | ~100ns |
-| CPU 开销 | 高（规则遍历 + 锁） | 低（Hash 查找 + 无锁） |
+| 指标       | HTB                        | EDT + fq               |
+| :--------- | :------------------------- | :--------------------- |
+| 多核扩展性 | 差（全局锁）               | 优（Per-CPU 无锁）     |
+| 延迟抖动   | 高（队列调度不精确）       | 低（精确时间戳调度）   |
+| 配置复杂度 | 高（多层 class/hierarchy） | 低（一个 BPF 程序）    |
+| 精度       | ~1ms                       | ~100ns                 |
+| CPU 开销   | 高（规则遍历 + 锁）        | 低（Hash 查找 + 无锁） |
 
 ---
 

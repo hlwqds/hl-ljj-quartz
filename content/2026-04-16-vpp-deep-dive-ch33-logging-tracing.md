@@ -294,19 +294,19 @@ global:
   evaluation_interval: 15s
 
 scrape_configs:
-  - job_name: 'vpp'
+  - job_name: "vpp"
     static_configs:
-      - targets: ['localhost:9932']
+      - targets: ["localhost:9932"]
     metrics_path: /metrics
     scrape_interval: 5s
     scrape_timeout: 5s
 
-  - job_name: 'vpp_full'
+  - job_name: "vpp_full"
     static_configs:
-      - targets: ['localhost:9932']
+      - targets: ["localhost:9932"]
     metrics_path: /metrics_full
     params:
-      mode: ['full']
+      mode: ["full"]
     scrape_interval: 30s
 ```
 
@@ -367,7 +367,7 @@ my_plugin_process_packet (vlib_main_t *vm, vlib_buffer_t *b)
       {
         "title": "Interface RX/TX Packets",
         "type": "timeseries",
-        "gridPos": {"x": 0, "y": 0, "w": 12, "h": 8},
+        "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
         "targets": [
           {
             "expr": "rate(vpp_interface_rx_packets_total[5m])",
@@ -408,7 +408,7 @@ my_plugin_process_packet (vlib_main_t *vm, vlib_buffer_t *b)
     {
       "title": "System Overview",
       "type": "row",
-      "gridPos": {"x": 0, "y": 0, "w": 24, "h": 2},
+      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 2 },
       "collapsed": false,
       "panels": [
         {
@@ -427,9 +427,9 @@ my_plugin_process_packet (vlib_main_t *vm, vlib_buffer_t *b)
               "thresholds": {
                 "mode": "absolute",
                 "steps": [
-                  {"color": "green", "value": null},
-                  {"color": "yellow", "value": 70},
-                  {"color": "red", "value": 90}
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 70 },
+                  { "color": "red", "value": 90 }
                 ]
               }
             }
@@ -449,7 +449,7 @@ my_plugin_process_packet (vlib_main_t *vm, vlib_buffer_t *b)
     {
       "title": "Interface Throughput",
       "type": "row",
-      "gridPos": {"x": 0, "y": 8, "w": 24, "h": 10},
+      "gridPos": { "x": 0, "y": 8, "w": 24, "h": 10 },
       "panels": [
         {
           "title": "RX Packets/s",
@@ -461,8 +461,8 @@ my_plugin_process_packet (vlib_main_t *vm, vlib_buffer_t *b)
             }
           ],
           "options": {
-            "legend": {"displayMode": "table"},
-            "tooltip": {"mode": "multi"}
+            "legend": { "displayMode": "table" },
+            "tooltip": { "mode": "multi" }
           }
         },
         {
@@ -515,7 +515,7 @@ my_plugin_process_packet (vlib_main_t *vm, vlib_buffer_t *b)
         }
       ],
       "options": {
-        "legend": {"displayMode": "table", "placement": "right"}
+        "legend": { "displayMode": "table", "placement": "right" }
       }
     },
     {
@@ -556,9 +556,9 @@ my_plugin_process_packet (vlib_main_t *vm, vlib_buffer_t *b)
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              {"color": "green", "value": null},
-              {"color": "yellow", "value": 0.01},
-              {"color": "red", "value": 0.1}
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.01 },
+              { "color": "red", "value": 0.1 }
             ]
           }
         }

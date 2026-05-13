@@ -93,13 +93,13 @@ curl -H "Content-Type: application/json" \
 
 SSL Labs 评级标准：
 
-| 评级 | 含义 | TLS 1.3 支持 | 强加密套件 | 前向保密 |
-|------|------|--------------|-----------|----------|
-| A+   | 卓越 | 必须 | 必须 | 必须 |
-| A    | 优秀 | 优先 | 必须 | 必须 |
-| B    | 良好 | - | 必须 | 推荐 |
-| C    | 合格 | - | 推荐 | - |
-| D/E/F| 不合格 | 弱加密或更糟 | - | - |
+| 评级  | 含义   | TLS 1.3 支持 | 强加密套件 | 前向保密 |
+| ----- | ------ | ------------ | ---------- | -------- |
+| A+    | 卓越   | 必须         | 必须       | 必须     |
+| A     | 优秀   | 优先         | 必须       | 必须     |
+| B     | 良好   | -            | 必须       | 推荐     |
+| C     | 合格   | -            | 推荐       | -        |
+| D/E/F | 不合格 | 弱加密或更糟 | -          | -        |
 
 ### 1.3 testssl.sh 命令行工具
 
@@ -137,11 +137,11 @@ cat hosts.txt | ./testssl.sh --each
 
 ### 1.4 工具对比
 
-| 工具 | 类型 | 适用场景 | 优点 | 缺点 |
-|------|------|----------|------|------|
-| OpenSSL s_client | 命令行 | 实时调试、快速检查 | 功能全面、随时可用 | 输出较乱 |
-| SSL Labs | 在线 | 全面评估、生成报告 | 分析最全面 | 需要公网访问 |
-| testssl.sh | 命令行 | 批量检测、CI 集成 | 开源、离线可用 | 速度较慢 |
+| 工具             | 类型   | 适用场景           | 优点               | 缺点         |
+| ---------------- | ------ | ------------------ | ------------------ | ------------ |
+| OpenSSL s_client | 命令行 | 实时调试、快速检查 | 功能全面、随时可用 | 输出较乱     |
+| SSL Labs         | 在线   | 全面评估、生成报告 | 分析最全面         | 需要公网访问 |
+| testssl.sh       | 命令行 | 批量检测、CI 集成  | 开源、离线可用     | 速度较慢     |
 
 ## 2. Wireshark TLS 抓包技巧
 
@@ -380,17 +380,17 @@ openssl s_client -connect example.com:443 -showcerts 2>/dev/null | \
 security.getUserMessage()
 
 // 检查证书状态（需要页面加载完成后）
-performance.getEntriesByType('resource').forEach(r => {
-    if (r.secureConnectionStart) {
-        console.log(r.name, {
-            protocol: r.nextHopProtocol,
-            transferSize: r.transferSize
-        });
-    }
-});
+performance.getEntriesByType("resource").forEach((r) => {
+  if (r.secureConnectionStart) {
+    console.log(r.name, {
+      protocol: r.nextHopProtocol,
+      transferSize: r.transferSize,
+    })
+  }
+})
 
 // 查看详细的 timing 信息
-performance.getEntriesByType('navigation')[0].toJSON()
+performance.getEntriesByType("navigation")[0].toJSON()
 ```
 
 ## 4. 常见 TLS 错误详解
@@ -399,31 +399,31 @@ performance.getEntriesByType('navigation')[0].toJSON()
 
 ### 4.1 错误码对照表
 
-| Alert Level | Alert Description | 含义 | 常见原因 |
-|-------------|-------------------|------|----------|
-| fatal | close_notify | 连接正常关闭 | - |
-| fatal | unexpected_message | 收到意外消息 | 协议版本不匹配 |
-| fatal | bad_record_mac | MAC 校验失败 | 密钥错误或篡改 |
-| fatal | decryption_failed | 解密失败 | 密钥错误 |
-| fatal | record_overflow | 记录溢出 | 收到异常大记录 |
-| fatal | certificate_unknown | 证书验证失败 | 证书链问题 |
-| fatal | handshake_failure | 握手失败 | 加密套件不匹配 |
-| fatal | no_cert | 证书缺失 | 客户端认证配置错误 |
-| fatal | unsupported_cert | 不支持的证书类型 | 证书格式错误 |
-| fatal | certificate_revoked | 证书已吊销 | 证书被吊销 |
-| fatal | certificate_expired | 证书已过期 | 证书过期 |
-| fatal | certificate_unknown | 证书未知 | CA 不受信任 |
-| fatal | illegal_parameter | 非法参数 | 参数格式错误 |
-| fatal | unknown_ca | 未知 CA | 根证书不受信任 |
-| fatal | access_denied | 访问被拒绝 | 证书 SAN 不匹配 |
-| fatal | decode_error | 解码错误 | 消息格式损坏 |
-| fatal | decrypt_error | 加密错误 | 签名验证失败 |
-| fatal | export_restriction | 导出限制 | 加密套件出口限制 |
-| fatal | protocol_version | 协议版本不支持 | TLS 版本不匹配 |
-| fatal | insufficient_security | 安全级别不足 | 加密强度不够 |
-| fatal | no_cipher_match | 没有匹配的加密套件 | 服务器不支持任何客户端加密套件 |
-| fatal | unspecified_error | 未指定错误 | 未知错误 |
-| fatal | internal_error | 内部错误 | 实现错误 |
+| Alert Level | Alert Description     | 含义               | 常见原因                       |
+| ----------- | --------------------- | ------------------ | ------------------------------ |
+| fatal       | close_notify          | 连接正常关闭       | -                              |
+| fatal       | unexpected_message    | 收到意外消息       | 协议版本不匹配                 |
+| fatal       | bad_record_mac        | MAC 校验失败       | 密钥错误或篡改                 |
+| fatal       | decryption_failed     | 解密失败           | 密钥错误                       |
+| fatal       | record_overflow       | 记录溢出           | 收到异常大记录                 |
+| fatal       | certificate_unknown   | 证书验证失败       | 证书链问题                     |
+| fatal       | handshake_failure     | 握手失败           | 加密套件不匹配                 |
+| fatal       | no_cert               | 证书缺失           | 客户端认证配置错误             |
+| fatal       | unsupported_cert      | 不支持的证书类型   | 证书格式错误                   |
+| fatal       | certificate_revoked   | 证书已吊销         | 证书被吊销                     |
+| fatal       | certificate_expired   | 证书已过期         | 证书过期                       |
+| fatal       | certificate_unknown   | 证书未知           | CA 不受信任                    |
+| fatal       | illegal_parameter     | 非法参数           | 参数格式错误                   |
+| fatal       | unknown_ca            | 未知 CA            | 根证书不受信任                 |
+| fatal       | access_denied         | 访问被拒绝         | 证书 SAN 不匹配                |
+| fatal       | decode_error          | 解码错误           | 消息格式损坏                   |
+| fatal       | decrypt_error         | 加密错误           | 签名验证失败                   |
+| fatal       | export_restriction    | 导出限制           | 加密套件出口限制               |
+| fatal       | protocol_version      | 协议版本不支持     | TLS 版本不匹配                 |
+| fatal       | insufficient_security | 安全级别不足       | 加密强度不够                   |
+| fatal       | no_cipher_match       | 没有匹配的加密套件 | 服务器不支持任何客户端加密套件 |
+| fatal       | unspecified_error     | 未指定错误         | 未知错误                       |
+| fatal       | internal_error        | 内部错误           | 实现错误                       |
 
 ### 4.2 certificate_unknown 详解
 
@@ -619,7 +619,7 @@ func basicHTTPSClient() {
         panic(err)
     }
     defer resp.Body.Close()
-    
+
     body, _ := ioutil.ReadAll(resp.Body)
     fmt.Println(string(body))
 }
@@ -630,7 +630,7 @@ func customTLSClient() {
     if err != nil {
         panic(err)
     }
-    
+
     // 加载 CA 证书
     caCert, err := ioutil.ReadFile("ca.crt")
     if err != nil {
@@ -638,7 +638,7 @@ func customTLSClient() {
     }
     caCertPool := x509.NewCertPool()
     caCertPool.AppendCertsFromPEM(caCert)
-    
+
     // 配置 TLS
     tlsConfig := &tls.Config{
         Certificates:       []tls.Certificate{cert},
@@ -647,19 +647,19 @@ func customTLSClient() {
         MinVersion:         tls.VersionTLS12,
         MaxVersion:         tls.VersionTLS13,
     }
-    
+
     client := &http.Client{
         Transport: &http.Transport{
             TLSClientConfig: tlsConfig,
         },
     }
-    
+
     resp, err := client.Get("https://example.com")
     if err != nil {
         panic(err)
     }
     defer resp.Body.Close()
-    
+
     fmt.Printf("Protocol: %s\n", resp.TLS.Version)
     fmt.Printf("Cipher Suite: %x\n", resp.TLS.CipherSuite)
 }
@@ -683,13 +683,13 @@ func customVerifyClient() {
     if err != nil {
         panic(err)
     }
-    
+
     tlsConfig := &tls.Config{
         RootCAs: caCert,
         // 自定义验证回调（Go 1.15+ 已废弃，仅在特定场景使用）
         // VerifyPeerCertificate 被调用来进行额外的验证
     }
-    
+
     // 验证函数
     customVerify := func(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error {
         for _, rawCert := range rawCerts {
@@ -697,12 +697,12 @@ func customVerifyClient() {
             if err != nil {
                 return err
             }
-            
+
             // 自定义验证逻辑
             if cert.Subject.CommonName != "example.com" {
                 return fmt.Errorf("invalid common name: %s", cert.Subject.CommonName)
             }
-            
+
             // 检查证书是否在特定用途上正确
             for _, usage := range cert.ExtKeyUsage {
                 if usage == x509.ExtKeyUsageServerAuth {
@@ -712,7 +712,7 @@ func customVerifyClient() {
         }
         return nil
     }
-    
+
     // 使用 VerifyConnection 进行连接级别的验证
     tlsConfig.VerifyConnection = customVerify
 }
@@ -737,7 +737,7 @@ func tlsServer() {
     if err != nil {
         panic(err)
     }
-    
+
     // 加载 CA 证书（用于客户端认证）
     caCert, err := ioutil.ReadFile("ca.crt")
     if err != nil {
@@ -745,7 +745,7 @@ func tlsServer() {
     }
     caCertPool := x509.NewCertPool()
     caCertPool.AppendCertsFromPEM(caCert)
-    
+
     tlsConfig := &tls.Config{
         Certificates: []tls.Certificate{serverCert},
         ClientCAs:    caCertPool,
@@ -763,13 +763,13 @@ func tlsServer() {
             tls.TLS_AES_256_GCM_SHA384,
         },
     }
-    
+
     server := &http.Server{
         Addr:      ":8443",
         TLSConfig: tlsConfig,
         Handler:   http.HandlerFunc(handler),
     }
-    
+
     fmt.Println("Server starting on :8443")
     err = server.ListenAndServeTLS("", "")
     if err != nil {
@@ -798,21 +798,21 @@ func getTLSInfo() {
         panic(err)
     }
     defer resp.Body.Close()
-    
+
     // 获取 TLS 连接信息
     tlsState := resp.TLS
-    
+
     if tlsState == nil {
         fmt.Println("Not a TLS connection")
         return
     }
-    
+
     fmt.Printf("TLS Version: %d\n", tlsState.Version)
     fmt.Printf("Handshake Complete: %v\n", tlsState.HandshakeComplete)
     fmt.Printf("Cipher Suite: %x\n", tlsState.CipherSuite)
     fmt.Printf("Server Name: %s\n", tlsState.ServerName)
     fmt.Printf("Negotiated Protocol: %s\n", tlsState.NegotiatedProtocol)
-    
+
     // 遍历证书链
     for i, cert := range tlsState.PeerCertificates {
         fmt.Printf("\nCertificate %d:\n", i)
@@ -838,16 +838,16 @@ func bestPracticeTLSConfig() *tls.Config {
     return &tls.Config{
         // 最低 TLS 版本
         MinVersion: tls.VersionTLS12,
-        
+
         // 推荐 TLS 1.3（如果可用）
         MaxVersion: tls.VersionTLS13,
-        
+
         // 安全曲线偏好（TLS 1.2）
         CurvePreferences: []tls.CurveID{
             tls.X25519,    // 优先 X25519
             tls.CurveP256,
         },
-        
+
         // 安全加密套件
         CipherSuites: []uint16{
             // TLS 1.3 加密套件
@@ -859,15 +859,15 @@ func bestPracticeTLSConfig() *tls.Config {
             tls.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,
             tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
         },
-        
+
         // 会话缓存配置
         SessionTicketsDisabled: false,
         // 推荐使用票证密钥轮换
         // SetSessionTicketKeys 或使用 tls.Config#SetSessionTicketKey
-        
+
         // 前向保密
         // 通过使用 DHE/ECDHE 加密套件自动实现
-        
+
         // OCSP Stapling（服务器端自动配置）
         // 如果需要客户端请求 OCSP：
         // OCSPRequestTimeout: 5 * time.Second,
@@ -903,7 +903,7 @@ import socket
 def basic_tls_connection():
     """最基本的 TLS 连接"""
     context = ssl.create_default_context()
-    
+
     with socket.create_connection(('example.com', 443)) as sock:
         with context.wrap_socket(sock, server_hostname='example.com') as ssock:
             print(ssock.version())
@@ -924,23 +924,23 @@ def custom_ssl_context():
     """自定义 SSL 上下文"""
     # 创建上下文
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-    
+
     # 加载可信 CA 证书
     context.load_verify_locations('/etc/ssl/certs/ca-certificates.crt')
-    
+
     # 或者使用系统默认的 CA
     # context.load_default_certs()
-    
+
     # 设置验证模式
     context.check_hostname = True
     context.verify_mode = ssl.CERT_REQUIRED
-    
+
     # 设置最低 TLS 版本
     context.minimum_version = ssl.TLSVersion.TLSv1_2
-    
+
     # 设置加密套件
     context.set_ciphers('ECDHE+AESGCM:ECDHE+CHACHA20:DHE+AESGCM:DHE+CHACHA20')
-    
+
     # 使用自定义上下文
     with socket.create_connection(('example.com', 443)) as sock:
         with context.wrap_socket(sock, server_hostname='example.com') as ssock:
@@ -948,7 +948,7 @@ def custom_ssl_context():
             cert = ssock.getpeercert(binary_form=True)
             cipher = ssock.cipher()
             version = ssock.version()
-            
+
             print(f"Version: {version}")
             print(f"Cipher: {cipher}")
             print(f"Certificate subject: {ssock.getpeercert()['subject']}")
@@ -968,20 +968,20 @@ def verify_certificate_chain():
     context.check_hostname = True
     context.verify_mode = ssl.CERT_REQUIRED
     context.load_default_certs()
-    
+
     with socket.create_connection(('example.com', 443)) as sock:
         with context.wrap_socket(sock, server_hostname='example.com') as ssock:
             # 获取证书链
             cert_dict = ssock.getpeercert()
-            
+
             # 获取完整的 PEM 格式证书链
             pem_certs = ssock.getpeercert(chain=True)
-            
+
             for i, cert in enumerate(pem_certs):
                 print(f"\n=== Certificate {i} ===")
                 print(f"Subject: {cert['subject']}")
                 print(f"Issuer: {cert['issuer']}")
-                
+
                 # 解析日期
                 not_before = cert['notBefore']
                 not_after = cert['notAfter']
@@ -992,21 +992,21 @@ def custom_hostname_verification():
     """自定义主机名验证"""
     import hashlib
     import base64
-    
+
     def verify_callback(conn, cert, errno, errdepth, retcode):
         if errno != 0:
             return False
-        
+
         # 自定义验证逻辑
         san = cert.get('subjectAltName', ())[0]
         expected_host = 'example.com'
-        
+
         if san[1] != expected_host:
             print(f"Hostname mismatch: {san[1]} != {expected_host}")
             return False
-        
+
         return True
-    
+
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
     context.check_hostname = False  # 禁用默认检查
     context.verify_mode = ssl.CERT_REQUIRED
@@ -1023,39 +1023,39 @@ from requests.structures import CaseInsensitiveDict
 
 def requests_with_tls():
     """requests 库的 TLS 配置"""
-    
+
     # 基础请求（使用系统 CA）
     resp = requests.get('https://example.com')
     print(resp.status_code)
     print(resp.url)
-    
+
     # 查看响应 TLS 信息
     print(f"TLS Version: {resp.raw._original_response.closed}")
     print(f"Cipher: {resp.raw._original_response.connection.getpeercert()}")
-    
+
 def requests_with_custom_ca():
     """使用自定义 CA 证书"""
     session = requests.Session()
-    
+
     # 加载自定义 CA
     session.verify = '/path/to/ca-bundle.crt'
-    
+
     # 或者禁用验证（仅用于测试）
     # session.verify = False  # 警告：安全性降低
-    
+
     resp = session.get('https://example.com')
     print(resp.status_code)
 
 def requests_with_client_cert():
     """使用客户端证书"""
     session = requests.Session()
-    
+
     # 配置客户端证书
     session.cert = ('/path/to/client.crt', '/path/to/client.key')
-    
+
     # 或者只指定证书文件（无密码）
     # session.cert = '/path/to/client.crt'
-    
+
     resp = session.get('https://example.com')
     print(resp.status_code)
 
@@ -1063,10 +1063,10 @@ def requests_with_insecure_warning():
     """禁用 SSL 警告"""
     import urllib3
     urllib3.disable_warnings(category=urllib3.exceptions.InsecureRequestWarning)
-    
+
     session = requests.Session()
     session.verify = False
-    
+
     resp = session.get('https://example.com', verify=False)
     print(resp.status_code)
 
@@ -1074,27 +1074,27 @@ def adapter_with_custom_tls():
     """使用 HTTPAdapter 自定义 TLS"""
     from requests.adapters import HTTPAdapter
     from urllib3.util.ssl_ import DEFAULT_CIPHERS
-    
+
     class TLSAdapter(HTTPAdapter):
         def __init__(self, min_tls_version=None, **kwargs):
             super().__init__(**kwargs)
             self.min_tls_version = min_tls_version
-        
+
         def init_poolmanager(self, *args, **kwargs):
             ctx = ssl.create_default_context()
-            
+
             if self.min_tls_version:
                 ctx.minimum_version = self.min_tls_version
-            
+
             # 设置安全的加密套件
             ctx.set_ciphers(DEFAULT_CIPHERS.replace(':EXP', ''))
-            
+
             kwargs['ssl_context'] = ctx
             return super().init_poolmanager(*args, **kwargs)
-    
+
     session = requests.Session()
     session.mount('https://', TLSAdapter(ssl.TLSVersion.TLSv1_2))
-    
+
     resp = session.get('https://example.com')
     print(resp.status_code)
 ```
@@ -1109,46 +1109,46 @@ def openssl_advanced_connection():
     """使用 pyOpenSSL 进行高级 TLS 操作"""
     # 创建上下文
     ctx = SSL.Context(SSL.TLSv1_2_METHOD)
-    
+
     # 设置选项
     ctx.set_options(SSL.OP_NO_SSLv2 | SSL.OP_NO_SSLv3 | SSL.OP_NO_TLSv1)
-    
+
     # 设置加密套件
     ctx.set_cipher_list('ECDHE+AESGCM:ECDHE+CHACHA20')
-    
+
     # 加载 CA 证书
     ctx.load_verify_locations('/etc/ssl/certs/ca-certificates.crt')
     ctx.set_verify_depth(5)
-    
+
     # 设置连接
     conn = SSL.Connection(ctx, socket.socket())
     conn.connect(('example.com', 443))
     conn.setblocking(True)
-    
+
     # SNI
     conn.set_tlsext_host_name('example.com')
-    
+
     # 执行握手
     conn.do_handshake()
-    
+
     # 获取证书信息
     cert = conn.get_peer_certificate()
     print(f"Subject: {cert.get_subject()}")
     print(f"Issuer: {cert.get_issuer()}")
     print(f"Cipher: {conn.get_cipher()}")
-    
+
     # 获取完整的证书链
     chain = conn.get_peer_cert_chain()
     for i, c in enumerate(chain):
         print(f"\nCertificate {i}:")
         print(f"  Subject: {c.get_subject()}")
         print(f"  Serial: {c.get_serial_number()}")
-    
+
     # 发送请求
     conn.send(b'GET / HTTP/1.1\r\nHost: example.com\r\n\r\n')
     response = conn.recv(4096)
     print(response.decode())
-    
+
     conn.shutdown()
     conn.close()
 ```
@@ -1165,10 +1165,10 @@ def debug_tls_connection():
     context = ssl.create_default_context()
     context.check_hostname = True
     context.verify_mode = ssl.CERT_REQUIRED
-    
+
     # 使用 certifi 的 CA 包（更可靠）
     context.load_verify_locations(certifi.where())
-    
+
     with socket.create_connection(('example.com', 443)) as sock:
         with context.wrap_socket(sock, server_hostname='example.com') as ssock:
             # 打印所有可用的 TLS 信息
@@ -1176,7 +1176,7 @@ def debug_tls_connection():
             print(f"Version: {ssock.version()}")
             print(f"Cipher: {ssock.cipher()}")
             print(f"Compression: {ssock.compression()}")
-            
+
             # 打印证书信息
             cert = ssock.getpeercert()
             print(f"\n=== Certificate ===")
@@ -1186,36 +1186,36 @@ def debug_tls_connection():
 def check_certificate_expiry():
     """检查证书过期时间"""
     import datetime
-    
+
     context = ssl.create_default_context()
     context.check_hostname = True
     context.verify_mode = ssl.CERT_REQUIRED
-    
+
     with socket.create_connection(('example.com', 443)) as sock:
         with context.wrap_socket(sock, server_hostname='example.com') as ssock:
             cert = ssock.getpeercert()
-            
+
             # 解析 notAfter 日期
             not_after = cert['notAfter']
             expiry_date = datetime.datetime.strptime(not_after, '%b %d %H:%M:%S %Y %Z')
-            
+
             # 计算剩余天数
             remaining = expiry_date - datetime.datetime.utcnow()
             print(f"Certificate expires: {expiry_date}")
             print(f"Days remaining: {remaining.days}")
-            
+
             if remaining.days < 30:
                 print("WARNING: Certificate expires soon!")
 
 def scan_available_ciphers():
     """扫描服务器支持的加密套件"""
     import subprocess
-    
+
     result = subprocess.run([
         'openssl', 's_client', '-connect', 'example.com:443',
         '-cipher', 'ALL', '-v'
     ], capture_output=True, text=True)
-    
+
     print(result.stdout)
     print(result.stderr)
 ```
@@ -1394,14 +1394,14 @@ curl -v -x https://proxy.example.com:8080 https://example.com
 
 **版本支持情况：**
 
-| 版本 | 状态 | 建议 |
-|------|------|------|
-| SSL 2.0 | 废弃 | 禁用 |
-| SSL 3.0 | 废弃 | 禁用 |
-| TLS 1.0 | 废弃 | 禁用 |
-| TLS 1.1 | 废弃 | 禁用 |
+| 版本    | 状态 | 建议           |
+| ------- | ---- | -------------- |
+| SSL 2.0 | 废弃 | 禁用           |
+| SSL 3.0 | 废弃 | 禁用           |
+| TLS 1.0 | 废弃 | 禁用           |
+| TLS 1.1 | 废弃 | 禁用           |
 | TLS 1.2 | 推荐 | 保留（兼容性） |
-| TLS 1.3 | 推荐 | 启用（最佳） |
+| TLS 1.3 | 推荐 | 启用（最佳）   |
 
 **Nginx 配置：**
 
@@ -1410,16 +1410,16 @@ curl -v -x https://proxy.example.com:8080 https://example.com
 
 server {
     listen 443 ssl http2;
-    
+
     ssl_certificate /etc/ssl/certs/server.crt;
     ssl_certificate_key /etc/ssl/private/server.key;
-    
+
     # TLS 版本配置 - 推荐配置
     ssl_protocols TLSv1.2 TLSv1.3;
-    
+
     # 禁用 TLS 1.0/1.1（旧配置）
     # ssl_protocols TLSv1.2 TLSv1.3;
-    
+
     # 不推荐的配置（允许 TLS 1.0/1.1）
     # ssl_protocols TLSv1 TLSv1.1 TLSv1.2 TLSv1.3;
 }
@@ -1434,10 +1434,10 @@ server {
     SSLEngine on
     SSLCertificateFile /etc/ssl/certs/server.crt
     SSLCertificateKeyFile /etc/ssl/private/server.key
-    
+
     # TLS 版本配置
     SSLProtocol -all +TLSv1.2 +TLSv1.3
-    
+
     # 旧配置（不推荐）
     # SSLProtocol all -SSLv3 -TLSv1 -TLSv1.1
 </VirtualHost>
@@ -1498,7 +1498,7 @@ ssl_ciphers 'TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:
 ssl_ciphers 'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:
              ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:
              DHE-RSA-AES256-GCM-SHA384';
-             
+
 # 启用 TLS 1.3 加密套件
 ssl_conf_command Ciphersuites TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256;
 
@@ -1557,7 +1557,7 @@ HSTS (HTTP Strict Transport Security) 强制浏览器使用 HTTPS：
 add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
 
 # 详细配置
-add_header Strict-Transport-Security 
+add_header Strict-Transport-Security
     "max-age=63072000"               # 2 年
     "includeSubDomains"              # 包含子域名
     "preload"                        # 申请预加载列表
@@ -1655,7 +1655,7 @@ graph TD
     A["根证书 (Root CA)<br/>自签名<br/>系统信任"] --> B["中间证书 (Intermediate CA)<br/>由根证书签发"]
     B --> C["服务器证书 (Server Certificate)<br/>由中间证书签发"]
     C --> D["example.com<br/>www.example.com"]
-    
+
     style A fill:#90EE90
     style B fill:#87CEEB
     style C fill:#FFA500
@@ -1734,7 +1734,7 @@ openssl s_client -connect example.com:443 -showcerts 2>/dev/null | \
 Certificate 0:
     subject=example.com
     issuer=Let's Encrypt Authority X3
-    
+
 Certificate 1:
     subject=Let's Encrypt Authority X3
     issuer=DST Root CA X3
@@ -1775,11 +1775,11 @@ openssl x509 -in root.crt -noout -dates
 
 **常见过期根证书：**
 
-| 根证书 | 过期日期 | 替代方案 |
-|--------|----------|----------|
+| 根证书                    | 过期日期   | 替代方案 |
+| ------------------------- | ---------- | -------- |
 | Baltimore CyberTrust Root | 2025-05-12 | 已有替代 |
-| DigiCert Global Root G2 | 2037-01-15 | 无需替换 |
-| WoSign Root CA | 2016-10-21 | 已过期 |
+| DigiCert Global Root G2   | 2037-01-15 | 无需替换 |
+| WoSign Root CA            | 2016-10-21 | 已过期   |
 
 **解决方案：**
 
@@ -1815,16 +1815,16 @@ openssl verify -CAfile root.crt -untrusted intermediate.crt server.crt
 
 ### 9.6 常见证书链问题汇总
 
-| 问题 | 症状 | 解决方案 |
-|------|------|----------|
-| 中间证书缺失 | SSL Labs 显示 "Missing certificate" | 服务器配置完整的证书链 |
-| 证书顺序错误 | 验证失败，issuer 不匹配 | 按正确顺序配置证书链 |
-| 根证书不受信任 | unknown_ca 错误 | 安装根证书或使用受信任 CA |
-| 根证书过期 | certificate_expired | 重新签发证书 |
-| 证书被吊销 | certificate_revoked | 使用新证书 |
-| SAN 不匹配 | certificate_unknown | 添加正确的 SAN |
-| 自签名证书 | unknown_ca | 安装自签名证书到信任存储 |
-| 交叉签名证书 | 部分客户端验证失败 | 使用完整证书链 |
+| 问题           | 症状                                | 解决方案                  |
+| -------------- | ----------------------------------- | ------------------------- |
+| 中间证书缺失   | SSL Labs 显示 "Missing certificate" | 服务器配置完整的证书链    |
+| 证书顺序错误   | 验证失败，issuer 不匹配             | 按正确顺序配置证书链      |
+| 根证书不受信任 | unknown_ca 错误                     | 安装根证书或使用受信任 CA |
+| 根证书过期     | certificate_expired                 | 重新签发证书              |
+| 证书被吊销     | certificate_revoked                 | 使用新证书                |
+| SAN 不匹配     | certificate_unknown                 | 添加正确的 SAN            |
+| 自签名证书     | unknown_ca                          | 安装自签名证书到信任存储  |
+| 交叉签名证书   | 部分客户端验证失败                  | 使用完整证书链            |
 
 ## 10. 生产环境 TLS 故障排查流程
 
@@ -1835,35 +1835,35 @@ openssl verify -CAfile root.crt -untrusted intermediate.crt server.crt
 ```mermaid
 flowchart TD
     A[TLS 连接失败] --> B{错误类型}
-    
+
     B --> C[连接被拒绝<br/>Connection refused]
     B --> D[握手超时<br/>Handshake timeout]
     B --> E[证书错误<br/>Certificate error]
     B --> F[握手失败<br/>Handshake failure]
-    
+
     C --> C1[检查端口是否开放<br/>netstat/ss -tlnp]
     C1 --> C2{端口开放?}
     C2 -->|否| C3[启动服务<br/>检查防火墙]
     C2 -->|是| C4[检查 TLS 是否启用<br/>服务配置]
-    
+
     D --> D1[检查网络连通性<br/>ping/telnet/traceroute]
     D1 --> D2{网络正常?}
     D2 -->|否| D3[联系网络团队]
     D2 -->|是| D4[检查 SSL/TLS 配置<br/>协议版本/加密套件]
-    
+
     E --> E1[证书错误详情<br/>openssl s_client]
     E1 --> E2{错误类型}
     E2 -->|expired| E3[更新证书]
     E2 -->|unknown_ca| E4[检查 CA 链]
     E2 -->|name_mismatch| E5[检查 SAN]
     E2 -->|self_signed| E6[安装根证书]
-    
+
     F --> F1{SSL Labs 检查}
     F1 --> F2{原因}
     F2 -->|cipher| F3[配置兼容加密套件]
     F2 -->|protocol| F4[启用 TLS 1.2/1.3]
     F2 -->|client_cert| F5[配置证书认证]
-    
+
     style A fill:#FFB6C1
     style C3 fill:#90EE90
     style C4 fill:#87CEEB
@@ -2127,18 +2127,18 @@ CRITICAL_DAYS=7
 
 for host in "${CHECK_HOSTS[@]}"; do
     IFS=':' read -r hostname port <<< "$host"
-    
+
     # 获取证书过期日期
     expiry=$(echo | openssl s_client -connect "$host" 2>/dev/null | \
         openssl x509 -noout -enddate 2>/dev/null | cut -d= -f2)
-    
+
     # 计算剩余天数
     expiry_epoch=$(date -d "$expiry" +%s 2>/dev/null)
     now_epoch=$(date +%s)
     days_left=$(( (expiry_epoch - now_epoch) / 86400 ))
-    
+
     echo "$hostname:$port - $days_left days left"
-    
+
     # 告警
     if [ $days_left -le $CRITICAL_DAYS ]; then
         echo "CRITICAL: Certificate for $hostname expires in $days_left days"
@@ -2185,7 +2185,7 @@ done
 
 ---
 
-*本文是"TLS 深度探索"系列的第六篇，关注实战调试技巧。
-[第一章：TLS 基础与协议详解](../2026-04-08-tls-deep-dive-ch1-basics.md) | 
-[第三章：TLS 1.3 深度解析](../2026-04-22-tls-deep-dive-ch3-tls13.md) | 
-[第五章：TLS 性能优化](../2026-05-06-tls-deep-dive-ch5-performance.md)*
+_本文是"TLS 深度探索"系列的第六篇，关注实战调试技巧。
+[第一章：TLS 基础与协议详解](../2026-04-08-tls-deep-dive-ch1-basics.md) |
+[第三章：TLS 1.3 深度解析](../2026-04-22-tls-deep-dive-ch3-tls13.md) |
+[第五章：TLS 性能优化](../2026-05-06-tls-deep-dive-ch5-performance.md)_

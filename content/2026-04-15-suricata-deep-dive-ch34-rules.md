@@ -11,15 +11,15 @@ tags:
 description: "深入解析 Suricata 规则语法：规则头结构、规则选项解析、关键字注册机制、语法检查工具、规则加载流程与源码映射"
 ---
 
-> [!info] Suricata 2026 深度探索系列
-> 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Suricata 2026 深度探索系列 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-15-suricata-deep-dive-ch1-overview|第一章：Suricata 概述]]
-> ...
-> 11. [[2026-04-15-suricata-deep-dive-ch11-detect-engine|第十一章：检测引擎架构]]
-> 12. [[2026-04-15-suricata-deep-dive-ch12-signatures|第十二章：规则解析]]
-> ...
-> 33. [[2026-04-15-suricata-deep-dive-ch33-unified2|第三十三章：Unified2]]
-> **34. 当前章节：规则语法**
+>    ...
+> 2. [[2026-04-15-suricata-deep-dive-ch11-detect-engine|第十一章：检测引擎架构]]
+> 3. [[2026-04-15-suricata-deep-dive-ch12-signatures|第十二章：规则解析]]
+>    ...
+> 4. [[2026-04-15-suricata-deep-dive-ch33-unified2|第三十三章：Unified2]]
+>    **34. 当前章节：规则语法**
 
 ---
 
@@ -61,10 +61,10 @@ alert tcp $HOME_NET any -> $EXTERNAL_NET $HTTP_PORTS (
 
 ### 1.2 方向符号
 
-| 符号 | 名称 | 说明 |
-|:---:|:---:|:---|
+| 符号 | 名称 | 说明          |
+| :--: | :--: | :------------ |
 | `->` | 单向 | 从 src 到 dst |
-| `<>` | 双向 | 双向流量 |
+| `<>` | 双向 | 双向流量      |
 
 ---
 
@@ -72,16 +72,16 @@ alert tcp $HOME_NET any -> $EXTERNAL_NET $HTTP_PORTS (
 
 ### 2.1 动作类型
 
-| 动作 | IPS 模式行为 | IDS 模式行为 |
-|:---:|:---|:---|
-| `alert` | 记录后放行 | 记录 |
-| `pass` | 放行（跳过检测） | 跳过 |
-| `drop` | 丢弃 + 告警 | 触发 Alert |
-| `reject` | 发送 RST/ICMP + 丢弃 | 触发 Alert |
-| `rejectsrc` | 仅向源发送拒绝 | 触发 Alert |
-| `rejectdst` | 仅向目标发送拒绝 | 触发 Alert |
-| `rejectboth` | 向两端发送拒绝 | 触发 Alert |
-| `log` | 仅记录 | 记录 |
+|     动作     | IPS 模式行为         | IDS 模式行为 |
+| :----------: | :------------------- | :----------- |
+|   `alert`    | 记录后放行           | 记录         |
+|    `pass`    | 放行（跳过检测）     | 跳过         |
+|    `drop`    | 丢弃 + 告警          | 触发 Alert   |
+|   `reject`   | 发送 RST/ICMP + 丢弃 | 触发 Alert   |
+| `rejectsrc`  | 仅向源发送拒绝       | 触发 Alert   |
+| `rejectdst`  | 仅向目标发送拒绝     | 触发 Alert   |
+| `rejectboth` | 向两端发送拒绝       | 触发 Alert   |
+|    `log`     | 仅记录               | 记录         |
 
 ```c
 // src/detect.h — 动作枚举
@@ -157,19 +157,19 @@ typedef struct DetectAddress_ {
 static DetectAddress *ParseAddress(const char *addr)
 {
     DetectAddress *da = SCCalloc(1, sizeof(DetectAddress));
-    
+
     /* 检查否定 */
     if (addr[0] == '!') {
         da->negated = true;
         addr++;
     }
-    
+
     /* 检查变量 ($HOME_NET 等) */
     if (addr[0] == '$') {
         const char *value = VarNameResolve(addr + 1);
         addr = value;
     }
-    
+
     /* 解析 CIDR/范围/单IP */
     if (strchr(addr, '/') != NULL) {
         ParseCIDR(addr, da);
@@ -178,7 +178,7 @@ static DetectAddress *ParseAddress(const char *addr)
     } else {
         ParseIP(addr, da);
     }
-    
+
     return da;
 }
 ```
@@ -193,16 +193,16 @@ static uint16_t ParsePort(const char *port_str)
         const char *value = VarNameResolve(port_str + 1);
         return PortVarResolve(value);
     }
-    
+
     if (strcmp(port_str, "any") == 0) {
         return 0;  // 任意端口
     }
-    
+
     if (strchr(port_str, ':') != NULL) {
         /* 范围端口: 80:85 */
         return ParsePortRange(port_str);
     }
-    
+
     return (uint16_t)atoi(port_str);
 }
 ```
@@ -220,13 +220,13 @@ typedef struct DetectKeyword_ {
     int id;                          // 关键字 ID
     const char *desc;                // 描述
     void (*Register)(void);          // 注册函数
-    
+
     /* flags */
     uint16_t flags;
 #define SIGMATCH_NO_SUB    0x01      // 不支持子选项
 #define SIGMATCH_QUOTES    0x02       // 需要引号
 #define SIGMATCH_DEONLY    0x04       // 仅检测阶段
-    
+
 } DetectKeyword;
 
 // src/detect.c — 内置关键字注册
@@ -268,7 +268,7 @@ void SigTableInit(void)
         sigmatch_table[i].id = i;
         sigmatch_table[i].Register();
     }
-    
+
     /* 调用各模块的注册函数 */
     HTTPRegister();      // http.*
     DNSRegister();       // dns.*
@@ -285,7 +285,7 @@ void RegisterContent(void)
     sigmatch_table[DETECT_CONTENT].Match = DetectContentMatch;
     sigmatch_table[DETECT_CONTENT].Setup = DetectContentSetup;
     sigmatch_table[DETECT_CONTENT].Free = DetectContentFree;
-    
+
     /* 注册修饰符 */
     DetectContentSetup();
 }
@@ -302,43 +302,43 @@ void RegisterContent(void)
 Signature *SigParse(const char *rule)
 {
     Signature *sig = SCCalloc(1, sizeof(Signature));
-    
+
     /* 跳过注释和空行 */
     if (rule[0] == '#' || rule[0] == '\0') {
         goto end;
     }
-    
+
     /* 解析规则头 */
     const char *p = rule;
-    
+
     /* 1. 解析动作 */
     const char *space = strchr(p, ' ');
     char action[32];
     strncpy(action, p, space - p);
     sig->action = ParseAction(action);
     p = space + 1;
-    
+
     /* 2. 解析协议 */
     space = strchr(p, ' ');
     char proto[16];
     strncpy(proto, p, space - p);
     sig->proto = ParseProtocol(proto);
     p = space + 1;
-    
+
     /* 3. 解析源地址 */
     space = strchr(p, ' ');
     char src_addr[256];
     strncpy(src_addr, p, space - p);
     sig->src = ParseAddress(src_addr);
     p = space + 1;
-    
+
     /* 4. 解析源端口 */
     space = strchr(p, ' ');
     char src_port[32];
     strncpy(src_port, p, space - p);
     sig->sp = ParsePort(src_port);
     p = space + 1;
-    
+
     /* 5. 解析方向 */
     if (strncmp(p, "->", 2) == 0) {
         sig->direction = SIG_FLAG_DIR_TO_DST;
@@ -347,44 +347,44 @@ Signature *SigParse(const char *rule)
         sig->direction = SIG_FLAG_DIR_BOTH;
         p += 2;
     }
-    
+
     /* 6. 解析目的地址 */
     space = strchr(p, ' ');
     char dst_addr[256];
     strncpy(dst_addr, p, space - p);
     sig->dst = ParseAddress(dst_addr);
     p = space + 1;
-    
+
     /* 7. 解析目的端口 */
     const char *paren = strchr(p, '(');
     char dst_port[32];
     strncpy(dst_port, p, paren - p);
     sig->dp = ParsePort(dst_port);
     p = paren + 1;
-    
+
     /* 8. 解析规则选项 */
     while (*p != ')' && *p != '\0') {
         /* 提取关键字 */
         const char *semicolon = strchr(p, ';');
         char option[512];
         strncpy(option, p, semicolon - p);
-        
+
         /* 解析关键字 */
         char *colon = strchr(option, ':');
         if (colon) {
             char keyname[64];
             strncpy(keyname, option, colon - option);
             char *value = colon + 1;
-            
+
             DetectKeyword *kw = FindKeyword(keyname);
             if (kw && kw->Setup) {
                 kw->Setup(value, sig);
             }
         }
-        
+
         p = semicolon + 1;
     }
-    
+
 end:
     return sig;
 }
@@ -424,12 +424,12 @@ Loading rule file: /path/to/rules/test.rules
 
 ### 5.2 常见错误信息
 
-| 错误 | 原因 | 修复方法 |
-|:---|:---|:---|
+| 错误                                 | 原因               | 修复方法                           |
+| :----------------------------------- | :----------------- | :--------------------------------- |
 | `invalid application layer protocol` | 协议关键字位置错误 | `http.uri` 必须在 `alert tcp` 之后 |
-| `duplicate sid` | SID 重复 | 使用唯一的 SID 值 |
-| `content length is 0` | content 为空 | content 不能为空 |
-| `unknown keyword` | 关键字不存在 | 检查拼写或加载对应模块 |
+| `duplicate sid`                      | SID 重复           | 使用唯一的 SID 值                  |
+| `content length is 0`                | content 为空       | content 不能为空                   |
+| `unknown keyword`                    | 关键字不存在       | 检查拼写或加载对应模块             |
 
 ---
 
@@ -479,6 +479,7 @@ rule-files:
 ### 7.1 规则编写最佳实践
 
 1. **使用 `fast_pattern`**：在多个 content 中指定快速模式
+
    ```snort
    alert tcp $HOME_NET any -> $EXTERNAL_NET any (
        content:"malware";
@@ -488,19 +489,21 @@ rule-files:
    ```
 
 2. **避免过宽的规则**：
+
    ```snort
    # 差: 匹配过多流量
    alert tcp any any -> any any (content:"login";)
-   
+
    # 好: 限定范围
    alert tcp $HOME_NET 80 -> $EXTERNAL_NET any (content:"login";)
    ```
 
 3. **使用协议修饰符**：
+
    ```snort
    # 差: 在整个 payload 中搜索
    alert tcp $HOME_NET any -> $EXTERNAL_NET any (content:"/admin";)
-   
+
    # 好: 仅搜索 HTTP URI
    alert tcp $HOME_NET any -> $EXTERNAL_NET $HTTP_PORTS (
        content:"/admin";
@@ -510,12 +513,12 @@ rule-files:
 
 ### 7.2 规则性能影响
 
-| 规则类型 | 性能影响 | 原因 |
-|:---|:---|:---|
-| `content:"/admin"` + `http.uri` | 低 | MPM + 协议解析 |
-| `pcre:"/regex/"` | 中 | 正则引擎回溯 |
-| `pcre:"/.*regex.*/"` | 高 | 正则回溯爆炸 |
-| 无 `fast_pattern` 多 content | 中 | 模糊匹配 |
+| 规则类型                        | 性能影响 | 原因           |
+| :------------------------------ | :------- | :------------- |
+| `content:"/admin"` + `http.uri` | 低       | MPM + 协议解析 |
+| `pcre:"/regex/"`                | 中       | 正则引擎回溯   |
+| `pcre:"/.*regex.*/"`            | 高       | 正则回溯爆炸   |
+| 无 `fast_pattern` 多 content    | 中       | 模糊匹配       |
 
 ---
 

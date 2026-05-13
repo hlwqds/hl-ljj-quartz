@@ -9,14 +9,8 @@ tags:
   - network
 ---
 
-> [!info] Zeek 2026 深度探索系列
-> 0. [[zeek-deep-dive-overview|全栈学习路径总览]]
-> ...
-> 29. [[zeek-deep-dive-ch29-logging-frameworks|第二十九章：日志框架与输出机制]]
-> 30. [[zeek-deep-dive-ch30-plugin-scripting|第三十章：第三方插件与脚本扩展体系]]
-> 31. **第三十一章：自定义协议解析器开发**
-> 32. [[zeek-deep-dive-ch32-event-engine-customization|第三十二章：事件引擎与日志定制]]
-> 33. [[zeek-deep-dive-ch33-performance-tuning|第三十三章：性能调优与高级配置]]
+> [!info] Zeek 2026 深度探索系列 0. [[zeek-deep-dive-overview|全栈学习路径总览]]
+> ... 29. [[zeek-deep-dive-ch29-logging-frameworks|第二十九章：日志框架与输出机制]] 30. [[zeek-deep-dive-ch30-plugin-scripting|第三十章：第三方插件与脚本扩展体系]] 31. **第三十一章：自定义协议解析器开发** 32. [[zeek-deep-dive-ch32-event-engine-customization|第三十二章：事件引擎与日志定制]] 33. [[zeek-deep-dive-ch33-performance-tuning|第三十三章：性能调优与高级配置]]
 
 ---
 
@@ -31,12 +25,12 @@ graph TB
         T["TCP Stream<br/>Reassembler"]
         A["App Analyzer<br/>(HTTP/SMTP/DNS...)"]
     end
-    
+
     subgraph "Analysis Output"
         E["Events<br/>(connection_* etc)"]
         L["Logs<br/>(conn.log etc)"]
     end
-    
+
     P -->|逐层分析| T
     T -->|数据分片| A
     A -->|语义分析| E
@@ -49,11 +43,11 @@ graph TB
 
 ### 2.1 分析器类型体系
 
-|| 类型 | 作用 | 示例 |
-| :--- | :--- | :--- | :--- |
-| **Packet Analyzer** | 链路/网络层包解析 | Ethernet, IPv4, IPv6, VLAN |
-| **TCP Analyzer** | TCP 流重组与顺序处理 | TCP, TCP_FASTOPEN |
-| **App Analyzer** | 应用层协议解析 | HTTP, DNS, SMTP, MySQL |
+|                     | 类型                 | 作用                       | 示例 |
+| :------------------ | :------------------- | :------------------------- | :--- |
+| **Packet Analyzer** | 链路/网络层包解析    | Ethernet, IPv4, IPv6, VLAN |
+| **TCP Analyzer**    | TCP 流重组与顺序处理 | TCP, TCP_FASTOPEN          |
+| **App Analyzer**    | 应用层协议解析       | HTTP, DNS, SMTP, MySQL     |
 
 ### 2.2 分析器基类
 
@@ -61,28 +55,28 @@ graph TB
 // analyzer/Analyzer.h (简化)
 class Analyzer {
     friend class Manager;
-    
+
 public:
     // 唯一名称
     const char* GetName() const { return name; }
-    
+
     // 是否启用
     bool IsEnabled() const { return enabled; }
-    
+
     // 父连接
     Connection* Conn() const { return conn; }
-    
+
 protected:
     // 确认协议（生成 protocol_confirmation 事件）
     void ProtocolConfirmation();
-    
+
     // 拒绝协议（生成 protocol_violation 事件）
     void ProtocolViolation(const char* reason, ...);
-    
+
     // 向上转发数据
     void ForwardStream(int len, const u_char* data, bool is_orig);
     void ForwardPacket(int len, const u_char* data, bool is_orig);
-    
+
     const char* name;
     Connection* conn;
     bool enabled;
@@ -98,14 +92,14 @@ class TCP_ApplicationAnalyzer : public analyzer::Analyzer {
 public:
     // 处理重组后的应用层数据流
     virtual void DeliverStream(int len, const u_char* data, bool is_orig);
-    
+
     // 处理 TCP 状态变更（FIN/RST）
     virtual void EndOfData(bool is_orig);
-    
+
     // 处理单个 TCP Segment（未重组）
-    virtual void DeliverPacket(int len, const u_char* data, bool is_orig, 
+    virtual void DeliverPacket(int len, const u_char* data, bool is_orig,
                                 uint64_t seq, bool nopush, bool ack);
-    
+
     // 检测到协议升级（如 TLS 隧道）
     virtual void StartTLS();
 };
@@ -173,35 +167,35 @@ enum ParserState {
 class CustomProtoAnalyzer : public zeek::analyzer::tcp::TCP_ApplicationAnalyzer {
 public:
     explicit CustomProtoAnalyzer(zeek::Connection* c);
-    
+
     // 流数据处理
     void DeliverStream(int len, const u_char* data, bool is_orig) override;
-    
+
     // 连接结束处理
     void EndOfData(bool is_orig) override;
-    
+
     // 心跳超时
     void ExpireTimer(double t) override;
-    
+
 private:
     // 解析器状态机
     bool ParseBuffer(bool is_orig);
-    
+
     // 处理完整消息
     void HandleMessage(uint8_t type, const u_char* payload, uint16_t length, bool is_orig);
-    
+
     // 检查 Magic
     bool CheckMagic(const u_char* data);
-    
+
     // 缓冲区管理
     void AppendToBuffer(bool is_orig, const u_char* data, int len);
     void ClearBuffer(bool is_orig);
-    
+
     // 状态
     ParserState state_;
     uint8_t  version_;
     uint16_t payload_len_;
-    
+
     // 双工缓冲（客户端/服务器方向独立）
     std::vector<u_char> orig_buffer_;
     std::vector<u_char> resp_buffer_;
@@ -247,7 +241,7 @@ void CustomProtoAnalyzer::ClearBuffer(bool is_orig) {
 
 bool CustomProtoAnalyzer::ParseBuffer(bool is_orig) {
     auto& buf = is_orig ? orig_buffer_ : resp_buffer_;
-    
+
     while ( buf.size() >= 4 ) {  // 最少需要 4 字节检测 magic
         switch ( state_ ) {
         case STATE_WAIT_MAGIC:
@@ -258,23 +252,23 @@ bool CustomProtoAnalyzer::ParseBuffer(bool is_orig) {
                 buf.erase(buf.begin());
             }
             break;
-            
+
         case STATE_WAIT_HEADER:
             if ( buf.size() >= sizeof(ProtoHeader) ) {
                 ProtoHeader* hdr = (ProtoHeader*)buf.data();
-                
+
                 // 验证版本
                 if ( hdr->version != CUSTOM_PROTO_VERSION ) {
                     ProtocolViolation("Unsupported protocol version: %d", hdr->version);
                     return false;
                 }
-                
+
                 version_ = hdr->version;
                 payload_len_ = ntohs(hdr->length);
-                
+
                 // 生成协议确认事件
                 ProtocolConfirmation();
-                
+
                 // 生成头信息事件
                 zeek::eventMgr.Enqueue(
                     "custom_proto::header",
@@ -283,7 +277,7 @@ bool CustomProtoAnalyzer::ParseBuffer(bool is_orig) {
                     zeek::make_intrusive<zeek::Val>(hdr->type, zeek::TYPE_COUNT),
                     zeek::make_intrusive<zeek::Val>(payload_len_, zeek::TYPE_COUNT)
                 );
-                
+
                 // 移除已消费的 header
                 buf.erase(buf.begin(), buf.begin() + sizeof(ProtoHeader));
                 state_ = STATE_WAIT_PAYLOAD;
@@ -291,18 +285,18 @@ bool CustomProtoAnalyzer::ParseBuffer(bool is_orig) {
                 return true;  // 等待更多数据
             }
             break;
-            
+
         case STATE_WAIT_PAYLOAD:
             if ( buf.size() >= payload_len_ ) {
                 // 提取 payload
                 std::vector<u_char> payload(buf.begin(), buf.begin() + payload_len_);
-                
+
                 // 处理消息
                 HandleMessage(version_, payload.data(), payload_len_, is_orig);
-                
+
                 // 移除已消费的数据
                 buf.erase(buf.begin(), buf.begin() + payload_len_);
-                
+
                 // 重置状态机
                 state_ = STATE_WAIT_MAGIC;
             } else {
@@ -311,11 +305,11 @@ bool CustomProtoAnalyzer::ParseBuffer(bool is_orig) {
             break;
         }
     }
-    
+
     return true;
 }
 
-void CustomProtoAnalyzer::HandleMessage(uint8_t type, const u_char* payload, 
+void CustomProtoAnalyzer::HandleMessage(uint8_t type, const u_char* payload,
                                          uint16_t length, bool is_orig) {
     // 生成消息事件
     zeek::eventMgr.Enqueue(
@@ -325,7 +319,7 @@ void CustomProtoAnalyzer::HandleMessage(uint8_t type, const u_char* payload,
         zeek::make_intrusive<zeek::Val>(type, zeek::TYPE_COUNT),
         zeek::make_intrusive<zeek::StringVal>(std::string((char*)payload, length))
     );
-    
+
     // 根据消息类型生成日志
     switch ( type ) {
     case TYPE_REQUEST:
@@ -346,10 +340,10 @@ void CustomProtoAnalyzer::HandleMessage(uint8_t type, const u_char* payload,
 void CustomProtoAnalyzer::DeliverStream(int len, const u_char* data, bool is_orig) {
     // 先调用基类（TLS 等会在这里升级）
     TCP_ApplicationAnalyzer::DeliverStream(len, data, is_orig);
-    
+
     // 追加到缓冲区
     AppendToBuffer(is_orig, data, len);
-    
+
     // 运行状态机
     if ( !ParseBuffer(is_orig) ) {
         // 解析失败，停止分析
@@ -365,7 +359,7 @@ void CustomProtoAnalyzer::EndOfData(bool is_orig) {
 }
 
 // 注册器（参考前一章）
-class CustomProtoAnalyzerRegistrar 
+class CustomProtoAnalyzerRegistrar
     : public TCP_ApplicationAnalyzer::Registrar {
 public:
     CustomProtoAnalyzerRegistrar() : Registrar("custom-proto") {}
@@ -388,10 +382,10 @@ export {
     # 定义事件类型（由 C++ 层触发）
     global header: event(c: connection, is_orig: bool, msg_type: count, length: count);
     global message: event(c: connection, is_orig: bool, msg_type: count, payload: string);
-    
+
     # 日志记录
     redef enum Log::ID += { LOG };
-    
+
     type Info: record {
         ts: time        &log;
         uid: string     &log;
@@ -421,7 +415,7 @@ event custom_proto::message(c: connection, is_orig: bool, msg_type: count, paylo
         $payload_len=|payload|,
         $payload_preview=|payload| > 16 ? payload[0:16] + "..." : payload
     ]);
-    
+
     # 更新统计
     if ( c?$custom_proto ) {
         if ( is_orig )
@@ -464,23 +458,23 @@ stateDiagram-v2
 class LengthPrefixAnalyzer : public TCP_ApplicationAnalyzer {
     bool ParseLengthPrefix(bool is_orig) {
         auto& buf = is_orig ? orig_buf_ : resp_buf_;
-        
+
         // 至少需要 4 字节才能解析长度
         if ( buf.size() < 4 ) return true;
-        
+
         // 解析长度字段（假设前 4 字节是 big-endian 长度）
         uint32_t msg_len = ntohl(*(uint32_t*)buf.data());
-        
+
         // 检查是否有完整消息
         if ( buf.size() >= 4 + msg_len ) {
             // 处理完整消息
             ProcessMessage(buf.data() + 4, msg_len, is_orig);
-            
+
             // 移除已处理数据
             buf.erase(buf.begin(), buf.begin() + 4 + msg_len);
             return true;  // 继续解析下一条
         }
-        
+
         return true;  // 等待更多数据
     }
 };
@@ -494,17 +488,17 @@ class LengthPrefixAnalyzer : public TCP_ApplicationAnalyzer {
 // 分隔符协议的通用模板
 class DelimiterAnalyzer : public TCP_ApplicationAnalyzer {
     static const char DELIMITER = '\n';
-    
+
     bool ParseDelimited(bool is_orig) {
         auto& buf = is_orig ? orig_buf_ : resp_buf_;
-        
+
         while ( true ) {
             auto it = std::find(buf.begin(), buf.end(), DELIMITER);
             if ( it == buf.end() ) break;  // 没有完整行
-            
+
             std::string line(buf.begin(), it);
             buf.erase(buf.begin(), it + 1);  // 移除这行
-            
+
             ProcessLine(line, is_orig);
         }
         return true;
@@ -526,7 +520,7 @@ event connection_state_remove(c: connection) {
     if ( c?$orig$raw_bytes && c$orig$raw_bytes > 0 ) {
         # 获取原始字节数据
         local data = c$orig$raw_bytes;
-        
+
         # 解析自定义字段（假设前 4 字节是 magic）
         if ( |data| >= 4 ) {
             local magic = get_bytes(data, 0, 4);
@@ -549,12 +543,12 @@ function parse_custom_header(data: string) : CustomHeader {
     if ( |data| < 8 ) {
         return NULL;
     }
-    
+
     local magic = get_bytes(data, 0, 4);
     local version = data[4];
     local msg_type = data[5];
     local length = get_bytes(data, 6, 2);
-    
+
     return [$magic=magic, $version=version, $type=msg_type, $length=length];
 }
 ```
@@ -576,13 +570,13 @@ import ZeekTest
 
 class CustomProtoTest(ZeekTest.ZeekTest):
     def __init__(self):
-        ZeekTest.ZeekTest.__init__(self, 
+        ZeekTest.ZeekTest.__init__(self,
             scripts=["test.zeek"],
             files=["traffic/custom-proto.pcap"],
             expected=[
                 "test.log"
             ])
-    
+
     def Test(self):
         # 验证输出
         self.CheckLogs()
@@ -600,11 +594,11 @@ cat custom-proto.log
 
 ### 6.3 常见错误处理
 
-| 错误 | 原因 | 解决方案 |
-| :--- | :--- | :--- |
-| `Protocol violation` | 数据不符合协议格式 | 检查字节序、长度字段 |
-| 事件未触发 | C++ 层未 Enqueue | 添加日志调试 `eventMgr.Dispatch()` |
-| 状态机死锁 | Buffer 清理不彻底 | 确保 `EndOfData` 中清理状态 |
+| 错误                 | 原因               | 解决方案                           |
+| :------------------- | :----------------- | :--------------------------------- |
+| `Protocol violation` | 数据不符合协议格式 | 检查字节序、长度字段               |
+| 事件未触发           | C++ 层未 Enqueue   | 添加日志调试 `eventMgr.Dispatch()` |
+| 状态机死锁           | Buffer 清理不彻底  | 确保 `EndOfData` 中清理状态        |
 
 ---
 

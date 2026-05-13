@@ -1,12 +1,25 @@
 ---
 title: "P4 深度探索 (二十四)：Intel IPU——IPU/DPU、基础设施处理单元、Fxp/Dcp、P4 控制面"
 date: 2026-04-14
-tags: [p4, series, ipu, dpu, intel, infrastructure-processing-unit, fxp, dcp, smartnic, p4, control-plane]
+tags:
+  [
+    p4,
+    series,
+    ipu,
+    dpu,
+    intel,
+    infrastructure-processing-unit,
+    fxp,
+    dcp,
+    smartnic,
+    p4,
+    control-plane,
+  ]
 description: "Intel IPU 深度解析——Infrastructure Processing Unit / DPU、P4 在 IPU 上的部署、Fxp (Flow Processor)、Dcp (Data-path Controller)、P4 控制面架构、IPU 与交换机的差异"
 ---
 
-> [!info] P4 深度探索系列
-> 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+> [!info] P4 深度探索系列 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-14-p4-deep-dive-ch1-p4-overview|第一章：P4 概述——诞生背景与协议无关包处理]]
 > 2. [[2026-04-14-p4-deep-dive-ch2-p4-architecture|第二章：P4 架构模型——PSA/V1Model、Ingress/Egress]]
 > 3. [[2026-04-14-p4-deep-dive-ch3-p4-vs-ebpf|第三章：P4 vs eBPF——适用场景与硬件/软件对比]]
@@ -78,15 +91,15 @@ IPU 架构:
 
 ### 1.1 IPU vs 交换机
 
-| 维度 | IPU (SmartNIC) | 交换机 (Tofino) |
-|------|---------------|-----------------|
-| **位置** | Host 侧 | 网络侧 |
-| **主要功能** | 虚拟化、存储、网络卸载 | L2/L3 转发 |
-| **端口数** | 1-4 x 100G | 64-256 x 100G |
-| **表容量** | 较小 | 超大 |
-| **TCAM** | 可选 | 原生支持 |
-| **CPU 核心** | 多核 ARM/x86 | 无 |
-| **DRAM** | DDR4/HBM | 一般无 |
+| 维度         | IPU (SmartNIC)             | 交换机 (Tofino) |
+| ------------ | -------------------------- | --------------- |
+| **位置**     | Host 侧                    | 网络侧          |
+| **主要功能** | 虚拟化、存储、网络卸载     | L2/L3 转发      |
+| **端口数**   | 1-4 x 100G                 | 64-256 x 100G   |
+| **表容量**   | 较小                       | 超大            |
+| **TCAM**     | 可选                       | 原生支持        |
+| **CPU 核心** | 多核 ARM/x86               | 无              |
+| **DRAM**     | DDR4/HBM                   | 一般无          |
 | **主要用例** | vSwitch、NVMe-oF、Security | Spine/Leaf 交换 |
 
 ### 1.2 Intel IPU 产品线
@@ -374,7 +387,7 @@ parser IngressParser(packet_in packet,
                     out headers h,
                     inout metadata m,
                     in PSA_ParserInputMetadata_t istd) {
-    
+
     state start {
         packet.extract(h.outer_ethernet);
         transition select(h.outer_ethernet.etherType) {
@@ -382,7 +395,7 @@ parser IngressParser(packet_in packet,
             default: accept;
         }
     }
-    
+
     state parse_outer_ipv4 {
         packet.extract(h.outer_ipv4);
         transition select(h.outer_ipv4.protocol) {
@@ -391,7 +404,7 @@ parser IngressParser(packet_in packet,
             default: accept;
         }
     }
-    
+
     state parse_outer_udp {
         packet.extract(h.outer_udp);
         transition select(h.outer_udp.dstPort) {
@@ -399,7 +412,7 @@ parser IngressParser(packet_in packet,
             default: accept;
         }
     }
-    
+
     state parse_vxlan {
         packet.extract(h.vxlan);
         m.vni = h.vxlan.vni;
@@ -408,7 +421,7 @@ parser IngressParser(packet_in packet,
             default: parse_inner_ethernet;
         }
     }
-    
+
     state parse_inner_ethernet {
         packet.extract(h.inner_ethernet);
         transition select(h.inner_ethernet.etherType) {
@@ -416,7 +429,7 @@ parser IngressParser(packet_in packet,
             default: accept;
         }
     }
-    
+
     state parse_inner_ipv4 {
         packet.extract(h.inner_ipv4);
         transition select(h.inner_ipv4.protocol) {
@@ -425,12 +438,12 @@ parser IngressParser(packet_in packet,
             default: accept;
         }
     }
-    
+
     state parse_tcp {
         packet.extract(h.tcp);
         transition accept;
     }
-    
+
     state parse_inner_udp {
         packet.extract(h.inner_udp);
         transition accept;
@@ -442,25 +455,25 @@ control Ingress(inout headers h,
                 inout metadata m,
                 in PSA_ParserInputMetadata_t istd,
                 inout PSA_ingress_output_metadata_t ostd) {
-    
+
     // VXLAN VNI -> 目的端口映射表
     action vxlan_lookup(bit<9> port, bit<8> action_type) {
         m.dst_port = port;
         m.tunnel_action = action_type;
     }
-    
+
     // L2 转发 (同一 VNI 内)
     action l2_forward(bit<48> dst_mac, bit<9> port) {
         h.inner_ethernet.dstAddr = dst_mac;
         m.dst_port = port;
     }
-    
+
     // L3 转发 (跨 VNI)
     action l3_forward(bit<9> port) {
         h.inner_ipv4.ttl = h.inner_ipv4.ttl - 1;
         m.dst_port = port;
     }
-    
+
     // 封装 VXLAN
     action vxlan_encap(bit<48> src_mac, bit<48> dst_mac,
                        bit<32> src_ip, bit<32> dst_ip,
@@ -468,23 +481,23 @@ control Ingress(inout headers h,
         // 添加 VXLAN 封装
         h.vxlan.setValid();
         h.vxlan.vni = vni[23:0];
-        
+
         // 添加外层 IP/UDP
         h.outer_ipv4.setValid();
         h.outer_ipv4.srcAddr = src_ip;
         h.outer_ipv4.dstAddr = dst_ip;
         h.outer_ipv4.protocol = 17;  // UDP
         h.outer_ipv4.ttl = 64;
-        
+
         h.outer_udp.setValid();
         h.outer_udp.srcPort = 4789;
         h.outer_udp.dstPort = 4789;
-        
+
         h.outer_ethernet.setValid();
         h.outer_ethernet.srcAddr = src_mac;
         h.outer_ethernet.dstAddr = dst_mac;
     }
-    
+
     // 解封装 VXLAN
     action vxlan_decap() {
         // 移除 VXLAN 封装
@@ -493,12 +506,12 @@ control Ingress(inout headers h,
         h.outer_udp.setInvalid();
         h.outer_ethernet.setInvalid();
     }
-    
+
     // Drop action
     action drop() {
         ostd.drop = true;
     }
-    
+
     // VXLAN 表
     table vxlan_table {
         key = {
@@ -510,7 +523,7 @@ control Ingress(inout headers h,
         }
         size = 16K;
     }
-    
+
     // L2 转发表
     table l2_table {
         key = {
@@ -524,7 +537,7 @@ control Ingress(inout headers h,
         }
         size = 64K;
     }
-    
+
     // L3 转发表
     table l3_table {
         key = {
@@ -536,7 +549,7 @@ control Ingress(inout headers h,
         }
         size = 32K;
     }
-    
+
     // ACL 表
     table acl_table {
         key = {
@@ -552,15 +565,15 @@ control Ingress(inout headers h,
         }
         size = 8K;
     }
-    
+
     apply {
         // 首先应用 ACL
         acl_table.apply();
-        
+
         // VXLAN 处理
         if (h.vxlan.isValid()) {
             vxlan_table.apply();
-            
+
             if (m.dst_port != 0) {
                 l2_table.apply();
             }
@@ -681,7 +694,7 @@ Dcp-Fxp 交互流程:
 =================
 
 1. 表项下发 (Dcp -> Fxp):
-   
+
    [App/Ryu/ONOS] --gRPC--> [Dcp Runtime] --DMA--> [Fxp]
                                               |
                                               v
@@ -689,7 +702,7 @@ Dcp-Fxp 交互流程:
                                        (TCAM/SRAM)
 
 2. Packet-In (Fxp -> Dcp):
-   
+
    [Fxp] --DMA--> [Dcp Packet Queue]
                     |
                     v
@@ -699,7 +712,7 @@ Dcp-Fxp 交互流程:
               [App / Control Plane]
 
 3. Statistics (Fxp -> Dcp):
-   
+
    [Fxp Registers/Counters] --DMA--> [Dcp Stats Collector]
                                         |
                                         v
@@ -720,14 +733,14 @@ service P4Runtime {
     // 表项操作
     rpc Write(WriteRequest) returns (WriteResponse);
     rpc Read(ReadRequest) returns (stream ReadResponse);
-    
+
     // Packet 操作
     rpc PacketOut(stream PacketOut) returns (stream PacketIn);
-    
+
     // 流水线配置
-    rpc SetForwardingPipelineConfig(SetForwardingPipelineConfigRequest) 
+    rpc SetForwardingPipelineConfig(SetForwardingPipelineConfigRequest)
         returns (SetForwardingPipelineConfigResponse);
-    rpc GetForwardingPipelineConfig(GetForwardingPipelineConfigRequest) 
+    rpc GetForwardingPipelineConfig(GetForwardingPipelineConfigRequest)
         returns (GetForwardingPipelineConfigResponse);
 }
 ```
@@ -776,62 +789,62 @@ class IPUControlPlane:
     def __init__(self, ipu_address='192.168.1.100:50051'):
         self.channel = grpc.insecure_channel(ipu_address)
         self.stub = p4runtime_pb2_grpc.P4RuntimeStub(self.channel)
-        
+
     def set_pipeline_config(self, p4info_path, config_path):
         """设置 IPU 流水线配置"""
         req = p4runtime_pb2.SetForwardingPipelineConfigRequest()
         req.device_id = 0
         req.election_id.low = 1
         req.action = p4runtime_pb2.SetForwardingPipelineConfigRequest.VERIFY_AND_COMMIT
-        
+
         # 读取 P4Info 和 BMv2 JSON
         with open(p4info_path, 'rb') as f:
             req.config.p4info.CopyFrom(p4info_pb2.FromString(f.read()))
-        
+
         with open(config_path, 'rb') as f:
             req.config.bmv2_json_file = f.read()
-        
+
         return self.stub.SetForwardingPipelineConfig(req)
-    
+
     def write_vxlan_entry(self, vni, port, action_type='forward'):
         """写入 VXLAN 表项"""
         update = p4runtime_pb2.Update()
         update.type = p4runtime_pb2.Update.INSERT
-        
+
         # 设置 table_entry
         entry = update.entity.table_entry
         entry.table_id = self.get_table_id('vxlan_table')
-        
+
         # Match: VNI
         mf = entry.match.add()
         mf.field_id = self.get_field_id('vxlan_table', 'meta.vni')
         mf.exact.value = vni.to_bytes(3, 'big')
-        
+
         # Action: vxlan_lookup
         action = entry.action.action
         action.action_id = self.get_action_id('vxlan_lookup')
-        
+
         # Action params
         p = action.params.add()
         p.param_id = self.get_param_id('vxlan_lookup', 'port')
         p.value = port.to_bytes(2, 'big')
-        
+
         # 写入
         req = p4runtime_pb2.WriteRequest()
         req.device_id = 0
         req.election_id.low = 1
         req.updates.append(update)
-        
+
         return self.stub.Write(req)
-    
+
     def write_l2_entry(self, vni, mac, port, action_type='l2_forward'):
         """写入 L2 转发表项"""
         update = p4runtime_pb2.Update()
         update.type = p4runtime_pb2.Update.INSERT
-        
+
         entry = update.entity.table_entry
         entry.table_id = self.get_table_id('l2_table')
-        
+
         # Match: VNI + MAC
         for field, value in [
             ('meta.vni', vni),
@@ -840,37 +853,37 @@ class IPUControlPlane:
             mf = entry.match.add()
             mf.field_id = self.get_field_id('l2_table', field)
             mf.exact.value = value
-        
+
         # Action
         action = entry.action.action
         action.action_id = self.get_action_id(action_type)
-        
+
         req = p4runtime_pb2.WriteRequest()
         req.device_id = 0
         req.election_id.low = 1
         req.updates.append(update)
-        
+
         return self.stub.Write(req)
-    
+
     def read_counters(self, counter_name='ingress_counters.packets'):
         """读取计数器"""
         req = p4runtime_pb2.ReadRequest()
         entity = req.entities.add().counter_entry
         entity.counter_id = self.get_counter_id(counter_name)
-        
+
         for resp in self.stub.Read(req):
             for entity in resp.entities:
                 yield entity.counter_entry
-    
+
     def packet_in_handler(self, callback):
         """处理 Packet-In (从 IPU 接收数据包)"""
         stream_req = p4runtime_pb2.StreamMessageRequest()
-        
+
         # 启动 Packet-In stream
         def generate():
             while True:
                 yield stream_req
-        
+
         for resp in self.stub.PacketOut(generate()):
             if resp.HasField('packet'):
                 callback(resp.packet)
@@ -986,25 +999,25 @@ control StorageOffload(inout headers h,
                        inout metadata m,
                        in PSA_ingress_input_metadata_t istd,
                        inout PSA_ingress_output_metadata_t ostd) {
-    
+
     // NVMe/TCP 解析
     action parse_nvme_tcp() {
         // NVMe over TCP 头部解析
         // 发现 NVMf 子ystem ID / Namespace ID
     }
-    
+
     // 存储镜像/复制
     action storage_mirror(bit<32> target_addr) {
         // 将 I/O 复制到指定目标
         // 用于同步/备份
     }
-    
+
     // NVMe QoS
     action nvme_qos(bit<8> priority) {
         // 基于 Namespace/扇区设置 QoS
         ostd.qos_class = priority;
     }
-    
+
     table storage_offload_table {
         key = {
             h.tcp.dstPort: exact;  // 4420 (NVMe-TCP)
@@ -1015,7 +1028,7 @@ control StorageOffload(inout headers h,
             nvme_qos;
         }
     }
-    
+
     apply {
         storage_offload_table.apply();
     }

@@ -37,14 +37,14 @@ QUIC 将数据包分为两大类：**Long Header 包**和 **Short Header 包**�
 
 ### 1.1 包类型分类
 
-| 包类型 | Header Form | 加密级别 | 用途 |
-|--------|-------------|----------|------|
-| Initial | Long (1) | Initial 密钥（HKDF 派生）| 握手第一轮 ClientHello/ServerHello |
-| 0-RTT | Long (1) | 0-RTT 密钥 | 在握手完成前发送早期数据 |
-| Handshake | Long (1) | Handshake 密钥 | 发送 Finished、加密扩展 |
-| Retry | Long (1) | 无加密（完整性保护） | 地址验证，要求客户端重试 |
-| Version Negotiation | Long (1) | 无加密 | 服务端告知支持的版本 |
-| 1-RTT | Short (0) | 1-RTT 密钥 | 握手完成后的所有应用数据 |
+| 包类型              | Header Form | 加密级别                  | 用途                               |
+| ------------------- | ----------- | ------------------------- | ---------------------------------- |
+| Initial             | Long (1)    | Initial 密钥（HKDF 派生） | 握手第一轮 ClientHello/ServerHello |
+| 0-RTT               | Long (1)    | 0-RTT 密钥                | 在握手完成前发送早期数据           |
+| Handshake           | Long (1)    | Handshake 密钥            | 发送 Finished、加密扩展            |
+| Retry               | Long (1)    | 无加密（完整性保护）      | 地址验证，要求客户端重试           |
+| Version Negotiation | Long (1)    | 无加密                    | 服务端告知支持的版本               |
+| 1-RTT               | Short (0)   | 1-RTT 密钥                | 握手完成后的所有应用数据           |
 
 ---
 
@@ -78,17 +78,17 @@ Long Header 公共格式（字节对齐）：
 
 字段说明：
 
-| 字段 | 长度 | 说明 |
-|------|------|------|
-| Header Form | 1 bit | 必须为 1（Long Header） |
-| Fixed Bit | 1 bit | 必须为 1，否则为无效包 |
-| Long Packet Type | 2 bits | 00=Initial, 01=0-RTT, 10=Handshake, 11=Retry |
-| Type-Specific Bits | 4 bits | 各包类型自定义 |
-| Version | 32 bits | QUIC 版本（v1 = 0x00000001） |
-| DCID Len | 8 bits | 目的 CID 长度（0-20 字节） |
-| DCID | 可变长 | Destination Connection ID |
-| SCID Len | 8 bits | 源 CID 长度（0-20 字节） |
-| SCID | 可变长 | Source Connection ID |
+| 字段               | 长度    | 说明                                         |
+| ------------------ | ------- | -------------------------------------------- |
+| Header Form        | 1 bit   | 必须为 1（Long Header）                      |
+| Fixed Bit          | 1 bit   | 必须为 1，否则为无效包                       |
+| Long Packet Type   | 2 bits  | 00=Initial, 01=0-RTT, 10=Handshake, 11=Retry |
+| Type-Specific Bits | 4 bits  | 各包类型自定义                               |
+| Version            | 32 bits | QUIC 版本（v1 = 0x00000001）                 |
+| DCID Len           | 8 bits  | 目的 CID 长度（0-20 字节）                   |
+| DCID               | 可变长  | Destination Connection ID                    |
+| SCID Len           | 8 bits  | 源 CID 长度（0-20 字节）                     |
+| SCID               | 可变长  | Source Connection ID                         |
 
 ### 2.2 Long Packet Type 编码
 
@@ -140,13 +140,13 @@ Initial 包格式：
 
 ### 3.2 Initial 包特有字段
 
-| 字段 | 长度 | 说明 |
-|------|------|------|
-| Token Length | 可变长整数 | Token 字段的字节长度 |
-| Token | Token Length 字节 | Retry Token 或地址验证 Token（客户端初始连接时为空） |
-| Length | 可变长整数 | Packet Number + Payload 的总长度 |
-| Packet Number | 1-4 字节 | 通过 PP bits 编码长度 |
-| Payload | 加密负载 | AEAD 加密的帧数据 + Tag |
+| 字段          | 长度              | 说明                                                 |
+| ------------- | ----------------- | ---------------------------------------------------- |
+| Token Length  | 可变长整数        | Token 字段的字节长度                                 |
+| Token         | Token Length 字节 | Retry Token 或地址验证 Token（客户端初始连接时为空） |
+| Length        | 可变长整数        | Packet Number + Payload 的总长度                     |
+| Packet Number | 1-4 字节          | 通过 PP bits 编码长度                                |
+| Payload       | 加密负载          | AEAD 加密的帧数据 + Tag                              |
 
 ### 3.3 Initial 密钥派生
 
@@ -404,17 +404,17 @@ Short Header（1-RTT）包格式：
 
 ### 8.2 Short Header 各字段解析
 
-| 字段 | 位数 | 说明 |
-|------|------|------|
-| Header Form | 1 | 0 = Short Header |
-| Fixed Bit | 1 | 必须为 1 |
-| Spin Bit (S) | 1 | 用于被动 RTT 测量（RFC 9000 §17.4） |
-| Reserved (R) | 2 | 必须为 0，AEAD 后验证 |
-| Key Phase (K) | 1 | 标识当前使用哪一组 1-RTT 密钥（密钥更新时翻转） |
-| Packet Number Length (PP) | 2 | PN 编码长度（00=1B, 01=2B, 10=3B, 11=4B） |
-| DCID | 可变 | 目的 CID，长度由对端 transport_parameters 决定 |
-| Packet Number | 1-4 | AEAD 保护前明文（但被 Header Protection 加密） |
-| Payload | 可变 | AEAD 加密的帧数据 |
+| 字段                      | 位数 | 说明                                            |
+| ------------------------- | ---- | ----------------------------------------------- |
+| Header Form               | 1    | 0 = Short Header                                |
+| Fixed Bit                 | 1    | 必须为 1                                        |
+| Spin Bit (S)              | 1    | 用于被动 RTT 测量（RFC 9000 §17.4）             |
+| Reserved (R)              | 2    | 必须为 0，AEAD 后验证                           |
+| Key Phase (K)             | 1    | 标识当前使用哪一组 1-RTT 密钥（密钥更新时翻转） |
+| Packet Number Length (PP) | 2    | PN 编码长度（00=1B, 01=2B, 10=3B, 11=4B）       |
+| DCID                      | 可变 | 目的 CID，长度由对端 transport_parameters 决定  |
+| Packet Number             | 1-4  | AEAD 保护前明文（但被 Header Protection 加密）  |
+| Payload                   | 可变 | AEAD 加密的帧数据                               |
 
 > [!note] Short Header 没有 Version 字段和 SCID 字段
 > Short Header 通过 DCID 路由，省略了版本号（连接建立时已协商）和 SCID（接收端无需知道发送端 CID）。
@@ -442,7 +442,7 @@ Spin Bit RTT 测量原理：
 Key Phase bit 与密钥更新：
 
   初始状态：Key Phase = 0，使用 Keys[0]
-  
+
   密钥更新触发条件：
     ① 定期刷新（如每 N 个包或每 T 秒）
     ② 发送方将 Key Phase 翻转为 1，使用 Keys[1]
@@ -551,13 +551,13 @@ tshark 解析示例：
 
 ## 小结
 
-| 包类型 | Type bits | 有 Token | 有 SCID | 有 Length | 加密算法 |
-|--------|-----------|---------|---------|-----------|----------|
-| Initial | 00 | ✓ | ✓ | ✓ | AES-128-GCM（Initial Keys）|
-| 0-RTT | 01 | ✗ | ✓ | ✓ | 0-RTT Keys |
-| Handshake | 10 | ✗ | ✓ | ✓ | Handshake Keys |
-| Retry | 11 | Token | ✓ | ✗ | Integrity Tag 仅 |
-| 1-RTT | N/A（Short Header） | ✗ | ✗ | ✗ | 1-RTT Keys |
-| Version Neg. | N/A | ✗ | ✓ | ✗ | 无 |
+| 包类型       | Type bits           | 有 Token | 有 SCID | 有 Length | 加密算法                    |
+| ------------ | ------------------- | -------- | ------- | --------- | --------------------------- |
+| Initial      | 00                  | ✓        | ✓       | ✓         | AES-128-GCM（Initial Keys） |
+| 0-RTT        | 01                  | ✗        | ✓       | ✓         | 0-RTT Keys                  |
+| Handshake    | 10                  | ✗        | ✓       | ✓         | Handshake Keys              |
+| Retry        | 11                  | Token    | ✓       | ✗         | Integrity Tag 仅            |
+| 1-RTT        | N/A（Short Header） | ✗        | ✗       | ✗         | 1-RTT Keys                  |
+| Version Neg. | N/A                 | ✗        | ✓       | ✗         | 无                          |
 
 下一章将深入介绍 QUIC 的帧类型体系，包括每种帧的二进制格式与发送语义。

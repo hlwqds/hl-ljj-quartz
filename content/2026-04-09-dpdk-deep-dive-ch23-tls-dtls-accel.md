@@ -5,10 +5,8 @@ tags: [dpdk, series, tls, dtls, ssl, session, crypto, tls-record, handshake, sec
 description: "深入理解 TLS/DTLS 协议与 DPDK 加速——记录层、握手流程、session 管理、rte_security TLS Record 卸载、Crypto 数据面与控制面分离"
 ---
 
-> [!info] DPDK 深度探索系列
-> 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
-> 1-22. 前二十二章已完成
-> 23. **第二十三章：TLS/DTLS 加速与 Session 管理**
+> [!info] DPDK 深度探索系列 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
+> 1-22. 前二十二章已完成 23. **第二十三章：TLS/DTLS 加速与 Session 管理**
 
 ---
 
@@ -251,6 +249,7 @@ struct rte_dtls_hdr {
 ```
 
 > [!important] TLS 1.2 vs 1.3 记录层关键区别
+>
 > - TLS 1.2 的 IV 来自 key material 派生的 `write_IV`（不是 "traffic secret"——那是 TLS 1.3 的概念）
 > - TLS 1.3 将 Content Type 移入密文内部（作为 inner plaintext 末尾字节），外部 Content Type 固定为 23 (application_data)
 > - TLS 1.3 Record Layer 版本号固定写 `0x0303`（TLS 1.2），不再写实际版本号
@@ -516,6 +515,7 @@ struct tls_session_ticket {
 ```
 
 > [!warning] TLS 1.2 vs 1.3 Master Secret 大小
+>
 > - TLS 1.2: `master_secret` 固定 48 字节（PRF 输出）
 > - TLS 1.3: `master_secret` 32 字节（HKDF-Extract 输出）
 
@@ -545,6 +545,7 @@ struct session_cache {
 > [!note] DPDK 不提供 TLS Session API
 > 与 IPsec SA（`rte_ipsec_sa`）不同，DPDK 没有内置的 TLS Session 管理。
 > 所有 TLS session 逻辑需要应用自行实现。DPDK 提供的只是：
+>
 > - `rte_hash` / `rte_ring` 等通用数据结构用于构建 session 缓存
 > - `rte_cryptodev` 用于加速加密运算
 > - `rte_security` (部分硬件) 用于 TLS Record 卸载
@@ -557,6 +558,7 @@ struct session_cache {
 
 > [!important] DPDK 没有内置 TLS/DTLS 协议栈
 > DPDK **不**提供完整的 TLS/DTLS 协议实现。DPDK 只提供三个层次的加速接口：
+>
 > 1. **Cryptodev**：加密算法加速（AES-GCM、ChaCha20 等）
 > 2. **rte_security TLS Record**：TLS 记录层卸载（部分硬件支持）
 > 3. **OpenSSL PMD**：用 OpenSSL 做软件加密的 PMD 驱动
@@ -1022,6 +1024,7 @@ rte_cryptodev_start(crypto_dev_id);
 ```
 
 > [!warning] OpenSSL Engine vs Provider
+>
 > - OpenSSL 3.0 已**废弃** Engine API（`ENGINE_by_id()`、`ENGINE_init()` 等）
 > - 新代码应使用 **Provider API**（`OSSL_PROVIDER`）
 > - DPDK **不提供** OpenSSL Engine 或 Provider，OpenSSL PMD 是反向的（OpenSSL → DPDK）
@@ -1277,15 +1280,15 @@ tls_proxy_run(struct tls_proxy *proxy)
 
 ### 9.2 优化建议
 
-| 优化项 | 说明 | 效果 |
-|--------|------|------|
-| **Session Resumption** | 复用 session 避免完整握手 | 30x 降低延迟 |
-| **Session Ticket** | 无状态 session 存储，支持分布式 | 水平扩展 |
-| **批量加密** | 批量提交 crypto op 到 cryptodev | 3-5x 提升吞吐 |
-| **硬件卸载** | QAT/AESNI-MB 加速 AEAD | 10x+ 提升 |
-| **数据面/控制面分离** | 握手用 OpenSSL，加密用 DPDK | 最佳效率 |
-| **Early Data (0-RTT)** | TLS 1.3 首包无延迟 | 首请求零延迟 |
-| **in-place 加密** | `m_src == m_dst`，减少拷贝 | 降低内存带宽 |
+| 优化项                 | 说明                            | 效果          |
+| ---------------------- | ------------------------------- | ------------- |
+| **Session Resumption** | 复用 session 避免完整握手       | 30x 降低延迟  |
+| **Session Ticket**     | 无状态 session 存储，支持分布式 | 水平扩展      |
+| **批量加密**           | 批量提交 crypto op 到 cryptodev | 3-5x 提升吞吐 |
+| **硬件卸载**           | QAT/AESNI-MB 加速 AEAD          | 10x+ 提升     |
+| **数据面/控制面分离**  | 握手用 OpenSSL，加密用 DPDK     | 最佳效率      |
+| **Early Data (0-RTT)** | TLS 1.3 首包无延迟              | 首请求零延迟  |
+| **in-place 加密**      | `m_src == m_dst`，减少拷贝      | 降低内存带宽  |
 
 ---
 
@@ -1318,6 +1321,7 @@ tls_proxy_run(struct tls_proxy *proxy)
 ---
 
 > [!tip] 参考文献
+>
 > - RFC 5246, "The Transport Layer Security (TLS) Protocol Version 1.2"
 > - RFC 8446, "The Transport Layer Security (TLS) Protocol Version 1.3"
 > - RFC 6347, "Datagram Transport Layer Security Version 1.2"

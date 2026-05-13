@@ -23,13 +23,13 @@ VPP (Vector Packet Processing) 是 Cisco 开源的高性能数据包处理框架
 
 ### 1.2 VPP vs 传统 DPDK
 
-| 特性 | VPP | 传统 DPDK |
-|------|------|-----------|
+| 特性         | VPP                 | 传统 DPDK         |
+| ------------ | ------------------- | ----------------- |
 | **编程模型** | Framework（节点图） | Library（裸 API） |
-| **配置方式** | CLI/API/Config file | Code |
-| **可扩展性** | 插件机制 | 重新编译 |
-| **协议支持** | 丰富（GRE/VXLAN等） | 需要自己实现 |
-| **适用场景** | 通用 vSwitch/Router | 专用应用 |
+| **配置方式** | CLI/API/Config file | Code              |
+| **可扩展性** | 插件机制            | 重新编译          |
+| **协议支持** | 丰富（GRE/VXLAN等） | 需要自己实现      |
+| **适用场景** | 通用 vSwitch/Router | 专用应用          |
 
 ### 1.3 VPP 架构
 
@@ -116,15 +116,15 @@ Feature arc 定义 node 之间的连接：
 
 VPP 支持多种接口类型：
 
-| 类型 | 说明 |
-|------|------|
+| 类型               | 说明                   |
+| ------------------ | ---------------------- |
 | **Host Interface** | 绑定到物理网卡（DPDK） |
-| **Tap/Geneve** | 虚拟以太接口 |
-| **Vhost-user** | 连接 QEMU/KVM |
-| **Af_packet** | 连接 Linux 端口 |
-| **Loopback** | 本地回环 |
-| **VXLAN** | VXLAN 隧道端点 |
-| **GRE** | GRE 隧道 |
+| **Tap/Geneve**     | 虚拟以太接口           |
+| **Vhost-user**     | 连接 QEMU/KVM          |
+| **Af_packet**      | 连接 Linux 端口        |
+| **Loopback**       | 本地回环               |
+| **VXLAN**          | VXLAN 隧道端点         |
+| **GRE**            | GRE 隧道               |
 
 ### 2.4 VPP CLI
 
@@ -253,12 +253,12 @@ Service mesh（如 Istio、Linkerd）为微服务提供：
 
 ### 4.3 性能对比
 
-| 方案 | 延迟 | CPU 开销 | 复杂度 |
-|------|------|----------|--------|
-| **纯 Service Mesh** | ~5-10ms | 高 | 低 |
-| **DPDK Sidecar** | ~1-2ms | 中 | 中 |
-| **Cilium eBPF** | ~0.1-0.5ms | 低 | 中 |
-| **VPP Service Proxy** | ~0.5ms | 低 | 高 |
+| 方案                  | 延迟       | CPU 开销 | 复杂度 |
+| --------------------- | ---------- | -------- | ------ |
+| **纯 Service Mesh**   | ~5-10ms    | 高       | 低     |
+| **DPDK Sidecar**      | ~1-2ms     | 中       | 中     |
+| **Cilium eBPF**       | ~0.1-0.5ms | 低       | 中     |
+| **VPP Service Proxy** | ~0.5ms     | 低       | 高     |
 
 ## 5. Cilium 与云原生
 
@@ -297,7 +297,7 @@ metadata:
   name: cilium-config
 data:
   vpp-backend: "enabled"
-  tunnel: "disabled"  # VPP handles L2
+  tunnel: "disabled" # VPP handles L2
 ```
 
 ### 5.3 Cilium Hubble（可观测性）
@@ -400,6 +400,7 @@ vpp# ip route add 0.0.0.0/0 via 20.0.0.1
 5. **Service Mesh**：微服务通信基础设施
 
 **融合趋势**：
+
 - VPP 作为高性能数据面
 - eBPF/Cilium 作为云原生控制平面
 - DPDK 应用作为 sidecar 或安全策略执行点

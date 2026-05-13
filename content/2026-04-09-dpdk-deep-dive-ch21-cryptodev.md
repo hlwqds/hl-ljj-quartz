@@ -5,12 +5,9 @@ tags: [dpdk, series, cryptodev, crypto-pmd, ipsec, aes, hardware-offload, cipher
 description: "深入理解 DPDK cryptodev 框架——对称加密、AEAD、认证算法、Crypto PMD 驱动、IPsec 加速、NULL Crypto 驱动"
 ---
 
-> [!info] DPDK 深度探索系列
-> 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
+> [!info] DPDK 深度探索系列 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
 > 1-19. 前十九章已完成
-> 19b. [[2026-04-09-dpdk-deep-dive-ch19b-dpu-smartnic|第十九章补充：DPU/SmartNIC 基础]]
-> 20. [[2026-04-09-dpdk-deep-dive-ch20-simd-avx512|第二十章：AVX512/SIMD 数据包处理向量化]]
-> 21. **第二十一章：cryptodev 加密设备与 Crypto PMD**
+> 19b. [[2026-04-09-dpdk-deep-dive-ch19b-dpu-smartnic|第十九章补充：DPU/SmartNIC 基础]] 20. [[2026-04-09-dpdk-deep-dive-ch20-simd-avx512|第二十章：AVX512/SIMD 数据包处理向量化]] 21. **第二十一章：cryptodev 加密设备与 Crypto PMD**
 
 ---
 
@@ -1113,15 +1110,15 @@ esp_decrypt_gcm(struct rte_mbuf *pkt, void *session,
 
 ### 9.5 场景选型指南
 
-| 场景 | 推荐算法 | 推荐硬件 | 原因 |
-|------|---------|---------|------|
-| IPsec VPN | AES-256-GCM | QAT 或 AESNI-MB | GCM 是 AEAD，单次操作完成加密+认证 |
-| TLS 终端 | AES-128-GCM | AESNI-MB | TLS 1.3 默认，128-bit 足够，密钥短更快 |
-| 5G UPF | SNOW 3G / ZUC | QAT 或 ARMv8 | 无线标准要求，需要硬件加速 |
-| WireGuard | ChaCha20-Poly1305 | AESNI-MB | ARM 平台性能优于 AES，x86 可选 |
-| MACsec | AES-GCM-128 | Inline NIC | L2 加密，需要 NIC 硬件支持 |
-| 磁盘加密 | AES-XTS | AESNI | 512B 扇区对齐，XTS 专为磁盘设计 |
-| 功能测试 | NULL Crypto | 任意 | 不做实际加密，用于性能基准和功能验证 |
+| 场景      | 推荐算法          | 推荐硬件        | 原因                                   |
+| --------- | ----------------- | --------------- | -------------------------------------- |
+| IPsec VPN | AES-256-GCM       | QAT 或 AESNI-MB | GCM 是 AEAD，单次操作完成加密+认证     |
+| TLS 终端  | AES-128-GCM       | AESNI-MB        | TLS 1.3 默认，128-bit 足够，密钥短更快 |
+| 5G UPF    | SNOW 3G / ZUC     | QAT 或 ARMv8    | 无线标准要求，需要硬件加速             |
+| WireGuard | ChaCha20-Poly1305 | AESNI-MB        | ARM 平台性能优于 AES，x86 可选         |
+| MACsec    | AES-GCM-128       | Inline NIC      | L2 加密，需要 NIC 硬件支持             |
+| 磁盘加密  | AES-XTS           | AESNI           | 512B 扇区对齐，XTS 专为磁盘设计        |
+| 功能测试  | NULL Crypto       | 任意            | 不做实际加密，用于性能基准和功能验证   |
 
 ---
 
@@ -1618,14 +1615,14 @@ crypto_cleanup(void)
 
 ### 11.2 优化建议
 
-| 优化项 | 说明 | 效果 |
-|--------|------|------|
-| **批量入队** | 每次 enqueue 32+ 操作 | 减少调用开销 |
-| **In-place 加密** | `symm_dst = NULL` | 避免 mbuf 拷贝 |
-| **连续 mbuf** | 单 segment mbuf | 减少 scatter/gather |
-| **会话复用** | 同一 SA 复用 session | 避免 session 创建开销 |
-| **硬件选择** | QAT/NVIDIA 加速卡 | 10-50x 提升 |
-| **AES-GCM** | 用 AEAD 代替 CBC+HMAC | 一次操作完成加密+认证 |
+| 优化项            | 说明                  | 效果                  |
+| ----------------- | --------------------- | --------------------- |
+| **批量入队**      | 每次 enqueue 32+ 操作 | 减少调用开销          |
+| **In-place 加密** | `symm_dst = NULL`     | 避免 mbuf 拷贝        |
+| **连续 mbuf**     | 单 segment mbuf       | 减少 scatter/gather   |
+| **会话复用**      | 同一 SA 复用 session  | 避免 session 创建开销 |
+| **硬件选择**      | QAT/NVIDIA 加速卡     | 10-50x 提升           |
+| **AES-GCM**       | 用 AEAD 代替 CBC+HMAC | 一次操作完成加密+认证 |
 
 ---
 
@@ -1664,6 +1661,7 @@ crypto_cleanup(void)
 ---
 
 > [!tip] 参考文献
+>
 > - DPDK, "Cryptodev Library", https://doc.dpdk.org/guides/prog_guide/cryptodev_lib.html
 > - DPDK, "AESNI-MB PMD", https://doc.dpdk.org/guides/cryptodevs/aesni_mb.html
 > - DPDK, "QAT PMD", https://doc.dpdk.org/guides/cryptodevs/qat.html

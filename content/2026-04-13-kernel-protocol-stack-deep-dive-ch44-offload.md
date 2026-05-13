@@ -1,15 +1,23 @@
 ---
 title: "Kernel Protocol Stack 深度探索 (四十四)：硬件 offload"
 date: 2026-04-13
-tags: [linux, kernel, networking, series, hardware-offload, smartnic, flow-director, rdma, switchdev, dpdk]
+tags:
+  [
+    linux,
+    kernel,
+    networking,
+    series,
+    hardware-offload,
+    smartnic,
+    flow-director,
+    rdma,
+    switchdev,
+    dpdk,
+  ]
 description: "深入解析网卡硬件 offload——Flow Director、Switchdev、RDMA、TOE、 checksum offload、以及智能网卡架构，帮助理解何时使用硬件 offload 与其性能边界"
 ---
 
-> [!info] Kernel Protocol Stack 深度探索系列
-> 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
-> 43. [[2026-04-13-kernel-protocol-stack-deep-dive-ch43-bpf-hook|第四十三章：Linux BPF 网络钩子]]
-> 44. **第四十四章：硬件 offload**
-> 45. [[2026-04-13-kernel-protocol-stack-deep-dive-ch45-tuning|第四十五章：网络性能调优]]
+> [!info] Kernel Protocol Stack 深度探索系列 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]] 43. [[2026-04-13-kernel-protocol-stack-deep-dive-ch43-bpf-hook|第四十三章：Linux BPF 网络钩子]] 44. **第四十四章：硬件 offload** 45. [[2026-04-13-kernel-protocol-stack-deep-dive-ch45-tuning|第四十五章：网络性能调优]]
 
 ---
 
@@ -17,16 +25,16 @@ description: "深入解析网卡硬件 offload——Flow Director、Switchdev、
 
 Linux 网络协议栈的处理可以卸载到网卡硬件，常见 offload 类型：
 
-| Offload 类型 | 协议 | 方向 | 功能 |
-|-------------|------|------|------|
-| **Checksum offload** | TCP/UDP/IP | TX/RX | 校验和计算 |
-| **TSO/UFO** | TCP/UDP | TX | 分段/分片 |
-| **GRO/LRO** | TCP | RX | 合并分段 |
-| **RSS** | 通用 | RX | 多队列分发 |
-| **Flow Director** | IP/TCP | RX | 精确流分类 |
-| **Switchdev** | L2 | RX | 交换芯片转发 |
-| **RDMA** | 传输层 | RX | 零拷贝远程内存访问 |
-| **TOE** | TCP | TX | TCP offload engine |
+| Offload 类型         | 协议       | 方向  | 功能               |
+| -------------------- | ---------- | ----- | ------------------ |
+| **Checksum offload** | TCP/UDP/IP | TX/RX | 校验和计算         |
+| **TSO/UFO**          | TCP/UDP    | TX    | 分段/分片          |
+| **GRO/LRO**          | TCP        | RX    | 合并分段           |
+| **RSS**              | 通用       | RX    | 多队列分发         |
+| **Flow Director**    | IP/TCP     | RX    | 精确流分类         |
+| **Switchdev**        | L2         | RX    | 交换芯片转发       |
+| **RDMA**             | 传输层     | RX    | 零拷贝远程内存访问 |
+| **TOE**              | TCP        | TX    | TCP offload engine |
 
 ---
 
@@ -47,13 +55,13 @@ Flow Director:
 
 ### 2.2 Flow Director 与 RSS 的区别
 
-| 特性 | RSS | Flow Director |
-|------|-----|---------------|
-| **匹配方式** | 哈希（概率均匀） | 精确匹配（exact match） |
-| **灵活性** | 自动 | 需手动配置 |
-| **流保序** | 可能打散（不同 hash 碰撞） | 100% 保序 |
-| **CPU 效率** | 好 | 极好（送到专用 cache） |
-| **表大小** | 256 entry indirection | 64K EM 表 |
+| 特性         | RSS                        | Flow Director           |
+| ------------ | -------------------------- | ----------------------- |
+| **匹配方式** | 哈希（概率均匀）           | 精确匹配（exact match） |
+| **灵活性**   | 自动                       | 需手动配置              |
+| **流保序**   | 可能打散（不同 hash 碰撞） | 100% 保序               |
+| **CPU 效率** | 好                         | 极好（送到专用 cache）  |
+| **表大小**   | 256 entry indirection      | 64K EM 表               |
 
 ### 2.3 配置 Flow Director
 
@@ -217,14 +225,14 @@ RDMA:
 
 ### 4.2 RDMA 关键概念
 
-| 概念 | 说明 |
-|------|------|
-| **QP (Queue Pair)** | RDMA 的通信端点，包含 SendQ/RecvQ/RQ/SQ |
-| **PD (Protection Domain)** | 安全隔离域 |
-| **MR (Memory Region)** | 已注册的内存区域（可用于 DMA） |
-| **WQE (Work Queue Element)** | RDMA 操作请求 |
-| **CQE (Completion Queue Entry)** | 操作完成通知 |
-| **verbs** | RDMA API（libibverbs） |
+| 概念                             | 说明                                    |
+| -------------------------------- | --------------------------------------- |
+| **QP (Queue Pair)**              | RDMA 的通信端点，包含 SendQ/RecvQ/RQ/SQ |
+| **PD (Protection Domain)**       | 安全隔离域                              |
+| **MR (Memory Region)**           | 已注册的内存区域（可用于 DMA）          |
+| **WQE (Work Queue Element)**     | RDMA 操作请求                           |
+| **CQE (Completion Queue Entry)** | 操作完成通知                            |
+| **verbs**                        | RDMA API（libibverbs）                  |
 
 ### 4.3 Linux RDMA 栈
 
@@ -397,15 +405,15 @@ ovs-ofctl add-flow br0 "actions=set_field:00:11:22:33:44:55->dst_mac,output:1"
 
 ### 7.2 offload 兼容性矩阵
 
-| 功能 | 传统网卡 | 高级网卡 (X710) | SmartNIC (BlueField) |
-|------|---------|----------------|---------------------|
-| TSO/GRO | ✅ | ✅ | ✅ |
-| RSS (16+ 队列) | ✅ | ✅ | ✅ |
-| Flow Director | ❌ | ✅ | ✅ |
-| Switchdev | ❌ | ❌ (部分) | ✅ |
-| RDMA | ❌ | ❌ | ✅ (可选) |
-| XDP | ❌ | ✅ (驱动支持) | ✅ |
-| 可编程流水线 | ❌ | ❌ | ✅ (FPGA) |
+| 功能           | 传统网卡 | 高级网卡 (X710) | SmartNIC (BlueField) |
+| -------------- | -------- | --------------- | -------------------- |
+| TSO/GRO        | ✅       | ✅              | ✅                   |
+| RSS (16+ 队列) | ✅       | ✅              | ✅                   |
+| Flow Director  | ❌       | ✅              | ✅                   |
+| Switchdev      | ❌       | ❌ (部分)       | ✅                   |
+| RDMA           | ❌       | ❌              | ✅ (可选)            |
+| XDP            | ❌       | ✅ (驱动支持)   | ✅                   |
+| 可编程流水线   | ❌       | ❌              | ✅ (FPGA)            |
 
 ---
 

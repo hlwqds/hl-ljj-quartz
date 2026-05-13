@@ -5,8 +5,8 @@ tags: [vpn, series, clash, proxy, gateway, rules, subscription, mihomo]
 description: "Clash 生态深度解析——Clash/Premium/Meta 客户端对比、规则分流策略、订阅制管理、mihomo/Clash.Meta 项目、配置模板与 Surge 兼容"
 ---
 
-> [!info] VPN 技术深度探索系列
-> 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+> [!info] VPN 技术深度探索系列 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-vpn-deep-dive-ch29-xray|Xray 核心]]
 > 2. **第三十章：Clash 生态**
 > 3. [[2026-04-13-vpn-deep-dive-ch31-tls-cdn|第三十一章：TLS 伪装与 CDN]]

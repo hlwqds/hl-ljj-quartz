@@ -72,19 +72,19 @@ enum pktgen_send_mode {
 typedef struct port_info_s {
     uint16_t port_id;
     uint64_t port_mask;
-    
+
     // 发送统计
     uint64_t stats.tx_packets;
     uint64_t stats.tx_bytes;
     uint64_t stats.tx_dropped;
     double   stats.tx_rate;      // pps
-    
-    // 接收统计  
+
+    // 接收统计
     uint64_t stats.rx_packets;
     uint64_t stats.rx_bytes;
     uint64_t stats.rx_dropped;
     double   stats.rx_rate;      // pps
-    
+
     // 配置
     uint8_t  send_mode;          // 发送模式
     uint8_t  seq_state[N_PORTS];// 序列号状态
@@ -142,15 +142,15 @@ sudo ./pktgen -l 0,1,2,3 -n 4 -- \
 
 ### 4.2 常用启动参数
 
-| 参数 | 说明 | 示例 |
-|------|------|------|
-| `-l` | lcore 列表 | `-l 0,1,2,3` |
-| `-n` | 内存通道 | `-n 4` |
+| 参数 | 说明            | 示例         |
+| ---- | --------------- | ------------ |
+| `-l` | lcore 列表      | `-l 0,1,2,3` |
+| `-n` | 内存通道        | `-n 4`       |
 | `-m` | 端口-lcore 映射 | `-m [0:1].0` |
-| `-P` | 混杂模式 | `-P` |
-| `--` | 分隔符 | `--` |
-| `-T` | 启用彩色输出 | `-T` |
-| `-N` | 禁用 NUMA 警告 | `-N` |
+| `-P` | 混杂模式        | `-P`         |
+| `--` | 分隔符          | `--`         |
+| `-T` | 启用彩色输出    | `-T`         |
+| `-N` | 禁用 NUMA 警告  | `-N`         |
 
 ### 4.3 交互命令
 
@@ -172,7 +172,7 @@ stop all                # 停止所有端口
 set <port> rate <pps>   # 设置发包速率(pps)
 set <port> size <size>  # 设置包大小
 
-# 流量配置  
+# 流量配置
 set <port> dst mac <MAC>      # 目标 MAC
 set <port> src mac <MAC>      # 源 MAC
 set <port> dst ip <IP>        # 目标 IP
@@ -231,7 +231,7 @@ functionSetup = function()
         for seq = 0, 9 do
             local src_ip = incrementIpAddr(src_ip_start, seq * 256)
             local dst_ip = incrementIpAddr(dst_ip_start, seq * 256)
-            
+
             pktgen.set_port(p, seq ..".dst_mac", "00:00:00:00:00:01")
             pktgen.set_port(p, seq ..".src_mac", "00:1B:21:00:12:34")
             pktgen.set_port(p, seq ..".src_ip", src_ip .."/24")
@@ -239,7 +239,7 @@ functionSetup = function()
             pktgen.set_port(p, seq ..".proto", "tcp")
             pktgen.set_port(p, seq ..".dpi", 80)  -- 目标端口
         end
-        
+
         -- 启用全部 sequence
         pktgen.set(p, "seq_cnt", 10)
     end
@@ -288,21 +288,21 @@ function throughputTest(port, frameSize)
     local low = 0
     local high = 100
     local result = 0
-    
+
     for i = 1, 7 do  -- 二分 7 次
         local mid = math.floor((low + high) / 2)
-        
+
         pktgen.set(port, "size", frameSize)
         pktgen.set(port, "rate", mid)
-        
+
         pktgen.start(port)
         pktgen.delay(5000)  -- 5 秒稳定
-        
+
         local stats = pktgen.get_stats(port)
         local loss_rate = stats.rx_packets / stats.tx_packets
-        
+
         pktgen.stop(port)
-        
+
         if loss_rate < 0.001 then  -- < 0.1% 丢包率
             result = mid
             low = mid
@@ -310,7 +310,7 @@ function throughputTest(port, frameSize)
             high = mid
         end
     end
-    
+
     return result
 end
 
@@ -338,24 +338,24 @@ pktgen.set(tx_port, "反射_port", rx_port)
 
 function latencyTest(duration)
     pktgen.start(tx_port)
-    
+
     local count = 0
     local total_latency = 0
-    
+
     while count < duration do
         local stats = pktgen.get_stats(tx_port)
-        
+
         -- 计算平均延迟
         if stats.latency > 0 then
             total_latency = total_latency + stats.latency
             count = count + 1
         end
-        
+
         pktgen.delay(1000)
     end
-    
+
     pktgen.stop(tx_port)
-    
+
     return total_latency / count
 end
 
@@ -375,16 +375,16 @@ local results = {}
 for _, rate in ipairs(rates) do
     -- 重置统计
     pktgen.reset()
-    
+
     -- 设置速率
     pktgen.set("all", "rate", rate)
     pktgen.set("all", "size", 64)
-    
+
     -- 发送 10 秒
     pktgen.start("all")
     pktgen.delay(10000)
     pktgen.stop("all")
-    
+
     -- 收集统计
     local tx = 0
     local rx = 0
@@ -393,10 +393,10 @@ for _, rate in ipairs(rates) do
         tx = tx + s.tx_packets
         rx = rx + s.rx_packets
     end
-    
+
     local loss = 100 * (1 - rx / tx)
     results[rate] = loss
-    
+
     print(string.format("Rate: %d%% Loss: %.3f%%", rate, loss))
 end
 
@@ -409,14 +409,14 @@ end
 
 ## 7. 与 testpmd 对比
 
-| 特性 | pktgen | testpmd |
-|------|--------|---------|
-| **定位** | 流量生成/测试 | 转发/桥接 |
-| **脚本支持** | Lua 原生支持 | 无内置脚本 |
-| **统计精度** | 实时精确 | 基础统计 |
+| 特性         | pktgen         | testpmd          |
+| ------------ | -------------- | ---------------- |
+| **定位**     | 流量生成/测试  | 转发/桥接        |
+| **脚本支持** | Lua 原生支持   | 无内置脚本       |
+| **统计精度** | 实时精确       | 基础统计         |
 | **CPU 开销** | 低（专注发送） | 较高（转发逻辑） |
-| **适用场景** | 性能基准测试 | 功能验证 |
-| **命令行** | 交互式 + 脚本 | 交互式命令 |
+| **适用场景** | 性能基准测试   | 功能验证         |
+| **命令行**   | 交互式 + 脚本  | 交互式命令       |
 
 ## 8. 常见问题排查
 

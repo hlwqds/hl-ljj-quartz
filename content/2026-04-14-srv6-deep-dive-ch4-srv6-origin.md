@@ -109,13 +109,13 @@ Segment Routing's innovation was not in inventing source routing—early IPv6 an
 
 Key differences:
 
-| Aspect           | RH0 Source Routing          | SRv6 Segment Routing        |
-|------------------|------------------------------|------------------------------|
-| Address source   | Arbitrary, potentially attacker-controlled | Operator-allocated SID space |
-| Path verification | None                         | IGP/BGP validation           |
-| SID meaning      | Generic IPv6 address         | Programmed behavior (via SRH) |
-| Scalability      | Poor (address explosion)    | Excellent (semantic compression) |
-| Operational model | End-to-end, stateless       | Domain-based, distributed intelligence |
+| Aspect            | RH0 Source Routing                         | SRv6 Segment Routing                   |
+| ----------------- | ------------------------------------------ | -------------------------------------- |
+| Address source    | Arbitrary, potentially attacker-controlled | Operator-allocated SID space           |
+| Path verification | None                                       | IGP/BGP validation                     |
+| SID meaning       | Generic IPv6 address                       | Programmed behavior (via SRH)          |
+| Scalability       | Poor (address explosion)                   | Excellent (semantic compression)       |
+| Operational model | End-to-end, stateless                      | Domain-based, distributed intelligence |
 
 ## 4.5 The SRH: Segment Routing Header
 
@@ -242,11 +242,11 @@ Early SRv6 implementations emerged in Cisco's IOS-XR and Linux kernel. Testing f
 
 Key RFCs emerged:
 
-| RFC | Title | Year |
-|-----|-------|------|
-| RFC 8402 | Segment Routing Architecture | 2018 |
+| RFC      | Title                             | Year |
+| -------- | --------------------------------- | ---- |
+| RFC 8402 | Segment Routing Architecture      | 2018 |
 | RFC 8754 | IPv6 Segment Routing Header (SRH) | 2020 |
-| RFC 8986 | SRv6 Network Programming | 2021 |
+| RFC 8986 | SRv6 Network Programming          | 2021 |
 
 ### 2021-Present: Production Deployment
 

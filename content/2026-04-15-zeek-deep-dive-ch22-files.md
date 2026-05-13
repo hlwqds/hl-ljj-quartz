@@ -12,8 +12,8 @@ tags:
 description: "深入解析 Zeek 文件分析——文件提取、file-analysis 框架、哈希计算、files.log、恶意软件检测"
 ---
 
-> [!info] Zeek 2026 深度探索系列
-> 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Zeek 2026 深度探索系列 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-15-zeek-deep-dive-ch1-overview|第一章：Zeek 概述]]
 > 2. [[2026-04-15-zeek-deep-dive-ch2-installation|第二章：安装部署]]
 > 3. [[2026-04-15-zeek-deep-dive-ch3-config|第三章：配置系统]]
@@ -151,19 +151,19 @@ type Files::Info = record {
 
 ### 2.3 主要字段说明
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `fuid` | string | 文件唯一标识符 |
-| `uid` | string | 关联连接 UID |
-| `id` | conn_id | 关联连接 4-tuple |
-| `analyzer` | set[string] | 分析器类型 (HTTP, SMTP, SMB, etc.) |
-| `mime` | string | MIME 类型 |
-| `filename` | string | 文件名（如有） |
-| `size` | int64 | 文件大小 |
-| `md5` | string | MD5 哈希 |
-| `sha1` | string | SHA1 哈希 |
-| `sha256` | string | SHA256 哈希 |
-| `extracted` | string | 提取文件路径 |
+| 字段        | 类型        | 说明                               |
+| ----------- | ----------- | ---------------------------------- |
+| `fuid`      | string      | 文件唯一标识符                     |
+| `uid`       | string      | 关联连接 UID                       |
+| `id`        | conn_id     | 关联连接 4-tuple                   |
+| `analyzer`  | set[string] | 分析器类型 (HTTP, SMTP, SMB, etc.) |
+| `mime`      | string      | MIME 类型                          |
+| `filename`  | string      | 文件名（如有）                     |
+| `size`      | int64       | 文件大小                           |
+| `md5`       | string      | MD5 哈希                           |
+| `sha1`      | string      | SHA1 哈希                          |
+| `sha256`    | string      | SHA256 哈希                        |
+| `extracted` | string      | 提取文件路径                       |
 
 ---
 
@@ -365,6 +365,7 @@ redef FileExtract::filename_prefixes = set(
 ### 5.1 哈希类型
 
 Zeek 支持计算三种哈希：
+
 - MD5 (128-bit)
 - SHA1 (160-bit)
 - SHA256 (256-bit)
@@ -657,22 +658,24 @@ event file_extraction(f: fa_file, path: string)
 
 本章介绍了 Zeek 文件分析框架的核心能力：
 
-| 组件 | 说明 |
-|------|------|
-| **files.log** | 文件分析主日志，记录所有检测到的文件 |
-| **Files::Info** | 文件信息的 record 类型 |
-| **file_new** | 检测到新文件事件 |
-| **file_over_new_connection** | 文件在连接中传输事件 |
-| **file_hash** | 文件哈希计算完成事件 |
-| **file_extraction** | 文件提取完成事件 |
-| **MD5/SHA1/SHA256** | 三种哈希算法支持 |
+| 组件                         | 说明                                 |
+| ---------------------------- | ------------------------------------ |
+| **files.log**                | 文件分析主日志，记录所有检测到的文件 |
+| **Files::Info**              | 文件信息的 record 类型               |
+| **file_new**                 | 检测到新文件事件                     |
+| **file_over_new_connection** | 文件在连接中传输事件                 |
+| **file_hash**                | 文件哈希计算完成事件                 |
+| **file_extraction**          | 文件提取完成事件                     |
+| **MD5/SHA1/SHA256**          | 三种哈希算法支持                     |
 
 文件分析的关键配置：
+
 - `FileExtract::default_extract_dir` - 提取目录
 - `FileExtract::max_file_size` - 单文件大小限制
 - `FileAnalysis::md5/sha1/sha256_enabled` - 哈希开关
 
 文件分析对于检测：
+
 - 恶意软件传播
 - 数据泄露
 - 可执行文件下载

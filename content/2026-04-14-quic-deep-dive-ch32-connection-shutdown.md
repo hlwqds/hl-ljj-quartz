@@ -26,6 +26,7 @@ QUIC 提供了两种互补的关闭机制：
 2. **立即关闭**（Immediate Close）：通过 CONNECTION_CLOSE 帧立即终止连接
 
 这两种机制服务于不同的场景：
+
 - 优雅关闭：服务器维护、重配置、负载均衡
 - 立即关闭：协议错误、攻击检测、应用程序强制终止
 
@@ -87,13 +88,13 @@ CONNECTION_CLOSE 帧有两种变体，分别用于不同的加密级别：
 
 ### 2.2 字段说明
 
-| 字段 | 说明 |
-|------|------|
-| Frame Type | 0x1c (Application), 0x1d (Initial/Handshake) |
-| Error Code | 错误码（见下节） |
-| Frame Type | 触发关闭的帧类型（仅 Application 级别） |
-| Reason Phrase Length | 可读错误原因的长度 |
-| Reason Phrase | UTF-8 编码的可读错误原因 |
+| 字段                 | 说明                                         |
+| -------------------- | -------------------------------------------- |
+| Frame Type           | 0x1c (Application), 0x1d (Initial/Handshake) |
+| Error Code           | 错误码（见下节）                             |
+| Frame Type           | 触发关闭的帧类型（仅 Application 级别）      |
+| Reason Phrase Length | 可读错误原因的长度                           |
+| Reason Phrase        | UTF-8 编码的可读错误原因                     |
 
 ### 2.3 发送规则
 
@@ -126,54 +127,54 @@ QUIC 定义了四类错误码，分别对应不同的错误场景：
 
 **1. 传输错误码（Transport Error Codes）— 0x0xxx**：
 
-| 错误码 | 名称 | 说明 |
-|--------|------|------|
-| 0x0 | NO_ERROR | 无错误（用于 idle timeout 关闭） |
-| 0x1 | INTERNAL_ERROR | 内部实现错误 |
-| 0x2 | CONNECTION_REFUSED | 连接被拒绝 |
-| 0x3 | FLOW_CONTROL_ERROR | 流量控制错误 |
-| 0x4 | STREAM_LIMIT_ERROR | 流数量超限 |
-| 0x5 | STREAM_STATE_ERROR | 流状态错误（如已关闭的流写入） |
-| 0x6 | FINAL_SIZE_ERROR | 最终大小错误 |
-| 0x7 | FRAME_ENCODING_ERROR | 帧编码错误 |
-| 0x8 | TRANSPORT_PARAMETER_ERROR | 传输参数错误 |
-| 0x9 | CONNECTION_ID_LIMIT_ERROR | Connection ID 数量超限 |
-| 0xa | PROTOCOL_VIOLATION | 协议违规 |
-| 0xb | INVALID_TOKEN | 无效的 Token |
-| 0xc | APPLICATION_ERROR | 应用层错误 |
-| 0xd | CRYPTO_BUFFER_EXCEEDED | CRYPTO 缓冲区超限 |
+| 错误码 | 名称                      | 说明                             |
+| ------ | ------------------------- | -------------------------------- |
+| 0x0    | NO_ERROR                  | 无错误（用于 idle timeout 关闭） |
+| 0x1    | INTERNAL_ERROR            | 内部实现错误                     |
+| 0x2    | CONNECTION_REFUSED        | 连接被拒绝                       |
+| 0x3    | FLOW_CONTROL_ERROR        | 流量控制错误                     |
+| 0x4    | STREAM_LIMIT_ERROR        | 流数量超限                       |
+| 0x5    | STREAM_STATE_ERROR        | 流状态错误（如已关闭的流写入）   |
+| 0x6    | FINAL_SIZE_ERROR          | 最终大小错误                     |
+| 0x7    | FRAME_ENCODING_ERROR      | 帧编码错误                       |
+| 0x8    | TRANSPORT_PARAMETER_ERROR | 传输参数错误                     |
+| 0x9    | CONNECTION_ID_LIMIT_ERROR | Connection ID 数量超限           |
+| 0xa    | PROTOCOL_VIOLATION        | 协议违规                         |
+| 0xb    | INVALID_TOKEN             | 无效的 Token                     |
+| 0xc    | APPLICATION_ERROR         | 应用层错误                       |
+| 0xd    | CRYPTO_BUFFER_EXCEEDED    | CRYPTO 缓冲区超限                |
 
 **2. 加密错误码（CRYPTO Error Codes）— 0x1xxx**：
 
 TLS 警报被映射到 QUIC 错误码，格式为 `0x1xxx`，其中 `xxx` 是 TLS 警报号。
 
-| 错误码 | TLS 警报 | 说明 |
-|--------|----------|------|
-| 0x100 | handshake_failure | 握手失败 |
-| 0x101 | no_certificate | 需要证书但未提供 |
-| 0x102 | certificate_expired | 证书过期 |
-| 0x103 | illegal_parameter | 非法参数 |
-| 0x106 | unknown_ca | CA 未知 |
-| 0x107 | decrypt_error | 解密错误 |
+| 错误码 | TLS 警报            | 说明             |
+| ------ | ------------------- | ---------------- |
+| 0x100  | handshake_failure   | 握手失败         |
+| 0x101  | no_certificate      | 需要证书但未提供 |
+| 0x102  | certificate_expired | 证书过期         |
+| 0x103  | illegal_parameter   | 非法参数         |
+| 0x106  | unknown_ca          | CA 未知          |
+| 0x107  | decrypt_error       | 解密错误         |
 
 **3. HTTP/3 错误码 — 0x2xxx**：
 
-| 错误码 | 名称 | 说明 |
-|--------|------|------|
-| 0x200 | H3_NO_ERROR | HTTP/3 无错误 |
-| 0x201 | H3_GENERAL_PROTOCOL_ERROR | 通用协议错误 |
-| 0x202 | H3_INTERNAL_ERROR | HTTP/3 内部错误 |
-| 0x203 | H3_STREAM_CREATION_ERROR | 流创建错误 |
-| 0x205 | H3_CLOSED_CRITICAL_STREAM | 关键流被关闭 |
-| 0x206 | H3_FRAME_UNEXPECTED | 意外的帧 |
-| 0x207 | H3_FRAME_ERROR | 帧错误 |
-| 0x208 | H3_EXCESSIVE_LOAD | 过度负载 |
-| 0x20a | H3_ID_ERROR | ID 错误 |
-| 0x20b | H3_SETTINGS_ERROR | 设置错误 |
-| 0x20c | H3_STREAM_STATE_ERROR | 流状态错误 |
-| 0x20d | H3_INCOMPLETE_STREAM | 流不完整 |
-| 0x20e | H3_FRAME_ENCODING_ERROR | 帧编码错误 |
-| 0x20f | H3_QPACK Decompression Failed | QPACK 解压失败 |
+| 错误码 | 名称                          | 说明            |
+| ------ | ----------------------------- | --------------- |
+| 0x200  | H3_NO_ERROR                   | HTTP/3 无错误   |
+| 0x201  | H3_GENERAL_PROTOCOL_ERROR     | 通用协议错误    |
+| 0x202  | H3_INTERNAL_ERROR             | HTTP/3 内部错误 |
+| 0x203  | H3_STREAM_CREATION_ERROR      | 流创建错误      |
+| 0x205  | H3_CLOSED_CRITICAL_STREAM     | 关键流被关闭    |
+| 0x206  | H3_FRAME_UNEXPECTED           | 意外的帧        |
+| 0x207  | H3_FRAME_ERROR                | 帧错误          |
+| 0x208  | H3_EXCESSIVE_LOAD             | 过度负载        |
+| 0x20a  | H3_ID_ERROR                   | ID 错误         |
+| 0x20b  | H3_SETTINGS_ERROR             | 设置错误        |
+| 0x20c  | H3_STREAM_STATE_ERROR         | 流状态错误      |
+| 0x20d  | H3_INCOMPLETE_STREAM          | 流不完整        |
+| 0x20e  | H3_FRAME_ENCODING_ERROR       | 帧编码错误      |
+| 0x20f  | H3_QPACK Decompression Failed | QPACK 解压失败  |
 
 ### 3.2 错误码选择指南
 
@@ -239,11 +240,11 @@ Server 发送 GOAWAY：
 
 1. Server 发送 GOAWAY（带 Stream ID）
    - Stream ID 标记了"最大允许的流 ID"
-   
+
 2. Client 收到 GOAWAY
    - 停止创建新流（ID >= GOAWAY.StreamID）
    - 等待活跃流完成
-   
+
 3. 所有活跃流完成后
    - Server 发送 CONNECTION_CLOSE
    - 连接进入 Draining 状态
@@ -275,6 +276,7 @@ Client                              Server
 ### 5.1 优雅关闭（Graceful Shutdown）
 
 优雅关闭的典型场景：
+
 - 服务器维护（无-downtime 重配置）
 - 负载均衡器流量迁移
 - 应用程序 graceful shutdown
@@ -306,6 +308,7 @@ Client                              Server
 ### 5.2 立即关闭（Immediate Close）
 
 立即关闭的典型场景：
+
 - 检测到协议违规
 - 加密握手失败
 - 应用程序强制终止
@@ -332,13 +335,13 @@ Client                              Server
 
 ### 5.3 关闭方式对比
 
-| 特性 | 优雅关闭 | 立即关闭 |
-|------|---------|---------|
-| 帧类型 | GOAWAY + CONNECTION_CLOSE | 仅 CONNECTION_CLOSE |
-| 等待时间 | 等待活跃流完成 | 立即进入 Draining |
-| 资源释放 | 流完成即释放 | 3 * PTO 后释放 |
-| 典型用途 | 服务器维护 | 错误处理 |
-| 对客户端影响 | 允许完成请求 | 强制断开 |
+| 特性         | 优雅关闭                  | 立即关闭            |
+| ------------ | ------------------------- | ------------------- |
+| 帧类型       | GOAWAY + CONNECTION_CLOSE | 仅 CONNECTION_CLOSE |
+| 等待时间     | 等待活跃流完成            | 立即进入 Draining   |
+| 资源释放     | 流完成即释放              | 3 \* PTO 后释放     |
+| 典型用途     | 服务器维护                | 错误处理            |
+| 对客户端影响 | 允许完成请求              | 强制断开            |
 
 ---
 
@@ -412,20 +415,20 @@ def cleanup_connection():
     cancel_timer(idle_timer)
     cancel_timer(PTO_timer)
     cancel_timer(keepalive_timer)
-    
+
     # 2. 流资源
     for stream in active_streams:
         stream.close()
     clear_stream_state()
-    
+
     # 3. 连接状态
     clear_connection_keys()
     clear_pn_space_states()
-    
+
     # 4. 内存资源
     release_crypto_buffer()
     release_flow_control_window()
-    
+
     # 5. 网络资源
     close_socket()
     release_port()
@@ -455,13 +458,13 @@ HTTP/3 层的关闭会触发 QUIC 层的 CONNECTION_CLOSE：
 def http3_close(error_code=H3_NO_ERROR):
     # 1. 发送 HTTP/3 GOAWAY
     send GOAWAY with error_code
-    
+
     # 2. 关闭所有流
     for stream in active_streams:
         send RESET_STREAM on stream
-    
+
     # 3. 发送 QUIC CONNECTION_CLOSE
-    send CONNECTION_CLOSE with 
+    send CONNECTION_CLOSE with
         frame_type = 0x0  # 表示无触发帧
         error_code = error_code
 ```

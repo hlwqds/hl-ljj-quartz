@@ -5,8 +5,8 @@ tags: [vpn, series, socks, proxy, protocol, udp]
 description: "SOCKS 协议深度解析——SOCKS4/5 版本对比、握手与认证过程、UDP ASSOCIATE、BNDADDR/BNDPORT 机制，以及在各代理工具中的应用"
 ---
 
-> [!info] VPN 技术深度探索系列
-> 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+> [!info] VPN 技术深度探索系列 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-vpn-deep-dive-ch32-tor-network|第三十二章：Tor 网络]]
 > 2. **第三十三章：SOCKS 协议**
 > 3. [[2026-04-13-vpn-deep-dive-ch34-http-proxy|第三十四章：HTTP Proxy]]

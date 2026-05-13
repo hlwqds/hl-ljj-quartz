@@ -5,8 +5,8 @@ tags: [vpn, series, spiffe, identity, workload, svidaemon, service-mesh]
 description: "SPIFFE 身份体系深度解析——SPIFFE ID 格式、SVID 工作负载身份证书、Workload API、SPIRE 实现与服务网格身份联动"
 ---
 
-> [!info] VPN 技术深度探索系列
-> 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+> [!info] VPN 技术深度探索系列 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-vpn-deep-dive-ch37-ztna|第三十七章：零信任网络 ZTNA]]
 > 2. **第三十八章：SPIFFE 身份体系**
 > 3. [[2026-04-13-vpn-deep-dive-ch39-mtls|第三十九章：mTLS 双向认证]]
@@ -644,7 +644,7 @@ Istio + SPIFFE：
 
 ### 7.2 与应用层集成
 
-```
+````
 SPIFFE 应用集成方式：
 
 ┌─────────────────────────────────────────────────────────────────┐
@@ -681,7 +681,7 @@ SPIFFE 应用集成方式：
 │  ```                                                           │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
-```
+````
 
 ---
 

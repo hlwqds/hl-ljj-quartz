@@ -63,12 +63,12 @@ STREAM 帧（0x08-0x0f）：
 
 ### 1.2 各字段说明
 
-| 字段 | 是否可选 | 类型 | 说明 |
-|------|---------|------|------|
-| Stream ID | 必选 | Variable-length int | Stream 编号，标识所属流 |
-| Offset | 可选（OFF=1 时有） | Variable-length int | 本帧数据在 Stream 中的起始字节偏移 |
-| Length | 可选（LEN=1 时有） | Variable-length int | Stream Data 的字节长度 |
-| Stream Data | 必选 | 字节序列 | 实际的应用层数据 |
+| 字段        | 是否可选           | 类型                | 说明                               |
+| ----------- | ------------------ | ------------------- | ---------------------------------- |
+| Stream ID   | 必选               | Variable-length int | Stream 编号，标识所属流            |
+| Offset      | 可选（OFF=1 时有） | Variable-length int | 本帧数据在 Stream 中的起始字节偏移 |
+| Length      | 可选（LEN=1 时有） | Variable-length int | Stream Data 的字节长度             |
+| Stream Data | 必选               | 字节序列            | 实际的应用层数据                   |
 
 > [!note] OFF=0 时 Offset 为 0
 > 当 OFF=0 时，隐式 Offset=0，意味着该帧是此 Stream 的第一帧（从字节偏移 0 开始）。这节省了每个首帧的 Offset 字段开销。
@@ -125,7 +125,7 @@ HTTP/3 对 QUIC Stream 的使用：
   Stream 0 (双向，客户端发起)：HTTP/3 Request Stream（第一个请求）
   Stream 4 (双向，客户端发起)：HTTP/3 Request Stream（第二个请求）
   ...
-  
+
   Stream 2 (单向，客户端发起)：HTTP/3 Control Stream（发送 SETTINGS 帧）
   Stream 3 (单向，服务端发起)：HTTP/3 Control Stream（服务端 SETTINGS）
   Stream 6 (单向，客户端发起)：QPACK Encoder Stream
@@ -207,17 +207,17 @@ QUIC Stream 接收方状态机（RFC 9000 §3.2）：
 数据分片必要性：
 
   应用层写入数据大小 >> QUIC 包能容纳的大小
-  
+
   示例：发送 100 KB HTTP/3 Response Body：
-  
+
     Packet 1 (1200 bytes):
       STREAM(id=0, offset=0,    len=1150, FIN=0, data=...)
-    
+
     Packet 2 (1200 bytes):
       STREAM(id=0, offset=1150, len=1150, FIN=0, data=...)
-    
+
     ...
-    
+
     Packet 87 (450 bytes):
       STREAM(id=0, offset=99750, len=250, FIN=1, data=...)
 ```
@@ -231,12 +231,12 @@ QUIC 保证 Stream 内的字节有序交付（Stream-level ordering），即使�
 
   发出顺序：  Pkt1(offset=0)    Pkt2(offset=1150)  Pkt3(offset=2300)
   到达顺序：  Pkt1(offset=0)    Pkt3(offset=2300)  Pkt2(offset=1150)
-  
+
   接收端缓冲区：
     [offset=0,    1150 bytes]  ← 已交付给应用
     [offset=1150, 空缺]        ← 等待 Pkt2
     [offset=2300, 1150 bytes]  ← 缓存，等待补全
-  
+
   Pkt2 到达后：
     [offset=0,    3450 bytes]  ← 全部交付给应用
 ```
@@ -272,7 +272,7 @@ FIN bit 含义：
   FIN=1 表示：此帧携带的是 Stream 的最后一段数据，发送方不再发送更多数据
 
   FIN 帧的 Offset + Length = Stream 的 Final Size（总字节数）
-  
+
   示例：
     STREAM(id=0, offset=9900, len=100, FIN=1)
     → Stream 0 的 Final Size = 9900 + 100 = 10000 字节
@@ -296,7 +296,7 @@ FIN bit 含义：
     发送方：发送 RESET_STREAM 帧，携带错误码和 Final Size
     接收方：丢弃已缓存的数据，通知应用发生错误
     语义：传输中断，数据可能不完整
-    
+
   对端请求停止（STOP_SENDING）：
     接收方：发送 STOP_SENDING 帧，请求发送方停止
     发送方：响应 RESET_STREAM（应用层决定是否停止）
@@ -338,7 +338,7 @@ QUIC 流量控制的两个维度：
 示例：
   initial_max_data = 100000
   initial_max_stream_data_bidi_local = 50000
-  
+
   Stream 0 发送了 30000 字节：
     connection_send_window = 100000 - 30000 = 70000
     stream_0_send_window = 50000 - 30000 = 20000
@@ -369,11 +369,11 @@ QUIC 流量控制的两个维度：
 ```
 双向 Stream（Bidirectional）：
   两端都可以发送数据（类似 TCP 全双工）
-  
+
   Stream 0（客户端发起双向）：
     客户端 → 服务端：请求数据
     服务端 → 客户端：响应数据
-  
+
   适用场景：HTTP/3 Request/Response
 ```
 
@@ -382,11 +382,11 @@ QUIC 流量控制的两个维度：
 ```
 单向 Stream（Unidirectional）：
   只有发起方可以发送数据，对端只能接收
-  
+
   Stream 2（客户端发起单向）：
     客户端 → 服务端：HTTP/3 Control Stream（SETTINGS 帧等）
     服务端 → 客户端：不可发送
-  
+
   适用场景：
     ① HTTP/3 Control Streams
     ② QPACK Encoder/Decoder Streams
@@ -397,13 +397,13 @@ QUIC 流量控制的两个维度：
 
 单向和双向 Stream 有独立的流控参数：
 
-| Transport Parameter | 适用场景 |
-|---------------------|---------|
-| initial_max_stream_data_bidi_local | 本端发起双向流的初始发送窗口 |
-| initial_max_stream_data_bidi_remote | 对端发起双向流的初始接收窗口 |
-| initial_max_stream_data_uni | 所有单向流的初始窗口（收发共用） |
-| initial_max_streams_bidi | 可并发的双向流数量上限 |
-| initial_max_streams_uni | 可并发的单向流数量上限 |
+| Transport Parameter                 | 适用场景                         |
+| ----------------------------------- | -------------------------------- |
+| initial_max_stream_data_bidi_local  | 本端发起双向流的初始发送窗口     |
+| initial_max_stream_data_bidi_remote | 对端发起双向流的初始接收窗口     |
+| initial_max_stream_data_uni         | 所有单向流的初始窗口（收发共用） |
+| initial_max_streams_bidi            | 可并发的双向流数量上限           |
+| initial_max_streams_uni             | 可并发的单向流数量上限           |
 
 ---
 
@@ -442,13 +442,13 @@ Wireshark 过滤与字段解析：
 
   ① 尽量合并多个 Stream 的数据到一个包
      → 减少 UDP 包数量，提高吞吐
-  
+
   ② 优先使用 LEN=0 省去 Length 字段（包内最后一帧）
      → 节省 1-2 字节
-  
+
   ③ 第一帧省去 Offset（OFF=0，隐式为 0）
      → 节省 1-2 字节
-  
+
   ④ 使用最小可变长整数编码 Stream ID 和 Offset
      → 小 Stream ID（<64）使用 1 字节，大 ID 使用 2-8 字节
 ```
@@ -460,10 +460,10 @@ Wireshark 过滤与字段解析：
 
   ① 增大 initial_max_data（默认 64KB 通常不够高带宽场景）
      → 建议设置为 BDP（带宽延迟积）的 4-8 倍
-  
+
   ② 及时更新窗口（收到 50% 数据时即发 MAX_DATA）
      → 防止发送方饥饿
-  
+
   ③ 高并发场景适当增大 initial_max_streams_bidi
      → HTTP/3 每个请求一个 Stream，1000 并发请求需 1000 个流
 ```

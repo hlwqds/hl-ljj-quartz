@@ -10,14 +10,8 @@ tags:
   - operations
 ---
 
-> [!info] Cilium 2026 深度探索系列
-> 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
-> ...
-> 38. [[2026-04-14-cilium-deep-dive-ch38-sockmap|第三十八章：Sockmap]]
-> 39. **第三十九章：生产级安装指南** ←
-> 40. [[2026-04-14-cilium-deep-dive-ch40-upgrade|第四十章：升级策略]]
-> 41. [[2026-04-14-cilium-deep-dive-ch41-debug|第四十一章：故障诊断]]
-> 42. [[2026-04-14-cilium-deep-dive-ch42-performance|第四十二章：性能调优]]
+> [!info] Cilium 2026 深度探索系列 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+> ... 38. [[2026-04-14-cilium-deep-dive-ch38-sockmap|第三十八章：Sockmap]] 39. **第三十九章：生产级安装指南** ← 40. [[2026-04-14-cilium-deep-dive-ch40-upgrade|第四十章：升级策略]] 41. [[2026-04-14-cilium-deep-dive-ch41-debug|第四十一章：故障诊断]] 42. [[2026-04-14-cilium-deep-dive-ch42-performance|第四十二章：性能调优]]
 
 ---
 
@@ -51,13 +45,13 @@ Cilium 的安装方式有多种，生产环境推荐使用 Helm 也可使用 `ci
 
 安装 Cilium 前，集群必须满足以下条件：
 
-| 要求 | 最低版本 | 说明 |
-|:---|:---|:---|
-| Kubernetes | 1.24+ | 生产环境推荐 1.27+ |
-| Linux Kernel | 4.19+ | 5.10+ 获得完整功能 |
-| eBPF | 支持 | 检查 `/sys/kernel/debugsubsys/eBPF` |
-| Helm | 3.6+ | 用于 Chart 安装 |
-| kubectl | 1.21+ | 与集群交互 |
+| 要求         | 最低版本 | 说明                                |
+| :----------- | :------- | :---------------------------------- |
+| Kubernetes   | 1.24+    | 生产环境推荐 1.27+                  |
+| Linux Kernel | 4.19+    | 5.10+ 获得完整功能                  |
+| eBPF         | 支持     | 检查 `/sys/kernel/debugsubsys/eBPF` |
+| Helm         | 3.6+     | 用于 Chart 安装                     |
+| kubectl      | 1.21+    | 与集群交互                          |
 
 ```
 # 检查内核版本
@@ -122,34 +116,34 @@ cilium config generate-helmvalues \
 # 集群配置
 cluster:
   name: my-production-cluster
-  id: 1  # 集群 ID，Cluster Mesh 时必填
+  id: 1 # 集群 ID，Cluster Mesh 时必填
 
 # IPAM 配置
 ipam:
-  mode: cluster-pool  # 生产推荐 cluster-pool
+  mode: cluster-pool # 生产推荐 cluster-pool
   operator:
     clusterPoolIPv4PodCIDRList: 10.0.0.0/8
     clusterPoolIPv4MaskSize: 24
 
 # 运营商配置
 operator:
-  replicas: 2  # 生产环境至少 2 个
+  replicas: 2 # 生产环境至少 2 个
   unrollPrunedEndpoints: false
 
 # eBPF 配置
 bpf:
-  mode: native  # 高性能模式
+  mode: native # 高性能模式
   clockProbe: true
-  hostRouting: true  # 需要 kernel 5.10+
+  hostRouting: true # 需要 kernel 5.10+
 
 # 负载均衡器
 loadBalancer:
   algorithm: weighted-round-robin
-  mode: hybrid  # snat + dsr 混合
-  acceleration: always  # 启用 XDP 加速
+  mode: hybrid # snat + dsr 混合
+  acceleration: always # 启用 XDP 加速
 
 #kubeProxyReplacement 配置
-kubeProxyReplacement: strict  # strict 或 partial
+kubeProxyReplacement: strict # strict 或 partial
 
 # Hubble 观测（生产推荐开启）
 hubble:
@@ -204,11 +198,11 @@ kubectl -n kube-system get pods -l k8s-app=cilium
 
 这是最重要的配置项，决定 Cilium 如何替代 kube-proxy：
 
-| 值 | 说明 | 使用场景 |
-|:---|:---|:---|
-| `disabled` | 不替代 kube-proxy | 兼容性测试 |
-| `partial` | 部分替代 | 迁移阶段 |
-| `strict` | 完全替代 | **生产推荐** |
+| 值         | 说明              | 使用场景     |
+| :--------- | :---------------- | :----------- |
+| `disabled` | 不替代 kube-proxy | 兼容性测试   |
+| `partial`  | 部分替代          | 迁移阶段     |
+| `strict`   | 完全替代          | **生产推荐** |
 
 ```yaml
 # strict 模式要求所有节点都有 matching 配置
@@ -245,15 +239,15 @@ cilium sysdump check-requirements
 # L4 负载均衡配置
 loadBalancer:
   # 调度算法
-  algorithm: Maglev  # maglev | round_robin | weighted_round_robin | random
-  
+  algorithm: Maglev # maglev | round_robin | weighted_round_robin | random
+
   # 模式
-  mode: snat  # snat | dsr | hybrid
+  mode: snat # snat | dsr | hybrid
   # SNAT: 出口转换，DSR: 直接返回，Hybrid: 智能选择
-  
+
   # XDP 加速
-  acceleration: always  # always | opt-in | disabled
-  
+  acceleration: always # always | opt-in | disabled
+
   # LRU 缓存大小
   lruMapSize: 65536
 
@@ -267,7 +261,7 @@ l2PodBalancer:
 ```yaml
 bandwidth-manager:
   enabled: true
-  
+
 # 启用 BBR 拥塞控制（需要内核 5.18+）
 # bbr: true
 
@@ -364,10 +358,10 @@ cni:
 clustermesh:
   enabled: true
   useAPIServer: true
-  
+
 # 每个集群必须有唯一 cluster ID
 cluster:
-  id: 1  # 集群 1
+  id: 1 # 集群 1
   # id: 2  # 集群 2
 ```
 
@@ -544,20 +538,20 @@ kubectl -n kube-system get pods -l k8s-app=hubble-ui
 
 ### 11.1 安装失败排查
 
-| 问题 | 原因 | 解决方案 |
-|:---|:---|:---|
-| Agent 无法启动 | 内核不支持 | 升级内核到 5.10+ |
-| Agent 无法启动 | eBPF 系统限制 | 检查 `/proc/sys/kernel/bpf_max*` |
-| Operator 无法启动 | RBAC 问题 | 检查 ClusterRole |
-| Hubble UI 无法访问 | 未配置 Ingress | 配置 Ingress 或 NodePort |
+| 问题               | 原因           | 解决方案                         |
+| :----------------- | :------------- | :------------------------------- |
+| Agent 无法启动     | 内核不支持     | 升级内核到 5.10+                 |
+| Agent 无法启动     | eBPF 系统限制  | 检查 `/proc/sys/kernel/bpf_max*` |
+| Operator 无法启动  | RBAC 问题      | 检查 ClusterRole                 |
+| Hubble UI 无法访问 | 未配置 Ingress | 配置 Ingress 或 NodePort         |
 
 ### 11.2 性能问题
 
-| 问题 | 原因 | 解决方案 |
-|:---|:---|:---|
-| 高延迟 | hostRouting 未启用 | 启用 `bpf.hostRouting=true` |
-| 高 CPU | 规则过多 | 启用 LRU 缓存 |
-| 内存占用高 | Map 大小过大 | 调小 `bpf.*MapSize` |
+| 问题       | 原因               | 解决方案                    |
+| :--------- | :----------------- | :-------------------------- |
+| 高延迟     | hostRouting 未启用 | 启用 `bpf.hostRouting=true` |
+| 高 CPU     | 规则过多           | 启用 LRU 缓存               |
+| 内存占用高 | Map 大小过大       | 调小 `bpf.*MapSize`         |
 
 ---
 

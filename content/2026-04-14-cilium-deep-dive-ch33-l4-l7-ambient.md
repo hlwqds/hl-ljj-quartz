@@ -15,12 +15,8 @@ tags:
   - security
 ---
 
-> [!info] Cilium 2026 深度探索系列
-> 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
-> ...
-> 31. [[2026-04-14-cilium-deep-dive-ch31-ambient-overview|第三十一章：Ambient Mode 概述]]
-> 32. [[2026-04-14-cilium-deep-dive-ch32-waypoint|第三十二章：Waypoint Proxy]]
-> 33. **第三十三章：L4/L7 策略在 Ambient Mode 下的应用** ←
+> [!info] Cilium 2026 深度探索系列 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+> ... 31. [[2026-04-14-cilium-deep-dive-ch31-ambient-overview|第三十一章：Ambient Mode 概述]] 32. [[2026-04-14-cilium-deep-dive-ch32-waypoint|第三十二章：Waypoint Proxy]] 33. **第三十三章：L4/L7 策略在 Ambient Mode 下的应用** ←
 
 ---
 
@@ -64,11 +60,11 @@ tags:
 
 ### 1.1 策略执行组件对比
 
-| 策略层级 | 执行组件 | 性能 | 匹配精度 | 功能 |
-|:---|:---|:---|:---|:---|
-| **L3** | eBPF (TC/XDP) | 最高 | IP/CIDR | 基础网络隔离 |
-| **L4** | ztunnel + eBPF | 高 | IP + Port + Protocol | 连接级别控制 |
-| **L7** | Waypoint Proxy | 中 | HTTP/gRPC | 应用层深度检测 |
+| 策略层级 | 执行组件       | 性能 | 匹配精度             | 功能           |
+| :------- | :------------- | :--- | :------------------- | :------------- |
+| **L3**   | eBPF (TC/XDP)  | 最高 | IP/CIDR              | 基础网络隔离   |
+| **L4**   | ztunnel + eBPF | 高   | IP + Port + Protocol | 连接级别控制   |
+| **L7**   | Waypoint Proxy | 中   | HTTP/gRPC            | 应用层深度检测 |
 
 ---
 
@@ -111,13 +107,13 @@ spec:
     matchLabels:
       app: payment
   ingress:
-  - fromEndpoints:
-    - matchLabels:
-        app: order
-    toPorts:
-    - ports:
-      - port: "8080"
-        protocol: TCP
+    - fromEndpoints:
+        - matchLabels:
+            app: order
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
 ```
 
 ```yaml
@@ -131,15 +127,15 @@ spec:
     matchLabels:
       app: payment
   egress:
-  - toPorts:
-    - ports:
-      - port: "5432"
-        protocol: TCP
-      # 限制目标为数据库服务
-    toEndpoints:
-    - matchLabels:
-        app: database
-        k8s:io.kubernetes.pod.namespace: database
+    - toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP
+          # 限制目标为数据库服务
+      toEndpoints:
+        - matchLabels:
+            app: database
+            k8s:io.kubernetes.pod.namespace: database
 ```
 
 ```yaml
@@ -153,21 +149,21 @@ spec:
     matchLabels:
       app: payment
   ingress:
-  - fromEndpoints:
-    - matchLabels:
-        app: frontend
-    toPorts:
-    - ports:
-      - port: "8080"
-        protocol: TCP
+    - fromEndpoints:
+        - matchLabels:
+            app: frontend
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
   egress:
-  - toEndpoints:
-    - matchLabels:
-        app: database
-    toPorts:
-    - ports:
-      - port: "5432"
-        protocol: TCP
+    - toEndpoints:
+        - matchLabels:
+            app: database
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP
 ```
 
 ### 2.3 L4 策略与 mTLS
@@ -193,13 +189,13 @@ spec:
     matchLabels:
       app: payment
   ingress:
-  - fromEndpoints:
-    - matchLabels:
-        app: order
-    toPorts:
-    - ports:
-      - port: "8080"
-        protocol: TCP
+    - fromEndpoints:
+        - matchLabels:
+            app: order
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
   # 隐式启用 mTLS - 无需额外配置
 ```
 
@@ -287,25 +283,25 @@ spec:
     matchLabels:
       app: payment
   ingress:
-  - fromEndpoints:
-    - matchLabels:
-        app: order
-    toPorts:
-    - ports:
-      - port: "8080"
-        protocol: TCP
-      rules:
-        http:
-        # 允许获取支付信息
-        - method: "GET"
-          path: "/api/v1/payments/[0-9]+"
-        # 允许创建支付
-        - method: "POST"
-          path: "/api/v1/payments"
-        # 允许退款
-        - method: "POST"
-          path: "/api/v1/refund"
-        # 拒绝其他所有请求（隐式默认拒绝）
+    - fromEndpoints:
+        - matchLabels:
+            app: order
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+          rules:
+            http:
+              # 允许获取支付信息
+              - method: "GET"
+                path: "/api/v1/payments/[0-9]+"
+              # 允许创建支付
+              - method: "POST"
+                path: "/api/v1/payments"
+              # 允许退款
+              - method: "POST"
+                path: "/api/v1/refund"
+            # 拒绝其他所有请求（隐式默认拒绝）
 ```
 
 ```yaml
@@ -319,27 +315,27 @@ spec:
     matchLabels:
       app: payment
   ingress:
-  - fromEndpoints:
-    - matchLabels:
-        app: frontend
-    toPorts:
-    - ports:
-      - port: "8080"
-        protocol: TCP
-      rules:
-        http:
-        - method: "POST"
-          path: "/api/v1/orders"
-          headers:
-            # 必须包含有效的 Authorization
-            "Authorization":
-              safeRegex: "Bearer valid-token-.*"
-            # 必须包含请求追踪 ID
-            "X-Request-ID":
-              presentMatch: true
-            # 禁止某些 header
-            "X-Forwarded-User":
-              invertMatch: true
+    - fromEndpoints:
+        - matchLabels:
+            app: frontend
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+          rules:
+            http:
+              - method: "POST"
+                path: "/api/v1/orders"
+                headers:
+                  # 必须包含有效的 Authorization
+                  "Authorization":
+                    safeRegex: "Bearer valid-token-.*"
+                  # 必须包含请求追踪 ID
+                  "X-Request-ID":
+                    presentMatch: true
+                  # 禁止某些 header
+                  "X-Forwarded-User":
+                    invertMatch: true
 ```
 
 ```yaml
@@ -353,22 +349,22 @@ spec:
     matchLabels:
       app: payment
   ingress:
-  - fromEndpoints:
-    - matchLabels:
-        app: order
-    toPorts:
-    - ports:
-      - port: "8080"
-        protocol: TCP
-      rules:
-        http:
-        # gRPC 使用 POST 方法，路径格式: /package.Service/Method
-        - method: "POST"
-          path: "/payment.PaymentService/CreatePayment"
-        - method: "POST"
-          path: "/payment.PaymentService/GetPayment"
-        - method: "POST"
-          path: "/payment.PaymentService/RefundPayment"
+    - fromEndpoints:
+        - matchLabels:
+            app: order
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+          rules:
+            http:
+              # gRPC 使用 POST 方法，路径格式: /package.Service/Method
+              - method: "POST"
+                path: "/payment.PaymentService/CreatePayment"
+              - method: "POST"
+                path: "/payment.PaymentService/GetPayment"
+              - method: "POST"
+                path: "/payment.PaymentService/RefundPayment"
 ```
 
 ### 3.3 L7 策略与 L4 策略组合
@@ -452,10 +448,10 @@ spec:
     matchLabels:
       app: payment
   ingress:
-  - toPorts:
-    - ports:
-      - port: "8080"
-        protocol: TCP
+    - toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
 ---
 # Namespace 策略 (优先级低，被覆盖)
 apiVersion: cilium.io/v2
@@ -467,17 +463,17 @@ spec:
     matchLabels:
       app: payment
   ingress:
-  - fromEndpoints:
-    - matchLabels:
-        app: order
-    toPorts:
-    - ports:
-      - port: "8080"
-        protocol: TCP
-      rules:
-        http:
-        - method: "GET"
-          path: "/api/v1/.*"
+    - fromEndpoints:
+        - matchLabels:
+            app: order
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+          rules:
+            http:
+              - method: "GET"
+                path: "/api/v1/.*"
 # 结果: GET 请求被 deny-all 策略拒绝
 ```
 
@@ -513,14 +509,14 @@ spec:
     matchLabels:
       app: payment
   ingress:
-  - fromRequires:
-    # 要求调用方必须在 mesh 内
-    - matchLabels:
-        io.cilium.k8s.policy.cluster: default
-    toPorts:
-    - ports:
-      - port: "8080"
-        protocol: TCP
+    - fromRequires:
+        # 要求调用方必须在 mesh 内
+        - matchLabels:
+            io.cilium.k8s.policy.cluster: default
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
 ```
 
 ### 5.2 L7 速率限制
@@ -536,21 +532,21 @@ spec:
     matchLabels:
       app: payment
   ingress:
-  - fromEndpoints:
-    - matchLabels:
-        app: frontend
-    toPorts:
-    - ports:
-      - port: "8080"
-        protocol: TCP
-      rules:
-        http:
-        - method: "GET"
-          path: "/api/v1/payments.*"
-        # 速率限制: 每秒 100 请求
-        rateLimit:
-          requestsPerHundredSeconds: 10000
-          burst: 200
+    - fromEndpoints:
+        - matchLabels:
+            app: frontend
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+          rules:
+            http:
+              - method: "GET"
+                path: "/api/v1/payments.*"
+            # 速率限制: 每秒 100 请求
+            rateLimit:
+              requestsPerHundredSeconds: 10000
+              burst: 200
 ```
 
 ### 5.3 L7 故障注入
@@ -638,12 +634,12 @@ kubectl exec -it <client-pod> -- curl -v http://<service>.<namespace>.svc.cluste
 
 ### 6.4 常见策略问题
 
-| 问题 | 原因 | 解决方法 |
-|:---|:---|:---|
-| L7 策略不生效 | Waypoint 未部署 | 检查 CiliumNetworkPolicy 引用 |
-| 流量被莫名拒绝 | Default Deny 未配置允许规则 | 添加明确允许规则 |
-| mTLS 握手失败 | 命名空间未启用 Ambient | 添加 `istio.io/dataplane-mode: ambient` |
-| L4 策略覆盖 L7 | 策略优先级问题 | 使用 CiliumClusterwideNetworkPolicy |
+| 问题           | 原因                        | 解决方法                                |
+| :------------- | :-------------------------- | :-------------------------------------- |
+| L7 策略不生效  | Waypoint 未部署             | 检查 CiliumNetworkPolicy 引用           |
+| 流量被莫名拒绝 | Default Deny 未配置允许规则 | 添加明确允许规则                        |
+| mTLS 握手失败  | 命名空间未启用 Ambient      | 添加 `istio.io/dataplane-mode: ambient` |
+| L4 策略覆盖 L7 | 策略优先级问题              | 使用 CiliumClusterwideNetworkPolicy     |
 
 ---
 
@@ -672,11 +668,11 @@ kubectl exec -it <client-pod> -- curl -v http://<service>.<namespace>.svc.cluste
 
 ## 系列总结
 
-| 章节 | 主题 | 核心价值 |
-|:---|:---|:---|
-| 31 | Ambient Mode 概述 | 架构理念、组件职责、启用方式 |
-| 32 | Waypoint Proxy | L7 代理、身份路由、策略执行 |
-| 33 | L4/L7 策略 | Ambient 模式下的策略应用 |
-| 34 | 迁移指南 | 从 Sidecar 到 Ambient 的迁移路径 |
+| 章节 | 主题              | 核心价值                         |
+| :--- | :---------------- | :------------------------------- |
+| 31   | Ambient Mode 概述 | 架构理念、组件职责、启用方式     |
+| 32   | Waypoint Proxy    | L7 代理、身份路由、策略执行      |
+| 33   | L4/L7 策略        | Ambient 模式下的策略应用         |
+| 34   | 迁移指南          | 从 Sidecar 到 Ambient 的迁移路径 |
 
 L4/L7 策略体系是 Cilium Ambient Mode 实现零信任安全的基础，通过分层防护为云原生工作负载提供全面的网络安全保障。

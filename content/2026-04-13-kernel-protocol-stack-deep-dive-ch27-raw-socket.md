@@ -1,12 +1,24 @@
 ---
 title: "Kernel Protocol Stack 深度探索 (二十七)：RAW Socket 与 ICMP"
 date: 2026-04-13
-tags: [linux, kernel, networking, series, raw-socket, icmp, ping, traceroute, packet-signature, socket-options]
+tags:
+  [
+    linux,
+    kernel,
+    networking,
+    series,
+    raw-socket,
+    icmp,
+    ping,
+    traceroute,
+    packet-signature,
+    socket-options,
+  ]
 description: "深入解析 RAW Socket——允许直接访问 IP 层、自定义协议、ICMP 协议实现、ping/traceroute 工具原理、协议注册"
 ---
 
-> [!info] Kernel Protocol Stack 深度探索系列
-> 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Kernel Protocol Stack 深度探索系列 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-kernel-protocol-stack-deep-dive-ch1-skbuff|第一章：sk_buff 与数据包生命周期]]
 > 2. [[2026-04-13-kernel-protocol-stack-deep-dive-ch2-netdevice|第二章：Netdevice 与网卡抽象]]
 > 3. [[2026-04-13-kernel-protocol-stack-deep-dive-ch3-ring-buffer|第三章：Ring Buffer 与 DMA]]
@@ -40,6 +52,7 @@ description: "深入解析 RAW Socket——允许直接访问 IP 层、自定义
 ## 1. 概述：RAW Socket
 
 RAW Socket（原始套接字）允许应用直接访问 IP 层，绕过传输层（TCP/UDP）。用途：
+
 - 实现自定义协议（ICMP、PIG负载探测）
 - 发送原始数据包（自定义 IP 头）
 - 网络诊断工具（ping、traceroute）
@@ -48,13 +61,13 @@ RAW Socket（原始套接字）允许应用直接访问 IP 层，绕过传输层
 
 ### 1.1 与普通 Socket 对比
 
-| 特性 | SOCK_STREAM (TCP) | SOCK_DGRAM (UDP) | SOCK_RAW (RAW) |
-|------|------------------|------------------|----------------|
-| 协议层 | TCP（L4） | UDP（L4） | IP（L3） |
-| 数据单元 | 字节流 | 数据报 | IP 数据报 |
-| 头部处理 | 内核处理 | 内核处理 | 用户可选 |
-| 端口绑定 | 必须 | 必须 | 可选 |
-| 权限 | 普通用户 | 普通用户 | root |
+| 特性     | SOCK_STREAM (TCP) | SOCK_DGRAM (UDP) | SOCK_RAW (RAW) |
+| -------- | ----------------- | ---------------- | -------------- |
+| 协议层   | TCP（L4）         | UDP（L4）        | IP（L3）       |
+| 数据单元 | 字节流            | 数据报           | IP 数据报      |
+| 头部处理 | 内核处理          | 内核处理         | 用户可选       |
+| 端口绑定 | 必须              | 必须             | 可选           |
+| 权限     | 普通用户          | 普通用户         | root           |
 
 ---
 
@@ -180,14 +193,14 @@ static const struct inet_protosw raw_pf_inet = {
 
 ### 4.2 ICMP 类型
 
-| Type | Name | Description |
-|------|------|-------------|
-| 0 | Echo Reply | ping 响应 |
-| 3 | Destination Unreachable | 目的不可达 |
-| 4 | Source Quench | 源抑制（已废弃） |
-| 8 | Echo Request | ping 请求 |
-| 11 | Time Exceeded | TTL 过期（traceroute） |
-| 12 | Parameter Problem | IP 头错误 |
+| Type | Name                    | Description            |
+| ---- | ----------------------- | ---------------------- |
+| 0    | Echo Reply              | ping 响应              |
+| 3    | Destination Unreachable | 目的不可达             |
+| 4    | Source Quench           | 源抑制（已废弃）       |
+| 8    | Echo Request            | ping 请求              |
+| 11   | Time Exceeded           | TTL 过期（traceroute） |
+| 12   | Parameter Problem       | IP 头错误              |
 
 ### 4.3 ICMP 消息结构
 
@@ -387,11 +400,11 @@ ping 使用 ICMP Echo Request/Reply：
 
 int main() {
     int sock = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
-    
+
     struct sockaddr_in target;
     target.sin_family = AF_INET;
     target.sin_addr.s_addr = inet_addr(argv[1]);
-    
+
     struct icmphdr icmp;
     icmp.type = ICMP_ECHO;
     icmp.code = 0;
@@ -399,16 +412,16 @@ int main() {
     icmp.un.echo.sequence = htons(1);
     icmp.checksum = 0;
     icmp.checksum = ip_checksum(&icmp, sizeof(icmp));
-    
+
     sendto(sock, &icmp, sizeof(icmp), 0,
            (struct sockaddr *)&target, sizeof(target));
-    
+
     char buf[1024];
     struct sockaddr_in from;
     socklen_t len = sizeof(from);
     recvfrom(sock, buf, sizeof(buf), 0,
              (struct sockaddr *)&from, &len);
-    
+
     struct icmphdr *reply = (struct icmphdr *)(buf + sizeof(struct iphdr));
     if (reply->type == ICMP_ECHOREPLY)
         printf("Reply received\\n");
@@ -428,16 +441,16 @@ traceroute 使用 ICMP Time Exceeded 和 UDP：
 for (int ttl = 1; ttl <= 30; ttl++) {
     int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     setsockopt(sock, IPPROTO_IP, IP_TTL, &ttl, sizeof(ttl));
-    
+
     // 发送到高端口（30000+）
     struct sockaddr_in target;
     target.sin_port = htons(30000 + ttl);
     sendto(sock, data, len, 0, &target, sizeof(target));
-    
+
     // 等待 ICMP Time Exceeded
     int raw = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
     recvfrom(raw, buf, sizeof(buf), 0, &from, &len);
-    
+
     // 打印路由跳
 }
 ```
@@ -449,9 +462,9 @@ for (int ttl = 1; ttl <= 30; ttl++) {
 for (int ttl = 1; ttl <= 30; ttl++) {
     int sock = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
     setsockopt(sock, IPPROTO_IP, IP_TTL, &ttl, sizeof(ttl));
-    
+
     sendto(sock, icmp_req, sizeof(icmp_req), 0, &target, sizeof(target));
-    
+
     // 等待 ICMP TTL Exceeded 或 Echo Reply
 }
 ```
@@ -517,12 +530,12 @@ tcpdump -i eth0 ip
 
 ## 12. 总结
 
-| 特性 | 说明 |
-|------|------|
-| SOCK_RAW | 允许直接访问 IP 层 |
-| IP_HDRINCL | 用户构造 IP 头 |
-| ICMP | 网络诊断协议（ping/traceroute） |
-| 权限 | 需要 CAP_NET_RAW |
-| 协议注册 | inet_protosw 表 |
+| 特性       | 说明                            |
+| ---------- | ------------------------------- |
+| SOCK_RAW   | 允许直接访问 IP 层              |
+| IP_HDRINCL | 用户构造 IP 头                  |
+| ICMP       | 网络诊断协议（ping/traceroute） |
+| 权限       | 需要 CAP_NET_RAW                |
+| 协议注册   | inet_protosw 表                 |
 
 RAW Socket 是网络诊断和安全工具的基础，也是实现新型协议（如新型隧道协议）的必要手段。

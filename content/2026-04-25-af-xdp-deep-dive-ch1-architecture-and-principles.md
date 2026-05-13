@@ -1,7 +1,21 @@
 ---
 title: AF_XDP 深度探索 Ch1：架构与原理
 date: 2026-04-25 09:00:00
-tags: [AF_XDP, XDP, eBPF, High Performance Networking, DPDK, io_uring, Zero Copy, Socket, Kernel Bypass, Linux, NIC, Packet Processing]
+tags:
+  [
+    AF_XDP,
+    XDP,
+    eBPF,
+    High Performance Networking,
+    DPDK,
+    io_uring,
+    Zero Copy,
+    Socket,
+    Kernel Bypass,
+    Linux,
+    NIC,
+    Packet Processing,
+  ]
 description: 深入解析 AF_XDP（Express Data Path）架构：XDP 基础、UMEM、队列映射、零拷贝机制，以及与 DPDK/io_uring 的定位差异。
 ---
 
@@ -400,7 +414,7 @@ ip link set eth0 xdp dump
 
 ### 4.1 接收路径（RX）
 
-```
+````
 AF_XDP 接收数据路径：
 
   1. NIC 收到数据包
@@ -470,7 +484,7 @@ int rx_loop(int sock)
         // ...
     }
 }
-```
+````
 
 ### 4.2 发送路径（TX）
 

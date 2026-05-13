@@ -624,13 +624,13 @@ l2fib_learn_batch(bridge_domain_t *bd,
 
 VPP L2 转发核心概念：
 
-| 组件 | 功能 | 关键点 |
-|------|------|--------|
-| **Bridge Domain** | L2 广播域 | 隔离不同虚拟网络 |
-| **L2 FIB** | MAC 表 | Hash 查找、学习、老化 |
-| **VLAN** | 虚拟 LAN | Access/Trunk 模式 |
-| **VXLAN** | L2 over L3 | 24-bit VNI |
-| **STP** | 环路防止 | 802.1D/Q |
+| 组件              | 功能       | 关键点                |
+| ----------------- | ---------- | --------------------- |
+| **Bridge Domain** | L2 广播域  | 隔离不同虚拟网络      |
+| **L2 FIB**        | MAC 表     | Hash 查找、学习、老化 |
+| **VLAN**          | 虚拟 LAN   | Access/Trunk 模式     |
+| **VXLAN**         | L2 over L3 | 24-bit VNI            |
+| **STP**           | 环路防止   | 802.1D/Q              |
 
 转发决策流程：
 

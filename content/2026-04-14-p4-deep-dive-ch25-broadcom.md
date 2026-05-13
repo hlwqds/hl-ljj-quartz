@@ -5,8 +5,8 @@ tags: [p4, series, broadcom, dnx, maple, jericho, ramon, switch, chip, architect
 description: "Broadcom P4 深度解析——DNX/Maple 交换芯片架构、Jericho/Ramon 系列、Broadcom P4 编译器 (bcmrt) 、OpenNPU、StrataXGS/Tomahawk 与 P4 的结合"
 ---
 
-> [!info] P4 深度探索系列
-> 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+> [!info] P4 深度探索系列 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-14-p4-deep-dive-ch1-p4-overview|第一章：P4 概述——诞生背景与协议无关包处理]]
 > 2. [[2026-04-14-p4-deep-dive-ch2-p4-architecture|第二章：P4 架构模型——PSA/V1Model、Ingress/Egress]]
 > 3. [[2026-04-14-p4-deep-dive-ch3-p4-vs-ebpf|第三章：P4 vs eBPF——适用场景与硬件/软件对比]]
@@ -60,23 +60,23 @@ StrataXGS Series (传统 ASIC):
 
 ### 1.1 Broadcom P4 支持
 
-| 架构 | 支持 P4 | 说明 |
-|------|---------|------|
-| **DNX** | P4-14 主要 | 主要支持厂家定义 API |
-| **OpenNPU** | P4-16 完整 | 开放可编程架构 |
-| **Sapphire** | P4-16 | 最新架构 |
+| 架构         | 支持 P4    | 说明                 |
+| ------------ | ---------- | -------------------- |
+| **DNX**      | P4-14 主要 | 主要支持厂家定义 API |
+| **OpenNPU**  | P4-16 完整 | 开放可编程架构       |
+| **Sapphire** | P4-16      | 最新架构             |
 
 ### 1.2 Broadcom vs Intel Tofino
 
-| 维度 | Broadcom DNX | Intel Tofino |
-|------|--------------|--------------|
-| **市场份额** | ~70% | ~15% |
-| **P4 支持** | OpenNPU | TNA (Native) |
-| **表容量** | 大 | 中等 |
-| **TCAM** | 原生 | 原生 |
-| **编译工具** | bcmrt | p4c-bft |
-| **控制面** | OpenSDK | SDE |
-| **价格** | 较低 | 较高 |
+| 维度         | Broadcom DNX | Intel Tofino |
+| ------------ | ------------ | ------------ |
+| **市场份额** | ~70%         | ~15%         |
+| **P4 支持**  | OpenNPU      | TNA (Native) |
+| **表容量**   | 大           | 中等         |
+| **TCAM**     | 原生         | 原生         |
+| **编译工具** | bcmrt        | p4c-bft      |
+| **控制面**   | OpenSDK      | SDE          |
+| **价格**     | 较低         | 较高         |
 
 ---
 
@@ -288,7 +288,7 @@ parser IngressParser(packet_in packet,
                     out headers h,
                     inout metadata m,
                     in dnx_parser_input_metadata_t istd) {
-    
+
     state start {
         packet.extract(h.ethernet);
         transition select(h.ethernet.etherType) {
@@ -296,7 +296,7 @@ parser IngressParser(packet_in packet,
             default: accept;
         }
     }
-    
+
     state parse_ipv4 {
         packet.extract(h.ipv4);
         transition select(h.ipv4.protocol) {
@@ -305,12 +305,12 @@ parser IngressParser(packet_in packet,
             default: accept;
         }
     }
-    
+
     state parse_tcp {
         packet.extract(h.tcp);
         transition accept;
     }
-    
+
     state parse_udp {
         transition accept;
     }
@@ -321,18 +321,18 @@ control Ingress(inout headers h,
                 inout metadata m,
                 in dnx_input_metadata_t istd,
                 inout dnx_output_metadata_t ostd) {
-    
+
     // L3 转发
     action ipv4_forward(PortId_t port, bit<8> ttl_val) {
         h.ipv4.ttl = ttl_val;
         ostd.egress_port = port;
     }
-    
+
     // Drop
     action drop() {
         ostd.drop = true;
     }
-    
+
     // 路由表
     table ipv4_fib {
         key = {
@@ -345,7 +345,7 @@ control Ingress(inout headers h,
         default_action = drop();
         size = 128K;
     }
-    
+
     // ACL
     table acl_filter {
         key = {
@@ -360,7 +360,7 @@ control Ingress(inout headers h,
         }
         size = 32K;
     }
-    
+
     apply {
         acl_filter.apply();
         ipv4_fib.apply();
@@ -612,16 +612,16 @@ control BroadcomIngress(inout headers h,
                         inout metadata m,
                         in dnx_input_metadata_t istd,
                         inout dnx_output_metadata_t ostd) {
-    
+
     // Broadcom 特有的动作
-    
+
     // 读取芯片内部计数器
     action read_dnx_counter() {
         // DNX counter read
         bit<64> counter_value;
         counter32x64.read(counter_value, istd.src_port);
     }
-    
+
     // Fabric 操作
     action send_to_fabric(bit<8> dest_chip, bit<8> dest_port) {
         // 通过 Fabric 发送到其他芯片
@@ -629,13 +629,13 @@ control BroadcomIngress(inout headers h,
         dnx_fabric_header.dest_chip = dest_chip;
         dnx_fabric_header.dest_port = dest_port;
     }
-    
+
     // FAP (Fabric Adaptation Processor)
     action process_in_fap() {
         // 使用 FAP 进行复杂处理
         // FAP 是 Broadcom 的辅助处理器
     }
-    
+
     // 镜像到 OAMP (Operations, Administration, Maintenance Processor)
     action mirror_to_oamp() {
         // 镜像到 CPU/OAMP 端口
@@ -713,7 +713,7 @@ table direct_table {
     key = { h.ipv4.dstAddr: lpm; }
     actions = { ipv4_forward; drop; }
     size = 64K;
-    
+
     // Direct 资源
     @dx profile "ingress";
 }
@@ -785,30 +785,30 @@ control DNXQoS(inout headers h,
                inout metadata m,
                in dnx_input_metadata_t istd,
                inout dnx_output_metadata_t ostd) {
-    
+
     // DSCP -> TC mapping
     action dscp_to_tc(bit<3> tc, bit<2> color) {
         ostd.qos_class = tc;
         ostd.color = color;
     }
-    
+
     table dscp_map {
         key = { h.ipv4.diffserv: ternary; }
         actions = { dscp_to_tc; }
         size = 64;
     }
-    
+
     // TC -> Queue mapping
     action tc_to_queue(bit<5> queue_id) {
         ostd.enq_qid = queue_id;
     }
-    
+
     table tc_map {
         key = { ostd.qos_class: exact; }
         actions = { tc_to_queue; }
         size = 8;
     }
-    
+
     // 入口应用
     apply {
         dscp_map.apply();
@@ -863,14 +863,14 @@ action ecmp_select(bit<16> ecmp_group_id) {
     hash<bit<16>>(HashAlgorithm.crc16)(
         hash_result,
         HashAlgorithm.crc16,
-        { 
-            h.ipv4.srcAddr, 
-            h.ipv4.dstAddr, 
-            h.tcp.srcPort, 
-            h.tcp.dstPort 
+        {
+            h.ipv4.srcAddr,
+            h.ipv4.dstAddr,
+            h.tcp.srcPort,
+            h.tcp.dstPort
         }
     );
-    
+
     // 使用 selector 表选择 nexthop
     // 动作数据存储在 action data 中
 }
@@ -879,7 +879,7 @@ action ecmp_select(bit<16> ecmp_group_id) {
 action congestion_mark(bit<2> ecn_val) {
     // Microsoft ECN 标记
     h.ipv4.diffserv[1:0] = ecn_val;
-    
+
     // 记录到计数器
     direct_meter<bit<2>>(MeterType.packets) congestion_meter;
     congestion_meter.read(ostd.drop, h.ipv4.diffserv);
@@ -1015,6 +1015,7 @@ Broadcom 是 P4 可编程交换芯片的重要厂商：
 4. **工具链**：bcmrt 编译器和 OpenSDK
 
 **Part V: Implementations** 到此结束。我们覆盖了：
+
 - **Ch21**: BMv2 软件交换机
 - **Ch22**: Intel Tofino 1 架构
 - **Ch23**: Intel Tofino 2 架构

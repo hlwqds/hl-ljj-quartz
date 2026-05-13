@@ -64,7 +64,7 @@ event zeek_init() {
         $port=9200,
         $stream_prefix="zeek"
     ]);
-    
+
     # 为不同日志创建索引
     Log::create_stream(Conn::LOG, [
         $writer=Elasticsearch::Writer,
@@ -78,12 +78,12 @@ event zeek_init() {
 ```yaml
 # /etc/filebeat/filebeat.yml
 filebeat.inputs:
-- type: log
-  enabled: true
-  paths:
-    - /var/log/zeek/*.log
-  json.keys_under_root: true
-  json.add_error_key: true
+  - type: log
+    enabled: true
+    paths:
+      - /var/log/zeek/*.log
+    json.keys_under_root: true
+    json.add_error_key: true
 
 output.elasticsearch:
   hosts: ["elasticsearch:9200"]
@@ -134,7 +134,7 @@ function send_to_splunk(data: string) {
         ["Authorization"] = fmt("Splunk %s", splunk_token),
         ["Content-Type"] = "application/json"
     };
-    
+
     # 使用curl发送数据
     local cmd = fmt(
         "curl -k -X POST '%s' -H 'Authorization: Splunk %s' -d '%s'",
@@ -187,7 +187,7 @@ redef Syslog::destinations += {
 # 配置QRadar接收
 template(name="QRadarFormat" type="string" string="%msg%\n")
 
-action(type="omfwd" target="qradar-server" port="514" 
+action(type="omfwd" target="qradar-server" port="514"
        protocol="tcp" template="QRadarFormat")
 ```
 
@@ -221,7 +221,7 @@ event ArcSight::arcsight_cefs(rec: any) {
         rec$src_port,
         rec$dst_port
     );
-    
+
     # 发送到ArcSight
     system(fmt("echo '%s' | nc arcsight-server 514", cef));
 }
@@ -252,13 +252,13 @@ type ThreatIndicator: record {
 
 function query_misp_attribute(indicator: string): ThreatIndicator {
     # 实际实现需要使用curl调用MISP API
-    return ThreatIndicator($indicator_type="ip", $value=indicator, 
+    return ThreatIndicator($indicator_type="ip", $value=indicator,
                           $context="test", $confidence=50);
 }
 
 event connection_established(c: connection) {
     local orig = fmt("%s", c$id$orig_h);
-    
+
     if (orig in threat_indicators) {
         Log::write(MISP::LOG, [
             $ts=current_time(),
@@ -313,7 +313,7 @@ type VTResponse: record {
 
 function check_virustotal(hash: string): VTResponse {
     # 调用VirusTotal API
-    return VTResponse($malicious=0, $suspicious=0, 
+    return VTResponse($malicious=0, $suspicious=0,
                      $harmless=1, $last_analysis="clean");
 }
 ```
@@ -326,7 +326,7 @@ module ThreatIntel;
 
 export {
     global ioc_log: Log::Stream;
-    
+
     global mal_ips: set[addr];
     global mal_domains: set[string];
     global mal_hashes: set[string];
@@ -347,7 +347,7 @@ function load_threat_intel(path: string) {
         if (|parts| >= 2) {
             local ioc_type = parts[0];
             local ioc_value = parts[1];
-            
+
             if (ioc_type == "ip") {
                 add mal_ips[to_addr(ioc_value)];
             } else if (ioc_type == "domain") {
@@ -412,11 +412,11 @@ event update_threat_intel() {
         "/opt/zeek/etc/threat-intel/malicious-ips.txt",
         "/opt/zeek/etc/threat-intel/malicious-domains.txt"
     );
-    
+
     for (f in ti_files) {
         ThreatIntel::load_threat_intel(f);
     }
-    
+
     # 下一次更新
     schedule 1 hr { update_threat_intel() };
 }
@@ -439,19 +439,19 @@ function block_ip(ip: addr) {
     # 调用防火墙封锁IP
     local cmd = fmt("iptables -A INPUT -s %s -j DROP", ip);
     system(cmd);
-    
+
     print fmt("Blocked: %s", ip);
 }
 
 event connection_established(c: connection) {
     local src = c$id$orig_h;
-    
+
     if (src in recent_blocks) {
         recent_blocks[src] += 1;
     } else {
         recent_blocks[src] = 1;
     }
-    
+
     if (recent_blocks[src] >= block_threshold) {
         block_ip(src);
     }
@@ -473,7 +473,7 @@ function send_webhook(alert: Notice::Info) {
         `{"alert": "%s", "src": "%s", "dst": "%s", "timestamp": "%s"}`,
         alert$msg, alert$src, alert$dst, alert$ts
     );
-    
+
     local cmd = fmt(
         "curl -X POST -H 'Content-Type: application/json' -d '%s' %s",
         payload, webhook_url
@@ -555,14 +555,14 @@ export {
 event siem_health_check() {
     if (current_time() - last_siem_success > 5 mins) {
         siem_failures += 1;
-        
+
         if (siem_failures > 3) {
             # 发送告警
-            Reporter::error(fmt("SIEM integration failing: %d consecutive failures", 
+            Reporter::error(fmt("SIEM integration failing: %d consecutive failures",
                                siem_failures));
         }
     }
-    
+
     schedule 1 min { siem_health_check() };
 }
 

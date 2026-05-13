@@ -11,8 +11,8 @@ tags:
   - aya
 ---
 
-> [!info] eBPF 2026 深度探索系列
-> 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+> [!info] eBPF 2026 深度探索系列 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+>
 > 1. [[2026-04-08-ebpf-deep-dive-ch1-registers-and-instructions|第一章：寄存器与指令集]]
 > 2. [[2026-04-08-ebpf-deep-dive-ch1-5-function-calls|第一.五章：四种函数调用与动态内存]]
 > 3. [[2026-04-08-ebpf-deep-dive-ch1-6-the-verifier|第一.六章：验证器 (Verifier) 的底层逻辑]]
@@ -64,6 +64,7 @@ tags:
 > 49. [[2026-04-09-ebpf-deep-dive-ch40-network-protocols-deep-dive|第四十章：网络协议深度解析——TCP/UDP/QUIC 的 eBPF 视角]]
 > 50. [[2026-04-09-ebpf-deep-dive-ch41-memory-safety-and-vulnerabilities|第四十一章：eBPF 内存安全与漏洞分析]]
 > 51. [[2026-04-09-ebpf-deep-dive-ch42-service-mesh-integration|第四十二章：eBPF 与 Service Mesh 深度集成]]
+
 ---
 
 ## 1. 概述：eBPF 生态全景
@@ -122,13 +123,13 @@ graph TB
 
 ### 2.1 开发框架对比
 
-| 框架 | 语言绑定 | 适用场景 | 学习曲线 | 维护状态 |
-|:---|:---|:---|:---|:---|
-| **BCC** | Python/Lua | 临时脚本、快速原型 | 低 | 活跃 |
-| **libbpf** | C | 生产级库、系统编程 | 中 | 活跃 |
-| **Aya** | Rust | 安全敏感、生产级 | 高 | 活跃 |
-| **goBPF** | Go | 云原生集成 | 中 | 活跃 |
-| **rbpf** | Ruby | 实验性 | 高 | 不活跃 |
+| 框架       | 语言绑定   | 适用场景           | 学习曲线 | 维护状态 |
+| :--------- | :--------- | :----------------- | :------- | :------- |
+| **BCC**    | Python/Lua | 临时脚本、快速原型 | 低       | 活跃     |
+| **libbpf** | C          | 生产级库、系统编程 | 中       | 活跃     |
+| **Aya**    | Rust       | 安全敏感、生产级   | 高       | 活跃     |
+| **goBPF**  | Go         | 云原生集成         | 中       | 活跃     |
+| **rbpf**   | Ruby       | 实验性             | 高       | 不活跃   |
 
 ### 2.2 Cilium 项目生态
 
@@ -227,15 +228,15 @@ pie title eBPF 应用场景分布 (2026)
 
 ### 3.2 场景与工具链对应
 
-| 场景 | 推荐工具 | 关键特性 |
-|:---|:---|:---|
-| **Kubernetes 网络** | Cilium | CNI、NetworkPolicy、Hubble |
-| **服务网格** | Cilium + Envoy | L7 可观测性、mTLS |
-| **容器安全** | Falco + Tetragon | 运行时检测、策略执行 |
-| **性能调优** | BCC / perfetto | CPU/内存/网络分析 |
-| **分布式追踪** | Pixie | 自动追踪、零配置 |
-| **DDoS 防护** | XDP + Cloud | 网卡级清洗 |
-| **合规审计** | LSM BPF | 系统调用拦截 |
+| 场景                | 推荐工具         | 关键特性                   |
+| :------------------ | :--------------- | :------------------------- |
+| **Kubernetes 网络** | Cilium           | CNI、NetworkPolicy、Hubble |
+| **服务网格**        | Cilium + Envoy   | L7 可观测性、mTLS          |
+| **容器安全**        | Falco + Tetragon | 运行时检测、策略执行       |
+| **性能调优**        | BCC / perfetto   | CPU/内存/网络分析          |
+| **分布式追踪**      | Pixie            | 自动追踪、零配置           |
+| **DDoS 防护**       | XDP + Cloud      | 网卡级清洗                 |
+| **合规审计**        | LSM BPF          | 系统调用拦截               |
 
 ---
 
@@ -298,13 +299,13 @@ graph TB
 
 ### 4.2 不同角色的技能要求
 
-| 角色 | 必备技能 | 加分技能 | 典型岗位 |
-|:---|:---|:---|:---|
-| **eBPF 开发** | C/libbpf、指令集、内核接口 | Rust/Aya、CO-RE、kfuncs | 内核/系统工程师 |
-| **云原生安全** | Cilium、Falco、K8s 网络 | LSM BPF、零信任架构 | 安全工程师 |
-| **可观测性平台** | BCC/Python、tracing 原理、OTel | Pixie、Hubble、Grafana | SRE/DevOps |
-| **网络性能** | XDP/TC、数据平面、DPDK | SmartNIC 编程、RDMA | 网络工程师 |
-| **AI 基础设施** | NPU/TPU 驱动、能效监控、CUDA | GPUDirect、RDMA | ML 平台工程师 |
+| 角色             | 必备技能                       | 加分技能                | 典型岗位        |
+| :--------------- | :----------------------------- | :---------------------- | :-------------- |
+| **eBPF 开发**    | C/libbpf、指令集、内核接口     | Rust/Aya、CO-RE、kfuncs | 内核/系统工程师 |
+| **云原生安全**   | Cilium、Falco、K8s 网络        | LSM BPF、零信任架构     | 安全工程师      |
+| **可观测性平台** | BCC/Python、tracing 原理、OTel | Pixie、Hubble、Grafana  | SRE/DevOps      |
+| **网络性能**     | XDP/TC、数据平面、DPDK         | SmartNIC 编程、RDMA     | 网络工程师      |
+| **AI 基础设施**  | NPU/TPU 驱动、能效监控、CUDA   | GPUDirect、RDMA         | ML 平台工程师   |
 
 ---
 
@@ -364,13 +365,13 @@ graph TB
 
 ### 5.2 薪资范围参考 (2026)
 
-| 地区 | 初级 (0-2年) | 中级 (3-5年) | 高级 (5-8年) | 专家 (8+年) |
-|:---|:---|:---|:---|:---|
-| **硅谷** | $150K-200K | $200K-280K | $280K-400K | $400K-600K |
-| **纽约** | $140K-180K | $180K-250K | $250K-350K | $350K-500K |
-| **伦敦** | GBP 80K-120K | GBP 120K-180K | GBP 180K-250K | GBP 250K-400K |
-| **中国一线** | ¥400K-700K | ¥700K-1200K | ¥1200K-2000K | ¥2000K-4000K |
-| **远程 (全球)** | $100K-160K | $160K-220K | $220K-320K | $320K-450K |
+| 地区            | 初级 (0-2年) | 中级 (3-5年)  | 高级 (5-8年)  | 专家 (8+年)   |
+| :-------------- | :----------- | :------------ | :------------ | :------------ |
+| **硅谷**        | $150K-200K   | $200K-280K    | $280K-400K    | $400K-600K    |
+| **纽约**        | $140K-180K   | $180K-250K    | $250K-350K    | $350K-500K    |
+| **伦敦**        | GBP 80K-120K | GBP 120K-180K | GBP 180K-250K | GBP 250K-400K |
+| **中国一线**    | ¥400K-700K   | ¥700K-1200K   | ¥1200K-2000K  | ¥2000K-4000K  |
+| **远程 (全球)** | $100K-160K   | $160K-220K    | $220K-320K    | $320K-450K    |
 
 ---
 
@@ -378,32 +379,32 @@ graph TB
 
 ### 6.1 官方文档与规范
 
-| 资源 | URL | 说明 |
-|:---|:---|:---|
-| **BPF Design Q&A** | docs.kernel.org/bpf/bpf_design_QA | 内核设计 FAQ |
-| **BPF PR 说明** | www.kernel.org/doc/html/latest/bpf/ | 内核文档 |
-| **libbpf 文档** | github.com/libbpf/libbpf | 库文档与示例 |
-| **Cilium 文档** | docs.cilium.io | CNI 与 Hubble |
-| **BCC 文档** | github.com/iovisor/bcc | 工具与示例 |
+| 资源               | URL                                 | 说明          |
+| :----------------- | :---------------------------------- | :------------ |
+| **BPF Design Q&A** | docs.kernel.org/bpf/bpf_design_QA   | 内核设计 FAQ  |
+| **BPF PR 说明**    | www.kernel.org/doc/html/latest/bpf/ | 内核文档      |
+| **libbpf 文档**    | github.com/libbpf/libbpf            | 库文档与示例  |
+| **Cilium 文档**    | docs.cilium.io                      | CNI 与 Hubble |
+| **BCC 文档**       | github.com/iovisor/bcc              | 工具与示例    |
 
 ### 6.2 书籍推荐
 
-| 书名 | 作者 | 适合人群 |
-|:---|:---|:---|
-| **BPF Performance Tools** | Brendan Gregg | 所有级别 |
-| **Linux Observability with BPF** | David Calavera | 初中级 |
-| **eBPF: The Future of Linux Networking** | Various (O'Reilly) | 中级 |
-| **Security Observability with eBPF** | Jaejyn Shin | 安全方向 |
+| 书名                                     | 作者               | 适合人群 |
+| :--------------------------------------- | :----------------- | :------- |
+| **BPF Performance Tools**                | Brendan Gregg      | 所有级别 |
+| **Linux Observability with BPF**         | David Calavera     | 初中级   |
+| **eBPF: The Future of Linux Networking** | Various (O'Reilly) | 中级     |
+| **Security Observability with eBPF**     | Jaejyn Shin        | 安全方向 |
 
 ### 6.3 会议与社区
 
-| 会议 | 时间 | 内容 |
-|:---|:---|:---|
-| **LPC (Linux Plumbers)** | 每年 9 月 | eBPF 专题 microconferences |
-| **bpfconf** | 每年 (Virtual) | BPF 开发者大会 |
-| **OSS NA/EMEA** | 每年 5/11 月 | 云原生与开源 |
-| **Kernel Recipes** | 每年 | 内核深入 |
-| **eBPF Summit** | 每年 | 厂商与用户交流 |
+| 会议                     | 时间           | 内容                       |
+| :----------------------- | :------------- | :------------------------- |
+| **LPC (Linux Plumbers)** | 每年 9 月      | eBPF 专题 microconferences |
+| **bpfconf**              | 每年 (Virtual) | BPF 开发者大会             |
+| **OSS NA/EMEA**          | 每年 5/11 月   | 云原生与开源               |
+| **Kernel Recipes**       | 每年           | 内核深入                   |
+| **eBPF Summit**          | 每年           | 厂商与用户交流             |
 
 ---
 
@@ -412,11 +413,13 @@ graph TB
 ### 7.1 入门项目
 
 **项目 1：系统调用追踪器**
+
 - 目标：使用 BCC 追踪任意进程的系统调用
 - 学习点：kprobe、tracepoint、bpftrace 脚本
 - 产出时间：1-2 天
 
 **项目 2：容器网络可视化**
+
 - 目标：使用 Cilium Hubble 展示 Pod 间流量
 - 学习点：Cilium 部署、Hubble CLI/LUI
 - 产出时间：1 周
@@ -424,11 +427,13 @@ graph TB
 ### 7.2 中级项目
 
 **项目 3：自定义 XDP 防火墙**
+
 - 目标：实现基于 IP/Port/Protocol 的包过滤
 - 学习点：XDP 编程、Packet parsing、Map 查找
 - 产出时间：2-4 周
 
 **项目 4：LSM BPF 安全沙箱**
+
 - 目标：实现进程级的系统调用访问控制
 - 学习点：LSM Hook、安全策略、seccomp
 - 产出时间：2-4 周
@@ -436,11 +441,13 @@ graph TB
 ### 7.3 高级项目
 
 **项目 5：eBPF 驱动的服务网格**
+
 - 目标：基于 Cilium + Envoy 实现 L7 负载均衡
 - 学习点：EnvoyFilter、TLS termination、可观测性
 - 产出时间：1-3 月
 
 **项目 6：sched_ext 自定义调度器**
+
 - 目标：实现延迟敏感的 AI 推理任务调度
 - 学习点：sched_ext BPF、调度算法、系统集成
 - 产出时间：2-4 月
@@ -454,6 +461,7 @@ graph TB
 **Q1: eBPF 程序的加载和执行流程是什么？**
 
 A: 关键步骤：
+
 1. 用户态调用 `bpf()` 系统调用（`bpf_prog_load`）
 2. 内核验证器检查程序安全性（指令合法性、内存访问边界、循环限制）
 3. JIT 编译器将字节码编译为目标架构机器码
@@ -463,6 +471,7 @@ A: 关键步骤：
 **Q2: eBPF Map 有哪些类型？各自的使用场景？**
 
 A: 核心类型：
+
 - `BPF_MAP_TYPE_HASH`: 键值对查找，适合策略存储
 - `BPF_MAP_TYPE_ARRAY`: 数组下标访问，适合统计计数
 - `BPF_MAP_TYPE_PERCPU_ARRAY`: 每 CPU 独立数组，避免锁竞争
@@ -473,6 +482,7 @@ A: 核心类型：
 **Q3: CO-RE 如何实现跨内核版本兼容？**
 
 A: CO-RE 通过 BTF 描述类型信息，在加载时通过 libbpf 进行**重定位**：
+
 1. 编译时保留字段偏移量的占位符
 2. 加载时通过 BTF 查询目标内核的实际偏移量
 3. libbpf 替换占位符为实际值
@@ -480,6 +490,7 @@ A: CO-RE 通过 BTF 描述类型信息，在加载时通过 libbpf 进行**重�
 **Q4: XDP Redirect 的工作原理？**
 
 A: `bpf_redirect()` 将数据包重定向到其他接口或 CPU：
+
 1. XDP 程序返回 `XDP_REDIRECT`
 2. 内核通过 `bpf_redirect_info` 保存目标接口/队列信息
 3. 底层驱动调用 `ndo_xdp_xmit` 完成实际传输
@@ -488,6 +499,7 @@ A: `bpf_redirect()` 将数据包重定向到其他接口或 CPU：
 **Q5: 如何防止 eBPF 程序被恶意利用？**
 
 A: 多层防护：
+
 1. **CAP_BPF**: 限制谁能加载 BPF 程序
 2. **Verifier**: 静态分析，拒绝危险操作
 3. **签名校验**: 内核签名验证机制 (CONFIG_BPF_SIGNATURE)
@@ -496,13 +508,13 @@ A: 多层防护：
 
 ### 8.2 面试加分项
 
-| 加分项 | 说明 | 证明方式 |
-|:---|:---|:---|
-| **内核贡献** | 提交过 eBPF 相关 patch | GitHub PR / kernel.org commit |
-| **开源项目** | 参与 BCC/Cilium/Falco 贡献 | GitHub contributions |
-| **论文发表** | 深入研究并发表论文 | ACM/IEEE publication |
-| **专利** | eBPF 相关创新专利 | 专利号 |
-| **演讲** | 在 conference 分享经验 | Conference talk 视频 |
+| 加分项       | 说明                       | 证明方式                      |
+| :----------- | :------------------------- | :---------------------------- |
+| **内核贡献** | 提交过 eBPF 相关 patch     | GitHub PR / kernel.org commit |
+| **开源项目** | 参与 BCC/Cilium/Falco 贡献 | GitHub contributions          |
+| **论文发表** | 深入研究并发表论文         | ACM/IEEE publication          |
+| **专利**     | eBPF 相关创新专利          | 专利号                        |
+| **演讲**     | 在 conference 分享经验     | Conference talk 视频          |
 
 ---
 
@@ -535,13 +547,13 @@ graph TB
 
 ### 9.2 技术趋势
 
-| 趋势 | 描述 | 影响 |
-|:---|:---|:---|
-| **eBPF 标准化** | POSIX-like 接口标准化 | 跨平台移植更容易 |
-| **硬件原生支持** | SmartNIC/RISC-V 内置 eBPF 执行单元 | 性能提升 10x |
-| **AI 深度集成** | NPU/TPU 调度与监控 | ML 基础设施革命 |
-| **安全原生** | eBPF 成为安全策略的事实标准 | 传统防火墙逐步淘汰 |
-| **绿色计算** | 碳感知调度成为标配 | 降低 20-40% 碳排放 |
+| 趋势             | 描述                               | 影响               |
+| :--------------- | :--------------------------------- | :----------------- |
+| **eBPF 标准化**  | POSIX-like 接口标准化              | 跨平台移植更容易   |
+| **硬件原生支持** | SmartNIC/RISC-V 内置 eBPF 执行单元 | 性能提升 10x       |
+| **AI 深度集成**  | NPU/TPU 调度与监控                 | ML 基础设施革命    |
+| **安全原生**     | eBPF 成为安全策略的事实标准        | 传统防火墙逐步淘汰 |
+| **绿色计算**     | 碳感知调度成为标配                 | 降低 20-40% 碳排放 |
 
 ---
 
@@ -554,6 +566,7 @@ eBPF 从 2014 年的诞生到 2026 年的繁荣不过十二年，但它已经深
 保持好奇，持续实践，积极参与社区——这正是 eBPF 生态蓬勃发展的原动力。
 
 **下一步推荐**：
+
 - [[2026-04-09-ebpf-deep-dive-ch39-rust-aya-framework|第三十九章：Rust eBPF 开发实战——Aya 框架与安全编程]]
 - [[2026-04-09-ebpf-deep-dive-ch40-network-protocols-deep-dive|第四十章：网络协议深度解析——TCP/UDP/QUIC 的 eBPF 视角]]
 - [[2026-04-09-ebpf-deep-dive-ch41-memory-safety-and-vulnerabilities|第四十一章：eBPF 内存安全与漏洞分析]]

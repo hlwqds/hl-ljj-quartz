@@ -9,8 +9,8 @@ tags:
   - performance
 ---
 
-> [!info] eBPF 2026 深度探索系列
-> 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+> [!info] eBPF 2026 深度探索系列 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+>
 > 1. [[2026-04-08-ebpf-deep-dive-ch1-registers-and-instructions|第一章：寄存器与指令集]]
 > 2. [[2026-04-08-ebpf-deep-dive-ch1-5-function-calls|第一.五章：四种函数调用与动态内存]]
 > 3. [[2026-04-08-ebpf-deep-dive-ch1-6-the-verifier|第一.六章：验证器 (Verifier) 的底层逻辑]]
@@ -62,6 +62,7 @@ tags:
 > 49. [[2026-04-09-ebpf-deep-dive-ch40-network-protocols-deep-dive|第四十章：网络协议深度解析——TCP/UDP/QUIC 的 eBPF 视角]]
 > 50. [[2026-04-09-ebpf-deep-dive-ch41-memory-safety-and-vulnerabilities|第四十一章：eBPF 内存安全与漏洞分析]]
 > 51. [[2026-04-09-ebpf-deep-dive-ch42-service-mesh-integration|第四十二章：eBPF 与 Service Mesh 深度集成]]
+
 ---
 
 # 第九章：AF_XDP 零拷贝与用户态协议栈
@@ -127,12 +128,12 @@ graph TB
 
 ### 2.2 四个 Ring 的职责
 
-| Ring | 方向 | 生产者 | 消费者 | 存储内容 |
-|:---|:---|:---|:---|:---|
-| **Fill Ring** | 用户→内核 | 用户态应用 | 内核驱动 | 空闲 Frame 地址（供内核存放新包） |
-| **RX Ring** | 内核→用户 | 内核驱动 | 用户态应用 | 已收到包的 Frame 地址 |
-| **TX Ring** | 用户→内核 | 用户态应用 | 内核驱动 | 待发送包的 Frame 地址 |
-| **Completion Ring** | 内核→用户 | 内核驱动 | 用户态应用 | 已发送完成的 Frame 地址（可回收） |
+| Ring                | 方向      | 生产者     | 消费者     | 存储内容                          |
+| :------------------ | :-------- | :--------- | :--------- | :-------------------------------- |
+| **Fill Ring**       | 用户→内核 | 用户态应用 | 内核驱动   | 空闲 Frame 地址（供内核存放新包） |
+| **RX Ring**         | 内核→用户 | 内核驱动   | 用户态应用 | 已收到包的 Frame 地址             |
+| **TX Ring**         | 用户→内核 | 用户态应用 | 内核驱动   | 待发送包的 Frame 地址             |
+| **Completion Ring** | 内核→用户 | 内核驱动   | 用户态应用 | 已发送完成的 Frame 地址（可回收） |
 
 ---
 
@@ -287,11 +288,11 @@ void poll_loop(struct xsk_socket *xsk, struct xsk_umem *umem) {
 
 ### 5.1 绑定模式 (Bind Flags)
 
-| 模式 | 描述 | 适用场景 |
-|:---|:---|:---|
-| `XDP_COPY` | 内核拷贝报文到 UMEM | 兼容性最好，有拷贝开销 |
-| `XDP_ZEROCOPY` | 真正的零拷贝 | 需要驱动支持，最高性能 |
-| `XDP_USE_NEED_WAKEUP` | 需要应用主动唤醒 TX | 减少系统调用 |
+| 模式                  | 描述                | 适用场景               |
+| :-------------------- | :------------------ | :--------------------- |
+| `XDP_COPY`            | 内核拷贝报文到 UMEM | 兼容性最好，有拷贝开销 |
+| `XDP_ZEROCOPY`        | 真正的零拷贝        | 需要驱动支持，最高性能 |
+| `XDP_USE_NEED_WAKEUP` | 需要应用主动唤醒 TX | 减少系统调用           |
 
 ```c
 // 设置零拷贝模式
@@ -329,13 +330,13 @@ graph TB
     style U2 fill:#c8e6c9
 ```
 
-| 指标 | COPY 模式 | ZEROCOPY 模式 |
-|:---|:---|:---|
-| 内存拷贝 | 1次（内核→UMEM） | 0次 |
-| 延迟 | ~1-2μs | ~0.5-1μs |
-| 吞吐量 | ~20-30 Mpps | ~40-50 Mpps |
-| 驱动要求 | 通用 | 需要驱动支持 |
-| 内存使用 | UMEM + DMA buffer | 仅 UMEM |
+| 指标     | COPY 模式         | ZEROCOPY 模式 |
+| :------- | :---------------- | :------------ |
+| 内存拷贝 | 1次（内核→UMEM）  | 0次           |
+| 延迟     | ~1-2μs            | ~0.5-1μs      |
+| 吞吐量   | ~20-30 Mpps       | ~40-50 Mpps   |
+| 驱动要求 | 通用              | 需要驱动支持  |
+| 内存使用 | UMEM + DMA buffer | 仅 UMEM       |
 
 ### 5.3 批量处理优化
 
@@ -397,12 +398,12 @@ void *allocate_numa_aware_umem(size_t size, int numa_node) {
 
 ## 6. AF_XDP vs 其他用户态网络方案
 
-| 方案 | 零拷贝 | 内核集成 | 可编程性 | 生态成熟度 |
-|:---|:---|:---|:---|:---|
-| **AF_XDP** | 是 | 原生 eBPF | 高（BPF + 用户态） | 高 |
-| **DPDK** | 是 | 无（旁路内核） | 高（完全用户态） | 极高 |
-| **io_uring + 零拷贝** | 部分 | 原生 | 中 | 中 |
-| **netmap** | 是 | 无 | 低 | 低 |
+| 方案                  | 零拷贝 | 内核集成       | 可编程性           | 生态成熟度 |
+| :-------------------- | :----- | :------------- | :----------------- | :--------- |
+| **AF_XDP**            | 是     | 原生 eBPF      | 高（BPF + 用户态） | 高         |
+| **DPDK**              | 是     | 无（旁路内核） | 高（完全用户态）   | 极高       |
+| **io_uring + 零拷贝** | 部分   | 原生           | 中                 | 中         |
+| **netmap**            | 是     | 无             | 低                 | 低         |
 
 **AF_XDP 的独特优势：** 与 DPDK 不同，AF_XDP 不需要旁路整个内核网络栈。未被 AF_XDP 处理的流量仍然走正常内核路径（SSH、监控等），管理平面完全保留。
 
@@ -410,13 +411,13 @@ void *allocate_numa_aware_umem(size_t size, int numa_node) {
 
 ## 7. 2026 应用场景
 
-| 场景 | AF_XDP 角色 | 性能收益 |
-|:---|:---|:---|
-| 软交换机/网关 | 替代 OVS 的快速路径 | 延迟降低 5-10x |
-| 高频交易 (HFT) | 直接处理交易报文 | 延迟 < 5μs |
-| 网络功能虚拟化 (NFV) | 用户态防火墙/IDS | 吞吐 40+ Mpps |
-| AI 推理网关 | 模型推理前置解析 | 消除协议栈瓶颈 |
-| 流量镜像/审计 | 全量报文复制 | TB 级实时镜像 |
+| 场景                 | AF_XDP 角色         | 性能收益       |
+| :------------------- | :------------------ | :------------- |
+| 软交换机/网关        | 替代 OVS 的快速路径 | 延迟降低 5-10x |
+| 高频交易 (HFT)       | 直接处理交易报文    | 延迟 < 5μs     |
+| 网络功能虚拟化 (NFV) | 用户态防火墙/IDS    | 吞吐 40+ Mpps  |
+| AI 推理网关          | 模型推理前置解析    | 消除协议栈瓶颈 |
+| 流量镜像/审计        | 全量报文复制        | TB 级实时镜像  |
 
 ---
 
@@ -546,11 +547,11 @@ find /sys/kernel/iommu_groups/ -type l | head -20
 
 ### 9.3 Huge Pages 与性能
 
-| 内存类型 | TLB Miss 率 | 性能影响 |
-|:---|:---|:---|
-| 4KB Pages | 高 | 基准 |
-| 2MB Huge Pages | 低 | 吞吐提升 10-20% |
-| 1GB Huge Pages | 极低 | 吞吐提升 15-25% |
+| 内存类型       | TLB Miss 率 | 性能影响        |
+| :------------- | :---------- | :-------------- |
+| 4KB Pages      | 高          | 基准            |
+| 2MB Huge Pages | 低          | 吞吐提升 10-20% |
+| 1GB Huge Pages | 极低        | 吞吐提升 15-25% |
 
 ```bash
 # 预分配 huge pages
@@ -588,13 +589,13 @@ xdpsock -i eth0 -r -N -v -q 0
 
 ### 10.2 常见性能瓶颈
 
-| 瓶颈 | 症状 | 解决方案 |
-|:---|:---|:---|
-| **Fill Ring 耗尽** | 网卡丢包（`rx_dropped` 上升） | 增大 Ring size 或加快处理速度 |
-| **CPU 单核瓶颈** | 单队列无法超过 ~20Mpps | 启用多队列 + RSS |
-| **NUMA 跨节点访问** | 延迟波动大 | 确保 UMEM 在网卡所在 NUMA 节点 |
-| **中断不均匀** | 部分 CPU 100% | 调整 RPS/RFS 或 IRQ affinity |
-| **TLB Miss** | 大 UMEM 下性能下降 | 使用 huge pages |
+| 瓶颈                | 症状                          | 解决方案                       |
+| :------------------ | :---------------------------- | :----------------------------- |
+| **Fill Ring 耗尽**  | 网卡丢包（`rx_dropped` 上升） | 增大 Ring size 或加快处理速度  |
+| **CPU 单核瓶颈**    | 单队列无法超过 ~20Mpps        | 启用多队列 + RSS               |
+| **NUMA 跨节点访问** | 延迟波动大                    | 确保 UMEM 在网卡所在 NUMA 节点 |
+| **中断不均匀**      | 部分 CPU 100%                 | 调整 RPS/RFS 或 IRQ affinity   |
+| **TLB Miss**        | 大 UMEM 下性能下降            | 使用 huge pages                |
 
 ### 10.3 性能监控
 
@@ -634,7 +635,7 @@ A：AF_XDP Socket 绑定到网卡的特定 RX 队列。如果网卡有 N 个 RX 
 
 **Q5：如何调试 AF_XDP 的性能问题？**
 
-A：1) 使用 `ethtool -S eth0` 查看网卡统计（rx_queue_*_* 字段）；2) 使用 `bpftool prog profile` 查看 XDP 程序的性能；3) 检查 Fill Ring 是否经常为空（说明应用处理速度跟不上网卡接收速度）；4) 使用 `xdpsock -i eth0` 进行基准测试。
+A：1) 使用 `ethtool -S eth0` 查看网卡统计（rx*queue*\_\_\_ 字段）；2) 使用 `bpftool prog profile` 查看 XDP 程序的性能；3) 检查 Fill Ring 是否经常为空（说明应用处理速度跟不上网卡接收速度）；4) 使用 `xdpsock -i eth0` 进行基准测试。
 
 **Q6：AF_XDP 能处理 jumbo frames (MTU > 1500) 吗？**
 

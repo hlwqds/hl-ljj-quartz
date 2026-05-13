@@ -13,12 +13,8 @@ tags:
   - zero-trust
 ---
 
-> [!info] Cilium 2026 深度探索系列
-> 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
-> ...
-> 32. [[2026-04-14-cilium-deep-dive-ch32-waypoint|第三十二章：Waypoint Proxy]]
-> 33. [[2026-04-14-cilium-deep-dive-ch33-l4-l7-ambient|第三十三章：L4/L7 策略在 Ambient Mode 下的应用]]
-> 34. **第三十四章：从 Sidecar 到 Ambient 的迁移** ←
+> [!info] Cilium 2026 深度探索系列 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+> ... 32. [[2026-04-14-cilium-deep-dive-ch32-waypoint|第三十二章：Waypoint Proxy]] 33. [[2026-04-14-cilium-deep-dive-ch33-l4-l7-ambient|第三十三章：L4/L7 策略在 Ambient Mode 下的应用]] 34. **第三十四章：从 Sidecar 到 Ambient 的迁移** ←
 
 ---
 
@@ -87,12 +83,12 @@ tags:
 
 ### 1.2 迁移风险评估
 
-| 风险 | 影响 | 缓解措施 |
-|:---|:---|:---|
-| **L7 策略兼容性** | Sidecar L7 策略可能需要调整 | 迁移前测试环境验证 |
-| **mTLS 证书切换** | 短暂连接中断 | 滚动迁移避免同时切换 |
-| **Waypoint 性能** | 高流量下 Waypoint 可能瓶颈 | 监控资源使用，提前扩容 |
-| **Istio CRD 兼容** | 某些 Istio CRD 不支持 | 检查 CRD 兼容性 |
+| 风险               | 影响                        | 缓解措施               |
+| :----------------- | :-------------------------- | :--------------------- |
+| **L7 策略兼容性**  | Sidecar L7 策略可能需要调整 | 迁移前测试环境验证     |
+| **mTLS 证书切换**  | 短暂连接中断                | 滚动迁移避免同时切换   |
+| **Waypoint 性能**  | 高流量下 Waypoint 可能瓶颈  | 监控资源使用，提前扩容 |
+| **Istio CRD 兼容** | 某些 Istio CRD 不支持       | 检查 CRD 兼容性        |
 
 ---
 
@@ -343,13 +339,13 @@ kubectl get pods -A -o jsonpath='{range .items[*]}{.metadata.namespace}{"\t"}{.m
 
 Ambient Mode 使用 Cilium CRD 替代 Istio CRD：
 
-| Istio Sidecar 资源 | Cilium Ambient 资源 | 说明 |
-|:---|:---|:---|
-| `VirtualService` | `CiliumEnvoyConfig` + `CiliumNetworkPolicy` | 流量路由 |
-| `DestinationRule` | `CiliumNetworkPolicy` | 负载均衡/连接池 |
-| `AuthorizationPolicy` | `CiliumNetworkPolicy` | L4/L7 授权 |
-| `PeerAuthentication` | 自动 (mTLS) | 传输加密 |
-| `Sidecar` | 不需要 | Ambient 无 Sidecar |
+| Istio Sidecar 资源    | Cilium Ambient 资源                         | 说明               |
+| :-------------------- | :------------------------------------------ | :----------------- |
+| `VirtualService`      | `CiliumEnvoyConfig` + `CiliumNetworkPolicy` | 流量路由           |
+| `DestinationRule`     | `CiliumNetworkPolicy`                       | 负载均衡/连接池    |
+| `AuthorizationPolicy` | `CiliumNetworkPolicy`                       | L4/L7 授权         |
+| `PeerAuthentication`  | 自动 (mTLS)                                 | 传输加密           |
+| `Sidecar`             | 不需要                                      | Ambient 无 Sidecar |
 
 ### 4.2 VirtualService 转换示例
 
@@ -361,20 +357,20 @@ metadata:
   name: payment-vs
 spec:
   hosts:
-  - payment
+    - payment
   http:
-  - match:
-    - headers:
-        X-Request-Type:
-          exact: refund
-    route:
-    - destination:
-        host: payment
-        subset: v2
-  - route:
-    - destination:
-        host: payment
-        subset: v1
+    - match:
+        - headers:
+            X-Request-Type:
+              exact: refund
+      route:
+        - destination:
+            host: payment
+            subset: v2
+    - route:
+        - destination:
+            host: payment
+            subset: v1
 ```
 
 转换后的 Cilium 配置：
@@ -416,14 +412,14 @@ spec:
     matchLabels:
       app: payment
   ingress:
-  - toPorts:
-    - ports:
-      - port: "8080"
-        protocol: TCP
-      rules:
-        http:
-        - method: "GET"
-          path: "/api/v1/.*"
+    - toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+          rules:
+            http:
+              - method: "GET"
+                path: "/api/v1/.*"
 ```
 
 ### 4.3 AuthorizationPolicy 转换
@@ -439,16 +435,16 @@ spec:
     matchLabels:
       app: payment
   rules:
-  - from:
-    - source:
-        principals:
-        - cluster.local/ns/default/sa/order
-    to:
-    - operation:
-        methods:
-        - GET
-        paths:
-        - /api/v1/payments.*
+    - from:
+        - source:
+            principals:
+              - cluster.local/ns/default/sa/order
+      to:
+        - operation:
+            methods:
+              - GET
+            paths:
+              - /api/v1/payments.*
 ```
 
 转换后的 Cilium 配置：
@@ -464,20 +460,20 @@ spec:
     matchLabels:
       app: payment
   ingress:
-  - fromRequires:
-    # 要求特定 ServiceAccount 的 mTLS 身份
-    - matchLabels:
-        io.cilium.k8s.policy.cluster: default
-        io.cilium.k8s.policy.namespace: default
-        io.cilium.k8s.policy.serviceaccount: order
-    toPorts:
-    - ports:
-      - port: "8080"
-        protocol: TCP
-      rules:
-        http:
-        - method: "GET"
-          path: "/api/v1/payments.*"
+    - fromRequires:
+        # 要求特定 ServiceAccount 的 mTLS 身份
+        - matchLabels:
+            io.cilium.k8s.policy.cluster: default
+            io.cilium.k8s.policy.namespace: default
+            io.cilium.k8s.policy.serviceaccount: order
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+          rules:
+            http:
+              - method: "GET"
+                path: "/api/v1/payments.*"
 ```
 
 ---
@@ -575,11 +571,11 @@ kubectl get pod -n <namespace> -o jsonpath='{range .items[*]}{.metadata.name}{"\
 
 Part VII（Ambient Mode）完整覆盖了 Cilium 无 Sidecar 零信任网格的核心内容：
 
-| 章节 | 主题 | 核心价值 |
-|:---|:---|:---|
-| 31 | Ambient Mode 概述 | 架构理念、组件职责、启用方式 |
-| 32 | Waypoint Proxy | L7 代理、身份路由、策略执行 |
-| 33 | L4/L7 策略 | Ambient 模式下的策略应用 |
-| 34 | 迁移指南 | 从 Sidecar 到 Ambient 的迁移路径 |
+| 章节 | 主题              | 核心价值                         |
+| :--- | :---------------- | :------------------------------- |
+| 31   | Ambient Mode 概述 | 架构理念、组件职责、启用方式     |
+| 32   | Waypoint Proxy    | L7 代理、身份路由、策略执行      |
+| 33   | L4/L7 策略        | Ambient 模式下的策略应用         |
+| 34   | 迁移指南          | 从 Sidecar 到 Ambient 的迁移路径 |
 
 Ambient Mode 代表了 Cilium 在服务网格领域的重大创新，通过无 Sidecar 架构实现真正的零信任安全，同时保持 Cilium 一贯的高性能和可观测性优势。

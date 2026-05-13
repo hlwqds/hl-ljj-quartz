@@ -1,12 +1,24 @@
 ---
 title: "Kernel Protocol Stack 深度探索 (三十一)：Netlink 通信机制"
 date: 2026-04-13
-tags: [linux, kernel, networking, series, netlink, rtnetlink, genetlink, uevent, netlink-socket, kernel-userspace-communication]
+tags:
+  [
+    linux,
+    kernel,
+    networking,
+    series,
+    netlink,
+    rtnetlink,
+    genetlink,
+    uevent,
+    netlink-socket,
+    kernel-userspace-communication,
+  ]
 description: "深入解析 Netlink 通信机制——用户态与内核态交互的标准接口、rtnetlink、genetlink、uevent、netlink 协议族、nlmsg 格式"
 ---
 
-> [!info] Kernel Protocol Stack 深度探索系列
-> 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Kernel Protocol Stack 深度探索系列 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-kernel-protocol-stack-deep-dive-ch1-skbuff|第一章：sk_buff 与数据包生命周期]]
 > 2. [[2026-04-13-kernel-protocol-stack-deep-dive-ch2-netdevice|第二章：Netdevice 与网卡抽象]]
 > 3. [[2026-04-13-kernel-protocol-stack-deep-dive-ch3-ring-buffer|第三章：Ring Buffer 与 DMA]]
@@ -44,6 +56,7 @@ description: "深入解析 Netlink 通信机制——用户态与内核态交互
 ## 1. 概述
 
 Netlink 是 Linux 内核与用户空间通信的标准机制，比 ioctl 更灵活，支持异步双向通信。它是一种特殊的 socket 家族（AF_NETLINK），用于：
+
 - 路由信息获取（rtnetlink）
 - 接口配置（iproute2）
 - 网络统计（netlink）
@@ -108,28 +121,28 @@ struct nlmsghdr {
 
 ### 3.2 消息类型
 
-| 类型 | 说明 |
-|------|------|
-| NLMSG_NOOP | 空消息 |
-| NLMSG_ERROR | 错误响应 |
-| NLMSG_DONE | 多消息结束标记 |
-| RTM_NEWLINK | 创建/更新网络接口 |
-| RTM_DELLINK | 删除网络接口 |
-| RTM_NEWADDR | 添加 IP 地址 |
-| RTM_DELADDR | 删除 IP 地址 |
-| RTM_NEWROUTE | 添加路由 |
-| RTM_DELROUTE | 删除路由 |
-| RTM_NEWNEIGH | 添加 neighbor 项 |
-| RTM_DELNEIGH | 删除 neighbor 项 |
+| 类型         | 说明              |
+| ------------ | ----------------- |
+| NLMSG_NOOP   | 空消息            |
+| NLMSG_ERROR  | 错误响应          |
+| NLMSG_DONE   | 多消息结束标记    |
+| RTM_NEWLINK  | 创建/更新网络接口 |
+| RTM_DELLINK  | 删除网络接口      |
+| RTM_NEWADDR  | 添加 IP 地址      |
+| RTM_DELADDR  | 删除 IP 地址      |
+| RTM_NEWROUTE | 添加路由          |
+| RTM_DELROUTE | 删除路由          |
+| RTM_NEWNEIGH | 添加 neighbor 项  |
+| RTM_DELNEIGH | 删除 neighbor 项  |
 
 ### 3.3 消息标志
 
-| 标志 | 说明 |
-|------|------|
-| NLM_F_REQUEST | 这是请求消息 |
-| NLM_F_MULTI | 多消息响应 |
-| NLM_F_ACK | 请求 ACK 确认 |
-| NLM_F_ECHO | 回显请求 |
+| 标志            | 说明             |
+| --------------- | ---------------- |
+| NLM_F_REQUEST   | 这是请求消息     |
+| NLM_F_MULTI     | 多消息响应       |
+| NLM_F_ACK       | 请求 ACK 确认    |
+| NLM_F_ECHO      | 回显请求         |
 | NLM_F_DUMP_INTR | 丢弃被中断的转储 |
 
 ---
@@ -337,12 +350,12 @@ send(sock, &hdr, sizeof(hdr), 0);
 
 ### 6.3 常用 genetlink 家族
 
-| 家族名 | 说明 |
-|--------|------|
-| nlctrl | Netlink 控制器 |
-| tcp_metrics | TCP 性能指标 |
-| devlink | 设备链路管理 |
-|wifi | Wireless 设备配置 |
+| 家族名      | 说明              |
+| ----------- | ----------------- |
+| nlctrl      | Netlink 控制器    |
+| tcp_metrics | TCP 性能指标      |
+| devlink     | 设备链路管理      |
+| wifi        | Wireless 设备配置 |
 
 ---
 
@@ -531,12 +544,12 @@ nl_socket_free(sock);
 
 ## 11. 总结
 
-| 协议 | 说明 |
-|------|------|
-| NETLINK_ROUTE | 路由/接口/地址配置 (iproute2) |
-| NETLINK_NETFILTER | 防火墙/conntrack |
-| NETLINK_KOBJECT_UEVENT | 热插拔事件 |
-| NETLINK_GENERIC | 通用 netlink 族 |
-| NETLINK_SOCK_DIAG | Socket 统计查询 |
+| 协议                   | 说明                          |
+| ---------------------- | ----------------------------- |
+| NETLINK_ROUTE          | 路由/接口/地址配置 (iproute2) |
+| NETLINK_NETFILTER      | 防火墙/conntrack              |
+| NETLINK_KOBJECT_UEVENT | 热插拔事件                    |
+| NETLINK_GENERIC        | 通用 netlink 族               |
+| NETLINK_SOCK_DIAG      | Socket 统计查询               |
 
 Netlink 是 Linux 网络管理的核心机制，iproute2、iptables、conntrack 等工具都依赖它与内核通信。理解 netlink 消息格式对于网络工具开发和调试至关重要。

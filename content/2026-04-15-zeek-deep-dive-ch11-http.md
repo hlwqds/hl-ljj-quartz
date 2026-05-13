@@ -10,8 +10,8 @@ tags:
 description: "深入解析 Zeek HTTP 分析器——HTTP::Info record、请求/响应日志、头部解析、User-Agent 分析、HTTP 脚本事件"
 ---
 
-> [!info] Zeek 2026 深度探索系列
-> 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Zeek 2026 深度探索系列 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-15-zeek-deep-dive-ch1-overview|第一章：Zeek 概述]]
 > 2. [[2026-04-15-zeek-deep-dive-ch2-installation|第二章：安装部署]]
 > 3. [[2026-04-15-zeek-deep-dive-ch3-config|第三章：配置系统]]
@@ -477,12 +477,12 @@ Zeek 通过 `Connection` 对象的 `c$http` 字段记录当前连接的 HTTP 状
 
 本章介绍了 Zeek HTTP 分析器的核心组件：
 
-| 组件 | 说明 |
-|------|------|
-| **HTTP::Info** | HTTP 日志核心 record，包含完整请求/响应信息 |
-| **http_request** | 请求解析事件，包含 method/uri/version |
-| **http_reply** | 响应解析事件，包含 status_code/reason |
-| **http_all_headers** | 所有头部解析完成事件 |
-| **http_entity** | HTTP body 解析事件 |
+| 组件                 | 说明                                        |
+| -------------------- | ------------------------------------------- |
+| **HTTP::Info**       | HTTP 日志核心 record，包含完整请求/响应信息 |
+| **http_request**     | 请求解析事件，包含 method/uri/version       |
+| **http_reply**       | 响应解析事件，包含 status_code/reason       |
+| **http_all_headers** | 所有头部解析完成事件                        |
+| **http_entity**      | HTTP body 解析事件                          |
 
 HTTP 分析是 Zeek 最常用的协议分析能力，通过 `http.log` 可以进行 Web 攻击检测、用户行为分析、资产梳理等安全分析工作。

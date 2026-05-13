@@ -128,22 +128,22 @@ metadata:
 spec:
   hostNetwork: true
   containers:
-  - name: vpp-agent
-    image: vfiovpp/vpp-agent:latest
-    securityContext:
-      privileged: true
-    volumeMounts:
-    - name: cni-bin
-      mountPath: /opt/cni/bin
-    - name: cni-conf
-      mountPath: /etc/cni/net.d
+    - name: vpp-agent
+      image: vfiovpp/vpp-agent:latest
+      securityContext:
+        privileged: true
+      volumeMounts:
+        - name: cni-bin
+          mountPath: /opt/cni/bin
+        - name: cni-conf
+          mountPath: /etc/cni/net.d
   volumes:
-  - name: cni-bin
-    hostPath:
-      path: /opt/cni/bin
-  - name: cni-conf
-    hostPath:
-      path: /etc/cni/net.d
+    - name: cni-bin
+      hostPath:
+        path: /opt/cni/bin
+    - name: cni-conf
+      hostPath:
+        path: /etc/cni/net.d
 ```
 
 ## 3. VPP Service Load Balancer
@@ -200,9 +200,9 @@ spec:
   selector:
     app: nginx
   ports:
-  - protocol: TCP
-    port: 80
-    targetPort: 80
+    - protocol: TCP
+      port: 80
+      targetPort: 80
 ```
 
 ## 4. VPP Gateway
@@ -373,24 +373,24 @@ metadata:
     proxy.vpp.mtls: "enabled"
 spec:
   containers:
-  - name: nginx
-    image: nginx
+    - name: nginx
+      image: nginx
   initContainers:
-  - name: vpp-sidecar
-    image: vfiovpp/sidecar:latest
+    - name: vpp-sidecar
+      image: vfiovpp/sidecar:latest
 ```
 
 ## 7. 性能对比
 
 ### 7.1 kube-proxy vs VPP
 
-| 指标 | kube-proxy (iptables) | VPP LBM |
-|------|------------------------|---------|
-| **延迟** | ~100-200μs | ~10-30μs |
-| **吞吐量** | ~2 Gbps | ~10-15 Gbps |
-| **PPS** | ~500K | ~10M |
-| **扩展性** | O(n) rules | O(1) lookup |
-| **内存** | 高 (many rules) | 低 |
+| 指标       | kube-proxy (iptables) | VPP LBM     |
+| ---------- | --------------------- | ----------- |
+| **延迟**   | ~100-200μs            | ~10-30μs    |
+| **吞吐量** | ~2 Gbps               | ~10-15 Gbps |
+| **PPS**    | ~500K                 | ~10M        |
+| **扩展性** | O(n) rules            | O(1) lookup |
+| **内存**   | 高 (many rules)       | 低          |
 
 ### 7.2 优化建议
 
@@ -436,12 +436,12 @@ VPP 在 K8s 中的位置：
 
 集成方案：
 
-| 组件 | 功能 | 替代 |
-|------|------|------|
-| **VPP CNI** | Pod 网络 | flannel, calico |
-| **VPP LBM** | Service LB | kube-proxy |
-| **VPP Gateway** | Ingress | NGINX, Envoy |
-| **VPP Sidecar** | Mesh | Istio, Linkerd |
+| 组件            | 功能       | 替代            |
+| --------------- | ---------- | --------------- |
+| **VPP CNI**     | Pod 网络   | flannel, calico |
+| **VPP LBM**     | Service LB | kube-proxy      |
+| **VPP Gateway** | Ingress    | NGINX, Envoy    |
+| **VPP Sidecar** | Mesh       | Istio, Linkerd  |
 
 ---
 

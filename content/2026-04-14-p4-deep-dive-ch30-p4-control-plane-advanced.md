@@ -5,8 +5,8 @@ tags: [p4, series, control-plane, p4-upgrade, event-driven, distributed, consist
 description: "P4 控制面高级主题深度解析——P4 程序热升级、事件驱动架构、分布式一致性算法、可编程控制面未来展望、 intent-based networking"
 ---
 
-> [!info] P4 深度探索系列
-> 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+> [!info] P4 深度探索系列 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-14-p4-deep-dive-ch1-p4-overview|第一章：P4 概述——诞生背景与协议无关包处理]]
 > 2. [[2026-04-14-p4-deep-dive-ch2-p4-architecture|第二章：P4 架构模型——PSA/V1Model、Ingress/Egress]]
 > 3. [[2026-04-14-p4-deep-dive-ch3-p4-vs-ebpf|第三章：P4 vs eBPF——适用场景与硬件/软件对比]]
@@ -120,25 +120,25 @@ class P4UpgradeManager:
     P4 程序升级管理器:
     支持多种升级策略
     """
-    
+
     class UpgradeStrategy:
         # 策略 1: 完全中断
         FULL_INTERRUPT = "full_interrupt"
-        
+
         # 策略 2: 双镜像热备
         DUAL_MIRROR = "dual_mirror"
-        
+
         # 策略 3: 渐进式迁移
         GRADUAL_MIGRATION = "gradual_migration"
-        
+
         # 策略 4: 原子切换
         ATOMIC_SWITCH = "atomic_switch"
-    
+
     def __init__(self, client):
         self.client = client
         self.current_pipeline = None
         self.backup_pipeline = None
-    
+
     def upgrade_with_full_interrupt(self, new_p4_info, new_config):
         """
         完全中断升级:
@@ -147,25 +147,25 @@ class P4UpgradeManager:
         3. 加载新程序
         4. 恢复配置
         5. 恢复流量
-        
+
         特点: 简单，但有中断
         """
-        
+
         # 1. 备份现有配置
         print("Backing up current configuration...")
         backup = self._backup_config()
-        
+
         # 2. 停止流量 (通过设置所有端口 down)
         print("Stopping traffic...")
         self._set_all_ports_down()
-        
+
         # 3. 加载新流水线
         print("Loading new pipeline...")
         self.client.set_fwd_pipeline_config(
             p4_info=new_p4_info,
             p4_config=new_config
         )
-        
+
         # 4. 尝试恢复配置
         print("Restoring configuration...")
         try:
@@ -175,11 +175,11 @@ class P4UpgradeManager:
             print(f"Restore failed, rolling back: {e}")
             self._rollback(backup)
             raise
-        
+
         # 5. 恢复端口
         print("Restoring ports...")
         self._set_all_ports_up()
-        
+
         self.current_pipeline = new_p4_info
         print("Upgrade completed successfully")
 ```
@@ -195,15 +195,15 @@ class P4UpgradeManager:
         - 流量切到备槽
         - 旧程序下电
         - 新程序上线
-        
+
         特点: 无中断，但需要硬件支持
         """
-        
+
         # 1. 查询设备能力
         caps = self.client.get_device_capabilities()
         if not caps.supports_dual_mirror:
             raise Exception("Device does not support dual mirror upgrade")
-        
+
         # 2. 加载新程序到备槽
         print("Loading new program to standby slot...")
         self.client.set_fwd_pipeline_config(
@@ -211,26 +211,26 @@ class P4UpgradeManager:
             p4_config=new_config,
             slot=STANDBY_SLOT  # 备槽
         )
-        
+
         # 3. 验证备槽程序
         print("Verifying standby program...")
         self._verify_program(new_p4_info, standby=True)
-        
+
         # 4. 原子切换到备槽
         print("Switching to standby slot...")
         self.client.switch_pipeline_slot(
             from_slot=ACTIVE_SLOT,
             to_slot=STANDBY_SLOT
         )
-        
+
         # 5. 更新控制面连接
         print("Updating control plane connections...")
         self.client.reconnect()
-        
+
         # 6. 清理旧槽
         print("Cleaning up old slot...")
         self.client.clear_pipeline_slot(OLD_SLOT)
-        
+
         print("Dual mirror upgrade completed")
 ```
 
@@ -241,25 +241,25 @@ class P4UpgradeManager:
         """
         表项迁移:
         将旧程序的表项映射到新程序
-        
+
         挑战:
         - 新程序可能没有相同的表
         - 字段 ID 可能不同
         - 动作参数可能不同
         """
-        
+
         migration_map = self._build_migration_map(
-            old_p4_info, 
+            old_p4_info,
             new_p4_info
         )
-        
+
         migrated_entries = []
         failed_entries = []
-        
+
         for old_entry in old_entries:
             try:
                 new_entry = self._translate_entry(
-                    old_entry, 
+                    old_entry,
                     migration_map
                 )
                 migrated_entries.append(new_entry)
@@ -268,39 +268,39 @@ class P4UpgradeManager:
                     "original": old_entry,
                     "error": str(e)
                 })
-        
+
         return {
             "migrated": migrated_entries,
             "failed": failed_entries,
             "migration_rate": len(migrated_entries) / len(old_entries)
         }
-    
+
     def _build_migration_map(self, old_info, new_info):
         """构建迁移映射"""
-        
+
         # 表名映射
         table_map = {}
-        
+
         for old_table in old_info.tables:
             # 尝试通过注释或命名约定找到对应的新表
             new_table = self._find_matching_table(
-                old_table.name, 
+                old_table.name,
                 new_info.tables
             )
             if new_table:
                 table_map[old_table.id] = new_table.id
-        
+
         # 字段映射
         field_map = {}
         for old_table_id, new_table_id in table_map.items():
             old_table = self._get_table(old_info, old_table_id)
             new_table = self._get_table(new_info, new_table_id)
-            
+
             field_map[old_table_id] = self._map_fields(
-                old_table.key, 
+                old_table.key,
                 new_table.key
             )
-        
+
         return {
             "tables": table_map,
             "fields": field_map
@@ -364,7 +364,7 @@ class P4UpgradeManager:
 
 class P4Event:
     """P4 事件基类"""
-    
+
     class Type:
         PACKET_IN = "packet_in"
         DIGEST = "digest"
@@ -374,7 +374,7 @@ class P4Event:
         ERROR = "error"
         TABLE_HIT = "table_hit"
         TABLE_MISS = "table_miss"
-    
+
     def __init__(self, event_type, device_id, timestamp=None):
         self.type = event_type
         self.device_id = device_id
@@ -383,7 +383,7 @@ class P4Event:
 
 class PacketInEvent(P4Event):
     """Packet In 事件"""
-    
+
     def __init__(self, device_id, payload, metadata=None):
         super().__init__(self.Type.PACKET_IN, device_id)
         self.payload = payload
@@ -392,7 +392,7 @@ class PacketInEvent(P4Event):
 
 class DigestEvent(P4Event):
     """Digest 事件"""
-    
+
     def __init__(self, device_id, digest_id, data):
         super().__init__(self.Type.DIGEST, device_id)
         self.digest_id = digest_id
@@ -401,7 +401,7 @@ class DigestEvent(P4Event):
 
 class IdleTimeoutEvent(P4Event):
     """Idle Timeout 事件"""
-    
+
     def __init__(self, device_id, table_name, entry_key, last_time):
         super().__init__(self.Type.IDLE_TIMEOUT, device_id)
         self.table_name = table_name
@@ -411,7 +411,7 @@ class IdleTimeoutEvent(P4Event):
 
 class PortStatusEvent(P4Event):
     """端口状态事件"""
-    
+
     def __init__(self, device_id, port_no, status):
         super().__init__(self.Type.PORT_STATUS, device_id)
         self.port_no = port_no
@@ -428,31 +428,31 @@ class P4EventHandler:
     P4 事件处理器:
     统一的异步事件处理框架
     """
-    
+
     def __init__(self):
         self.handlers = {}
         self.event_queue = asyncio.Queue()
         self.running = False
-    
+
     def register_handler(self, event_type, handler):
         """注册事件处理器"""
         self.handlers[event_type] = handler
-    
+
     async def start(self):
         """启动事件处理循环"""
         self.running = True
-        
+
         # 启动多个 worker
         workers = [
             asyncio.create_task(self._worker(i))
             for i in range(4)  # 4 个并发 worker
         ]
-        
+
         await asyncio.gather(*workers)
-    
+
     async def _worker(self, worker_id):
         """事件处理 worker"""
-        
+
         while self.running:
             try:
                 # 从队列获取事件
@@ -460,22 +460,22 @@ class P4EventHandler:
                     self.event_queue.get(),
                     timeout=1.0
                 )
-                
+
                 # 获取处理器
                 handler = self.handlers.get(event.type)
-                
+
                 if handler:
                     # 处理事件
                     try:
                         await handler.handle(event)
                     except Exception as e:
                         logger.error(f"Handler error: {e}")
-                
+
                 self.event_queue.task_done()
-            
+
             except asyncio.TimeoutError:
                 continue
-    
+
     async def enqueue(self, event):
         """将事件加入队列"""
         await self.event_queue.put(event)
@@ -483,21 +483,21 @@ class P4EventHandler:
 
 class MACLearningHandler(P4EventHandler):
     """MAC 学习事件处理器"""
-    
+
     def __init__(self, controller):
         super().__init__()
         self.controller = controller
         self.register_handler(P4Event.Type.DIGEST, self)
-    
+
     async def handle(self, event):
         """处理 MAC 学习事件"""
-        
+
         if isinstance(event, DigestEvent):
             if event.digest_id == self.controller.MAC_DIGEST_ID:
                 # 提取 MAC 学习信息
                 mac_addr = event.data["src_mac"]
                 port = event.data["ingress_port"]
-                
+
                 # 更新 MAC 表
                 await self.controller.update_mac_table(
                     mac=mac_addr,
@@ -507,19 +507,19 @@ class MACLearningHandler(P4EventHandler):
 
 class PacketInHandler(P4EventHandler):
     """Packet In 事件处理器"""
-    
+
     def __init__(self, controller):
         super().__init__()
         self.controller = controller
         self.register_handler(P4Event.Type.PACKET_IN, self)
-    
+
     async def handle(self, event):
         """处理需要 CPU 处理的包"""
-        
+
         if isinstance(event, PacketInEvent):
             # 解析数据包
             parsed = self._parse_packet(event.payload)
-            
+
             if parsed.type == "arp":
                 await self._handle_arp(event, parsed)
             elif parsed.type == "bgp":
@@ -544,13 +544,13 @@ class PacketInHandler(P4EventHandler):
 1. 两个控制器同时写入同一表
    Controller A: INSERT route 10.0.1.0/24 -> port 1
    Controller B: MODIFY route 10.0.1.0/24 -> port 2
-   
+
    结果: 谁说了算?
 
 2. 控制器网络分区
    Controller A 认为是 Master
    Controller B 认为是 Master
-   
+
    两边都写入，造成不一致
 
 3. 表项与物理网络状态不一致
@@ -570,12 +570,12 @@ class RaftP4Controller:
     - 日志复制
     - 故障切换
     """
-    
+
     class State:
         FOLLOWER = "follower"
         CANDIDATE = "candidate"
         LEADER = "leader"
-    
+
     def __init__(self, node_id, cluster_nodes):
         self.node_id = node_id
         self.cluster = cluster_nodes
@@ -584,18 +584,18 @@ class RaftP4Controller:
         self.voted_for = None
         self.log = []  # 操作日志
         self.commit_index = 0
-        
+
         # Leader 专有
         self.next_index = {}
         self.match_index = {}
-        
+
         # 选举超时
         self.election_timeout = random.randint(150, 300)
         self.heartbeat_interval = 50  # ms
-    
+
     async def run(self):
         """运行 Raft 状态机"""
-        
+
         while True:
             if self.state == self.State.FOLLOWER:
                 await self._run_follower()
@@ -603,67 +603,67 @@ class RaftP4Controller:
                 await self._run_candidate()
             elif self.state == self.State.LEADER:
                 await self._run_leader()
-    
+
     async def _run_follower(self):
         """Follower 角色"""
-        
+
         last_time = time.time()
-        
+
         while self.state == self.State.FOLLOWER:
             # 检查选举超时
             if time.time() - last_time > self.election_timeout / 1000:
                 self.state = self.State.CANDIDATE
                 break
-            
+
             # 处理 RPC
             msg = await self._receive_message()
-            
+
             if msg and msg.type == "AppendEntries":
                 await self._handle_append_entries(msg)
             elif msg and msg.type == "RequestVote":
                 await self._handle_request_vote(msg)
-    
+
     async def _run_candidate(self):
         """Candidate 角色"""
-        
+
         self.current_term += 1
         self.voted_for = self.node_id
         votes = {self.node_id}  # 自己投自己
-        
+
         # 并行发送 RequestVote
         futures = []
         for node in self.cluster:
             if node != self.node_id:
                 future = self._send_request_vote(node)
                 futures.append(future)
-        
+
         # 收集投票
         for future in asyncio.as_completed(futures):
             vote = await future
             if vote.term == self.current_term and vote.granted:
                 votes.add(vote.node_id)
-                
+
                 if len(votes) > len(self.cluster) / 2:
                     # 成为 Leader
                     self.state = self.State.LEADER
                     self._become_leader()
                     break
-    
+
     async def _run_leader(self):
         """Leader 角色"""
-        
+
         # 初始化 next_index
         for node in self.cluster:
             if node != self.node_id:
                 self.next_index[node] = len(self.log) + 1
-        
+
         while self.state == self.State.LEADER:
             # 发送心跳
             await self._send_heartbeats()
-            
+
             # 处理写请求
             request = await self._receive_write_request()
-            
+
             if request:
                 # 添加到日志
                 self.log.append({
@@ -671,45 +671,45 @@ class RaftP4Controller:
                     "command": request.command,
                     "data": request.data
                 })
-                
+
                 # 复制到 followers
                 await self._replicate_to_followers()
-                
+
                 # 如果大多数节点已复制，提交
                 if self._majority_committed():
                     self.commit_index = len(self.log)
                     await self._apply_to_p4runtime()
-    
+
     async def _replicate_to_followers(self):
         """复制日志到 followers"""
-        
+
         futures = []
-        
+
         for node in self.cluster:
             if node != self.node_id:
                 future = self._send_append_entries(node)
                 futures.append((node, future))
-        
+
         for node, future in futures:
             result = await future
-            
+
             if result.success:
                 self.next_index[node] = len(self.log) + 1
                 self.match_index[node] = len(self.log)
             else:
                 # 后退重试
                 self.next_index[node] -= 1
-    
+
     def _majority_committed(self):
         """检查是否已被大多数节点复制"""
-        
+
         committed_count = 1  # Leader 自己的日志
-        
+
         for node in self.cluster:
             if node != self.node_id:
                 if self.match_index.get(node, 0) >= self.commit_index:
                     committed_count += 1
-        
+
         return committed_count > len(self.cluster) / 2
 ```
 
@@ -724,23 +724,23 @@ class DistributedLock:
     - 基于 etcd/ZooKeeper
     - 用于保护临界资源
     """
-    
+
     def __init__(self, etcd_client, lock_key):
         self.etcd = etcd_client
         self.lock_key = f"/p4/locks/{lock_key}"
         self.lock_value = None
         self.is_held = False
-    
+
     async def acquire(self, timeout=10.0):
         """
         获取锁
-        
+
         使用 etcd 的事务机制确保原子性
         """
-        
+
         start_time = time.time()
         self.lock_value = str(uuid.uuid4())
-        
+
         while time.time() - start_time < timeout:
             # 尝试创建 key (仅当不存在)
             try:
@@ -751,35 +751,35 @@ class DistributedLock:
                 )
                 self.is_held = True
                 return True
-            
+
             except etcd.AlreadyExists:
                 # 锁已被持有，等待
                 await asyncio.sleep(0.1)
-        
+
         return False
-    
+
     async def release(self):
         """释放锁"""
-        
+
         if not self.is_held:
             return
-        
+
         # 仅删除自己持有的锁
         try:
             current = await self.etcd.get(self.lock_key)
-            
+
             if current.value == self.lock_value:
                 await self.etcd.delete(self.lock_key)
-            
+
             self.is_held = False
-        
+
         except Exception:
             pass
-    
+
     async def __aenter__(self):
         await self.acquire()
         return self
-    
+
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self.release()
 
@@ -787,14 +787,14 @@ class DistributedLock:
 # 使用示例
 class P4TableWriter:
     """带锁的 P4 表写入"""
-    
+
     def __init__(self, p4rt_client, etcd_client):
         self.p4rt = p4rt_client
         self.lock = DistributedLock(etcd_client, "route_table")
-    
+
     async def write_route(self, route):
         """写入路由 (带锁)"""
-        
+
         async with self.lock:
             # 临界区: 仅一个控制器能执行
             self.p4rt.write_table_entry(route)
@@ -867,28 +867,28 @@ from typing import List, Optional
 @dataclass
 class ConnectivityIntent:
     """连接性 Intent"""
-    
+
     # 源端点
     source_endpoint: str  # e.g., "subnet:10.0.1.0/24"
-    
+
     # 目的端点
     destination_endpoint: str  # e.g., "subnet:10.0.2.0/24"
-    
+
     # 协议
     protocol: Optional[str] = None  # e.g., "tcp", "udp", None (any)
-    
+
     # 端口范围
     port_range: Optional[tuple] = None  # e.g., (80, 443)
-    
+
     # 带宽要求
     bandwidth_mbps: Optional[int] = None
-    
+
     # 延迟要求
     max_latency_ms: Optional[int] = None
-    
+
     # 安全要求
     encryption_required: bool = False
-    
+
     # 优先级
     priority: int = 100
 
@@ -896,16 +896,16 @@ class ConnectivityIntent:
 @dataclass
 class SecurityIntent:
     """安全 Intent"""
-    
+
     # 动作
     action: str  # "permit", "deny", "log"
-    
+
     # 匹配条件
     source: str
     destination: str
     protocol: Optional[str] = None
     port: Optional[int] = None
-    
+
     # 条件
     time_window: Optional[str] = None
     rate_limit: Optional[int] = None
@@ -921,38 +921,38 @@ class IntentEngine:
     Intent 解析引擎:
     将高层 Intent 转换为 P4 表项
     """
-    
+
     def __init__(self, p4rt_controller):
         self.controller = p4rt_controller
         self.intent_repository = {}
-    
+
     async def submit_intent(self, intent):
         """
         提交 Intent
-        
+
         1. 验证 Intent
         2. 转换为策略
         3. 生成 P4 配置
         4. 应用到数据平面
         """
-        
+
         # 1. 验证 Intent
         validation = self._validate_intent(intent)
         if not validation.valid:
             return {"success": False, "errors": validation.errors}
-        
+
         # 2. 生成唯一 ID
         intent_id = str(uuid.uuid4())
-        
+
         # 3. 解析为策略
         policies = self._parse_intent(intent)
-        
+
         # 4. 转换为 P4 配置
         p4_config = self._translate_to_p4(policies)
-        
+
         # 5. 应用
         await self._apply_config(p4_config)
-        
+
         # 6. 存储 Intent
         self.intent_repository[intent_id] = {
             "intent": intent,
@@ -960,17 +960,17 @@ class IntentEngine:
             "p4_config": p4_config,
             "state": "active"
         }
-        
+
         # 7. 启动监控
         asyncio.create_task(self._monitor_intent(intent_id))
-        
+
         return {"success": True, "intent_id": intent_id}
-    
+
     def _parse_intent(self, intent):
         """解析 Intent 为策略"""
-        
+
         policies = []
-        
+
         if isinstance(intent, ConnectivityIntent):
             # 生成可达性策略
             policies.append({
@@ -979,7 +979,7 @@ class IntentEngine:
                 "destination": intent.destination_endpoint,
                 "priority": intent.priority
             })
-            
+
             # 生成 ACL 策略
             policies.append({
                 "type": "acl",
@@ -989,7 +989,7 @@ class IntentEngine:
                 "port_range": intent.port_range,
                 "action": "permit"
             })
-            
+
             # 生成 QoS 策略
             if intent.bandwidth_mbps:
                 policies.append({
@@ -998,7 +998,7 @@ class IntentEngine:
                     "bandwidth": intent.bandwidth_mbps,
                     "priority": intent.priority
                 })
-        
+
         elif isinstance(intent, SecurityIntent):
             policies.append({
                 "type": "acl",
@@ -1008,14 +1008,14 @@ class IntentEngine:
                 "port": intent.port,
                 "action": intent.action
             })
-        
+
         return policies
-    
+
     def _translate_to_p4(self, policies):
         """将策略转换为 P4 表项"""
-        
+
         p4_entries = []
-        
+
         for policy in policies:
             if policy["type"] == "route":
                 # 生成路由表项
@@ -1034,7 +1034,7 @@ class IntentEngine:
                     }
                 )
                 p4_entries.append(("ipv4_routetable", entry))
-            
+
             elif policy["type"] == "acl":
                 # 生成 ACL 表项
                 entry = self.controller.make_table_entry(
@@ -1047,7 +1047,7 @@ class IntentEngine:
                     priority=policy["priority"]
                 )
                 p4_entries.append(("acl_table", entry))
-        
+
         return p4_entries
 ```
 
@@ -1061,33 +1061,33 @@ class IntentEngine:
         - 检测偏差
         - 自动修复
         """
-        
+
         stored = self.intent_repository[intent_id]
         intent = stored["intent"]
-        
+
         while stored["state"] == "active":
             # 1. 收集遥测数据
             telemetry = await self._collect_telemetry(intent)
-            
+
             # 2. 验证 Intent
             validation_result = self._validate_intent(intent, telemetry)
-            
+
             if not validation_result.satisfied:
                 # 3. 检测到偏差，尝试修复
                 logger.warning(f"Intent {intent_id} not satisfied: {validation_result.gaps}")
-                
+
                 # 计算修复
                 fix = self._compute_fix(validation_result.gaps)
-                
+
                 # 应用修复
                 await self._apply_fix(fix)
-            
+
             # 等待下一个监控周期
             await asyncio.sleep(30)  # 30 秒
-    
+
     async def _collect_telemetry(self, intent):
         """收集遥测数据"""
-        
+
         if isinstance(intent, ConnectivityIntent):
             return {
                 "latency": await self._measure_latency(
@@ -1103,13 +1103,13 @@ class IntentEngine:
                     intent.destination_endpoint
                 )
             }
-    
+
     def _validate_intent(self, intent, telemetry):
         """验证 Intent 是否满足"""
-        
+
         if isinstance(intent, ConnectivityIntent):
             gaps = []
-            
+
             # 检查延迟
             if intent.max_latency_ms:
                 if telemetry["latency"] > intent.max_latency_ms:
@@ -1118,7 +1118,7 @@ class IntentEngine:
                         "expected": intent.max_latency_ms,
                         "actual": telemetry["latency"]
                     })
-            
+
             # 检查带宽
             if intent.bandwidth_mbps:
                 if telemetry["bandwidth"] < intent.bandwidth_mbps:
@@ -1127,7 +1127,7 @@ class IntentEngine:
                         "expected": intent.bandwidth_mbps,
                         "actual": telemetry["bandwidth"]
                     })
-            
+
             return type('ValidationResult', (), {
                 'satisfied': len(gaps) == 0,
                 'gaps': gaps
@@ -1181,7 +1181,7 @@ class ZeroTrustController:
     - 最小权限
     - 微分段
     """
-    
+
     async def verify_and_apply(self, intent):
         """
         验证后再应用:
@@ -1190,25 +1190,25 @@ class ZeroTrustController:
         3. 安全扫描
         4. 合规检查
         """
-        
+
         # 1. 验证意图提交者身份
         if not await self._verify_identity(intent):
             raise PermissionDenied("Identity verification failed")
-        
+
         # 2. 检查权限
         if not await self._check_permissions(intent):
             raise PermissionDenied("Insufficient permissions")
-        
+
         # 3. 安全扫描
         security_result = await self._security_scan(intent)
         if not security_result.safe:
             raise SecurityException(f"Security scan failed: {security_result.reasons}")
-        
+
         # 4. 合规检查
         compliance_result = await self._check_compliance(intent)
         if not compliance_result.compliant:
             raise ComplianceException(f"Compliance violation: {compliance_result.issues}")
-        
+
         # 5. 应用
         return await self._apply_intent(intent)
 ```
@@ -1217,12 +1217,12 @@ class ZeroTrustController:
 
 ## 7. 总结
 
-| 高级主题 | 关键技术 | 成熟度 |
-|---------|---------|--------|
-| **热升级** | 双镜像、渐进迁移、原子切换 | 生产级 |
-| **事件驱动** | 异步处理、事件总线、智能响应 | 生产级 |
-| **分布式一致性** | Raft、分布式锁、共识算法 | 生产级 |
-| **Intent-Based** | 自然语言理解、自动翻译、闭环控制 | 发展中 |
-| **AI/ML 集成** | 流量预测、异常检测、自主优化 | 研究阶段 |
+| 高级主题         | 关键技术                         | 成熟度   |
+| ---------------- | -------------------------------- | -------- |
+| **热升级**       | 双镜像、渐进迁移、原子切换       | 生产级   |
+| **事件驱动**     | 异步处理、事件总线、智能响应     | 生产级   |
+| **分布式一致性** | Raft、分布式锁、共识算法         | 生产级   |
+| **Intent-Based** | 自然语言理解、自动翻译、闭环控制 | 发展中   |
+| **AI/ML 集成**   | 流量预测、异常检测、自主优化     | 研究阶段 |
 
 P4 控制面正在从**静态配置**向**智能自治**演进，未来网络将具备自我配置、自我优化、自我修复的能力。

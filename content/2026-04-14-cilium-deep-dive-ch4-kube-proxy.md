@@ -10,8 +10,8 @@ tags:
   - kubernetes
 ---
 
-> [!info] Cilium 2026 深度探索系列
-> 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+> [!info] Cilium 2026 深度探索系列 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+>
 > 1. [[2026-04-14-cilium-deep-dive-ch1-cilium-overview|第一章：Cilium 概述]]
 > 2. [[2026-04-14-cilium-deep-dive-ch2-architecture|第二章：Cilium 架构]]
 > 3. [[2026-04-14-cilium-deep-dive-ch3-ebpf-datapath|第三章：eBPF 数据面]]
@@ -26,11 +26,11 @@ tags:
 
 kube-proxy 是 Kubernetes 的核心组件，负责实现 **Service** 的负载均衡。它有三种实现模式：
 
-| 模式 | 原理 | 优点 | 缺点 |
-|:---|:---|:---|:---|
-| **iptables** | 规则链匹配 | 成熟稳定 | 规则多时性能差，O(n) 查找 |
-| **ipvs** | IPVS 哈希表 | 比 iptables 快，支持更多算法 | 需要额外内核模块 |
-| **userspace** | 用户态代理 | 灵活 | 性能最差，已废弃 |
+| 模式          | 原理        | 优点                         | 缺点                      |
+| :------------ | :---------- | :--------------------------- | :------------------------ |
+| **iptables**  | 规则链匹配  | 成熟稳定                     | 规则多时性能差，O(n) 查找 |
+| **ipvs**      | IPVS 哈希表 | 比 iptables 快，支持更多算法 | 需要额外内核模块          |
+| **userspace** | 用户态代理  | 灵活                         | 性能最差，已废弃          |
 
 ### 1.2 iptables 模式的性能问题
 
@@ -52,12 +52,12 @@ iptables -t nat -L -n | head -50
 
 当集群规模增长时：
 
-| 集群规模 | Service 数 | iptables 规则数 | 更新延迟 | 内存占用 |
-|:---|:---|:---|:---|:---|
-| 小型（< 50 节点） | ~200 | ~5,000 | < 100ms | ~10MB |
-| 中型（50-200 节点） | ~2,000 | ~50,000 | ~1s | ~50MB |
-| 大型（200-500 节点） | ~10,000 | ~250,000 | ~10s | ~250MB |
-| 超大规模（500+ 节点） | ~50,000 | ~1,250,000 | > 60s | > 1GB |
+| 集群规模              | Service 数 | iptables 规则数 | 更新延迟 | 内存占用 |
+| :-------------------- | :--------- | :-------------- | :------- | :------- |
+| 小型（< 50 节点）     | ~200       | ~5,000          | < 100ms  | ~10MB    |
+| 中型（50-200 节点）   | ~2,000     | ~50,000         | ~1s      | ~50MB    |
+| 大型（200-500 节点）  | ~10,000    | ~250,000        | ~10s     | ~250MB   |
+| 超大规模（500+ 节点） | ~50,000    | ~1,250,000      | > 60s    | > 1GB    |
 
 **更新一条 iptables 规则意味着重写整条链**，在大规模集群中会导致**服务中断**（conntrack 条目失效）。
 
@@ -180,12 +180,12 @@ struct cilium_backend {
 
 Cilium 支持多种负载均衡算法：
 
-| 算法 | 说明 | 适用场景 |
-|:---|:---|:---|
-| **RR（Round Robin）** | 轮询所有后端 | 默认，简单公平 |
-| **LC（Least Connected）** | 选择连接数最少的后端 | 长连接场景 |
-| **DSR（Direct Server Return）** | 后端直接返回客户端，无需 SNAT | 高性能场景 |
-| **Maglev** | 一致性哈希，连接保持 | 需要会话亲和的场景 |
+| 算法                            | 说明                          | 适用场景           |
+| :------------------------------ | :---------------------------- | :----------------- |
+| **RR（Round Robin）**           | 轮询所有后端                  | 默认，简单公平     |
+| **LC（Least Connected）**       | 选择连接数最少的后端          | 长连接场景         |
+| **DSR（Direct Server Return）** | 后端直接返回客户端，无需 SNAT | 高性能场景         |
+| **Maglev**                      | 一致性哈希，连接保持          | 需要会话亲和的场景 |
 
 ```bash
 # 查看当前 Service 的负载均衡配置
@@ -270,8 +270,8 @@ spec:
   selector:
     app: my-app
   ports:
-  - port: 80
-    targetPort: 8080
+    - port: 80
+      targetPort: 8080
 ```
 
 **Cilium 的 LoadBalancer 实现**：
@@ -302,10 +302,10 @@ metadata:
   name: my-app
 spec:
   externalIPs:
-  - 192.168.1.100
+    - 192.168.1.100
   ports:
-  - port: 80
-    targetPort: 8080
+    - port: 80
+      targetPort: 8080
 ```
 
 Cilium 通过 `sk_lookup` eBPF hook 处理 ExternalIP，直接在连接建立时重定向到后端 Pod。
@@ -347,11 +347,11 @@ maglev_hash(__u32 src_ip, __u16 src_port) {
 
 **与 iptables 的区别**：
 
-| 特性 | kube-proxy (iptables) | Cilium |
-|:---|:---|:---|
-| Session 亲和 | iptables statistic 模块 | Maglev 哈希 |
-| 亲和超时 | 支持 | 支持 |
-| 一致性 | 重新加载时可能丢失 | Maglev 保证查找稳定 |
+| 特性         | kube-proxy (iptables)   | Cilium              |
+| :----------- | :---------------------- | :------------------ |
+| Session 亲和 | iptables statistic 模块 | Maglev 哈希         |
+| 亲和超时     | 支持                    | 支持                |
+| 一致性       | 重新加载时可能丢失      | Maglev 保证查找稳定 |
 
 ```bash
 # 查看 Service session 亲和配置
@@ -389,14 +389,14 @@ dig my-headless.default.svc.cluster.local
 
 ### 7.1 基准测试结果
 
-| 指标 | kube-proxy (iptables) | Cilium (eBPF) | 提升 |
-|:---|:---|:---|:---|
-| Service 查找延迟 | O(n)，n=规则数 | O(1) | 10-100x |
-| 每秒新建连接数 | ~5,000 | ~50,000+ | 10x |
-| 最大 Service 数 | ~10,000 | 无硬限制 | 50x+ |
-| 规则更新延迟 | >1s（大规模） | <1ms | 1000x |
-| NodePort 吞吐量 | ~500 Kpps | ~2,000+ Kpps | 4x |
-| CPU 使用（5000 Svc） | ~30% 单核 | ~5% 单核 | 6x |
+| 指标                 | kube-proxy (iptables) | Cilium (eBPF) | 提升    |
+| :------------------- | :-------------------- | :------------ | :------ |
+| Service 查找延迟     | O(n)，n=规则数        | O(1)          | 10-100x |
+| 每秒新建连接数       | ~5,000                | ~50,000+      | 10x     |
+| 最大 Service 数      | ~10,000               | 无硬限制      | 50x+    |
+| 规则更新延迟         | >1s（大规模）         | <1ms          | 1000x   |
+| NodePort 吞吐量      | ~500 Kpps             | ~2,000+ Kpps  | 4x      |
+| CPU 使用（5000 Svc） | ~30% 单核             | ~5% 单核      | 6x      |
 
 ### 7.2 验证 Cilium Service
 
@@ -425,14 +425,14 @@ kubectl run client --image=busybox --restart=Never -- \
 
 ## 8. 章节总结
 
-| 功能 | kube-proxy | Cilium |
-|:---|:---|:---|
-| **Service 类型** | ClusterIP, NodePort, LoadBalancer, ExternalIP | 全部支持 |
-| **查找复杂度** | O(n) iptables 遍历 | O(1) eBPF Map |
-| **NodePort 处理** | iptables + 内核协议栈 | XDP（绕过协议栈） |
-| **Session 亲和** | iptables statistic | Maglev 一致性哈希 |
-| **DSR 支持** | 需要额外配置 | 原生支持 |
-| **最大规模** | ~10,000 Service | 百万级 Endpoint |
+| 功能              | kube-proxy                                    | Cilium            |
+| :---------------- | :-------------------------------------------- | :---------------- |
+| **Service 类型**  | ClusterIP, NodePort, LoadBalancer, ExternalIP | 全部支持          |
+| **查找复杂度**    | O(n) iptables 遍历                            | O(1) eBPF Map     |
+| **NodePort 处理** | iptables + 内核协议栈                         | XDP（绕过协议栈） |
+| **Session 亲和**  | iptables statistic                            | Maglev 一致性哈希 |
+| **DSR 支持**      | 需要额外配置                                  | 原生支持          |
+| **最大规模**      | ~10,000 Service                               | 百万级 Endpoint   |
 
 **下一章**：CNI 集成——Cilium 如何与 Kubernetes 网络生态系统中的其他组件配合工作。
 

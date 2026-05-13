@@ -559,12 +559,12 @@ DDoS 防护架构：
 
 性能指标：
 
-| 功能 | 性能 |
-|------|------|
-| **Rate Limiting** | ~100M pps |
-| **SYN Cookie** | ~50M CPS |
+| 功能              | 性能       |
+| ----------------- | ---------- |
+| **Rate Limiting** | ~100M pps  |
+| **SYN Cookie**    | ~50M CPS   |
 | **Flow Tracking** | ~10M flows |
-| **ACL** | ~50M rules |
+| **ACL**           | ~50M rules |
 
 ---
 

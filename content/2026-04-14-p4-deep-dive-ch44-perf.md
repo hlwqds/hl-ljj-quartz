@@ -1,19 +1,33 @@
 ---
 title: "P4 深度探索 (四十四)：P4 性能优化——流水线瓶颈分析、吞吐/延迟优化、队列管理、Buffer 调优"
 date: 2026-04-14
-tags: [p4, series, performance, optimization, throughput, latency, pipeline, queue, buffer, tuning, tofino, bmv2]
+tags:
+  [
+    p4,
+    series,
+    performance,
+    optimization,
+    throughput,
+    latency,
+    pipeline,
+    queue,
+    buffer,
+    tuning,
+    tofino,
+    bmv2,
+  ]
 description: "P4 可编程网络性能优化深度解析——流水线瓶颈分析、吞吐/延迟优化技术、队列管理策略、Buffer 调优、Congestion Control、ECN、流量控制"
 ---
 
-> [!info] P4 深度探索系列
-> 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+> [!info] P4 深度探索系列 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-14-p4-deep-dive-ch1-p4-overview|第一章：P4 概述]]
-> ...
-> 40. [[2026-04-14-p4-deep-dive-ch40-alibaba|第四十章：阿里云网络可编程实践]]
-> 41. [[2026-04-14-p4-deep-dive-ch41-debug|第四十一章：P4 排错与诊断]]
-> 42. [[2026-04-14-p4-deep-dive-ch42-resource|第四十二章：P4 资源优化]]
-> 43. [[2026-04-14-p4-deep-dive-ch43-compiler|第四十三章：P4 编译器 (p4c) 架构]]
-> 44. **第四十四章：P4 性能优化——流水线瓶颈分析、吞吐/延迟优化、队列管理、Buffer 调优**
+>    ...
+> 2. [[2026-04-14-p4-deep-dive-ch40-alibaba|第四十章：阿里云网络可编程实践]]
+> 3. [[2026-04-14-p4-deep-dive-ch41-debug|第四十一章：P4 排错与诊断]]
+> 4. [[2026-04-14-p4-deep-dive-ch42-resource|第四十二章：P4 资源优化]]
+> 5. [[2026-04-14-p4-deep-dive-ch43-compiler|第四十三章：P4 编译器 (p4c) 架构]]
+> 6. **第四十四章：P4 性能优化——流水线瓶颈分析、吞吐/延迟优化、队列管理、Buffer 调优**
 
 ---
 
@@ -1064,4 +1078,4 @@ P4 性能优化检查清单:
 
 ---
 
-*P4 深度探索系列 © 2026*
+_P4 深度探索系列 © 2026_

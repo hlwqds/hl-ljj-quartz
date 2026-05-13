@@ -1,7 +1,19 @@
 ---
 title: io_uring 深度探索 Ch4：进阶特性与性能优化
 date: 2026-04-18 21:00:00
-tags: [io_uring, Linux, Async IO, High Performance, Kernel, SQPOLL, Multishot, Memory, Benchmark, Optimization]
+tags:
+  [
+    io_uring,
+    Linux,
+    Async IO,
+    High Performance,
+    Kernel,
+    SQPOLL,
+    Multishot,
+    Memory,
+    Benchmark,
+    Optimization,
+  ]
 description: 深入讲解 io_uring 进阶特性：SQPOLL 深度调优、multishot 机制、IORING_SETUP_ATTACH_TASK、内存屏障与 cache line 对齐、perf 火焰图分析，以及性能优化实战。
 ---
 

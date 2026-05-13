@@ -20,6 +20,7 @@ CodeAgent = (LLM, Tools, Memory, Executor, Policy)
 ```
 
 其中：
+
 - **LLM**: 负责理解意图、推理决策、生成代码
 - **Tools**: 可调用的外部能力集合（文件操作、Shell命令、Git、网络搜索等）
 - **Memory**: 存储对话历史、项目上下文、中间执行状态
@@ -90,13 +91,13 @@ graph TB
             CLI["CLI 交互层"]
             TTY["PTY 控制台"]
         end
-        
+
         subgraph "Agent Core"
             PLANNER["任务规划器"]
             REASONER["推理引擎"]
             CONTEXT["上下文管理器"]
         end
-        
+
         subgraph "Execution Layer"
             TOOL_REG["工具注册表"]
             SANDBOX["沙箱执行环境"]
@@ -104,18 +105,18 @@ graph TB
             SHELL["Shell 执行器"]
             GIT["Git 操作代理"]
         end
-        
+
         subgraph "Memory Layer"
             WORKSPACE["工作区上下文"]
             HISTORY["对话历史"]
             KB["知识库"]
         end
-        
+
         subgraph "LLM Layer"
             CLAUDE["Claude Model API"]
             CACHE["上下文缓存"]
         end
-        
+
         CLI --> PLANNER
         TTY --> PLANNER
         PLANNER <--> REASONER
@@ -148,13 +149,13 @@ sequenceDiagram
     participant LLM as Claude LLM
     participant Executor as 执行器
     participant Tools as 工具集
-    
+
     User->>CLI: 自然语言指令
     CLI->>Planner: 转发指令
     Planner->>LLM: 请求决策
     LLM->>LLM: 推理分析
     LLM-->>Planner: 返回决策
-    
+
     alt 需要工具调用
         Planner->>Executor: 调用工具
         Executor->>Tools: 执行具体操作
@@ -162,7 +163,7 @@ sequenceDiagram
         Executor-->>Planner: 状态更新
         Planner->>LLM: 继续推理
     end
-    
+
     Planner-->>CLI: 响应输出
     CLI-->>User: 显示结果
 ```
@@ -174,6 +175,7 @@ sequenceDiagram
 **1. PTY 模式**
 
 Claude Code 运行在 PTY（Pseudo-Terminal）模式下，这使得它能够：
+
 - 捕获所有命令输出，包括 ANSI 颜色代码
 - 模拟交互式输入（如 vim、less 等）
 - 保持状态一致性
@@ -190,10 +192,10 @@ class PTYSession:
             stderr=self.slave_fd,
             preexec_fn=os.setsid
         )
-    
+
     def write(self, data: str):
         os.write(self.master_fd, data.encode())
-    
+
     def read(self, timeout: float = 0.1) -> str:
         # 非阻塞读取
         pass
@@ -227,20 +229,20 @@ class IncrementalContext:
         self.max_tokens = max_tokens
         self.chunks = []
         self.embeddings = []
-    
+
     def add(self, content: str, source: str):
         """添加新的上下文内容"""
         chunk = Chunk(content, source)
         self.chunks.append(chunk)
         self._maintain_limit()
-    
+
     def _maintain_limit(self):
         """保持上下文在限制内"""
         while self._total_tokens() > self.max_tokens:
             # 移除最不重要的 chunk
             least_important = self._find_least_important()
             self.chunks.remove(least_important)
-    
+
     def get_context_window(self) -> list[dict]:
         """获取当前上下文窗口"""
         return [chunk.to_message() for chunk in self.chunks]
@@ -252,12 +254,12 @@ class IncrementalContext:
 
 LLM 层是 Code Agent 的"大脑"，负责：
 
-| 能力 | 描述 | 技术实现 |
-|------|------|----------|
-| 意图理解 | 解析用户自然语言指令 | Prompt Engineering + Fine-tuning |
-| 任务规划 | 分解复杂需求为可执行步骤 | Chain-of-Thought |
-| 代码生成 | 生成符合规范的代码 | Code-Specific Training |
-| 反思验证 | 检查输出质量并修正 | Constitutional AI |
+| 能力     | 描述                     | 技术实现                         |
+| -------- | ------------------------ | -------------------------------- |
+| 意图理解 | 解析用户自然语言指令     | Prompt Engineering + Fine-tuning |
+| 任务规划 | 分解复杂需求为可执行步骤 | Chain-of-Thought                 |
+| 代码生成 | 生成符合规范的代码       | Code-Specific Training           |
+| 反思验证 | 检查输出质量并修正       | Constitutional AI                |
 
 **模型选择考量**：
 
@@ -295,26 +297,26 @@ graph TD
             GLOB["文件搜索"]
             Grep["内容搜索"]
         end
-        
+
         subgraph "命令执行"
             SHELL["Shell 命令"]
             BASH["Bash 脚本"]
             PKG["包管理"]
         end
-        
+
         subgraph "版本控制"
             GIT_LOG["Git 日志"]
             GIT_DIFF["Git 差异"]
             GIT_COMMIT["Git 提交"]
         end
-        
+
         subgraph "外部服务"
             SEARCH["网络搜索"]
             API["API 调用"]
             DB["数据库"]
         end
     end
-    
+
     TOOL_REG["Tool Registry"] --> READ
     TOOL_REG --> WRITE
     TOOL_REG --> GLOB
@@ -346,7 +348,7 @@ graph TD
         "default": 1
       },
       "limit": {
-        "type": "integer", 
+        "type": "integer",
         "description": "读取行数限制",
         "default": 1000
       }
@@ -363,17 +365,17 @@ Memory 层是 Code Agent 的"海马体"，负责存储和检索各类信息：
 ```python
 class MemoryLayer:
     """三层记忆架构"""
-    
+
     def __init__(self):
         # 1. 工作记忆：当前会话的即时状态
         self.working_memory: WorkingMemory = WorkingMemory()
-        
+
         # 2. 项目记忆：当前项目的结构化信息
         self.project_memory: ProjectMemory = ProjectMemory()
-        
+
         # 3. 长期记忆：跨会话的知识积累
         self.long_term_memory: LongTermMemory = LongTermMemory()
-    
+
     def remember(self, key: str, value: Any, tier: str = "working"):
         """存储记忆"""
         if tier == "working":
@@ -382,7 +384,7 @@ class MemoryLayer:
             self.project_memory.set(key, value)
         else:
             self.long_term_memory.set(key, value)
-    
+
     def recall(self, query: str, tier: str = "all") -> list[Any]:
         """检索记忆"""
         # 实现向量相似度搜索
@@ -391,11 +393,11 @@ class MemoryLayer:
 
 **记忆类型对比**：
 
-| 记忆类型 | 容量 | 生命周期 | 内容示例 |
-|----------|------|----------|----------|
-| Working | ~10KB | 单次交互 | 当前指令、正在编辑的代码 |
-| Project | ~1MB | 项目周期 | 项目结构、依赖关系、代码规范 |
-| Long-term | 无限制 | 永久 | 编程模式、最佳实践、历史经验 |
+| 记忆类型  | 容量   | 生命周期 | 内容示例                     |
+| --------- | ------ | -------- | ---------------------------- |
+| Working   | ~10KB  | 单次交互 | 当前指令、正在编辑的代码     |
+| Project   | ~1MB   | 项目周期 | 项目结构、依赖关系、代码规范 |
+| Long-term | 无限制 | 永久     | 编程模式、最佳实践、历史经验 |
 
 ### 3.4 Execution 层
 
@@ -409,20 +411,20 @@ graph LR
             RESOURCE["资源限制"]
             TIMEOUT["超时控制"]
         end
-        
+
         subgraph "命令路由"
             ROUTER["命令路由"]
             SHELL_PARSER["Shell 解析"]
             VALIDATOR["参数验证"]
         end
-        
+
         subgraph "结果处理"
             PARSER["输出解析"]
             STREAM["流式输出"]
             ERROR["错误处理"]
         end
     end
-    
+
     TOOL_CALL["Tool Call"] --> ROUTER
     ROUTER --> SHELL_PARSER
     SHELL_PARSER --> VALIDATOR
@@ -443,11 +445,11 @@ import os
 
 class SandboxedExecutor:
     """安全的命令执行器"""
-    
+
     def __init__(self, timeout: int = 30, memory_limit: int = 512 * 1024 * 1024):
         self.timeout = timeout
         self.memory_limit = memory_limit
-    
+
     def execute(self, command: str, cwd: str = None) -> ExecutionResult:
         """在沙箱中执行命令"""
         try:
@@ -470,7 +472,7 @@ class SandboxedExecutor:
             return ExecutionResult(success=False, error="Timeout")
         except Exception as e:
             return ExecutionResult(success=False, error=str(e))
-    
+
     def _get_safe_env(self) -> dict:
         """获取安全的环境变量"""
         safe_env = os.environ.copy()
@@ -486,13 +488,13 @@ class SandboxedExecutor:
 
 ### 4.1 产品概览
 
-| 产品 | 开发方 | 发布年份 | 核心定位 | 技术特点 |
-|------|--------|----------|----------|----------|
-| Claude Code | Anthropic | 2024 | CLI 开发者工具 | PTY 集成、深度推理 |
-| Copilot Chat | GitHub/Microsoft | 2023 | IDE 内嵌助手 | 深度 IDE 集成 |
-| Devin | Cognition | 2024 | 全自主工程师 | 端到端自动化 |
-| Cursor | Cursor Inc. | 2023 | AI-First IDE | 多模型融合 |
-| Replit Agent | Replit | 2024 | 云端开发 | 全流程自动化 |
+| 产品         | 开发方           | 发布年份 | 核心定位       | 技术特点           |
+| ------------ | ---------------- | -------- | -------------- | ------------------ |
+| Claude Code  | Anthropic        | 2024     | CLI 开发者工具 | PTY 集成、深度推理 |
+| Copilot Chat | GitHub/Microsoft | 2023     | IDE 内嵌助手   | 深度 IDE 集成      |
+| Devin        | Cognition        | 2024     | 全自主工程师   | 端到端自动化       |
+| Cursor       | Cursor Inc.      | 2023     | AI-First IDE   | 多模型融合         |
+| Replit Agent | Replit           | 2024     | 云端开发       | 全流程自动化       |
 
 ### 4.2 功能维度对比
 
@@ -500,25 +502,25 @@ class SandboxedExecutor:
 
 #### 评分总览
 
-| 维度 | Claude Code | Copilot Chat | Devin | Cursor | Replit Agent |
-|------|:-----------:|:------------:|:-----:|:------:|:------------:|
-| 代码生成 | 0.90 | 0.95 | 0.85 | 0.90 | 0.80 |
-| 调试能力 | 0.85 | 0.90 | 0.70 | 0.85 | 0.75 |
-| 多步骤规划 | 0.95 | 0.70 | 0.90 | 0.80 | 0.85 |
-| IDE 集成 | 0.60 | 0.95 | 0.30 | 0.95 | 0.40 |
-| 独立部署 | 0.90 | 0.50 | 0.70 | 0.80 | 0.95 |
-| 上下文理解 | 0.95 | 0.85 | 0.80 | 0.90 | 0.85 |
+| 维度       | Claude Code | Copilot Chat | Devin | Cursor | Replit Agent |
+| ---------- | :---------: | :----------: | :---: | :----: | :----------: |
+| 代码生成   |    0.90     |     0.95     | 0.85  |  0.90  |     0.80     |
+| 调试能力   |    0.85     |     0.90     | 0.70  |  0.85  |     0.75     |
+| 多步骤规划 |    0.95     |     0.70     | 0.90  |  0.80  |     0.85     |
+| IDE 集成   |    0.60     |     0.95     | 0.30  |  0.95  |     0.40     |
+| 独立部署   |    0.90     |     0.50     | 0.70  |  0.80  |     0.95     |
+| 上下文理解 |    0.95     |     0.85     | 0.80  |  0.90  |     0.85     |
 
 #### 维度解析
 
-| 维度 | 说明 | 最优方案 |
-|------|------|---------|
-| 代码生成 | 根据需求描述生成符合规范的代码 | Copilot Chat (0.95) |
-| 调试能力 | 理解错误信息、定位问题、根因分析 | Copilot Chat (0.90) |
-| 多步骤规划 | 复杂任务分解、多阶段执行、状态管理 | Claude Code (0.95) |
-| IDE 集成 | 与编辑器深度融合、智能补全、跳转支持 | Cursor/Copilot Chat (0.95) |
-| 独立部署 | 可脱离 IDE 运行、CLI 优先、自动化友好 | Claude Code (0.90) |
-| 上下文理解 | 超长上下文窗口、跨文件推理、项目级理解 | Claude Code (0.95) |
+| 维度       | 说明                                   | 最优方案                   |
+| ---------- | -------------------------------------- | -------------------------- |
+| 代码生成   | 根据需求描述生成符合规范的代码         | Copilot Chat (0.95)        |
+| 调试能力   | 理解错误信息、定位问题、根因分析       | Copilot Chat (0.90)        |
+| 多步骤规划 | 复杂任务分解、多阶段执行、状态管理     | Claude Code (0.95)         |
+| IDE 集成   | 与编辑器深度融合、智能补全、跳转支持   | Cursor/Copilot Chat (0.95) |
+| 独立部署   | 可脱离 IDE 运行、CLI 优先、自动化友好  | Claude Code (0.90)         |
+| 上下文理解 | 超长上下文窗口、跨文件推理、项目级理解 | Claude Code (0.95)         |
 
 #### 雷达图（Quartz 部署后可查看）
 
@@ -560,7 +562,7 @@ graph LR
         C_PTY["PTY 控制"]
         C_SANDBOX["独立沙箱"]
     end
-    
+
     subgraph "Copilot Chat"
         P_IDE["IDE 内嵌"]
         P_EXT["Extension API"]
@@ -568,12 +570,12 @@ graph LR
     end
 ```
 
-| 维度 | Claude Code | Copilot Chat |
-|------|-------------|--------------|
-| 部署模式 | 独立 CLI | IDE 插件 |
-| 执行环境 | 独立沙箱 | 共享进程 |
-| 交互方式 | PTY 会话 | 对话面板 |
-| 上下文 | 可配置 | IDE 上下文自动注入 |
+| 维度     | Claude Code      | Copilot Chat               |
+| -------- | ---------------- | -------------------------- |
+| 部署模式 | 独立 CLI         | IDE 插件                   |
+| 执行环境 | 独立沙箱         | 共享进程                   |
+| 交互方式 | PTY 会话         | 对话面板                   |
+| 上下文   | 可配置           | IDE 上下文自动注入         |
 | 定制能力 | 高（可二次开发） | 低（受限于 Extension API） |
 
 **Devin 的独特设计**
@@ -588,7 +590,7 @@ graph TB
         WEB["Web Search"]
         CODE["代码执行"]
         REPO["代码库管理"]
-        
+
         SUB --> PLAN
         PLAN --> WEB
         PLAN --> CODE
@@ -628,7 +630,7 @@ graph TB
         VM["隔离 VM"]
         AGENT["Agent 核心"]
         CONTAINER["容器集群"]
-        
+
         USER --> BROWSER
         BROWSER --> REPL
         REPL --> VM
@@ -637,12 +639,12 @@ graph TB
     end
 ```
 
-| 优势 | 说明 |
-|------|------|
+| 优势       | 说明                         |
+| ---------- | ---------------------------- |
 | 环境一致性 | 云端预配置环境，无需本地安装 |
-| 资源弹性 | 可动态扩展计算资源 |
-| 即开即用 | 无需配置开发环境 |
-| 协作便捷 | 原生支持多人协作 |
+| 资源弹性   | 可动态扩展计算资源           |
+| 即开即用   | 无需配置开发环境             |
+| 协作便捷   | 原生支持多人协作             |
 
 ## 5. 从插件到独立 Agent 的演进路径
 
@@ -659,6 +661,7 @@ IDE 启动 → 插件加载 → IDE 关闭 → 插件销毁
 ```
 
 这意味着：
+
 - 无法保持长时间运行的上下文
 - 状态在 IDE 重启后丢失
 - 受 IDE 崩溃影响
@@ -673,10 +676,10 @@ class IDEPlugin:
     def can_access(self):
         # 受限的文件访问
         self.file_access = True
-        
+
         # 无法直接执行 shell
         self.shell_access = False  # 被禁止
-        
+
         # 无法访问网络
         self.network_access = False  # 受限
 ```
@@ -702,26 +705,26 @@ graph LR
         A3["完整权限"]
         A4["自定义 UI"]
     end
-    
+
     subgraph "插件形态"
         B1["宿主进程"]
         B2["随宿主启停"]
         B3["受限权限"]
         B4["受限于 IDE UI"]
     end
-    
+
     A1 --> A2
     A2 --> A3
     A3 --> A4
 ```
 
-| 对比项 | 插件形态 | 独立 Agent |
-|--------|----------|------------|
-| 启动速度 | 快（加载即用） | 需启动进程 |
-| 资源占用 | 共享宿主资源 | 独立资源 |
-| 权限控制 | 依赖宿主 | 完全控制 |
-| 状态持久化 | 困难 | 原生支持 |
-| 跨 IDE 使用 | 不支持 | 可跨平台 |
+| 对比项      | 插件形态       | 独立 Agent |
+| ----------- | -------------- | ---------- |
+| 启动速度    | 快（加载即用） | 需启动进程 |
+| 资源占用    | 共享宿主资源   | 独立资源   |
+| 权限控制    | 依赖宿主       | 完全控制   |
+| 状态持久化  | 困难           | 原生支持   |
+| 跨 IDE 使用 | 不支持         | 可跨平台   |
 
 ### 5.3 gsd2 案例分析
 
@@ -737,19 +740,19 @@ graph LR
         P1_PLUGIN["插件代码"]
         P1_LAUNCHER["claude-code 命令"]
     end
-    
+
     subgraph "Phase 2: 插件 + Agent 混合"
         P2_PLUGIN["插件"]
         P2_AGENT["轻量 Agent"]
         P2_BRIDGE["通信桥接"]
     end
-    
+
     subgraph "Phase 3: 独立 Agent"
         P3_CORE["Agent Core"]
         P3_FRAMEWORK["Pi.ai 框架"]
         P3_API["外部 API"]
     end
-    
+
     P1_PLUGIN --> P1_LAUNCHER
     P1_LAUNCHER --> P2_BRIDGE
     P2_PLUGIN --> P2_BRIDGE
@@ -772,17 +775,17 @@ class StateMigration:
         project_context = self._extract_project_context(
             plugin_state.workspace
         )
-        
+
         # 2. 转换对话历史
         conversation_history = self._convert_conversations(
             plugin_state.history
         )
-        
+
         # 3. 重建工具配置
         tool_config = self._migrate_tool_config(
             plugin_state.tools
         )
-        
+
         return AgentState(
             project=project_context,
             history=conversation_history,
@@ -813,46 +816,46 @@ graph TB
             WEB["Web UI"]
             WS["WebSocket"]
         end
-        
+
         subgraph "Agent 核心层"
             COORDINATOR["任务协调器"]
             PLANNER["规划器"]
             REASONER["推理引擎"]
         end
-        
+
         subgraph "能力层 Capability Layer"
             TOOL_REGISTRY["工具注册表"]
             MEMORY["记忆系统"]
             CONTEXT["上下文管理"]
         end
-        
+
         subgraph "执行层 Execution Layer"
             SANDBOX["沙箱执行器"]
             FS["文件系统"]
             SHELL["Shell 通道"]
             GIT["Git 操作"]
         end
-        
+
         subgraph "框架层 Framework"
             PIAI["Pi.ai 框架"]
             ADAPTER["适配器"]
         end
-        
+
         CLI --> COORDINATOR
         HTTP --> COORDINATOR
         WEB --> WS
         WS --> COORDINATOR
-        
+
         COORDINATOR --> PLANNER
         PLANNER --> REASONER
         REASONER --> TOOL_REGISTRY
         REASONER --> MEMORY
-        
+
         TOOL_REGISTRY --> SANDBOX
         SANDBOX --> FS
         SANDBOX --> SHELL
         SANDBOX --> GIT
-        
+
         PIAI --> ADAPTER
         ADAPTER --> COORDINATOR
     end
@@ -867,33 +870,33 @@ graph TB
 ```python
 class TaskCoordinator:
     """任务协调器 - Agent 的中央调度器"""
-    
+
     def __init__(self, config: CoordinatorConfig):
         self.planner = TaskPlanner()
         self.reasoner = ReasoningEngine()
         self.tool_registry = ToolRegistry()
         self.context_manager = ContextManager()
         self.execution_engine = ExecutionEngine()
-    
+
     async def coordinate(self, request: UserRequest) -> Response:
         """协调处理用户请求"""
         # 1. 解析请求
         parsed = await self._parse_request(request)
-        
+
         # 2. 上下文准备
         context = await self.context_manager.prepare(parsed)
-        
+
         # 3. 任务规划
         plan = await self.planner.create_plan(parsed, context)
-        
+
         # 4. 逐步执行
         for step in plan.steps:
             # 推理
             reasoning = await self.reasoner.reason(step, context)
-            
+
             # 决策
             decision = await self._decide_action(reasoning)
-            
+
             # 执行
             if decision.needs_tool:
                 result = await self.execution_engine.execute(
@@ -903,7 +906,7 @@ class TaskCoordinator:
                 context.update(result)
             else:
                 context.update(reasoning)
-        
+
         # 5. 生成响应
         return await self._generate_response(context)
 ```
@@ -915,38 +918,38 @@ class TaskCoordinator:
 ```python
 class ToolRegistry:
     """工具注册表 - 插件化的工具管理"""
-    
+
     def __init__(self):
         self._tools: dict[str, Tool] = {}
         self._hooks: list[ToolHook] = []
-    
+
     def register(self, tool: Tool, category: str = "default"):
         """注册工具"""
         tool.category = category
         tool.id = f"{category}/{tool.name}"
         self._tools[tool.id] = tool
-        
+
         # 触发注册钩子
         for hook in self._hooks:
             hook.on_register(tool)
-    
+
     async def execute(self, tool_id: str, params: dict) -> ToolResult:
         """执行工具"""
         if tool_id not in self._tools:
             raise ToolNotFoundError(tool_id)
-        
+
         tool = self._tools[tool_id]
-        
+
         # 前置验证
         await self._validate_params(tool, params)
-        
+
         # 执行
         try:
             result = await tool.execute(params)
             return ToolResult(success=True, data=result)
         except Exception as e:
             return ToolResult(success=False, error=str(e))
-    
+
     def discover(self, category: str = None) -> list[Tool]:
         """发现工具"""
         if category:
@@ -961,25 +964,25 @@ gsd2 的记忆系统采用三层架构：
 ```python
 class MemorySystem:
     """三层记忆系统"""
-    
+
     def __init__(self, config: MemoryConfig):
         # 工作记忆：当前交互的瞬时状态
         self.working = WorkingMemory(
             capacity=config.working_capacity
         )
-        
+
         # 项目记忆：项目级别的结构化信息
         self.project = ProjectMemory(
             storage=config.project_storage,
             vector_db=config.vector_db
         )
-        
+
         # 长期记忆：跨项目的通用知识
         self.long_term = LongTermMemory(
             storage=config.lt_storage,
             embedding_model=config.embedding_model
         )
-    
+
     async def store(self, memory: Memory, tier: str):
         """存储记忆"""
         if tier == "working":
@@ -988,18 +991,18 @@ class MemorySystem:
             await self.project.set(memory.key, memory.value)
         else:
             await self.long_term.set(memory.key, memory.value)
-    
+
     async def retrieve(self, query: str, tier: str = "all") -> list[Memory]:
         """检索记忆"""
         results = []
-        
+
         if tier in ("working", "all"):
             results.extend(await self.working.get(query))
         if tier in ("project", "all"):
             results.extend(await self.project.search(query))
         if tier in ("long_term", "all"):
             results.extend(await self.long_term.search(query))
-        
+
         return self._rank_results(results)
 ```
 
@@ -1011,17 +1014,17 @@ gsd2 基于 Pi.ai 框架构建，Pi.ai 提供了关键的底层能力：
 # Pi.ai 框架适配器
 class PiAIAdapter:
     """Pi.ai 框架适配器"""
-    
+
     def __init__(self, config: PiAIConfig):
         self.client = PiAIClient(config)
         self.session_manager = SessionManager()
         self.stream_handler = StreamHandler()
-    
+
     async def initialize(self):
         """初始化连接"""
         await self.client.connect()
         await self.session_manager.create_session()
-    
+
     async def send_message(self, message: str) -> str:
         """发送消息并获取响应"""
         response = await self.client.chat(
@@ -1029,7 +1032,7 @@ class PiAIAdapter:
             stream_handler=self.stream_handler
         )
         return response
-    
+
     async def close(self):
         """关闭连接"""
         await self.session_manager.close_session()
@@ -1047,13 +1050,13 @@ class PiAIAdapter:
 
 ### 7.1 架构层面的本质差异
 
-| 维度 | 传统 IDE 插件 | Code Agent |
-|------|---------------|------------|
-| 运行形态 | 动态库/脚本，寄生于 IDE 进程 | 独立进程，拥有独立生命周期 |
-| 通信方式 | IDE 提供的 IPC/API | 任意协议（HTTP/WebSocket/CLI） |
-| 资源限制 | 受限于 IDE 资源配额 | 可独立扩展资源 |
-| 状态管理 | IDE 会话状态 | 自主的持久化状态 |
-| 部署方式 | IDE 市场/插件市场 | 独立分发，pip/npm 安装 |
+| 维度     | 传统 IDE 插件                | Code Agent                     |
+| -------- | ---------------------------- | ------------------------------ |
+| 运行形态 | 动态库/脚本，寄生于 IDE 进程 | 独立进程，拥有独立生命周期     |
+| 通信方式 | IDE 提供的 IPC/API           | 任意协议（HTTP/WebSocket/CLI） |
+| 资源限制 | 受限于 IDE 资源配额          | 可独立扩展资源                 |
+| 状态管理 | IDE 会话状态                 | 自主的持久化状态               |
+| 部署方式 | IDE 市场/插件市场            | 独立分发，pip/npm 安装         |
 
 ```mermaid
 graph TD
@@ -1061,18 +1064,18 @@ graph TD
         IDE["IDE 进程"]
         PLUGIN["插件"]
         API["IDE API"]
-        
+
         IDE --> PLUGIN
         IDE --> API
         PLUGIN --> API
     end
-    
+
     subgraph "Code Agent 架构"
         AGENT["Agent 进程"]
         API_EXT["外部 API"]
         CLI["CLI"]
         WEB["Web UI"]
-        
+
         AGENT --> API_EXT
         AGENT --> CLI
         AGENT --> WEB
@@ -1089,13 +1092,13 @@ class TraditionalPlugin:
     def __init__(self):
         # 文件访问：受 IDE 沙箱限制
         self.file_access = "sandboxed"
-        
+
         # 网络访问：通常被禁止
         self.network_access = False
-        
+
         # 系统命令：无法直接执行
         self.system_commands = False
-        
+
         # 多线程：受 IDE 主线程限制
         self.multithreading = "limited"
 ```
@@ -1108,29 +1111,29 @@ class CodeAgent:
     def __init__(self):
         # 文件访问：完整文件系统权限
         self.file_access = "full"
-        
+
         # 网络访问：可访问任意网络资源
         self.network_access = True
-        
+
         # 系统命令：完整的 shell 执行能力
         self.system_commands = True
-        
+
         # 多线程：独立的进程资源
         self.multithreading = "unlimited"
-        
+
         # 持久化：独立的状态存储
         self.state_persistence = True
 ```
 
 ### 7.3 开发体验对比
 
-| 场景 | 传统插件 | Code Agent |
-|------|----------|------------|
-| 安装 | IDE 内搜索安装，需重启 | `pip install` / `npm install` 即用 |
-| 更新 | 等待 IDE 市场审核 | 独立版本控制，快速迭代 |
-| 调试 | 依赖 IDE 调试器 | 可使用任意调试工具 |
-| 测试 | 受限于 IDE 测试框架 | 独立的测试环境 |
-| 分发 | 受限于平台（VSCode/JetBrains） | 跨平台，任意环境运行 |
+| 场景 | 传统插件                       | Code Agent                         |
+| ---- | ------------------------------ | ---------------------------------- |
+| 安装 | IDE 内搜索安装，需重启         | `pip install` / `npm install` 即用 |
+| 更新 | 等待 IDE 市场审核              | 独立版本控制，快速迭代             |
+| 调试 | 依赖 IDE 调试器                | 可使用任意调试工具                 |
+| 测试 | 受限于 IDE 测试框架            | 独立的测试环境                     |
+| 分发 | 受限于平台（VSCode/JetBrains） | 跨平台，任意环境运行               |
 
 ### 7.4 适用场景分析
 
@@ -1153,14 +1156,14 @@ class CodeAgent:
 
 ### 8.1 架构选型决策矩阵
 
-| 考量维度 | 自研架构 | 基于 Pi.ai | 基于 LangChain |
-|----------|----------|------------|----------------|
-| 开发成本 | 高 | 中 | 中 |
-| 定制能力 | 最高 | 高 | 中 |
-| 社区支持 | 无 | 增长中 | 成熟 |
-| 文档完善度 | 自定义 | 中 | 好 |
-| 学习曲线 | 陡峭 | 中等 | 较缓 |
-| 适合场景 | 核心技术创新 | 产品化落地 | 快速原型验证 |
+| 考量维度   | 自研架构     | 基于 Pi.ai | 基于 LangChain |
+| ---------- | ------------ | ---------- | -------------- |
+| 开发成本   | 高           | 中         | 中             |
+| 定制能力   | 最高         | 高         | 中             |
+| 社区支持   | 无           | 增长中     | 成熟           |
+| 文档完善度 | 自定义       | 中         | 好             |
+| 学习曲线   | 陡峭         | 中等       | 较缓           |
+| 适合场景   | 核心技术创新 | 产品化落地 | 快速原型验证   |
 
 ### 8.2 为什么选择分层架构
 
@@ -1179,24 +1182,24 @@ class LayeredArchitecture:
     - 执行层：命令执行和安全
     - 框架层：底层支撑
     """
-    
+
     async def process(self, user_input: str) -> Response:
         # 接口层：解析用户输入
         parsed = self.interface_layer.parse(user_input)
-        
+
         # 核心层：业务决策
         decision = self.core_layer.decide(parsed)
-        
+
         # 能力层：获取必要工具和上下文
         tools = self.capability_layer.prepare_tools(decision)
         context = self.capability_layer.load_context(decision)
-        
+
         # 执行层：安全执行
         result = await self.execution_layer.run(decision, tools, context)
-        
+
         # 核心层：处理结果
         response = self.core_layer.format_response(result)
-        
+
         return response
 ```
 
@@ -1214,7 +1217,7 @@ class TestPlanner:
             context=self.mock_context()
         )
         plan = planner.create_plan(request)
-        
+
         assert len(plan.steps) > 0
         assert plan.steps[0].type == "search"
         assert plan.steps[-1].type == "verify"
@@ -1229,7 +1232,7 @@ class TestPlanner:
 class NewTool(Tool):
     name = "custom_analysis"
     description = "自定义代码分析工具"
-    
+
     async def execute(self, params: dict) -> ToolResult:
         # 实现工具逻辑
         pass
@@ -1242,13 +1245,13 @@ tool_registry.register(NewTool(), category="analysis")
 
 可以根据需求选择或替换各层的实现：
 
-| 层级 | 可选技术 | gsd2 选择 |
-|------|----------|-----------|
-| LLM | Claude / GPT-4 / Gemini | Claude（Anthropic） |
-| 向量存储 | Chroma / Pinecone / Weaviate | Chroma |
-| 文件系统 | 原生 FS / Virtual FS | 原生 FS |
-| Shell 执行 | subprocess / pty / wasm | subprocess + pty |
-| Web 框架 | FastAPI / Express / Actix | FastAPI |
+| 层级       | 可选技术                     | gsd2 选择           |
+| ---------- | ---------------------------- | ------------------- |
+| LLM        | Claude / GPT-4 / Gemini      | Claude（Anthropic） |
+| 向量存储   | Chroma / Pinecone / Weaviate | Chroma              |
+| 文件系统   | 原生 FS / Virtual FS         | 原生 FS             |
+| Shell 执行 | subprocess / pty / wasm      | subprocess + pty    |
+| Web 框架   | FastAPI / Express / Actix    | FastAPI             |
 
 ### 8.3 gsd2 的选型理由
 
@@ -1257,6 +1260,7 @@ gsd2 选择基于 Pi.ai 框架构建独立 Agent，主要基于以下考量：
 **1. 产品化导向**
 
 gsd2 的目标是打造一款面向市场的产品，需要：
+
 - 稳定的生产级质量
 - 快速的迭代能力
 - 完善的商业支持
@@ -1266,6 +1270,7 @@ Pi.ai 框架提供了成熟的生产级基础设施，让团队能够专注于�
 **2. 架构解耦**
 
 Pi.ai 采用了清晰的模块化设计，使得 gsd2 能够：
+
 - 自由替换 LLM 提供商
 - 灵活定制工具系统
 - 无缝集成自有组件
@@ -1278,12 +1283,12 @@ gsd2 定位为 CLI 工具，Pi.ai 对 CLI 场景有良好的支持，提供富�
 
 Pi.ai 作为一个新兴框架，拥有活跃的社区和快速的迭代周期：
 
-| 指标 | 数值 |
-|------|------|
-| 日均 commits | 15+ |
+| 指标           | 数值 |
+| -------------- | ---- |
+| 日均 commits   | 15+  |
 | Issue 响应时间 | <24h |
-| 文档完整度 | 85% |
-| 示例代码数量 | 50+ |
+| 文档完整度     | 85%  |
+| 示例代码数量   | 50+  |
 
 ### 8.4 技术债务与规避策略
 
@@ -1296,34 +1301,34 @@ LLM 的上下文窗口有限，当处理大型项目时会遇到限制：
 ```python
 class ContextWindowManager:
     """上下文窗口管理器"""
-    
+
     def __init__(self, max_tokens: int = 200000, reserved: int = 10000):
         self.max_tokens = max_tokens
         self.reserved = reserved
         self.effective_limit = max_tokens - reserved
-    
+
     async def fit_context(self, items: list[ContextItem]) -> list[ContextItem]:
         """智能裁剪上下文"""
         total = sum(self._estimate_tokens(item) for item in items)
-        
+
         if total <= self.effective_limit:
             return items
-        
+
         # 按重要性排序
         sorted_items = self._sort_by_importance(items)
-        
+
         # 逐步裁剪直到符合限制
         result = []
         current_tokens = 0
-        
+
         for item in sorted_items:
             item_tokens = self._estimate_tokens(item)
             if current_tokens + item_tokens <= self.effective_limit:
                 result.append(item)
                 current_tokens += item_tokens
-        
+
         return result
-    
+
     def _sort_by_importance(self, items: list[ContextItem]) -> list[ContextItem]:
         """按重要性排序"""
         return sorted(
@@ -1344,11 +1349,11 @@ Agent 可能陷入重复调用同一工具的循环：
 ```python
 class LoopDetector:
     """循环检测器"""
-    
+
     def __init__(self, max_repeats: int = 3):
         self.max_repeats = max_repeats
         self.call_history: deque = deque(maxlen=20)
-    
+
     def record_call(self, tool_id: str, params: dict):
         """记录工具调用"""
         self.call_history.append({
@@ -1356,18 +1361,18 @@ class LoopDetector:
             "params": params,
             "timestamp": time.time()
         })
-    
+
     def is_looping(self) -> bool:
         """检测是否在循环"""
         if len(self.call_history) < self.max_repeats:
             return False
-        
+
         recent = list(self.call_history)[-self.max_repeats:]
-        
+
         # 检查是否有重复调用
         calls = [(c["tool"], str(c["params"])) for c in recent]
         return len(calls) != len(set(calls))
-    
+
     def get_suggestion(self) -> str:
         """获取跳出循环的建议"""
         return (
@@ -1385,35 +1390,35 @@ class LoopDetector:
 ```python
 class StateManager:
     """分布式状态管理器"""
-    
+
     def __init__(self, storage: StateStorage):
         self.storage = storage
         self.local_cache = {}
         self.lock = asyncio.Lock()
-    
+
     async def update(self, key: str, value: Any, version: int = None):
         """原子性更新状态"""
         async with self.lock:
             if version is None:
                 version = await self.storage.get_version(key)
-            
+
             # 乐观锁更新
             success = await self.storage.compare_and_set(
                 key, value, expected_version=version
             )
-            
+
             if not success:
                 # 版本冲突，重试
                 raise StateConflictError(key)
-            
+
             # 更新本地缓存
             self.local_cache[key] = (value, version + 1)
-    
+
     async def get(self, key: str) -> Any:
         """获取状态（优先本地缓存）"""
         if key in self.local_cache:
             return self.local_cache[key][0]
-        
+
         return await self.storage.get(key)
 ```
 
@@ -1428,15 +1433,15 @@ Code Agent 的性能优化需要考虑多个维度：
 ```python
 class StreamingExecutor:
     """流式执行器"""
-    
+
     def __init__(self):
         self.queue = asyncio.Queue()
         self.handlers = []
-    
+
     def add_handler(self, handler: StreamHandler):
         """添加流处理器"""
         self.handlers.append(handler)
-    
+
     async def execute_streaming(self, plan: Plan):
         """流式执行计划"""
         for step in plan.steps:
@@ -1445,20 +1450,20 @@ class StreamingExecutor:
                 type="step_start",
                 data={"step": step.id, "action": step.action}
             ))
-            
+
             # 执行步骤
             async for partial in step.execute_streaming():
                 await self._emit(Event(
                     type="step_progress",
                     data={"step": step.id, "partial": partial}
                 ))
-            
+
             # 完成步骤
             await self._emit(Event(
                 type="step_complete",
                 data={"step": step.id, "result": step.result}
             ))
-    
+
     async def _emit(self, event: Event):
         """发送事件到所有处理器"""
         for handler in self.handlers:
@@ -1472,18 +1477,18 @@ class StreamingExecutor:
 ```python
 class ParallelExecutor:
     """并行执行器"""
-    
+
     async def execute_independent(
-        self, 
+        self,
         tasks: list[Task]
     ) -> list[TaskResult]:
         """并行执行独立任务"""
         # 识别依赖关系
         task_graph = self._build_dependency_graph(tasks)
-        
+
         # 按层级分组
         levels = self._topological_sort(task_graph)
-        
+
         results = {}
         for level in levels:
             # 同层级任务并行执行
@@ -1492,10 +1497,10 @@ class ParallelExecutor:
                 *[self._execute_task(t) for t in level_tasks],
                 return_exceptions=True
             )
-            
+
             for task, result in zip(level_tasks, level_results):
                 results[task.id] = result
-        
+
         return [results[t.id] for t in tasks]
 ```
 
@@ -1506,37 +1511,37 @@ class ParallelExecutor:
 ```python
 class IntelligentCache:
     """智能缓存"""
-    
+
     def __init__(self, ttl: int = 3600):
         self.cache = {}
         self.access_log = []
         self.ttl = ttl
-    
+
     def _compute_key(self, operation: str, params: dict) -> str:
         """计算缓存键"""
         param_str = json.dumps(params, sort_keys=True)
         return hashlib.sha256(f"{operation}:{param_str}".encode()).hexdigest()
-    
+
     def get_or_compute(
-        self, 
-        operation: str, 
+        self,
+        operation: str,
         params: dict,
         compute_fn: Callable
     ) -> Any:
         """获取缓存或计算"""
         key = self._compute_key(operation, params)
-        
+
         if key in self.cache:
             entry = self.cache[key]
             if time.time() - entry["timestamp"] < self.ttl:
                 return entry["value"]
-        
+
         value = compute_fn()
         self.cache[key] = {
             "value": value,
             "timestamp": time.time()
         }
-        
+
         return value
 ```
 
@@ -1544,36 +1549,36 @@ class IntelligentCache:
 
 **基础层**：
 
-| 组件 | 推荐技术 | 备选 |
-|------|----------|------|
-| 语言 | Python 3.11+ / TypeScript | Go |
-| 异步框架 | asyncio | tokio (Rust) |
-| Web 框架 | FastAPI | Express |
-| 数据库 | SQLite + PostgreSQL | MySQL |
+| 组件     | 推荐技术                  | 备选         |
+| -------- | ------------------------- | ------------ |
+| 语言     | Python 3.11+ / TypeScript | Go           |
+| 异步框架 | asyncio                   | tokio (Rust) |
+| Web 框架 | FastAPI                   | Express      |
+| 数据库   | SQLite + PostgreSQL       | MySQL        |
 
 **AI 能力层**：
 
-| 组件 | 推荐技术 | 备注 |
-|------|----------|------|
-| LLM API | Anthropic Claude | 多模型支持 |
-| Embedding | OpenAI text-embedding-3 | 向量检索 |
-| Prompt 管理 | PromptTemplate | 版本化管理 |
+| 组件        | 推荐技术                | 备注       |
+| ----------- | ----------------------- | ---------- |
+| LLM API     | Anthropic Claude        | 多模型支持 |
+| Embedding   | OpenAI text-embedding-3 | 向量检索   |
+| Prompt 管理 | PromptTemplate          | 版本化管理 |
 
 **工具层**：
 
-| 组件 | 推荐技术 | 备注 |
-|------|----------|------|
-| Shell 执行 | asyncio.subprocess | PTY 支持 |
-| 文件操作 | pathlib / fs | 跨平台 |
-| Git 操作 | GitPython / go-git | 自动化 Git |
+| 组件       | 推荐技术           | 备注       |
+| ---------- | ------------------ | ---------- |
+| Shell 执行 | asyncio.subprocess | PTY 支持   |
+| 文件操作   | pathlib / fs       | 跨平台     |
+| Git 操作   | GitPython / go-git | 自动化 Git |
 
 **存储层**：
 
-| 组件 | 推荐技术 | 备注 |
-|------|----------|------|
-| 向量存储 | Chroma | 轻量级 |
-| 知识库 | SQLite + SQLAlchemy | 结构化数据 |
-| 缓存 | Redis | 会话缓存 |
+| 组件     | 推荐技术            | 备注       |
+| -------- | ------------------- | ---------- |
+| 向量存储 | Chroma              | 轻量级     |
+| 知识库   | SQLite + SQLAlchemy | 结构化数据 |
+| 缓存     | Redis               | 会话缓存   |
 
 ### 8.7 未来展望
 
@@ -1586,11 +1591,11 @@ class IntelligentCache:
 
 **gsd2 的 roadmap**：
 
-| 版本 | 目标 | 计划时间 |
-|------|------|----------|
-| v1.0 | 独立 Agent 基础框架 + CLI 核心功能 | 2026-Q1 |
+| 版本 | 目标                               | 计划时间     |
+| ---- | ---------------------------------- | ------------ |
+| v1.0 | 独立 Agent 基础框架 + CLI 核心功能 | 2026-Q1      |
 | v2.0 | Web UI + 多模型路由 + 高级记忆系统 | 2026-Q2 ~ Q3 |
-| v3.0 | 协作 Agent + 企业级特性 | 2026-Q4 |
+| v3.0 | 协作 Agent + 企业级特性            | 2026-Q4      |
 
 ## 结语
 
@@ -1608,8 +1613,9 @@ gsd2 的架构设计充分考虑了可扩展性、可测试性和安全性，为
 
 ---
 
-*本文属于 Code Agent 技术系列文章 Ch1，后续章节将涵盖：*
-- *Ch2: 任务规划与执行引擎*
-- *Ch3: 工具系统设计与实现*
-- *Ch4: 记忆系统与上下文管理*
-- *Ch5: 安全沙箱与权限控制*
+_本文属于 Code Agent 技术系列文章 Ch1，后续章节将涵盖：_
+
+- _Ch2: 任务规划与执行引擎_
+- _Ch3: 工具系统设计与实现_
+- _Ch4: 记忆系统与上下文管理_
+- _Ch5: 安全沙箱与权限控制_

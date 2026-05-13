@@ -1,12 +1,13 @@
 ---
 title: "Kernel Protocol Stack 深度探索 (十九)：GENEVE 通用网络虚拟化封装"
 date: 2026-04-13
-tags: [linux, kernel, networking, series, geneve, tunnel, virtualization, sdn, network-virtualization]
+tags:
+  [linux, kernel, networking, series, geneve, tunnel, virtualization, sdn, network-virtualization]
 description: "深入解析 Linux GENEVE 协议——GENEVE 头部结构、与 VXLAN 对比、TLV 扩展机制、OVN/OVS 实现、以及 GENEVE 在容器网络中的应用"
 ---
 
-> [!info] Kernel Protocol Stack 深度探索系列
-> 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Kernel Protocol Stack 深度探索系列 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-kernel-protocol-stack-deep-dive-ch1-skbuff|第一章：sk_buff 与数据包生命周期]]
 > 2. [[2026-04-13-kernel-protocol-stack-deep-dive-ch2-netdevice|第二章：Netdevice 与网卡抽象]]
 > 3. [[2026-04-13-kernel-protocol-stack-deep-dive-ch3-ring-buffer|第三章：Ring Buffer 与 DMA]]
@@ -35,12 +36,12 @@ GENEVE（Generic Network Virtualization Encapsulation，通用网络虚拟化封
 
 **GENEVE 解决了什么问题：**
 
-| 问题 | VXLAN | GENEVE 解决方案 |
-|------|-------|----------------|
-| 固定头部 | 无法扩展 | TLV 选项机制支持灵活扩展 |
-| 元数据携带 | 有限 | 支持任意类型的元数据 |
-| 硬件兼容性 | 差 | 设计即考虑硬件卸载 |
-| 标准化 | IETF 标准 | RFC 8926 正式标准化 |
+| 问题       | VXLAN     | GENEVE 解决方案          |
+| ---------- | --------- | ------------------------ |
+| 固定头部   | 无法扩展  | TLV 选项机制支持灵活扩展 |
+| 元数据携带 | 有限      | 支持任意类型的元数据     |
+| 硬件兼容性 | 差        | 设计即考虑硬件卸载       |
+| 标准化     | IETF 标准 | RFC 8926 正式标准化      |
 
 **GENEVE 核心特点：**
 
@@ -76,15 +77,15 @@ GENEVE（Generic Network Virtualization Encapsulation，通用网络虚拟化封
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 ```
 
-| 字段 | 位宽 | 说明 |
-|------|------|------|
-| Ver (Version) | 2 | 版本号，必须为 0 |
-| O (Options) | 1 | 1 表示存在 Options，0 表示无 Options |
-| Reserved | 5 | 保留字段 |
-| Protocol Type | 16 | 载荷协议类型（Ethernet Type） |
-| VNI | 24 | Virtual Network Identifier |
-| Reserved | 8 | 保留字段 |
-| Options | 可变 | TLV 格式的选项 |
+| 字段          | 位宽 | 说明                                 |
+| ------------- | ---- | ------------------------------------ |
+| Ver (Version) | 2    | 版本号，必须为 0                     |
+| O (Options)   | 1    | 1 表示存在 Options，0 表示无 Options |
+| Reserved      | 5    | 保留字段                             |
+| Protocol Type | 16   | 载荷协议类型（Ethernet Type）        |
+| VNI           | 24   | Virtual Network Identifier           |
+| Reserved      | 8    | 保留字段                             |
+| Options       | 可变 | TLV 格式的选项                       |
 
 ### 2.3 GENEVE 选项（Options）
 
@@ -96,13 +97,13 @@ GENEVE（Generic Network Virtualization Encapsulation，通用网络虚拟化封
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 ```
 
-| 字段 | 位宽 | 说明 |
-|------|------|------|
-| Option Class | 16 | 选项类（IANA 分配，如 0x0109 = Open Virtual Networking） |
-| Type | 8 | 特定于类的选项类型 |
-| Flags | 8 | P=1 表示必须理解，C=1 表示在复制时复制 |
-| Length | 8 | 选项数据长度（4 字节的倍数） |
-| Option Data | 可变 | 实际选项数据 |
+| 字段         | 位宽 | 说明                                                     |
+| ------------ | ---- | -------------------------------------------------------- |
+| Option Class | 16   | 选项类（IANA 分配，如 0x0109 = Open Virtual Networking） |
+| Type         | 8    | 特定于类的选项类型                                       |
+| Flags        | 8    | P=1 表示必须理解，C=1 表示在复制时复制                   |
+| Length       | 8    | 选项数据长度（4 字节的倍数）                             |
+| Option Data  | 可变 | 实际选项数据                                             |
 
 ### 2.4 内核 GENEVE 头结构
 
@@ -135,21 +136,22 @@ struct geneve_opt {
 
 ### 3.1 协议对比
 
-| 特性 | GRE | VXLAN | GENEVE |
-|------|-----|-------|--------|
-| 标准化 | RFC 1701/2784 | RFC 7348 | RFC 8926 |
-| 封装位置 | IP 层 | UDP 层 | UDP 层 |
-| VNI 宽度 | 无 | 24-bit | 24-bit |
-| 隧道标识 | Key (32-bit) | VNI (24-bit) | VNI + Options |
-| 元数据支持 | Key | 无 | TLV Options |
-| 硬件友好 | 一般 | 好 | 最好 |
-| 组播支持 | 是 | 是 | 是 |
-| 最小头部 | 4B | 8B | 8B |
-| 最大选项 | 0 | 0 | 64KB |
+| 特性       | GRE           | VXLAN        | GENEVE        |
+| ---------- | ------------- | ------------ | ------------- |
+| 标准化     | RFC 1701/2784 | RFC 7348     | RFC 8926      |
+| 封装位置   | IP 层         | UDP 层       | UDP 层        |
+| VNI 宽度   | 无            | 24-bit       | 24-bit        |
+| 隧道标识   | Key (32-bit)  | VNI (24-bit) | VNI + Options |
+| 元数据支持 | Key           | 无           | TLV Options   |
+| 硬件友好   | 一般          | 好           | 最好          |
+| 组播支持   | 是            | 是           | 是            |
+| 最小头部   | 4B            | 8B           | 8B            |
+| 最大选项   | 0             | 0            | 64KB          |
 
 ### 3.2 GENEVE 的优势
 
 **1. TLV 扩展性：**
+
 ```bash
 # GENEVE 可以携带任意元数据
 # 例如：Open vSwitch 流表信息
@@ -159,6 +161,7 @@ Data: <任意元数据>
 ```
 
 **2. 硬件卸载友好：**
+
 ```
 VXLAN 头:
   - 固定字段，硬件解析简单
@@ -170,6 +173,7 @@ GENEVE 头:
 ```
 
 **3. 协议类型清晰：**
+
 ```c
 // GENEVE 使用标准 EtherType
 protocol = eth_type_trans(skb, dev);  // 自动识别内层协议
@@ -301,35 +305,35 @@ static netdev_tx_t geneve_xmit(struct sk_buff *skb, struct net_device *dev)
     struct genevehdr *gh;
     int min_mtu = geneve->min_mtu;
     int opt_len = cfg->options_len;
-    
+
     // 1. 获取远端 VTEP IP
     dst_ip = geneve->remote_ip;
     dst_port = GENEVE_PORT;
-    
+
     // 2. 添加 GENEVE 头部
     skb = skb_cow_head(skb, sizeof(*gh) + opt_len);
     if (!skb)
         return NETDEV_TX_OK;
-    
+
     gh = (struct genevehdr *)skb_push(skb, sizeof(*gh) + opt_len);
-    
+
     // 填充 GENEVE 头
     gh->ver = 0;
     gh->opt_len = opt_len / 4;  // 4字节倍数
     gh->oam = 0;
     gh->protocol = skb->protocol;
     memcpy(gh->vni, &geneve->vni, 3);
-    
+
     // 复制选项
     if (opt_len)
         memcpy(gh + 1, cfg->options, opt_len);
-    
+
     // 3. 发送
     udp_tunnel_xmit_skb(rt, gs->sock->sk, skb,
                         geneve->local_ip, dst_ip,
                         cfg->tos, cfg->ttl, 0,
                         src_port, dst_port, false);
-    
+
     return NETDEV_TX_OK;
 }
 ```
@@ -345,42 +349,42 @@ static int geneve_udp_encap_recv(struct sock *sk, struct sk_buff *skb)
     struct geneve_config *cfg;
     __u8 vni[3];
     int hdr_len;
-    
+
     // 1. 检查 GENEVE 头部长度
     if (!pskb_may_pull(skb, GENEVE_HLEN))
         return -EINVAL;
-    
+
     geneveh = (struct genevehdr *)skb->data;
-    
+
     // 2. 验证版本
     if (geneveh->ver != 0)
         return -EINVAL;
-    
+
     // 3. 计算头部总长度
     hdr_len = GENEVE_HLEN + geneveh->opt_len * 4;
     if (!pskb_may_pull(skb, hdr_len))
         return -EINVAL;
-    
+
     // 4. 移除 GENEVE 头
     skb_pull(skb, hdr_len);
-    
+
     // 5. 查找对应的 geneve socket
     memcpy(vni, geneveh->vni, 3);
     gs = geneve_lookup_sock(skb->sk, vni);
     if (!gs)
         return -ENOENT;
-    
+
     cfg = &gs->cfg;
-    
+
     // 6. 更新 MAC 表
     geneve_fdb_update(gs, eth_hdr(skb)->h_source,
                       geneveh->protocol, vni, ...);
-    
+
     // 7. 交付到网络层
     skb->protocol = geneveh->protocol;
     skb_scrub_packet(skb, false);
     netif_rx(skb);
-    
+
     return 0;
 }
 ```
@@ -391,11 +395,11 @@ static int geneve_udp_encap_recv(struct sock *sk, struct sk_buff *skb)
 
 ### 7.1 常见选项类
 
-| Option Class | 用途 | 示例 |
-|-------------|------|------|
-| 0x0109 | Open Virtual Networking | OVN 流表 ID |
-| 0x0002 | NIC Switch | 硬件卸载信息 |
-| 0x010B | Intel | 容器元数据 |
+| Option Class | 用途                    | 示例         |
+| ------------ | ----------------------- | ------------ |
+| 0x0109       | Open Virtual Networking | OVN 流表 ID  |
+| 0x0002       | NIC Switch              | 硬件卸载信息 |
+| 0x010B       | Intel                   | 容器元数据   |
 
 ### 7.2 处理选项
 
@@ -408,13 +412,13 @@ while (opt_len > 0) {
     __be16 opt_class = opt->option_class;
     __u8 opt_type = opt->type;
     __u8 opt_data_len = opt->length * 4;
-    
+
     // 处理特定选项
     if (opt_class == 0x0109 && opt_type == 1) {
         // OVN Traffic ID
         __u32 traffic_id = *( __u32 *)opt->data;
     }
-    
+
     opt = (struct geneve_opt *)((char *)opt + sizeof(*opt) + opt_data_len);
     opt_len -= sizeof(*opt) + opt_data_len;
 }
@@ -529,6 +533,7 @@ bridge fdb show dev geneve0
 GENEVE 是网络虚拟化的新一代标准协议：
 
 **关键要点：**
+
 1. RFC 8926 正式标准化，解决 VXLAN 扩展性问题
 2. TLV 选项机制支持任意元数据扩展
 3. 设计即考虑硬件卸载
@@ -537,15 +542,16 @@ GENEVE 是网络虚拟化的新一代标准协议：
 
 **与 VXLAN 选择指南：**
 
-| 场景 | 推荐协议 |
-|------|----------|
-| 简单 L2 隧道 | VXLAN |
-| 需要元数据 | GENEVE |
-| OVN/Kubernetes | GENEVE |
-| 硬件卸载优先 | GENEVE |
-| 传统数据中心 | VXLAN |
+| 场景           | 推荐协议 |
+| -------------- | -------- |
+| 简单 L2 隧道   | VXLAN    |
+| 需要元数据     | GENEVE   |
+| OVN/Kubernetes | GENEVE   |
+| 硬件卸载优先   | GENEVE   |
+| 传统数据中心   | VXLAN    |
 
 **典型应用场景：**
+
 - OVN/OVS 网络虚拟化
 - Kubernetes 容器网络
 - 多租户云环境

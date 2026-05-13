@@ -12,12 +12,8 @@ tags:
   - cloud-native
 ---
 
-> [!info] Cilium 2026 深度探索系列
-> 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
-> ...
-> 23. [[2026-04-14-cilium-deep-dive-ch23-cni-chain|第二十三章：CNI Chaining]]
-> 24. [[2026-04-14-cilium-deep-dive-ch24-ipam|第二十四章：IPAM]]
-> 25. **第二十五章：etcd kvstore** ←
+> [!info] Cilium 2026 深度探索系列 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+> ... 23. [[2026-04-14-cilium-deep-dive-ch23-cni-chain|第二十三章：CNI Chaining]] 24. [[2026-04-14-cilium-deep-dive-ch24-ipam|第二十四章：IPAM]] 25. **第二十五章：etcd kvstore** ←
 
 ---
 
@@ -63,13 +59,13 @@ Cilium 的控制面和数据面都依赖 **etcd** 作为集群状态的持久化
 
 ### 2.2 Cilium etcd 数据类型
 
-| 数据类型 | Key 模式 | 说明 |
-|:---|:---|:---|
-| **Node** | `cilium/nodes/v1/<node>` | 节点信息、Pod CIDR、隧道端点 |
-| **IPAM** | `cilium/ipam/v2/...` | IP 地址分配状态 |
-| **Identity** | `cilium/identity/v1/...` | 安全身份 |
-| **Service** | `cilium/service/v1/...` | Global Service 定义 |
-| **Policy** | `cilium/policy/v2/...` | 网络策略规则 |
+| 数据类型     | Key 模式                 | 说明                         |
+| :----------- | :----------------------- | :--------------------------- |
+| **Node**     | `cilium/nodes/v1/<node>` | 节点信息、Pod CIDR、隧道端点 |
+| **IPAM**     | `cilium/ipam/v2/...`     | IP 地址分配状态              |
+| **Identity** | `cilium/identity/v1/...` | 安全身份                     |
+| **Service**  | `cilium/service/v1/...`  | Global Service 定义          |
+| **Policy**   | `cilium/policy/v2/...`   | 网络策略规则                 |
 
 ### 2.3 数据流
 
@@ -123,12 +119,12 @@ Cilium 的控制面和数据面都依赖 **etcd** 作为集群状态的持久化
 
 ### 3.2 故障容忍
 
-| 节点数 | 容忍故障节点 | 说明 |
-|:---|:---|:---|
-| 1 | 0 | 单点故障，不推荐生产 |
-| 3 | 1 | 推荐最小生产配置 |
-| 5 | 2 | 更高可靠性，延迟更高 |
-| 7+ | 3 | 超大规模部署 |
+| 节点数 | 容忍故障节点 | 说明                 |
+| :----- | :----------- | :------------------- |
+| 1      | 0            | 单点故障，不推荐生产 |
+| 3      | 1            | 推荐最小生产配置     |
+| 5      | 2            | 更高可靠性，延迟更高 |
+| 7+     | 3            | 超大规模部署         |
 
 ### 3.3 选举机制
 
@@ -209,12 +205,12 @@ helm install cilium cilium/cilium \
 
 ### 5.1 硬件要求
 
-| 资源 | 最低 | 推荐 | 说明 |
-|:---|:---|:---|:---|
-| **CPU** | 2 核 | 4+ 核 | Raft 共识处理 |
-| **内存** | 4 GB | 8+ GB | 数据缓存 |
+| 资源     | 最低      | 推荐            | 说明             |
+| :------- | :-------- | :-------------- | :--------------- |
+| **CPU**  | 2 核      | 4+ 核           | Raft 共识处理    |
+| **内存** | 4 GB      | 8+ GB           | 数据缓存         |
 | **磁盘** | 20 GB SSD | 50+ GB NVMe SSD | WAL 写入延迟关键 |
-| **网络** | 1 Gbps | 10 Gbps | 节点间通信 |
+| **网络** | 1 Gbps    | 10 Gbps         | 节点间通信       |
 
 ### 5.2 参数调优
 
@@ -238,12 +234,12 @@ data:
 
 关键参数：
 
-| 参数 | 说明 | 推荐值 |
-|:---|:---|:---|
-| `--heartbeat-interval` | 心跳间隔（ms） | 500 |
-| `--election-timeout` | 选举超时（ms） | 2500 |
-| `--snapshot-count` | 快照间隔 | 5000 |
-| `--quota-backend-bytes` | DB 大小限制 | 8GB |
+| 参数                    | 说明           | 推荐值 |
+| :---------------------- | :------------- | :----- |
+| `--heartbeat-interval`  | 心跳间隔（ms） | 500    |
+| `--election-timeout`    | 选举超时（ms） | 2500   |
+| `--snapshot-count`      | 快照间隔       | 5000   |
+| `--quota-backend-bytes` | DB 大小限制    | 8GB    |
 
 ### 5.3 监控指标
 
@@ -267,12 +263,12 @@ EOF
 
 关键指标：
 
-| 指标 | 说明 | 告警阈值 |
-|:---|:---|:---|
-| `etcd_server_leader_changes` | Leader 变更次数 | > 5/分钟 |
-| `etcd_mvcc_db_total_size_in_bytes` | DB 大小 | > quota 的 80% |
-| `etcd_server_slow_apply` | 慢请求 | > 0.5s |
-| `etcd_network_peer_round_trip_time_seconds` | 节点延迟 | > 0.5s |
+| 指标                                        | 说明            | 告警阈值       |
+| :------------------------------------------ | :-------------- | :------------- |
+| `etcd_server_leader_changes`                | Leader 变更次数 | > 5/分钟       |
+| `etcd_mvcc_db_total_size_in_bytes`          | DB 大小         | > quota 的 80% |
+| `etcd_server_slow_apply`                    | 慢请求          | > 0.5s         |
+| `etcd_network_peer_round_trip_time_seconds` | 节点延迟        | > 0.5s         |
 
 ---
 
@@ -362,12 +358,12 @@ helm upgrade cilium cilium/cilium \
 
 ### 8.1 常见问题
 
-| 问题 | 原因 | 解决方案 |
-|:---|:---|:---|
-| `context deadline exceeded` | etcd 连接超时 | 检查网络、防火墙 |
-| `etcd cluster is unavailable` | 多数节点故障 | 增加节点数，确保 3+ |
-| `mvcc: database space exceeded` | DB 配额用尽 | 压缩 DB，增加配额 |
-| `request is too large` | 请求过大 | 减少批量操作 |
+| 问题                            | 原因          | 解决方案            |
+| :------------------------------ | :------------ | :------------------ |
+| `context deadline exceeded`     | etcd 连接超时 | 检查网络、防火墙    |
+| `etcd cluster is unavailable`   | 多数节点故障  | 增加节点数，确保 3+ |
+| `mvcc: database space exceeded` | DB 配额用尽   | 压缩 DB，增加配额   |
+| `request is too large`          | 请求过大      | 减少批量操作        |
 
 ### 8.2 诊断命令
 
@@ -394,14 +390,14 @@ kubectl -n kube-system exec etcd-0 -- -- sh -c 'dd if=/dev/zero of=./test bs=64k
 
 ## 9. 章节总结
 
-| 概念 | 说明 |
-|:---|:---|
-| **Cilium etcd** | 独立于 K8s etcd，存储 Cilium 专用数据 |
-| **Raft 共识** | etcd 的分布式一致性协议 |
-| **3 节点 HA** | 生产环境最小推荐配置 |
-| **IPAM/Identity/Node** | 存储在 etcd 中的关键数据类型 |
-| **TLS 安全** | 加密 etcd 通信，推荐生产环境启用 |
-| **备份恢复** | 快照备份 + 恢复流程 |
+| 概念                   | 说明                                  |
+| :--------------------- | :------------------------------------ |
+| **Cilium etcd**        | 独立于 K8s etcd，存储 Cilium 专用数据 |
+| **Raft 共识**          | etcd 的分布式一致性协议               |
+| **3 节点 HA**          | 生产环境最小推荐配置                  |
+| **IPAM/Identity/Node** | 存储在 etcd 中的关键数据类型          |
+| **TLS 安全**           | 加密 etcd 通信，推荐生产环境启用      |
+| **备份恢复**           | 快照备份 + 恢复流程                   |
 
 ---
 

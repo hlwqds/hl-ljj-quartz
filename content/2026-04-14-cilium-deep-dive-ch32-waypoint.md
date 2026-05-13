@@ -14,13 +14,13 @@ tags:
   - security
 ---
 
-> [!info] Cilium 2026 深度探索系列
-> 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+> [!info] Cilium 2026 深度探索系列 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+>
 > 1. [[2026-04-14-cilium-deep-dive-ch1-cilium-overview|第一章：Cilium 概述]]
-> ...
-> 30. [[2026-04-14-cilium-deep-dive-ch30-multitenancy|第三十章：多租户隔离]]
-> 31. [[2026-04-14-cilium-deep-dive-ch31-ambient-overview|第三十一章：Ambient Mode 概述]]
-> 32. **第三十二章：Waypoint Proxy** ←
+>    ...
+> 2. [[2026-04-14-cilium-deep-dive-ch30-multitenancy|第三十章：多租户隔离]]
+> 3. [[2026-04-14-cilium-deep-dive-ch31-ambient-overview|第三十一章：Ambient Mode 概述]]
+> 4. **第三十二章：Waypoint Proxy** ←
 
 ---
 
@@ -68,14 +68,14 @@ Waypoint Proxy 是 Cilium Ambient Mode 的 L7 代理组件，基于 Envoy 构建
 
 ### 1.1 Waypoint vs Sidecar
 
-| 特性 | Sidecar Proxy | Waypoint Proxy |
-|:---|:---|:---|
-| **部署方式** | Per-Pod | Per-ServiceAccount |
-| **资源占用** | O(n) Pod 数量 | O(m) ServiceAccount 数量 |
-| **启动依赖** | Pod 等待 Sidecar | Waypoint 独立部署 |
-| **升级影响** | 升级重启 Pod | Waypoint 滚动升级 |
-| **故障域** | 单个 Pod | 单个服务 |
-| **策略作用域** | 单个 Pod | ServiceAccount 级别 |
+| 特性           | Sidecar Proxy    | Waypoint Proxy           |
+| :------------- | :--------------- | :----------------------- |
+| **部署方式**   | Per-Pod          | Per-ServiceAccount       |
+| **资源占用**   | O(n) Pod 数量    | O(m) ServiceAccount 数量 |
+| **启动依赖**   | Pod 等待 Sidecar | Waypoint 独立部署        |
+| **升级影响**   | 升级重启 Pod     | Waypoint 滚动升级        |
+| **故障域**     | 单个 Pod         | 单个服务                 |
+| **策略作用域** | 单个 Pod         | ServiceAccount 级别      |
 
 ### 1.2 Waypoint 核心能力
 
@@ -184,18 +184,18 @@ spec:
     matchLabels:
       app: payment
   ingress:
-  - fromEndpoints:
-    - matchLabels:
-        app: order
-    toPorts:
-    - port: "8080"
-      protocol: TCP
-      rules:
-        http:
-        - method: "GET"
-          path: "/api/v1/payments.*"
-        - method: "POST"
-          path: "/api/v1/refund"
+    - fromEndpoints:
+        - matchLabels:
+            app: order
+      toPorts:
+        - port: "8080"
+          protocol: TCP
+          rules:
+            http:
+              - method: "GET"
+                path: "/api/v1/payments.*"
+              - method: "POST"
+                path: "/api/v1/refund"
 ```
 
 转换后的 Envoy Route 配置：
@@ -203,25 +203,29 @@ spec:
 ```json
 {
   "name": "payment-ingress",
-  "virtual_hosts": [{
-    "name": "payment",
-    "domains": ["payment:8080"],
-    "routes": [{
-      "match": {
-        "prefix": "/api/v1/payments"
-      },
-      "route": {
-        "cluster": "payment-backend"
-      },
-      "metadata_match": {
-        "filter_metadata": {
-          "envoy.lb": {
-            "version": "v1"
+  "virtual_hosts": [
+    {
+      "name": "payment",
+      "domains": ["payment:8080"],
+      "routes": [
+        {
+          "match": {
+            "prefix": "/api/v1/payments"
+          },
+          "route": {
+            "cluster": "payment-backend"
+          },
+          "metadata_match": {
+            "filter_metadata": {
+              "envoy.lb": {
+                "version": "v1"
+              }
+            }
           }
         }
-      }
-    }]
-  }]
+      ]
+    }
+  ]
 }
 ```
 
@@ -342,21 +346,21 @@ spec:
     matchLabels:
       app: payment
   ingress:
-  - fromRequires:
-    - matchLabels:
-        # 要求调用方必须具有特定 SPIFFE 身份
-        io.cilium.k8s.policy.cluster: default
-        io.cilium.k8s.policy.namespace: order
-    toPorts:
-    - ports:
-      - port: "8080"
-        protocol: TCP
-      rules:
-        http:
-        - method: "POST"
-          path: "/api/v1/refund"
-          headers:
-          - "X-Request-ID": ".*"
+    - fromRequires:
+        - matchLabels:
+            # 要求调用方必须具有特定 SPIFFE 身份
+            io.cilium.k8s.policy.cluster: default
+            io.cilium.k8s.policy.namespace: order
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+          rules:
+            http:
+              - method: "POST"
+                path: "/api/v1/refund"
+                headers:
+                  - "X-Request-ID": ".*"
 ```
 
 ### 4.3 mTLS 配置
@@ -388,17 +392,17 @@ spec:
     matchLabels:
       app: api
   ingress:
-  - toPorts:
-    - ports:
-      - port: "8080"
-        protocol: TCP
-      rules:
-        http:
-        # 只允许 GET 和 POST
-        - method: "GET"
-          path: "/api/v1/.*"
-        - method: "POST"
-          path: "/api/v1/.*"
+    - toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+          rules:
+            http:
+              # 只允许 GET 和 POST
+              - method: "GET"
+                path: "/api/v1/.*"
+              - method: "POST"
+                path: "/api/v1/.*"
 ```
 
 ```yaml
@@ -412,19 +416,19 @@ spec:
     matchLabels:
       app: api
   ingress:
-  - toPorts:
-    - ports:
-      - port: "8080"
-        protocol: TCP
-      rules:
-        http:
-        # 要求特定 Header
-        - headerMatchers:
-            "Authorization":
-              safeRegex: "Bearer .*"
-            "X-Request-ID":
-              presentMatch: true
-          path: "/api/v1/.*"
+    - toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+          rules:
+            http:
+              # 要求特定 Header
+              - headerMatchers:
+                  "Authorization":
+                    safeRegex: "Bearer .*"
+                  "X-Request-ID":
+                    presentMatch: true
+                path: "/api/v1/.*"
 ```
 
 ```yaml
@@ -438,18 +442,18 @@ spec:
     matchLabels:
       app: api
   ingress:
-  - toPorts:
-    - ports:
-      - port: "8080"
-        protocol: TCP
-      rules:
-        http:
-        - method: "GET"
-          path: "/api/v1/.*"
-          # 每分钟 100 个请求
-          rateLimit:
-            requestsPerHundredSeconds: 100
-            burst: 10
+    - toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+          rules:
+            http:
+              - method: "GET"
+                path: "/api/v1/.*"
+                # 每分钟 100 个请求
+                rateLimit:
+                  requestsPerHundredSeconds: 100
+                  burst: 10
 ```
 
 ### 5.2 gRPC 策略
@@ -465,15 +469,15 @@ spec:
     matchLabels:
       app: payment
   ingress:
-  - toPorts:
-    - ports:
-      - port: "8080"
-        protocol: TCP
-      rules:
-        http:
-        # gRPC 通常使用 HTTP/2
-        - method: "POST"
-          path: "/pb.PaymentService/.*"
+    - toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+          rules:
+            http:
+              # gRPC 通常使用 HTTP/2
+              - method: "POST"
+                path: "/pb.PaymentService/.*"
 ```
 
 ### 5.3 L7 策略组合
@@ -489,32 +493,32 @@ spec:
     matchLabels:
       app: payment
   ingress:
-  # 允许 order 服务访问
-  - fromEndpoints:
-    - matchLabels:
-        app: order
-    toPorts:
-    - ports:
-      - port: "8080"
-        protocol: TCP
-      rules:
-        http:
-        - method: "GET"
-          path: "/api/v1/payments"
-        - method: "POST"
-          path: "/api/v1/refund"
-  # 允许 frontend 服务只读访问
-  - fromEndpoints:
-    - matchLabels:
-        app: frontend
-    toPorts:
-    - ports:
-      - port: "8080"
-        protocol: TCP
-      rules:
-        http:
-        - method: "GET"
-          path: "/api/v1/payments.*"
+    # 允许 order 服务访问
+    - fromEndpoints:
+        - matchLabels:
+            app: order
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+          rules:
+            http:
+              - method: "GET"
+                path: "/api/v1/payments"
+              - method: "POST"
+                path: "/api/v1/refund"
+    # 允许 frontend 服务只读访问
+    - fromEndpoints:
+        - matchLabels:
+            app: frontend
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+          rules:
+            http:
+              - method: "GET"
+                path: "/api/v1/payments.*"
 ```
 
 ---
@@ -595,9 +599,9 @@ spec:
 
 ## 系列总结
 
-| 章节 | 主题 | 核心价值 |
-|:---|:---|:---|
-| 31 | Ambient Mode 概述 | 架构理念、组件职责、启用方式 |
-| 32 | Waypoint Proxy | L7 代理、身份路由、策略执行 |
-| 33 | L4/L7 策略 | Ambient 模式下的策略应用 |
-| 34 | 迁移指南 | 从 Sidecar 到 Ambient 的迁移路径 |
+| 章节 | 主题              | 核心价值                         |
+| :--- | :---------------- | :------------------------------- |
+| 31   | Ambient Mode 概述 | 架构理念、组件职责、启用方式     |
+| 32   | Waypoint Proxy    | L7 代理、身份路由、策略执行      |
+| 33   | L4/L7 策略        | Ambient 模式下的策略应用         |
+| 34   | 迁移指南          | 从 Sidecar 到 Ambient 的迁移路径 |

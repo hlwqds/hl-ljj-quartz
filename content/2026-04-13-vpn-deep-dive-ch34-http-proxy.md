@@ -5,8 +5,8 @@ tags: [vpn, series, http-proxy, connect, forward-proxy, reverse-proxy]
 description: "HTTP 代理协议深度解析——CONNECT 方法建立隧道、HTTP Proxy vs SOCKS5、HTTPS 代理原理、TRACE/TRACK 方法、代理认证与访问控制"
 ---
 
-> [!info] VPN 技术深度探索系列
-> 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+> [!info] VPN 技术深度探索系列 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-vpn-deep-dive-ch33-socks-proxy|第三十三章：SOCKS 协议]]
 > 2. **第三十四章：HTTP Proxy**
 > 3. [[2026-04-13-vpn-deep-dive-ch35-gost|第三十五章：gost 代理工具]]

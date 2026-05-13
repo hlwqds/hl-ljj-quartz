@@ -11,8 +11,8 @@ tags:
 description: "深入解析 Suricata 的 Alert 输出系统：alert 配置、Alert 生成机制、fast.log、syslog 输出、以及源码实现"
 ---
 
-> [!info] Suricata 2026 深度探索系列
-> 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Suricata 2026 深度探索系列 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-15-suricata-deep-dive-ch1-overview|第一章：Suricata 概述]]
 > 2. [[2026-04-15-suricata-deep-dive-ch2-config|第二章：Suricata 配置系统]]
 > 3. [[2026-04-15-suricata-deep-dive-ch3-runmodes|第三章：Runmodes 运行模式]]
@@ -61,18 +61,18 @@ graph TD
         M["规则匹配"]
         A["Alert 生成"]
     end
-    
+
     subgraph "Alert 输出"
         F["fast.log"]
         E["EVE JSON"]
         S["Syslog"]
         U["Unified2"]
     end
-    
+
     P --> D
     D --> M
     M --> A
-    
+
     A --> F
     A --> E
     A --> S
@@ -102,12 +102,12 @@ outputs:
   - alert-fast:
       enabled: yes
       filename: fast.log
-      
+
   - alert-syslog:
       enabled: yes
       facility: local3
       level: notice
-      
+
   - unified2:
       enabled: yes
       filename: unified2.log
@@ -120,19 +120,19 @@ outputs:
 outputs:
   - alert-fast:
       enabled: yes
-      
+
       # 输出文件名
       filename: fast.log
-      
+
       # 是否包含数据包内容
       include-packet-data: no
-      
+
       # 扩展格式（包含标签）
       xff:
         enabled: yes
         mode: extra-data
         header-name: X-Forwarded-For
-        
+
       # 触发 alert 后打印的包数
       packets: 1
 ```
@@ -144,16 +144,16 @@ outputs:
 outputs:
   - alert-syslog:
       enabled: yes
-      
+
       # Syslog 设施
       facility: local3
-      
+
       # 日志级别
       level: info
-      
+
       # 包含 metadata
       metadata: yes
-      
+
       # 格式
       format: "[%i] %s:%d %s [%d:%s] %s"
 ```
@@ -170,27 +170,27 @@ typedef struct Alert_ {
     uint32_t signature_id;     // 规则 ID
     uint32_t rev;              // 规则版本
     uint32_t gid;              // 规则组 ID
-    
+
     char *signature;           // 规则内容
     char *category;            // 规则分类
     uint8_t severity;          // 严重级别
-    
+
     /* 匹配信息 */
     uint8_t action;            // alert/pass/drop/log
-    
+
     /* 源和目标信息 */
     Address src;               // 源地址
     Port sp;                   // 源端口
     Address dst;               // 目标地址
     Port dp;                   // 目标端口
-    
+
     /* 协议信息 */
     uint8_t proto;             // 协议
-    
+
     /* Packet 数据 */
     uint8_t *pkt_data;         // 数据包原始数据
     uint32_t pkt_len;           // 数据包长度
-    
+
 } Alert;
 ```
 
@@ -203,17 +203,17 @@ int DetectRun(ThreadVars *tv, DetectEngineCtx *de_ctx,
 {
     /* 规则匹配 */
     int match = DetectEngineInspectPacket(de_ctx, det_ctx, p);
-    
+
     if (match > 0) {
         /* 找到匹配的规则 */
         Signature *s = de_ctx->sig_arr[match];
-        
+
         /* 创建 Alert */
         Alert *alert = SCCalloc(1, sizeof(Alert));
         if (alert == NULL) {
             return -1;
         }
-        
+
         /* 填充 Alert 信息 */
         alert->signature_id = s->id;
         alert->rev = s->rev;
@@ -222,21 +222,21 @@ int DetectRun(ThreadVars *tv, DetectEngineCtx *de_ctx,
         alert->category = SCStrdup(s->class_msg);
         alert->severity = s->prio;
         alert->action = s->action;
-        
+
         /* 复制地址信息 */
         COPY_ADDRESS(&p->src, &alert->src);
         alert->sp = p->sp;
         COPY_ADDRESS(&p->dst, &alert->dst);
         alert->dp = p->dp;
         alert->proto = IP_GET_IPPROTO(p);
-        
+
         /* 添加到 Packet 的 Alert 列表 */
         PacketAddAlert(p, alert);
-        
+
         /* 触发输出 */
         OutputAlert(tv, p, alert);
     }
-    
+
     return 0;
 }
 ```
@@ -250,25 +250,25 @@ int DetectThresholdCheck(Packet *p, Signature *s,
 {
     /* 获取 Flow */
     Flow *f = p->flow;
-    
+
     /* 查找已有的检测记录 */
     thresholds *th = FlowGetThreshold(f, s->id);
-    
+
     if (th == NULL) {
         /* 首次匹配，创建新阈值记录 */
         th = CreateThreshold(s->id, td->count, td->seconds);
         FlowSetThreshold(f, s->id, th);
-        
+
         /* 检查是否需要 alert */
         if (td->count == 1) {
             return 1;  /* 立即 alert */
         }
         return 0;
     }
-    
+
     /* 更新时间戳 */
     uint64_t now = p->ts.tv_sec;
-    
+
     /* 检查时间窗口 */
     if (now - th->first_ts > td->seconds) {
         /* 窗口过期，重置 */
@@ -276,17 +276,17 @@ int DetectThresholdCheck(Packet *p, Signature *s,
         th->first_ts = now;
         return 1;
     }
-    
+
     /* 增加计数 */
     th->cnt++;
-    
+
     /* 检查是否达到阈值 */
     if (th->cnt >= td->count) {
         /* 达到阈值，reset 并 alert */
         th->cnt = 0;
         return 1;
     }
-    
+
     return 0;
 }
 ```
@@ -309,19 +309,19 @@ int DetectThresholdCheck(Packet *p, Signature *s,
 static int AlertFastWrite(ThreadVars *tv, void *data, Packet *p)
 {
     OutputLogContext *ctx = (OutputLogContext *)data;
-    
+
     /* 遍历所有 Alert */
     for (int i = 0; i < p->alerts.alert_cnt; i++) {
         Alert *alert = &p->alerts.alerts[i];
-        
+
         /* 格式化输出 */
         char timestamp[64];
         CreateUtcIsoTimeStamp(p->ts, timestamp, sizeof(timestamp));
-        
+
         char srcip[46], dstip[46];
         PrintInet(AF_INET, &alert->src, srcip, sizeof(srcip));
         PrintInet(AF_INET, &alert->dst, dstip, sizeof(dstip));
-        
+
         /* 写入 fast.log */
         fprintf(ctx->fp,
             "%s %s:%d -> %s:%d %s %s [%d:%s] %s\n",
@@ -333,16 +333,16 @@ static int AlertFastWrite(ThreadVars *tv, void *data, Packet *p)
             alert->signature_id,
             alert->signature,
             alert->category);
-        
+
         /* 写入原始数据包（可选） */
         if (ctx->include_packet_data && p->pkt) {
             WritePacketData(ctx->fp, p);
         }
     }
-    
+
     /* 刷新缓冲区 */
     fflush(ctx->fp);
-    
+
     return 0;
 }
 ```
@@ -364,11 +364,11 @@ Apr 15 10:23:45 hostname suricata[1234]: [1:1000001:1] ET EXPLOIT Kali Linux HTT
 static int AlertSyslogWrite(ThreadVars *tv, void *data, Packet *p)
 {
     OutputSyslogContext *ctx = (OutputSyslogContext *)data;
-    
+
     /* 遍历所有 Alert */
     for (int i = 0; i < p->alerts.alert_cnt; i++) {
         Alert *alert = &p->alerts.alerts[i];
-        
+
         /* 格式化消息 */
         char msg[2048];
         snprintf(msg, sizeof(msg),
@@ -382,19 +382,19 @@ static int AlertSyslogWrite(ThreadVars *tv, void *data, Packet *p)
             alert->sp,
             inet_ntoa(alert->dst),
             alert->dp);
-        
+
         /* 发送到 Syslog */
         if (ctx->facility == LOG_FAC_LOCAL3) {
             openlog("suricata", LOG_PID, LOG_LOCAL3);
         }
-        
+
         syslog(LOG_INFO, "%s", msg);
-        
+
         if (ctx->facility == LOG_FAC_LOCAL3) {
             closelog();
         }
     }
-    
+
     return 0;
 }
 ```
@@ -426,14 +426,14 @@ int VerdictSet(Packet *p, int verdict)
     /* 在 NFQ/IPS 模式下设置 verdict */
     if (EngineModeIsIPS()) {
         p->nfq_verdict = verdict;
-        
+
         /* 记录 verdict 统计 */
         StatsIncr(cnt_verdict[verdict]);
     }
-    
+
     /* 设置 Packet 的 verdict 标记 */
     p->verdict = verdict;
-    
+
     return 0;
 }
 ```
@@ -449,16 +449,16 @@ int VerdictSet(Packet *p, int verdict)
 outputs:
   - alert-fast:
       enabled: yes
-      
+
       # 每秒最大 alert 数
       alerts-limit: 1000
-      
+
       # 重复 alert 合并
       duplicate-alerts: yes
-      
+
   - alert-syslog:
       enabled: yes
-      
+
       # 按级别过滤
       severity-filter:
         min: 1
@@ -472,7 +472,7 @@ outputs:
 outputs:
   - alert-fast:
       enabled: yes
-      
+
       # 级别标签
       alert:
         - critical:
@@ -497,7 +497,7 @@ outputs:
 outputs:
   - alert-fast:
       enabled: yes
-      
+
       # 全局限流
       rate:
         max-alerts-per-second: 1000
@@ -564,7 +564,7 @@ outputs:
       enabled: yes
       filetype: file
       filename: eve.json
-      
+
   - alert-fast:
       enabled: yes
       filename: /var/log/suricata/alerts.fast
@@ -577,6 +577,7 @@ outputs:
 ### 10.1 Alert 丢失
 
 **检查**：
+
 - 确认 alert 输出已启用
 - 检查磁盘空间是否充足
 - 查看是否有 rate limit 触发
@@ -584,6 +585,7 @@ outputs:
 ### 10.2 fast.log 为空
 
 **解决**：
+
 ```yaml
 outputs:
   - alert-fast:
@@ -594,6 +596,7 @@ outputs:
 ### 10.3 Alert 重复
 
 **解决**：
+
 ```yaml
 outputs:
   - alert-fast:

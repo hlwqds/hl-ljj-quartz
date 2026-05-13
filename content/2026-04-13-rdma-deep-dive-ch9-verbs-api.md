@@ -5,8 +5,8 @@ tags: [rdma, series, libibverbs, verbs-api, ibv_post_send, polling, rdma-core]
 description: "深入理解 libibverbs 核心 API：设备查询、QP 操作、Work Request 提交、Completion 轮询，以及 rdma-core 用户态接口"
 ---
 
-> [!info] RDMA 深度探索系列
-> 0. [[2026-04-13-rdma-deep-dive-series-index|全栈学习路径总览]]
+> [!info] RDMA 深度探索系列 0. [[2026-04-13-rdma-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-rdma-deep-dive-ch1-rdma-overview|第一章：RDMA 概述]]
 > 2. [[2026-04-13-rdma-deep-dive-ch2-rdma-architecture|第二章：RDMA 架构]]
 > 3. [[2026-04-13-rdma-deep-dive-ch3-infiniband|第三章：InfiniBand 架构]]
@@ -435,6 +435,7 @@ int main() {
 ```
 
 编译：
+
 ```bash
 gcc -o rdma_app rdma_app.c -libverbs -lrdmacm
 ```
@@ -463,27 +464,27 @@ ibv_ack_cq_events(ev_cq, 1);
 
 ## 9. 常见错误码
 
-| WC Status | 说明 |
-|-----------|------|
-| `IBV_WC_SUCCESS` | 成功 |
-| `IBV_WC_LOC_LEN_ERR` | 本地长度错误 |
-| `IBV_WC_LOC_QP_OP_ERR` | QP 操作错误（未正确初始化） |
-| `IBV_WC_WR_FLUSH_ERR` | WR 在 Flush 状态（QP 进入 ERROR） |
-| `IBV_WC_MW_BIND_ERR` | Memory Window 绑定错误 |
-| `IBV_WC_REM_ACCESS_ERR` | 远端访问错误（rkey 无效） |
-| `IBV_WC_REM_INV_REQ_ERR` | 远端无效请求错误 |
-| `IBV_WC_RETRY_EXC_ERR` | 重试超时（网络或远端故障） |
+| WC Status                  | 说明                              |
+| -------------------------- | --------------------------------- |
+| `IBV_WC_SUCCESS`           | 成功                              |
+| `IBV_WC_LOC_LEN_ERR`       | 本地长度错误                      |
+| `IBV_WC_LOC_QP_OP_ERR`     | QP 操作错误（未正确初始化）       |
+| `IBV_WC_WR_FLUSH_ERR`      | WR 在 Flush 状态（QP 进入 ERROR） |
+| `IBV_WC_MW_BIND_ERR`       | Memory Window 绑定错误            |
+| `IBV_WC_REM_ACCESS_ERR`    | 远端访问错误（rkey 无效）         |
+| `IBV_WC_REM_INV_REQ_ERR`   | 远端无效请求错误                  |
+| `IBV_WC_RETRY_EXC_ERR`     | 重试超时（网络或远端故障）        |
 | `IBV_WC_RNR_RETRY_EXC_ERR` | RNR 错误（接收方未 Post Recv WR） |
 
 ---
 
 ## 10. 性能相关的 API 参数
 
-| 参数 | 影响 |
-|------|------|
-| `max_inline_data` | 小数据直接放在 WQE 中，省去额外 DMA（降低延迟） |
-| `max_send_wr / max_recv_wr` | 批量能力，影响吞吐 |
-| `send_flags = IBV_SEND_SIGNALED` | 每 N 个 WR 才产生一次 CQE（减少 overhead） |
+| 参数                             | 影响                                            |
+| -------------------------------- | ----------------------------------------------- |
+| `max_inline_data`                | 小数据直接放在 WQE 中，省去额外 DMA（降低延迟） |
+| `max_send_wr / max_recv_wr`      | 批量能力，影响吞吐                              |
+| `send_flags = IBV_SEND_SIGNALED` | 每 N 个 WR 才产生一次 CQE（减少 overhead）      |
 
 ---
 

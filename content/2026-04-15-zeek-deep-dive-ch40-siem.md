@@ -13,11 +13,8 @@ tags:
 description: "深入解析 Zeek SIEM 集成——Elasticsearch、Splunk、Google Chronicle 配置、日志导入、Kibana 可视化、SPL 查询、威胁检测规则"
 ---
 
-> [!info] Zeek 2026 深度探索系列
-> 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
-> ...
-> 39. [[2026-04-15-zeek-deep-dive-ch39-hunting|第三十九章：威胁狩猎]]
-> 40. **第四十章：SIEM 集成**
+> [!info] Zeek 2026 深度探索系列 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
+> ... 39. [[2026-04-15-zeek-deep-dive-ch39-hunting|第三十九章：威胁狩猎]] 40. **第四十章：SIEM 集成**
 
 ---
 
@@ -53,13 +50,13 @@ SIEM（Security Information and Event Management）是**安全日志集中分析
 
 ### 1.1 常见集成方式
 
-| 方式 | 协议 | 优点 | 缺点 |
-| :--- | :--- | :--- | :--- |
-| **Filebeat** | 文件读取 | 简单、无侵入 | 有延迟 |
-| **Kafka** | 消息队列 | 解耦、高吞吐 | 需要 Kafka 集群 |
-| **Syslog** | UDP/TCP | 通用兼容 | 丢包风险 |
-| **Direct** | HTTP API | 实时 | 需要应用适配 |
-| **Zeek Agent** | 插件 | 完整数据 | 需要部署代理 |
+| 方式           | 协议     | 优点         | 缺点            |
+| :------------- | :------- | :----------- | :-------------- |
+| **Filebeat**   | 文件读取 | 简单、无侵入 | 有延迟          |
+| **Kafka**      | 消息队列 | 解耦、高吞吐 | 需要 Kafka 集群 |
+| **Syslog**     | UDP/TCP  | 通用兼容     | 丢包风险        |
+| **Direct**     | HTTP API | 实时         | 需要应用适配    |
+| **Zeek Agent** | 插件     | 完整数据     | 需要部署代理    |
 
 ---
 
@@ -86,10 +83,10 @@ redef Log::default_log_dir = "/var/log/zeek/eve";
 # 为每个日志流创建 EVE 过滤器
 event zeek_init() {
     local streams = set(
-        HTTP::LOG, DNS::LOG, SSL::LOG, SSH::LOG, 
+        HTTP::LOG, DNS::LOG, SSL::LOG, SSH::LOG,
         SMTP::LOG, CONN::LOG, FILES::LOG, NOTICE::LOG
     );
-    
+
     for ( id in streams ) {
         Log::add_filter(id, [
             $name="elasticsearch",
@@ -113,13 +110,13 @@ filebeat.inputs:
     json.keys_under_root: true
     json.add_error_key: true
     json.message_key: log
-    
+
     # 字段重命名
     fields:
       log_type: zeek
       env: production
     fields_under_root: false
-    
+
     # 多行处理（EVE JSON 每行一条）
     multiline.type: pattern
     multiline.pattern: '^\{'
@@ -129,14 +126,14 @@ filebeat.inputs:
 # =================== 输出到 Elasticsearch ===================
 output.elasticsearch:
   hosts: ["elasticsearch:9200"]
-  
+
   # 索引模板
   index: "zeek-%{+yyyy.MM.dd}"
-  
+
   # 认证
   username: "elastic"
   password: "${ELASTIC_PASSWORD}"
-  
+
   # ILM 策略
   ilm.enabled: true
   ilm.rollover_alias: "zeek"
@@ -298,7 +295,7 @@ event Log::write(rec: Log::ID, path: string, num_lines: count) {
     # 读取日志文件并发送到 HEC
     local log_file = fmt("%s/%s.json", Log::default_log_dir, path);
     local content = cat(log_file);
-    
+
     # 调用 HEC API
     local payload = fmt('{"event": %s}', content);
     SplunkHEC::send(payload);
@@ -326,7 +323,7 @@ sourcetype = zeek:eve
 # /opt/splunkforwarder/etc/system/local/props.conf
 
 [zeek:json]
-DATETIME_CONFIG = 
+DATETIME_CONFIG =
 INDEXED_EXTRACTIONS = json
 KV_MODE = json
 TIME_PREFIX = "\"timestamp\":"
@@ -355,17 +352,17 @@ index=zeek event_type=dns | top limit=10 zeek.query
 
 ```spl
 # 检测 DNS 隧道（大量 TXT 查询）
-index=zeek event_type=dns zeek.qtype=TXT 
-| stats count by src_ip 
+index=zeek event_type=dns zeek.qtype=TXT
+| stats count by src_ip
 | where count > 100
 
 # 检测可疑 HTTP User-Agent
-index=zeek event_type=http 
+index=zeek event_type=http
 | search zeek.user_agent IN ("python-requests*", "Masscan", "nmap")
 | stats count by src_ip, zeek.user_agent
 
 # 检测内部服务器直连外部
-index=zeek event_type=conn 
+index=zeek event_type=conn
 | where like(src_ip, "10.%") AND NOT like(dest_ip, "10.%")
 | stats sum(zeek.orig_bytes) as total_bytes by src_ip
 | where total_bytes > 10000000
@@ -375,13 +372,13 @@ index=zeek event_type=conn
 
 ```spl
 # 关联 DNS 和 HTTP（DNS 查询后有 HTTP 访问）
-index=zeek 
-| join type=inner unixtime 
-    [search index=zeek event_type=dns 
-     | rename zeek.query as domain 
+index=zeek
+| join type=inner unixtime
+    [search index=zeek event_type=dns
+     | rename zeek.query as domain
      | fields src_ip, domain, timestamp]
-    [search index=zeek event_type=http 
-     | rename zeek.host as domain 
+    [search index=zeek event_type=http
+     | rename zeek.host as domain
      | fields src_ip, domain, timestamp]
 | where relative_time(timestamp, "-5m") <= relative_time(timestamp, "+5m")
 | table src_ip, domain
@@ -391,13 +388,13 @@ index=zeek
 
 ```spl
 # 保存为告警：检测大规模扫描
-index=zeek event_type=conn 
-| stats dc(dest_ip) as unique_targets by src_ip 
+index=zeek event_type=conn
+| stats dc(dest_ip) as unique_targets by src_ip
 | where unique_targets > 50
 | `ring`("Potential port scan from {src_ip} to {unique_targets} hosts", mail)
 
 # 保存为告警：检测数据外泄
-index=zeek event_type=conn 
+index=zeek event_type=conn
 | where zeek.orig_bytes > 100000000
 | `ring`("Large data transfer from {src_ip}", mail)
 ```
@@ -448,11 +445,11 @@ Google Chronicle 是**云原生 SIEM**，支持无限日志摄取和快速搜索
 
 #### 4.2.1 支持的协议
 
-| 方式 | 说明 |
-| :--- | :--- |
-| **Syslog** | 通过 RSyslog 转发 |
+| 方式              | 说明                |
+| :---------------- | :------------------ |
+| **Syslog**        | 通过 RSyslog 转发   |
 | **Cloud Pub/Sub** | 发布到 Google Cloud |
-| **Backstory** | Chronicle 原生采集 |
+| **Backstory**     | Chronicle 原生采集  |
 
 #### 4.2.2 Syslog 转发配置
 
@@ -463,7 +460,7 @@ Google Chronicle 是**云原生 SIEM**，支持无限日志摄取和快速搜索
 module(load="omrelp")
 
 # 连接 Chronicle Ingestion API
-*.* action(type="omrelp" 
+*.* action(type="omrelp"
            target="ingestion.backstory.google.com"
            port="6514"
            tls="on"
@@ -543,12 +540,12 @@ rule ZeekDNSTunneling {
   meta:
     description = "Detect potential DNS tunneling"
     severity = "HIGH"
-    
+
   events:
     $dns = zeek.dns.event_type = "dns"
-    
+
     $query = zeek.dns.query.length > 50
-    
+
   condition:
     $dns and $query
 }
@@ -557,12 +554,12 @@ rule ZeekHTTPSuspiciousURI {
   meta:
     description = "Detect suspicious HTTP URI"
     severity = "MEDIUM"
-    
+
   events:
     $http = zeek.http.event_type = "http"
-    
+
     $uri = zeek.http.uri.length > 500
-    
+
   condition:
     $http and $uri
 }
@@ -582,7 +579,7 @@ rule ZeekHTTPSuspiciousURI {
 
 # 使用 Log Stsource 协议
 module(load="omfwd")
-*.* action(type="omfwd" 
+*.* action(type="omfwd"
            target="qradar.example.com"
            port="514"
            protocol="tcp"
@@ -685,7 +682,7 @@ scrape_configs:
 redef Kafka::logging_kafka_topic = "zeek-logs";
 redef Kafka::logging_kafka_brokers = set(
     "kafka1:9092",
-    "kafka2:9092", 
+    "kafka2:9092",
     "kafka3:9092"
 );
 
@@ -724,15 +721,15 @@ filebeat.inputs:
     enabled: true
     paths:
       - /var/log/zeek/eve/*.json
-    
+
     # 读取优化
     close_inactive: 5m
     harvester_buffer_size: 16384
-    
+
     # JSON 处理优化
     json.keys_under_root: true
     json.add_error_key: true
-    
+
     # 多行配置
     multiline.type: pattern
     multiline.pattern: '^\{'
@@ -796,13 +793,13 @@ monitoring:
 
 ### 8.1 常见问题
 
-| 问题 | 原因 | 解决方案 |
-| :--- | :--- | :--- |
-| Filebeat 无法读取日志 | 权限问题 | `chmod 644 /var/log/zeek/eve/*.json` |
-| Elasticsearch 索引失败 | 映射冲突 | 更新索引模板 |
-| 日志延迟高 | Filebeat 批量太小 | 增加 `bulk_max_size` |
-| 丢失日志 | Kafka 消费者落后 | 增加消费者数量 |
-| Splunk 解析失败 | Sourcetype 不匹配 | 检查 `props.conf` |
+| 问题                   | 原因              | 解决方案                             |
+| :--------------------- | :---------------- | :----------------------------------- |
+| Filebeat 无法读取日志  | 权限问题          | `chmod 644 /var/log/zeek/eve/*.json` |
+| Elasticsearch 索引失败 | 映射冲突          | 更新索引模板                         |
+| 日志延迟高             | Filebeat 批量太小 | 增加 `bulk_max_size`                 |
+| 丢失日志               | Kafka 消费者落后  | 增加消费者数量                       |
+| Splunk 解析失败        | Sourcetype 不匹配 | 检查 `props.conf`                    |
 
 ### 8.2 验证命令
 
@@ -852,7 +849,7 @@ event zeek_init() {
         SMTP::LOG,
         NOTICE::LOG
     );
-    
+
     for ( id in siem_streams ) {
         Log::add_filter(id, [
             $name="siem",
@@ -920,6 +917,7 @@ Zeek 与主流 SIEM 平台的集成本章涵盖：
 4. **其他**：QRadar、Humio、Grafana Loki 等
 
 关键配置要点：
+
 - 使用 EVE_JSON writer 实现格式统一
 - Filebeat/Kafka 作为高吞吐量的中转层
 - 根据 SIEM 要求调整索引模板和字段映射

@@ -36,10 +36,12 @@ QUIC 连接状态机比 TCP 复杂得多，原因在于 QUIC 在单一连接中�
 Handshake 状态是连接建立的第一阶段，从客户端发送第一个 Initial 包开始，到服务器收到客户端的 Handshake 包为止。
 
 进入 Handshake 状态的条件：
+
 - 发送或接收 Initial 包
 - 握手密钥尚未确认
 
 在 Handshake 状态下：
+
 - 可以发送 Initial 包和 Handshake 包
 - 不能发送 1-RTT 包（密钥尚未派生）
 - 接收到的 0-RTT 包被缓冲（不交付给应用层）
@@ -49,11 +51,13 @@ Handshake 状态是连接建立的第一阶段，从客户端发送第一个 Ini
 Confirmed 状态表示加密握手已完成且得到确认。RFC 9000 定义了"Confirmed"的概念——当端点收到由 1-RTT 密钥保护的确认帧（CONFIRMED frame），或者收到对方发送的 1-RTT 包且该包被确认时，进入 Confirmed 状态。
 
 进入 Confirmed 状态的条件（满足任一即可）：
+
 1. 收到 Handshake 包确认
 2. 收到由 1-RTT 密钥保护的确认帧
 3. 发送或接收非-ACK 帧（表示握手完成）
 
 Confirmed 状态的核心意义：
+
 - 0-RTT 密钥的保密性（forward secrecy）已得到确认
 - 可以安全地使用 0-RTT 数据
 - 连接迁移时无需重新验证地址（已确认的地址无需再次验证）
@@ -63,6 +67,7 @@ Confirmed 状态的核心意义：
 Draining 状态是连接关闭前的过渡状态。当连接即将终止，但还需要处理网络中仍在传输的包时，进入 Draining 状态。
 
 在 Draining 状态下：
+
 - 不再发送新数据包
 - 仍然可以发送 ACK（处理仍在途中的包）
 - 不交付任何新数据给应用层
@@ -76,11 +81,11 @@ Draining 状态的引入是为了优雅关闭（Graceful Shutdown），确保对
 
 QUIC 定义了三个独立的 Packet Number Space，每个空间有独立的包编号序列：
 
-| PN Space | 包含的包类型 | 加密密钥 | 用途 |
-|-----------|------------|---------|------|
-| Initial Space | Initial | Initial 密钥 | 握手初始阶段 |
-| Handshake Space | Handshake | Handshake 密钥 | 握手确认阶段 |
-| Application Space | 0-RTT, 1-RTT | 1-RTT 密钥 | 数据传输 |
+| PN Space          | 包含的包类型 | 加密密钥       | 用途         |
+| ----------------- | ------------ | -------------- | ------------ |
+| Initial Space     | Initial      | Initial 密钥   | 握手初始阶段 |
+| Handshake Space   | Handshake    | Handshake 密钥 | 握手确认阶段 |
+| Application Space | 0-RTT, 1-RTT | 1-RTT 密钥     | 数据传输     |
 
 ### 3.1 PN Space 与连接状态的关系
 
@@ -103,12 +108,12 @@ PN Space 与连接状态映射：
 
 ### 3.2 各状态下的 PN Space 可用性
 
-| 连接状态 | Initial Space | Handshake Space | Application Space |
-|---------|--------------|----------------|-------------------|
-| Handshake | 可用 | 可用 | 不可用（密钥未派生） |
-| Confirmed | 不可用（关闭） | 不可用（关闭） | 可用 |
-| Active | 不可用 | 不可用 | 可用 |
-| Draining | 不可用 | 不可用 | 仅接收 ACK |
+| 连接状态  | Initial Space  | Handshake Space | Application Space    |
+| --------- | -------------- | --------------- | -------------------- |
+| Handshake | 可用           | 可用            | 不可用（密钥未派生） |
+| Confirmed | 不可用（关闭） | 不可用（关闭）  | 可用                 |
+| Active    | 不可用         | 不可用          | 可用                 |
+| Draining  | 不可用         | 不可用          | 仅接收 ACK           |
 
 ### 3.3 密钥派生与 PN Space 切换
 
@@ -197,16 +202,16 @@ Confirmed -> Active:
 
 ### 4.3 状态转换事件表
 
-| 当前状态 | 事件 | 目标状态 | 操作 |
-|---------|------|---------|------|
-| Init | 发送 Initial | Handshake | 启动握手 |
-| Handshake | 收到 Handshake 确认 | Confirmed | 派生 1-RTT 密钥 |
-| Handshake | PTO 超时（多次） | Closing | 发送 CONNECTION_CLOSE |
-| Confirmed | 发送数据帧 | Active | 启动 idle timeout |
-| Active | 收到 CONNECTION_CLOSE | Draining | 停止发送新数据 |
-| Active | 应用请求关闭 | Draining | 发送 CONNECTION_CLOSE |
-| Draining | idle timeout | Closing | 释放资源 |
-| Closing | 3 * PTO | Closed | 完全关闭连接 |
+| 当前状态  | 事件                  | 目标状态  | 操作                  |
+| --------- | --------------------- | --------- | --------------------- |
+| Init      | 发送 Initial          | Handshake | 启动握手              |
+| Handshake | 收到 Handshake 确认   | Confirmed | 派生 1-RTT 密钥       |
+| Handshake | PTO 超时（多次）      | Closing   | 发送 CONNECTION_CLOSE |
+| Confirmed | 发送数据帧            | Active    | 启动 idle timeout     |
+| Active    | 收到 CONNECTION_CLOSE | Draining  | 停止发送新数据        |
+| Active    | 应用请求关闭          | Draining  | 发送 CONNECTION_CLOSE |
+| Draining  | idle timeout          | Closing   | 释放资源              |
+| Closing   | 3 \* PTO              | Closed    | 完全关闭连接          |
 
 ---
 
@@ -279,16 +284,16 @@ class QUICConnectionStats:
     packets_received: int           # 已接收包数
     bytes_sent: int                 # 已发送字节数
     bytes_received: int             # 已接收字节数
-    
+
     # RTT 统计
     estimated_rtt: float            # 当前 RTT 估计
     min_rtt: float                  # 最小 RTT
     max_rtt: float                  # 最大 RTT
-    
+
     # 丢包统计
     packets_lost: int               # 检测到的丢包数
     PTO_count: int                  # PTO 触发次数
-    
+
     # 流统计
     streams_opened: int             # 已打开的流数
     streams_closed: int             # 已关闭的流数
@@ -296,12 +301,12 @@ class QUICConnectionStats:
 
 ### 6.2 各状态下的统计行为
 
-| 状态 | packets_sent | packets_received | 说明 |
-|------|-------------|-----------------|------|
-| Handshake | Initial + Handshake | Initial + Handshake | 仅握手包 |
-| Confirmed | 0-RTT + 1-RTT | 0-RTT + 1-RTT | 仅数据面包 |
-| Active | 1-RTT | 1-RTT | 仅 1-RTT 包 |
-| Draining | 仅 ACK | 任意包 | 仅响应包 |
+| 状态      | packets_sent        | packets_received    | 说明        |
+| --------- | ------------------- | ------------------- | ----------- |
+| Handshake | Initial + Handshake | Initial + Handshake | 仅握手包    |
+| Confirmed | 0-RTT + 1-RTT       | 0-RTT + 1-RTT       | 仅数据面包  |
+| Active    | 1-RTT               | 1-RTT               | 仅 1-RTT 包 |
+| Draining  | 仅 ACK              | 任意包              | 仅响应包    |
 
 ---
 
@@ -321,20 +326,20 @@ class QUICConnectionState:
             "handshake": PacketNumberSpace(),
             "application": PacketNumberSpace(),
         }
-        
+
         # 密钥状态
         self.encryption_levels = {
             "initial": EncryptionLevel.Initial,
             "handshake": EncryptionLevel.Handshake,
             "application": EncryptionLevel.OneRTT,
         }
-        
+
         # 超时状态
         self.idle_timeout = 30.0
         self.idle_timer = None
         self.PTO_timer = None
         self.PTO_count = 0
-        
+
         # 地址状态
         self.address_verified = False
         self.migration_state = "disconnected"

@@ -10,8 +10,8 @@ tags:
 description: "Suricata 项目历史、架构概览、与 Snort 的对比、NIDS vs IPS vs NSM 三种工作模式，以及源码目录结构解读"
 ---
 
-> [!info] Suricata 2026 深度探索系列
-> 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Suricata 2026 深度探索系列 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. **第一章：Suricata 概述**
 > 2. [[2026-04-15-suricata-deep-dive-ch2-config|第二章：Suricata 配置系统]]
 > 3. [[2026-04-15-suricata-deep-dive-ch3-runmodes|第三章：Runmodes 运行模式]]
@@ -93,7 +93,7 @@ static int SuricataMain(int argc, char **argv)
 # suricata.yaml — NFQ IPS 模式
 runmode: nfq
 nfq:
-  mode: accept   # accept=放行+记录, drop=丢弃+记录
+  mode: accept # accept=放行+记录, drop=丢弃+记录
 ```
 
 **源码实现**：`TmModuleReceiveNFQ` 和 `TmModuleVerdictNFQ` 协同工作：
@@ -123,13 +123,13 @@ TmEcode TmThreadsSlotVarRun(ThreadVars *thv, Packet *p)
 # suricata.yaml — NSM 模式配置
 outputs:
   -eve-log:
-      types:
-        - alert
-        - http: # 完整 HTTP 日志
-        - dns:  # DNS 查询/响应
-        - tls:  # TLS 证书、SNI
-        - files: # 文件提取
-        - flow: # Flow 元数据
+    types:
+      - alert
+      - http: # 完整 HTTP 日志
+      - dns: # DNS 查询/响应
+      - tls: # TLS 证书、SNI
+      - files: # 文件提取
+      - flow: # Flow 元数据
 ```
 
 ---
@@ -229,12 +229,12 @@ int ConfYamlLoad(const char *filename)
 {
     yaml_parser_t parser;
     yaml_document_t document;
-    
+
     // libyaml 解析 YAML
     if (!yaml_parser_load(&parser, f)) {
         return -1;
     }
-    
+
     // 构建配置树 (ConfNode)
     ConfYamlParse(&parser, NULL, NULL, &document);
     return 0;

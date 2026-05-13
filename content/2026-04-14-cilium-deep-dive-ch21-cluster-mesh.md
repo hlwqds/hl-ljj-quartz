@@ -11,13 +11,13 @@ tags:
   - cloud-native
 ---
 
-> [!info] Cilium 2026 深度探索系列
-> 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+> [!info] Cilium 2026 深度探索系列 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+>
 > 1. [[2026-04-14-cilium-deep-dive-ch1-cilium-overview|第一章：Cilium 概述]]
 > 2. [[2026-04-14-cilium-deep-dive-ch2-architecture|第二章：Cilium 架构]]
-> ...
-> 20. [[2026-04-14-cilium-deep-dive-ch20-otel|第二十章：OpenTelemetry]]
-> 21. **第二十一章：Cluster Mesh** ←
+>    ...
+> 3. [[2026-04-14-cilium-deep-dive-ch20-otel|第二十章：OpenTelemetry]]
+> 4. **第二十一章：Cluster Mesh** ←
 
 ---
 
@@ -128,11 +128,11 @@ Cilium 通过 **VXLAN 封装** 和 **集群唯一标识** 解决冲突：
 
 关键设计：
 
-| 字段 | 作用 |
-|:---|:---|
-| **VNI (VXLAN Network Identifier)** | 每个集群分配唯一的 VNI，32 位标识 |
-| **Outer Header** | 使用节点 IP，而非 Pod IP |
-| **Inner Header** | 保留原始 Pod IP，但通过 VNI 区分集群 |
+| 字段                               | 作用                                 |
+| :--------------------------------- | :----------------------------------- |
+| **VNI (VXLAN Network Identifier)** | 每个集群分配唯一的 VNI，32 位标识    |
+| **Outer Header**                   | 使用节点 IP，而非 Pod IP             |
+| **Inner Header**                   | 保留原始 Pod IP，但通过 VNI 区分集群 |
 
 ### 3.3 IP 路由查找流程
 
@@ -259,7 +259,7 @@ kind: Service
 metadata:
   name: nginx-global
   annotations:
-    io.cilium/global-service: "true"  # 标记为全局服务
+    io.cilium/global-service: "true" # 标记为全局服务
 spec:
   selector:
     app: nginx
@@ -325,11 +325,11 @@ Cilium 基于 **Identity** 而非 IP 进行策略匹配。当 Pod 从集群 A �
 
 ### 7.1 性能考量
 
-| 指标 | 影响 |
-|:---|:---|
-| **VXLAN 开销** | 额外 50 字节封装，对于 MTU 1500 的网络，实际 Payload 为 1450 |
-| **隧道延迟** | 额外的封装/解封装操作，通常增加 0.1-0.3ms |
-| **kvstore 依赖** | 节点状态同步依赖 etcd，需要保证低延迟 |
+| 指标             | 影响                                                         |
+| :--------------- | :----------------------------------------------------------- |
+| **VXLAN 开销**   | 额外 50 字节封装，对于 MTU 1500 的网络，实际 Payload 为 1450 |
+| **隧道延迟**     | 额外的封装/解封装操作，通常增加 0.1-0.3ms                    |
+| **kvstore 依赖** | 节点状态同步依赖 etcd，需要保证低延迟                        |
 
 ### 7.2 局限性
 
@@ -343,14 +343,14 @@ Cilium 基于 **Identity** 而非 IP 进行策略匹配。当 Pod 从集群 A �
 
 本章介绍了 Cilium Cluster Mesh 多集群网络方案：
 
-| 概念 | 说明 |
-|:---|:---|
-| **Cluster Mesh** | Cilium 原生的多集群网络方案 |
-| **cluster-id** | 唯一标识每个集群，32 位整数 |
-| **VNI (VXLAN Network Identifier)** | 区分重叠的 Pod IP |
-| **IP-in-VXLAN** | 通过 VXLAN 封装解决 CIDR 冲突 |
-| **Global Service** | 跨集群服务访问，支持健康检查和故障转移 |
-| **共享 kvstore** | 通过 etcd 同步集群间状态 |
+| 概念                               | 说明                                   |
+| :--------------------------------- | :------------------------------------- |
+| **Cluster Mesh**                   | Cilium 原生的多集群网络方案            |
+| **cluster-id**                     | 唯一标识每个集群，32 位整数            |
+| **VNI (VXLAN Network Identifier)** | 区分重叠的 Pod IP                      |
+| **IP-in-VXLAN**                    | 通过 VXLAN 封装解决 CIDR 冲突          |
+| **Global Service**                 | 跨集群服务访问，支持健康检查和故障转移 |
+| **共享 kvstore**                   | 通过 etcd 同步集群间状态               |
 
 **下一章**：深入讲解 Global Services，探讨跨集群服务访问的详细机制和故障转移策略。
 

@@ -11,8 +11,8 @@ tags:
 description: "深入解析 Suricata 的 EVE JSON 输出系统：eve 配置、JSON 格式、字段映射、输出插件、以及源码实现"
 ---
 
-> [!info] Suricata 2026 深度探索系列
-> 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Suricata 2026 深度探索系列 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-15-suricata-deep-dive-ch1-overview|第一章：Suricata 概述]]
 > 2. [[2026-04-15-suricata-deep-dive-ch2-config|第二章：Suricata 配置系统]]
 > 3. [[2026-04-15-suricata-deep-dive-ch3-runmodes|第三章：Runmodes 运行模式]]
@@ -60,18 +60,18 @@ graph TD
         P["协议解析器"]
         F["Flow 管理"]
     end
-    
+
     subgraph "EVE 输出系统"
         J["JSON Logger"]
         F1["文件输出"]
         F2["Socket 输出"]
         E["EVE Channel"]
     end
-    
+
     D --> J
     P --> J
     F --> J
-    
+
     J --> E
     E --> F1
     E --> F2
@@ -110,20 +110,20 @@ graph TD
 outputs:
   - eve-log:
       enabled: yes
-      filetype: regular  # regular/syslog/unix_stream/unix_dgram
-      
+      filetype: regular # regular/syslog/unix_stream/unix_dgram
+
       # 输出路径
       filename: eve.json
-      
+
       # 是否启用多线程写入
       threaded: yes
-      
+
       # 每批次数量
       batchsize: 100
-      
+
       # 输出缓冲
       bufsize: 16384
-      
+
       # 是否包含网络抓包的 pcap 文件名
       pcap: false
 ```
@@ -136,23 +136,23 @@ outputs:
   - eve-log:
       enabled: yes
       filetype: regular
-      
+
       # 输出目录（带 rotation）
       filename: eve
-      
+
       # rotation 配置
       rotation:
         enabled: yes
-        time-reap: 300           # 5 分钟后关闭文件
-        size-reap: 100MB         # 达到 100MB 后 rotation
-        time-interval: 300       # 5 分钟检查一次
-        
+        time-reap: 300 # 5 分钟后关闭文件
+        size-reap: 100MB # 达到 100MB 后 rotation
+        time-interval: 300 # 5 分钟检查一次
+
       # JSON 格式化
       json:
         include-origin: false
-        forward: yes              # 包含 origin 字段
-        timestamp-format: iso     # iso/rfc3339/unix
-      
+        forward: yes # 包含 origin 字段
+        timestamp-format: iso # iso/rfc3339/unix
+
       # EVE 字段类型配置
       types:
         - alert
@@ -176,19 +176,19 @@ outputs:
   - eve-log:
       enabled: yes
       filetype: redis
-      
+
       redis:
         server: 127.0.0.1
         port: 6379
         password: <password>
         database: 0
-        
+
         # Redis 模式
-        mode: stream             # list/stream
-        
+        mode: stream # list/stream
+
         # Key 格式
         key: suricata:eve
-        
+
         # 批量写入
         pipelining:
           enabled: yes
@@ -221,22 +221,22 @@ outputs:
 
 ### 3.2 event_type 详解
 
-| event_type | 说明 | 主要字段 |
-|:-----------|:-----|:---------|
-| `alert` | 告警事件 | alert.*, flow_id, signature_id |
-| `flow` | Flow 事件 | flow.*, state, reason |
-| `stats` | 统计事件 | stats.*, stats_t |
-| `dns` | DNS 查询/响应 | dns.* |
-| `http` | HTTP 请求/响应 | http.* |
-| `tls` | TLS 握手 | tls.*, sni, subject, issuerdn |
-| `ssh` | SSH 握手 | ssh.* |
-| `smtp` | SMTP 邮件 | smtp.*, subject, from, to |
-| `imap` | IMAP 协议 | imap.* |
-| `ftp` | FTP 协议 | ftp.* |
-| `rdp` | RDP 协议 | rdp.* |
-| `snmp` | SNMP 协议 | snmp.* |
-| `quic` | QUIC 协议 | quic.* |
-| `http2` | HTTP/2 协议 | http.* |
+| event_type | 说明           | 主要字段                        |
+| :--------- | :------------- | :------------------------------ |
+| `alert`    | 告警事件       | alert.\*, flow_id, signature_id |
+| `flow`     | Flow 事件      | flow.\*, state, reason          |
+| `stats`    | 统计事件       | stats.\*, stats_t               |
+| `dns`      | DNS 查询/响应  | dns.\*                          |
+| `http`     | HTTP 请求/响应 | http.\*                         |
+| `tls`      | TLS 握手       | tls.\*, sni, subject, issuerdn  |
+| `ssh`      | SSH 握手       | ssh.\*                          |
+| `smtp`     | SMTP 邮件      | smtp.\*, subject, from, to      |
+| `imap`     | IMAP 协议      | imap.\*                         |
+| `ftp`      | FTP 协议       | ftp.\*                          |
+| `rdp`      | RDP 协议       | rdp.\*                          |
+| `snmp`     | SNMP 协议      | snmp.\*                         |
+| `quic`     | QUIC 协议      | quic.\*                         |
+| `http2`    | HTTP/2 协议    | http.\*                         |
 
 ### 3.3 Alert 日志格式
 
@@ -244,7 +244,7 @@ outputs:
 {
   "timestamp": "2026-04-15T10:23:45.123456Z",
   "event_type": "alert",
-  
+
   "alert": {
     "signature_id": 1000001,
     "rev": 1,
@@ -252,7 +252,7 @@ outputs:
     "category": "Attempted Information Leak",
     "severity": 1
   },
-  
+
   "flow": {
     "bytes_toserver": 1024,
     "bytes_toclient": 2048,
@@ -261,7 +261,7 @@ outputs:
     "state": "closed",
     "reason": "timeout"
   },
-  
+
   "src_ip": "192.168.1.100",
   "src_port": 54321,
   "dest_ip": "93.184.216.ة34",
@@ -276,7 +276,7 @@ outputs:
 {
   "timestamp": "2026-04-15T10:23:45.123456Z",
   "event_type": "dns",
-  
+
   "dns": {
     "version": 2,
     "type": "query",
@@ -288,7 +288,7 @@ outputs:
     "qtype": "A",
     "qclass": 1
   },
-  
+
   "src_ip": "192.168.1.100",
   "src_port": 53,
   "dest_ip": "8.8.8.8",
@@ -303,7 +303,7 @@ outputs:
 {
   "timestamp": "2026-04-15T10:23:45.123456Z",
   "event_type": "http",
-  
+
   "http": {
     "hostname": "www.example.com",
     "url": "/api/v1/users",
@@ -313,18 +313,18 @@ outputs:
     "status": 200,
     "status_line": "200 OK",
     "length": 1234,
-    
+
     "request_headers": {
       "host": "www.example.com",
       "user-agent": "curl/7.68.0",
       "accept": "*/*"
     },
-    
+
     "response_headers": {
       "content-type": "application/json",
       "content-length": "1234"
     },
-    
+
     "request_body": null,
     "response_body": "{\"users\": [...]}"
   }
@@ -345,7 +345,7 @@ static OutputInitResult OutputEveLogInit(ConfNode *conf)
     if (eve_ctx == NULL) {
         return ResultInitFail;
     }
-    
+
     /* 解析配置 */
     const char *filetype = ConfNodeLookupChildValue(conf, "filetype");
     if (filetype == NULL || strcmp(filetype, "regular") == 0) {
@@ -355,21 +355,21 @@ static OutputInitResult OutputEveLogInit(ConfNode *conf)
     } else if (strcmp(filetype, "redis") == 0) {
         eve_ctx->type = EVE_FILE_TYPE_REDIS;
     }
-    
+
     /* 获取文件名 */
     const char *filename = ConfNodeLookupChildValue(conf, "filename");
     if (filename != NULL) {
         eve_ctx->filename = SCStrdup(filename);
     }
-    
+
     /* 初始化 JSON 上下文 */
     eve_ctx->js = Json派rotoInit();
-    
+
     /* 创建日志输出线程 */
     OutputRegisterFileRotation(&eve_ctx->output,
                                EVEWrite,
                                eve_ctx);
-    
+
     return ResultOk;
 }
 ```
@@ -382,7 +382,7 @@ static int EVEWrite(Json派roto *js, OutputEveCtx *eve_ctx, void *arg)
 {
     /* 获取事件类型 */
     const char *event_type = Json派rotoGetValue(js, "event_type");
-    
+
     /* 调用特定类型的日志写入 */
     switch (GetEventType(event_type)) {
         case EVE_EVENT_ALERT:
@@ -395,7 +395,7 @@ static int EVEWrite(Json派roto *js, OutputEveCtx *eve_ctx, void *arg)
             return EVEWriteHTTP(js, eve_ctx, arg);
         // ... 其他类型
     }
-    
+
     return -1;
 }
 ```
@@ -407,28 +407,28 @@ static int EVEWrite(Json派roto *js, OutputEveCtx *eve_ctx, void *arg)
 int OutputJsonAlertLog(ThreadVars *tv, Packet *p, void *data)
 {
     Json派roto *js = CreateJson();
-    
+
     /* 添加通用字段 */
     Json派rotoSetString(js, "event_type", "alert");
     Json派rotoSetTimestamp(js, "timestamp", p->ts);
-    
+
     /* 添加 IP 层字段 */
     char srcip[46], dstip[46];
     Port srcport, dstport;
-    
+
     if (PKT_IS_IP(p)) {
         PrintInet(AF_INET6, &p->src, srcip, sizeof(srcip));
         PrintInet(AF_INET6, &p->dst, dstip, sizeof(dstip));
         srcport = p->sp;
         dstport = p->dp;
-        
+
         Json派rotoSetString(js, "src_ip", srcip);
         Json派rotoSetString(js, "dest_ip", dstip);
         Json派rotoSetUint(js, "src_port", srcport);
         Json派rotoSetUint(js, "dest_port", dstport);
         Json派rotoSetString(js, "proto", "TCP");
     }
-    
+
     /* 添加 Alert 特定字段 */
     if (p->alerts.alert_cnt > 0) {
         Alert *alert = &p->alerts.alerts[0];
@@ -438,10 +438,10 @@ int OutputJsonAlertLog(ThreadVars *tv, Packet *p, void *data)
         Json派rotoSetString(js, "alert.category", alert->category);
         Json派rotoSetUint(js, "alert.severity", alert->severity);
     }
-    
+
     /* 写入 EVE 输出 */
     OutputEveLog(js, data);
-    
+
     Json派rotoFree(js);
     return 0;
 }
@@ -455,7 +455,7 @@ static int EVELogRotation(OutputEveCtx *eve_ctx)
 {
     char *new_filename;
     struct stat st;
-    
+
     /* 检查是否需要 rotation */
     if (stat(eve_ctx->filename, &st) == 0) {
         if (eve_ctx->rotation_size > 0 &&
@@ -465,10 +465,10 @@ static int EVELogRotation(OutputEveCtx *eve_ctx)
             RenameFile(eve_ctx->filename, new_filename);
         }
     }
-    
+
     /* 重新打开主文件 */
     ReopenFile(eve_ctx->filename);
-    
+
     return 0;
 }
 ```
@@ -486,7 +486,7 @@ outputs:
       enabled: yes
       filetype: regular
       filename: /var/log/suricata/eve.json
-      
+
       # rotation
       rotation:
         enabled: yes
@@ -501,9 +501,9 @@ outputs:
 outputs:
   - eve-log:
       enabled: yes
-      filetype: unix_stream  # 或 unix_dgram
+      filetype: unix_stream # 或 unix_dgram
       filename: /var/run/suricata/eve.sock
-      
+
       # non-blocking
       non-blocking: yes
 ```
@@ -516,7 +516,7 @@ outputs:
   - eve-log:
       enabled: yes
       filetype: syslog
-      
+
       syslog:
         facility: local3
         level: info
@@ -534,14 +534,14 @@ outputs:
 outputs:
   - eve-log:
       enabled: yes
-      
+
       # 字段过滤
       filter:
         - event_type:
             - alert
             - dns
             - http
-            
+
       # 特定类型的字段
       types:
         - alert:
@@ -554,13 +554,13 @@ outputs:
               - signature
               - category
               - severity
-              
+
         - dns:
             # 排除的字段
             exclude-fields:
               - dns.type
               - dns.ttl
-              
+
         - http:
             fields:
               - hostname
@@ -577,10 +577,10 @@ outputs:
 outputs:
   - eve-log:
       enabled: yes
-      
+
       custom:
         enabled: yes
-        
+
         # 自定义 JSON 字段
         fields:
           - name: suricata_version
@@ -602,7 +602,7 @@ outputs:
       enabled: yes
       filetype: file
       filename: eve.json
-      
+
   # 使用 Filebeat 发送到 Elasticsearch
 ---
 filebeat.inputs:
@@ -611,7 +611,7 @@ filebeat.inputs:
       - /var/log/suricata/eve.json
     json.keys_under_root: true
     json.add_error_key: true
-    
+
 output.elasticsearch:
   hosts: ["elasticsearch:9200"]
   index: "suricata-%{+yyyy.MM.dd}"
@@ -625,7 +625,7 @@ outputs:
   - eve-log:
       enabled: yes
       filetype: syslog
-      
+
       syslog:
         facility: local3
         level: info
@@ -640,7 +640,7 @@ outputs:
       enabled: yes
       filetype: file
       filename: /var/log/suricata/eve.json
-      
+
 # 使用 nxlog 或 filebeat 发送到 Graylog
 ```
 
@@ -655,16 +655,16 @@ outputs:
 outputs:
   - eve-log:
       enabled: yes
-      
+
       # 多线程写入
       threaded: yes
-      
+
       # 批量写入
       batchsize: 100
-      
+
       # 输出缓冲
       bufsize: 65536
-      
+
       # Lock-free 队列
       lockless: yes
 ```
@@ -676,13 +676,13 @@ outputs:
 outputs:
   - eve-log:
       enabled: yes
-      
+
       # 使用 O_DIRECT 绕过缓冲
       direct: no
-      
+
       # 异步写入
       async: yes
-      
+
       # 文件系统建议
       warm: yes
 ```
@@ -696,11 +696,12 @@ outputs:
 **症状**：eve.json 快速增长，占用大量磁盘
 
 **解决**：
+
 ```yaml
 outputs:
   - eve-log:
       enabled: yes
-      
+
       rotation:
         enabled: yes
         size-reap: 100MB
@@ -710,6 +711,7 @@ outputs:
 ### 9.2 JSON 解析性能
 
 **优化建议**：
+
 - 使用 `jq` 进行流式处理
 - 配置合适的 rotation 大小
 - 使用 Elasticsearch 的 ingest pipeline
@@ -717,6 +719,7 @@ outputs:
 ### 9.3 字段丢失
 
 **检查**：
+
 - 确认相关协议解析已启用
 - 检查 `types` 配置是否包含该类型
 - 查看 `exclude-fields` 是否有排除

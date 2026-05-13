@@ -40,13 +40,13 @@ description: "深入解析 VPP Graph 调优：热点检测、dispatch 优化、�
 
 ### 1.2 Node 类型
 
-| 类型 | 描述 | 示例 |
-|------|------|------|
-| **Input** | 数据包入口点 | dpdk-input, ethernet-input |
-| **Processing** | 包处理逻辑 | ip4-lookup, acl-plugin |
-| **Output** | 包发送出口 | dpdk-output, interface-output |
-| **Feature** | 可选的扩展功能 | ipsec-input, nat44-out |
-| **Internal** | 内部辅助节点 | error-drop, interface-tx |
+| 类型           | 描述           | 示例                          |
+| -------------- | -------------- | ----------------------------- |
+| **Input**      | 数据包入口点   | dpdk-input, ethernet-input    |
+| **Processing** | 包处理逻辑     | ip4-lookup, acl-plugin        |
+| **Output**     | 包发送出口     | dpdk-output, interface-output |
+| **Feature**    | 可选的扩展功能 | ipsec-input, nat44-out        |
+| **Internal**   | 内部辅助节点   | error-drop, interface-tx      |
 
 ### 1.3 图结构
 
@@ -59,16 +59,16 @@ typedef struct vlib_node {
     u32 index;                    // node 索引
     vlib_node_type_t type;        // node 类型
     vlib_node_function_t *function; // 处理函数
-    
+
     // 边（next nodes）
     u16 *next_nodes;             // 指向下一个 node 的索引
     char **next_node_names;      // 下一个 node 的名称
-    
+
     // 统计
     u64 total_packets;           // 处理的总包数
     u64 total_cycles;            // 总 CPU 周期
     u64 total_bytes;             // 总字节数
-    
+
     // 调度
     u16 process_hint;            // 调度提示
     u8 state;                    // 运行状态
@@ -139,30 +139,30 @@ vlib_dispatch_node (vlib_main_t *vm, vlib_node_runtime_t *node,
     u32 n_left = n_buffers;
     u32 next_index;
     vlib_buffer_t **to_next;
-    
+
     while (n_left > 0) {
         // 确定下一个 node
         next_index = get_next_index(next_runtime, 0);
-        
+
         // 获取下一个 node 的运行时信息
-        vlib_node_runtime_t *next_node = 
+        vlib_node_runtime_t *next_node =
             vlib_get_node_runtime(vm, next_index);
-        
+
         // 分配输出 buffer
         to_next = vlib_get_next_buffer_buffers(vm, next_node, n_left);
-        
+
         // 调用 node 函数
-        u32 n_dispatched = next_node->function(vm, next_node, 
+        u32 n_dispatched = next_node->function(vm, next_node,
                                                 buffers, to_next, n_left);
-        
+
         // 更新统计
         next_node->stats.total_packets += n_dispatched;
         next_node->stats.total_cycles += get_cpu_cycles();
-        
+
         n_left -= n_dispatched;
         buffers += n_dispatched;
     }
-    
+
     return n_buffers;
 }
 ```
@@ -178,10 +178,10 @@ dispatch_vector (vlib_main_t *vm, vlib_node_runtime_t *node,
 {
     // 批量获取 next indices
     u32 next_indices[256];
-    
+
     // 单次调用获取所有 next
     node_get_next_nodes(node, buffers, n_buffers, next_indices);
-    
+
     // 按 next 分组 buffers
     // 减少分支预测失败
     for (u32 i = 0; i < n_buffers; i++) {
@@ -189,7 +189,7 @@ dispatch_vector (vlib_main_t *vm, vlib_node_runtime_t *node,
         // 累计这个 next 的 buffers
         add_to_next_buffers(next, buffers[i]);
     }
-    
+
     // 批量 dispatch 到每个 next
     // 一次调用分发所有相同 next 的 buffers
     for (u32 next = 0; next < num_nexts; next++) {
@@ -198,7 +198,7 @@ dispatch_vector (vlib_main_t *vm, vlib_node_runtime_t *node,
             dispatch_to_node(vm, next, get_buffers(next), n);
         }
     }
-    
+
     return n_buffers;
 }
 ```
@@ -399,10 +399,10 @@ vpp_graph_reconfigure (vlib_graph_t *new_graph)
 {
     // 等待所有正在读取的 reader 完成
     rcu_synchronize();
-    
+
     // 原子性切换
     atomic_store(&vlib_global_graph, new_graph);
-    
+
     // 释放旧图
     vlib_graph_free(old_graph);
 }
@@ -424,17 +424,17 @@ always_inline int
 vpp_graph_lock (void)
 {
     graph_reconfigure_lock_t *lock = &reconfig_lock;
-    
+
     // 使用 atomic compare-and-swap
     u32 prev = __sync_val_compare_and_swap(
         &lock->is_locked, 0, 1);
-    
+
     if (prev == 0) {
         // 获取锁成功
         lock->owner_thread = os_get_thread_index();
         return 0;
     }
-    
+
     // 锁已被持有
     lock->waiters++;
     return -1;
@@ -445,7 +445,7 @@ always_inline void
 vpp_graph_unlock (void)
 {
     graph_reconfigure_lock_t *lock = &reconfig_lock;
-    
+
     lock->is_locked = 0;
     lock->owner_thread = 0;
 }
@@ -512,7 +512,7 @@ vppctl set worker 4 disable
 cpu {
     main-core 0
     corelist-workers 1-7
-    
+
     # 调度相关参数
     scheduler-policy round-robin   # SCHED_RR
     scheduler-priority 50          # 0-99，值越大优先级越高
@@ -540,7 +540,7 @@ set_worker_count (vlib_main_t *vm, u32 count)
     if (count > vm->available_workers) {
         return clib_error_create("Not enough workers");
     }
-    
+
     if (count > vm->current_workers) {
         // 增加 worker
         for (u32 i = vm->current_workers; i < count; i++) {
@@ -552,7 +552,7 @@ set_worker_count (vlib_main_t *vm, u32 count)
             vlib_worker_thread_stop(vm, i);
         }
     }
-    
+
     vm->current_workers = count;
     return 0;
 }
@@ -562,7 +562,7 @@ void
 adaptive_worker_adjustment (vlib_main_t *vm)
 {
     f64 load = get_current_load();
-    
+
     if (load > 0.9 && vm->current_workers < vm->max_workers) {
         // 负载高，增加 worker
         set_worker_count(vm, vm->current_workers + 1);
@@ -590,13 +590,13 @@ create_per_interface_graphs (vlib_main_t *vm, u32 num_interfaces)
 {
     for (u32 i = 0; i < num_interfaces; i++) {
         vlib_graph_t *g = vlib_graph_create();
-        
+
         // 为这个接口配置专属路径
         configure_interface_graph(g, i);
-        
+
         // 绑定到特定 worker
         bind_graph_to_worker(g, i % vm->current_workers);
-        
+
         multi_graphs[i] = g;
     }
 }
@@ -606,7 +606,7 @@ always_inline vlib_graph_t *
 select_graph (vlib_main_t *vm, vlib_buffer_t *b)
 {
     u32 sw_if_index = vnet_buffer(b)->sw_if_index[VLIB_RX];
-    
+
     return multi_graphs[sw_if_index % num_interfaces];
 }
 ```
@@ -660,28 +660,28 @@ vppctl show vector
 // 向量化处理示例 - 批量计算
 
 always_inline void
-vector_process_packets (vlib_main_t *vm, vlib_buffer_t **buffers, 
+vector_process_packets (vlib_main_t *vm, vlib_buffer_t **buffers,
                         u32 n_buffers)
 {
     // 批量获取包数据指针
     ip4_header_t *ip_headers[256];
     u32 *dst_ips[256];
-    
+
     for (u32 i = 0; i < n_buffers; i++) {
         ip_headers[i] = vlib_buffer_get_current(buffers[i]);
         dst_ips[i] = &ip_headers[i]->dst_address.as_u32;
     }
-    
+
     // SIMD 批量处理
     // 假设处理函数：ip4_lookup_batch(dst_ips[], results[], n)
-    
+
     ip4_lookup_batch(dst_ips, results, n_buffers);
-    
+
     // 批量分发
     for (u32 i = 0; i < n_buffers; i++) {
         u32 next_node = results[i].next_node;
         vlib_buffer_t *b = buffers[i];
-        
+
         vlib_dispatch_to_node(vm, next_node, &b, 1);
     }
 }
@@ -694,17 +694,17 @@ optimized_vector_process (vlib_main_t *vm, vlib_buffer_t **buffers,
     // 按 next 分组，而不是逐包分发
     u32 buffers_by_next[16][256];
     u32 count_by_next[16] = {0};
-    
+
     // 一次遍历分组
     for (u32 i = 0; i < n_buffers; i++) {
         u32 next = get_next_node(buffers[i]);
         buffers_by_next[next][count_by_next[next]++] = buffers[i];
     }
-    
+
     // 批量分发到每个 next
     for (u32 n = 0; n < next_node_count; n++) {
         if (count_by_next[n] > 0) {
-            vlib_dispatch_batch(vm, n, buffers_by_next[n], 
+            vlib_dispatch_batch(vm, n, buffers_by_next[n],
                                count_by_next[n]);
         }
     }
@@ -734,7 +734,7 @@ process_with_prefetch (vlib_main_t *vm, vlib_buffer_t **buffers,
 {
     // 预取
     prefetch_packets(buffers, n_buffers);
-    
+
     // 处理当前 batch
     for (u32 i = 0; i < n_buffers; i++) {
         process_single_packet(buffers[i]);
@@ -760,13 +760,13 @@ deep_prefetch (vlib_main_t *vm, vlib_buffer_t **buffers,
 
 ### 7.1 常见调优场景
 
-| 场景 | 优化方法 | 效果 |
-|------|----------|------|
-| **高吞吐** | 增加 vector size，批处理 | +20% 吞吐 |
-| **低延迟** | 减少 vector size，预取 | -30% 延迟 |
-| **CPU 利用不均** | 重新分配 worker | 负载均衡 |
-| **频繁重配置** | 批量配置，延迟生效 | -50% 重配置 |
-| **热点集中** | 优化热点 node，增加 cache | +15% 性能 |
+| 场景             | 优化方法                  | 效果        |
+| ---------------- | ------------------------- | ----------- |
+| **高吞吐**       | 增加 vector size，批处理  | +20% 吞吐   |
+| **低延迟**       | 减少 vector size，预取    | -30% 延迟   |
+| **CPU 利用不均** | 重新分配 worker           | 负载均衡    |
+| **频繁重配置**   | 批量配置，延迟生效        | -50% 重配置 |
+| **热点集中**     | 优化热点 node，增加 cache | +15% 性能   |
 
 ### 7.2 调优脚本
 
@@ -900,7 +900,7 @@ vppctl trace path ip4-input to interface-output
 
 # 示例输出：
 # Path: ip4-input → ip4-lookup → ip4-rewrite → interface-output
-# 
+#
 # Nodes in path:
 #   0. ip4-input (count: 123456)
 #   1. ip4-lookup (count: 123456)
@@ -951,13 +951,13 @@ vppctl show graph stats
 #   Active nodes: 100
 #   Total edges: 456
 #   Active edges: 400
-#   
+#
 #   Node type distribution:
 #     Input: 5
 #     Output: 10
 #     Feature: 20
 #     Internal: 88
-#   
+#
 #   Top nodes by dispatch count:
 #     1. dpdk-input: 1234567890
 #     2. ethernet-input: 1234567890
@@ -966,13 +966,13 @@ vppctl show graph stats
 
 ### 8.4 常见图问题
 
-| 问题 | 症状 | 解决 |
-|------|------|------|
-| **图断裂** | 包在中间消失 | 检查 node next 配置 |
-| **循环** | 包无法结束，处理多次 | 检查图结构 |
-| **过深** | 延迟高 | 优化路径，减少中间 node |
-| **过浅** | 功能缺失 | 添加必要的处理 node |
-| **热点** | 某个 node 占比高 | 优化热点 node 或增加 worker |
+| 问题       | 症状                 | 解决                        |
+| ---------- | -------------------- | --------------------------- |
+| **图断裂** | 包在中间消失         | 检查 node next 配置         |
+| **循环**   | 包无法结束，处理多次 | 检查图结构                  |
+| **过深**   | 延迟高               | 优化路径，减少中间 node     |
+| **过浅**   | 功能缺失             | 添加必要的处理 node         |
+| **热点**   | 某个 node 占比高     | 优化热点 node 或增加 worker |
 
 ## 9. 总结
 
@@ -1012,12 +1012,14 @@ vppctl show graph stats
 ---
 
 > [!tip] 最佳实践
+>
 > 1. 热点检测是调优的第一步，优先优化耗时最多的 node
 > 2. Vector size 64 是最佳平衡点，高吞吐可用 128-256
 > 3. Graph 重配置使用无锁 RCU，避免长时间锁等待
 > 4. Prefetch 在 vector 处理中效果显著，优先处理热点 node
 
 > [!warning] 注意事项
+>
 > - 调优时注意测量效果，避免过早优化
 > - 图结构变更需要考虑向后兼容性
 > - 调试时启用 trace 会显著影响性能

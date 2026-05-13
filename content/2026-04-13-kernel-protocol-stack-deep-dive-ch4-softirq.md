@@ -5,8 +5,8 @@ tags: [linux, kernel, networking, series, softirq, ksoftirqd, interrupt, softnet
 description: "深入解析 Linux 内核软中断机制——NET_RX/NET_TX softirq 触发路径、per-CPU softnet_data 结构、net_rx_action 处理流程、ksoftirqd 内核线程、以及中断与进程的协同调度"
 ---
 
-> [!info] Kernel Protocol Stack 深度探索系列
-> 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Kernel Protocol Stack 深度探索系列 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-kernel-protocol-stack-deep-dive-ch1-skbuff|第一章：sk_buff 与数据包生命周期]]
 > 2. [[2026-04-13-kernel-protocol-stack-deep-dive-ch2-netdevice|第二章：Netdevice 与网卡抽象]]
 > 3. [[2026-04-13-kernel-protocol-stack-deep-dive-ch3-ring-buffer|第三章：Ring Buffer 与 DMA]]
@@ -22,12 +22,12 @@ Linux 网络栈的 RX/TX 处理发生在**软中断上下文**（softirq context
 
 **核心矛盾：**
 
-| 需求 | 硬中断约束 | 软中断优势 |
-|------|-----------|-----------|
-| 快速响应 | 必须在 `irq` 中响应 | 可延迟处理 |
-| 上下文安全 | 不能睡眠、不能进程调度 | 可处理复杂任务 |
-| 吞吐量大 | 每个包一次中断 → 中断风暴 | batch processing |
-| 实时性 | 极低延迟 | 适中延迟 |
+| 需求       | 硬中断约束                | 软中断优势       |
+| ---------- | ------------------------- | ---------------- |
+| 快速响应   | 必须在 `irq` 中响应       | 可延迟处理       |
+| 上下文安全 | 不能睡眠、不能进程调度    | 可处理复杂任务   |
+| 吞吐量大   | 每个包一次中断 → 中断风暴 | batch processing |
+| 实时性     | 极低延迟                  | 适中延迟         |
 
 **软中断解决的问题：**
 
@@ -40,10 +40,10 @@ graph LR
     A["硬件中断<br/>IRQ"] --> B{"是否禁用<br/>local_bh_disable?"}
     B --> |是| C["softirq_vec<br/>延迟执行"]
     B --> |否| D["立即执行<br/>softirq_handler"]
-    
+
     C --> E["ksoftirqd<br/>内核线程"]
     D --> F["net_rx_action /<br/>net_tx_action"]
-    
+
     E --> |唤醒| F
 ```
 
@@ -80,9 +80,9 @@ struct softirq_action {
 
 **网络相关的软中断只有两种：**
 
-| Softirq | 用途 | 处理函数 |
-|---------|------|---------|
-| `NET_TX_SOFTIRQ` | TX 完成处理 | `net_tx_action()` |
+| Softirq          | 用途          | 处理函数          |
+| ---------------- | ------------- | ----------------- |
+| `NET_TX_SOFTIRQ` | TX 完成处理   | `net_tx_action()` |
 | `NET_RX_SOFTIRQ` | RX 包接收处理 | `net_rx_action()` |
 
 ### 2.2 per-CPU softnet_data 结构
@@ -95,42 +95,42 @@ struct softnet_data {
     /* === RX 路径 === */
     struct sk_buff_head  input_pkt_queue;   // 等待处理的包队列
     struct napi_struct   *current_napi;      // 当前正在轮询的 NAPI
-    
+
     /* === 统计 === */
     unsigned int        processed;           // 本轮处理的包数
     unsigned int        time_squeeze;        // 时间片耗尽而退出的次数
     unsigned int        cpu_collision;       // CPU 竞争计数
     unsigned int        received_rps;        // 收到的 RFS 唤醒
-    
+
     /* === NAPI 列表 === */
     struct list_head    poll_list;           // 待轮询的 NAPI 链表
-    
+
     /* === TX 路径 === */
     struct Qdisc         *output_queue;      // TX qdisc
     struct Qdisc        **output_queue_tailp;
-    
+
     /* === backlog === */
     struct sk_buff_head  process_queue;      // 处理中队列（已废弃）
-    
+
     /* === gro === */
     struct napi_gro_cb   *gro_list;
     int                   gro_count;
-    
+
     /* === 中断亲和性 === */
     unsigned int        cpu;                  // CPU ID
     unsigned int        input_queue_head;
     unsigned int        input_queue_tail;
-    
+
     /* === softnet_data 之间通信 === */
     call_single单_t       csd;
     struct softnet_data   *rps_ipi_next;
-    
+
     /* === IOMMU === */
     unsigned int        iommu_rx;
-    
+
     /* === offload === */
     struct bpf_prog      *xdp_prog;
-    
+
     /* 64 字节对齐的 pad */
 } ____cacheline_aligned_in_smp;
 ```
@@ -147,21 +147,21 @@ sequenceDiagram
     participant SOFTIRQ as raise_softirq()
     participant KSOFT as ksoftirqd
     participant ACTION as softirq_action()
-    
+
     NIC->>IRQ: TX 完成中断
     IRQ->>IRQ: __network_probe_irq()
-    
+
     Note over IRQ: 禁止新硬中断<br/>快速清理 descriptor
-    
+
     IRQ->>BH: raise_softirq(NET_TX_SOFTIRQ)
-    
+
     alt local_bh_disabled == 0
         IRQ->>SOFTIRQ: 立即执行 net_tx_action()
     else local_bh_disabled > 0
         IRQ->>KSOFT: 标记 pending softirq
         Note over KSOFT: ksoftirqd 稍后唤醒
     end
-    
+
     SOFTIRQ->>ACTION: softirq_vec[NET_TX_SOFTIRQ].action()
     ACTION->>ACTION: 处理 TX 完成，回收 descriptor
 ```
@@ -172,21 +172,21 @@ sequenceDiagram
 void raise_softirq(unsigned int nr)
 {
     unsigned long flags;
-    
+
     // 关闭本地中断，防止并发
     local_irq_save(flags);
-    
+
     // 1. 设置 pending 位图
     __raise_softirq_irqoff(nr);  // set_bit(nr, softirq_pending(cpu))
-    
+
     // 2. 如果不在中断上下文中且有其他 CPU idle
     //    发送 IPI 让他们帮忙处理
     if (!in_interrupt() && may_send_ipi(nr))
         send_remote_softirq();
-    
+
     // 3. 如果在硬中断上下文中，标记为待处理
     //    硬中断返回时会检查并执行
-    
+
     local_irq_restore(flags);
 }
 
@@ -204,7 +204,7 @@ void __irq_exit(void)
         // 在中断返回前执行 softirq（递归软中断）
         invoke_softirq();
     }
-    
+
     // 允许进程调度
     preempt_count_dec();
     __schedule(SCHED_SOFTIRQ);
@@ -223,21 +223,21 @@ TX softirq 处理网卡的发送完成，回收已发送的 descriptor：
 static __latent_entropy void net_tx_action(struct softirq_action *h)
 {
     struct softnet_data *sd = this_cpu_ptr(&softnet_data);
-    
+
     // 1. 处理 TX timeout（检测卡死队列）
     rps_unlock(sd);
-    
+
     // 2. 处理 qdisc backlog
     if (sd->output_queue) {
         qdisc_run_endless(sd->output_queue);
     }
-    
+
     // 3. 清理TX completion
     //    遍历所有 TX 队列
     struct list_head *list = &sd->poll_list;
     list_for_each_entry(napi, list, dev_list) {
         struct softnet_data *sd;
-        
+
         // 调用驱动 TX 完成清理
         if (test_bit(NAPI_STATE_SCHED, &napi->state))
             net_tx_complete(napi);
@@ -248,7 +248,7 @@ static void net_tx_complete(struct napi_struct *napi)
 {
     struct softnet_data *sd = this_cpu_ptr(&softnet_data);
     struct net_device *dev = napi->dev;
-    
+
     // 实际在驱动 TX 完成中断中直接处理
     // 这里主要处理 qdisc backlog
 }
@@ -263,16 +263,16 @@ static void net_tx_complete(struct napi_struct *napi)
 static irqreturn_t i40e_msix_clean_rings(int irq, void *data)
 {
     struct i40e_q_vector *q_vector = data;
-    
+
     // 1. 禁止这个向量上的中断
     i40e_disable_vectors(q_vector);
-    
+
     // 2. 触发 NET_TX_SOFTIRQ
     raise_softirq(NET_TX_SOFTIRQ);
-    
+
     // 3. 触发 NAPI 轮询（处理 TX + RX）
     napi_schedule(&q_vector->napi);
-    
+
     return IRQ_HANDLED;
 }
 
@@ -298,40 +298,40 @@ static void net_rx_action(struct softirq_action *h)
     int budget = weight_p;  // default: 300 / net.core.netdev_budget
     LIST_HEAD(list);
     int work = 0;
-    
+
     // 1. 将当前 NAPI 移到本地列表（避免竞争）
     list_splice_init(&sd->poll_list, &list);
-    
+
     // 2. 循环处理直到 budget 耗尽或时间超时
     while (!list_empty(&list)) {
         struct napi_struct *napi;
-        
+
         if (likely(time_before(jiffies, time_limit)))
             break;
-        
+
         napi = list_first_entry(&list, struct napi_struct, poll_list);
-        
+
         // 3. 调用 NAPI poll 回调（驱动提供）
         //    预算通常是 budget / num_queues
         int work_done = napi->poll(napi, weight);
-        
+
         // 4. 如果工作完成，移除
         if (work_done < weight) {
             list_del_init(&napi->poll_list);
             __napi_complete(napi);
         }
-        
+
         work += work_done;
         budget -= work_done;
-        
+
         if (budget <= 0)
             break;
     }
-    
+
     // 5. 如果还有待处理的 NAPI，重新触发 softirq
     if (!list_empty(&list))
         __raise_softirq_irqoff(NET_RX_SOFTIRQ);
-    
+
     // 6. 处理 RPS（如果启用）
     rps_rx_triggers(sd);
 }
@@ -347,18 +347,18 @@ int netif_rx(struct sk_buff *skb)
 {
     struct softnet_data *sd;
     int ret;
-    
+
     net_timestamp_check(skb);
-    
+
     // 1. 进入 softirq
     local_bh_disable();
     sd = this_cpu_ptr(&softnet_data);
-    
+
     // 2. 加入 per-CPU backlog 队列
     ret = enqueue_to_backlog(skb, &sd);
-    
+
     local_bh_enable();
-    
+
     return ret;
 }
 
@@ -367,22 +367,22 @@ static int enqueue_to_backlog(struct sk_buff *skb, int cpu,
 {
     struct softnet_data *sd = &per_cpu(softnet_data, cpu);
     unsigned long flags;
-    
+
     // backlog 队列长度限制
     unsigned int qlen = skb_queue_len(&sd->input_pkt_queue);
-    
+
     if (qlen >= rx_queue_len)  // /proc/sys/net/core/netdev_max_backlog
         goto drop;
-    
+
     // 加入队列
     __skb_queue_tail(&sd->input_pkt_queue, skb);
-    
+
     // 3. 如果这个 CPU 没有在运行 softirq，调度它
     if (!test_bit(NAPI_STATE_SCHED, &sd->backlog.state)) {
         ____napi_schedule(sd, &sd->backlog);
         raise_softirq(NET_RX_SOFTIRQ);
     }
-    
+
     return NET_RX_SUCCESS;
 
 drop:
@@ -395,24 +395,24 @@ static int process_backlog(struct napi_struct *napi, int budget)
 {
     struct softnet_data *sd = this_cpu_ptr(&softnet_data);
     int work = 0;
-    
+
     while (work < budget) {
         struct sk_buff *skb;
-        
+
         // 从 backlog 队列取出
         skb = __skb_dequeue(&sd->input_pkt_queue);
         if (!skb)
             break;
-        
+
         // 送入协议栈
         netif_receive_skb(skb);
         work++;
     }
-    
+
     // 如果队列清空，重新开启硬中断
     if (work < budget)
         napi_complete_done(napi, work);
-    
+
     return work;
 }
 ```
@@ -484,17 +484,17 @@ static int ksoftirqd_should_run(unsigned int cpu)
 static void run_ksoftirqd(unsigned int cpu)
 {
     local_bh_disable();
-    
+
     if (local_softirq_pending()) {
         // 执行 pending softirq
         __do_softirq();
-        
+
         // 可能触发调度（如果还有工作要做）
         preempt_disable();
         __schedule(SCHED_SOFTIRQ);
         preempt_enable();
     }
-    
+
     local_bh_enable();
 }
 
@@ -502,24 +502,24 @@ static void run_ksoftirqd(unsigned int cpu)
 static int ksoftirqd(void *arg)
 {
     set_current_state(TASK_INTERRUPTIBLE);
-    
+
     while (!kthread_should_stop()) {
         if (!ksoftirqd_should_run(smp_processor_id()))
             schedule();
-        
+
         __set_current_state(TASK_RUNNING);
-        
+
         while (local_softirq_pending())
             run_ksoftirqd(smp_processor_id());
-        
+
         set_current_state(TASK_INTERRUPTIBLE);
     }
-    
+
     return 0;
 }
 ```
 
-### 5.3 __do_softirq：实际执行者
+### 5.3 \_\_do_softirq：实际执行者
 
 ```c
 asmlinkage __visible void __do_softirq(void)
@@ -528,29 +528,29 @@ asmlinkage __visible void __do_softirq(void)
     struct softirq_action *h;
     unsigned int vec_nr;
     int prev_count;
-    
+
     // 1. 标记进入 softirq 上下文
     prev_count = preempt_count();
     preempt_count_set(prev_count + SOFTIRQ_OFFSET);
-    
+
     local_irq_enable();
-    
+
     // 2. 按优先级顺序处理 softirq
     while (pending) {
         // 获取最低位的 set bit
         vec_nr = __ffs(pending);
-        
+
         // 清除该位
         pending &= ~(1UL << vec_nr);
-        
+
         h = &softirq_vec[vec_nr];
-        
+
         // 调用处理函数
         h->action(h);
     }
-    
+
     local_irq_disable();
-    
+
     // 3. 处理完重新检查（可能有新的 pending）
     pending = local_softirq_pending();
     if (pending) {
@@ -558,10 +558,10 @@ asmlinkage __visible void __do_softirq(void)
         if (pending >= 10)
             wakeup_softirqd();
     }
-    
+
     // 4. 恢复 preempt count
     preempt_count_set(prev_count);
-    
+
     // 5. 处理网络统计
     rcu_bh_qs();
 }
@@ -614,7 +614,7 @@ graph LR
     C --> |enqueue_to_backlog| D["CPU 1 backlog"]
     D --> |IPI 中断| E["CPU 1"]
     E --> F["CPU 1 net_rx_action"]
-    
+
     style B fill:#FFB6C1
     style F fill:#90EE90
 ```

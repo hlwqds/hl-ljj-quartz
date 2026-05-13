@@ -1,12 +1,25 @@
 ---
 title: "VPN 技术深度探索 (十三)：SSL VPN 技术"
 date: 2026-04-13
-tags: [vpn, series, networking, security, tunnel, ssl-vpn, openconnect, anyconnect, reverse-proxy, port-forwarding, full-tunnel]
+tags:
+  [
+    vpn,
+    series,
+    networking,
+    security,
+    tunnel,
+    ssl-vpn,
+    openconnect,
+    anyconnect,
+    reverse-proxy,
+    port-forwarding,
+    full-tunnel,
+  ]
 description: "SSL VPN 技术深度解析——SSL VPN 三种模式（全路由/反向代理/端口转发）、OpenConnect/OpenVPN 客户端、企业 SSL VPN 产品（Cisco/Juniper/Palo Alto）、HTTS 代理"
 ---
 
-> [!info] VPN 技术深度探索系列
-> 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+> [!info] VPN 技术深度探索系列 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-vpn-deep-dive-ch1-vpn-fundamentals|VPN 基础概念]]
 > 2. [[2026-04-13-vpn-deep-dive-ch2-tunnel-basics|第二章：隧道技术基础]]
 > 3. [[2026-04-13-vpn-deep-dive-ch3-crypto-fundamentals|第三章：密码学基础]]
@@ -57,15 +70,15 @@ graph TB
     style PF fill:#f59f00,stroke:#333
 ```
 
-| 维度 | SSL VPN | IPSec VPN |
-|------|---------|-----------|
-| **协议层** | TLS (L4-L7) | IPSec (L3) |
-| **客户端** | 浏览器/Web 或轻量客户端 | 专用客户端 |
-| **部署难度** | 低（浏览器即可） | 中（需安装软件） |
-| **访问控制粒度** | 应用层（URL/资源） | 网络层（IP/端口） |
-| **NAT 穿透** | 好（基于 HTTPS） | 差（需 NAT-T） |
-| **典型场景** | 远程办公、BYOD | 企业全面接入 |
-| **性能** | 中等 | 高 |
+| 维度             | SSL VPN                 | IPSec VPN         |
+| ---------------- | ----------------------- | ----------------- |
+| **协议层**       | TLS (L4-L7)             | IPSec (L3)        |
+| **客户端**       | 浏览器/Web 或轻量客户端 | 专用客户端        |
+| **部署难度**     | 低（浏览器即可）        | 中（需安装软件）  |
+| **访问控制粒度** | 应用层（URL/资源）      | 网络层（IP/端口） |
+| **NAT 穿透**     | 好（基于 HTTPS）        | 差（需 NAT-T）    |
+| **典型场景**     | 远程办公、BYOD          | 企业全面接入      |
+| **性能**         | 中等                    | 高                |
 
 ---
 
@@ -73,11 +86,11 @@ graph TB
 
 ### 2.1 模式对比
 
-| 模式 | 工作层 | 客户端 | 流量范围 | 典型场景 |
-|------|--------|--------|----------|----------|
-| **全路由模式** | L3 | 专用客户端 | 所有流量 | 全面内网访问 |
-| **反向代理模式** | L7 | 仅浏览器 | HTTP/HTTPS | Web 应用发布 |
-| **端口转发模式** | L4 | Java/ActiveX | 指定端口 | 旧应用（LDAP/SMB） |
+| 模式             | 工作层 | 客户端       | 流量范围   | 典型场景           |
+| ---------------- | ------ | ------------ | ---------- | ------------------ |
+| **全路由模式**   | L3     | 专用客户端   | 所有流量   | 全面内网访问       |
+| **反向代理模式** | L7     | 仅浏览器     | HTTP/HTTPS | Web 应用发布       |
+| **端口转发模式** | L4     | Java/ActiveX | 指定端口   | 旧应用（LDAP/SMB） |
 
 ### 2.2 全路由模式 (Full Tunnel)
 
@@ -252,7 +265,7 @@ nmcli connection import type openconnect file vpn.ovpn
 ```bash
 # OpenConnect 兼容 Cisco ASA
 # ASA 配置（简化）：
-# 
+#
 # ! ASA 配置 AnyConnect
 # webvpn
 #  enable outside
@@ -260,13 +273,13 @@ nmcli connection import type openconnect file vpn.ovpn
 #  anyconnect-essentials
 #  anyconnect image disk0:/anyconnect-win-4.10.00095.pkg
 #  anyconnect profiles VPN-Profile disk0:/vpn_profile.xml
-# 
+#
 # group-policy VPN-Policy internal
 # group-policy VPN-Policy attributes
 #  vpn-tunnel-protocol ssl-client
 #  webvpn
 #   anyconnect profiles value VPN-Profile
-# 
+#
 # tunnel-group VPN-Tunnel general-attributes
 #  default-group-policy VPN-Policy
 # tunnel-group VPN-Tunnel webvpn-attributes
@@ -280,13 +293,13 @@ nmcli connection import type openconnect file vpn.ovpn
 
 ### 4.1 产品对比
 
-| 产品 | 厂商 | 客户端 | 特点 |
-|------|------|--------|------|
-| **Cisco AnyConnect** | Cisco | 专用客户端 | 企业标配，ISE 集成 |
-| **GlobalProtect** | Palo Alto | 专用客户端 | 与 PAN-OS 深度集成 |
-| **Pulse Secure** | Ivanti/Juniper | 专用客户端 | 多因素认证 |
-| **SSL Network Extender** | Check Point | 无客户端 | 防火墙配套 |
-| **Aruba VIA** | Aruba | 专用客户端 | WLAN 集成 |
+| 产品                     | 厂商           | 客户端     | 特点               |
+| ------------------------ | -------------- | ---------- | ------------------ |
+| **Cisco AnyConnect**     | Cisco          | 专用客户端 | 企业标配，ISE 集成 |
+| **GlobalProtect**        | Palo Alto      | 专用客户端 | 与 PAN-OS 深度集成 |
+| **Pulse Secure**         | Ivanti/Juniper | 专用客户端 | 多因素认证         |
+| **SSL Network Extender** | Check Point    | 无客户端   | 防火墙配套         |
+| **Aruba VIA**            | Aruba          | 专用客户端 | WLAN 集成          |
 
 ### 4.2 Cisco AnyConnect 架构
 
@@ -551,13 +564,13 @@ server {
 
 ### 7.3 开源 SSL VPN 对比
 
-| 方案 | 协议 | 客户端 | 认证 | 特点 |
-|------|------|--------|------|------|
-| **OpenConnect (ocserv)** | AnyConnect | 专用/AnyConnect | 证书/PAM/RADIUS | 开源，兼容 Cisco |
-| **OpenVPN** | OpenVPN 专属 | 专用 | 证书/PAM | 最流行，功能全 |
-| **WireGuard** | WireGuard | 专用 | PSK/证书 | 现代，最简 |
-| **SoftEther** | 多协议 | 多客户端 | 证书/AD | 日本开发，多协议 |
-| ** strongSwan** | IPSec | 专用 | 证书/EAP | IPSec 企业方案 |
+| 方案                     | 协议         | 客户端          | 认证            | 特点             |
+| ------------------------ | ------------ | --------------- | --------------- | ---------------- |
+| **OpenConnect (ocserv)** | AnyConnect   | 专用/AnyConnect | 证书/PAM/RADIUS | 开源，兼容 Cisco |
+| **OpenVPN**              | OpenVPN 专属 | 专用            | 证书/PAM        | 最流行，功能全   |
+| **WireGuard**            | WireGuard    | 专用            | PSK/证书        | 现代，最简       |
+| **SoftEther**            | 多协议       | 多客户端        | 证书/AD         | 日本开发，多协议 |
+| ** strongSwan**          | IPSec        | 专用            | 证书/EAP        | IPSec 企业方案   |
 
 ---
 
@@ -625,21 +638,21 @@ cat /var/log/ocserv.log
 
 ## 9. 总结
 
-| 维度 | SSL VPN 三种模式 |
-|------|-----------------|
+| 维度           | SSL VPN 三种模式                                    |
+| -------------- | --------------------------------------------------- |
 | **全路由模式** | 安装客户端，全流量 VPN，L3 隧道，类似 OpenVPN/IPSec |
-| **反向代理** | 仅浏览器，无需客户端，适合 Web 应用发布，L7 |
-| **端口转发** | 安装插件，本地端口转发，适合旧协议 (SMB/RDP) |
+| **反向代理**   | 仅浏览器，无需客户端，适合 Web 应用发布，L7         |
+| **端口转发**   | 安装插件，本地端口转发，适合旧协议 (SMB/RDP)        |
 
-| 特性 | SSL VPN 总结 |
-|------|-------------|
-| **协议基础** | TLS 1.2/1.3 (HTTPS) |
-| **NAT 穿透** | 优秀（基于 443 端口） |
-| **客户端需求** | 全路由模式需要，轻量级 |
-| **访问控制** | 精细（URL/IP/应用层） |
-| **典型产品** | Cisco AnyConnect, PAN GlobalProtect, OpenConnect |
-| **优势** | 无客户端（反向代理）、精细控制、NAT 好 |
-| **劣势** | 全路由性能低于 IPSec、配置复杂 |
+| 特性           | SSL VPN 总结                                     |
+| -------------- | ------------------------------------------------ |
+| **协议基础**   | TLS 1.2/1.3 (HTTPS)                              |
+| **NAT 穿透**   | 优秀（基于 443 端口）                            |
+| **客户端需求** | 全路由模式需要，轻量级                           |
+| **访问控制**   | 精细（URL/IP/应用层）                            |
+| **典型产品**   | Cisco AnyConnect, PAN GlobalProtect, OpenConnect |
+| **优势**       | 无客户端（反向代理）、精细控制、NAT 好           |
+| **劣势**       | 全路由性能低于 IPSec、配置复杂                   |
 
 **本系列 Part III 完结。**
 
@@ -648,6 +661,7 @@ cat /var/log/ocserv.log
 ---
 
 > [!quote] 参考文献
+>
 > - Cisco AnyConnect VPN - https://www.cisco.com/c/en/us/products/security/anyconnect-secure-mobility-client
 > - OpenConnect - https://www.infradead.org/ocserv/
 > - [[2026-04-13-vpn-deep-dive-ch11-openvpn|OpenVPN 基础 (本系列)]] — SSL VPN 实现

@@ -38,13 +38,13 @@ description: "深入解析 DPDK 云环境 Hypervisor：KVM/Xen/ESXi 虚拟化、
 
 ### 1.2 云环境选择
 
-| 云 | Hypervisor | DPDK 支持 |
-|----|------------|-----------|
-| **AWS** | Nitro (KVM 定制) | ENA |
-| **Azure** | Hyper-V | SR-IOV |
-| **GCP** | Xen (KVM) | gVNIC |
-| **阿里云** | Xen/KVM | virtio |
-| **私有云** | KVM/Xen | 多 |
+| 云         | Hypervisor       | DPDK 支持 |
+| ---------- | ---------------- | --------- |
+| **AWS**    | Nitro (KVM 定制) | ENA       |
+| **Azure**  | Hyper-V          | SR-IOV    |
+| **GCP**    | Xen (KVM)        | gVNIC     |
+| **阿里云** | Xen/KVM          | virtio    |
+| **私有云** | KVM/Xen          | 多        |
 
 ## 2. KVM 虚拟化
 
@@ -333,13 +333,13 @@ Azure Hyper-V Stack：
 
 ### 6.3 对比
 
-| 特性 | KVM | Xen | ESXi | Nitro |
-|------|-----|-----|------|-------|
-| **DPDK 支持** | 完整 | 完整 | 完整 | ENA |
-| **SR-IOV** | 是 | 是 | 是 | 否 |
-| **vhost-user** | 是 | 是 | 否 | 否 |
-| **PCI Passthrough** | 是 | 是 | 是 | 有限 |
-| **IOMMU** | 是 | 是 | 是 | 是 |
+| 特性                | KVM  | Xen  | ESXi | Nitro |
+| ------------------- | ---- | ---- | ---- | ----- |
+| **DPDK 支持**       | 完整 | 完整 | 完整 | ENA   |
+| **SR-IOV**          | 是   | 是   | 是   | 否    |
+| **vhost-user**      | 是   | 是   | 否   | 否    |
+| **PCI Passthrough** | 是   | 是   | 是   | 有限  |
+| **IOMMU**           | 是   | 是   | 是   | 是    |
 
 ## 7. 总结
 
@@ -361,13 +361,13 @@ Hypervisor 与 DPDK：
 
 选择建议：
 
-| 环境 | 推荐方案 |
-|------|----------|
+| 环境         | 推荐方案          |
+| ------------ | ----------------- |
 | **私有 KVM** | vhost-user / VFIO |
-| **私有 Xen** | PV 驱动 / VFIO |
-| **AWS** | ENA |
-| **Azure** | SR-IOV |
-| **GCP** | gVNIC |
+| **私有 Xen** | PV 驱动 / VFIO    |
+| **AWS**      | ENA               |
+| **Azure**    | SR-IOV            |
+| **GCP**      | gVNIC             |
 
 ---
 

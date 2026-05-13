@@ -1,7 +1,19 @@
 ---
 title: io_uring 深度探索 Ch5：网络 I/O 与多 ring 架构
 date: 2026-04-19 10:00:00
-tags: [io_uring, Linux, Network IO, Zero Copy, Multi Ring, epoll, High Performance, TCP, UDP, Connection Pool]
+tags:
+  [
+    io_uring,
+    Linux,
+    Network IO,
+    Zero Copy,
+    Multi Ring,
+    epoll,
+    High Performance,
+    TCP,
+    UDP,
+    Connection Pool,
+  ]
 description: 深入讲解 io_uring 网络 I/O：recv/send/accept 深度调优、SO_ZEROCOPY 零拷贝、multishot accept 高并发、per-CPU 多 ring 架构、epoll vs io_uring 对比，以及高性能网络服务器设计。
 ---
 

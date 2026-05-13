@@ -5,8 +5,8 @@ tags: [rdma, series, atomics, compare-and-swap, fetch-and-add, one-sided, synchr
 description: "深入理解 RDMA 原子操作——Compare & Swap (CAS)、Fetch & Add (FA)、原子语义、内存顺序、以及在分布式算法中的应用"
 ---
 
-> [!info] RDMA 深度探索系列
-> 0. [[2026-04-13-rdma-deep-dive-series-index|全栈学习路径总览]]
+> [!info] RDMA 深度探索系列 0. [[2026-04-13-rdma-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-rdma-deep-dive-ch1-rdma-overview|第一章：RDMA 概述]]
 > 2. [[2026-04-13-rdma-deep-dive-ch2-rdma-architecture|第二章：RDMA 架构]]
 > 3. [[2026-04-13-rdma-deep-dive-ch3-infiniband|第三章：InfiniBand 架构]]
@@ -62,12 +62,12 @@ description: "深入理解 RDMA 原子操作——Compare & Swap (CAS)、Fetch &
 
 ### 1.1 原子操作的核心价值
 
-| 特性 | 说明 |
-|------|------|
-| **远端无感知** | 远端 CPU 完全不知道有人改了它的内存 |
-| **硬件保证原子性** | 不会出现读-改-写竞态条件 |
-| **一致性** | 保证线性化顺序，无锁实现分布式数据结构 |
-| **低延迟** | 单次网络往返完成原子修改 |
+| 特性               | 说明                                   |
+| ------------------ | -------------------------------------- |
+| **远端无感知**     | 远端 CPU 完全不知道有人改了它的内存    |
+| **硬件保证原子性** | 不会出现读-改-写竞态条件               |
+| **一致性**         | 保证线性化顺序，无锁实现分布式数据结构 |
+| **低延迟**         | 单次网络往返完成原子修改               |
 
 ---
 
@@ -438,12 +438,12 @@ struct ibv_send_wr wr = {
 
 ### 6.3 原子操作的顺序规则
 
-| 操作类型 | Ordering 保证 |
-|---------|--------------|
-| Send/Recv | 同一 QP 内按顺序 |
-| RDMA Read | 不保证顺序（独立操作） |
+| 操作类型   | Ordering 保证          |
+| ---------- | ---------------------- |
+| Send/Recv  | 同一 QP 内按顺序       |
+| RDMA Read  | 不保证顺序（独立操作） |
 | RDMA Write | 不保证顺序（独立操作） |
-| Atomic | 不保证顺序（独立操作） |
+| Atomic     | 不保证顺序（独立操作） |
 
 **注意**：同一 QP 内的多个原子操作**不保证**按提交顺序完成。需要在应用层通过 CAS 变体实现顺序保证。
 
@@ -492,13 +492,13 @@ ibv_post_send(qp, &wr1, &bad_wr);
 
 一些高端 HCA（如 ConnectX-7）支持扩展原子操作：
 
-| 基础原子 | 扩展原子 |
-|---------|---------|
-| Fetch & Add (64-bit) | Fetch & Add (64-bit) |
-| CMP_AND_SWP (64-bit) | CMP_AND_SWP (64-bit) |
-| - | STORE (单向存储) |
-| - | LOAD (单向加载) |
-| - | MASKED_CMP_AND_SWP (32-bit 掩码) |
+| 基础原子             | 扩展原子                         |
+| -------------------- | -------------------------------- |
+| Fetch & Add (64-bit) | Fetch & Add (64-bit)             |
+| CMP_AND_SWP (64-bit) | CMP_AND_SWP (64-bit)             |
+| -                    | STORE (单向存储)                 |
+| -                    | LOAD (单向加载)                  |
+| -                    | MASKED_CMP_AND_SWP (32-bit 掩码) |
 
 ### 8.2 验证支持
 
@@ -519,6 +519,7 @@ if (attr.orig_attr.device_cap_flags & IBV_DEVICE_EXT_ATOMICS) {
 
 **Q: 原子操作失败（返回值不匹配）怎么办？**
 A: 这是正常的（CAS 的预期行为）。应用应该根据返回值决定重试（自旋/退避）。典型模式：
+
 ```c
 do {
     old = result;
@@ -534,6 +535,7 @@ A: 主流 HCA 支持 64-bit 原子（8字节）。部分支持 32-bit（通过 E
 
 **Q: 原子操作的 rkey 需要什么权限？**
 A: 需要 `IBV_ACCESS_REMOTE_ATOMIC` 权限。这是在注册 MR 时指定的：
+
 ```c
 ibv_reg_mr(pd, buf, size, IBV_ACCESS_REMOTE_ATOMIC | ...);
 ```

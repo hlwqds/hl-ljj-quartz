@@ -9,8 +9,8 @@ tags:
   - kernel-tuning
 ---
 
-> [!info] eBPF 2026 深度探索系列
-> 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+> [!info] eBPF 2026 深度探索系列 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+>
 > 1. [[2026-04-08-ebpf-deep-dive-ch1-registers-and-instructions|第一章：寄存器与指令集]]
 > 2. [[2026-04-08-ebpf-deep-dive-ch1-5-function-calls|第一.五章：四种函数调用与动态内存]]
 > 3. [[2026-04-08-ebpf-deep-dive-ch1-6-the-verifier|第一.六章：验证器 (Verifier) 的底层逻辑]]
@@ -62,6 +62,7 @@ tags:
 > 49. [[2026-04-09-ebpf-deep-dive-ch40-network-protocols-deep-dive|第四十章：网络协议深度解析——TCP/UDP/QUIC 的 eBPF 视角]]
 > 50. [[2026-04-09-ebpf-deep-dive-ch41-memory-safety-and-vulnerabilities|第四十一章：eBPF 内存安全与漏洞分析]]
 > 51. [[2026-04-09-ebpf-deep-dive-ch42-service-mesh-integration|第四十二章：eBPF 与 Service Mesh 深度集成]]
+
 ---
 
 # 第八章：进阶实战与内核调优
@@ -159,14 +160,14 @@ err = bpf_map_update_batch(
 
 ### 2.4 Map 类型选型速查
 
-| 场景 | 推荐 Map 类型 | 理由 |
-|:---|:---|:---|
-| IP 黑名单 | LPM_TRIE | 前缀匹配，CIDR 友好 |
-| 连接跟踪 | HASH + PERCPU | 高频读写，锁优化 |
-| 简单计数器 | PERCPU_ARRAY | 最快的无锁计数 |
-| 事件队列 | RINGBUF | 高吞吐，零拷贝 |
-| 配置下发 | ARRAY (RO) | 只读，无锁 |
-| 线程本地状态 | PERCPU_HASH | Per-CPU 隔离 |
+| 场景         | 推荐 Map 类型 | 理由                |
+| :----------- | :------------ | :------------------ |
+| IP 黑名单    | LPM_TRIE      | 前缀匹配，CIDR 友好 |
+| 连接跟踪     | HASH + PERCPU | 高频读写，锁优化    |
+| 简单计数器   | PERCPU_ARRAY  | 最快的无锁计数      |
+| 事件队列     | RINGBUF       | 高吞吐，零拷贝      |
+| 配置下发     | ARRAY (RO)    | 只读，无锁          |
+| 线程本地状态 | PERCPU_HASH   | Per-CPU 隔离        |
 
 ---
 
@@ -235,15 +236,15 @@ if (ptr + sizeof(struct header) > data_end)
 
 ### 3.3 BPF 子程序限制
 
-| 特性 | 主程序 | 子程序 |
-|:---|:---|:---|
-| 最大指令数 | 100 万 | 100 万（共享总预算） |
-| 嵌套调用深度 | — | 最多 8 层 |
-| 参数个数 | 由上下文决定 | 最多 5 个 (R1-R5) |
-| 返回值 | 由程序类型决定 | int (R0) |
-| 全局变量 | 不可 | 不可 |
-| Map 访问 | 可以 | 可以 |
-| Helper 调用 | 可以 | 可以（部分受限） |
+| 特性         | 主程序         | 子程序               |
+| :----------- | :------------- | :------------------- |
+| 最大指令数   | 100 万         | 100 万（共享总预算） |
+| 嵌套调用深度 | —              | 最多 8 层            |
+| 参数个数     | 由上下文决定   | 最多 5 个 (R1-R5)    |
+| 返回值       | 由程序类型决定 | int (R0)             |
+| 全局变量     | 不可           | 不可                 |
+| Map 访问     | 可以           | 可以                 |
+| Helper 调用  | 可以           | 可以（部分受限）     |
 
 ---
 
@@ -476,15 +477,15 @@ int xdp_ringbuf_opt(struct xdp_md *ctx) {
 
 ## 8. 常见性能陷阱
 
-| 陷阱 | 症状 | 解决方案 |
-|:---|:---|:---|
-| 全局 Map 锁竞争 | CPU 软中断飙升 | 换用 Per-CPU Map |
-| 伪共享 | 多核扩展性差 | `__attribute__((aligned(64)))` |
-| 验证器路径爆炸 | 加载失败 | 拆分子程序 |
-| Ring Buffer 满丢事件 | 监控数据缺失 | 增大 buffer 或降低采样率 |
-| bpf_printk 开销 | 生产性能退化 | 替换为 Ring Buffer |
-| 频繁 Map 查找 | CPU cycles 高 | 本地缓存决策结果 |
-| 大字符串拷贝 | 超出栈限制 | 使用 `bpf_probe_read_*_str` 限制长度 |
+| 陷阱                 | 症状           | 解决方案                             |
+| :------------------- | :------------- | :----------------------------------- |
+| 全局 Map 锁竞争      | CPU 软中断飙升 | 换用 Per-CPU Map                     |
+| 伪共享               | 多核扩展性差   | `__attribute__((aligned(64)))`       |
+| 验证器路径爆炸       | 加载失败       | 拆分子程序                           |
+| Ring Buffer 满丢事件 | 监控数据缺失   | 增大 buffer 或降低采样率             |
+| bpf_printk 开销      | 生产性能退化   | 替换为 Ring Buffer                   |
+| 频繁 Map 查找        | CPU cycles 高  | 本地缓存决策结果                     |
+| 大字符串拷贝         | 超出栈限制     | 使用 `bpf_probe_read_*_str` 限制长度 |
 
 ---
 

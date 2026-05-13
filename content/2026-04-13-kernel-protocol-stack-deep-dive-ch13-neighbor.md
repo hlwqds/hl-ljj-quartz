@@ -5,8 +5,8 @@ tags: [linux, kernel, networking, series, neighbor, arp, ndp, arp_cache, mac_res
 description: "深入解析 Linux Neighbor 子系统——ARP/NDP 协议实现、neigh_table 哈希表、邻居状态机（NUD）、Gratuitous ARP、Proxy ARP、以及邻居条目超时与回收机制"
 ---
 
-> [!info] Kernel Protocol Stack 深度探索系列
-> 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Kernel Protocol Stack 深度探索系列 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-kernel-protocol-stack-deep-dive-ch1-skbuff|第一章：sk_buff 与数据包生命周期]]
 > 2. [[2026-04-13-kernel-protocol-stack-deep-dive-ch2-netdevice|第二章：Netdevice 与网卡抽象]]
 > 3. [[2026-04-13-kernel-protocol-stack-deep-dive-ch3-ring-buffer|第三章：Ring Buffer 与 DMA]]
@@ -39,26 +39,26 @@ graph LR
     subgraph "应用层"
         APP["应用"]
     end
-    
+
     subgraph "L4"
         L4["TCP/UDP"]
     end
-    
+
     subgraph "L3"
         L3["IP"]
     end
-    
+
     subgraph "Neighbor"
         ARP["ARP/NDP"]
         NUD["NUD 状态机"]
     end
-    
+
     subgraph "L2"
         ETH["Ethernet"]
     end
-    
+
     APP --> L4 --> L3 --> ARP --> ETH
-    
+
     style ARP fill:#f59f00,stroke:#333
 ```
 
@@ -75,12 +75,12 @@ struct neighbour {
     struct hlist_node     dbg_flags;
     struct net_device       *dev;             // 关联的网络设备
     struct neigh_table     *tbl;             // 所属的 neigh_table
-    
+
     // 关键数据
     unsigned char           primary_key[8];    // IP 地址
     __u8                   addr[ETH_ALEN];   // MAC 地址
     struct hh_cache        *hh;               // 硬件头缓存
-    
+
     // 状态
     unsigned long           used;              // 最后使用时间
     atomic_t                refcnt;            // 引用计数
@@ -88,20 +88,20 @@ struct neighbour {
     unsigned int            confirmed;         // 确认时间
     unsigned int            updated;           // 更新时间
     unsigned int            stabled;           // 稳定时间
-    
+
     // 状态机
     __u8                   nud_state;         // NUD_*
-    
+
     // 操作函数
     int                     (*output)(struct neighbour *, struct sk_buff *);
     int                     (*connected_output)(struct neighbour *, struct sk_buff *);
-    
+
     // Timer
     struct timer_list       timer;
-    
+
     // 实际输出函数
     int                     (*ar_trans_output)(struct net *, struct sock *, struct sk_buff *);
-    
+
     struct rcu_head         rcu;
 };
 ```
@@ -173,37 +173,37 @@ struct neigh_table {
     int                     family;           // AF_INET 或 AF_INET6
     int                     entry_size;       // 条目大小
     int                     key_len;         // 键长度（IP 地址长度）
-    
+
     // 哈希函数
     __u32                   (*hash)(const void *pkey,
                                     const struct net_device *dev);
-    
+
     // 构造函数和比较函数
     int                     (*constructor)(struct neighbour *);
     int                     (*pconstructor)(struct pneigh_entry *);
-    
+
     // 探测函数
     void                    (*proxy_redo)(struct sk_buff *skb);
-    
+
     char                    *id;             // 表名 ("arp_cache", "nd_cache")
     struct neigh_parms      parms;           // 默认参数
-    
+
     // 哈希表
     struct hlist_head       *hash_buckets;
     unsigned int            hash_mask;
     atomic_t                 hash_size;
-    
+
     // Timer
     struct timer_list       proxy_timer;
-    
+
     // 输出函数
     void                    (*output)(struct net *, struct sock *, struct sk_buff *);
-    
+
     // 统计
     atomic_t                 allocs;
     atomic_t                 destroys;
     atomic_t                 hash_grows;
-    
+
     // LRU 列表
     struct list_head        proxy_queue;
     struct fnic_list        gc_list;         // GC 列表
@@ -255,20 +255,20 @@ int arp_rcv(struct sk_buff *skb, struct net_device *dev,
     unsigned char *arp_ptr;
     __be32 sip, tip;
     unsigned char *sha, *tha;
-    
+
     // 1. 检查长度
     if (!pskb_may_pull(skb, arp_hdr_len(dev)))
         goto freeskb;
-    
+
     arp = arp_hdr(skb);
-    
+
     // 2. 检查协议类型（只处理 Ethernet/IP）
     if (arp->ar_hrd != htons(ARPHRD_ETHER) ||
         arp->ar_pro != htons(ETH_P_IP) ||
         arp->ar_hln != ETH_ALEN ||
         arp->ar_pln != 4)
         goto freeskb;
-    
+
     // 3. 提取字段
     arp_ptr = (unsigned char *)(arp + 1);
     sha = arp_ptr;                    // Sender MAC
@@ -278,17 +278,17 @@ int arp_rcv(struct sk_buff *skb, struct net_device *dev,
     tha = arp_ptr;                     // Target MAC
     arp_ptr += ETH_ALEN;
     memcpy(&tip, arp_ptr, 4);          // Target IP
-    
+
     // 4. 学习发送者的 MAC -> IP 映射
     neigh_update(neigh, sha, NUD_REACHABLE, ...);
-    
+
     // 5. 处理 ARP 请求
     if (arp->ar_op == htons(ARPOP_REQUEST)) {
         // 是请求本机的 IP 吗？
         if (inet_addr_on_dev(ip_dev_find(dev_net(dev), dev, tip)))
             arp_send_reply(dev, sip, tip, sha);
     }
-    
+
 freeskb:
     kfree_skb(skb);
     return 0;
@@ -306,7 +306,7 @@ struct neighbour *arp_lookup(struct net *net, __be32 pkey,
     struct neigh_table *tbl = &arp_tbl;
     struct neighbour *n;
     uint hash = tbl->hash(pkey, dev);
-    
+
     // 在哈希表中查找
     rcu_read_lock_bh();
     for (n = rcu_dereference_bh(tbl->hash_buckets[hash]);
@@ -322,7 +322,7 @@ struct neighbour *arp_lookup(struct net *net, __be32 pkey,
         }
     }
     n = NULL;
-    
+
 out:
     rcu_read_unlock_bh();
     return n;
@@ -343,32 +343,32 @@ struct neighbour *__neigh_create(struct neigh_table *tbl,
 {
     struct neighbour *n;
     int err;
-    
+
     // 1. 分配邻居条目
     n = kmem_cache_alloc(tbl->kmem_cachep, GFP_ATOMIC);
     if (!n)
         return NULL;
-    
+
     // 2. 初始化
     n->tbl = tbl;
     n->dev = dev;
     dev_hold(dev);
-    
+
     // 3. 调用构造函数
     if (tbl->constructor) {
         err = tbl->constructor(n);
         if (err)
             goto out;
     }
-    
+
     // 4. 插入哈希表
     hash = tbl->hash(pkey, dev);
     rcu_assign_pointer(n->next, tbl->hash_buckets[hash]);
     rcu_assign_pointer(tbl->hash_buckets[hash], n);
-    
+
     atomic_inc(&tbl->allocs);
     return n;
-    
+
 out:
     neigh_release(n);
     return NULL;
@@ -384,37 +384,37 @@ int neigh_update(struct neighbour *neigh, const u8 *lladdr,
 {
     unsigned long now = jiffies;
     int notify = 0;
-    
+
     write_seqlock_bh(&neigh->lock);
-    
+
     // 检查是否改变
     if (lladdr && memcmp(lladdr, neigh->ha, dev->addr_len) != 0) {
         // MAC 地址改变
         if (new != NUD_STALE)
             notify = 1;
     }
-    
+
     // 更新 MAC
     if (lladdr)
         memcpy(neigh->ha, lladdr, dev->addr_len);
-    
+
     // 更新状态
     neigh->updated = jiffies;
-    
+
     if (new & NUD_CONNECTED)
         neigh->confirmed = now;
-    
+
     neigh->nud_state = new;
-    
+
     // 状态变化后的处理
     if (new == NUD_REACHABLE)
         neigh_timer_start(neigh, neigh->parms->reachable_time);
-    
+
     write_sequnlock_bh(&neigh->lock);
-    
+
     if (notify)
         neigh_update_notify(neigh);
-    
+
     return 0;
 }
 ```
@@ -426,10 +426,10 @@ int neigh_update(struct neighbour *neigh, const u8 *lladdr,
 static void neigh_probe(struct neighbour *neigh)
 {
     struct sk_buff *skb;
-    
+
     // 创建 ARP 请求
     skb = neigh->ar_trans_output(neigh->dev, NULL, skb);
-    
+
     if (skb) {
         // 发送 ARP 请求
         __dev_queue_xmit(skb);
@@ -450,19 +450,19 @@ graph LR
     subgraph "主机 A"
         HA["192.168.1.10"]
     end
-    
+
     subgraph "路由器 (Proxy ARP)"
         R["Router<br/>192.168.1.1"]
     end
-    
+
     subgraph "主机 B"
         HB["192.168.1.20"]
     end
-    
+
     HA -->|"ARP 谁是 192.168.1.20?"| R
     R -->|"192.168.1.20 在我这里<br/>MAC = 路由器的 MAC"| HA
     R --> HB
-    
+
     style R fill:#f59f00,stroke:#333
 ```
 
@@ -534,17 +534,17 @@ void arp_send_gratuitous(struct net_device *dev)
     struct sk_buff *skb;
     struct arphdr *arp;
     unsigned char *arp_ptr;
-    
+
     // 分配 skb
     skb = alloc_skb(arp_hdr_len(dev) + LL_ALLOCATED_SPACE(dev), GFP_ATOMIC);
     if (!skb)
         return;
-    
+
     // 填充 ARP 头部
     arp = arp_hdr(skb);
     arp->ar_op = htons(ARPOP_REQUEST);
     arp->ar_pro = htons(ETH_P_IP);
-    
+
     // Sender IP = Target IP = 本机 IP
     arp_ptr = (unsigned char *)(arp + 1);
     memcpy(arp_ptr, dev->dev_addr, ETH_ALEN);
@@ -554,7 +554,7 @@ void arp_send_gratuitous(struct net_device *dev)
     memset(arp_ptr, 0, ETH_ALEN);  // Target MAC = 0
     arp_ptr += ETH_ALEN;
     memcpy(arp_ptr, &dev->ip_ptr, 4);
-    
+
     // 发送
     dev_queue_xmit(skb);
 }
@@ -566,13 +566,13 @@ void arp_send_gratuitous(struct net_device *dev)
 
 ### 7.1 NDP 消息类型
 
-| ICMPv6 Type | 名称 | 用途 |
-|-------------|------|------|
-| 133 | Router Solicitation | 主机请求路由器信息 |
-| 134 | Router Advertisement | 路由器宣告信息 |
-| 135 | Neighbor Solicitation | 邻居请求（类似 ARP） |
-| 136 | Neighbor Advertisement | 邻居宣告（类似 ARP 响应） |
-| 137 | Redirect | 重定向 |
+| ICMPv6 Type | 名称                   | 用途                      |
+| ----------- | ---------------------- | ------------------------- |
+| 133         | Router Solicitation    | 主机请求路由器信息        |
+| 134         | Router Advertisement   | 路由器宣告信息            |
+| 135         | Neighbor Solicitation  | 邻居请求（类似 ARP）      |
+| 136         | Neighbor Advertisement | 邻居宣告（类似 ARP 响应） |
+| 137         | Redirect               | 重定向                    |
 
 ### 7.2 NDP 数据结构
 
@@ -593,12 +593,12 @@ struct nd_opt_hdr {
 
 ### 7.3 NDP 与 ARP 的对比
 
-| 功能 | IPv4 ARP | IPv6 NDP |
-|------|----------|---------|
-| 地址解析 | ARP Request/Reply | Neighbor Solicitation/Advertisement |
-| 路由发现 | ICMP Router Discovery | Router Solicitation/Advertisement |
-| 重复地址检测 | ARP Probe | Neighbor Solicitation |
-| 重定向 | ICMP Redirect | Redirect |
+| 功能         | IPv4 ARP              | IPv6 NDP                            |
+| ------------ | --------------------- | ----------------------------------- |
+| 地址解析     | ARP Request/Reply     | Neighbor Solicitation/Advertisement |
+| 路由发现     | ICMP Router Discovery | Router Solicitation/Advertisement   |
+| 重复地址检测 | ARP Probe             | Neighbor Solicitation               |
+| 重定向       | ICMP Redirect         | Redirect                            |
 
 ---
 
@@ -662,30 +662,30 @@ graph TD
     subgraph "L3 IP"
         L3["IP"]
     end
-    
+
     subgraph "Neighbor Lookup"
         LOOKUP["neigh_lookup()"]
         CREATE["__neigh_create()"]
     end
-    
+
     subgraph "NUD State Machine"
         NUD["NUD_INCOMPLETE<br/>NUD_REACHABLE<br/>NUD_STALE<br/>NUD_DELAY<br/>NUD_PROBE"]
     end
-    
+
     subgraph "ARP/NDP"
         ARP["ARP Request/Reply<br/>NDP NS/NA"]
     end
-    
+
     subgraph "L2 Ethernet"
         ETH["Ethernet"]
     end
-    
+
     L3 --> LOOKUP
     LOOKUP -->|未找到| CREATE
     CREATE --> NUD
     NUD --> ARP
     ARP --> ETH
-    
+
     style LOOKUP fill:#f59f00,stroke:#333
 ```
 

@@ -5,8 +5,8 @@ tags: [p4, series, program, header, parser, control, table, match-action, p4-16]
 description: "P4-16 程序结构详解——Header 类型定义与 Header Stack、Struct 元数据结构、Parser 状态机编写、Control 块与 apply 语义、Match-Action Table 声明与 Key、Action 参数绑定"
 ---
 
-> [!info] P4 深度探索系列
-> 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+> [!info] P4 深度探索系列 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-14-p4-deep-dive-ch1-p4-overview|第一章：P4 概述——诞生背景与协议无关包处理]]
 > 2. [[2026-04-14-p4-deep-dive-ch2-p4-architecture|第二章：P4 架构模型——PSA/V1Model、Ingress/Egress]]
 > 3. [[2026-04-14-p4-deep-dive-ch3-p4-vs-ebpf|第三章：P4 vs eBPF——适用场景与硬件/软件对比]]
@@ -385,6 +385,7 @@ table qos_mark {
 ```
 
 Action 中可以：
+
 - **修改 Header**：如 `h.ipv4.ttl = h.ipv4.ttl - 1`
 - **修改 Metadata**：如 `m.vni = 100`
 - **修改 Standard Metadata**：如 `sm.egress_spec = 3`
@@ -422,11 +423,11 @@ table my_table {
 
 **三种 Match Kind**（匹配类型）：
 
-| Match Kind | P4 关键字 | 说明 | 硬件实现 |
-|------------|---------|------|---------|
-| 精确匹配 | `exact` | 完全相等 | Hash + CAM |
-| LPM (最长前缀) | `lpm` | 子网掩码，最长匹配 | TCAM 或 Patricia Tree |
-| 三元匹配 | `ternary` | 位掩码，允许通配 | TCAM |
+| Match Kind     | P4 关键字 | 说明               | 硬件实现              |
+| -------------- | --------- | ------------------ | --------------------- |
+| 精确匹配       | `exact`   | 完全相等           | Hash + CAM            |
+| LPM (最长前缀) | `lpm`     | 子网掩码，最长匹配 | TCAM 或 Patricia Tree |
+| 三元匹配       | `ternary` | 位掩码，允许通配   | TCAM                  |
 
 ### 5.4 apply 的执行语义
 
@@ -695,6 +696,7 @@ V1Switch(MyParser(), MyIngress(), MyEgress(),
 ---
 
 > [!tip] 延伸阅读
+>
 > - P4-16 Language Specification: https://p4.org/p4-spec/docs/P4-16-language.html
 > - P4 V1Model Arch: https://github.com/p4lang/p4c/blob/main/p4include/v1model.p4
 > - P4 PSA Arch: https://github.com/p4lang/p4-spec/blob/main/p4src/include/psa.p4

@@ -1,7 +1,27 @@
 ---
 title: QUIC & HTTP/3 深度探索 Ch1：协议概述与核心概念
 date: 2026-05-07 09:00:00
-tags: [QUIC, HTTP/3, UDP, Transport, Protocol, IETF, Protocol Design, Connection ID, Stream, Multiplexing, TLS 1.3, 0-RTT, Head-of-Line Blocking, Packet, Frame, Wire Format, Version Negotiation, Protocol Evolution]
+tags:
+  [
+    QUIC,
+    HTTP/3,
+    UDP,
+    Transport,
+    Protocol,
+    IETF,
+    Protocol Design,
+    Connection ID,
+    Stream,
+    Multiplexing,
+    TLS 1.3,
+    0-RTT,
+    Head-of-Line Blocking,
+    Packet,
+    Frame,
+    Wire Format,
+    Version Negotiation,
+    Protocol Evolution,
+  ]
 description: QUIC & HTTP/3 深度探索 Ch1：QUIC 协议概述、核心设计理念、与 TCP/TLS 的对比、连接建立、多路复用、Wire Format 详解。
 ---
 

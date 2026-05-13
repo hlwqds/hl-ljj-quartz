@@ -240,11 +240,11 @@ int rdma_write(struct ibv_qp* qp, struct ibv_mr* mr,
                uint64_t remote_addr, uint32_t rkey) {
     struct ibv_send_wr wr, *bad_wr;
     struct ibv_sge sge;
-    
+
     sge.addr = (uint64_t)local_buffer;
     sge.length = buffer_size;
     sge.lkey = mr->lkey;
-    
+
     wr.sg_list = &sge;
     wr.num_sge = 1;
     wr.opcode = IBV_WR_RDMA_WRITE;  // 单边操作
@@ -252,7 +252,7 @@ int rdma_write(struct ibv_qp* qp, struct ibv_mr* mr,
     wr.wr.rdma.rkey = rkey;
     wr.send_flags = IBV_SEND_SIGNALED;
     wr.next = NULL;
-    
+
     return ibv_post_send(qp, &wr, &bad_wr);
 }
 
@@ -261,11 +261,11 @@ int rdma_read(struct ibv_qp* qp, struct ibv_mr* mr,
               uint64_t remote_addr, uint32_t rkey) {
     struct ibv_send_wr wr, *bad_wr;
     struct ibv_sge sge;
-    
+
     sge.addr = (uint64_t)local_buffer;
     sge.length = buffer_size;
     sge.lkey = mr->lkey;
-    
+
     wr.sg_list = &sge;
     wr.num_sge = 1;
     wr.opcode = IBV_WR_RDMA_READ;  // 单边读操作
@@ -273,7 +273,7 @@ int rdma_read(struct ibv_qp* qp, struct ibv_mr* mr,
     wr.wr.rdma.rkey = rkey;
     wr.send_flags = IBV_SEND_SIGNALED;
     wr.next = NULL;
-    
+
     return ibv_post_send(qp, &wr, &bad_wr);
 }
 
@@ -281,17 +281,17 @@ int rdma_read(struct ibv_qp* qp, struct ibv_mr* mr,
 int rdma_send(struct ibv_qp* qp, struct ibv_mr* mr) {
     struct ibv_send_wr wr, *bad_wr;
     struct ibv_sge sge;
-    
+
     sge.addr = (uint64_t)local_buffer;
     sge.length = buffer_size;
     sge.lkey = mr->lkey;
-    
+
     wr.sg_list = &sge;
     wr.num_sge = 1;
     wr.opcode = IBV_WR_SEND;
     wr.send_flags = IBV_SEND_SIGNALED;
     wr.next = NULL;
-    
+
     return ibv_post_send(qp, &wr, &bad_wr);
 }
 ```
@@ -638,6 +638,7 @@ dpdk-devbind.py --bind=mlx5_core VF2,VF3
 ---
 
 > [!tip] 延伸阅读
+>
 > - [[2026-04-13-rdma-deep-dive-ch9-verbs-api|第九章：verbs API]] —— RDMA 编程接口
 > - [[2026-04-13-rdma-deep-dive-ch12-rdma-programming|第十二章：RDMA 编程起步]] —— RDMA 应用开发
 > - [[2026-04-14-rdma-deep-dive-ch41-tcp-vs-rdma|第四十一章：TCP vs RDMA]] —— 传统网络对比

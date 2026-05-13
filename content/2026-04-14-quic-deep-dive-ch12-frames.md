@@ -56,10 +56,10 @@ QUIC 使用两位前缀（MSB）对整数的字节长度进行编码：
 
 ### 1.2 帧对 ACK 触发性的分类
 
-| 类型 | 说明 |
-|------|------|
-| ACK-eliciting | 包含此类帧的数据包必须触发对端发送 ACK |
-| Non-ACK-eliciting | 包含此类帧的数据包不要求对端 ACK |
+| 类型              | 说明                                   |
+| ----------------- | -------------------------------------- |
+| ACK-eliciting     | 包含此类帧的数据包必须触发对端发送 ACK |
+| Non-ACK-eliciting | 包含此类帧的数据包不要求对端 ACK       |
 
 只含 ACK、PADDING 或 CONNECTION_CLOSE 的数据包为 Non-ACK-eliciting。
 
@@ -67,31 +67,31 @@ QUIC 使用两位前缀（MSB）对整数的字节长度进行编码：
 
 ## 2. 帧类型编号总表
 
-| 类型值（十六进制）| 帧名称 | ACK-eliciting | 可用包类型 |
-|-----------------|--------|---------------|------------|
-| 0x00 | PADDING | ✗ | IH01 |
-| 0x01 | PING | ✓ | IH01 |
-| 0x02-0x03 | ACK | ✗ | IH_1 |
-| 0x04 | RESET_STREAM | ✓ | __01 |
-| 0x05 | STOP_SENDING | ✓ | __01 |
-| 0x06 | CRYPTO | ✓ | IH_1 |
-| 0x07 | NEW_TOKEN | ✓ | ___1 |
-| 0x08-0x0f | STREAM | ✓ | __01 |
-| 0x10 | MAX_DATA | ✓ | __01 |
-| 0x11 | MAX_STREAM_DATA | ✓ | __01 |
-| 0x12-0x13 | MAX_STREAMS | ✓ | __01 |
-| 0x14 | DATA_BLOCKED | ✓ | __01 |
-| 0x15 | STREAM_DATA_BLOCKED | ✓ | __01 |
-| 0x16-0x17 | STREAMS_BLOCKED | ✓ | __01 |
-| 0x18 | NEW_CONNECTION_ID | ✓ | __01 |
-| 0x19 | RETIRE_CONNECTION_ID | ✓ | __01 |
-| 0x1a | PATH_CHALLENGE | ✓ | __01 |
-| 0x1b | PATH_RESPONSE | ✓ | ___1 |
-| 0x1c-0x1d | CONNECTION_CLOSE | ✗ | IH01 |
-| 0x1e | HANDSHAKE_DONE | ✓ | ___1 |
-| 0x30-0x31 | DATAGRAM（扩展） | ✓ | __01 |
+| 类型值（十六进制） | 帧名称               | ACK-eliciting | 可用包类型 |
+| ------------------ | -------------------- | ------------- | ---------- |
+| 0x00               | PADDING              | ✗             | IH01       |
+| 0x01               | PING                 | ✓             | IH01       |
+| 0x02-0x03          | ACK                  | ✗             | IH_1       |
+| 0x04               | RESET_STREAM         | ✓             | \_\_01     |
+| 0x05               | STOP_SENDING         | ✓             | \_\_01     |
+| 0x06               | CRYPTO               | ✓             | IH_1       |
+| 0x07               | NEW_TOKEN            | ✓             | \_\_\_1    |
+| 0x08-0x0f          | STREAM               | ✓             | \_\_01     |
+| 0x10               | MAX_DATA             | ✓             | \_\_01     |
+| 0x11               | MAX_STREAM_DATA      | ✓             | \_\_01     |
+| 0x12-0x13          | MAX_STREAMS          | ✓             | \_\_01     |
+| 0x14               | DATA_BLOCKED         | ✓             | \_\_01     |
+| 0x15               | STREAM_DATA_BLOCKED  | ✓             | \_\_01     |
+| 0x16-0x17          | STREAMS_BLOCKED      | ✓             | \_\_01     |
+| 0x18               | NEW_CONNECTION_ID    | ✓             | \_\_01     |
+| 0x19               | RETIRE_CONNECTION_ID | ✓             | \_\_01     |
+| 0x1a               | PATH_CHALLENGE       | ✓             | \_\_01     |
+| 0x1b               | PATH_RESPONSE        | ✓             | \_\_\_1    |
+| 0x1c-0x1d          | CONNECTION_CLOSE     | ✗             | IH01       |
+| 0x1e               | HANDSHAKE_DONE       | ✓             | \_\_\_1    |
+| 0x30-0x31          | DATAGRAM（扩展）     | ✓             | \_\_01     |
 
-> 包类型列：I=Initial, H=Handshake, 0=0-RTT, 1=1-RTT, _=不可用
+> 包类型列：I=Initial, H=Handshake, 0=0-RTT, 1=1-RTT, \_=不可用
 
 ---
 
@@ -107,6 +107,7 @@ PADDING 帧格式：
 ```
 
 用途：
+
 - 填充数据包到最小 UDP 大小（防止路径 MTU 探测失败）
 - 使数据包看起来一样大（减少流量指纹）
 - 使 Initial 包填满到 1200 字节（RFC 9000 §14.1 要求）
@@ -127,6 +128,7 @@ PING 帧格式：
 ```
 
 用途：
+
 - 心跳保活（保持 NAT 映射不超时）
 - 强制对端发送 ACK（探测对端是否在线）
 - 探测路径（与 PATH_CHALLENGE 配合）
@@ -171,11 +173,11 @@ RESET_STREAM 帧格式：
   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 ```
 
-| 字段 | 说明 |
-|------|------|
-| Stream ID | 要重置的 Stream 编号 |
-| Application Protocol Error Code | 上层应用错误码（如 HTTP/3 定义的错误码） |
-| Final Size | 发送方声明的该 Stream 数据总字节数（即使未发完） |
+| 字段                            | 说明                                             |
+| ------------------------------- | ------------------------------------------------ |
+| Stream ID                       | 要重置的 Stream 编号                             |
+| Application Protocol Error Code | 上层应用错误码（如 HTTP/3 定义的错误码）         |
+| Final Size                      | 发送方声明的该 Stream 数据总字节数（即使未发完） |
 
 ### 3.5 STOP_SENDING 帧（0x05）
 
@@ -339,12 +341,12 @@ NEW_CONNECTION_ID 帧格式：
   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 ```
 
-| 字段 | 说明 |
-|------|------|
-| Sequence Number | CID 的序列号，用于去重 |
-| Retire Prior To | 序列号小于此值的 CID 应被 RETIRE_CONNECTION_ID |
-| Length | CID 长度（1-20 字节）|
-| Connection ID | 新的 CID 值 |
+| 字段                  | 说明                                             |
+| --------------------- | ------------------------------------------------ |
+| Sequence Number       | CID 的序列号，用于去重                           |
+| Retire Prior To       | 序列号小于此值的 CID 应被 RETIRE_CONNECTION_ID   |
+| Length                | CID 长度（1-20 字节）                            |
+| Connection ID         | 新的 CID 值                                      |
 | Stateless Reset Token | 128-bit 无状态重置 Token（用于 Stateless Reset） |
 
 ### 3.16 RETIRE_CONNECTION_ID 帧（0x19）
@@ -407,19 +409,19 @@ CONNECTION_CLOSE 帧格式：
 
 常用错误码：
 
-| 错误码 | 名称 | 含义 |
-|--------|------|------|
-| 0x00 | NO_ERROR | 正常关闭 |
-| 0x01 | INTERNAL_ERROR | 内部错误 |
-| 0x02 | CONNECTION_REFUSED | 连接被拒绝 |
-| 0x03 | FLOW_CONTROL_ERROR | 流量控制违规 |
-| 0x04 | STREAM_LIMIT_ERROR | Stream 数量超限 |
-| 0x05 | STREAM_STATE_ERROR | Stream 状态错误 |
-| 0x06 | FINAL_SIZE_ERROR | Final Size 不一致 |
-| 0x07 | FRAME_ENCODING_ERROR | 帧编码错误 |
-| 0x08 | TRANSPORT_PARAMETER_ERROR | 传输参数错误 |
-| 0x0a | PROTOCOL_VIOLATION | 协议违规 |
-| 0x0e | CRYPTO_ERROR | TLS 错误（高 8 位为 TLS Alert 码）|
+| 错误码 | 名称                      | 含义                               |
+| ------ | ------------------------- | ---------------------------------- |
+| 0x00   | NO_ERROR                  | 正常关闭                           |
+| 0x01   | INTERNAL_ERROR            | 内部错误                           |
+| 0x02   | CONNECTION_REFUSED        | 连接被拒绝                         |
+| 0x03   | FLOW_CONTROL_ERROR        | 流量控制违规                       |
+| 0x04   | STREAM_LIMIT_ERROR        | Stream 数量超限                    |
+| 0x05   | STREAM_STATE_ERROR        | Stream 状态错误                    |
+| 0x06   | FINAL_SIZE_ERROR          | Final Size 不一致                  |
+| 0x07   | FRAME_ENCODING_ERROR      | 帧编码错误                         |
+| 0x08   | TRANSPORT_PARAMETER_ERROR | 传输参数错误                       |
+| 0x0a   | PROTOCOL_VIOLATION        | 协议违规                           |
+| 0x0e   | CRYPTO_ERROR              | TLS 错误（高 8 位为 TLS Alert 码） |
 
 ### 3.20 HANDSHAKE_DONE 帧（0x1e）
 
@@ -482,11 +484,11 @@ QUIC 要求帧的重传行为是安全的。接收端必须能够处理重复接
 
 QUIC 支持通过扩展帧增加新功能，扩展帧的类型值通过 IANA 注册。已标准化的扩展帧：
 
-| 类型值 | 帧名称 | 来源 RFC |
-|--------|--------|---------|
-| 0x30-0x31 | DATAGRAM | RFC 9221 |
-| 0xbaba05 | ACK_FREQUENCY | draft-ietf |
-| 0x02 (扩展) | ACK + ECN | RFC 9000 §19.3.2 |
+| 类型值      | 帧名称        | 来源 RFC         |
+| ----------- | ------------- | ---------------- |
+| 0x30-0x31   | DATAGRAM      | RFC 9221         |
+| 0xbaba05    | ACK_FREQUENCY | draft-ietf       |
+| 0x02 (扩展) | ACK + ECN     | RFC 9000 §19.3.2 |
 
 ---
 
@@ -496,25 +498,25 @@ QUIC 支持通过扩展帧增加新功能，扩展帧的类型值通过 IANA 注
 def parse_quic_payload(data: bytes, packet_type: PacketType):
     pos = 0
     frames = []
-    
+
     while pos < len(data):
         frame_type, consumed = decode_varint(data[pos:])
         pos += consumed
-        
+
         if frame_type == 0x00:
             # PADDING — skip all consecutive 0x00
             while pos < len(data) and data[pos] == 0x00:
                 pos += 1
             frames.append(PaddingFrame())
-        
+
         elif frame_type == 0x01:
             frames.append(PingFrame())
-        
+
         elif frame_type in (0x02, 0x03):
             frame, consumed = parse_ack_frame(data[pos:], has_ecn=(frame_type == 0x03))
             pos += consumed
             frames.append(frame)
-        
+
         elif 0x08 <= frame_type <= 0x0f:
             has_off = bool(frame_type & 0x04)
             has_len = bool(frame_type & 0x02)
@@ -522,12 +524,12 @@ def parse_quic_payload(data: bytes, packet_type: PacketType):
             frame, consumed = parse_stream_frame(data[pos:], has_off, has_len, has_fin)
             pos += consumed
             frames.append(frame)
-        
+
         else:
             frame, consumed = parse_generic_frame(frame_type, data[pos:])
             pos += consumed
             frames.append(frame)
-    
+
     return frames
 ```
 

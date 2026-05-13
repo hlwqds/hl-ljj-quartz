@@ -10,8 +10,8 @@ tags:
   - inference
 ---
 
-> [!info] eBPF 2026 深度探索系列
-> 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+> [!info] eBPF 2026 深度探索系列 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+>
 > 1. [[2026-04-08-ebpf-deep-dive-ch1-registers-and-instructions|第一章：寄存器与指令集]]
 > 2. [[2026-04-08-ebpf-deep-dive-ch1-5-function-calls|第一.五章：四种函数调用与动态内存]]
 > 3. [[2026-04-08-ebpf-deep-dive-ch1-6-the-verifier|第一.六章：验证器 (Verifier) 的底层逻辑]]
@@ -63,6 +63,7 @@ tags:
 > 49. [[2026-04-09-ebpf-deep-dive-ch40-network-protocols-deep-dive|第四十章：网络协议深度解析——TCP/UDP/QUIC 的 eBPF 视角]]
 > 50. [[2026-04-09-ebpf-deep-dive-ch41-memory-safety-and-vulnerabilities|第四十一章：eBPF 内存安全与漏洞分析]]
 > 51. [[2026-04-09-ebpf-deep-dive-ch42-service-mesh-integration|第四十二章：eBPF 与 Service Mesh 深度集成]]
+
 ---
 
 ## 1. 概述：AI 推理时代的 eBPF
@@ -101,12 +102,12 @@ graph TB
 
 ### 1.2 NPU/TPU 与 CPU 的协同模型
 
-| 组件 | 主要职责 | eBPF 能介入的环节 |
-|:---|:---|:---|
-| **CPU** | 控制流、内存管理、调度 | 追踪系统调用、内存分配、进程调度 |
-| **NPU/TPU** | 张量计算、矩阵乘法 | DMA 传输监控、计算资源分配、队列深度监控 |
-| **Host Memory** | 存储模型权重、KV Cache | 内存带宽监控、NUMA 亲和性 |
-| **Device Memory** | 计算中间结果 | 设备内存页迁移追踪 |
+| 组件              | 主要职责               | eBPF 能介入的环节                        |
+| :---------------- | :--------------------- | :--------------------------------------- |
+| **CPU**           | 控制流、内存管理、调度 | 追踪系统调用、内存分配、进程调度         |
+| **NPU/TPU**       | 张量计算、矩阵乘法     | DMA 传输监控、计算资源分配、队列深度监控 |
+| **Host Memory**   | 存储模型权重、KV Cache | 内存带宽监控、NUMA 亲和性                |
+| **Device Memory** | 计算中间结果           | 设备内存页迁移追踪                       |
 
 ---
 
@@ -130,14 +131,14 @@ AI 推理延迟并非只是"输入到输出的总时间"，而是多个阶段的
 
 **各阶段详情：**
 
-| 阶段 | 典型耗时 | 占比 | eBPF 测量点 | 优化空间 |
-|:---|:---|:---|:---|:---|
-| **请求排队** | 5-50ms | 5-50% | `sched_wakeup` + `sched_switch` tracepoint | 调度优先级、请求合并 |
-| **数据预处理** | 2-10ms | 2-10% | `kprobe:tensor_preprocess` | 向量化、BATCH 合并 |
-| **模型调度启动** | 0.5-2ms | 0.5-2% | NPU 驱动 kfunc | 容器预热、模型预加载 |
-| **NPU 计算** | 10-80ms | 10-80% | DMA 完成中断 tracepoint | 计算图优化、算子融合 |
-| **结果回传** | 1-5ms | 1-5% | DMA 传输追踪 | 零拷贝、CPU/NPU 并行 |
-| **响应发送** | 5-20ms | 5-20% | `kprobe:inet_sendmsg` | 连接复用、协议优化 |
+| 阶段             | 典型耗时 | 占比   | eBPF 测量点                                | 优化空间             |
+| :--------------- | :------- | :----- | :----------------------------------------- | :------------------- |
+| **请求排队**     | 5-50ms   | 5-50%  | `sched_wakeup` + `sched_switch` tracepoint | 调度优先级、请求合并 |
+| **数据预处理**   | 2-10ms   | 2-10%  | `kprobe:tensor_preprocess`                 | 向量化、BATCH 合并   |
+| **模型调度启动** | 0.5-2ms  | 0.5-2% | NPU 驱动 kfunc                             | 容器预热、模型预加载 |
+| **NPU 计算**     | 10-80ms  | 10-80% | DMA 完成中断 tracepoint                    | 计算图优化、算子融合 |
+| **结果回传**     | 1-5ms    | 1-5%   | DMA 传输追踪                               | 零拷贝、CPU/NPU 并行 |
+| **响应发送**     | 5-20ms   | 5-20%  | `kprobe:inet_sendmsg`                      | 连接复用、协议优化   |
 
 > [!note]
 > NPU 计算是关键路径（crit），通常是优化的重点。eBPF 可通过 DMA 中断时间戳精确测量 NPU 计算的实际耗时。
@@ -309,6 +310,7 @@ eBPF 与 `sched_ext` 的结合，使得 AI 推理任务能够获得精准的调�
 ### 4.1 问题：NPU 空转现象
 
 传统调度器不理解 AI 推理的工作负载特性，常常出现：
+
 - CPU 预处理还未完成，NPU 已空闲等待
 - 多个推理请求竞争导致上下文切换开销
 - KV Cache 跨 NUMA 节点访问导致的内存延迟
@@ -553,13 +555,13 @@ int on_npu_pmu(struct bpf_perf_event_hdr *ctx) {
 
 ### 7.2 性能计数器类型对比
 
-| PMU 事件 | 说明 | 典型用途 |
-|:---|:---|:---|
-| **IPC** | 每指令周期数 | 算子融合优化 |
-| **MAC** | 乘加运算次数 | 模型性能分析 |
-| **MEM_BW** | 内存带宽 | 批量大小调优 |
-| **Cache Hit** | 缓存命中率 | 预取策略调整 |
-| **DMA Transfer** | DMA 传输量 | 流水线优化 |
+| PMU 事件         | 说明         | 典型用途     |
+| :--------------- | :----------- | :----------- |
+| **IPC**          | 每指令周期数 | 算子融合优化 |
+| **MAC**          | 乘加运算次数 | 模型性能分析 |
+| **MEM_BW**       | 内存带宽     | 批量大小调优 |
+| **Cache Hit**    | 缓存命中率   | 预取策略调整 |
+| **DMA Transfer** | DMA 传输量   | 流水线优化   |
 
 ---
 

@@ -11,8 +11,8 @@ tags:
 description: "深入解析 Suricata 规则解析系统：Snort 兼容规则语法、Signature 内部结构、关键字（content/pcre/uricontent）解析流程、YAML 配置与规则编译"
 ---
 
-> [!info] Suricata 2026 深度探索系列
-> 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Suricata 2026 深度探索系列 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-15-suricata-deep-dive-ch1-overview|第一章：Suricata 概述]]
 > 2. [[2026-04-15-suricata-deep-dive-ch2-config|第二章：Suricata 配置系统]]
 > 3. [[2026-04-15-suricata-deep-dive-ch3-runmodes|第三章：Runmodes 运行模式]]
@@ -70,16 +70,16 @@ alert tcp $HOME_NET any -> $EXTERNAL_NET $HTTP_PORTS (
 
 ### 2.1 动作类型
 
-| 动作 | 说明 | IPS 模式行为 |
-| :--- | :--- | :--- |
-| `alert` | 生成告警 | 记录后放行 |
-| `pass` | 忽略匹配流量 | 放行 |
-| `drop` | 丢弃并告警 | 丢弃 + 记录 |
-| `reject` | 发送 RST/ICMP | 丢弃 + 拒绝 |
-| `rejectsrc` | 仅发送拒绝 | 丢弃 |
-| `rejectdst` | 仅向目标发送拒绝 | 丢弃 |
-| `rejectboth` | 向两端发送拒绝 | 丢弃 |
-| `log` | 仅记录 | 记录 |
+| 动作         | 说明             | IPS 模式行为 |
+| :----------- | :--------------- | :----------- |
+| `alert`      | 生成告警         | 记录后放行   |
+| `pass`       | 忽略匹配流量     | 放行         |
+| `drop`       | 丢弃并告警       | 丢弃 + 记录  |
+| `reject`     | 发送 RST/ICMP    | 丢弃 + 拒绝  |
+| `rejectsrc`  | 仅发送拒绝       | 丢弃         |
+| `rejectdst`  | 仅向目标发送拒绝 | 丢弃         |
+| `rejectboth` | 向两端发送拒绝   | 丢弃         |
+| `log`        | 仅记录           | 记录         |
 
 ### 2.2 动作源码映射
 
@@ -137,18 +137,18 @@ typedef enum {
 typedef struct DetectAddress_ {
     /* 地址类型 */
     uint8_t type;                    // ADDR_TYPE_* (IPV4/IPV6/ANY)
-    
+
     /* IP 地址 */
     uint8_t ip[16];                  // IPv6 地址
     uint8_t ip2[16];                 // 范围结束地址
     uint16_t family;                 // AF_INET / AF_INET6
-    
+
     /* 掩码 */
     uint8_t netmask;                // CIDR 掩码
-    
+
     /* 否定 */
     bool negated;                    // 否定标志
-    
+
     /* 链表 */
     struct DetectAddress_ *next;    // 下一个地址
 } DetectAddress;
@@ -157,19 +157,19 @@ typedef struct DetectAddress_ {
 static DetectAddress *ParseAddress(const char *addr)
 {
     DetectAddress *da = SCCalloc(1, sizeof(DetectAddress));
-    
+
     /* 检查否定 */
     if (addr[0] == '!') {
         da->negated = true;
         addr++;
     }
-    
+
     /* 检查变量 ($HOME_NET 等) */
     if (addr[0] == '$') {
         const char *value = VarNameResolve(addr + 1);
         addr = value;
     }
-    
+
     /* 解析 IP/范围/CIDR */
     if (strchr(addr, '/') != NULL) {
         /* CIDR 格式: 192.168.0.0/16 */
@@ -181,7 +181,7 @@ static DetectAddress *ParseAddress(const char *addr)
         /* 单个 IP */
         ParseIP(addr, da);
     }
-    
+
     return da;
 }
 ```
@@ -197,12 +197,12 @@ static uint16_t ParsePort(const char *port_str)
         const char *value = VarNameResolve(port_str + 1);
         return PortVarResolve(value);
     }
-    
+
     /* 检查任意端口 */
     if (strcmp(port_str, "any") == 0) {
         return 0;
     }
-    
+
     /* 解析数字端口 */
     return (uint16_t)atoi(port_str);
 }
@@ -221,11 +221,11 @@ typedef struct DetectKeyword_ {
     int id;                          // 关键字 ID
     const char *desc;                // 描述
     void (*Parse)(const char *, Signature *);  // 解析函数
-    
+
     /* flags */
     uint16_t flags;
 #define SIGMATCH_NO_SUB    0x01   // 不支持子选项
-    
+
 } DetectKeyword;
 
 // src/detect.c — 内置关键字注册
@@ -287,11 +287,11 @@ typedef struct DetectContentData_ {
     /* 原始内容 */
     uint8_t *content;               // 匹配内容
     uint16_t content_len;            // 内容长度
-    
+
     /* 偏移/深度 */
     int32_t offset;                  // 匹配偏移
     int32_t depth;                   // 匹配深度
-    
+
     /* 修饰符 */
     uint8_t flags;
 #define CONTENT_NOCASE      0x01   // 不区分大小写
@@ -299,14 +299,14 @@ typedef struct DetectContentData_ {
 #define CONTENT_NEGATED     0x04   // 否定
 #define CONTENT_FAST_PATTERN  0x08  // 快速模式
 #define CONTENT_MPM         0x10   // MPM 匹配
-    
+
     /* 距离/within */
     int32_t distance;                // 距离
     int32_t within;                  // 范围
-    
+
     /* 替换数据 (很少用) */
     uint8_t *replace;               // 替换内容
-    
+
     /* 链表 */
     struct DetectContentData_ *next;
 } DetectContentData;
@@ -316,20 +316,20 @@ static int ParseContent(const char *optstr, Signature *sig)
 {
     /* 分配数据结构 */
     DetectContentData *cd = SCCalloc(1, sizeof(DetectContentData));
-    
+
     /* 解析 content:"..." 格式 */
     const char *start = strchr(optstr, '"');
     const char *end = strchr(start + 1, '"');
-    
+
     /* 提取内容 */
     uint16_t len = end - start - 1;
     cd->content = SCMalloc(len);
     memcpy(cd->content, start + 1, len);
     cd->content_len = len;
-    
+
     /* 处理转义字符 */
     DecodeContentEscape(cd->content, &cd->content_len);
-    
+
     /* 处理修饰符 */
     const char *pos = end + 1;
     while (*pos != '\0' && *pos != ')') {
@@ -351,11 +351,11 @@ static int ParseContent(const char *optstr, Signature *sig)
         }
         pos++;
     }
-    
+
     /* 添加到签名 */
     cd->next = sig->matches;
     sig->matches = cd;
-    
+
     return 0;
 }
 ```
@@ -369,12 +369,12 @@ static void DecodeContentEscape(uint8_t *content, uint16_t *len)
     uint8_t *src = content;
     uint8_t *dst = content;
     uint16_t remaining = *len;
-    
+
     while (remaining > 0) {
         if (*src == '\\' && remaining >= 2) {
             src++;
             remaining--;
-            
+
             switch (*src) {
                 case 'n':  *dst = '\n'; break;
                 case 'r':  *dst = '\r'; break;
@@ -395,12 +395,12 @@ static void DecodeContentEscape(uint8_t *content, uint16_t *len)
         } else {
             *dst = *src;
         }
-        
+
         src++;
         dst++;
         remaining--;
     }
-    
+
     *len = dst - content;
 }
 ```
@@ -417,11 +417,11 @@ typedef struct DetectPcreData_ {
     /* PCRE 正则表达式 */
     pcre *re;                        // 编译后的 PCRE
     pcre_extra *study;               // 学习信息
-    
+
     /* 模式字符串 */
     char *pattern;                   // 原始模式
     uint16_t pattern_len;           // 模式长度
-    
+
     /* 修饰符 */
     uint8_t flags;
 #define PCRE_CASELESS    0x01   // 不区分大小写
@@ -429,10 +429,10 @@ typedef struct DetectPcreData_ {
 #define PCRE_DOTALL      0x04   // . 匹配换行
 #define PCRE_ANCHORED    0x08   // 锚定
 #define PCRE_RAW         0x10   // 原始模式
-    
+
     /* 捕获组偏移 */
     int capture_group[10];           // 最多 10 个组
-    
+
     /* 是否 URI 模式 */
     bool uri_matching;              // URI 匹配模式
 } DetectPcreData;
@@ -441,14 +441,14 @@ typedef struct DetectPcreData_ {
 static int ParsePcre(const char *optstr, Signature *sig)
 {
     DetectPcreData *pd = SCCalloc(1, sizeof(DetectPcreData));
-    
+
     /* 提取正则表达式 */
     const char *start = strchr(optstr, '"');
     const char *end = strrchr(start + 1, '"');
-    
+
     pd->pattern = SCStrndup(start + 1, end - start - 1);
     pd->pattern_len = strlen(pd->pattern);
-    
+
     /* 解析修饰符 */
     const char *modifiers = end + 1;
     while (*modifiers != '\0' && *modifiers != ')') {
@@ -461,29 +461,29 @@ static int ParsePcre(const char *optstr, Signature *sig)
         }
         modifiers++;
     }
-    
+
     /* 编译 PCRE */
     const char *errptr;
     int erroffset;
     int options = PCRE_COMPILE_OPTIONS;
-    
+
     if (pd->flags & PCRE_CASELESS) options |= PCRE_CASELESS;
     if (pd->flags & PCRE_MULTILINE) options |= PCRE_MULTILINE;
     if (pd->flags & PCRE_DOTALL) options |= PCRE_DOTALL;
-    
+
     pd->re = pcre_compile(pd->pattern, options, &errptr, &erroffset, NULL);
     if (pd->re == NULL) {
         SCLogError("PCRE compilation failed: %s at offset %d", errptr, erroffset);
         SCFree(pd);
         return -1;
     }
-    
+
     /* 可选学习阶段 */
     pd->study = pcre_study(pd->re, 0, &errptr);
-    
+
     /* 添加到签名 */
     sig->sig_pcre = pd;
-    
+
     return 0;
 }
 ```
@@ -502,17 +502,17 @@ static int ParseUricontent(const char *optstr, Signature *sig)
 {
     /* uricontent 与 content 共用数据结构 */
     DetectContentData *cd = SCCalloc(1, sizeof(DetectContentData));
-    
+
     /* 解析内容（与 content 相同）*/
     ParseContentString(optstr, cd);
-    
+
     /* 标记为 URI 内容 */
     cd->flags |= CONTENT_URI;
-    
+
     /* 添加到 URI 内容列表 */
     cd->next = sig->uri_content;
     sig->uri_content = cd;
-    
+
     return 0;
 }
 ```
@@ -541,7 +541,7 @@ static int ParseHttp(const char *optstr, Signature *sig, HttpMode mode)
         cd->http_mode = mode;
         cd->flags |= CONTENT_HTTP;
     }
-    
+
     return 0;
 }
 ```
@@ -557,13 +557,13 @@ static int ParseHttp(const char *optstr, Signature *sig, HttpMode mode)
 static int ParseSid(const char *optstr, Signature *sig)
 {
     sig->id = (uint64_t)atoi(optstr);
-    
+
     /* sid 必须 > 0 */
     if (sig->id == 0) {
         SCLogWarning("Invalid sid 0");
         return -1;
     }
-    
+
     return 0;
 }
 
@@ -600,10 +600,10 @@ typedef struct DetectFlowbitsData_ {
 #define FLOWBIT_ISNOTSET  4
 #define FLOWBIT_UNSET     5
 #define FLOWBIT_TOGGLE    6
-    
+
     /* flowbit 名称 */
     char *name;                      // flowbit 名称
-    
+
     /* flags */
     uint8_t flags;
 #define FLOWBIT_NOALERT   0x01   // 不产生告警
@@ -615,15 +615,15 @@ typedef struct DetectFlowbitsData_ {
 static int ParseFlowbits(const char *optstr, Signature *sig)
 {
     DetectFlowbitsData *fd = SCCalloc(1, sizeof(DetectFlowbitsData));
-    
+
     /* 解析 "flowbits:set,mybit" 或 "flowbits:isset,mybit" */
     char *command = SCStrdup(optstr);
     char *comma = strchr(command, ',');
-    
+
     if (comma != NULL) {
         *comma = '\0';
         comma++;
-        
+
         /* 解析命令 */
         if (strcmp(command, "set") == 0) {
             fd->type = FLOWBIT_SET;
@@ -636,17 +636,17 @@ static int ParseFlowbits(const char *optstr, Signature *sig)
         } else if (strcmp(command, "toggle") == 0) {
             fd->type = FLOWBIT_TOGGLE;
         }
-        
+
         /* 解析名称 */
         fd->name = SCStrdup(comma);
     }
-    
+
     SCFree(command);
-    
+
     /* 添加到签名 */
     fd->next = sig->flowbits;
     sig->flowbits = fd;
-    
+
     return 0;
 }
 ```
@@ -664,10 +664,10 @@ Signature *SigInit(DetectEngineCtx *de_ctx, const char *sig_str)
     /* 1. 分配签名结构 */
     Signature *sig = SCCalloc(1, sizeof(Signature));
     if (sig == NULL) return NULL;
-    
+
     /* 2. 复制原始规则 */
     sig->raw = SCStrdup(sig_str);
-    
+
     /* 3. 词法分析：分割规则头和选项 */
     char *opts_start = strchr(sig_str, '(');
     if (opts_start != NULL) {
@@ -675,24 +675,24 @@ Signature *SigInit(DetectEngineCtx *de_ctx, const char *sig_str)
         char *rule_header = SCStrndup(sig_str, opts_start - sig_str);
         ParseRuleHeader(sig, rule_header);
         SCFree(rule_header);
-        
+
         /* 解析规则选项 */
         ParseRuleOptions(sig, opts_start);
     } else {
         SCLogError("Rule missing options");
         goto error;
     }
-    
+
     /* 4. 验证签名 */
     if (SigValidate(sig) != 0) {
         goto error;
     }
-    
+
     /* 5. 设置 MPM 标记 */
     if (sig->matches != NULL) {
         sig->mpm_pattern = 1;
     }
-    
+
     return sig;
 
 error:
@@ -710,21 +710,21 @@ static int ParseRuleOptions(Signature *sig, const char *opts)
     /* 解析 "(option1;option2;option3)" */
     char *options = SCStrdup(opts + 1);  // 跳过 '('
     options[strlen(options) - 1] = '\0';  // 移除 ')'
-    
+
     char *token = strtok(options, ";");
     while (token != NULL) {
         /* 去除前后空格 */
         while (*token == ' ') token++;
         char *end = token + strlen(token) - 1;
         while (*end == ' ') *end-- = '\0';
-        
+
         /* 查找关键字解析函数 */
         char *colon = strchr(token, ':');
         if (colon != NULL) {
             *colon = '\0';
             char *keyword = token;
             char *value = colon + 1;
-            
+
             /* 查找关键字 */
             DetectKeyword *kw = FindKeyword(keyword);
             if (kw != NULL && kw->Parse != NULL) {
@@ -739,10 +739,10 @@ static int ParseRuleOptions(Signature *sig, const char *opts)
                 kw->Parse("", sig);
             }
         }
-        
+
         token = strtok(NULL, ";");
     }
-    
+
     SCFree(options);
     return 0;
 }
@@ -759,12 +759,12 @@ static int ParseRuleOptions(Signature *sig, const char *opts)
 default-rule-path: /etc/suricata/rules
 
 rule-files:
-  - emerging-malware.rules     # 恶意软件规则
-  - emerging-trojan.rules      # 木马规则
-  - emerging-web.rules         # Web 攻击规则
-  - emerging-networking.rules  # 网络规则
-  - emerging-info.rules       # 信息类规则
-  - classification.config      # 分类配置
+  - emerging-malware.rules # 恶意软件规则
+  - emerging-trojan.rules # 木马规则
+  - emerging-web.rules # Web 攻击规则
+  - emerging-networking.rules # 网络规则
+  - emerging-info.rules # 信息类规则
+  - classification.config # 分类配置
 ```
 
 ### 11.2 变量定义
@@ -778,7 +778,7 @@ vars:
     DNS_SERVERS: "[10.0.0.1,10.0.0.2]"
     SMTP_SERVERS: "$HOME_NET"
     HTTP_SERVERS: "$HOME_NET"
-    
+
   port-groups:
     HTTP_PORTS: "[80,81,82,83,84,85,86,87,88,89,90,311,591,593,631,800,801,808,880,888,900,901,908,980,981,1158,1220,1414,1500,1560,1701,1801,1830,1900,2000,2001,2049,2065,2082,2083,2086,2087,2095,2096,3000,3001,3029,3037,3050,3054,3100,3102,3128,3283,3333,3389,3400,3689,3800,4000,4001,4002,4003,4004,4005,4006,4007,4045,4111,4242,4433,4444,4445,4567,4711,4712,4840,4843,4847,4848,5000,5001,5009,5050,5051,5060,5061,5104,5108,5190,5280,5281,5432,5500,5550,5678,5718,5800,5801,5802,5803,5910,5915,5984,6000,6001,6002,6003,6004,6005,6060,6100,6379,6543,6560,6561,6588,6646,6660,6661,6662,6663,6664,6665,6666,6667,6668,6669,6686,6697,6767,6770,6771,6800,6888,7000,7001,7005,7009,7100,7200,7201,7400,7443,7474,7547,7548,7549,7676,7700,7777,7778,7779,7801,8000,8001,8008,8009,8010,8020,8021,8022,8025,8030,8042,8080,8081,8082,8083,8084,8085,8086,8087,8088,8089,8090,8091,8100,8101,8118,8123,8180,8181,8200,8222,8243,8280,8281,8333,8400,8443,8444,8500,8761,8765,8800,8834,8880,8888,8889,8983,9000,9001,9002,9003,9009,9010,9042,9043,9050,9051,9080,9090,9091,9092,9093,9094,9095,9096,9097,9098,9099,9100,9101,9102,9103,9104,9105,9110,9111,9200,9201,9202,9203,9204,9205,9206,9207,9208,9209,9210,9211,9212,9213,9214,9215,9216,9217,9220,9221,9290,9291,9300,9301,9306,9309,9310,9311,9418,9443,9500,9530,9595,9600,9875,9876,9877,9878,9898,9900,9943,9944,9999,10000,10001,10080,10081,10082,10161,10243,10443,10880,11001,11211,11235,11311,11371,12000,12345,12443,12555,13000,14000,14441,14443,15000,15002,15672,16000,16001,16080,17000,17500,17988,18000,18080,18081,18091,18092,18093,18094,18095,18096,18097,18098,18099,18100,18101,18245,18246,18247,18248,18249,19000,19080,19090,19527,19888,20000,20001,20180,20880,21000,22000,22001,22222,23000,24000,25000,25565,26000,26001,26002,26003,26004,26005,26257,26484,27000,27017,27018,27019,27080,27081,27230,27500,28000,28017,29000,29015,29182,30000,30080,30888,31000,31101,31161,31200,32000,32400,32764,33060,33333,34000,35000,36000,36915,37417,38000,39000,40000,41080,42000,43000,44000,45000,46000,47000,48000,49000,50000,50030,50060,50070,50090,51000,52000,53000,54000,55000,55555,55556,56000,57000,58000,59000,60000,61000,62000,63000,64000,65000,65500]"
     IRC_PORTS: "[6665,6666,6667,6668,6669,6670,6697]"

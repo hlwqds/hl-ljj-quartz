@@ -47,11 +47,11 @@ Server push can eliminate multiple round trips for dependent resources.
 
 HTTP/3 server push uses three frame types:
 
-| Frame | Direction | Purpose |
-|---|---|---|
+| Frame        | Direction       | Purpose                  |
+| ------------ | --------------- | ------------------------ |
 | PUSH_PROMISE | Server → Client | Announces intent to push |
-| CANCEL_PUSH | Client → Server | Cancels a push |
-| MAX_PUSH_ID | Client → Server | Limits pushes |
+| CANCEL_PUSH  | Client → Server | Cancels a push           |
+| MAX_PUSH_ID  | Client → Server | Limits pushes            |
 
 ### 29.2.1 Push Stream
 
@@ -103,7 +103,7 @@ Push IDs are scoped to the connection. The server MUST NOT push resources with t
 
 ### 29.3.2 Promised Request Headers
 
-The PUSH_PROMISE contains the request headers the client *would* have sent to request the resource:
+The PUSH*PROMISE contains the request headers the client \_would* have sent to request the resource:
 
 ```
 Promised request:
@@ -298,6 +298,7 @@ But HTTP/3 doesn't mandate client behavior based on this ordering. The client ca
 ### 29.8.2 QUIC Stream Priority
 
 QUIC doesn't define stream priority; all streams compete equally by default. HTTP/3 push prioritization relies on:
+
 - Server sending order
 - Client receive buffer processing order
 - Implementation-specific optimizations
@@ -463,11 +464,11 @@ Server push competes with client-side resource hints:
   Lower priority than preload
 ```
 
-| Mechanism | Initiator | Timing | Cancellation |
-|---|---|---|---|
-| Server Push | Server | Immediate | CANCEL_PUSH |
-| Preload | Client | On link processing | Stop fetch |
-| Prefetch | Client | Idle time | Stop fetch |
+| Mechanism   | Initiator | Timing             | Cancellation |
+| ----------- | --------- | ------------------ | ------------ |
+| Server Push | Server    | Immediate          | CANCEL_PUSH  |
+| Preload     | Client    | On link processing | Stop fetch   |
+| Prefetch    | Client    | Idle time          | Stop fetch   |
 
 ## 29.14 Common Push Patterns
 
@@ -520,6 +521,7 @@ Server push in HTTP/3:
 ```
 
 Key differences from HTTP/2:
+
 - HTTP/3 uses QUIC streams (no HEADERS frame with flag bits)
 - HTTP/3 has MAX_PUSH_ID for explicit push limits
 - HTTP/3 PUSH_PROMISE can be on any stream
@@ -530,6 +532,7 @@ Key differences from HTTP/2:
 Server push enables proactive resource delivery in HTTP/3. The server announces pushes via PUSH_PROMISE, sends responses on dedicated push streams, and the client can cancel via CANCEL_PUSH or limit via MAX_PUSH_ID.
 
 While server push can eliminate round trips, it's not always beneficial:
+
 - If the client already has the resource, push wastes bandwidth
 - Push competes with critical resources for bandwidth
 - Cache validation after push can add overhead

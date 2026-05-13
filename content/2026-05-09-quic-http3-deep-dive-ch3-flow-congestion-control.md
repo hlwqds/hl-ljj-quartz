@@ -1,7 +1,26 @@
 ---
 title: QUIC & HTTP/3 深度探索 Ch3：流控与拥塞控制
 date: 2026-05-09 09:00:00
-tags: [QUIC, Flow Control, Congestion Control, Stream Window, Connection Window, ACK, RTT, CWND, Cubic, Reno, BBR, Packet Loss, PTO, Timer, Rate Control, Credit Based, Connection Migration]
+tags:
+  [
+    QUIC,
+    Flow Control,
+    Congestion Control,
+    Stream Window,
+    Connection Window,
+    ACK,
+    RTT,
+    CWND,
+    Cubic,
+    Reno,
+    BBR,
+    Packet Loss,
+    PTO,
+    Timer,
+    Rate Control,
+    Credit Based,
+    Connection Migration,
+  ]
 description: QUIC & HTTP/3 深度探索 Ch3：QUIC 流控机制、连接/流级别窗口、拥塞控制算法（Cubic/Reno/BBR）、丢包检测、RTT 测量、PTO 定时器。
 ---
 

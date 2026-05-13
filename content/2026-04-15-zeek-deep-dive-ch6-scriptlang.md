@@ -13,8 +13,8 @@ tags:
 description: "深入解析 ZeekScript 类型系统——基本类型（bool/int/count/double/string/time/interval/addr/subnet）、复合类型（record/table/set/vector）、类型转换、操作符、变量作用域、内置常量和函数"
 ---
 
-> [!info] Zeek 2026 深度探索系列
-> 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Zeek 2026 深度探索系列 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-15-zeek-deep-dive-ch1-overview|第一章：Zeek 概述]]
 > 2. [[2026-04-15-zeek-deep-dive-ch2-installation|第二章：安装部署]]
 > 3. [[2026-04-15-zeek-deep-dive-ch3-config|第三章：配置系统]]
@@ -90,11 +90,11 @@ local skip = is_active && !is_debug;
 
 ZeekScript 的数值类型分为有符号和无符号两类：
 
-| 类型 | 说明 | 示例 |
-| :--- | :--- | :--- |
-| `int` | 有符号整数（64位） | `-42`, `0`, `1234` |
-| `count` | 无符号整数（64位） | `42`, `0`, `1234` |
-| `double` | 双精度浮点 | `3.14`, `2.71828` |
+| 类型     | 说明               | 示例               |
+| :------- | :----------------- | :----------------- |
+| `int`    | 有符号整数（64位） | `-42`, `0`, `1234` |
+| `count`  | 无符号整数（64位） | `42`, `0`, `1234`  |
+| `double` | 双精度浮点         | `3.14`, `2.71828`  |
 
 ```zeek
 local a: int = -100;
@@ -160,6 +160,7 @@ local trunc_secs = dur/1sec;     # 5（截断）
 ```
 
 > [!info] interval 字面量
+>
 > ```
 > 100 msec    # 100 毫秒
 > 5 sec       # 5 秒
@@ -208,18 +209,18 @@ local is_web = http_port == 80/tcp;  # T
 
 ### 2.7 基本类型完整对照表
 
-| 类型 | 说明 | 示例 | 默认值 |
-| :--- | :--- | :--- | :--- |
-| `bool` | 布尔 | `T`, `F` | `F` |
-| `int` | 有符号整数 | `-42`, `0` | `0` |
-| `count` | 无符号整数 | `42`, `0` | `0` |
-| `double` | 双精度浮点 | `3.14` | `0.0` |
-| `string` | 不可变字符串 | `"hello"` | `""` |
-| `time` | 时间点 | `current_time()` | `double(0)` |
-| `interval` | 时间间隔 | `5 secs` | `0secs` |
-| `addr` | IP 地址 | `192.168.1.1` | 未定义 |
-| `subnet` | IP 子网 | `10.0.0.0/8` | 未定义 |
-| `port` | 端口 | `80/tcp` | `0/unknown` |
+| 类型       | 说明         | 示例             | 默认值      |
+| :--------- | :----------- | :--------------- | :---------- |
+| `bool`     | 布尔         | `T`, `F`         | `F`         |
+| `int`      | 有符号整数   | `-42`, `0`       | `0`         |
+| `count`    | 无符号整数   | `42`, `0`        | `0`         |
+| `double`   | 双精度浮点   | `3.14`           | `0.0`       |
+| `string`   | 不可变字符串 | `"hello"`        | `""`        |
+| `time`     | 时间点       | `current_time()` | `double(0)` |
+| `interval` | 时间间隔     | `5 secs`         | `0secs`     |
+| `addr`     | IP 地址      | `192.168.1.1`    | 未定义      |
+| `subnet`   | IP 子网      | `10.0.0.0/8`     | 未定义      |
+| `port`     | 端口         | `80/tcp`         | `0/unknown` |
 
 ---
 
@@ -376,12 +377,12 @@ local sum_val = sum(nums);       # 求和（仅数值类型）
 
 ### 3.5 复合类型对比
 
-| 类型 | 特性 | 示例 |
-| :--- | :--- | :--- |
-| `record` | 结构化数据，命名字段 | `[$x=1, $y="test"]` |
-| `table` | 关联数组，key-value | `[192.168.1.1 -> "host1"]` |
-| `set` | 无序不重复集合 | `{"a", "b", "c"}` |
-| `vector` | 有序可重复数组 | `["a", "b", "a"]` |
+| 类型     | 特性                 | 示例                       |
+| :------- | :------------------- | :------------------------- |
+| `record` | 结构化数据，命名字段 | `[$x=1, $y="test"]`        |
+| `table`  | 关联数组，key-value  | `[192.168.1.1 -> "host1"]` |
+| `set`    | 无序不重复集合       | `{"a", "b", "c"}`          |
+| `vector` | 有序可重复数组       | `["a", "b", "a"]`          |
 
 ---
 
@@ -718,5 +719,6 @@ event dns_request(c: connection, msg: dns_msg, query: string, qtype: count) {
 **下一章**将深入讲解 Zeek 的**事件驱动模型**——事件（Event）的定义、注册、调度机制，以及如何编写自定义事件处理程序。
 
 > [!tip] 延伸阅读
+>
 > - [ZeekScript Language Reference](https://docs.zeek.org/en/stable/script-reference/)
 > - [Zeek Script Templates](https://docs.zeek.org/en/stable/examples/)

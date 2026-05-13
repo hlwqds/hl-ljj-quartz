@@ -616,24 +616,24 @@ Investigate Node C → found queue buildup
 
 ### 18.10.1 Comparison with TWAMP
 
-| Aspect | TWAMP | SRv6 IOAM |
-|--------|-------|-----------|
-| Measurement type | Probe-based | In-situ |
-| Traffic measured | Synthetic probes | Actual traffic |
-| Scale | Limited flows | Per-flow |
-| Latency accuracy | High (dedicated) | High (in-band) |
-| Deployment | Separate protocol | Data plane |
-| Hardware support | Widely supported | Emerging |
+| Aspect           | TWAMP             | SRv6 IOAM      |
+| ---------------- | ----------------- | -------------- |
+| Measurement type | Probe-based       | In-situ        |
+| Traffic measured | Synthetic probes  | Actual traffic |
+| Scale            | Limited flows     | Per-flow       |
+| Latency accuracy | High (dedicated)  | High (in-band) |
+| Deployment       | Separate protocol | Data plane     |
+| Hardware support | Widely supported  | Emerging       |
 
 ### 18.10.2 Comparison with INT (Inband Telemetry)
 
-| Aspect | INT (P4) | SRv6 IOAM |
-|--------|----------|-----------|
-| Platform | P4-capable hardware | SRv6-capable routers |
-| Data location | Packet header (INT header) | SRH or trailer |
-| Visibility | Per-hop | Per-SRv6-segment |
-| Standardization | Vendor-specific | IETF standardized |
-| Scalability | Challenge at high rates | Similar |
+| Aspect          | INT (P4)                   | SRv6 IOAM            |
+| --------------- | -------------------------- | -------------------- |
+| Platform        | P4-capable hardware        | SRv6-capable routers |
+| Data location   | Packet header (INT header) | SRH or trailer       |
+| Visibility      | Per-hop                    | Per-SRv6-segment     |
+| Standardization | Vendor-specific            | IETF standardized    |
+| Scalability     | Challenge at high rates    | Similar              |
 
 ### 18.10.3 When to Use SRv6 IOAM
 

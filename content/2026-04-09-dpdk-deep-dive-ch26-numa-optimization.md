@@ -1,14 +1,24 @@
 ---
 title: "DPDK 深度探索 (二十六)：NUMA 亲和性与 Local/Remote 访问"
 date: 2026-04-09
-tags: [dpdk, series, numa, affinity, local-memory, remote-memory, memory-policy, socket, lcore, allocation]
+tags:
+  [
+    dpdk,
+    series,
+    numa,
+    affinity,
+    local-memory,
+    remote-memory,
+    memory-policy,
+    socket,
+    lcore,
+    allocation,
+  ]
 description: "深入理解 NUMA 架构与 DPDK 性能优化——NUMA 拓扑、CPU-内存亲和性、local vs remote 访问延迟、数据分片策略、DPDK socket 感知"
 ---
 
-> [!info] DPDK 深度探索系列
-> 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
-> 1-25. 前二十五章已完成
-> 26. **第二十六章：NUMA 亲和性与 Local/Remote 访问**
+> [!info] DPDK 深度探索系列 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
+> 1-25. 前二十五章已完成 26. **第二十六章：NUMA 亲和性与 Local/Remote 访问**
 
 ---
 
@@ -1654,6 +1664,7 @@ monitor_numa_access_ratio(void)
 ---
 
 > [!tip] 参考文献
+>
 > - Intel, "Intel Xeon Processor Scalable Family, Technical Overview"
 > - AMD, "AMD EPYC System Architecture"
 > - "NUMA Performance for DPDK Applications", Intel White Paper

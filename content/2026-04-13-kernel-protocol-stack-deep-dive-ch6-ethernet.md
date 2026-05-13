@@ -5,8 +5,8 @@ tags: [linux, kernel, networking, series, ethernet, mac, arp, switch, vlan]
 description: "深入解析以太网技术——Ethernet 帧格式、MAC 地址与地址解析协议（ARP）、帧类型与协议识别、VLAN Tagging（802.1Q）、以及交换机基础与 MAC 地址学习"
 ---
 
-> [!info] Kernel Protocol Stack 深度探索系列
-> 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Kernel Protocol Stack 深度探索系列 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-kernel-protocol-stack-deep-dive-ch1-skbuff|第一章：sk_buff 与数据包生命周期]]
 > 2. [[2026-04-13-kernel-protocol-stack-deep-dive-ch2-netdevice|第二章：Netdevice 与网卡抽象]]
 > 3. [[2026-04-13-kernel-protocol-stack-deep-dive-ch3-ring-buffer|第三章：Ring Buffer 与 DMA]]
@@ -73,12 +73,12 @@ description: "深入解析以太网技术——Ethernet 帧格式、MAC 地址�
 
 **关键区别：**
 
-| 特性 | Ethernet II | IEEE 802.3 |
-|------|-----------|------------|
-| Type/Length 字段 | EtherType (> 0x0600) | Length (<= 0x0600) |
-| 协议识别 | EtherType 直接标识 | 802.2 LLC 封装 |
-| 常用协议 | IPv4(0x0800), ARP(0x0806), IPv6(0x86DD) | IPX, AppleTalk |
-| 兼容性 | 几乎所有设备 | 传统设备 |
+| 特性             | Ethernet II                             | IEEE 802.3         |
+| ---------------- | --------------------------------------- | ------------------ |
+| Type/Length 字段 | EtherType (> 0x0600)                    | Length (<= 0x0600) |
+| 协议识别         | EtherType 直接标识                      | 802.2 LLC 封装     |
+| 常用协议         | IPv4(0x0800), ARP(0x0806), IPv6(0x86DD) | IPX, AppleTalk     |
+| 兼容性           | 几乎所有设备                            | 传统设备           |
 
 ### 2.2 常用 EtherType
 
@@ -145,13 +145,13 @@ MAC 地址是 48 位（6 字节）的唯一标识符：
 
 **特殊地址：**
 
-| 地址 | 用途 |
-|------|------|
-| `FF:FF:FF:FF:FF:FF` | 广播地址（所有主机） |
+| 地址                | 用途                      |
+| ------------------- | ------------------------- |
+| `FF:FF:FF:FF:FF:FF` | 广播地址（所有主机）      |
 | `01:00:5E:xx:xx:xx` | IPv4 多播地址（RFC 1112） |
 | `01:80:C2:xx:xx:xx` | 链路本地多播（STP, LACP） |
-| `33:33:xx:xx:xx:xx` | IPv6 多播地址 |
-| `00:00:00:00:00:00` | 黑洞地址（未初始化） |
+| `33:33:xx:xx:xx:xx` | IPv6 多播地址             |
+| `00:00:00:00:00:00` | 黑洞地址（未初始化）      |
 
 ### 3.2 MAC 地址类型
 
@@ -211,10 +211,10 @@ void dev_mc_destroy(struct net_device *dev);
 __be16 eth_type_trans(struct sk_buff *skb, struct net_device *dev)
 {
     struct ethhdr *eth = (struct ethhdr *)skb->data;
-    
+
     skb->mac_header = (unsigned char *)eth - skb->head;
     skb->protocol = eth->h_proto;  // 直接从帧提取 EtherType
-    
+
     // 检查是否带 VLAN tag
     if (eth->h_proto == htons(ETH_P_8021Q) ||
         eth->h_proto == htons(ETH_P_8021AD)) {
@@ -222,14 +222,14 @@ __be16 eth_type_trans(struct sk_buff *skb, struct net_device *dev)
         struct vlan_hdr *vlan = (struct vlan_hdr *)(eth + 1);
         __be16 vlan_proto = eth->h_proto;
         u16 vlan_id;
-        
+
         vlan_id = ntohs(vlan->h_vlan_TCI) & VLAN_VID_MASK;
         __vlan_hwaccel_put_tag(skb, vlan_proto, vlan_id);
-        
+
         // 提取内层协议类型
         skb->protocol = vlan->h_vlan_encapsulated_proto;
     }
-    
+
     // 检查是否为桥接/本地环回
     if (unlikely(!compare_ether_addr(eth->h_dest, dev->dev_addr))) {
         // 目的 MAC = 本机 MAC（接收）
@@ -241,7 +241,7 @@ __be16 eth_type_trans(struct sk_buff *skb, struct net_device *dev)
         // 其他（混杂模式或其他 MAC）
         skb->pkt_type = PACKET_OTHERHOST;
     }
-    
+
     return skb->protocol;
 }
 ```
@@ -346,13 +346,13 @@ static int vlan_dev_tx(struct sk_buff *skb, struct net_device *dev)
 {
     struct vlan_dev_priv *vlan = vlan_dev_priv(dev);
     u16 vlan_id = vlan->vlan_id;
-    
+
     // 剥除 VLAN tag（TX 时）
     if (skb->vlan_tci & VLAN_TAG_PRESENT) {
         skb->vlan_tci = 0;
         skb->protocol = eth_type_trans(skb, skb->dev);
     }
-    
+
     // 交给物理网卡发送
     return dev_queue_xmit(skb);
 }
@@ -365,23 +365,23 @@ static rx_handler_result_t vlan_rx_handler(struct sk_buff **pskb)
     struct sk_buff *skb = *pskb;
     struct net_device *dev;
     u16 vlan_id;
-    
+
     // 从 skb 提取 VLAN tag
     if (skb->vlan_tci & VLAN_TAG_PRESENT)
         vlan_id = vlan_tci & VLAN_VID_MASK;
     else
         vlan_id = 0;
-    
+
     // 查找对应的 VLAN 设备
     grp = rcu_dereference(skb->dev->vlan_group);
     dev = vlan_group_get_device(grp, vlan_id);
-    
+
     if (dev) {
         // 将 skb 送到 VLAN 设备
         skb->dev = dev;
         return RX_HANDLER_ANOTHER;
     }
-    
+
     return RX_HANDLER_PASS;
 }
 ```
@@ -423,7 +423,7 @@ struct arphdr {
     unsigned char   ar_hln;      // 硬件地址长度 (ETH_ALEN = 6)
     unsigned char   ar_pln;      // 协议地址长度 (4 for IPv4)
     __be16      ar_op;          // 操作码 (ARPOP_REQUEST/REPLY)
-    
+
     // 后面紧跟：
     // ar_sha (发送者 MAC)
     // ar_sip (发送者 IP)
@@ -455,15 +455,15 @@ int arp_rcv(struct sk_buff *skb, struct net_device *dev,
     struct rtable *rt;
     unsigned char *arp_ptr;
     __be32 sip, tip;
-    
+
     // 1. 检查是否是我们关心的 EtherType/IP 组合
     if (arp->ar_pro != htons(ETH_P_IP))
         goto drops;  // 只处理 IPv4 ARP
-    
+
     // 2. 检查 ARP 长度是否正确
     if (skb->len < sizeof(struct arphdr) + 4 * ETH_ALEN)
         goto drops;
-    
+
     // 3. 提取 ARP 信息
     arp_ptr = (unsigned char *)(arp + 1);
     memcpy(&sha, arp_ptr, ETH_ALEN);        // 发送者 MAC
@@ -473,17 +473,17 @@ int arp_rcv(struct sk_buff *skb, struct net_device *dev,
     memcpy(&tha, arp_ptr, ETH_ALEN);         // 目标 MAC
     arp_ptr += 4;
     memcpy(&tip, arp_ptr, 4);                // 目标 IP
-    
+
     // 4. 处理 ARP 包
     if (arp->ar_op == htons(ARPOP_REQUEST)) {
         // ARP 请求：IP 在本机接口上？
         if (inet_addrype(tip) == RTN_LOCAL)
             arp_send(ARPOP_REPLY, ETH_P_ARP, sip, dev, tip, sha, dev->dev_addr, sha);
     }
-    
+
     // 5. 学习发送者 MAC -> IP 映射
     neigh_update(neigh, sha, NUD_STALE, ...);
-    
+
     kfree_skb(skb);
     return 0;
 }
@@ -543,7 +543,7 @@ static void br_fdb_update(struct net_bridge *br, struct net_bridge_port *source,
 {
     struct hlist_head *head = &br->hash[MAC(addr)];
     struct net_bridge_fdb_entry *fdb;
-    
+
     // 查找现有条目
     fdb = fdb_find(head, addr, vid);
     if (likely(fdb)) {
@@ -596,14 +596,14 @@ static void __br_forward(const struct net_bridge_port *to,
                          struct sk_buff *skb)
 {
     struct net_device *indev = skb->dev;
-    
+
     // 设置出口设备
     skb->dev = to->dev;
-    
+
     // 更新统计
     to->dev->stats.tx_packets++;
     to->dev->stats.tx_bytes += skb->len;
-    
+
     // 发送到出口
     __br_dispatch(skb, to);
 }
@@ -614,13 +614,13 @@ static void __br_dispatch(struct net_bridge_port *src,
     struct net_bridge *br = src->br;
     struct net_bridge_fdb_entry *fdb;
     const unsigned char *dest = eth_hdr(skb)->h_dest;
-    
+
     // 多播/广播：洪泛
     if (is_multicast_ether_addr(dest)) {
         br_flood_forward(src, skb);
         return;
     }
-    
+
     // 单播：MAC 表查找
     fdb = br_fdb_find(br, dest, skb->vlan_id);
     if (fdb && fdb->dst != src) {

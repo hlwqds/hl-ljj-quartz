@@ -5,8 +5,8 @@ tags: [rdma, series, rdma-core, libibverbs, rdma-cm, memory-registration, verbs]
 description: "从零开始搭建 RDMA 开发环境，详解 rdma-core 用户态库、CM API 连接建立流程、内存注册机制，以及基础代码框架"
 ---
 
-> [!info] RDMA 深度探索系列
-> 0. [[2026-04-13-rdma-deep-dive-series-index|全栈学习路径总览]]
+> [!info] RDMA 深度探索系列 0. [[2026-04-13-rdma-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-rdma-deep-dive-ch1-rdma-overview|第一章：RDMA 概述]]
 > 2. [[2026-04-13-rdma-deep-dive-ch2-rdma-architecture|第二章：RDMA 架构]]
 > 3. [[2026-04-13-rdma-deep-dive-ch3-infiniband|第三章：InfiniBand 架构]]
@@ -400,13 +400,13 @@ int main() {
 
 ### 4.3 内存注册标志
 
-| 标志 | 说明 | 使用场景 |
-|------|------|----------|
-| `IBV_ACCESS_LOCAL_WRITE` | 本地可写 | 本地写入 buffer |
-| `IBV_ACCESS_REMOTE_WRITE` | 远端可写 | 允许对方 RDMA Write 到此区域 |
-| `IBV_ACCESS_REMOTE_READ` | 远端可读 | 允许对方 RDMA Read 此区域 |
-| `IBV_ACCESS_MW_BIND` | 可绑定 Memory Window | 使用 MW 时需要 |
-| `IBV_ACCESS_ZERO_BASED` | 零基础地址注册 | 简化地址计算 |
+| 标志                      | 说明                 | 使用场景                     |
+| ------------------------- | -------------------- | ---------------------------- |
+| `IBV_ACCESS_LOCAL_WRITE`  | 本地可写             | 本地写入 buffer              |
+| `IBV_ACCESS_REMOTE_WRITE` | 远端可写             | 允许对方 RDMA Write 到此区域 |
+| `IBV_ACCESS_REMOTE_READ`  | 远端可读             | 允许对方 RDMA Read 此区域    |
+| `IBV_ACCESS_MW_BIND`      | 可绑定 Memory Window | 使用 MW 时需要               |
+| `IBV_ACCESS_ZERO_BASED`   | 零基础地址注册       | 简化地址计算                 |
 
 ---
 

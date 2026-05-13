@@ -5,8 +5,8 @@ tags: [dpdk, series, conntrack, lazy-expiry, gc, timer, garbage-collection]
 description: "深入理解高性能网关中的定时器替代方案——懒惰过期（Lazy Expiration）、分片 GC（Sharded GC）、多层时间桶（Multi-level Time Bucket），以及用 DPDK 实现简化版连接跟踪的完整流程"
 ---
 
-> [!info] DPDK 深度探索系列
-> 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
+> [!info] DPDK 深度探索系列 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-09-dpdk-deep-dive-ch1-architecture-overview|第一章：架构概述——kernel bypass 原理与 DPDK 定位]]
 > 2. [[2026-04-09-dpdk-deep-dive-ch2-uio-vfio-iommu|第二章：UIO/VFIO/IOMMU 用户态驱动框架]]
 > 3. [[2026-04-09-dpdk-deep-dive-ch3-eal-initialization|第三章：EAL 初始化与 lcore 模型]]
@@ -67,14 +67,14 @@ rte_timer 模式（主动通知）:
 
 ### 1.3 两种机制对比
 
-| 维度 | rte_timer（时间轮） | 懒惰过期 + GC |
-|------|-------------------|--------------|
-| **内存** | 40B/flow（定时器结构体） | 8B/flow（一个时间戳） |
-| **定时精度** | 精确到 tick | 精确到 GC 轮次或收包时机 |
-| **CPU 开销** | O(1) per tick（分摊） | O(1) per packet（收包路径） + O(n/N) per GC |
-| **适合规模** | 千~万级 | 百万~千万级 |
-| **实现复杂度** | DPDK 内置 | 需要自行实现 |
-| **典型场景** | LACP 心跳、TCP RTO、统计上报 | Conntrack、NAT、会话管理 |
+| 维度           | rte_timer（时间轮）          | 懒惰过期 + GC                               |
+| -------------- | ---------------------------- | ------------------------------------------- |
+| **内存**       | 40B/flow（定时器结构体）     | 8B/flow（一个时间戳）                       |
+| **定时精度**   | 精确到 tick                  | 精确到 GC 轮次或收包时机                    |
+| **CPU 开销**   | O(1) per tick（分摊）        | O(1) per packet（收包路径） + O(n/N) per GC |
+| **适合规模**   | 千~万级                      | 百万~千万级                                 |
+| **实现复杂度** | DPDK 内置                    | 需要自行实现                                |
+| **典型场景**   | LACP 心跳、TCP RTO、统计上报 | Conntrack、NAT、会话管理                    |
 
 ---
 
@@ -899,6 +899,7 @@ rte_timer:
 ---
 
 > [!tip] 参考文献
+>
 > - Linux Netfilter conntrack: https://www.kernel.org/doc/html/latest/networking/nf_conntrack-sysctl.html
 > - "Cuckoo Switching: Hash Table Design for DPDK", https://dpdk.org/doc/guides/prog_guide/hash_lib.html
 > - VPP (Vector Packet Processor) connection tracking design

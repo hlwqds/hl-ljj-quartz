@@ -11,8 +11,8 @@ tags:
 description: "深入解析 Zeek 的配置系统——zeekctl 配置、node.cfg 节点配置、zeek_path 脚本加载机制、内置配置变量，以及配置如何驱动源码行为"
 ---
 
-> [!info] Zeek 2026 深度探索系列
-> 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Zeek 2026 深度探索系列 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-15-zeek-deep-dive-ch1-overview|第一章：Zeek 概述]]
 > 2. [[2026-04-15-zeek-deep-dive-ch2-installation|第二章：安装部署]]
 > 3. **第三章：配置系统**
@@ -486,14 +486,14 @@ redef Cluster::nodes = {
 
 ### 7.1 关键环境变量
 
-| 变量 | 说明 | 默认值 |
-| :--- | :--- | :--- |
-| `ZEEKBASE` | Zeek 安装根目录 | `/usr/local/zeek` |
-| `ZEEK_PLUGIN_PATH` | 插件搜索路径 | `$ZEEKBASE/plugins` |
-| `ZEEKPATH` | ZeekScript 搜索路径 | `$ZEEKBASE/share/zeek/base:...` |
-| `ZEEK_DEBUG` | 启用调试输出 | 空 |
-| `ZEEK_GOPATH` | Go 插件路径 | 空 |
-| `ZEEK_LOG_FILE` | 日志文件 | stderr |
+| 变量               | 说明                | 默认值                          |
+| :----------------- | :------------------ | :------------------------------ |
+| `ZEEKBASE`         | Zeek 安装根目录     | `/usr/local/zeek`               |
+| `ZEEK_PLUGIN_PATH` | 插件搜索路径        | `$ZEEKBASE/plugins`             |
+| `ZEEKPATH`         | ZeekScript 搜索路径 | `$ZEEKBASE/share/zeek/base:...` |
+| `ZEEK_DEBUG`       | 启用调试输出        | 空                              |
+| `ZEEK_GOPATH`      | Go 插件路径         | 空                              |
+| `ZEEK_LOG_FILE`    | 日志文件            | stderr                          |
 
 ### 7.2 ZEEKPATH 配置
 
@@ -549,6 +549,7 @@ zeek -b -s my-script.zeek -p -U <state-file> | head -50
    - 环境变量：`BRO_*` → `ZEEK_*`
 
 2. **迁移脚本**：
+
    ```bash
    # 自动迁移脚本（位于 Zeek 源码）
    ./scripts/migrate-to-zeek.sh /path/to/old/bro-scripts/

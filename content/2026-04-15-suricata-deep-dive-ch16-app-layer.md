@@ -11,8 +11,8 @@ tags:
 description: "深入解析 Suricata 的 AppLayer 框架：协议解析器注册流程、状态机管理、Stream 数据处理、以及内置协议解析器的实现机制"
 ---
 
-> [!info] Suricata 2026 深度探索系列
-> 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Suricata 2026 深度探索系列 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-15-suricata-deep-dive-ch1-overview|第一章：Suricata 概述]]
 > 2. [[2026-04-15-suricata-deep-dive-ch2-config|第二章：Suricata 配置系统]]
 > 3. [[2026-04-15-suricata-deep-dive-ch3-runmodes|第三章：Runmodes 运行模式]]
@@ -63,10 +63,10 @@ graph TD
 
 ### 1.1 协议检测 vs 协议解析
 
-| 阶段 | 职责 | 输入 | 输出 |
-|:---|:---|:---|:---|
-| **Protocol Detection** | 识别协议类型 | 原始包数据 | 协议类型（HTTP/DNS/TLS 等） |
-| **Protocol Parsing** | 解析协议内容 | 协议数据 | 结构化数据（状态、头部、body） |
+| 阶段                   | 职责         | 输入       | 输出                           |
+| :--------------------- | :----------- | :--------- | :----------------------------- |
+| **Protocol Detection** | 识别协议类型 | 原始包数据 | 协议类型（HTTP/DNS/TLS 等）    |
+| **Protocol Parsing**   | 解析协议内容 | 协议数据   | 结构化数据（状态、头部、body） |
 
 ### 1.2 AppLayer 数据流
 
@@ -96,32 +96,32 @@ sequenceDiagram
 typedef struct AppLayerProtocol_ {
     /* 协议名称 */
     const char *name;
-    
+
     /* 协议 ID */
     AppProto id;
-    
+
     /* 最小协议头长度 */
     uint16_t min_header_len;
-    
+
     /* 默认端口 */
     uint16_t default_port;
-    
+
     /* 协议检测函数 */
     AppLayerProtoDetectFunc ProtocolDetection;
-    
+
     /* 解析器函数 */
     AppLayerParserFunc *Parser;
-    
+
     /* 状态机 */
     AppLayerStateFunc *StateAlloc;
     AppLayerStateFunc *StateFree;
-    
+
     /* TX 清理函数 */
     AppLayerTxCleanupFunc *TxCleanup;
-    
+
     /* TX 日志函数 */
     AppLayerTxLogFunc *TxLogFunc;
-    
+
     /* 标志位 */
     uint32_t flags;
 #define APP_LAYER_PROTO_TLS      0x01
@@ -143,19 +143,19 @@ static AppLayerProtocol *app_layer_protocols[ALPROTO_MAX];
 typedef struct AppLayerState_ {
     /* 协议状态 */
     void *proto_ctx;           // 协议特定上下文
-    
+
     /* 事务列表 */
     AppLayerTx *txs;          // 事务链表
     uint64_t tx_cnt;          // 事务计数
-    
+
     /* 解析状态 */
     uint8_t parser_status;    // 解析器状态
     uint8_t探测状态;          // 协议检测状态
-    
+
     /* Stream 缓冲 */
     StreamBuffer *sb;         // Stream 重组缓冲
     uint64_t bytes_consumed;  // 已消费字节数
-    
+
     /* 标志位 */
     uint32_t flags;
 #define APP_LAYER_STATE_BLOCK_PARSING   0x01  // 阻止解析
@@ -171,32 +171,32 @@ typedef struct AppLayerState_ {
 typedef struct AppLayerTx_ {
     /* TX ID */
     uint64_t tx_id;
-    
+
     /* 协议 */
     AppProto alproto;
-    
+
     /* 事务状态 */
     uint8_t tx救护;            // 救护/完成状态
     uint8_t state;             // 事务状态
-    
+
     /* 时间戳 */
     struct timeval start_time;
     struct timeval last_time;
-    
+
     /* 请求/响应数据 */
     void *request;            // 请求数据
     void *response;           // 响应数据
-    
+
     /* 协议特定数据 */
     union {
         HTPHTx *http;         // HTTP 事务
         DNSQuery *dns;         // DNS 查询
         SSLState *ssl;         // TLS 状态
     } proto;
-    
+
     /* 日志标志 */
     uint32_t logged;
-    
+
     /* 标志位 */
     uint32_t flags;
 } AppLayerTx;
@@ -236,7 +236,7 @@ static AppProto AppLayerProtoDetectByPort(
     if (p == NULL) {
         return ALPROTO_UNKNOWN;
     }
-    
+
     /* 返回协议 */
     if (direction == STREAM_TOCLIENT) {
         return p->probing_parser_c2s;
@@ -271,7 +271,7 @@ static AppLayerProtoDetectFuncResult HTTPProbingParser(
     if (input_len < 4) {
         return APP_LAYER_PROTO_DETECT_FAILED;
     }
-    
+
     /* HTTP 请求检测 */
     if (direction == STREAM_TOSERVER) {
         /* 检查是否是 HTTP 请求行 */
@@ -282,20 +282,20 @@ static AppLayerProtoDetectFuncResult HTTPProbingParser(
             memcmp(input, "DELETE ", 7) == 0 ||
             memcmp(input, "OPTIONS ", 8) == 0 ||
             memcmp(input, "CONNECT ", 8) == 0) {
-            
+
             /* 检查是否包含完整的请求行 */
             uint8_t *crlf = memmem(input, input_len, "\r\n", 2);
             if (crlf != NULL) {
                 return APP_LAYER_PROTO_DETECT_SUCCESS;
             }
         }
-        
+
         /* 检查是否是 HTTP 响应 */
         if (memcmp(input, "HTTP/", 5) == 0) {
             return APP_LAYER_PROTO_DETECT_SUCCESS;
         }
     }
-    
+
     return APP_LAYER_PROTO_DETECT_FAILED;
 }
 
@@ -307,7 +307,7 @@ static AppLayerProtoDetectFuncResult TLSProbingParser(
     if (input_len < 5) {
         return APP_LAYER_PROTO_DETECT_FAILED;
     }
-    
+
     /* 检查 TLS Content Type */
     if (input[0] >= 0x14 && input[0] <= 0x17) {
         /* 检查 TLS Version */
@@ -315,7 +315,7 @@ static AppLayerProtoDetectFuncResult TLSProbingParser(
             return APP_LAYER_PROTO_DETECT_SUCCESS;
         }
     }
-    
+
     return APP_LAYER_PROTO_DETECT_FAILED;
 }
 ```
@@ -331,12 +331,12 @@ static AppLayerProtoDetectFuncResult DNSProbingParser(
     if (input_len < 12) {
         return APP_LAYER_PROTO_DETECT_FAILED;
     }
-    
+
     /* 解析 DNS 头部 */
     uint16_t tx_id = *((uint16_t *)input);
     uint16_t flags = *((uint16_t *)(input + 2));
     uint16_t questions = *((uint16_t *)(input + 4));
-    
+
     /* 检查 DNS 标志 */
     /* QR(1) + OPCODE(4) + AA(1) + TC(1) + RD(1) + RA(1) + Z(3) + RCODE(4) */
     if ((flags & 0x8000) == 0) {  /* 查询标志 */
@@ -346,7 +346,7 @@ static AppLayerProtoDetectFuncResult DNSProbingParser(
             return APP_LAYER_PROTO_DETECT_SUCCESS;
         }
     }
-    
+
     return APP_LAYER_PROTO_DETECT_FAILED;
 }
 ```
@@ -359,7 +359,7 @@ static AppLayerProtoDetectFuncResult DNSProbingParser(
 
 ```c
 // src/app-layer-register.c — 注册 AppLayer 解析器
-int AppLayerRegisterProtocol(const char *name, AppProto id, 
+int AppLayerRegisterProtocol(const char *name, AppProto id,
                              AppLayerParserFunc *parser)
 {
     /* 检查协议 ID 有效性 */
@@ -367,26 +367,26 @@ int AppLayerRegisterProtocol(const char *name, AppProto id,
         SCLogError("Invalid protocol ID: %d", id);
         return -1;
     }
-    
+
     /* 分配协议结构 */
     AppLayerProtocol *p = SCCalloc(1, sizeof(AppLayerProtocol));
     if (p == NULL) {
         return -1;
     }
-    
+
     /* 设置协议属性 */
     p->name = name;
     p->id = id;
     p->Parser = parser;
-    
+
     /* 添加到注册表 */
     app_layer_protocols[id] = p;
-    
+
     /* 注册协议检测函数 */
     AppLayerProtoDetectRegister(id, p->ProtocolDetection);
-    
+
     SCLogInfo("Registered app-layer protocol: %s (id=%d)", name, id);
-    
+
     return 0;
 }
 ```
@@ -399,31 +399,31 @@ void AppLayerSetup(void)
 {
     /* HTTP */
     AppLayerRegisterProtocol("http", ALPROTO_HTTP, HTTPParse);
-    
+
     /* DNS */
     AppLayerRegisterProtocol("dns", ALPROTO_DNS, DNSParser);
-    
+
     /* TLS */
     AppLayerRegisterProtocol("tls", ALPROTO_TLS, TLSParse);
-    
+
     /* SMB */
     AppLayerRegisterProtocol("smb", ALPROTO_SMB, SMBParse);
-    
+
     /* SSH */
     AppLayerRegisterProtocol("ssh", ALPROTO_SSH, SSHParse);
-    
+
     /* FTP */
     AppLayerRegisterProtocol("ftp", ALPROTO_FTP, FTPParse);
-    
+
     /* SMTP */
     AppLayerRegisterProtocol("smtp", ALPROTO_SMTP, SMTPParse);
-    
+
     /* SMTP */
     AppLayerRegisterProtocol("imap", ALPROTO_IMAP, IMAPParse);
-    
+
     /* POP3 */
     AppLayerRegisterProtocol("pop3", ALPROTO_POP3, POP3Parse);
-    
+
     /* HTTP/2 */
     AppLayerRegisterProtocol("http2", ALPROTO_HTTP2, HTTP2Parse);
 }
@@ -455,7 +455,7 @@ stateDiagram-v2
 void *AppLayerStateAlloc(AppProto alproto, uint8_t direction)
 {
     void *state = NULL;
-    
+
     switch (alproto) {
         case ALPROTO_HTTP:
             state = HTPStateAlloc();
@@ -473,11 +473,11 @@ void *AppLayerStateAlloc(AppProto alproto, uint8_t direction)
             state = HTTP2StateAlloc();
             break;
         default:
-            SCLogWarning("No state allocator for protocol: %s", 
+            SCLogWarning("No state allocator for protocol: %s",
                          AppLayerGetProtocolName(alproto));
             return NULL;
     }
-    
+
     return state;
 }
 
@@ -487,7 +487,7 @@ void AppLayerStateFree(void *state, AppProto alproto)
     if (state == NULL) {
         return;
     }
-    
+
     switch (alproto) {
         case ALPROTO_HTTP:
             HTPStateFree((HtpState *)state);
@@ -533,7 +533,7 @@ static HTTPStateMachine HTTPStateTransition(
                 return HTTP_STATE_REQUEST_LINE;
             }
             break;
-            
+
         case HTTP_STATE_REQUEST_LINE:
             if (event == HTTP_EVENT_HEADERS_COMPLETE) {
                 return HTTP_STATE_REQUEST_HEADERS;
@@ -541,7 +541,7 @@ static HTTPStateMachine HTTPStateTransition(
                 return HTTP_STATE_ERROR;
             }
             break;
-            
+
         case HTTP_STATE_REQUEST_HEADERS:
             if (event == HTTP_EVENT_BODY_COMPLETE) {
                 return HTTP_STATE_REQUEST_BODY;
@@ -549,13 +549,13 @@ static HTTPStateMachine HTTPStateTransition(
                 return HTTP_STATE_RESPONSE_LINE;
             }
             break;
-            
+
         case HTTP_STATE_RESPONSE_LINE:
             if (event == HTTP_EVENT_HEADERS_COMPLETE) {
                 return HTTP_STATE_RESPONSE_HEADERS;
             }
             break;
-            
+
         case HTTP_STATE_RESPONSE_HEADERS:
             if (event == HTTP_EVENT_BODY_COMPLETE) {
                 return HTTP_STATE_RESPONSE_BODY;
@@ -563,14 +563,14 @@ static HTTPStateMachine HTTPStateTransition(
                 return HTTP_STATE_DONE;
             }
             break;
-            
+
         case HTTP_STATE_RESPONSE_BODY:
             if (event == HTTP_EVENT_BODY_COMPLETE) {
                 return HTTP_STATE_DONE;
             }
             break;
     }
-    
+
     return HTTP_STATE_ERROR;
 }
 ```
@@ -589,15 +589,15 @@ typedef struct AppLayerStreamBuffer_ {
     /* 缓冲数据 */
     uint8_t *data;
     uint32_t data_len;
-    
+
     /* 缓冲偏移 */
     uint64_t offset;
-    
+
     /* 流的完整性标志 */
     uint8_t flags;
 #define APP_LAYER_STREAM_BUFFER_COMPLETE  0x01  // 完整数据
 #define APP_LAYER_STREAM_BUFFER_TRUNCATED 0x02  // 截断数据
-    
+
     /* 下一个缓冲 */
     struct AppLayerStreamBuffer_ *next;
 } AppLayerStreamBuffer;
@@ -615,10 +615,10 @@ int AppLayerRequestGetData(
     if (ssn == NULL) {
         return -1;
     }
-    
+
     /* 获取服务器到客户端的重组数据 */
     StreamTcpReassemblyGetData(ssn, STREAM_TOSERVER, buffer, offset);
-    
+
     return 0;
 }
 ```
@@ -642,7 +642,7 @@ app-layer:
       body-limit: 4096
       body-inspect-min-size: 32768
       body-inspect-window: 400
-      
+
     tls:
       enabled: yes
       detection-ports:
@@ -650,7 +650,7 @@ app-layer:
         toclient: [443]
       observe-response: yes
       encrypts-handling: yes
-      
+
     dns:
       enabled: yes
       tcp:
@@ -664,14 +664,14 @@ app-layer:
           toserver: [53]
           toclient: [53]
       max-records: 100
-      
+
     smb:
       enabled: yes
       detection-ports:
         toserver: [445]
         toclient: [445]
       max-tx: 100
-      
+
     ssh:
       enabled: yes
       detection-ports:
@@ -693,13 +693,13 @@ static int AppLayerLoadConfig(AppLayerProtocol *p, YamlNode *node)
     } else {
         p->flags &= ~APP_LAYER_PROTO_ENABLED;
     }
-    
+
     /* 解析 detection-ports */
     YamlNode *ports = YamlNodeLookup(node, "detection-ports");
     if (ports) {
         ParseDetectionPorts(p, ports);
     }
-    
+
     /* 解析协议特定配置 */
     if (strcmp(p->name, "http") == 0) {
         return HTTPConfigParse(p, node);
@@ -708,7 +708,7 @@ static int AppLayerLoadConfig(AppLayerProtocol *p, YamlNode *node)
     } else if (strcmp(p->name, "dns") == 0) {
         return DNSConfigParse(p, node);
     }
-    
+
     return 0;
 }
 ```
@@ -727,7 +727,7 @@ typedef struct AppLayerTxList_ {
     AppLayerTx **txs;         // 事务数组
     uint64_t tx_count;        // 事务数
     uint64_t tx_index;        // 当前事务索引
-    
+
     /* 同步锁 */
     SCMutex mutex;
 } AppLayerTxList;
@@ -743,13 +743,13 @@ AppLayerTx *AppLayerTxCreate(AppLayerState *state, AppProto alproto)
     if (tx == NULL) {
         return NULL;
     }
-    
+
     /* 设置基本属性 */
     tx->tx_id = state->tx_cnt++;
     tx->alproto = alproto;
     tx->start_time = current_time();
     tx->last_time = current_time();
-    
+
     /* 添加到事务列表 */
     if (state->txs == NULL) {
         state->txs = tx;
@@ -761,7 +761,7 @@ AppLayerTx *AppLayerTxCreate(AppLayerState *state, AppProto alproto)
         }
         last->next = tx;
     }
-    
+
     return tx;
 }
 ```
@@ -773,14 +773,14 @@ AppLayerTx *AppLayerTxCreate(AppLayerState *state, AppProto alproto)
 AppLayerTx *AppLayerTxGet(AppLayerState *state, uint64_t tx_id)
 {
     AppLayerTx *tx = state->txs;
-    
+
     while (tx != NULL) {
         if (tx->tx_id == tx_id) {
             return tx;
         }
         tx = tx->next;
     }
-    
+
     return NULL;
 }
 ```
@@ -810,14 +810,14 @@ int AppLayerRegisterTxLogger(const char *name, AppProto alproto,
     log->name = name;
     log->alproto = alproto;
     log->func = func;
-    
+
     /* 添加到日志列表 */
     if (alproto == ALPROTO_HTTP) {
         HTTP_LOGGERS_ADD(log);
     } else if (alproto == ALPROTO_DNS) {
         DNS_LOGGERS_ADD(log);
     }
-    
+
     return 0;
 }
 ```
@@ -826,20 +826,20 @@ int AppLayerRegisterTxLogger(const char *name, AppProto alproto,
 
 ```json
 {
-    "timestamp": "2026-04-15T16:00:00.000000+0000",
-    "event_type": "http",
-    "src_ip": "192.168.1.100",
-    "src_port": 54321,
-    "dest_ip": "93.184.216.34",
-    "dest_port": 80,
-    "http": {
-        "hostname": "example.com",
-        "uri": "/index.html",
-        "status": 200,
-        "length": 1234,
-        "user_agent": "Mozilla/5.0",
-        "content_type": "text/html"
-    }
+  "timestamp": "2026-04-15T16:00:00.000000+0000",
+  "event_type": "http",
+  "src_ip": "192.168.1.100",
+  "src_port": 54321,
+  "dest_ip": "93.184.216.34",
+  "dest_port": 80,
+  "http": {
+    "hostname": "example.com",
+    "uri": "/index.html",
+    "status": 200,
+    "length": 1234,
+    "user_agent": "Mozilla/5.0",
+    "content_type": "text/html"
+  }
 }
 ```
 
@@ -889,11 +889,11 @@ static int AppLayerRecoverFromError(
             /* 跳过当前数据块 */
             StreamSkipBytes(f, f->bytes_skipped);
             return 0;
-            
+
         case APP_LAYER_ERROR_TIMEOUT:
             /* 尝试重新同步 */
             return AppLayerResync(f);
-            
+
         case APP_LAYER_ERROR_NO_MEM:
             /* 降低处理复杂度 */
             if (alproto == ALPROTO_HTTP) {
@@ -901,7 +901,7 @@ static int AppLayerRecoverFromError(
                 f->flags |= FLOW_HTTP_NO_BODY;
             }
             return 0;
-            
+
         default:
             /* 标记连接为错误 */
             f->flow_state = FLOW_STATE_ERROR;
@@ -916,12 +916,12 @@ static int AppLayerRecoverFromError(
 
 ### 11.1 解析器性能优化
 
-| 优化项 | 描述 | 影响 |
-|:---|:---|:---|
-| **快速路径** | 简单协议跳过复杂解析 | 延迟 -30% |
-| **增量解析** | 仅解析新增数据 | 内存 -50% |
-| **TX 限制** | 限制单连接 TX 数 | 内存 -70% |
-| **early rejection** | 快速丢弃无效流量 | CPU -40% |
+| 优化项              | 描述                 | 影响      |
+| :------------------ | :------------------- | :-------- |
+| **快速路径**        | 简单协议跳过复杂解析 | 延迟 -30% |
+| **增量解析**        | 仅解析新增数据       | 内存 -50% |
+| **TX 限制**         | 限制单连接 TX 数     | 内存 -70% |
+| **early rejection** | 快速丢弃无效流量     | CPU -40%  |
 
 ### 11.2 配置调优
 
@@ -936,7 +936,7 @@ app-layer:
       body-limit: 8192
       # 禁用不需要的检查
       enabled: yes
-      
+
     dns:
       # 限制 DNS 记录数
       max-records: 100

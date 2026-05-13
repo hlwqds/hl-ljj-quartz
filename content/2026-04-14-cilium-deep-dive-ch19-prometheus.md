@@ -12,8 +12,8 @@ tags:
   - alerting
 ---
 
-> [!info] Cilium 2026 深度探索系列
-> 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+> [!info] Cilium 2026 深度探索系列 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+>
 > 1. [[2026-04-14-cilium-deep-dive-ch1-cilium-overview|第一章：Cilium 概述]]
 > 2. [[2026-04-14-cilium-deep-dive-ch2-architecture|第二章：Cilium 架构]]
 > 3. [[2026-04-14-cilium-deep-dive-ch3-ebpf-datapath|第三章：eBPF 数据面]]
@@ -107,30 +107,30 @@ curl -s http://localhost:9090/metrics | head -50
 
 ### 2.1 网络流量指标
 
-| 指标名称 | 类型 | 描述 |
-|:---|:---|:---|
+| 指标名称                 | 类型    | 描述           |
+| :----------------------- | :------ | :------------- |
 | `cilium_forwarded_total` | Counter | 转发的流量总数 |
-| `cilium_dropped_total` | Counter | 丢弃的流量总数 |
-| `cilium_audited_total` | Counter | 审计的流量总数 |
+| `cilium_dropped_total`   | Counter | 丢弃的流量总数 |
+| `cilium_audited_total`   | Counter | 审计的流量总数 |
 | `cilium_processed_total` | Counter | 处理的流量总数 |
 
 ```promql
 # 流量转发率
-sum(rate(cilium_forwarded_total[5m])) / 
+sum(rate(cilium_forwarded_total[5m])) /
 sum(rate(cilium_forwarded_total[5m]) + rate(cilium_dropped_total[5m]))
 
 # 丢弃率
-sum(rate(cilium_dropped_total[5m])) * 100 / 
+sum(rate(cilium_dropped_total[5m])) * 100 /
 sum(rate(cilium_forwarded_total[5m]) + rate(cilium_dropped_total[5m]))
 ```
 
 ### 2.2 端点指标
 
-| 指标名称 | 类型 | 描述 |
-|:---|:---|:---|
-| `cilium_endpoint_state` | Gauge | 端点状态分布（标签：endpoint_state） |
-| `cilium_endpoint_count` | Gauge | 端点总数 |
-| `cilium_endpoint_regenerations` | Counter | 端点策略重建次数 |
+| 指标名称                        | 类型    | 描述                                 |
+| :------------------------------ | :------ | :----------------------------------- |
+| `cilium_endpoint_state`         | Gauge   | 端点状态分布（标签：endpoint_state） |
+| `cilium_endpoint_count`         | Gauge   | 端点总数                             |
+| `cilium_endpoint_regenerations` | Counter | 端点策略重建次数                     |
 
 ```promql
 # 按状态统计端点
@@ -140,58 +140,58 @@ sum(cilium_endpoint_state) by (state)
 sum(cilium_endpoint_count)
 
 # 重建失败率
-sum(rate(cilium_endpoint_regenerations{outcome="fail"}[5m])) / 
+sum(rate(cilium_endpoint_regenerations{outcome="fail"}[5m])) /
 sum(rate(cilium_endpoint_regenerations[5m]))
 ```
 
 ### 2.3 策略指标
 
-| 指标名称 | 类型 | 描述 |
-|:---|:---|:---|
-| `cilium_policy_l7_total` | Counter | L7 策略匹配次数 |
-| `cilium_policy_verdict` | Counter | 策略判定（标签：verdict, direction） |
-| `cilium_policy_count` | Gauge | 策略总数 |
+| 指标名称                 | 类型    | 描述                                 |
+| :----------------------- | :------ | :----------------------------------- |
+| `cilium_policy_l7_total` | Counter | L7 策略匹配次数                      |
+| `cilium_policy_verdict`  | Counter | 策略判定（标签：verdict, direction） |
+| `cilium_policy_count`    | Gauge   | 策略总数                             |
 
 ```promql
 # L7 策略拒绝率
-sum(rate(cilium_policy_verdict{verdict="denied", direction="ingress"}[5m])) / 
+sum(rate(cilium_policy_verdict{verdict="denied", direction="ingress"}[5m])) /
 sum(rate(cilium_policy_verdict{direction="ingress"}[5m]))
 
 # HTTP 200 成功率
-sum(rate(cilium_policy_l7_total{http_status="200"}[5m])) / 
+sum(rate(cilium_policy_l7_total{http_status="200"}[5m])) /
 sum(rate(cilium_policy_l7_total{http_status=~"2.*"}[5m]))
 ```
 
 ### 2.4 eBPF 指标
 
-| 指标名称 | 类型 | 描述 |
-|:---|:---|:---|
-| `cilium_bpf_map_ops_total` | Counter | BPF Map 操作次数 |
-| `cilium_bpf_syscall_duration_seconds` | Histogram | BPF 系统调用延迟 |
+| 指标名称                                        | 类型      | 描述              |
+| :---------------------------------------------- | :-------- | :---------------- |
+| `cilium_bpf_map_ops_total`                      | Counter   | BPF Map 操作次数  |
+| `cilium_bpf_syscall_duration_seconds`           | Histogram | BPF 系统调用延迟  |
 | `cilium_datapath_conntrack_gc_duration_seconds` | Histogram | Conntrack GC 耗时 |
 
 ```promql
 # BPF Map 操作错误率
-sum(rate(cilium_bpf_map_ops_total{outcome="error"}[5m])) / 
+sum(rate(cilium_bpf_map_ops_total{outcome="error"}[5m])) /
 sum(rate(cilium_bpf_map_ops_total[5m]))
 
 # Conntrack GC 延迟 P99
-histogram_quantile(0.99, 
+histogram_quantile(0.99,
   sum(rate(cilium_datapath_conntrack_gc_duration_seconds_bucket[5m])) by (le)
 )
 ```
 
 ### 2.5 服务/负载均衡指标
 
-| 指标名称 | 类型 | 描述 |
-|:---|:---|:---|
-| `cilium_service_endpoints` | Gauge | Service 的后端数量 |
-| `cilium_nodeport_local` | Counter | NodePort 本地连接数 |
-| `cilium_loadbalancer_routes` | Gauge | 负载均衡路由数 |
+| 指标名称                     | 类型    | 描述                |
+| :--------------------------- | :------ | :------------------ |
+| `cilium_service_endpoints`   | Gauge   | Service 的后端数量  |
+| `cilium_nodeport_local`      | Counter | NodePort 本地连接数 |
+| `cilium_loadbalancer_routes` | Gauge   | 负载均衡路由数      |
 
 ```promql
 # Service 后端健康率
-sum(cilium_service_endpoints{health="healthy"}) by (service_id) / 
+sum(cilium_service_endpoints{health="healthy"}) by (service_id) /
 sum(cilium_service_endpoints) by (service_id)
 
 # NodePort 连接分布
@@ -225,14 +225,14 @@ helm upgrade cilium cilium/cilium \
 
 ### 3.2 Hubble 指标列表
 
-| 指标名称 | 类型 | 描述 |
-|:---|:---|:---|
-| `hubble_flows_total` | Counter | Flow 事件总数 |
-| `hubble_flows_processed_total` | Counter | 已处理 Flow 数 |
-| `hubble_http_request_total` | Counter | HTTP 请求总数 |
-| `hubble_http_requests_duration_seconds` | Histogram | HTTP 请求延迟 |
-| `hubble_dns_queries_total` | Counter | DNS 查询总数 |
-| `hubble_dns_response_total` | Counter | DNS 响应总数 |
+| 指标名称                                | 类型      | 描述           |
+| :-------------------------------------- | :-------- | :------------- |
+| `hubble_flows_total`                    | Counter   | Flow 事件总数  |
+| `hubble_flows_processed_total`          | Counter   | 已处理 Flow 数 |
+| `hubble_http_request_total`             | Counter   | HTTP 请求总数  |
+| `hubble_http_requests_duration_seconds` | Histogram | HTTP 请求延迟  |
+| `hubble_dns_queries_total`              | Counter   | DNS 查询总数   |
+| `hubble_dns_response_total`             | Counter   | DNS 响应总数   |
 
 ```yaml
 # 自定义 Hubble Metrics 配置
@@ -240,8 +240,7 @@ apiVersion: cilium.io/v2alpha1
 kind: CiliumClusterwideHubbleMetrics
 metadata:
   name: custom-metrics
-spec:
-  -旗袍
+spec: -旗袍
   - http
   - dns
   - nodeport
@@ -254,17 +253,17 @@ spec:
 sum(rate(hubble_http_request_total[5m])) by (method, path)
 
 # HTTP 延迟分布
-histogram_quantile(0.99, 
+histogram_quantile(0.99,
   sum(rate(hubble_http_requests_duration_seconds_bucket[5m])) by (le, method)
 )
 
 # HTTP 错误率（4xx + 5xx）
-sum(rate(hubble_http_request_total{status_code=~"4.."}[5m])) + 
+sum(rate(hubble_http_request_total{status_code=~"4.."}[5m])) +
 sum(rate(hubble_http_request_total{status_code=~"5.."}[5m]))
 
 # Top 10 最慢端点
-topk(10, 
-  sum(rate(hubble_http_requests_duration_seconds_sum[5m])) by (path) / 
+topk(10,
+  sum(rate(hubble_http_requests_duration_seconds_sum[5m])) by (path) /
   sum(rate(hubble_http_requests_duration_seconds_count[5m])) by (path)
 )
 ```
@@ -279,7 +278,7 @@ sum(rate(hubble_dns_queries_total[5m])) by (qtype)
 sum(rate(hubble_dns_response_total[5m]))
 
 # NXDOMAIN 错误率
-sum(rate(hubble_dns_response_total{rcode="NXDOMAIN"}[5m])) / 
+sum(rate(hubble_dns_response_total{rcode="NXDOMAIN"}[5m])) /
 sum(rate(hubble_dns_queries_total[5m]))
 
 # 外部 DNS 查询分布
@@ -301,7 +300,7 @@ metadata:
   name: cilium
   namespace: kube-system
   labels:
-    release: prometheus  # 需要与 Prometheus 配置的 matchLabel 一致
+    release: prometheus # 需要与 Prometheus 配置的 matchLabel 一致
 spec:
   jobLabel: cilium
   selector:
@@ -513,7 +512,7 @@ kubectl apply -f CiliumDashboard.yaml
 ```promql
 # 流量转发率（百分比）
 100 - (
-  sum(rate(cilium_dropped_total[5m])) * 100 / 
+  sum(rate(cilium_dropped_total[5m])) * 100 /
   (sum(rate(cilium_forwarded_total[5m])) + sum(rate(cilium_dropped_total[5m])))
 )
 
@@ -521,14 +520,14 @@ kubectl apply -f CiliumDashboard.yaml
 sum(cilium_endpoint_state) by (state)
 
 # Service 后端健康率
-sum(cilium_service_endpoints{health="healthy"}) by (service_name) / 
+sum(cilium_service_endpoints{health="healthy"}) by (service_name) /
 sum(cilium_service_endpoints) by (service_name) * 100
 
 # HTTP 请求率 Top 10
 topk(10, sum(rate(hubble_http_request_total[5m])) by (path))
 
 # L7 代理延迟 P99
-histogram_quantile(0.99, 
+histogram_quantile(0.99,
   sum(rate(cilium_proxy_redirect_duration_seconds_bucket[5m])) by (le, service)
 )
 
@@ -581,7 +580,7 @@ spec:
         # L7 代理延迟过高
         - alert: CiliumL7ProxyLatencyHigh
           expr: |
-            histogram_quantile(0.99, 
+            histogram_quantile(0.99,
               sum(rate(cilium_proxy_redirect_duration_seconds_bucket[5m])) by (le)
             ) > 1
           for: 10m
@@ -616,10 +615,10 @@ spec:
 ```yaml
 # AlertManager 配置示例
 receivers:
-  - name: 'cilium-alerts-slack'
+  - name: "cilium-alerts-slack"
     slack_configs:
-      - channel: '#alerts-cilium'
-        title: 'Cilium Alert: {{ .GroupLabels.alertname }}'
+      - channel: "#alerts-cilium"
+        title: "Cilium Alert: {{ .GroupLabels.alertname }}"
         text: |
           {{ range .Alerts }}
           *Alert:* {{ .Annotations.summary }}
@@ -628,13 +627,13 @@ receivers:
           *Cluster:* {{ .Labels.cluster }}
           *Value:* {{ .Value }}
           {{ end }}
-  - name: 'cilium-alerts-pagerduty'
+  - name: "cilium-alerts-pagerduty"
     pagerduty_configs:
       - service_key: <PAGERDUTY_KEY>
         severity: critical
 
 route:
-  group_by: ['alertname', 'cluster']
+  group_by: ["alertname", "cluster"]
   match:
     severity: critical
   receiver: cilium-alerts-pagerduty
@@ -673,7 +672,7 @@ int handle_ingress(struct __ctx_buff *ctx) {
     __u64 *cnt = bpf_map_lookup_elem(&custom_metrics, &key);
     if (cnt)
         (*cnt)++;
-    
+
     return TC_ACT_OK;
 }
 ```
@@ -728,11 +727,11 @@ spec:
 
 ### 8.2 容量规划参考
 
-| 集群规模 | 端点数 | 指标点/秒 | 存储建议 |
-|:---|:---|:---|:---|
-| 小型（<50 节点） | 500 | ~5,000 | 50GB / 30d |
-| 中型（50-200 节点） | 5,000 | ~50,000 | 200GB / 30d |
-| 大型（200+ 节点） | 20,000 | ~200,000 | 500GB / 30d |
+| 集群规模            | 端点数 | 指标点/秒 | 存储建议    |
+| :------------------ | :----- | :-------- | :---------- |
+| 小型（<50 节点）    | 500    | ~5,000    | 50GB / 30d  |
+| 中型（50-200 节点） | 5,000  | ~50,000   | 200GB / 30d |
+| 大型（200+ 节点）   | 20,000 | ~200,000  | 500GB / 30d |
 
 ---
 
@@ -746,6 +745,7 @@ Cilium 和 Hubble 的 Prometheus 指标提供了全面的网络可观测性：
 4. **Service 指标**：负载均衡路由、后端健康状态
 
 与 Prometheus/Grafana 集成后可以实现：
+
 - **实时监控 Dashboard**：关键指标一目了然
 - **历史趋势分析**：长期数据存储和分析
 - **智能告警**：基于指标阈值的自动化告警

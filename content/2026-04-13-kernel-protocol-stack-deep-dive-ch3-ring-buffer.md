@@ -5,8 +5,8 @@ tags: [linux, kernel, networking, series, ring-buffer, dma, page-pool, mbuf]
 description: "深入解析网卡与内核之间的数据传输机制——TX/RX 环形缓冲区、 DMA 描述符管理、 page_pool 内存管理、 IOMMU 映射、以及 Zero-Copy 发送与接收的完整流程"
 ---
 
-> [!info] Kernel Protocol Stack 深度探索系列
-> 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Kernel Protocol Stack 深度探索系列 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-kernel-protocol-stack-deep-dive-ch1-skbuff|第一章：sk_buff 与数据包生命周期]]
 > 2. [[2026-04-13-kernel-protocol-stack-deep-dive-ch2-netdevice|第二章：Netdevice 与网卡抽象]]
 > 3. **第三章：Ring Buffer 与 DMA**
@@ -103,11 +103,11 @@ rmb();  // read memory barrier
 
 **三种屏障：**
 
-| 屏障 | 作用 | 使用场景 |
-|------|------|---------|
-| `mb()` | 完整内存屏障 | 前后读写都不能重排序 |
-| `wmb()` | 写屏障 | 确保写操作对 DMA 可见 |
-| `rmb()` | 读屏障 | 确保 DMA 数据对 CPU 可见 |
+| 屏障    | 作用         | 使用场景                 |
+| ------- | ------------ | ------------------------ |
+| `mb()`  | 完整内存屏障 | 前后读写都不能重排序     |
+| `wmb()` | 写屏障       | 确保写操作对 DMA 可见    |
+| `rmb()` | 读屏障       | 确保 DMA 数据对 CPU 可见 |
 
 ### 2.3 IOMMU 与 VFIO
 
@@ -171,13 +171,13 @@ struct i40e_tx_desc {
 
 **Descriptor 状态标志：**
 
-| 标志 | 名称 | 含义 |
-|------|------|------|
-| `DD` | Descriptor Done | 网卡已完成处理 |
-| `EOP` | End of Packet | 数据包最后一个分片 |
-| `RS` | Report Status | 请求生成完成状态 |
-| `IFCS` | Insert FCS | 让网卡插入 CRC |
-| `OTA` | One Transmit Advance | 高级发送模式 |
+| 标志   | 名称                 | 含义               |
+| ------ | -------------------- | ------------------ |
+| `DD`   | Descriptor Done      | 网卡已完成处理     |
+| `EOP`  | End of Packet        | 数据包最后一个分片 |
+| `RS`   | Report Status        | 请求生成完成状态   |
+| `IFCS` | Insert FCS           | 让网卡插入 CRC     |
+| `OTA`  | One Transmit Advance | 高级发送模式       |
 
 ### 3.2 TX Ring 管理
 
@@ -185,13 +185,13 @@ struct i40e_tx_desc {
 struct i40e_tx_ring {
     void            *desc;           // TX descriptor 数组（DMA 一致性内存）
     dma_addr_t      dma;              // descriptor 的 DMA 地址
-    
+
     struct i40e_tx_buffer *tx_bp;    // TX buffer 数组（对应每个 descriptor）
-    
+
     unsigned int    count;            // Descriptor 数量（通常 256/512/1024）
     unsigned int    next_to_use;      // 下一个可用位置（驱动写）
-    unsigned int    next_to_clean;     // 下一个待清理位置（驱动回收）    
-    
+    unsigned int    next_to_clean;     // 下一个待清理位置（驱动回收）
+
     unsigned int    xsk_umem;         // AF_XDP/zero-copy 模式
     struct net_device *netdev;
     struct device   *dev;
@@ -207,15 +207,15 @@ graph LR
         D --> E["desc[4]<br/>DONE"]
         E --> F["desc[5]<br/>FREE"]
         F -.-> |wrap| A
-        
+
         style C fill:#f59f00
         style D fill:#f59f00
         style E fill:#90EE90
     end
-    
-    G["next_to_use=5<br/>驱动写"] 
+
+    G["next_to_use=5<br/>驱动写"]
     H["next_to_clean=4<br/>驱动回收"]
-    
+
     G --> F
     H --> E
 ```
@@ -229,51 +229,51 @@ static netdev_tx_t i40e_xmit_frame(struct sk_buff *skb,
     struct i40e_tx_ring *tx_ring;
     bool first = true;
     unsigned int tx_flags = 0;
-    
+
     // 1. 选择 TX 队列（基于 hash 或 priority）
     tx_ring = i40e_txring_csum(skb, netdev);
-    
+
     // 2. 计算需要的 descriptor 数量
     //    - 线性数据：1 个 descriptor
     //    - TSO：每个 MSS 分段需要 1 个
     //    - 线性+分片：每个分片 1 个
     unsigned int desc_needed = i40e_tx_desc_count(skb);
-    
+
     // 3. 检查可用空间
     if (i40e_check_stop_required(tx_ring, desc_needed)) {
         netif_stop_subqueue(netdev, tx_ring->q_index);
         return NETDEV_TX_BUSY;
     }
-    
+
     // 4. TSO 分割（如果启用）
     if (skb_shinfo(skb)->gso_size) {
         tx_flags |= I40E_TX_FLAGS_TSO;
         i40e_tso_first_skb(skb, tx_ring, tx_flags);
         goto do_dma;
     }
-    
+
     // 5. 映射数据缓冲区
     do_dma:
     dma_addr = dma_map_single(dev, skb->data, skb->len, DMA_TO_DEVICE);
-    
+
     // 6. 填充 descriptor
     i40e_tx_desc_fill(tx_ring, dma_addr, skb->len, first, last);
     first = false;
-    
+
     // 7. 更新 next_to_use
     tx_ring->next_to_use++;
     if (tx_ring->next_to_use == tx_ring->count)
         tx_ring->next_to_use = 0;
-    
+
     // 8. 内存屏障
     wmb();
-    
+
     // 9. 通知网卡（写 doorbell）
     writel(tx_ring->next_to_use, tx_ring->tail);
-    
+
     // 10. 记录 skb 到 tx_buffer（用于完成时释放）
     tx_ring->tx_bp[tx_ring->next_to_use].skb = skb;
-    
+
     return NETDEV_TX_OK;
 }
 ```
@@ -287,46 +287,46 @@ TX 完成有两种模式：**中断模式**和**轮询模式**：
 static void i40e_clean_tx_irq(struct i40e_tx_ring *tx_ring)
 {
     unsigned int total_bytes = 0, total_packets = 0;
-    
+
     // 遍历直到遇到 OWN 标志（网卡还在用的 descriptor）
     while (tx_ring->next_to_clean != tx_ring->next_to_use) {
         struct i40e_tx_desc *desc;
         struct i40e_tx_buffer *buf;
-        
+
         desc = &tx_ring->desc[tx_ring->next_to_clean];
         buf = &tx_ring->tx_bp[tx_ring->next_to_clean];
-        
+
         // 检查 DD 标志
         if (!(desc->cmd & I40E_TX_DESC_CMD_DONE))
             break;
-        
+
         // 统计
         total_bytes += buf->bytecount;
         total_packets++;
-        
+
         // 解除 DMA 映射
         if (buf->dma) {
             dma_unmap_page(tx_ring->dev, buf->dma, buf->size,
                           DMA_TO_DEVICE);
             buf->dma = 0;
         }
-        
+
         // 释放 skb
         if (buf->skb) {
             dev_kfree_skb_any(buf->skb);
             buf->skb = NULL;
         }
-        
+
         // 移动到下一个
         tx_ring->next_to_clean++;
         if (tx_ring->next_to_clean == tx_ring->count)
             tx_ring->next_to_clean = 0;
     }
-    
+
     // 更新统计
     tx_ring->netdev->stats.tx_packets += total_packets;
     tx_ring->netdev->stats.tx_bytes += total_bytes;
-    
+
     // 如果队列停止且有空间，唤醒
     if (netif_tx_queue_stopped(tx_ring->tx_queue) &&
         likely(tx_ring->count - tx_ring->next_to_clean >= DESC_NEEDED))
@@ -395,58 +395,58 @@ skb_add_rx_frag(skb, 0, page, 0, size);
 static int i40e_clean_rx_irq(struct i40e_ring *rx_ring, int budget)
 {
     unsigned int total_bytes = 0, total_packets = 0;
-    
+
     while (total_packets < budget) {
         union i40e_rx_desc *desc;
         struct sk_buff *skb;
         unsigned int size;
-        
+
         // 1. 获取当前 descriptor
         desc = &rx_ring->desc[rx_ring->next_to_clean];
-        
+
         // 2. 检查 DD 标志
         if (!(desc->wb.status_error & cpu_to_le16(I40E_RXD_STAT_DD)))
             break;
-        
+
         // 3. 内存屏障
         rmb();
-        
+
         // 4. 解析 descriptor 信息
         size = le16_to_cpu(desc->wb.qword1.pkt_len) & 0x7FFF;
-        
+
         // 5. 构建 skb（page_pool 模式）
         skb = i40e_build_skb(rx_ring, desc);
         if (!skb) {
             rx_ring->rx_stats.alloc_fail++;
             break;
         }
-        
+
         // 6. DMA 同步（CPU 需要访问数据）
         dma_sync_single_for_cpu(rx_ring->dev,
                                  le64_to_cpu(desc->read.pkt_addr),
                                  rx_ring->rx_buf_len,
                                  DMA_FROM_DEVICE);
-        
+
         // 7. 推送数据到协议栈
         skb->protocol = eth_type_trans(skb, rx_ring->netdev);
         napi_gro_receive(&rx_ring->q_vector->napi, skb);
-        
+
         // 8. 统计
         total_packets++;
         total_bytes += size;
-        
+
         // 9. 回收 descriptor（重新填充 buffer）
         i40e_alloc_rx_buffers(rx_ring, 1);
-        
+
         rx_ring->next_to_clean++;
         if (rx_ring->next_to_clean == rx_ring->count)
             rx_ring->next_to_clean = 0;
     }
-    
+
     // 更新统计
     rx_ring->netdev->stats.rx_packets += total_packets;
     rx_ring->netdev->stats.rx_bytes += total_bytes;
-    
+
     return total_packets;
 }
 ```
@@ -461,29 +461,29 @@ void i40e_alloc_rx_buffers(struct i40e_ring *rx_ring, int count)
     while (count--) {
         union i40e_rx_desc *desc;
         struct i40e_rx_buffer *buf;
-        
+
         desc = &rx_ring->desc[rx_ring->next_to_use];
         buf = &rx_ring->rx_bp[rx_ring->next_to_use];
-        
+
         if (!buf->page) {
             // 分配新页面
             buf->page = page_pool_alloc_pages(rx_ring->page_pool, ...);
             if (!buf->page)
                 break;
         }
-        
+
         // 清空旧 DD 标志，重新写入 DMA 地址
         desc->read.pkt_addr = cpu_to_le64(buf->dma + buf->page_offset);
         desc->read.hdr_addr = 0;
-        
+
         rx_ring->next_to_use++;
         if (rx_ring->next_to_use == rx_ring->count)
             rx_ring->next_to_use = 0;
     }
-    
+
     // 内存屏障
     wmb();
-    
+
     // 通知网卡有新 descriptor
     writel(rx_ring->next_to_use, rx_ring->tail);
 }
@@ -508,12 +508,12 @@ sequenceDiagram
     participant SKB as skb_add_rx_frag()
     participant APP as 应用
     participant RET as page_pool 回收
-    
+
     NIC->>PP: DMA 写入页面
     PP->>SKB: page + offset
     SKB->>APP: recv() 返回数据
     APP->>RET: 释放 skb（page 引用-1）
-    
+
     alt page 引用归零
         RET->>PP: page 返还 page_pool
         Note over PP: 页面不归还系统<br/>供下次 DMA 复用
@@ -545,16 +545,16 @@ static int i40e_setup_rx_buffer(struct i40e_ring *rx_ring)
 {
     struct page_pool *pool = rx_ring->page_pool;
     struct page *page;
-    
+
     page = page_pool_alloc_pages(pool, 0);
     if (!page)
         return -ENOMEM;
-    
+
     // 记录 DMA 地址
     rx_ring->rx_bp[rx_ring->next_to_use].page = page;
     rx_ring->rx_bp[rx_ring->next_to_use].page_offset = 0;
     rx_ring->rx_bp[rx_ring->next_to_use].dma = page_pool_get_device_addr(page);
-    
+
     return 0;
 }
 
@@ -564,21 +564,21 @@ static struct sk_buff *i40e_build_skb(struct i40e_ring *rx_ring,
 {
     struct page *page = rx_ring->rx_bp[rx_ring->next_to_use].page;
     unsigned int size = le16_to_cpu(desc->wb.qword1.pkt_len) & 0x7FFF;
-    
+
     // 直接从页面构建 skb（zero-copy）
     struct sk_buff *skb = napi_build_skb(page, rx_ring->rx_buf_len);
     if (!skb)
         return NULL;
-    
+
     // 调整 data 指针（跳过 headroom）
     skb_reserve(skb, rx_ring->rx_buf_len - size);
     skb_put(skb, size);
-    
+
     // page 引用给 skb
     skb->head_frag = 1;
     __skb_fill_page_desc(skb, 0, page, 0, size);
     get_page(page);  // 引用 +1
-    
+
     return skb;
 }
 ```
@@ -627,7 +627,7 @@ ethtool -N eth0 rx-flow-hash udp4 sdfn
 
 # rx-flow-hash 掩码:
 #   s = src port
-#   d = dst port  
+#   d = dst port
 #   f = src IP
 #   n = dst IP
 ```
@@ -643,11 +643,11 @@ static int i40e_rss_hash(struct sk_buff *skb, u32 *hash, u32 *hash_type)
         *hash_type = skb->l4_hash;
     } else if (skb->protocol == htons(ETH_P_IP)) {
         struct iphdr *iph = ip_hdr(skb);
-        *hash = (iph->saddr ^ iph->daddr ^ 
+        *hash = (iph->saddr ^ iph->daddr ^
                 (iph->protocol << 16));
         *hash_type = PKT_HASH_TYPE_L3;
     }
-    
+
     // indirection table 查找队列
     queue_idx = (*hash >> 16) % rx_ring->rss_table_size;
     return rx_ring->rss_table[queue_idx];
@@ -667,12 +667,12 @@ graph LR
     subgraph "传统 RX"
         A["NIC DMA"] --> B["Ring"] --> C["skb"] --> D["协议栈"]
     end
-    
+
     subgraph "AF_XDP RX"
         A2["NIC DMA"] --> B2["Ring"] --> C2["XSK (XDP Socket)"]
         C2 --> |zero-copy| D2["用户态应用"]
     end
-    
+
     style C2 fill:#90EE90
     style D2 fill:#90EE90
 ```
@@ -702,7 +702,7 @@ struct xsk {
     struct xdp_umem     *umem;     // 用户态内存区域
     struct xsk_ring_prod tx;
     struct xsk_ring_cons rx;
-    
+
     struct net_device   *dev;      // 关联网卡
     u32                  queue_id;  // 关联队列
 };
@@ -716,17 +716,17 @@ int send_batch(struct xsk_socket *xsk)
 {
     struct xsk_ring_prod *tx = &xsk->tx;
     unsigned int idx = xsk->tx.cached_prod;
-    
+
     for (int i = 0; i < batch_size; i++) {
         struct xdp_desc *desc = &tx->desc[idx % tx->mask];
-        
+
         desc->addr = /* 用户态 buffer 地址 */;
         desc->len = packet_len;
         desc->options = 0;
-        
+
         idx++;
     }
-    
+
     // 提交
     xsk->tx.cached_prod = idx;
     return sendto(xsk->fd, NULL, 0, MSG_DONTWAIT, NULL, 0);
@@ -736,7 +736,7 @@ int send_batch(struct xsk_socket *xsk)
 struct xdp_umem {
     void            *fill_buffer[2];  // fill 队列（RX）
     void            *comp_buffer[2];  // completion 队列（TX）
-    
+
     u64             size;             // 总大小
     u32             headroom;         // headroom 大小
     u32             tailroom;         // tailroom 大小

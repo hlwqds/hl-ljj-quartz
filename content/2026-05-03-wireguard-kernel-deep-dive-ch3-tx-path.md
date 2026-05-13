@@ -1,7 +1,26 @@
 ---
 title: WireGuard 内核深度探索 Ch3：数据包发送路径
 date: 2026-05-03 09:00:00
-tags: [WireGuard, Kernel, TX, Transmit, Xmit, Packet, Encryption, Queue, UDP, AllowedIPs, Routing, dst_entry, Netdev, Workqueue, NAPI, Batch Processing, Zero Copy]
+tags:
+  [
+    WireGuard,
+    Kernel,
+    TX,
+    Transmit,
+    Xmit,
+    Packet,
+    Encryption,
+    Queue,
+    UDP,
+    AllowedIPs,
+    Routing,
+    dst_entry,
+    Netdev,
+    Workqueue,
+    NAPI,
+    Batch Processing,
+    Zero Copy,
+  ]
 description: WireGuard 内核源码深度解析 Ch3：数据包发送路径详解——wg_xmit 入口、AllowedIPs 路由查找、加密队列处理、UDP 封装发送、零拷贝优化与性能分析。
 ---
 

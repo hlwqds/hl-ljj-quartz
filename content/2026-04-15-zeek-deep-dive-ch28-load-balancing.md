@@ -13,13 +13,8 @@ tags:
 description: "深入解析 Zeek 负载均衡——PF_RING 负载均衡、AF_PACKET 负载均衡、Flow 哈希算法、RSS 配置、多队列分发"
 ---
 
-> [!info] Zeek 2026 深度探索系列
-> 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
-> ...
-> 26. [[2026-04-15-zeek-deep-dive-ch26-cluster-config|第二十六章：集群配置]]
-> 27. [[2026-04-15-zeek-deep-dive-ch27-communication|第二十七章：通信]]
-> 28. **第二十八章：负载均衡**
-> 29. [[2026-04-15-zeek-deep-dive-ch29-packet-loss|第二十九章：丢包处理]]
+> [!info] Zeek 2026 深度探索系列 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
+> ... 26. [[2026-04-15-zeek-deep-dive-ch26-cluster-config|第二十六章：集群配置]] 27. [[2026-04-15-zeek-deep-dive-ch27-communication|第二十七章：通信]] 28. **第二十八章：负载均衡** 29. [[2026-04-15-zeek-deep-dive-ch29-packet-loss|第二十九章：丢包处理]]
 
 ---
 
@@ -62,12 +57,12 @@ Zeek 集群的**负载均衡**发生在两个层面：
 
 ### 1.1 负载均衡方法
 
-| 方法 | 说明 | 适用场景 |
-|:---|:---|:---|
-| **PF_RING** | 基于 DNA 的负载均衡 | 超高性能需求 |
-| **AF_PACKET** | 基于 Linux 套接字 | 通用场景 |
-| **RSS** | 硬件 RSS | 网卡支持 RSS |
-| **None** | 无负载均衡 | 单 Worker |
+| 方法          | 说明                | 适用场景     |
+| :------------ | :------------------ | :----------- |
+| **PF_RING**   | 基于 DNA 的负载均衡 | 超高性能需求 |
+| **AF_PACKET** | 基于 Linux 套接字   | 通用场景     |
+| **RSS**       | 硬件 RSS            | 网卡支持 RSS |
+| **None**      | 无负载均衡          | 单 Worker    |
 
 ---
 
@@ -978,12 +973,12 @@ perf top -ag -p $(pidof zeek-worker)
 
 本章介绍了 Zeek 集群负载均衡的核心内容：
 
-| 负载均衡方法 | 说明 | 关键参数 |
-|:---|:---|:---|
-| **PF_RING** | 高性能 DNA 负载均衡 | cluster_id, cluster_type |
-| **AF_PACKET** | Linux 通用套接字 | block_size, num_blocks |
-| **RSS** | 硬件加速哈希 | hash_types, indir_table |
-| **一致性哈希** | 分布式节点选择 | vnodes 数量 |
+| 负载均衡方法   | 说明                | 关键参数                 |
+| :------------- | :------------------ | :----------------------- |
+| **PF_RING**    | 高性能 DNA 负载均衡 | cluster_id, cluster_type |
+| **AF_PACKET**  | Linux 通用套接字    | block_size, num_blocks   |
+| **RSS**        | 硬件加速哈希        | hash_types, indir_table  |
+| **一致性哈希** | 分布式节点选择      | vnodes 数量              |
 
 下一章我们将讨论**丢包处理**，包括丢包检测机制、Intel E810 / DAG 卡配置、以及故障排除方法。
 

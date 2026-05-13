@@ -12,11 +12,8 @@ tags:
   - kubernetes
 ---
 
-> [!info] Cilium 2026 深度探索系列
-> 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
-> ...
-> 37. [[2026-04-14-cilium-deep-dive-ch37-transparent-encryption|第三十七章：透明加密]]
-> 38. **第三十八章：Sockmap** ←
+> [!info] Cilium 2026 深度探索系列 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+> ... 37. [[2026-04-14-cilium-deep-dive-ch37-transparent-encryption|第三十七章：透明加密]] 38. **第三十八章：Sockmap** ←
 
 ---
 
@@ -51,12 +48,12 @@ Sockmap 是 Linux 内核提供的一种 **eBPF Map 类型**，用于将两个 so
 
 ### 1.1 核心优势
 
-| 指标 | 传统协议栈 | Sockmap 加速 | 提升 |
-|:---|:---|:---|:---|
-| **延迟** | 0.15-0.3ms | 0.01-0.02ms | **10-15x** |
-| **吞吐量** | 基准 | +20-50% | 显著 |
-| **CPU 开销** | 高（多次拷贝） | 极低（单次拷贝） | 节省 30%+ |
-| **适用场景** | 通用 | 同节点 Pod 通信 | 延迟敏感 |
+| 指标         | 传统协议栈     | Sockmap 加速     | 提升       |
+| :----------- | :------------- | :--------------- | :--------- |
+| **延迟**     | 0.15-0.3ms     | 0.01-0.02ms      | **10-15x** |
+| **吞吐量**   | 基准           | +20-50%          | 显著       |
+| **CPU 开销** | 高（多次拷贝） | 极低（单次拷贝） | 节省 30%+  |
+| **适用场景** | 通用           | 同节点 Pod 通信  | 延迟敏感   |
 
 ---
 
@@ -82,10 +79,10 @@ sendmsg() ──────► [sk_msg hook] ──── 查找对端 socket �
 
 ### 2.2 两种劫持模式
 
-|| 模式 | Hook | 作用 |
-|:---|:---|:---|:---|
-| **sockops** | `BPF_SOCK_OPS` | 拦截 TCP 状态变化，决定是否加入 Sockmap |
-| **sk_msg** | `BPF_SK_MSG_VERDICT` | 拦截 sendmsg()，直接转发到对端 socket |
+|             | 模式                 | Hook                                    | 作用 |
+| :---------- | :------------------- | :-------------------------------------- | :--- |
+| **sockops** | `BPF_SOCK_OPS`       | 拦截 TCP 状态变化，决定是否加入 Sockmap |
+| **sk_msg**  | `BPF_SK_MSG_VERDICT` | 拦截 sendmsg()，直接转发到对端 socket   |
 
 ### 2.3 Sockmap 数据结构
 
@@ -200,13 +197,13 @@ spec:
     matchLabels:
       app: restricted-pod
   egress:
-  - socketMatch:
-      protocol: tcp
-      namespace: production
-    toPorts:
-    - ports:
-      - port: "443"
-        protocol: TCP
+    - socketMatch:
+        protocol: tcp
+        namespace: production
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
 ```
 
 ### 4.3 Sockmap 与 ServiceAccount 身份
@@ -392,14 +389,15 @@ BPF_MSG_VERDICT(msg) {
 
 ## 8. 章节总结
 
-|| 组件 | 作用 |
-|:---|:---|:---|
-| **Sockmap** | 将两个 socket 映射，实现直接转发 |
-| **sockops** | 劫持 connect()，管理 Sockmap |
-| **sk_msg** | 劫持 sendmsg()，执行直接转发 |
-| **Socket LB** | Cilium 的节点级负载均衡 |
+|               | 组件                             | 作用 |
+| :------------ | :------------------------------- | :--- |
+| **Sockmap**   | 将两个 socket 映射，实现直接转发 |
+| **sockops**   | 劫持 connect()，管理 Sockmap     |
+| **sk_msg**    | 劫持 sendmsg()，执行直接转发     |
+| **Socket LB** | Cilium 的节点级负载均衡          |
 
 **Sockmap 核心价值**：
+
 - 同节点 Pod 间 TCP 通信延迟降低 10-15x
 - CPU 开销降低 30%+
 - 完全透明，应用无需改动

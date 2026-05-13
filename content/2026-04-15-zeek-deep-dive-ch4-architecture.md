@@ -12,8 +12,8 @@ tags:
 description: "深入解析 Zeek 核心架构——C++ 核心引擎、事件引擎、ZeekScript 解释器、Analyzer 分析器框架、协议分用机制"
 ---
 
-> [!info] Zeek 2026 深度探索系列
-> 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Zeek 2026 深度探索系列 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-15-zeek-deep-dive-ch1-overview|第一章：Zeek 概述]]
 > 2. [[2026-04-15-zeek-deep-dive-ch2-installation|第二章：安装部署]]
 > 3. [[2026-04-15-zeek-deep-dive-ch3-config|第三章：配置系统]]
@@ -136,13 +136,13 @@ private:
 
 **支持的 Packet Source**：
 
-| 类型 | 源码位置 | 说明 |
-| :--- | :--- | :--- |
-| `libpcap` | `src/io/pktSrc.bro` | 通用抓包，默认 |
-| `AF_XDP` | `src/io/AF_XDP.cc` | 零拷贝，Linux 4.18+ |
-| `PF_RING` | `src/io/PF_RING.cc` | 高性能 DNA |
-| `Myricom` | `src/io/Myricom.cc` | SNF 库 |
-| `HPV` | `src/io/HPV.cc` | Solaris/illumos |
+| 类型      | 源码位置            | 说明                |
+| :-------- | :------------------ | :------------------ |
+| `libpcap` | `src/io/pktSrc.bro` | 通用抓包，默认      |
+| `AF_XDP`  | `src/io/AF_XDP.cc`  | 零拷贝，Linux 4.18+ |
+| `PF_RING` | `src/io/PF_RING.cc` | 高性能 DNA          |
+| `Myricom` | `src/io/Myricom.cc` | SNF 库              |
+| `HPV`     | `src/io/HPV.cc`     | Solaris/illumos     |
 
 ---
 
@@ -269,7 +269,7 @@ event ssh_authentication(c: connection, accepted: bool);
 
 ### 4.1 SessionMap 结构
 
-Zeek 通过 **SessionMap**（5-tuple → Connection*）管理活跃连接：
+Zeek 通过 **SessionMap**（5-tuple → Connection\*）管理活跃连接：
 
 ```cpp
 // src/NetSessions.h
@@ -601,12 +601,12 @@ event zeek_init() {
 
 **Hook vs Event**：
 
-| 特性 | Event | Hook |
-| :--- | :--- | :--- |
+| 特性     | Event                | Hook                 |
+| :------- | :------------------- | :------------------- |
 | 调用方式 | 单播（一个处理程序） | 多播（所有处理程序） |
-| 中断机制 | 无 | `break` 可停止传播 |
-| 返回值 | void | bool（可中断） |
-| 使用场景 | 日志记录、通知 | 预处理、验证 |
+| 中断机制 | 无                   | `break` 可停止传播   |
+| 返回值   | void                 | bool（可中断）       |
+| 使用场景 | 日志记录、通知       | 预处理、验证         |
 
 ---
 

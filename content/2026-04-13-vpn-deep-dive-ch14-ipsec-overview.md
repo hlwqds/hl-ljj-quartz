@@ -5,18 +5,18 @@ tags: [vpn, series, networking, security, ipsec, ah, esp, sa, sadb, tunnel-mode,
 description: "IPSec 协议族全景解析——AH/ESP 协议头格式与作用、传输模式与隧道模式对比、安全关联(SA)与安全策略数据库(SADB/SPD)详解、Linux 内核 xfrm 子系统架构"
 ---
 
-> [!info] VPN 技术深度探索系列
-> 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+> [!info] VPN 技术深度探索系列 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-vpn-deep-dive-ch1-vpn-fundamentals|VPN 基础概念]]
 > 2. [[2026-04-13-vpn-deep-dive-ch2-tunnel-basics|隧道技术基础]]
 > 3. [[2026-04-13-vpn-deep-dive-ch3-crypto-fundamentals|密码学基础]]
 > 4. [[2026-04-13-vpn-deep-dive-ch4-authentication|身份认证基础]]
-> 13. [[2026-04-13-vpn-deep-dive-ch13-ssl-vpn|SSL VPN 技术]]
-> **14. IPSec 体系概述（本章）**
-> 15. [[2026-04-13-vpn-deep-dive-ch15-ipsec-ike|IKE 密钥交换]]
-> 16. [[2026-04-13-vpn-deep-dive-ch16-ipsec-esp|AH 与 ESP 协议]]
-> 17. [[2026-04-13-vpn-deep-dive-ch17-ipsec-policy|IPSec 策略配置]]
-> 18. [[2026-04-13-vpn-deep-dive-ch18-ipsec-troubleshooting|IPSec 排错]]
+> 5. [[2026-04-13-vpn-deep-dive-ch13-ssl-vpn|SSL VPN 技术]]
+>    **14. IPSec 体系概述（本章）**
+> 6. [[2026-04-13-vpn-deep-dive-ch15-ipsec-ike|IKE 密钥交换]]
+> 7. [[2026-04-13-vpn-deep-dive-ch16-ipsec-esp|AH 与 ESP 协议]]
+> 8. [[2026-04-13-vpn-deep-dive-ch17-ipsec-policy|IPSec 策略配置]]
+> 9. [[2026-04-13-vpn-deep-dive-ch18-ipsec-troubleshooting|IPSec 排错]]
 
 ---
 
@@ -24,13 +24,13 @@ description: "IPSec 协议族全景解析——AH/ESP 协议头格式与作用�
 
 **IPSec（Internet Protocol Security）** 是 IETF 制定的一套在 IP 层提供安全通信的协议族，主要由以下 RFC 规范定义：
 
-| RFC | 内容 |
-|-----|------|
-| RFC 4301 | IPSec 安全架构 |
-| RFC 4302 | AH（Authentication Header）协议 |
+| RFC      | 内容                                      |
+| -------- | ----------------------------------------- |
+| RFC 4301 | IPSec 安全架构                            |
+| RFC 4302 | AH（Authentication Header）协议           |
 | RFC 4303 | ESP（Encapsulating Security Payload）协议 |
-| RFC 7296 | IKEv2 密钥交换协议 |
-| RFC 4306 | IKEv2（旧版，已被 7296 废止） |
+| RFC 7296 | IKEv2 密钥交换协议                        |
+| RFC 4306 | IKEv2（旧版，已被 7296 废止）             |
 
 IPSec 的三大目标：
 
@@ -80,13 +80,13 @@ AH 提供**数据完整性 + 源认证**，但**不加密**载荷内容。
 
 字段说明：
 
-| 字段 | 说明 |
-|------|------|
-| Next Header | 被保护的上层协议（如 TCP=6、UDP=17、ESP=50） |
-| Payload Len | AH 头长度（以 32 位为单位，减 2） |
-| SPI | 安全参数索引，标识 SA |
-| Sequence Number | 防重放序列号，从 1 递增 |
-| ICV | 完整性校验值（Integrity Check Value），覆盖 IP 头不变字段 + 上层载荷 |
+| 字段            | 说明                                                                 |
+| --------------- | -------------------------------------------------------------------- |
+| Next Header     | 被保护的上层协议（如 TCP=6、UDP=17、ESP=50）                         |
+| Payload Len     | AH 头长度（以 32 位为单位，减 2）                                    |
+| SPI             | 安全参数索引，标识 SA                                                |
+| Sequence Number | 防重放序列号，从 1 递增                                              |
+| ICV             | 完整性校验值（Integrity Check Value），覆盖 IP 头不变字段 + 上层载荷 |
 
 > [!warning] AH 与 NAT 不兼容
 > AH 的 ICV 覆盖 IP 头中的源/目的地址字段，而 NAT 会修改这些字段，导致 ICV 验证失败。
@@ -174,18 +174,19 @@ ESP 隧道模式：
 ```
 
 **适用场景**：
+
 - 站点到站点 VPN（Site-to-Site）：两端 VPN 网关之间
 - 远程接入 VPN（Remote Access）：客户端与 VPN 网关
 
 ### 3.3 模式对比
 
-| 特性 | 传输模式 | 隧道模式 |
-|------|---------|---------|
-| IP 头保护 | 不保护（AH 认证但不封装） | 整个原始 IP 头被加密封装 |
-| 报文开销 | 小（无外层 IP 头） | 大（新增外层 IP 头） |
-| 源/目的地址 | 与通信端点相同 | 外层 IP 为网关地址 |
-| 典型场景 | 主机到主机 | 网关到网关、客户端到网关 |
-| NAT 穿透 | 困难（尤其 AH） | ESP + NAT-T 可以穿透 |
+| 特性        | 传输模式                  | 隧道模式                 |
+| ----------- | ------------------------- | ------------------------ |
+| IP 头保护   | 不保护（AH 认证但不封装） | 整个原始 IP 头被加密封装 |
+| 报文开销    | 小（无外层 IP 头）        | 大（新增外层 IP 头）     |
+| 源/目的地址 | 与通信端点相同            | 外层 IP 为网关地址       |
+| 典型场景    | 主机到主机                | 网关到网关、客户端到网关 |
+| NAT 穿透    | 困难（尤其 AH）           | ESP + NAT-T 可以穿透     |
 
 ---
 
@@ -194,6 +195,7 @@ ESP 隧道模式：
 ### 4.1 SA 的概念
 
 **SA（Security Association）** 是 IPSec 通信双方之间的**单向安全协议**，定义了：
+
 - 使用哪种协议（AH 或 ESP）
 - 使用哪种加密/认证算法
 - 使用哪个密钥
@@ -271,6 +273,7 @@ PROTECT   —— 应用 IPSec 处理（指向某个 SA）
 ```
 
 SPD 条目匹配依据（选择符 Selector）：
+
 - 源/目的 IP 地址（可含前缀）
 - 协议（TCP/UDP/ICMP 等）
 - 源/目的端口
@@ -364,24 +367,28 @@ Linux 内核通过 **xfrm（eXtensible Framework）** 子系统实现 IPSec。
 ### 6.2 常用 ip xfrm 命令
 
 查看 SADB：
+
 ```bash
 ip xfrm state
 ip xfrm state list
 ```
 
 查看 SPD：
+
 ```bash
 ip xfrm policy
 ip xfrm policy list
 ```
 
 查看 xfrm 统计：
+
 ```bash
 ip xfrm monitor    # 实时监控 SA/policy 变化
 cat /proc/net/xfrm_stat
 ```
 
 手工添加 SA（调试用）：
+
 ```bash
 # 出站 SA
 ip xfrm state add \
@@ -401,6 +408,7 @@ ip xfrm state add \
 ```
 
 手工添加 SPD 策略：
+
 ```bash
 # 出站策略
 ip xfrm policy add \
@@ -442,6 +450,7 @@ IPSec SA 有两个生命期阈值：
 ```
 
 典型配置（strongSwan）：
+
 ```
 ikelifetime = 1h      # IKE SA 生命期
 lifetime = 30m        # IPSec SA 生命期
@@ -462,6 +471,7 @@ PFS 要求每次重新协商 IPSec SA 时都进行**新的 DH 密钥交换**，�
 ```
 
 strongSwan 配置启用 PFS：
+
 ```
 esp_proposals = aes256gcm128-modp2048
 #                               ↑ DH group → 启用 PFS
@@ -473,12 +483,12 @@ esp_proposals = aes256gcm128-modp2048
 
 现代推荐算法组合（2024+）：
 
-| 功能 | 推荐算法 | 避免使用 |
-|------|---------|---------|
-| 加密 | AES-256-GCM（AEAD） | DES、3DES、RC4 |
-| 完整性 | SHA-256/384/512 | MD5、SHA-1 |
+| 功能        | 推荐算法                    | 避免使用       |
+| ----------- | --------------------------- | -------------- |
+| 加密        | AES-256-GCM（AEAD）         | DES、3DES、RC4 |
+| 完整性      | SHA-256/384/512             | MD5、SHA-1     |
 | DH 密钥交换 | ECDH P-256/P-384、modp3072+ | DH group 1/2/5 |
-| PRF | PRF-HMAC-SHA256 | PRF-HMAC-MD5 |
+| PRF         | PRF-HMAC-SHA256             | PRF-HMAC-MD5   |
 
 > [!tip] 优先使用 AEAD 算法
 > **AES-GCM（Galois/Counter Mode）** 是 AEAD（同时认证加密）算法，一次操作完成加密和认证，比 AES-CBC + HMAC 更高效，且无 padding oracle 攻击风险。

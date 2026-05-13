@@ -972,4 +972,3 @@ The traffic matrix is the foundation of effective traffic engineering in SRv6 ne
 Understanding and leveraging the traffic matrix transforms SRv6 networks from reactive to proactive—continuously optimized based on actual demand rather than static configuration.
 
 ---
-

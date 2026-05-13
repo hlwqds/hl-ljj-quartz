@@ -5,8 +5,8 @@ tags: [rdma, series, queue-pair, QP, work-request, completion-queue, verbs]
 description: "深入理解 RDMA 队列对 (QP) 的状态机、Work Request 结构、Completion Queue 机制，以及 QP 与 CQ、PD 的关联"
 ---
 
-> [!info] RDMA 深度探索系列
-> 0. [[2026-04-13-rdma-deep-dive-series-index|全栈学习路径总览]]
+> [!info] RDMA 深度探索系列 0. [[2026-04-13-rdma-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-rdma-deep-dive-ch1-rdma-overview|第一章：RDMA 概述]]
 > 2. [[2026-04-13-rdma-deep-dive-ch2-rdma-architecture|第二章：RDMA 架构]]
 > 3. [[2026-04-13-rdma-deep-dive-ch3-infiniband|第三章：InfiniBand 架构]]
@@ -117,15 +117,15 @@ struct ibv_sge {
 
 ### 2.3 Opcode 类型
 
-| Opcode | 操作 | 方向 | 语义 |
-|--------|------|------|------|
-| `IBV_WR_SEND` | 发送 | Two-sided | 发送数据，接收方必须已 post Recv WR |
-| `IBV_WR_SEND_WITH_IMM` | 发送+立即数 | Two-sided | 发送数据 + 32bit 立即数 |
-| `IBV_WR_RDMA_READ` | RDMA Read | One-sided | 从远端读取（远端 CPU 无感知） |
-| `IBV_WR_RDMA_WRITE` | RDMA Write | One-sided | 写入远端内存（远端 CPU 无感知） |
-| `IBV_WR_RDMA_WRITE_WITH_IMM` | RDMA Write+立即数 | One-sided | 写入 + 立即数 |
-| `IBV_WR_ATOMIC_CMP_AND_SWP` | CAS | One-sided | 原子比较并交换 |
-| `IBV_WR_ATOMIC_FETCH_AND_ADD` | Fetch & Add | One-sided | 原子 Fetch & Add |
+| Opcode                        | 操作              | 方向      | 语义                                |
+| ----------------------------- | ----------------- | --------- | ----------------------------------- |
+| `IBV_WR_SEND`                 | 发送              | Two-sided | 发送数据，接收方必须已 post Recv WR |
+| `IBV_WR_SEND_WITH_IMM`        | 发送+立即数       | Two-sided | 发送数据 + 32bit 立即数             |
+| `IBV_WR_RDMA_READ`            | RDMA Read         | One-sided | 从远端读取（远端 CPU 无感知）       |
+| `IBV_WR_RDMA_WRITE`           | RDMA Write        | One-sided | 写入远端内存（远端 CPU 无感知）     |
+| `IBV_WR_RDMA_WRITE_WITH_IMM`  | RDMA Write+立即数 | One-sided | 写入 + 立即数                       |
+| `IBV_WR_ATOMIC_CMP_AND_SWP`   | CAS               | One-sided | 原子比较并交换                      |
+| `IBV_WR_ATOMIC_FETCH_AND_ADD` | Fetch & Add       | One-sided | 原子 Fetch & Add                    |
 
 ---
 
@@ -172,13 +172,13 @@ if (ne > 0) {
 
 ### 3.3 轮询 vs 中断
 
-| 特性 | Polling | 中断 |
-|------|---------|------|
-| 延迟 | 微秒级（无中断开销） | 毫秒级（中断处理） |
-| CPU 占用 | 持续占用一个 core | 按需唤醒 |
-| 吞吐 | 高（适合高频场景） | 低（适合低频场景） |
-| 能耗 | 高 | 低 |
-| 典型场景 | HPC、AI 训练 | 通用存储、网络 |
+| 特性     | Polling              | 中断               |
+| -------- | -------------------- | ------------------ |
+| 延迟     | 微秒级（无中断开销） | 毫秒级（中断处理） |
+| CPU 占用 | 持续占用一个 core    | 按需唤醒           |
+| 吞吐     | 高（适合高频场景）   | 低（适合低频场景） |
+| 能耗     | 高                   | 低                 |
+| 典型场景 | HPC、AI 训练         | 通用存储、网络     |
 
 ---
 
@@ -220,15 +220,15 @@ QP 是有状态的，状态转换遵循 InfiniBand 规范：
 
 ### 4.1 各状态说明
 
-| 状态 | 说明 | 可执行操作 |
-|------|------|-----------|
-| `RESET` | QP 初始状态，队列为空 | 创建、销毁 |
-| `INIT` | 已初始化，尚未准备收发 | Modify QP to RTR |
-| `RTR` | Ready to Receive，已准备好接收 | Modify QP to RTS |
-| `RTS` | Ready to Send，可以发送 WQE | 正常收发 |
-| `SQ_DRAINED` | 发送队列已排空 | 等待 ACK/NACK |
-| `SQE` | Send Queue Error | Recovery |
-| `ERROR` | 错误状态 | 销毁或 Reset |
+| 状态         | 说明                           | 可执行操作       |
+| ------------ | ------------------------------ | ---------------- |
+| `RESET`      | QP 初始状态，队列为空          | 创建、销毁       |
+| `INIT`       | 已初始化，尚未准备收发         | Modify QP to RTR |
+| `RTR`        | Ready to Receive，已准备好接收 | Modify QP to RTS |
+| `RTS`        | Ready to Send，可以发送 WQE    | 正常收发         |
+| `SQ_DRAINED` | 发送队列已排空                 | 等待 ACK/NACK    |
+| `SQE`        | Send Queue Error               | Recovery         |
+| `ERROR`      | 错误状态                       | 销毁或 Reset     |
 
 ### 4.2 典型状态转换代码
 
@@ -327,12 +327,12 @@ ibv_post_send(qp, &send_wr, &bad_wr);
 
 ### 6.2 ibv_post_send 标志位
 
-| 标志 | 说明 |
-|------|------|
-| `IBV_SEND_FENCE` | 之前的所有 Send WR 必须在此之前完成 |
-| `IBV_SEND_SIGNALED` | 产生 Completion（更新 CQ） |
+| 标志                 | 说明                                     |
+| -------------------- | ---------------------------------------- |
+| `IBV_SEND_FENCE`     | 之前的所有 Send WR 必须在此之前完成      |
+| `IBV_SEND_SIGNALED`  | 产生 Completion（更新 CQ）               |
 | `IBV_SEND_SOLICITED` | 使用Solicited 事件（对方收到时产生通知） |
-| `IBV_SEND_INLINE` | 数据内联在 WQE 中（不额外 DMA） |
+| `IBV_SEND_INLINE`    | 数据内联在 WQE 中（不额外 DMA）          |
 
 ---
 

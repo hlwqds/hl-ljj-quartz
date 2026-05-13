@@ -12,12 +12,8 @@ tags:
 description: "深入解析 Zeek 生产调优清单——系统内核参数、Zeek 配置、日志优化、集群调优、高吞吐量场景最佳实践、监控告警配置"
 ---
 
-> [!info] Zeek 2026 深度探索系列
-> 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
-> ...
-> 35. [[2026-04-15-zeek-deep-dive-ch35-scripts|第三十五章：脚本优化]]
-> 36. [[2026-04-15-zeek-deep-dive-ch36-hardware|第三十六章：硬件加速]]
-> 37. **第三十七章：Tuning 清单**
+> [!info] Zeek 2026 深度探索系列 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
+> ... 35. [[2026-04-15-zeek-deep-dive-ch35-scripts|第三十五章：脚本优化]] 36. [[2026-04-15-zeek-deep-dive-ch36-hardware|第三十六章：硬件加速]] 37. **第三十七章：Tuning 清单**
 
 ---
 
@@ -362,7 +358,7 @@ redef Log::default_rotation_interval = 1hr;
 event zeek_init() {
     # 禁用 SSH 详细日志（如果不需要）
     # Log::disable_stream(SSH::LOG);
-    
+
     # 禁用 FTP 详细日志
     # Log::disable_stream(FTP::LOG);
 }
@@ -520,7 +516,7 @@ redef dns_cache_size = 500000;
 event zeek_init() {
     # 如果不需要 SMTP 分析
     # Analyzer::disable(Analyzer::ANALYZER_SMTP);
-    
+
     # 如果不需要 RDP 分析
     # Analyzer::disable(Analyzer::ANALYZER_RDP);
 }
@@ -582,18 +578,18 @@ monitor_zeek() {
 
     # 内存使用
     local mem=$(ps -o rss= -p $pid | awk '{print $1/1024}')
-    
+
     # CPU 使用
     local cpu=$(ps -o %cpu= -p $pid)
-    
+
     # 连接数
     local conns=$(wc -l < $LOG_DIR/conn.log 2>/dev/null || echo 0)
-    
+
     # 丢包率
     local loss=$(grep -a "^#fields" $LOG_DIR/capture_loss.log 2>/dev/null && \
                  awk 'END {if(NR>1) print}' $LOG_DIR/capture_loss.log 2>/dev/null | \
                  awk '{print $4/$2}' 2>/dev/null || echo "N/A")
-    
+
     echo "$(date '+%Y-%m-%d %H:%M:%S') Memory=${mem}MB CPU=${cpu}% Conn=${conns} Loss=${loss}"
 }
 
@@ -627,16 +623,16 @@ event perf_stats_update(s: perfstats) {
         fmt("# HELP zeek_memory_rss_bytes Zeek RSS memory in bytes"),
         fmt("# TYPE zeek_memory_rss_bytes gauge"),
         fmt("zeek_memory_rss_bytes %.0f", s$mem),
-        
+
         fmt("# HELP zeek_events_processed_total Total events processed"),
         fmt("# TYPE zeek_events_processed_total counter"),
         fmt("zeek_events_processed_total %.0f", s$events),
-        
+
         fmt("# HELP zeek_packets_processed_total Total packets processed"),
         fmt("# TYPE zeek_packets_processed_total counter"),
         fmt("zeek_packets_processed_total %.0f", s$pkts)
     );
-    
+
     for ( m in metrics ) {
         print m;
     }
@@ -646,9 +642,9 @@ event perf_stats_update(s: perfstats) {
 ```yaml
 # prometheus.yml 配置
 scrape_configs:
-  - job_name: 'zeek'
+  - job_name: "zeek"
     static_configs:
-      - targets: ['zeek-node:9091']
+      - targets: ["zeek-node:9091"]
     scrape_interval: 15s
 ```
 
@@ -663,15 +659,15 @@ export {
     # 内存告警阈值
     global memory_warning_threshold = 8GB;
     global memory_critical_threshold = 12GB;
-    
+
     # CPU 告警阈值
     global cpu_warning_threshold = 80.0;
     global cpu_critical_threshold = 95.0;
-    
+
     # 丢包告警阈值
     global packet_loss_warning = 0.001;   # 0.1%
     global packet_loss_critical = 0.01;   # 1%
-    
+
     # 事件队列告警阈值
     global event_queue_warning = 50000;
     global event_queue_critical = 100000;
@@ -687,7 +683,7 @@ event memory_update(s: memory_stats) {
 
 event capture_loss_update(u: count, d: count, i: count) {
     local loss_rate = double(d) / double(u + d);
-    
+
     if ( loss_rate > packet_loss_critical ) {
         Reporter::error(fmt("Critical packet loss: %.2f%%", loss_rate * 100));
     } else if ( loss_rate > packet_loss_warning ) {
@@ -789,15 +785,15 @@ grep -a "drops" /var/log/zeek/capture_loss.log
 
 ### 9.1 常见问题与解决方案
 
-| 问题 | 可能原因 | 解决方案 |
-|:---|:---|:---|
-| **Zeek 无法启动** | 端口被占用 | `netstat -tlnp \| grep 47760` |
-| **丢包严重** | RSS 未配置 / Ring buffer 太小 | 配置 RSS / 增加 ring buffer |
-| **内存持续增长** | 内存泄漏 | 检查 DNS 缓存 / 全局表 |
-| **CPU 100%** | 正则表达式回溯 | 简化正则 / 使用 re2 |
-| **事件队列积压** | 处理速度慢 | 优化脚本 / 增加 worker |
-| **日志不输出** | 权限问题 / 磁盘满 | 检查权限 / 清理磁盘 |
-| **集群通信失败** | 防火墙 / 网络 | 检查端口 / 防火墙规则 |
+| 问题              | 可能原因                      | 解决方案                      |
+| :---------------- | :---------------------------- | :---------------------------- |
+| **Zeek 无法启动** | 端口被占用                    | `netstat -tlnp \| grep 47760` |
+| **丢包严重**      | RSS 未配置 / Ring buffer 太小 | 配置 RSS / 增加 ring buffer   |
+| **内存持续增长**  | 内存泄漏                      | 检查 DNS 缓存 / 全局表        |
+| **CPU 100%**      | 正则表达式回溯                | 简化正则 / 使用 re2           |
+| **事件队列积压**  | 处理速度慢                    | 优化脚本 / 增加 worker        |
+| **日志不输出**    | 权限问题 / 磁盘满             | 检查权限 / 清理磁盘           |
+| **集群通信失败**  | 防火墙 / 网络                 | 检查端口 / 防火墙规则         |
 
 ### 9.2 诊断命令速查
 

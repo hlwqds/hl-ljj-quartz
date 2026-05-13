@@ -5,8 +5,8 @@ tags: [vpn, series, wireguard, protocol, handshake, noise]
 description: "WireGuard 协议核心详解——协议头格式、四种消息类型（握手/响应/Cookie/数据）、Noise Protocol IK 模式握手流程、密钥派生过程、Cookie 防 DoS 机制"
 ---
 
-> [!info] VPN 技术深度探索系列
-> 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+> [!info] VPN 技术深度探索系列 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-vpn-deep-dive-ch1-vpn-fundamentals|VPN 基础概念]]
 > 2. [[2026-04-13-vpn-deep-dive-ch18-ipsec-troubleshooting|第十八章：IPSec 排错]]
 > 3. **第十九章：WireGuard 协议详解**

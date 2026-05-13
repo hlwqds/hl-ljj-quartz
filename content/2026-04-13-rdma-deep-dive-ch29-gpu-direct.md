@@ -39,7 +39,7 @@ GPU Direct RDMA:
 // 带宽: 受限于 PCIe + 主机内存带宽
 
 // GPU Direct RDMA: GPU → RDMA 直接
-// 延迟: ~2-3 μs  
+// 延迟: ~2-3 μs
 // 带宽: 接近 IB HDR 线速 (50-100 Gbps)
 
 // 对于 AllReduce 通信:
@@ -127,7 +127,7 @@ GDR 系统组件：
 void* gpu_mem;
 cudaMalloc(&gpu_mem, size);  // GPU 显存
 
-// 2. cudaMallocHost分配的 pinned 主机内存  
+// 2. cudaMallocHost分配的 pinned 主机内存
 void* host_mem;
 cudaMallocHost(&host_mem, size);  // 主机 pinned 内存
 // 可直接注册到 RDMA
@@ -156,7 +156,7 @@ if (!gdr) {
 
 // 2. 打开 GPU 显存对应的 BAR
 gdr_mh_t mh;
-int ret = gdr_pin_buffer(gdr, (unsigned long)gpu_ptr, size, 
+int ret = gdr_pin_buffer(gdr, (unsigned long)gpu_ptr, size,
                          0, 0, &mh);
 if (ret) {
     fprintf(stderr, "gdr_pin_buffer failed: %d\n", ret);
@@ -214,28 +214,28 @@ int setup_gpu_rdma(struct rdma_context *ctx, void *gpu_ptr, size_t size) {
     // 1. 初始化 GDR
     ctx->gdr = gdr_init();
     if (!ctx->gdr) return -1;
-    
+
     // 2. 注册 GPU 显存
     int ret = gdr_pin_buffer(ctx->gdr, (unsigned long)gpu_ptr, size,
                              0, 0, &ctx->gdr_mh);
     if (ret) return ret;
-    
+
     // 3. 映射 GPU 显存
     ret = gdr_map(ctx->gdr, ctx->gdr_mh, &ctx->mapped_gpu_ptr, size);
     if (ret) return ret;
-    
+
     // 4. 获取 GPU 物理地址用于 RDMA
     struct gdr_info info;
     gdr_get_info(ctx->gdr, ctx->gdr_mh, &info);
     ctx->gpu_phys_addr = info.phys_addr;
-    
+
     // 5. 创建 IB 保护域和内存区域
     ctx->pd = ibv_alloc_pd(ctx->cm_id->verbs);
     ctx->mr = ibv_reg_mr(ctx->pd, ctx->mapped_gpu_ptr, size,
-                          IBV_ACCESS_LOCAL_WRITE | 
+                          IBV_ACCESS_LOCAL_WRITE |
                           IBV_ACCESS_REMOTE_WRITE |
                           IBV_ACCESS_REMOTE_READ);
-    
+
     return 0;
 }
 ```
@@ -262,10 +262,10 @@ nvidia-smi topo -m
 
 # 输出示例：
 #       GPU0    GPU1    mlx5_0  CPU
-# GPU0     X     NV1     SYS    
-# GPU1    NV1     X      SYS    
-# mlx5_0  SYS    SYS     X      
-# 
+# GPU0     X     NV1     SYS
+# GPU1    NV1     X      SYS
+# mlx5_0  SYS    SYS     X
+#
 # NV = NVLink 连接
 # SYS = System PCI 互联
 ```
@@ -404,7 +404,7 @@ mpirun --allow-run-as-root -n 8 \
 ```bash
 # 1. 检查 GDR 模块加载
 lsmod | grep nvidia
-# 期望看到: nvidia_p2p_* 
+# 期望看到: nvidia_p2p_*
 
 # 2. 检查 GPU BAR 空间
 nvidia-smi -q | grep -i bar

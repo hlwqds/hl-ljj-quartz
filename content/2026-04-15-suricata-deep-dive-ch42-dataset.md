@@ -11,15 +11,8 @@ tags:
 description: "深入解析 Suricata Dataset 系统：dataset 配置、Dataset 类型（ip, md5, sha256, string, url）、Atomic 加载、Lua 动态列表、规则关键字（dstlive, filestore）、以及大列表性能优化"
 ---
 
-> [!info] Suricata 2026 深度探索系列
-> 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
-> ...
-> 40. [[2026-04-15-suricata-deep-dive-ch40-hyperscan|第四十章：Hyperscan MPM]]
-> 41. [[2026-04-15-suricata-deep-dive-ch41-iprep|第四十一章：IP 信誉系统]]
-> 42. **第四十二章：Dataset 与动态列表**
-> 43. [[2026-04-15-suricata-deep-dive-ch43-app-layer-register|第四十三章：自定义 Parser]]
-> 44. [[2026-04-15-suricata-deep-dive-ch44-rust|第四十四章：Rust 扩展]]
-> 45. [[2026-04-15-suricata-deep-dive-ch45-cluster|第四十五章：集群模式]]
+> [!info] Suricata 2026 深度探索系列 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+> ... 40. [[2026-04-15-suricata-deep-dive-ch40-hyperscan|第四十章：Hyperscan MPM]] 41. [[2026-04-15-suricata-deep-dive-ch41-iprep|第四十一章：IP 信誉系统]] 42. **第四十二章：Dataset 与动态列表** 43. [[2026-04-15-suricata-deep-dive-ch43-app-layer-register|第四十三章：自定义 Parser]] 44. [[2026-04-15-suricata-deep-dive-ch44-rust|第四十四章：Rust 扩展]] 45. [[2026-04-15-suricata-deep-dive-ch45-cluster|第四十五章：集群模式]]
 
 ---
 
@@ -45,14 +38,14 @@ graph TD
 
 ### 1.1 Dataset vs IPREP
 
-| 特性 | IPREP | Dataset |
-|:---|:---|:---|
-| **数据类型** | IP 信誉（类别+分数） | IP/MD5/SHA256/String/URL |
-| **更新粒度** | 全量替换 | 增量添加/删除 |
-| **Lua 集成** | 否 | 是 |
-| **持久化** | 二进制 .dat | 文本文件 |
-| **规则关键字** | `iprep` | `dstlive`, `filemd5`, `urilive` |
-| **适用场景** | 威胁情报 | 动态黑白名单 |
+| 特性           | IPREP                | Dataset                         |
+| :------------- | :------------------- | :------------------------------ |
+| **数据类型**   | IP 信誉（类别+分数） | IP/MD5/SHA256/String/URL        |
+| **更新粒度**   | 全量替换             | 增量添加/删除                   |
+| **Lua 集成**   | 否                   | 是                              |
+| **持久化**     | 二进制 .dat          | 文本文件                        |
+| **规则关键字** | `iprep`              | `dstlive`, `filemd5`, `urilive` |
+| **适用场景**   | 威胁情报             | 动态黑白名单                    |
 
 ### 1.2 Dataset 类型
 
@@ -96,7 +89,7 @@ datasets:
       load: /var/lib/suricata/datasets/badips.txt
       # 写入路径（新条目追加）
       save: /var/lib/suricata/datasets/badips.txt
-      lock: yes                    # 文件锁
+      lock: yes # 文件锁
 
     # MD5 黑名单（恶意文件哈希）
     - name: "malware-hashes"
@@ -111,7 +104,7 @@ datasets:
       type: sha256
       persist: yes
       load: /var/lib/suricata/datasets/malware-sha256.txt
-      notifiers: /var/run/suricata/dataset.notif  # inotify 通知
+      notifiers: /var/run/suricata/dataset.notif # inotify 通知
 
     # URL 黑名单
     - name: "malicious-urls"
@@ -141,7 +134,7 @@ datasets:
         map-size: 2gb
         max-readers: 100
       # 文件格式
-      format: text               # text | binary
+      format: text # text | binary
       # 字符集（string/url 类型）
       separator: ","
 
@@ -150,7 +143,7 @@ datasets:
       # 实时加载，不持久化
       persist: no
       # 非持久化数据集，内存增长后不写入磁盘
-      empty: ignore               # ignore | create
+      empty: ignore # ignore | create
 
     - name: "http-useragents"
       type: string

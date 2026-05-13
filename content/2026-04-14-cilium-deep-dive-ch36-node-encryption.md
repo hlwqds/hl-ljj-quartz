@@ -11,13 +11,8 @@ tags:
   - kubernetes
 ---
 
-> [!info] Cilium 2026 深度探索系列
-> 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
-> ...
-> 35. [[2026-04-14-cilium-deep-dive-ch35-bandwidth-manager|第三十五章：带宽管理器]]
-> 36. **第三十六章：节点加密** ←
-> 37. [[2026-04-14-cilium-deep-dive-ch37-transparent-encryption|第三十七章：透明加密]]
-> 38. [[2026-04-14-cilium-deep-dive-ch38-sockmap|第三十八章：Sockmap]]
+> [!info] Cilium 2026 深度探索系列 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+> ... 35. [[2026-04-14-cilium-deep-dive-ch35-bandwidth-manager|第三十五章：带宽管理器]] 36. **第三十六章：节点加密** ← 37. [[2026-04-14-cilium-deep-dive-ch37-transparent-encryption|第三十七章：透明加密]] 38. [[2026-04-14-cilium-deep-dive-ch38-sockmap|第三十八章：Sockmap]]
 
 ---
 
@@ -25,10 +20,10 @@ tags:
 
 Cilium 支持**节点间流量加密**，确保跨节点的 Pod 通信不被窃听或篡改。Cilium 支持两种加密后端：
 
-|| 方案 | 加密算法 | 性能 | 密钥管理 |
-|:---|:---|:---|:---|:---|
+|               | 方案              | 加密算法         | 性能     | 密钥管理 |
+| :------------ | :---------------- | :--------------- | :------- | :------- |
 | **WireGuard** | ChaCha20-Poly1305 | 极高（内核原生） | 自动分发 |
-| **IPsec** | AES-GCM | 高 | 自动分发 |
+| **IPsec**     | AES-GCM           | 高               | 自动分发 |
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
@@ -66,6 +61,7 @@ Cilium 支持**节点间流量加密**，确保跨节点的 Pod 通信不被窃�
 ### 2.1 为什么选择 WireGuard
 
 WireGuard 是专为现代内核设计的轻量级 VPN 协议，相比 IPsec：
+
 - **代码量少**：~4,000 行 vs IPsec 的 ~600,000 行
 - **极致性能**：利用内核 Crypt API，接近线速
 - **现代加密**：ChaCha20-Poly1305（非 AES 依赖，ARM 友好）
@@ -130,6 +126,7 @@ kubectl -n kube-system exec ds/cilium -- \
 ### 3.1 何时使用 IPsec
 
 在以下场景优先选择 IPsec：
+
 - 需要与**非 Cilium 节点**互通（IPsec 是标准协议）
 - 已有 PKI 基础设施
 - 需要 **ESP 隧道模式**与硬件加密卡配合
@@ -209,9 +206,9 @@ spec:
   endpointSelector:
     matchLabels:
       # 匹配所有节点上的 Cilium managed endpoints
-  tunnel: true          # WireGuard 模式
+  tunnel: true # WireGuard 模式
   # OR
-  ipsecMode: tunnel     # IPsec tunnel 模式
+  ipsecMode: tunnel # IPsec tunnel 模式
 ```
 
 ---
@@ -241,13 +238,13 @@ IPsec (AES-GCM-256):
 
 ### 5.2 选型建议
 
-| 场景 | 推荐方案 | 原因 |
-|:---|:---|:---|
-| 高性能数据中心 | WireGuard | 极低开销，原生多核 |
-| 与非 K8s 节点互通 | IPsec | 标准协议，兼容性更好 |
-| 已有 TPM/Hardware crypto | IPsec | 可利用硬件加速 |
-| 低延迟敏感业务 | WireGuard | 更低的延迟增加 |
-| ARM/M1 节点 | WireGuard | ChaCha20 而非 AES 优化 |
+| 场景                     | 推荐方案  | 原因                   |
+| :----------------------- | :-------- | :--------------------- |
+| 高性能数据中心           | WireGuard | 极低开销，原生多核     |
+| 与非 K8s 节点互通        | IPsec     | 标准协议，兼容性更好   |
+| 已有 TPM/Hardware crypto | IPsec     | 可利用硬件加速         |
+| 低延迟敏感业务           | WireGuard | 更低的延迟增加         |
+| ARM/M1 节点              | WireGuard | ChaCha20 而非 AES 优化 |
 
 ---
 
@@ -316,14 +313,14 @@ cilium config EndpointRRSize=8192
 
 ## 7. 章节总结
 
-|| 特性 | WireGuard | IPsec |
-|:---|:---|:---|:---|
-| **加密算法** | ChaCha20-Poly1305 | AES-GCM |
-| **性能** | 极高 | 高 |
-| **密钥分发** | 自动 (KVStore) | 自动 (KVStore) |
-| **兼容性** | Cilium 节点间 | 可与第三方设备 |
-| **代码复杂度** | 极低 | 高 |
-| **推荐场景** | 高性能数据中心 | 多厂商互通 |
+|                | 特性              | WireGuard      | IPsec |
+| :------------- | :---------------- | :------------- | :---- |
+| **加密算法**   | ChaCha20-Poly1305 | AES-GCM        |
+| **性能**       | 极高              | 高             |
+| **密钥分发**   | 自动 (KVStore)    | 自动 (KVStore) |
+| **兼容性**     | Cilium 节点间     | 可与第三方设备 |
+| **代码复杂度** | 极低              | 高             |
+| **推荐场景**   | 高性能数据中心    | 多厂商互通     |
 
 **下一章**：透明加密——Cilium 如何实现从 Pod 到 Pod 的端到端加密，无需修改应用代码。
 

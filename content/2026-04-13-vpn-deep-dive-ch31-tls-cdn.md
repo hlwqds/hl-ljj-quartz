@@ -5,8 +5,8 @@ tags: [vpn, series, tls, cdn, domain-fronting, cloudflare, proxy]
 description: "TLS 伪装与 CDN 技术深度解析——域前置（Domain Fronting）、SNI 隐藏、CDN 隐蔽、真实 TLS 证书、Cloudflare/Workers 部署与抗封锁架构"
 ---
 
-> [!info] VPN 技术深度探索系列
-> 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+> [!info] VPN 技术深度探索系列 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-vpn-deep-dive-ch30-clash|Clash 生态]]
 > 2. **第三十一章：TLS 伪装与 CDN**
 > 3. [[2026-04-13-vpn-deep-dive-ch32-tor-network|第三十二章：Tor 网络]]
@@ -435,23 +435,23 @@ addEventListener('fetch', event => {
 
 async function handleRequest(request) {
   const url = new URL(request.url)
-  
+
   // 只代理特定 path
   if (url.pathname.startsWith('/proxy/')) {
     // 提取目标
     const targetPath = url.pathname.replace('/proxy/', '/')
     const targetUrl = 'https://your-origin-server.com' + targetPath
-    
+
     // 转发请求
     const modifiedRequest = new Request(targetUrl, {
       method: request.method,
       headers: request.headers,
       body: request.body
     })
-    
+
     return fetch(modifiedRequest)
   }
-  
+
   // 其他请求返回简单页面
   return new Response('OK', { status: 200 })
 }
@@ -474,7 +474,7 @@ addEventListener('fetch', event => {
 
 async function handleRequest(request) {
   const url = new URL(request.url)
-  
+
   // WebSocket 升级
   if (request.headers.get('Upgrade') === 'websocket') {
     const target = 'wss://' + serverHost
@@ -484,7 +484,7 @@ async function handleRequest(request) {
       body: request.body
     })
   }
-  
+
   // HTTP 代理
   const targetUrl = 'https://' + serverHost + url.pathname
   return fetch(targetUrl, {
@@ -575,10 +575,10 @@ Let's Encrypt + Nginx + V2Ray：
    server {
        listen 443 ssl;
        server_name your-domain.com;
-       
+
        ssl_certificate /etc/letsencrypt/live/your-domain.com/fullchain.pem;
        ssl_certificate_key /etc/letsencrypt/live/your-domain.com/privkey.pem;
-       
+
        # V2Ray WebSocket 路径
        location /vless {
            proxy_pass http://127.0.0.1:10086;
@@ -587,7 +587,7 @@ Let's Encrypt + Nginx + V2Ray：
            proxy_set_header Connection "upgrade";
            proxy_set_header Host $host;
        }
-       
+
        # 其他路径返回正常页面
        location / {
            root /var/www/html;

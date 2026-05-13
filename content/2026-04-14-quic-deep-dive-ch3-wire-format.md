@@ -26,12 +26,12 @@ UDP Datagram:
 
 QUIC defines two packet types based on the first byte's high bits:
 
-| First Byte (binary) | Packet Type | Used During |
-|---|---|---|
-| `00` | Initial | Connection establishment |
-| `01` | 0-RTT | Early data (after initial) |
-| `10` | Handshake | Post-handshake messages |
-| `11` | Short Header | 1-RTT data transfer |
+| First Byte (binary) | Packet Type  | Used During                |
+| ------------------- | ------------ | -------------------------- |
+| `00`                | Initial      | Connection establishment   |
+| `01`                | 0-RTT        | Early data (after initial) |
+| `10`                | Handshake    | Post-handshake messages    |
+| `11`                | Short Header | 1-RTT data transfer        |
 
 The first byte is also the Connection ID Length (first 2 bits) in long header packets, and version-specific flags in short header packets.
 
@@ -62,6 +62,7 @@ Long header packets share a common prefix:
 ```
 
 **Fields:**
+
 - **Header Form** (1 bit): `1` = long header
 - **Version** (32 bits): QUIC protocol version (e.g., `0x00000001` for v1)
 - **DCID Len** (8 bits): Length of Destination Connection ID
@@ -93,6 +94,7 @@ Used for 1-RTT data. Only the destination Connection ID is included (since the c
 ```
 
 **Fields:**
+
 - **Header Form** (1 bit): `0` = short header
 - **Reserved** (2 bits): Must be zero (checked by receiver)
 - **Packet Number Length** (2 bits): Same encoding as long header
@@ -104,12 +106,12 @@ Used for 1-RTT data. Only the destination Connection ID is included (since the c
 
 QUIC uses a variable-length integer encoding for most numeric fields to reduce overhead:
 
-| Prefix (2 bits) | Bytes Used | Range |
-|---|---|---|
-| `00` | 1 byte | 0 to 63 |
-| `01` | 2 bytes | 0 to 16383 |
-| `10` | 4 bytes | 0 to 2^31 - 1 |
-| `11` | 8 bytes | 0 to 2^63 - 1 |
+| Prefix (2 bits) | Bytes Used | Range         |
+| --------------- | ---------- | ------------- |
+| `00`            | 1 byte     | 0 to 63       |
+| `01`            | 2 bytes    | 0 to 16383    |
+| `10`            | 4 bytes    | 0 to 2^31 - 1 |
+| `11`            | 8 bytes    | 0 to 2^63 - 1 |
 
 The first two bits encode the length, the remaining bits encode the value:
 

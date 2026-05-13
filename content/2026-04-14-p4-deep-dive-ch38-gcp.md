@@ -1,17 +1,18 @@
 ---
 title: "P4 深度探索 (三十八)：GCP 网络可编程实践——Andromeda 软件定义网络、Jupiter Fabric、Espresso 边缘"
 date: 2026-04-14
-tags: [p4, series, gcp, cloud, andromeda, jupiter, network, programmable, software-defined, espresso]
+tags:
+  [p4, series, gcp, cloud, andromeda, jupiter, network, programmable, software-defined, espresso]
 description: "GCP P4 可编程网络深度解析——Andromeda 软件定义网络架构、Jupiter Fabric 96Tbps 单 clos 平面、Espresso 边缘网络、gRPC 配置管理、VPC 路由、P4 on GCP"
 ---
 
-> [!info] P4 深度探索系列
-> 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+> [!info] P4 深度探索系列 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-14-p4-deep-dive-ch1-p4-overview|第一章：P4 概述]]
-> ...
-> 36. [[2026-04-14-p4-deep-dive-ch36-aws|第三十六章：AWS 网络可编程实践]]
-> 37. [[2026-04-14-p4-deep-dive-ch37-azure|第三十七章：Azure 网络可编程实践]]
-> 38. **第三十八章：GCP 网络可编程实践——Andromeda、Jupiter Fabric、Espresso**
+>    ...
+> 2. [[2026-04-14-p4-deep-dive-ch36-aws|第三十六章：AWS 网络可编程实践]]
+> 3. [[2026-04-14-p4-deep-dive-ch37-azure|第三十七章：Azure 网络可编程实践]]
+> 4. **第三十八章：GCP 网络可编程实践——Andromeda、Jupiter Fabric、Espresso**
 
 ---
 
@@ -308,13 +309,13 @@ Espresso 架构:
 
 Espresso 使用 P4 实现以下功能：
 
-| 功能 | 描述 | P4 表 |
-|------|------|-------|
-| **BGP Route Server** | BGP 路由服务 | 路由表 |
-| **Route Filtering** | 路由过滤 | ACL 表 |
-| **Traffic Policing** | 流量监管 | Meter 表 |
-| **NAT** | 网络地址转换 | NAPT 表 |
-| **Load Balancing** | 负载均衡 | Hash 表 |
+| 功能                 | 描述         | P4 表    |
+| -------------------- | ------------ | -------- |
+| **BGP Route Server** | BGP 路由服务 | 路由表   |
+| **Route Filtering**  | 路由过滤     | ACL 表   |
+| **Traffic Policing** | 流量监管     | Meter 表 |
+| **NAT**              | 网络地址转换 | NAPT 表  |
+| **Load Balancing**   | 负载均衡     | Hash 表  |
 
 ```c
 // Espresso P4 NAT 实现
@@ -819,12 +820,12 @@ gcloud compute target-pools create my-pool \
 
 GCP 的 P4 可编程网络实践：
 
-| 组件 | 技术 | P4 用途 |
-|------|--------|--------|
-| **Andromeda** | OVS-DPDK + P4 | SDN 控制面 |
-| **Jupiter** | Tofino P4 | 96Tbps Clos Fabric |
-| **Espresso** | P4 | 边缘网络/NAT |
-| **VPC** | P4 ACL | 虚拟网络隔离 |
-| **Cloud Armor** | P4 | DDoS 防护 |
+| 组件            | 技术          | P4 用途            |
+| --------------- | ------------- | ------------------ |
+| **Andromeda**   | OVS-DPDK + P4 | SDN 控制面         |
+| **Jupiter**     | Tofino P4     | 96Tbps Clos Fabric |
+| **Espresso**    | P4            | 边缘网络/NAT       |
+| **VPC**         | P4 ACL        | 虚拟网络隔离       |
+| **Cloud Armor** | P4            | DDoS 防护          |
 
 GCP 通过 Andromeda + Jupiter 的组合，实现了高度可扩展和可编程的网络基础设施。

@@ -1,12 +1,23 @@
 ---
 title: "Kernel Protocol Stack 深度探索 (二十二)：TCP 状态机"
 date: 2026-04-13
-tags: [linux, kernel, networking, series, tcp, state-machine, connection, three-way-handshake, four-way-handshake]
+tags:
+  [
+    linux,
+    kernel,
+    networking,
+    series,
+    tcp,
+    state-machine,
+    connection,
+    three-way-handshake,
+    four-way-handshake,
+  ]
 description: "深入解析 TCP 状态机——连接建立三次握手、连接关闭四次挥手、状态转换图、TIMEOUT_WAIT/CLOSE_WAIT 状态处理、异常状态与调试"
 ---
 
-> [!info] Kernel Protocol Stack 深度探索系列
-> 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Kernel Protocol Stack 深度探索系列 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-kernel-protocol-stack-deep-dive-ch1-skbuff|第一章：sk_buff 与数据包生命周期]]
 > 2. [[2026-04-13-kernel-protocol-stack-deep-dive-ch2-netdevice|第二章：Netdevice 与网卡抽象]]
 > 3. [[2026-04-13-kernel-protocol-stack-deep-dive-ch3-ring-buffer|第三章：Ring Buffer 与 DMA]]
@@ -48,19 +59,19 @@ CLOSED -> LISTEN -> SYN_RCVD -> ESTABLISHED -> CLOSE_WAIT -> LAST_ACK -> CLOSED
 
 ### 2.1 完整状态表
 
-| 状态 | 说明 | 客户端/服务端 |
-|------|------|---------------|
-| CLOSED | 关闭状态，无连接 | 双方 |
-| LISTEN | 监听状态，等待连接 | 服务端 |
-| SYN_SENT | 已发送 SYN，等待确认 | 客户端 |
-| SYN_RCVD | 已收到 SYN，已发送 SYN+ACK | 服务端 |
-| ESTABLISHED | 连接已建立，可传输数据 | 双方 |
-| CLOSE_WAIT | 收到 FIN，等待应用关闭 | 被动关闭方 |
-| FIN_WAIT_1 | 已发送 FIN，等待 ACK | 主动关闭方 |
-| FIN_WAIT_2 | 收到 ACK，等待对端 FIN | 主动关闭方 |
-| CLOSING | 双方同时关闭中 | 双方 |
-| LAST_ACK | 等待最后的 ACK | 被动关闭方 |
-| TIME_WAIT | 等待 2MSL 后关闭 | 主动关闭方 |
+| 状态        | 说明                       | 客户端/服务端 |
+| ----------- | -------------------------- | ------------- |
+| CLOSED      | 关闭状态，无连接           | 双方          |
+| LISTEN      | 监听状态，等待连接         | 服务端        |
+| SYN_SENT    | 已发送 SYN，等待确认       | 客户端        |
+| SYN_RCVD    | 已收到 SYN，已发送 SYN+ACK | 服务端        |
+| ESTABLISHED | 连接已建立，可传输数据     | 双方          |
+| CLOSE_WAIT  | 收到 FIN，等待应用关闭     | 被动关闭方    |
+| FIN_WAIT_1  | 已发送 FIN，等待 ACK       | 主动关闭方    |
+| FIN_WAIT_2  | 收到 ACK，等待对端 FIN     | 主动关闭方    |
+| CLOSING     | 双方同时关闭中             | 双方          |
+| LAST_ACK    | 等待最后的 ACK             | 被动关闭方    |
+| TIME_WAIT   | 等待 2MSL 后关闭           | 主动关闭方    |
 
 ### 2.2 内核状态定义
 
@@ -102,11 +113,11 @@ enum tcp_conn_state {
 
 ### 3.2 三次握手详解
 
-| 步骤 | 客户端发送 | 服务端发送 | 客户端状态 | 服务端状态 |
-|------|------------|------------|------------|------------|
-| 1 | SYN, seq=x | - | SYN_SENT | LISTEN |
-| 2 | - | SYN+ACK, seq=y, ack=x+1 | SYN_SENT | SYN_RCVD |
-| 3 | ACK, ack=y+1 | - | ESTABLISHED | SYN_RCVD/ESTABLISHED |
+| 步骤 | 客户端发送   | 服务端发送              | 客户端状态  | 服务端状态           |
+| ---- | ------------ | ----------------------- | ----------- | -------------------- |
+| 1    | SYN, seq=x   | -                       | SYN_SENT    | LISTEN               |
+| 2    | -            | SYN+ACK, seq=y, ack=x+1 | SYN_SENT    | SYN_RCVD             |
+| 3    | ACK, ack=y+1 | -                       | ESTABLISHED | SYN_RCVD/ESTABLISHED |
 
 ### 3.3 内核实现
 
@@ -116,13 +127,13 @@ int tcp_v4_conn_request(struct sock *sk, struct sk_buff *skb)
 {
     // 为新连接创建 request_sock
     struct request_sock *req = inet_reqsk_alloc(&tcp_request_sock_ops, sk);
-    
+
     // 生成 ISN
     req->seq = secure_tcp_isn(...);
-    
+
     // 发送 SYN+ACK
     tcp_v4_send_synack(sk, req, skb);
-    
+
     return 0;
 }
 
@@ -133,7 +144,7 @@ static void tcp_v4_do_rcv(struct sock *sk, struct sk_buff *skb)
         // 收到 ACK，连接建立完成
         struct request_sock *req = inet_reqsk(sk);
         inet_csk(sk)->icsk_af_ops->sk_rx_dst(sk, skb);
-        
+
         // 迁移到 established
         tcp_set_state(sk, TCP_ESTABLISHED);
         sk->sk_state_change(sk);
@@ -181,12 +192,12 @@ struct listen_sock {
 
 ### 4.2 四次挥手详解
 
-| 步骤 | 主动方发送 | 被动方发送 | 主动方状态 | 被动方状态 |
-|------|------------|------------|------------|------------|
-| 1 | FIN, seq=u | - | FIN_WAIT_1 | CLOSE_WAIT |
-| 2 | - | ACK, ack=u+1 | FIN_WAIT_2 | CLOSE_WAIT |
-| 3 | - | FIN, seq=w | FIN_WAIT_2 | LAST_ACK |
-| 4 | ACK, ack=w+1 | - | TIME_WAIT | CLOSED |
+| 步骤 | 主动方发送   | 被动方发送   | 主动方状态 | 被动方状态 |
+| ---- | ------------ | ------------ | ---------- | ---------- |
+| 1    | FIN, seq=u   | -            | FIN_WAIT_1 | CLOSE_WAIT |
+| 2    | -            | ACK, ack=u+1 | FIN_WAIT_2 | CLOSE_WAIT |
+| 3    | -            | FIN, seq=w   | FIN_WAIT_2 | LAST_ACK   |
+| 4    | ACK, ack=w+1 | -            | TIME_WAIT  | CLOSED     |
 
 ### 4.3 同时关闭
 
@@ -208,19 +219,19 @@ struct listen_sock {
 void tcp_close(struct sock *sk, long timeout)
 {
     struct tcp_sock *tp = tcp_sk(sk);
-    
+
     if (sk->sk_state == TCP_LISTEN) {
         // 关闭监听套接字
         tcp_set_state(sk, TCP_CLOSE);
         return;
     }
-    
+
     if (sk->sk_state == TCP_ESTABLISHED) {
         // 发送 FIN
         tcp_send_fin(sk);
         tcp_set_state(sk, TCP_FIN_WAIT1);
     }
-    
+
     // 等待对端 FIN
     sk_stream_wait_close(sk, timeout);
 }
@@ -286,7 +297,7 @@ static void tcp_twsk_work(struct work_struct *work)
 {
     struct tcp_timewait_sock *twsk;
     twsk = container_of(work, struct tcp_timewait_sock, twsk_work);
-    
+
     // 2MSL 超时后删除
     inet_twsk_put(twsk);
 }
@@ -295,7 +306,7 @@ static void tcp_twsk_work(struct work_struct *work)
 static void tcp_tw_handler(unsigned long data)
 {
     struct tcp_timewait_sock *twsk = (void *)data;
-    
+
     // 超时，进入 CLOSED
     inet_twsk_kill(twsk);
 }
@@ -500,12 +511,14 @@ cat /proc/net/nf_conntrack | grep tcp
 TCP 状态机要点：
 
 **连接建立（三次握手）：**
+
 1. 客户端发送 SYN，进入 SYN_SENT
 2. 服务端收到 SYN，发送 SYN+ACK，进入 SYN_RCVD
 3. 客户端收到 SYN+ACK，发送 ACK，进入 ESTABLISHED
 4. 服务端收到 ACK，进入 ESTABLISHED
 
 **连接关闭（四次挥手）：**
+
 1. 主动关闭方发送 FIN，进入 FIN_WAIT_1
 2. 被动关闭方发送 ACK，进入 FIN_WAIT_2
 3. 被动关闭方发送 FIN，进入 CLOSE_WAIT
@@ -514,6 +527,7 @@ TCP 状态机要点：
 6. 主动关闭方等待 2MSL 后进入 CLOSED
 
 **关键状态：**
+
 1. TIME_WAIT：防止旧包干扰，等待 2MSL
 2. CLOSE_WAIT：被动关闭方未调用 close()
 3. SYN_RCVD：半连接队列

@@ -1,12 +1,13 @@
 ---
 title: "VPN 技术深度探索 (四十七)：VPN 安全加固"
 date: 2026-04-13
-tags: [vpn, series, security, hardening, certificate, key-rotation, vulnerability, replay-protection]
+tags:
+  [vpn, series, security, hardening, certificate, key-rotation, vulnerability, replay-protection]
 description: "VPN 安全加固深度解析——证书固定、密钥轮换、漏洞扫描、防重放攻击、安全配置最佳实践"
 ---
 
-> [!info] VPN 技术深度探索系列
-> 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+> [!info] VPN 技术深度探索系列 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-vpn-deep-dive-ch46-proxy-perf|第四十六章：翻墙协议性能]]
 > 2. **第四十七章：VPN 安全加固**
 > 3. [[2026-04-13-vpn-deep-dive-ch48-detection-defense|第四十八章：GFW 检测与防御]]
@@ -396,20 +397,20 @@ conn %default
     keyexchange=ikev2          # 仅 IKEv2
     ike=aes256gcm16-prfsha512-ecp384!
     esp=aes256gcm16-ecp384!
-    
+
     # 安全参数
     fragmentation=yes         # 启用分片
     uniqueids=never           # 允许重新连接
     compress=yes              # 启用压缩（注意 CRIME 攻击）
-    
+
     # 存活检测
     dpdaction=clear           # DPD 检测到断开时清除 SA
     dpddelay=300s
     dpdtimeout=900s
-    
+
     # 防重放（启用）
     replay_window=128
-    
+
     # 仅允许加密流量
     forceencaps=yes
 
@@ -419,11 +420,11 @@ conn my-vpn
     leftcert=server.crt
     leftsendcert=always
     leftsubnet=0.0.0.0/0,::/0
-    
+
     right=%any
     rightsourceip=10.8.0.0/24
     rightdns=8.8.8.8,8.8.4.4
-    
+
     authby=rsasig             # 仅 RSA 签名认证
     auto=start
 ```
@@ -561,7 +562,7 @@ for cert in $(find $CERT_DIR -name "*.crt"); do
     EXPIRY_EPOCH=$(date -d "$EXPIRY" +%s)
     NOW_EPOCH=$(date +%s)
     DAYS_LEFT=$(( ($EXPIRY_EPOCH - $NOW_EPOCH) / 86400 ))
-    
+
     if [ $DAYS_LEFT -lt $DAYS_THRESHOLD ]; then
         echo "WARNING: $(basename $cert) expires in $DAYS_LEFT days"
         logger -p daemon.warn "Certificate $(basename $cert) expires in $DAYS_LEFT days"
@@ -635,6 +636,7 @@ VPN 安全加固是持续过程：
 ---
 
 > [!tip] 延伸阅读
+>
 > - OWASP VPN 安全指南：https://owasp.org/www-project-web-security-testing-guide/
 > - NIST SP 800-77：IPSec VPN 指南
 > - IETF RFC 7383：IKEv2 消息格式

@@ -12,12 +12,8 @@ tags:
   - kubernetes
 ---
 
-> [!info] Cilium 2026 深度探索系列
-> 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
-> ...
-> 36. [[2026-04-14-cilium-deep-dive-ch36-node-encryption|第三十六章：节点加密]]
-> 37. **第三十七章：透明加密** ←
-> 38. [[2026-04-14-cilium-deep-dive-ch38-sockmap|第三十八章：Sockmap]]
+> [!info] Cilium 2026 深度探索系列 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+> ... 36. [[2026-04-14-cilium-deep-dive-ch36-node-encryption|第三十六章：节点加密]] 37. **第三十七章：透明加密** ← 38. [[2026-04-14-cilium-deep-dive-ch38-sockmap|第三十八章：Sockmap]]
 
 ---
 
@@ -48,14 +44,14 @@ Cilium 的透明加密（Transparent Encryption）实现**从 Pod 到 Pod 的端
 
 ### 1.1 透明加密 vs mTLS
 
-|| 特性 | 透明加密 | mTLS (Istio) |
-|:---|:---|:---|:---|
-| **加解密位置** | eBPF（内核） | Sidecar（用户态） |
-| **应用改动** | 无需改动 | 需要应用支持 ServiceAccount |
-| **CPU 开销** | 极低 (~1%) | 较高 (~5-15%) |
-| **延迟增加** | 极低 | 中等 |
-| **密钥管理** | 自动 (KVStore) | 需 Cert Manager |
-| **覆盖范围** | Pod ↔ Pod | Pod ↔ Pod (+外部) |
+|                | 特性           | 透明加密                    | mTLS (Istio) |
+| :------------- | :------------- | :-------------------------- | :----------- |
+| **加解密位置** | eBPF（内核）   | Sidecar（用户态）           |
+| **应用改动**   | 无需改动       | 需要应用支持 ServiceAccount |
+| **CPU 开销**   | 极低 (~1%)     | 较高 (~5-15%)               |
+| **延迟增加**   | 极低           | 中等                        |
+| **密钥管理**   | 自动 (KVStore) | 需 Cert Manager             |
+| **覆盖范围**   | Pod ↔ Pod      | Pod ↔ Pod (+外部)           |
 
 ---
 
@@ -152,14 +148,14 @@ metadata:
   name: allow-encrypted
 spec:
   endpointSelectors:
-  - matchLabels:
-      namespace: production
+    - matchLabels:
+        namespace: production
   ingressEncryptionModes:
-  - wireguard
-  - ipsec
+    - wireguard
+    - ipsec
   egressEncryptionModes:
-  - wireguard
-  - ipsec
+    - wireguard
+    - ipsec
 ```
 
 ### 4.3 强制加密
@@ -319,6 +315,7 @@ IPsec AES-GCM-256 加密:
 ```
 
 > [!tip] 性能优化建议
+>
 > - 优先使用 WireGuard（ChaCha20 在无 AES-NI 的环境下更快）
 > - IPsec 场景下使用 AES-GCM-128（安全性与性能最佳平衡）
 > - MTU 合理设置（1500 - WireGuard overhead = 1420）
@@ -327,13 +324,14 @@ IPsec AES-GCM-256 加密:
 
 ## 8. 章节总结
 
-|| 模式 | 适用场景 | 性能 |
-|:---|:---|:---|:---|
-| **WireGuard 隧道** | 高性能数据中心 | 极高 |
-| **IPsec 隧道** | 需要与非 K8s 互通 | 高 |
-| **IPsec 传输** | 需要保持原始 IP 头 | 高 |
+|                    | 模式               | 适用场景 | 性能 |
+| :----------------- | :----------------- | :------- | :--- |
+| **WireGuard 隧道** | 高性能数据中心     | 极高     |
+| **IPsec 隧道**     | 需要与非 K8s 互通  | 高       |
+| **IPsec 传输**     | 需要保持原始 IP 头 | 高       |
 
 **关键优势**：
+
 - 应用完全透明，无需代码改动
 - eBPF 层实现，CPU 开销极低
 - 自动密钥管理，无需手动配置

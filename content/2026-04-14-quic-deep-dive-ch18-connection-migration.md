@@ -7,6 +7,7 @@ Flow control prevents a fast sender from overwhelming a slow receiver. Without i
 TCP has flow control (via the receive window), but HTTP/2's stream multiplexing revealed a problem: TCP's receive window is connection-wide. If one HTTP/2 stream receives data faster than the application can consume it, the TCP window fills, blocking ALL HTTP/2 streams -- even streams whose applications are ready to consume data immediately.
 
 QUIC implements **two-level flow control**:
+
 1. **Connection-level flow control**: Total data across all streams
 2. **Stream-level flow control**: Data on a specific stream
 
@@ -30,6 +31,7 @@ Endpoint A                              Endpoint B
 ```
 
 The sender tracks:
+
 - How much data it has sent on each stream
 - How much data the peer has advertised it can receive
 - How much connection-level data the peer can receive
@@ -119,14 +121,15 @@ For each stream, sender tracks:
 
 QUIC uses credit-based flow control, not sliding window (like TCP). The difference:
 
-| Aspect | TCP Sliding Window | QUIC Credit-Based |
-|---|---|---|
-| Advertisement | Window size in ACK | Explicit credit (MAX_DATA) |
-| Credits consumed | By sent data | By sent data |
-| Credits restored | By ACK increasing window | By MAX_DATA frames |
-| Per-stream | No | Yes |
+| Aspect           | TCP Sliding Window       | QUIC Credit-Based          |
+| ---------------- | ------------------------ | -------------------------- |
+| Advertisement    | Window size in ACK       | Explicit credit (MAX_DATA) |
+| Credits consumed | By sent data             | By sent data               |
+| Credits restored | By ACK increasing window | By MAX_DATA frames         |
+| Per-stream       | No                       | Yes                        |
 
 Credit-based is more flexible because:
+
 - Credits can be updated independently of data acknowledgment
 - The peer can pre-advertise buffer space before it's used
 - Stream-level credits are independent
@@ -145,6 +148,7 @@ To send STREAM frame on Stream N:
 ```
 
 This two-level check ensures:
+
 - The connection as a whole doesn't overflow the receiver
 - Individual streams can't hog all connection credit
 
@@ -189,6 +193,7 @@ Key insight:
 ## 18.9 Flow Control and Retransmission
 
 When data is retransmitted, the offset stays the same but the packet number is new. The receiver must:
+
 1. Recognize the offset (already received)
 2. Discard duplicate data
 3. Not deliver duplicate data to application
@@ -232,12 +237,13 @@ This is strict enforcement -- you cannot silently ignore flow control violations
 
 Flow control and congestion control are separate mechanisms:
 
-| Mechanism | What it controls | Triggered by |
-|---|---|---|
-| Flow control | Receiver buffer | Receiver advertised limits |
-| Congestion control | Network capacity | Observed packet loss, ECN |
+| Mechanism          | What it controls | Triggered by               |
+| ------------------ | ---------------- | -------------------------- |
+| Flow control       | Receiver buffer  | Receiver advertised limits |
+| Congestion control | Network capacity | Observed packet loss, ECN  |
 
 A sender can be blocked by:
+
 1. **Flow control**: Receiver can't receive more (peer advertised limits)
 2. **Congestion control**: Network can't carry more (loss/ECT signals)
 
@@ -269,10 +275,10 @@ MAX_STREAM_DATA must be >= 1000 to send this frame
 
 QUIC's two-level flow control prevents both receiver overflow and individual stream monopolization:
 
-| Frame | Level | Purpose |
-|---|---|---|
-| MAX_DATA | Connection | Total bytes across all streams |
-| MAX_STREAM_DATA | Per-stream | Bytes on specific stream |
+| Frame           | Level      | Purpose                        |
+| --------------- | ---------- | ------------------------------ |
+| MAX_DATA        | Connection | Total bytes across all streams |
+| MAX_STREAM_DATA | Per-stream | Bytes on specific stream       |
 
 Credit-based flow control allows flexible buffer advertising without sliding window constraints. The sender must check both connection-level and stream-level limits before sending.
 

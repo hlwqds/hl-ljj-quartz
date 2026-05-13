@@ -4,13 +4,13 @@
 
 Traditional VPN protocols have well-known limitations:
 
-| Protocol | Issues |
-|----------|--------|
-| PPTP | Deprecated, insecure |
-| OpenVPN | TCP-based (head-of-line blocking), complex |
-| IPSec (transport) | Complex, OS-level integration |
-| WireGuard | Kernel module requirement, limited mobility |
-| TLS VPN | TCP overhead, connection establishment latency |
+| Protocol          | Issues                                         |
+| ----------------- | ---------------------------------------------- |
+| PPTP              | Deprecated, insecure                           |
+| OpenVPN           | TCP-based (head-of-line blocking), complex     |
+| IPSec (transport) | Complex, OS-level integration                  |
+| WireGuard         | Kernel module requirement, limited mobility    |
+| TLS VPN           | TCP overhead, connection establishment latency |
 
 QUIC as a VPN transport offers compelling advantages:
 
@@ -112,6 +112,7 @@ quic_send_frame(conn, &frame);
 ```
 
 Benefits:
+
 - No per-packet acknowledgments (efficient)
 - Loss-tolerant (QoS can decide to drop or retransmit)
 - Full packet encapsulation preserves IP semantics
@@ -188,7 +189,7 @@ With QUIC's connection migration, a VPN connection survives network changes:
 Timeline:
    WiFi:     |==== VPN Session =====|
    Cellular:                  |==== Migrated VPN Session ====|
-   
+
 During handoff:
    - Client detects WiFi signal weakening
    - Client starts cellular connection to same server
@@ -204,12 +205,12 @@ No VPN re-authentication needed. The existing QUIC connection migrates to the ne
 
 ### 47.8.1 Overhead Comparison
 
-| Protocol | Encapsulation Overhead | Connection Setup |
-|----------|------------------------|------------------|
-| WireGuard | ~60 bytes/packet | ~1 RTT |
-| OpenVPN (TCP) | ~50 bytes + TCP overhead | ~2-3 RTT |
-| OpenVPN (UDP) | ~50 bytes | ~2-3 RTT |
-| QUIC VPN | ~40-60 bytes | 0-RTT or 1-RTT |
+| Protocol      | Encapsulation Overhead   | Connection Setup |
+| ------------- | ------------------------ | ---------------- |
+| WireGuard     | ~60 bytes/packet         | ~1 RTT           |
+| OpenVPN (TCP) | ~50 bytes + TCP overhead | ~2-3 RTT         |
+| OpenVPN (UDP) | ~50 bytes                | ~2-3 RTT         |
+| QUIC VPN      | ~40-60 bytes             | 0-RTT or 1-RTT   |
 
 ### 47.8.2 Congestion Control
 
@@ -233,6 +234,7 @@ Eavesdropper (passive)          MITM (active)
 ```
 
 QUIC VPN inherits TLS 1.3's security properties:
+
 - **Forward secrecy** (unless 0-RTT with resumption tokens)
 - **Authentication** (certificate-based)
 - **Encryption** (AES-GCM/ChaCha20-Poly1305)
@@ -249,12 +251,12 @@ QUIC VPN inherits TLS 1.3's security properties:
 
 ### 47.10.1 Comparison
 
-| Implementation | Language | Notes |
-|---------------|----------|-------|
-| masque (Apple) | C | iOS/macOS built-in, proxy-style |
-| quic-tun | Go | Userspace QUIC, TUN interface |
-| quivpn | Rust | Experimental |
-| Outline (Shadowsocks over QUIC) | Go | Based on QUIC |
+| Implementation                  | Language | Notes                           |
+| ------------------------------- | -------- | ------------------------------- |
+| masque (Apple)                  | C        | iOS/macOS built-in, proxy-style |
+| quic-tun                        | Go       | Userspace QUIC, TUN interface   |
+| quivpn                          | Rust     | Experimental                    |
+| Outline (Shadowsocks over QUIC) | Go       | Based on QUIC                   |
 
 ### 47.10.2 Apple's MASQUE Proxy
 
@@ -282,7 +284,7 @@ QUIC VPN must handle NAT:
 Symmetric NAT Problem:
   Client behind NAT: C:9000 -> NAT:45000 -> Server:443
   Server sees: NAT IP:45000
-  
+
   If NAT mapping expires before connection closes:
     - QUIC heartbeats must keep mapping alive
     - Or connection migration/establishment on new mapping
@@ -291,11 +293,13 @@ Symmetric NAT Problem:
 ### 47.11.2 MTU and Fragmentation
 
 QUIC VPN encapsulation increases packet size:
+
 - Original: 1500 bytes (typical Ethernet MTU)
 - QUIC overhead: ~40-60 bytes (header + encryption)
 - Total: ~1540-1560 bytes
 
 VPN implementations should:
+
 1. Advertise smaller MTU to TUN interface
 2. Use Path MTU Discovery
 3. Fragment if necessary (not ideal for performance)

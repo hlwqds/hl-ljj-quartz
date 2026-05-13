@@ -9,13 +9,8 @@ tags:
   - configuration
 ---
 
-> [!info] Zeek 2026 深度探索系列
-> 0. [[zeek-deep-dive-overview|全栈学习路径总览]]
-> ...
-> 29. [[zeek-deep-dive-ch29-logging-frameworks|第二十九章：日志框架与输出机制]]
-> 30. [[zeek-deep-dive-ch30-plugin-scripting|第三十章：第三方插件与脚本扩展体系]]
-> 31. [[zeek-deep-dive-ch31-custom-protocol-parsers|第三十一章：自定义协议解析器开发]]
-> 32. [[zeek-deep-dive-ch32-event-engine-customization|第三十二章：事件引擎与日志定制]]
+> [!info] Zeek 2026 深度探索系列 0. [[zeek-deep-dive-overview|全栈学习路径总览]]
+> ... 29. [[zeek-deep-dive-ch29-logging-frameworks|第二十九章：日志框架与输出机制]] 30. [[zeek-deep-dive-ch30-plugin-scripting|第三十章：第三方插件与脚本扩展体系]] 31. [[zeek-deep-dive-ch31-custom-protocol-parsers|第三十一章：自定义协议解析器开发]] 32. [[zeek-deep-dive-ch32-event-engine-customization|第三十二章：事件引擎与日志定制]]
 
 ---
 
@@ -36,18 +31,18 @@ graph TB
         Z["Zeek<br/>Core"]
         A["Analysis<br/>Scripts"]
     end
-    
+
     S --> N
     N --> Z
     Z --> A
-    
+
     subgraph "Tuning Knobs"
         T1["Kernel Params<br/>(sysctl)"]
         T2["NIC Offload<br/>(ethtool)"]
         T3["Worker Count<br/>(zeekctl)"]
         T4["Script<br/>Optimization"]
     end
-    
+
     T1 --> S
     T2 --> N
     T3 --> Z
@@ -212,7 +207,7 @@ redef analyzer_max_depth = 5;  # 限制嵌套协议层数
 event packet_in(c: connection, p: pkt_hdr) {
     # 差：每次包都执行正则
     if ( /suspicious-pattern/ in p$tcp$payload ) { ... }
-    
+
     # 好：使用连接状态缓存正则结果
     if ( !c?$pattern_checked ) {
         c$pattern_checked = T;
@@ -227,7 +222,7 @@ event http_message_done(c: connection, is_orig: bool, stat: http_message_stat) {
     # 好：一次性提取所需数据
     local uri = c$http$uri;
     local host = c$http$host;
-    
+
     # 而不是多次访问
     # local uri_len = strlen(c$http$uri);  # 差！
 }
@@ -315,7 +310,7 @@ graph TB
         M["Zeek Manager<br/>(日志聚合)"]
         C["Zeek Controller<br/>(配置控制)"]
     end
-    
+
     subgraph "Data Plane"
         P1["Proxy 1"]
         P2["Proxy 2"]
@@ -324,23 +319,23 @@ graph TB
         W3["Worker 3"]
         W4["Worker 4"]
     end
-    
+
     subgraph "Capture"
         T["Tap/Splitter"]
     end
-    
+
     T -->|分发| P1
     T -->|分发| P2
     P1 --> W1
     P1 --> W2
     P2 --> W3
     P2 --> W4
-    
+
     W1 -->|日志| M
     W2 -->|日志| M
     W3 -->|日志| M
     W4 -->|日志| M
-    
+
     C -->|控制| P1
     C -->|控制| P2
     C -->|控制| W1
@@ -359,14 +354,14 @@ graph TB
 
 redef Cluster::nodes = {
     ["manager"] = [$node_type=Cluster::MANAGER, $ip=127.0.0.1],
-    
-    ["proxy-1"] = [$node_type=Cluster::PROXY, $ip=127.0.0.1, 
+
+    ["proxy-1"] = [$node_type=Cluster::PROXY, $ip=127.0.0.1,
                    $manager="manager"],
-    
+
     ["worker-1"] = [$node_type=Cluster::WORKER, $ip=127.0.0.1,
-                    $interface="eth0", $lb_procs=4, 
+                    $interface="eth0", $lb_procs=4,
                     $pin_cpus={0,1}, $proxy="proxy-1"],
-    
+
     ["worker-2"] = [$node_type=Cluster::WORKER, $ip=127.0.0.1,
                     $interface="eth0", $lb_procs=4,
                     $pin_cpus={2,3}, $proxy="proxy-1"],
@@ -438,7 +433,7 @@ export {
 
 event zeek_init() {
     Log::create_stream(PERF_LOG, [...]);
-    
+
     # 启动 HTTP 服务器
     Broker::listen("127.0.0.1", metrics_port);
 }
@@ -448,7 +443,7 @@ event perf_stats_update(s: perfstats) {
     print fmt("# HELP zeek_mem_bytes Memory usage");
     print fmt("# TYPE zeek_mem_bytes gauge");
     print fmt("zeek_mem_bytes %d", s$mem);
-    
+
     print fmt("# HELP zeek_events_total Total events");
     print fmt("# TYPE zeek_events_total counter");
     print fmt("zeek_events_total %d", s$events);
@@ -475,13 +470,13 @@ google-pprof --text zeek /tmp/zeek-cpu.0001.prof
 
 ### 6.4 常见性能问题与解决方案
 
-|| 问题 | 症状 | 解决方案 |
-| :--- | :--- | :--- | :--- |
-| **内存泄漏** | RSS 持续增长 | 减少 DNS 缓存、检查脚本泄漏 |
-| **CPU 瓶颈** | 处理延迟增加 | 增加 worker、降低日志级别 |
-| **I/O 瓶颈** | 包处理落后 | 使用 SSD、日志异步写入 |
-| **连接表满** | 新连接被忽略 | 增加 max_connection_state |
-| **事件队列积压** | 事件处理延迟 | 优化脚本、减少事件处理 |
+|                  | 问题         | 症状                        | 解决方案 |
+| :--------------- | :----------- | :-------------------------- | :------- |
+| **内存泄漏**     | RSS 持续增长 | 减少 DNS 缓存、检查脚本泄漏 |
+| **CPU 瓶颈**     | 处理延迟增加 | 增加 worker、降低日志级别   |
+| **I/O 瓶颈**     | 包处理落后   | 使用 SSD、日志异步写入      |
+| **连接表满**     | 新连接被忽略 | 增加 max_connection_state   |
+| **事件队列积压** | 事件处理延迟 | 优化脚本、减少事件处理      |
 
 ---
 
@@ -632,12 +627,12 @@ redef udp_inactivity_timeout = 60 secs;
 
 **Part VI: Customization** 涵盖了 Zeek 深度定制三大方向：
 
-| 章节 | 主题 | 核心能力 |
-| :--- | :--- | :--- |
-| Ch30 | 第三方插件与脚本扩展 | 插件开发、Spicy 集成 |
+| 章节 | 主题                 | 核心能力                        |
+| :--- | :------------------- | :------------------------------ |
+| Ch30 | 第三方插件与脚本扩展 | 插件开发、Spicy 集成            |
 | Ch31 | 自定义协议解析器开发 | 状态机解析、C++/ZeekScript 交互 |
-| Ch32 | 事件引擎与日志定制 | 事件优先级、日志过滤、多输出 |
-| Ch33 | 性能调优与高级配置 | 系统优化、集群部署、性能监控 |
+| Ch32 | 事件引擎与日志定制   | 事件优先级、日志过滤、多输出    |
+| Ch33 | 性能调优与高级配置   | 系统优化、集群部署、性能监控    |
 
 通过本系列的学习，你已掌握 Zeek 从**基础使用**到**高级定制**的完整知识体系。Zeek 的设计哲学——**协议无关、事件驱动、脚本可编程**——使其成为网络安全监控领域的瑞士军刀。
 

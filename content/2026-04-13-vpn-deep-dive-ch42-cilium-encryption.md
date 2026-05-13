@@ -5,8 +5,8 @@ tags: [vpn, series, cilium, encryption, wireguard, ebpf, cluster-wide, cip]
 description: "Cilium 流量加密深度解析——CiliumClusterWideEncryption、WireGuard 集成、CMCC/CWC 加密模式、CiliumIdentity Policy（CEP）、透明加密"
 ---
 
-> [!info] VPN 技术深度探索系列
-> 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+> [!info] VPN 技术深度探索系列 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-vpn-deep-dive-ch41-k8s-vpn|第四十一章：Kubernetes VPN 方案]]
 > 2. **第四十二章：Cilium 流量加密**
 > 3. [[2026-04-13-vpn-deep-dive-ch43-subnet-router|第四十三章：Subnet Router 模式]]

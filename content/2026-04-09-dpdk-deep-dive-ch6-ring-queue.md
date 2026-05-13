@@ -5,8 +5,8 @@ tags: [dpdk, series, ring, lock-free, CAS, SPSC, MPMC, mempool]
 description: "深入理解 DPDK 高性能无锁 ring 的实现——CAS 原子操作、MP/MC vs SP/SC 模式、ring vs ring_pool、内存屏障、以及在 mempool 和线程间通信中的核心应用"
 ---
 
-> [!info] DPDK 深度探索系列
-> 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
+> [!info] DPDK 深度探索系列 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-09-dpdk-deep-dive-ch1-architecture-overview|第一章：架构概述——kernel bypass 原理与 DPDK 定位]]
 > 2. [[2026-04-09-dpdk-deep-dive-ch2-uio-vfio-iommu|第二章：UIO/VFIO/IOMMU 用户态驱动框架]]
 > 3. [[2026-04-09-dpdk-deep-dive-ch3-eal-initialization|第三章：EAL 初始化与 lcore 模型]]
@@ -20,12 +20,12 @@ description: "深入理解 DPDK 高性能无锁 ring 的实现——CAS 原子�
 
 DPDK 的 rte_ring 是一个高性能的无锁 FIFO（First-In-First-Out）队列，被广泛应用于：
 
-| 应用场景 | 说明 |
-|---------|------|
-| **mempool 底层** | mempool 使用 ring 存储空闲对象 |
-| **线程间通信** | lcores 之间传递数据包 |
-| **生产者-消费者** | 多生产者-多消费者模型 |
-| **事件分发** | Event-Dev 框架的事件队列 |
+| 应用场景          | 说明                           |
+| ----------------- | ------------------------------ |
+| **mempool 底层**  | mempool 使用 ring 存储空闲对象 |
+| **线程间通信**    | lcores 之间传递数据包          |
+| **生产者-消费者** | 多生产者-多消费者模型          |
+| **事件分发**      | Event-Dev 框架的事件队列       |
 
 ### 1.1 传统锁的问题
 
@@ -54,14 +54,14 @@ DPDK 的 rte_ring 是一个高性能的无锁 FIFO（First-In-First-Out）队列
 
 ### 1.2 Lock-Free vs Mutex
 
-| 特性 | Lock-Free | Mutex |
-|------|-----------|-------|
-| **延迟** | 确定性的 O(1) | 不可预期（可能 sleep） |
-| **吞吐** | 高（无序列化） | 低（串行化） |
-| **死锁风险** | 无（总会前进） | 有（忘记 unlock） |
-| **优先级反转** | 无 | 有（低优先级持有锁） |
-| **实现复杂度** | 高 | 低 |
-| **公平性** | 不保证 FIFO | 可保证 |
+| 特性           | Lock-Free      | Mutex                  |
+| -------------- | -------------- | ---------------------- |
+| **延迟**       | 确定性的 O(1)  | 不可预期（可能 sleep） |
+| **吞吐**       | 高（无序列化） | 低（串行化）           |
+| **死锁风险**   | 无（总会前进） | 有（忘记 unlock）      |
+| **优先级反转** | 无             | 有（低优先级持有锁）   |
+| **实现复杂度** | 高             | 低                     |
+| **公平性**     | 不保证 FIFO    | 可保证                 |
 
 ---
 
@@ -72,14 +72,14 @@ DPDK 的 rte_ring 是一个高性能的无锁 FIFO（First-In-First-Out）队列
 ```mermaid
 graph LR
     subgraph "有界队列 (Bounded)"
-        A["Ring (DPDK)<br/>固定容量，O(1)"] 
+        A["Ring (DPDK)<br/>固定容量，O(1)"]
         B["Linked List Queue<br/>动态容量"]
     end
-    
+
     subgraph "无界队列 (Unbounded)"
         C["Lock-Free Stack<br/>单消费者"]
     end
-    
+
     style A fill:#74b9ff
     style B fill:#a29bfe
     style C fill:#fdcb6e
@@ -192,7 +192,7 @@ static inline int
 rte_atomic32_cmpset(volatile uint32_t *dst, uint32_t exp, uint32_t src)
 {
     uint8_t ret;
-    
+
     asm volatile (
         "lock cmpxchgl %[src], %[dst];"
         "sete %[ret];"
@@ -202,7 +202,7 @@ rte_atomic32_cmpset(volatile uint32_t *dst, uint32_t exp, uint32_t src)
           "a" (exp),
           [src] "r" (src)
         : "memory", "cc");
-    
+
     return ret;
 }
 
@@ -258,13 +258,13 @@ __rte_ring_sp_do_enqueue(struct rte_ring *r, void * const *obj_table,
 {
     uint32_t prod_head, prod_next;
     uint32_t free_entries;
-    
+
     // 1. 获取当前 prod_head（本地副本）
     prod_head = r->prod.head;
-    
+
     // 2. 计算 prod_next（本次入队后的 head）
     prod_next = prod_head + n;
-    
+
     // 3. 检查空间
     // cons.tail 提供"已消费"信息
     free_entries = (r->cons.tail > prod_head) ?
@@ -272,7 +272,7 @@ __rte_ring_sp_do_enqueue(struct rte_ring *r, void * const *obj_table,
                     r->mask + 1 - prod_head + r->cons.tail :
                     // tail <= head：正常情况
                     r->cons.tail - prod_head;
-    
+
     if (n > free_entries) {
         // 空间不足
         if (behavior == RTE_RING_QUEUE_FIXED)
@@ -283,7 +283,7 @@ __rte_ring_sp_do_enqueue(struct rte_ring *r, void * const *obj_table,
             return 0;
         prod_next = prod_head + n;
     }
-    
+
     // 4. 写入对象到 ring
     // 这里不需要 CAS，因为只有一个生产者
     for (uint32_t i = 0; i < n; i++) {
@@ -293,11 +293,11 @@ __rte_ring_sp_do_enqueue(struct rte_ring *r, void * const *obj_table,
     // 5. 内存屏障：确保数据写入在更新 tail 之前
     // 消费者看到 tail 更新后，保证数据已经写入
     rte_smp_wmb();  // 写屏障（Store-Store）
-    
+
     // 6. 更新 prod_tail（可见性保证）
     // 消费者现在可以看到新数据
     r->prod.tail = prod_next;
-    
+
     return n;
 }
 ```
@@ -313,16 +313,16 @@ __rte_ring_mp_do_enqueue(struct rte_ring *r, void * const *obj_table,
     uint32_t prod_head, prod_next;
     uint32_t free_entries;
     uint32_t success = 0;
-    
+
     do {
         // 1. 获取当前 prod_head
         prod_head = r->prod.head;
-        
+
         // 2. 计算 free entries
         free_entries = (r->cons.tail > prod_head) ?
                         r->mask + 1 - prod_head + r->cons.tail :
                         r->cons.tail - prod_head;
-        
+
         if (n > free_entries) {
             if (behavior == RTE_RING_QUEUE_FIXED)
                 return 0;
@@ -330,27 +330,27 @@ __rte_ring_mp_do_enqueue(struct rte_ring *r, void * const *obj_table,
             if (n == 0)
                 return 0;
         }
-        
+
         prod_next = prod_head + n;
-        
+
         // 3. CAS：尝试将 prod_head 更新为 prod_next
         // 如果失败，说明其他生产者先一步更新了 head
         // 需要重试
     } while (!rte_atomic32_cmpset(&r->prod.head, prod_head, prod_next));
-    
+
     // 4. CAS 成功，当前线程获得"独占"更新权
     // 可以安全写入数据
     for (uint32_t i = 0; i < n; i++) {
         r->ring[(prod_head + i) & r->mask] = obj_table[i];
     }
-    
+
     // 5. 内存屏障
     rte_smp_wmb();
-    
+
     // 6. 更新 prod_tail
     // 这里使用 store-release语义
     r->prod.tail = prod_next;
-    
+
     return n;
 }
 ```
@@ -362,12 +362,12 @@ sequenceDiagram
     participant T1 as Thread 1
     participant R as r->prod.head
     participant T2 as Thread 2
-    
+
     Note over T1,R: prod_head = 0
-    
+
     T1->>R: CAS(head, 0, 32) - 尝试获取写入权
     T2->>R: CAS(head, 0, 32) - 同时尝试！
-    
+
     alt T1 wins
         R-->>T1: true
         Note over T1: 写入 obj[0..31]
@@ -399,16 +399,16 @@ __rte_ring_sc_do_dequeue(struct rte_ring *r, void **obj_table,
 {
     uint32_t cons_head, cons_next;
     uint32_t entries;
-    
+
     // 1. 获取当前 cons_head
     cons_head = r->cons.head;
-    
+
     // 2. 计算可用对象数
     // prod.tail 提供"已生产"信息
     entries = (r->prod.tail > cons_head) ?
               r->prod.tail - cons_head :
               r->mask + 1 - cons_head + r->prod.tail;
-    
+
     if (n > entries) {
         if (behavior == RTE_RING_QUEUE_FIXED)
             return 0;
@@ -416,7 +416,7 @@ __rte_ring_sc_do_dequeue(struct rte_ring *r, void **obj_table,
         if (n == 0)
             return 0;
     }
-    
+
     cons_next = cons_head + n;
 
     // 3. 内存屏障：确保看到生产者写入的最新数据
@@ -427,10 +427,10 @@ __rte_ring_sc_do_dequeue(struct rte_ring *r, void **obj_table,
     for (uint32_t i = 0; i < n; i++) {
         obj_table[i] = r->ring[(cons_head + i) & r->mask];
     }
-    
+
     // 5. 更新 cons_tail
     r->cons.tail = cons_next;
-    
+
     return n;
 }
 ```
@@ -445,14 +445,14 @@ __rte_ring_mc_do_dequeue(struct rte_ring *r, void **obj_table,
 {
     uint32_t cons_head, cons_next;
     uint32_t entries;
-    
+
     do {
         cons_head = r->cons.head;
-        
+
         entries = (r->prod.tail > cons_head) ?
                   r->prod.tail - cons_head :
                   r->mask + 1 - cons_head + r->prod.tail;
-        
+
         if (n > entries) {
             if (behavior == RTE_RING_QUEUE_FIXED)
                 return 0;
@@ -460,20 +460,20 @@ __rte_ring_mc_do_dequeue(struct rte_ring *r, void **obj_table,
             if (n == 0)
                 return 0;
         }
-        
+
         cons_next = cons_head + n;
-        
+
         // CAS 尝试更新 cons_head
     } while (!rte_atomic32_cmpset(&r->cons.head, cons_head, cons_next));
-    
+
     // CAS 成功，安全读取数据
     for (uint32_t i = 0; i < n; i++) {
         obj_table[i] = r->ring[(cons_head + i) & r->mask];
     }
-    
+
     rte_smp_rmb();
     r->cons.tail = cons_next;
-    
+
     return n;
 }
 ```
@@ -585,13 +585,13 @@ rte_ring_sc_dequeue_elem(r, &out);
 
 两种模式的选择取决于对象大小和访问模式：
 
-| | 指针模式 (`rte_ring_create`) | 内嵌模式 (`rte_ring_create_elem`) |
-|---|---|---|
-| 适用对象大小 | 任意 | 小对象（16~64 字节） |
-| 每次访存次数 | 2（指针 + 解引用） | 1（直接访问） |
-| 拷贝开销 | 无 | enqueue/dequeue 时 memcpy |
-| 对象可共享 | 可以，多个 ring 指向同一对象 | 不行，是值拷贝 |
-| 典型场景 | mbuf（128B）传递 | 流表条目、统计计数器 |
+|              | 指针模式 (`rte_ring_create`) | 内嵌模式 (`rte_ring_create_elem`) |
+| ------------ | ---------------------------- | --------------------------------- |
+| 适用对象大小 | 任意                         | 小对象（16~64 字节）              |
+| 每次访存次数 | 2（指针 + 解引用）           | 1（直接访问）                     |
+| 拷贝开销     | 无                           | enqueue/dequeue 时 memcpy         |
+| 对象可共享   | 可以，多个 ring 指向同一对象 | 不行，是值拷贝                    |
+| 典型场景     | mbuf（128B）传递             | 流表条目、统计计数器              |
 
 > **为什么 mbuf 场景仍然用指针模式？** mbuf 本身 128 字节，每次拷贝的代价远大于一次指针解引用。而且 mbuf 经常需要在多个 ring 之间传递（rx_ring → tx_ring），指针模式天然支持零拷贝共享。
 
@@ -616,7 +616,7 @@ uint16_t nb_enq = rte_ring_sp_enqueue_burst(tx_ring,
 // 测试：单生产者 → 单消费者
 
 // 每操作延迟（ns）：
-// 
+//
 // 操作类型          平均    P99    最大
 // ─────────────────────────────────────
 // SP enqueue        3.2     5.1    12
@@ -629,12 +629,12 @@ uint16_t nb_enq = rte_ring_sp_enqueue_burst(tx_ring,
 
 ### 8.2 性能影响因素
 
-| 因素 | 影响 | 建议 |
-|------|------|------|
-| **Cache line** | head/tail 在同一 Cache line | ⚠️ 已优化 |
-| **CAS 竞争** | 多个生产者时冲突增加 | 使用 SP/SC 模式 |
-| **NUMA** | 跨 Socket 访问延迟 3x | 在本地 Socket 创建 ring |
-| **Ring 大小** | 过大占用内存 | 合适大小（建议 2^n, n=9-14） |
+| 因素           | 影响                        | 建议                         |
+| -------------- | --------------------------- | ---------------------------- |
+| **Cache line** | head/tail 在同一 Cache line | ⚠️ 已优化                    |
+| **CAS 竞争**   | 多个生产者时冲突增加        | 使用 SP/SC 模式              |
+| **NUMA**       | 跨 Socket 访问延迟 3x       | 在本地 Socket 创建 ring      |
+| **Ring 大小**  | 过大占用内存                | 合适大小（建议 2^n, n=9-14） |
 
 ### 8.3 ring vs 其他队列
 
@@ -706,11 +706,11 @@ static void
 producer(void *arg)
 {
     struct rte_ring *ring = arg;
-    
+
     while (!quit) {
         struct rte_mbuf *m = rte_pktmbuf_alloc(mbuf_pool);
         // 填充 mbuf...
-        
+
         // 发送到消费者
         while (rte_ring_sp_enqueue(ring, m) != 0) {
             // 队列满，短暂退避
@@ -725,7 +725,7 @@ consumer(void *arg)
 {
     struct rte_ring *ring = arg;
     struct rte_mbuf *m;
-    
+
     while (!quit) {
         if (rte_ring_sc_dequeue(ring, (void **)&m) == 0) {
             // 处理数据包
@@ -771,12 +771,12 @@ struct rte_ring *r = rte_ring_create(
 
 ### 10.2 常见错误
 
-| 错误 | 原因 | 解决 |
-|------|------|------|
-| `Ring is full` | 入队速率 > 出队速率 | 增加 ring 大小或提高消费速度 |
-| `Ring is empty` | 出队速率 > 入队速率 | 增加生产速率或使用 burst 接口 |
-| `No space in ring` | 批量入队时空间不足 | 使用单对象入队或增大 ring |
-| `Object lost` | 生产者覆盖未消费对象 | 增加 ring 大小或添加背压机制 |
+| 错误               | 原因                 | 解决                          |
+| ------------------ | -------------------- | ----------------------------- |
+| `Ring is full`     | 入队速率 > 出队速率  | 增加 ring 大小或提高消费速度  |
+| `Ring is empty`    | 出队速率 > 入队速率  | 增加生产速率或使用 burst 接口 |
+| `No space in ring` | 批量入队时空间不足   | 使用单对象入队或增大 ring     |
+| `Object lost`      | 生产者覆盖未消费对象 | 增加 ring 大小或添加背压机制  |
 
 ### 10.3 调试
 
@@ -789,12 +789,12 @@ dump_ring(const struct rte_ring *r)
     printf("  size: %u, mask: 0x%x\n", r->size, r->mask);
     printf("  prod head: %u, tail: %u\n", r->prod.head, r->prod.tail);
     printf("  cons head: %u, tail: %u\n", r->cons.head, r->cons.tail);
-    
+
     uint32_t used = (r->prod.tail >= r->cons.head) ?
                      r->prod.tail - r->cons.head :
                      r->size - r->cons.head + r->prod.tail;
     uint32_t free = r->size - used;
-    
+
     printf("  used: %u, free: %u\n", used, free);
 }
 
@@ -838,6 +838,7 @@ rte_ring_dump(stdout, r);
 ---
 
 > [!tip] 参考文献
+>
 > - Intel, "DPDK Ring Library", https://doc.dpdk.org/guides/prog_guide/ring_lib.html
 > - "Implementations of Lock-Free Queues", https://www.researchgate.net/publication/2241499_Implementing_Lock-Free_Queues
 > - "Simple, Fast, and Practical Non-Blocking and Blocking Concurrent Queue Algorithms", Maged M. Michael, Michael L. Scott, 1996

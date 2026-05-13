@@ -13,14 +13,8 @@ tags:
 description: "深入解析 Zeek 内存管理——memory.log、malloc_trim、jemalloc/mimalloc 替代 allocator、堆内存分析、内存泄漏检测与排查"
 ---
 
-> [!info] Zeek 2026 深度探索系列
-> 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
-> ...
-> 33. [[2026-04-08-zeek-deep-dive-ch33-performance-tuning|第三十三章：性能调优与高级配置]]
-> 34. **第三十四章：内存调优**
-> 35. [[2026-04-15-zeek-deep-dive-ch35-scripts|第三十五章：脚本优化]]
-> 36. [[2026-04-15-zeek-deep-dive-ch36-hardware|第三十六章：硬件加速]]
-> 37. [[2026-04-15-zeek-deep-dive-ch37-tuning|第三十七章：Tuning 清单]]
+> [!info] Zeek 2026 深度探索系列 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
+> ... 33. [[2026-04-08-zeek-deep-dive-ch33-performance-tuning|第三十三章：性能调优与高级配置]] 34. **第三十四章：内存调优** 35. [[2026-04-15-zeek-deep-dive-ch35-scripts|第三十五章：脚本优化]] 36. [[2026-04-15-zeek-deep-dive-ch36-hardware|第三十六章：硬件加速]] 37. [[2026-04-15-zeek-deep-dive-ch37-tuning|第三十七章：Tuning 清单]]
 
 ---
 
@@ -62,15 +56,15 @@ Zeek 的内存管理涉及多个层面：从底层系统 allocator 到 Zeek 内�
 
 ### 1.1 Zeek 主要内存消耗源
 
-| 组件 | 内存消耗 | 配置参数 |
-|:---|:---|:---|
-| **连接状态表** | 高 | `max_connection_state` |
-| **DNS 缓存** | 中 | `dns_cache_size`, `dns_ttl_uid_cache_size` |
-| **事件队列** | 中 | `event_queue_size` |
-| **协议解析器** | 中 | `analyzer_max_depth` |
-| **文件提取缓存** | 高 | `extract_file_size_limit` |
-| **正则表达式缓存** | 高 | `pattern_cache_size` |
-| **日志缓冲区** | 中 | `log_buffer_size` |
+| 组件               | 内存消耗 | 配置参数                                   |
+| :----------------- | :------- | :----------------------------------------- |
+| **连接状态表**     | 高       | `max_connection_state`                     |
+| **DNS 缓存**       | 中       | `dns_cache_size`, `dns_ttl_uid_cache_size` |
+| **事件队列**       | 中       | `event_queue_size`                         |
+| **协议解析器**     | 中       | `analyzer_max_depth`                       |
+| **文件提取缓存**   | 高       | `extract_file_size_limit`                  |
+| **正则表达式缓存** | 高       | `pattern_cache_size`                       |
+| **日志缓冲区**     | 中       | `log_buffer_size`                          |
 
 ---
 
@@ -101,15 +95,15 @@ zeek -m memory /path/to/scripts
 1637845562.123456  2048576   1234567    234567      1234    5678    90
 ```
 
-| 字段 | 类型 | 说明 |
-|:---|:---|:---|
-| `ts` | time | 时间戳 |
-| `mem` | count | RSS 内存使用量（字节） |
-| `pkts_proc` | count | 已处理包数 |
-| `events_proc` | count | 已处理事件数 |
-| `timers` | count | 活跃定时器数 |
-| `conc_c` | count | 活跃连接数 |
-| `conc_a` | count | 活跃分析器数 |
+| 字段          | 类型  | 说明                   |
+| :------------ | :---- | :--------------------- |
+| `ts`          | time  | 时间戳                 |
+| `mem`         | count | RSS 内存使用量（字节） |
+| `pkts_proc`   | count | 已处理包数             |
+| `events_proc` | count | 已处理事件数           |
+| `timers`      | count | 活跃定时器数           |
+| `conc_c`      | count | 活跃连接数             |
+| `conc_a`      | count | 活跃分析器数           |
 
 ### 2.3 内存异常检测
 
@@ -128,24 +122,24 @@ global last_time: time = 0.0;
 
 event memory_update(s: memory_stats) {
     local current_time = network_time();
-    
+
     if ( last_time > 0.0 ) {
         local time_delta = current_time - last_time;
         local mem_delta = s$mem - last_mem;
         local growth_rate = (double(mem_delta) / double(last_mem)) / time_delta;
-        
+
         # 检测内存增长异常
         if ( growth_rate > growth_rate_threshold ) {
             Reporter::info(fmt("Memory growth rate anomaly: %.2f bytes/sec", growth_rate));
         }
-        
+
         # 检测内存使用超阈值
         if ( s$mem > memory_threshold ) {
-            Reporter::warning(fmt("Memory usage exceeded threshold: %.2f GB", 
+            Reporter::warning(fmt("Memory usage exceeded threshold: %.2f GB",
                 double(s$mem) / 1GB));
         }
     }
-    
+
     last_mem = s$mem;
     last_time = current_time;
 }
@@ -227,14 +221,14 @@ LD_PRELOAD=/usr/local/lib/libmimalloc.so zeek /path/to/scripts
 
 ### 3.4 Allocator 对比
 
-| 特性 | glibc malloc | jemalloc | mimalloc |
-|:---|:---|:---|:---|
-| **多核扩展性** | 中 | 高 | 高 |
-| **内存碎片** | 中 | 低 | 很低 |
-| **锁竞争** | 高 | 低 | 很低 |
-| **吞吐量** | 中 | 高 | 很高 |
-| **内存占用** | 低 | 中 | 中 |
-| **安全特性** | 无 | 红黑区 | 安全分区 |
+| 特性           | glibc malloc | jemalloc | mimalloc |
+| :------------- | :----------- | :------- | :------- |
+| **多核扩展性** | 中           | 高       | 高       |
+| **内存碎片**   | 中           | 低       | 很低     |
+| **锁竞争**     | 高           | 低       | 很低     |
+| **吞吐量**     | 中           | 高       | 很高     |
+| **内存占用**   | 低           | 中       | 中       |
+| **安全特性**   | 无           | 红黑区   | 安全分区 |
 
 ```bash
 # 使用 perf 比较 allocator 性能
@@ -283,7 +277,7 @@ module MallocTrim;
 export {
     # malloc_trim 调用间隔（默认 5 分钟）
     redef trim_interval = 5mins;
-    
+
     # 最小释放阈值（字节）
     # 只有当可释放内存超过此值时才调用 trim
     redef min_trim_size = 1MB;
@@ -296,7 +290,7 @@ event zeek_init() {
 event malloc_trim_timer() {
     # 调用 C++ 内置的 malloc_trim
     builtin_malloc_trim(min_trim_size);
-    
+
     # 调度下一次调用
     schedule trim_interval { malloc_trim_timer() };
 }
@@ -328,12 +322,12 @@ fi
 
 ### 4.4 何时使用 malloc_trim
 
-| 场景 | 建议 |
-|:---|:---|
-| 内存受限环境（云 VM） | 启用，间隔 1-5 分钟 |
-| 高吞吐量服务器 | 禁用或延长间隔 |
-| 内存泄漏排查 | 禁用（保持内存快照） |
-| 容器化部署 | 启用，避免 OOM |
+| 场景                  | 建议                 |
+| :-------------------- | :------------------- |
+| 内存受限环境（云 VM） | 启用，间隔 1-5 分钟  |
+| 高吞吐量服务器        | 禁用或延长间隔       |
+| 内存泄漏排查          | 禁用（保持内存快照） |
+| 容器化部署            | 启用，避免 OOM       |
 
 ---
 
@@ -421,7 +415,7 @@ event new_connection(c: connection) {
 # 好：定期清理
 event new_connection(c: connection) {
     connection_store[c$id] = c$state;
-    
+
     # 定期清理过期条目
     if ( |connection_store| > 100000 ) {
         for ( id in connection_store ) {
@@ -558,11 +552,11 @@ export {
 
 event memory_update(s: memory_stats) {
     local mem_mb = double(s$mem) / 1MB;
-    
+
     # 输出 Prometheus 格式
     print fmt("# HELP zeek_memory_rss_bytes Resident set size");
     print fmt("# TYPE zeek_memory_rss_bytes gauge");
-    print fmt("zeek_memory_rss_bytes{node=\"%s\"} %.2f", 
+    print fmt("zeek_memory_rss_bytes{node=\"%s\"} %.2f",
         Cluster::node, mem_mb * 1024 * 1024);
 }
 ```

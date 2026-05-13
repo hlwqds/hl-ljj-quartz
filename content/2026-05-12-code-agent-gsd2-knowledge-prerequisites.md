@@ -1,7 +1,23 @@
 ---
 title: 构建 Code Agent 知识体系：从 Claude Code 插件到独立 Agent
 date: 2026-05-12 14:00:00
-tags: [Code Agent, Claude Code, Pi.ai, AI Agent, LLM, Agent Architecture, Tool Use, Planning, Reasoning, Code Generation, SWE-bench, MCP, ReAct, Knowledge Graph]
+tags:
+  [
+    Code Agent,
+    Claude Code,
+    Pi.ai,
+    AI Agent,
+    LLM,
+    Agent Architecture,
+    Tool Use,
+    Planning,
+    Reasoning,
+    Code Generation,
+    SWE-bench,
+    MCP,
+    ReAct,
+    Knowledge Graph,
+  ]
 description: 构建类 Claude Code 的 Code Agent 需要掌握的知识体系——LLM 基础、Agent 架构、工具系统、代码执行、多语言支持、评估体系与 Pi.ai 框架集成。
 ---
 
@@ -887,18 +903,21 @@ Code Agent 开发者技能清单：
 ## 延伸阅读
 
 ### 论文
+
 - "Attention Is All You Need" — Vaswani et al., 2017
 - "ReAct: Synergizing Reasoning and Acting in Language Models" — Yao et al., 2022
 - "Tool Learning with Foundation Models" — Shen et al., 2023
 - "SWE-bench: Can Large Language Models Resolve Real-World GitHub Issues?" — Jimenez et al., 2024
 
 ### 代码
+
 - Claude Code: https://github.com/anthropics/claude-code
 - LangChain: https://github.com/langchain-ai/langchain
 - Tree-sitter: https://github.com/tree-sitter/tree-sitter
 - MCP SDK: https://github.com/modelcontextprotocol
 
 ### 文章
+
 - "Building Effective Agents" — Anthropic Best Practices
 - "The Illustrated Transformer" — Jay Alammar
 - "AI Code Agents" — Chip Huyen

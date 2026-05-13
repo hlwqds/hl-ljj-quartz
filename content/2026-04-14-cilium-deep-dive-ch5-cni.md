@@ -10,8 +10,8 @@ tags:
   - standalone
 ---
 
-> [!info] Cilium 2026 深度探索系列
-> 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+> [!info] Cilium 2026 深度探索系列 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+>
 > 1. [[2026-04-14-cilium-deep-dive-ch1-cilium-overview|第一章：Cilium 概述]]
 > 2. [[2026-04-14-cilium-deep-dive-ch2-architecture|第二章：Cilium 架构]]
 > 3. [[2026-04-14-cilium-deep-dive-ch3-ebpf-datapath|第三章：eBPF 数据面]]
@@ -58,13 +58,13 @@ CNI 插件：
 
 ### 1.2 标准 CNI 插件列表
 
-| 插件 | 特点 | 隧道/路由 |
-|:---|:---|:---|
-| **Cilium** | eBPF 数据面，L7 策略，Hubble | VXLAN / 直接路由 |
-| **Calico** | 纯路由，BGP 控制平面，网络策略 | IPIP / 直接路由 |
-| **Flannel** | 简单，Overlay 网络 | VXLAN / UDP |
-| **Weave Net** | 自动 Mesh，加密 | sleeve / fastdp |
-| **Cilium（AWS VPC CNI）** | AWS 原生 ENI | 直接路由 |
+| 插件                      | 特点                           | 隧道/路由        |
+| :------------------------ | :----------------------------- | :--------------- |
+| **Cilium**                | eBPF 数据面，L7 策略，Hubble   | VXLAN / 直接路由 |
+| **Calico**                | 纯路由，BGP 控制平面，网络策略 | IPIP / 直接路由  |
+| **Flannel**               | 简单，Overlay 网络             | VXLAN / UDP      |
+| **Weave Net**             | 自动 Mesh，加密                | sleeve / fastdp  |
+| **Cilium（AWS VPC CNI）** | AWS 原生 ENI                   | 直接路由         |
 
 ---
 
@@ -72,10 +72,10 @@ CNI 插件：
 
 Cilium 支持两种 CNI 集成方式：
 
-| 模式 | 说明 | 使用场景 |
-|:---|:---|:---|
-| **Standalone（独立模式）** | Cilium 作为唯一 CNI，负责所有网络功能 | 新部署，追求最高性能 |
-| **Chaining（链式模式）** | Cilium 叠加在另一个 CNI 之上 | 现有集群迁移，云厂商 CNI 集成 |
+| 模式                       | 说明                                  | 使用场景                      |
+| :------------------------- | :------------------------------------ | :---------------------------- |
+| **Standalone（独立模式）** | Cilium 作为唯一 CNI，负责所有网络功能 | 新部署，追求最高性能          |
+| **Chaining（链式模式）**   | Cilium 叠加在另一个 CNI 之上          | 现有集群迁移，云厂商 CNI 集成 |
 
 ---
 
@@ -133,12 +133,12 @@ cat /etc/cni/net.d/05-cilium.conflist
 
 Cilium 支持多种 IPAM（IP Address Management）模式：
 
-| 模式 | 说明 | 适用场景 |
-|:---|:---|:---|
-| **cluster-pool** | 每个节点分配一个 CIDR 块，Pod IP 从节点 CIDR 分配 | 默认，简单 |
-| **eni** | AWS/GCP/Azure 云厂商 ENI 模式，Pod 使用弹性网卡 IP | 云环境 |
-| **kubernetes** | Kubernetes Node CIDR 模式 | 兼容旧部署 |
-| **static** | 静态 IP 分配 | 特殊需求 |
+| 模式             | 说明                                               | 适用场景   |
+| :--------------- | :------------------------------------------------- | :--------- |
+| **cluster-pool** | 每个节点分配一个 CIDR 块，Pod IP 从节点 CIDR 分配  | 默认，简单 |
+| **eni**          | AWS/GCP/Azure 云厂商 ENI 模式，Pod 使用弹性网卡 IP | 云环境     |
+| **kubernetes**   | Kubernetes Node CIDR 模式                          | 兼容旧部署 |
+| **static**       | 静态 IP 分配                                       | 特殊需求   |
 
 ```bash
 # cluster-pool 模式配置
@@ -197,13 +197,13 @@ Chaining 部署：
 
 ### 4.2 支持的 Chaining 模式
 
-| 底层 CNI | Chaining 模式 | 说明 |
-|:---|:---|:---|
-| **AWS VPC CNI** | `aws-cni` | Cilium 叠加在 AWS 原生 CNI 上 |
-| **GKE native CNI** | `gke` | Cilium 叠加在 GKE 原生 CNI 上 |
-| **EKS CNI** | `eks` | Cilium 叠加在 EKS CNI 上 |
-| **Flannel** | `flannel` | Cilium 叠加在 Flannel 上 |
-| **Calico** | `calico` | Cilium 叠加在 Calico 上（需要禁用 Calico 策略） |
+| 底层 CNI           | Chaining 模式 | 说明                                            |
+| :----------------- | :------------ | :---------------------------------------------- |
+| **AWS VPC CNI**    | `aws-cni`     | Cilium 叠加在 AWS 原生 CNI 上                   |
+| **GKE native CNI** | `gke`         | Cilium 叠加在 GKE 原生 CNI 上                   |
+| **EKS CNI**        | `eks`         | Cilium 叠加在 EKS CNI 上                        |
+| **Flannel**        | `flannel`     | Cilium 叠加在 Flannel 上                        |
+| **Calico**         | `calico`      | Cilium 叠加在 Calico 上（需要禁用 Calico 策略） |
 
 ### 4.3 AWS VPC CNI Chaining
 
@@ -305,8 +305,8 @@ metadata:
   name: multi-network-pod
 spec:
   containers:
-  - name: app
-    image: nginx
+    - name: app
+      image: nginx
 ```
 
 **注意**：当使用 Multus 时，只有 `cilium` 命名的接口受 Cilium 策略保护。
@@ -347,23 +347,20 @@ ls -la /etc/cni/net.d/
     "mask-size": 24
   },
   "agent": "cilium-agent",
-  "container-runtime-endpoint": [
-    "/var/run/containerd/containerd.sock",
-    "/var/run/cri-o.sock"
-  ],
+  "container-runtime-endpoint": ["/var/run/containerd/containerd.sock", "/var/run/cri-o.sock"],
   "polkit-enabled": false
 }
 ```
 
 ### 6.3 常见配置选项
 
-| 参数 | 说明 | 默认值 |
-|:---|:---|:---|
-| `mtu` | Pod 网络 MTU | 1500 |
-| `ipam.mode` | IPAM 模式 | cluster-pool |
-| `enable-debug` | 启用调试日志 | false |
+| 参数                         | 说明              | 默认值                              |
+| :--------------------------- | :---------------- | :---------------------------------- |
+| `mtu`                        | Pod 网络 MTU      | 1500                                |
+| `ipam.mode`                  | IPAM 模式         | cluster-pool                        |
+| `enable-debug`               | 启用调试日志      | false                               |
 | `container-runtime-endpoint` | 容器运行时 socket | /var/run/containerd/containerd.sock |
-| `log-file` | 日志文件路径 | /var/run/cilium/cilium-cni.log |
+| `log-file`                   | 日志文件路径      | /var/run/cilium/cilium-cni.log      |
 
 ---
 
@@ -441,12 +438,12 @@ helm install cilium cilium/cilium \
 
 ## 9. 章节总结
 
-| CNI 模式 | 适用场景 | 特点 |
-|:---|:---|:---|
-| **Standalone** | 新部署，完全迁移 | Cilium 全功能，最高性能 |
-| **Chaining (AWS/GKE/EKS)** | 云厂商 CNI 集群 | 叠加 Cilium 策略和可观测性 |
-| **Chaining (Flannel/Calico)** | 现有集群迁移 | 复用底层网络，叠加高级功能 |
-| **Multus + Cilium** | 多网络接口 Pod | Cilium 作为主网络 |
+| CNI 模式                      | 适用场景         | 特点                       |
+| :---------------------------- | :--------------- | :------------------------- |
+| **Standalone**                | 新部署，完全迁移 | Cilium 全功能，最高性能    |
+| **Chaining (AWS/GKE/EKS)**    | 云厂商 CNI 集群  | 叠加 Cilium 策略和可观测性 |
+| **Chaining (Flannel/Calico)** | 现有集群迁移     | 复用底层网络，叠加高级功能 |
+| **Multus + Cilium**           | 多网络接口 Pod   | Cilium 作为主网络          |
 
 **下一章预告**：Part II 网络功能——ClusterIP、NodePort、LoadBalancer 的深度解析与高级用法。
 

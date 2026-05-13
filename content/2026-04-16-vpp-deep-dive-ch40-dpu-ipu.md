@@ -1,7 +1,7 @@
 ---
 title: "VPP 深入探讨 ch40：DPU/IPU 集成"
 date: 2026-04-16 11:30:00
-tags: [vpp, dpu, ipu, smartnic, doca, bluefield, stingray,卸载, offload]
+tags: [vpp, dpu, ipu, smartnic, doca, bluefield, stingray, 卸载, offload]
 description: "深入解析 VPP 与 DPU/IPU 集成：SmartNIC 架构、DOCA 框架、BlueField/融噶青-Stingray、VPP 卸载路径、以及主机管理"
 ---
 
@@ -63,13 +63,13 @@ description: "深入解析 VPP 与 DPU/IPU 集成：SmartNIC 架构、DOCA 框�
 
 ### 1.3 DPU 核心功能
 
-|| 功能 | 说明 | 卸载收益 |
-|------|------|--------|
-| **网络虚拟化** | SR-IOV, VirtIO | 20% CPU |
-| **存储** | NVMe-oF, vhost | 30% CPU |
-| **安全** | IPSec, TLS | 40% CPU |
-| **网络协议** | TCP/IP, RDMA | 50% CPU |
-| **编排** | OVS, Kubernetes | 30% CPU |
+|                | 功能            | 说明    | 卸载收益 |
+| -------------- | --------------- | ------- | -------- |
+| **网络虚拟化** | SR-IOV, VirtIO  | 20% CPU |
+| **存储**       | NVMe-oF, vhost  | 30% CPU |
+| **安全**       | IPSec, TLS      | 40% CPU |
+| **网络协议**   | TCP/IP, RDMA    | 50% CPU |
+| **编排**       | OVS, Kubernetes | 30% CPU |
 
 ## 2. NVIDIA DOCA 框架
 
@@ -151,18 +151,18 @@ struct doca_flow_pipe *create_udp_pipe(struct doca_flow_port *port)
         .out_src_ip = TRUE,
         .l4_type = DOCA_FLOW_L4_TYPE_UDP,
     };
-    
+
     struct doca_flow_actions actions = {
         . decap = TRUE,  // 卸载 VXLAN 解封装
     };
-    
+
     struct doca_flow_pipe_cfg cfg = {
         .name = "vpp_offload",
         .match = &match,
         .actions = &actions,
         .port = port,
     };
-    
+
     return doca_flow_create_pipe(&cfg);
 }
 
@@ -173,11 +173,11 @@ int add_vpp_offload_rule(struct doca_flow_pipe *pipe)
         .out_src_ip = TRUE,
         .src_port = 4789,  // VXLAN 端口
     };
-    
+
     struct doca_flow_fwd fwd = {
         . type = DOCA_FLOW_FWD_VPP,  // 重定向到 VPP
     };
-    
+
     return doca_flow_pipe_add_entry(pipe, &match, &fwd);
 }
 ```
@@ -511,12 +511,12 @@ vpp# set interface state vhost0 up
 
 ### 7.1 卸载收益
 
-|| 配置 | CPU 使用 | 延迟 | 吞吐 |
-|------|--------|------|------|
-| **纯软件 VPP** | 100% (4 cores) | ~15μs | 10 Gbps |
-| **VPP + DPU L2** | 60% | ~12μs | 15 Gbps |
-| **VPP + DPU L3** | 40% | ~10μs | 20 Gbps |
-| **DPU 完全卸载** | 10% | ~5μs | 50 Gbps |
+|                  | 配置           | CPU 使用 | 延迟    | 吞吐 |
+| ---------------- | -------------- | -------- | ------- | ---- |
+| **纯软件 VPP**   | 100% (4 cores) | ~15μs    | 10 Gbps |
+| **VPP + DPU L2** | 60%            | ~12μs    | 15 Gbps |
+| **VPP + DPU L3** | 40%            | ~10μs    | 20 Gbps |
+| **DPU 完全卸载** | 10%            | ~5μs     | 50 Gbps |
 
 ### 7.2 延迟分解
 

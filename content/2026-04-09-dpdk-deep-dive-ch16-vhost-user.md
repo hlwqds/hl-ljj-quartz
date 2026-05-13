@@ -5,11 +5,9 @@ tags: [dpdk, series, vhost-user, virtio, VM, shared-memory, virtqueue, zero-copy
 description: "深入理解 vhost-user 与 virtio 加速机制——VM 与 DPDK 的高性能共享内存通信、virtqueue 机制、eventfd 通知、零拷贝实现"
 ---
 
-> [!info] DPDK 深度探索系列
-> 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
+> [!info] DPDK 深度探索系列 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
 > 1-15. 前十五章已完成
-> 15b. [[2026-04-09-dpdk-deep-dive-ch15b-af-xdp|第十五章补充：AF_XDP —— KNI 的现代替代]]
-> 16. **第十六章：vhost-user 与 virtio 加速**
+> 15b. [[2026-04-09-dpdk-deep-dive-ch15b-af-xdp|第十五章补充：AF_XDP —— KNI 的现代替代]] 16. **第十六章：vhost-user 与 virtio 加速**
 
 ---
 
@@ -27,6 +25,7 @@ VM → virtio driver → VMEXIT → QEMU → vhost-net (内核) → 物理网卡
 ```
 
 vhost-net 虽然比纯 QEMU 模拟快得多（省去了 QEMU 用户态的 I/O 模拟），但仍有瓶颈：
+
 - **VMEXIT 开销**：Guest 访问 virtqueue 需要陷入 Host，即使 vhost 在内核态也绕不开
 - **内核调度**：vhost-net worker 线程受内核调度器制约
 - **无法利用 DPDK**：vhost-net 走内核网络栈，无法使用 DPDK 的 PMD 和轮询模式
@@ -35,15 +34,15 @@ vhost-net 虽然比纯 QEMU 模拟快得多（省去了 QEMU 用户态的 I/O �
 
 ### 1.2 vhost-user vs vhost-net vs KNI
 
-| 特性          | KNI（已废弃）           | vhost-net（内核）    | vhost-user（DPDK）     |
-| ----------- | ------------------ | ---------------- | -------------------- |
-| **通信对象**    | Linux 内核网络栈        | VM (QEMU)        | VM (QEMU)            |
-| **后端位置**    | 内核模块 `rte_kni.ko`  | 内核模块 `vhost_net` | 用户态 (DPDK)           |
-| **数据路径**    | FIFO + ioctl (有拷贝) | 内核 tun/tap (有拷贝) | 共享内存 + eventfd (零拷贝) |
-| **延迟**      | ~5-10μs            | ~3-10μs          | ~1-5μs               |
-| **吞吐量**     | ~1-2 Mpps          | ~5-10 Mpps       | 线速 (几乎无开销)           |
-| **DPDK 集成** | 有限                 | 不支持              | 原生支持                 |
-| **适用场景**    | 控制平面（SSH/BGP）      | 轻量级 VM 网络        | 数据平面 VM 网络、NFV       |
+| 特性          | KNI（已废弃）         | vhost-net（内核）     | vhost-user（DPDK）          |
+| ------------- | --------------------- | --------------------- | --------------------------- |
+| **通信对象**  | Linux 内核网络栈      | VM (QEMU)             | VM (QEMU)                   |
+| **后端位置**  | 内核模块 `rte_kni.ko` | 内核模块 `vhost_net`  | 用户态 (DPDK)               |
+| **数据路径**  | FIFO + ioctl (有拷贝) | 内核 tun/tap (有拷贝) | 共享内存 + eventfd (零拷贝) |
+| **延迟**      | ~5-10μs               | ~3-10μs               | ~1-5μs                      |
+| **吞吐量**    | ~1-2 Mpps             | ~5-10 Mpps            | 线速 (几乎无开销)           |
+| **DPDK 集成** | 有限                  | 不支持                | 原生支持                    |
+| **适用场景**  | 控制平面（SSH/BGP）   | 轻量级 VM 网络        | 数据平面 VM 网络、NFV       |
 
 ### 1.3 virtio + vhost-user 架构
 
@@ -298,6 +297,7 @@ vhost-user 涉及三种 fd，容易混淆：
 ### 2.1 virtqueue 结构
 
 virtqueue 是 VM 和 Host 之间的共享内存环形缓冲区。每个 virtio-net 设备至少有两个 virtqueue：
+
 - **TX virtqueue**：VM → Host（VM 发包）
 - **RX virtqueue**：Host → VM（VM 收包）
 
@@ -1063,17 +1063,17 @@ flowchart TB
     end
 ```
 
-| 特性 | vhost-user (DPDK) | vhost-net (kernel) |
-|------|-------------------|-------------------|
-| **后端位置** | 用户态 (DPDK) | 内核模块 |
-| **通信方式** | Unix Domain Socket | ioctl `/dev/vhost-net` |
-| **数据路径** | 共享内存（零拷贝） | tun/tap（有拷贝） |
-| **控制路径** | QEMU ↔ DPDK（socket） | QEMU ↔ kernel（ioctl） |
-| **轮询模式** | 支持（rte_vhost_dequeue_burst） | 不支持（依赖中断） |
-| **DPDK 集成** | 原生（PMD 对接） | 不支持 |
-| **灵活性** | 高（自定义后端逻辑） | 低（固定行为） |
-| **性能** | 最高（接近裸金属） | 较高（受内核调度制约） |
-| **依赖** | QEMU + DPDK | 内核模块 + QEMU |
+| 特性          | vhost-user (DPDK)               | vhost-net (kernel)     |
+| ------------- | ------------------------------- | ---------------------- |
+| **后端位置**  | 用户态 (DPDK)                   | 内核模块               |
+| **通信方式**  | Unix Domain Socket              | ioctl `/dev/vhost-net` |
+| **数据路径**  | 共享内存（零拷贝）              | tun/tap（有拷贝）      |
+| **控制路径**  | QEMU ↔ DPDK（socket）           | QEMU ↔ kernel（ioctl） |
+| **轮询模式**  | 支持（rte_vhost_dequeue_burst） | 不支持（依赖中断）     |
+| **DPDK 集成** | 原生（PMD 对接）                | 不支持                 |
+| **灵活性**    | 高（自定义后端逻辑）            | 低（固定行为）         |
+| **性能**      | 最高（接近裸金属）              | 较高（受内核调度制约） |
+| **依赖**      | QEMU + DPDK                     | 内核模块 + QEMU        |
 
 ---
 
@@ -1082,6 +1082,7 @@ flowchart TB
 ### 7.1 vhost-user 交换机
 
 下面的示例实现了一个支持多 VM 的 MAC 学习交换机，核心逻辑：
+
 - 每个 VM 连接时分配一个 vid，记录其 MAC 地址
 - 收到物理端口的包，查 MAC 表决定转发到哪个 VM（或广播）
 - VM 发出的包进行 MAC 学习
@@ -1293,6 +1294,7 @@ qemu-system-x86_64 \
 ```
 
 核心转发逻辑：
+
 - **物理端口 → VM**：查 MAC 表单播 / 广播泛洪
 - **VM → 物理端口**：默认发往物理端口（上联 / 外部通信）
 - **VM → VM**：查到目标 VM 在本地 MAC 表中，直接 `enqueue_burst` 到目标 VM，不经过物理 NIC
@@ -1328,6 +1330,7 @@ qemu-system-x86_64 \
 ---
 
 > [!tip] 参考文献
+>
 > - "vhost-user 协议", https://qemu.readthedocs.io/en/latest/interop/vhost-user.html
 > - "virtio 规范", https://docs.oasis-open.org/virtio/virtio/v1.1/virtio-v1.1.html
 > - Intel, "DPDK Vhost", https://doc.dpdk.org/guides/prog_guide/vhost_lib.html

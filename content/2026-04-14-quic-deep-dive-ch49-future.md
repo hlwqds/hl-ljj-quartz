@@ -64,6 +64,7 @@ With ELN:
 ```
 
 Benefits:
+
 - Faster loss detection
 - Less unnecessary retransmissions
 - Better for asymmetric paths
@@ -73,11 +74,13 @@ Draft: draft-ietf-quic-eln
 ### 49.3.2 RTT Independence for ACK
 
 Traditional ACK-based loss detection can be fooled by:
+
 - Asymmetric paths (ACKs travel different route)
 - Congestion on return path
 - Bufferbloat on ACK path
 
 Potential solutions:
+
 - Separate ACK congestion control
 - Path-probing for RTT asymmetry
 - Hop-by-hop loss notification
@@ -166,13 +169,13 @@ Scheduler decides:
 
 QUIC's encrypted headers create challenges:
 
-| Middlebox Behavior | QUIC Impact |
-|--------------------|-------------|
-| Stateful firewall tracking | May block after NAT reboot |
-| Deep Packet Inspection | Can't see payload, may throttle |
-| TLS interception | Breaks end-to-end encryption |
-| Rate limiting | Can't determine app type |
-| QoS marking | Can't prioritize by application |
+| Middlebox Behavior         | QUIC Impact                     |
+| -------------------------- | ------------------------------- |
+| Stateful firewall tracking | May block after NAT reboot      |
+| Deep Packet Inspection     | Can't see payload, may throttle |
+| TLS interception           | Breaks end-to-end encryption    |
+| Rate limiting              | Can't determine app type        |
+| QoS marking                | Can't prioritize by application |
 
 ### 49.6.2 GREASE Extensions
 
@@ -223,6 +226,7 @@ quic_conn_t *conn = quic_connect(&config, "example.com", 443);
 ```
 
 Benefits:
+
 - Application controls all transport behavior
 - Easy to A/B test different configurations
 - Ship transport improvements without OS updates
@@ -423,18 +427,22 @@ Ongoing research on "TCP friendliness" for QUIC
 QUIC's future is bright and active:
 
 **Standardization**:
+
 - Multipath, Loss Bit, enhanced datagrams in progress
 - Post-quantum crypto on the horizon
 
 **Performance**:
+
 - Kernel bypass, hardware offload maturing
 - Deterministic networking integration
 
 **Ecosystem**:
+
 - Multiple production-quality implementations
 - Deployment across major services
 
 **Research**:
+
 - Better congestion control models
 - Network measurement applications
 - Security and privacy enhancements
@@ -445,9 +453,9 @@ QUIC was designed to be extensible. The next decade will prove whether that desi
 
 ## Appendix: QUIC Version Reference
 
-| Version | Hex | Status |
-|---------|-----|--------|
-| RFC 9000 | 0x00000001 | Standard (2021) |
-| draft-34 | 0xff00001d | Historic |
+| Version          | Hex        | Status           |
+| ---------------- | ---------- | ---------------- |
+| RFC 9000         | 0x00000001 | Standard (2021)  |
+| draft-34         | 0xff00001d | Historic         |
 | Google QUIC Q050 | 0x51303430 | Google's version |
-| GREASE | 0x1a1a1a1a | Testing only |
+| GREASE           | 0x1a1a1a1a | Testing only     |

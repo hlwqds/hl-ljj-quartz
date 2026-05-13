@@ -10,8 +10,8 @@ tags:
 description: "深入解析 Suricata 的 YAML 配置解析机制、SCConf 配置树、ConfGet* 系列函数、命令行参数处理，以及配置如何驱动源码行为"
 ---
 
-> [!info] Suricata 2026 深度探索系列
-> 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Suricata 2026 深度探索系列 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-15-suricata-deep-dive-ch1-overview|第一章：Suricata 概述]]
 > 2. **第二章：Suricata 配置系统**
 > 3. [[2026-04-15-suricata-deep-dive-ch3-runmodes|第三章：Runmodes 运行模式]]
@@ -62,12 +62,12 @@ int ConfYamlLoad(const char *filename)
 {
     FILE *f = fopen(filename, "r");
     yaml_parser_t parser;
-    
+
     yaml_parser_initialize(&parser);
     yaml_parser_set_input_file(&parser, f);
-    
+
     ConfYamlParse(&parser, NULL, NULL, NULL);
-    
+
     yaml_parser_delete(&parser);
     fclose(f);
     return 0;
@@ -97,19 +97,19 @@ static ConfNode *root = NULL;  // 配置树根节点
 static int ConfYamlParse(yaml_parser_t *parser, ConfNode *parent, ...)
 {
     yaml_event_t event;
-    
+
     while (1) {
         yaml_parser_parse(parser, &event);
-        
+
         switch (event.type) {
             case YAML_SCALAR_EVENT: {
                 // 创建新节点
                 ConfNode *node = ConfNodeNew();
                 node->name = strdup((char *)event.data.scalar.value);
-                
+
                 // 解析值（可能为嵌套结构）
                 ConfYamlParse(parser, node, ...);
-                
+
                 // 挂载到父节点
                 if (parent) {
                     TAILQ_INSERT_TAIL(&parent->head, node, next);
@@ -173,11 +173,11 @@ static void SetupCapture(const char *capture_mode)
     if (ConfGet("capture.threads", &threads_str) == 1) {
         ConfGetInt("capture.threads", &cfg->threads);
     }
-    
+
     // 读取缓冲区大小
     int64_t buffer_size = 1024;
     (void)ConfGetInt("capture.buffer-size", &buffer_size);
-    
+
     // 遍历所有 capture 下的子节点
     ConfNode *capture_node = ConfGetNode("capture");
     ConfNode *child;
@@ -217,7 +217,7 @@ static struct option long_options[] = {
 int main(int argc, char **argv)
 {
     int opt;
-    while ((opt = getopt_long(argc, argv, "c:C:d:ei:o:p:q:r:s:t:T:u:v:", 
+    while ((opt = getopt_long(argc, argv, "c:C:d:ei:o:p:q:r:s:t:T:u:v:",
                              long_options, NULL)) != -1) {
         switch (opt) {
             case 'c':
@@ -273,7 +273,7 @@ int ConfYamlLoad(const char *filename)
 {
     // 先加载主配置
     ConfYamlLoadFile(filename);
-    
+
     // 遍历 includes
     ConfNode *includes = ConfGetNode("includes");
     if (includes) {
@@ -325,7 +325,7 @@ intmain(void)
     // 读取 max-pending-packets
     uint32_t max_pending_packets = 1024;
     (void)ConfGetInt("max-pending-packets", &max_pending_packets);
-    
+
     // 设置到全局配置
     g_default_packet_size = max_pending_packets;
 }
@@ -362,12 +362,12 @@ int RunModeSet(runmode, capture_plugin, ...);
 # suricata.yaml
 outputs:
   -eve-log:
-      enabled: yes
-      filename: eve.json
-      types:
-        - alert
-        - http
-        - dns
+    enabled: yes
+    filename: eve.json
+    types:
+      - alert
+      - http
+      - dns
 ```
 
 ```c
@@ -386,7 +386,7 @@ int OutputEveLoadConfig(const ConfNode *conf)
     if (ConfGet("outputs.eve-log.enabled", &enabled) == 1) {
         g_eve_enabled = (strcmp(enabled, "yes") == 0);
     }
-    
+
     // 读取各模块开关
     ConfNode *types = ConfGetNode("outputs.eve-log.types");
     ConfNode *type;

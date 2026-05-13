@@ -12,8 +12,8 @@ tags:
 description: "深入解析 Suricata 文件识别系统：file-data 关键字、magic 匹配、文件提取、MD5/SHA1 哈希计算、以及 EVE 文件日志"
 ---
 
-> [!info] Suricata 2026 深度探索系列
-> 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Suricata 2026 深度探索系列 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-15-suricata-deep-dive-ch1-overview|第一章：Suricata 概述]]
 > 2. [[2026-04-15-suricata-deep-dive-ch2-config|第二章：Suricata 配置系统]]
 > 3. [[2026-04-15-suricata-deep-dive-ch3-runmodes|第三章：Runmodes 运行模式]]
@@ -109,14 +109,14 @@ alert smtp $HOME_NET any -> any any (
 typedef struct DetectFiledataData_ {
     /* 协议类型 */
     AppProto alproto;                // HTTP/SMTP/DNS 等
-    
+
     /* 匹配选项 */
     uint8_t flags;
 #define FILEDATA_FLAG_GZIP     0x01  # 解压 gzip
 #define FILEDATA_FLAG_BZIP2    0x02  # 解压 bzip2
 #define FILEDATA_FLAG_ZSTD     0x04  # 解压 zstd
 #define FILEDATA_FLAG_RAW      0x08  # 原始数据
-    
+
     /* 内部状态 */
     bool has_mime;                  // 是否包含 MIME
     bool has_decoded;               // 是否有解码内容
@@ -126,7 +126,7 @@ typedef struct DetectFiledataData_ {
 static int ParseFiledata(const char *optstr, Signature *sig)
 {
     DetectFiledataData *fd = SCCalloc(1, sizeof(DetectFiledataData));
-    
+
     /* file-data 可以带参数 */
     if (optstr != NULL && strlen(optstr) > 0) {
         if (strcmp(optstr, "gzip") == 0) {
@@ -139,14 +139,14 @@ static int ParseFiledata(const char *optstr, Signature *sig)
             fd->flags |= FILEDATA_FLAG_RAW;
         }
     }
-    
+
     /* 设置协议 */
     fd->alproto = AppLayerGetProtocol("http");
-    
+
     /* 添加到签名 */
     sig->file_flags |= SIG_FLAG_HAS_FILE;
     sig->filedata = fd;
-    
+
     return 0;
 }
 ```
@@ -186,7 +186,7 @@ typedef enum {
 static int ParseFiletype(const char *optstr, Signature *sig)
 {
     FileType type = FILE_TYPE_UNKNOWN;
-    
+
     if (strcmp(optstr, "exe") == 0 || strcmp(optstr, "pe") == 0) {
         type = FILE_TYPE_EXE;
     } else if (strcmp(optstr, "pdf") == 0) {
@@ -201,10 +201,10 @@ static int ParseFiletype(const char *optstr, Signature *sig)
         type = FILE_TYPE_XML;
     }
     // ... 其他类型
-    
+
     sig->file_type = type;
     sig->file_flags |= SIG_FLAG_FILETYPE;
-    
+
     return 0;
 }
 ```
@@ -222,7 +222,7 @@ typedef struct FileContainer_ {
     File *head;                      // 第一个文件
     File *tail;                      // 最后一个文件
     uint32_t len;                    // 文件数量
-    
+
     /* 状态 */
     uint8_t flags;
 #define FC_ISERROR      0x01        # 有错误
@@ -235,28 +235,28 @@ typedef struct File_ {
     uint64_t id;                     # 文件唯一 ID
     char *name;                      # 文件名
     uint8_t *tmp_path;              # 临时文件路径
-    
+
     /* 文件内容 */
     uint8_t *content;               # 文件内容缓冲区
     uint32_t size;                  # 已接收大小
     uint32_t allocated;             # 缓冲区分配大小
     uint64_t size_limit;           # 文件大小限制
-    
+
     /* 文件类型 */
     FileType type;                  # 文件类型
     AppProto proto;                 # 所属协议
-    
+
     /* 哈希 */
     struct {
         uint8_t md5[16];            # MD5 哈希
         uint8_t sha1[20];           # SHA1 哈希
         uint8_t sha256[32];         # SHA256 哈希
-        
+
         bool md5_set;
         bool sha1_set;
         bool sha256_set;
     } hash;
-    
+
     /* 状态 */
     uint8_t flags;
 #define FILE_NOSTORE       0x01     # 不存储
@@ -267,7 +267,7 @@ typedef struct File_ {
 #define FILE_SHA1         0x20     # 计算 SHA1
 #define FILE_SHA256       0x40     # 计算 SHA256
 #define FILE_GZIP         0x80     # Gzip 解压
-    
+
     /* 链表 */
     struct File_ *next;            # 下一个文件
     struct File_ *prev;            # 上一个文件
@@ -295,7 +295,7 @@ File *FileContainerAdd(FileContainer *fc, File *file)
         fc->tail = file;
     }
     fc->len++;
-    
+
     return file;
 }
 
@@ -303,14 +303,14 @@ File *FileContainerAdd(FileContainer *fc, File *file)
 void FileContainerFree(FileContainer *fc)
 {
     if (fc == NULL) return;
-    
+
     File *file = fc->head;
     while (file != NULL) {
         File *next = file->next;
         FileFree(file);
         file = next;
     }
-    
+
     SCFree(fc);
 }
 ```
@@ -327,13 +327,13 @@ typedef struct FileMagic_ {
     /* Magic 字节 */
     uint8_t *magic;                # Magic 字节序列
     uint16_t maglen;                # Magic 长度
-    
+
     /* 偏移 */
     int16_t offset;                 # 偏移量 (-1 表示任意)
-    
+
     /* 文件类型 */
     FileType type;                  # 文件类型
-    
+
     /* 描述 */
     const char *desc;               # 描述
 } FileMagic;
@@ -343,45 +343,45 @@ static FileMagic file_magics[] = {
     /* EXE/PE */
     { (uint8_t *)"MZ", 2, 0, FILE_TYPE_EXE, "PE/EXE" },
     { (uint8_t *)"PE\0\0", 4, 0, FILE_TYPE_EXE, "PE" },
-    
+
     /* PDF */
     { (uint8_t *)"%PDF", 4, 0, FILE_TYPE_PDF, "PDF" },
-    
+
     /* Office/OLE */
     { (uint8_t *)"\xD0\xCF\x11\xE0", 4, 0, FILE_TYPE_DOC, "MS Office" },
-    
+
     /* ZIP */
     { (uint8_t *)"PK\x03\x04", 4, 0, FILE_TYPE_ZIP, "ZIP Archive" },
-    
+
     /* HTML */
     { (uint8_t *)"<html", 5, 0, FILE_TYPE_HTML, "HTML" },
     { (uint8_t *)"<!DOCTYPE", 9, 0, FILE_TYPE_HTML, "HTML" },
-    
+
     /* XML */
     { (uint8_t *)"<?xml", 5, 0, FILE_TYPE_XML, "XML" },
-    
+
     /* PNG */
     { (uint8_t *)"\x89PNG", 4, 0, FILE_TYPE_PNG, "PNG" },
-    
+
     /* JPEG */
     { (uint8_t *)"\xFF\xD8\xFF", 3, 0, FILE_TYPE_JPG, "JPEG" },
-    
+
     /* GIF */
     { (uint8_t *)"GIF87a", 6, 0, FILE_TYPE_GIF, "GIF" },
     { (uint8_t *)"GIF89a", 6, 0, FILE_TYPE_GIF, "GIF" },
-    
+
     /* Java class */
     { (uint8_t *)"\xCA\xFE\xBA\xBE", 4, 0, FILE_TYPE_JAVA, "Java Class" },
-    
+
     /* ELF */
     { (uint8_t *)"\x7FELF", 4, 0, FILE_TYPE_ELF, "ELF" },
-    
+
     /* Android APK (ZIP based) */
     { (uint8_t *)"PK\x03\x04", 4, 0, FILE_TYPE_APK, "Android APK" },
-    
+
     /* Gzip */
     { (uint8_t *)"\x1F\x8B", 2, 0, FILE_TYPE_GZIP, "Gzip" },
-    
+
     { NULL, 0, 0, FILE_TYPE_UNKNOWN, NULL }
 };
 ```
@@ -399,23 +399,23 @@ FileType FileMagicMatch(File *file, const uint8_t *buffer, uint32_t buffer_len)
         if (fm->offset >= 0) {
             start = fm->offset;
         }
-        
+
         /* 检查长度是否足够 */
         if (start + fm->maglen > buffer_len) {
             continue;
         }
-        
+
         /* 比较 magic 字节 */
         if (memcmp(buffer + start, fm->magic, fm->maglen) == 0) {
             /* 匹配成功 */
             file->type = fm->type;
             file->flags |= FILE_DETECTED;
-            
+
             SCLogDebug("File type detected: %s", fm->desc);
             return fm->type;
         }
     }
-    
+
     return FILE_TYPE_UNKNOWN;
 }
 ```
@@ -430,36 +430,36 @@ FileType FileMagicMatch(File *file, const uint8_t *buffer, uint32_t buffer_len)
 # suricata.yaml
 outputs:
   -eve-log:
-      types:
-        - files:
-            # 记录文件日志
-            enabled: yes
-            
-            # 文件存储目录
-            store-directory: /var/log/suricata/files
-            
-            # 是否存储文件内容
-            store: yes
-            
-            # 是否计算哈希
-            compute-md5: yes
-            compute-sha1: yes
-            compute-sha256: no
-            
-            # 文件大小限制
-            size-limit: 100mb
-            
-            # 特定文件类型存储
-            include-files:
-              - exe
-              - pdf
-              - doc
-              - zip
-            
-            # 排除的文件类型
-            # exclude-files:
-            #   - png
-            #   - jpg
+    types:
+      - files:
+          # 记录文件日志
+          enabled: yes
+
+          # 文件存储目录
+          store-directory: /var/log/suricata/files
+
+          # 是否存储文件内容
+          store: yes
+
+          # 是否计算哈希
+          compute-md5: yes
+          compute-sha1: yes
+          compute-sha256: no
+
+          # 文件大小限制
+          size-limit: 100mb
+
+          # 特定文件类型存储
+          include-files:
+            - exe
+            - pdf
+            - doc
+            - zip
+
+          # 排除的文件类型
+          # exclude-files:
+          #   - png
+          #   - jpg
 ```
 
 ### 6.2 文件存储流程
@@ -474,18 +474,18 @@ int FileDataProcess(File *file, const uint8_t *data, uint32_t data_len)
         file->flags |= FILE_TRUNCATED;
         data_len = file->size_limit - file->size;
     }
-    
+
     /* 扩展缓冲区 */
     if (file->size + data_len > file->allocated) {
         uint32_t new_size = file->size + data_len + 4096;
         file->content = SCRealloc(file->content, new_size);
         file->allocated = new_size;
     }
-    
+
     /* 复制数据 */
     memcpy(file->content + file->size, data, data_len);
     file->size += data_len;
-    
+
     /* 更新哈希 */
     if (file->flags & FILE_MD5) {
         MdfHashUpdate(file->hash.md5, data, data_len);
@@ -496,12 +496,12 @@ int FileDataProcess(File *file, const uint8_t *data, uint32_t data_len)
     if (file->flags & FILE_SHA256) {
         Sha256HashUpdate(file->hash.sha256, data, data_len);
     }
-    
+
     /* Magic 检测（仅在文件开始时）*/
     if (file->size <= 32 && !(file->flags & FILE_DETECTED)) {
         FileMagicMatch(file, file->content, file->size);
     }
-    
+
     return 0;
 }
 ```
@@ -515,7 +515,7 @@ int FileSaveToDisk(File *file)
     if (file == NULL || !(file->flags & FILE_STORE)) {
         return -1;
     }
-    
+
     /* 生成文件名 */
     char filename[256];
     if (file->name != NULL) {
@@ -524,27 +524,27 @@ int FileSaveToDisk(File *file)
     } else {
         snprintf(filename, sizeof(filename), "file.%lu", file->id);
     }
-    
+
     /* 生成完整路径 */
     char filepath[512];
     snprintf(filepath, sizeof(filepath), "%s/%s",
              file->path, filename);
-    
+
     /* 写入文件 */
     FILE *fp = fopen(filepath, "wb");
     if (fp == NULL) {
         SCLogError("Failed to open file for writing: %s", filepath);
         return -1;
     }
-    
+
     fwrite(file->content, 1, file->size, fp);
     fclose(fp);
-    
+
     /* 更新临时路径 */
     file->tmp_path = SCStrdup(filepath);
-    
+
     SCLogInfo("File saved: %s (size=%u)", filepath, file->size);
-    
+
     return 0;
 }
 ```
@@ -632,7 +632,7 @@ int HTPFileProcess(htp_tx_t *tx, const uint8_t *data, uint32_t data_len)
         fc = FileContainerAlloc();
         tx->files = fc;
     }
-    
+
     /* 获取或创建当前文件 */
     File *file = NULL;
     if (fc->tail != NULL && !(fc->tail->flags & FILE_STORE)) {
@@ -642,10 +642,10 @@ int HTPFileProcess(htp_tx_t *tx, const uint8_t *data, uint32_t data_len)
         file = FileNew();
         FileContainerAdd(fc, file);
     }
-    
+
     /* 处理文件数据 */
     FileDataProcess(file, data, data_len);
-    
+
     return 0;
 }
 ```
@@ -658,13 +658,13 @@ void HTPFileSetFilename(htp_tx_t *tx, const char *filename)
 {
     if (tx->files != NULL && tx->files->tail != NULL) {
         File *file = tx->files->tail;
-        
+
         if (file->name != NULL) {
             SCFree(file->name);
         }
-        
+
         file->name = SCStrdup(filename);
-        
+
         /* 根据扩展名推测类型 */
         const char *ext = strrchr(filename, '.');
         if (ext != NULL) {
@@ -683,31 +683,31 @@ void HTPFileSetFilename(htp_tx_t *tx, const char *filename)
 
 ```json
 {
-    "timestamp": "2026-04-15T10:30:00.000000Z",
-    "event_type": "fileinfo",
-    "fileinfo": {
-        "sid": [1000001],
-        "version": "2",
-        "stored": true,
-        "size": 458752,
-        "filename": "/malware/payload.exe",
-        "file_type": "PE/EXE",
-        "md5": "d41d8cd98f00b204e9800998ecf8427e",
-        "sha1": "da39a3ee5e6b4b0d3255bfef95601890afd80709",
-        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-        "gaps": false,
-        "state": "established",
-        "md5hex": "d41d8cd98f00b204e9800998ecf8427e",
-        "sha1hex": "da39a3ee5e6b4b0d3255bfef95601890afd80709",
-        "sha256hex": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-        "magic_id": "PE/EXE",
-        "app_proto": "http",
-        "direction": "to_client",
-        "dns": {
-            "rrname": "example.com",
-            "rrtype": "A"
-        }
+  "timestamp": "2026-04-15T10:30:00.000000Z",
+  "event_type": "fileinfo",
+  "fileinfo": {
+    "sid": [1000001],
+    "version": "2",
+    "stored": true,
+    "size": 458752,
+    "filename": "/malware/payload.exe",
+    "file_type": "PE/EXE",
+    "md5": "d41d8cd98f00b204e9800998ecf8427e",
+    "sha1": "da39a3ee5e6b4b0d3255bfef95601890afd80709",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "gaps": false,
+    "state": "established",
+    "md5hex": "d41d8cd98f00b204e9800998ecf8427e",
+    "sha1hex": "da39a3ee5e6b4b0d3255bfef95601890afd80709",
+    "sha256hex": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "magic_id": "PE/EXE",
+    "app_proto": "http",
+    "direction": "to_client",
+    "dns": {
+      "rrname": "example.com",
+      "rrtype": "A"
     }
+  }
 }
 ```
 
@@ -718,23 +718,23 @@ void HTPFileSetFilename(htp_tx_t *tx, const char *filename)
 static int EVEFileInfoJson(JsonOut *js, File *file)
 {
     EveJson *ej = (EveJson *)js;
-    
+
     JsonStartObject(ej->js, "fileinfo");
-    
+
     /* 基本信息 */
     JsonAddString(ej->js, "filename", file->name);
     JsonAddUint(ej->js, "size", file->size);
-    
+
     /* 文件类型 */
     if (file->type != FILE_TYPE_UNKNOWN) {
         JsonAddString(ej->js, "file_type", FileTypeToString(file->type));
     }
-    
+
     /* Magic 类型 */
     if (file->flags & FILE_DETECTED) {
         JsonAddString(ej->js, "magic_id", FileTypeToString(file->type));
     }
-    
+
     /* 哈希 */
     if (file->hash.md5_set) {
         char md5_str[33];
@@ -754,7 +754,7 @@ static int EVEFileInfoJson(JsonOut *js, File *file)
         JsonAddString(ej->js, "sha256", sha256_str);
         JsonAddString(ej->js, "sha256hex", sha256_str);
     }
-    
+
     /* 存储状态 */
     if (file->flags & FILE_STORE) {
         JsonAddBool(ej->js, "stored", true);
@@ -762,14 +762,14 @@ static int EVEFileInfoJson(JsonOut *js, File *file)
             JsonAddString(ej->js, "path", file->tmp_path);
         }
     }
-    
+
     /* 截断状态 */
     if (file->flags & FILE_TRUNCATED) {
         JsonAddBool(ej->js, "truncated", true);
     }
-    
+
     JsonEndObject(ej->js);
-    
+
     return 0;
 }
 ```

@@ -49,12 +49,12 @@ QUIC 的设计：
 
 ### 1.3 TLS 1.3 vs TLS 1.2 in QUIC
 
-| 特性 | TLS 1.3 | TLS 1.2 |
-|------|---------|---------|
-| 握手模式 | 1-RTT/0-RTT | 2-RTT + Resumption |
-| 密钥交换 | ECDHE（提供前向保密） | RSA（无前向保密） |
-| 证书用途 | 认证 + 签名 | 仅认证 |
-| QUIC 支持 | ✅ 完全支持 | ⚠️ 已废弃（RFC 8999） |
+| 特性      | TLS 1.3               | TLS 1.2               |
+| --------- | --------------------- | --------------------- |
+| 握手模式  | 1-RTT/0-RTT           | 2-RTT + Resumption    |
+| 密钥交换  | ECDHE（提供前向保密） | RSA（无前向保密）     |
+| 证书用途  | 认证 + 签名           | 仅认证                |
+| QUIC 支持 | ✅ 完全支持           | ⚠️ 已废弃（RFC 8999） |
 
 > [!warning] TLS 1.2 在 QUIC 中已被废弃
 > RFC 8999 明确指出：QUIC 必须使用 TLS 1.3，不再支持 TLS 1.2。这确保了前向保密和现代加密标准。
@@ -77,15 +77,15 @@ QUIC + TLS 1.3
 
 ### 2.2 TLS 1.3 消息到 QUIC 包类型的对应
 
-| TLS 1.3 消息 | QUIC 包类型 | CRYPTO 帧阶段 |
-|--------------|------------|--------------|
-| ClientHello | Initial | initial_number_space |
-| ServerHello | Initial | initial_number_space |
-| EncryptedExtensions | Initial | initial_number_space |
-| Certificates | Initial | initial_number_space |
-| CertificateVerify | Initial | initial_number_space |
-| Finished | Initial / Handshake | handshake_number_space |
-| NewSessionTicket | 1-RTT | application_number_space |
+| TLS 1.3 消息        | QUIC 包类型         | CRYPTO 帧阶段            |
+| ------------------- | ------------------- | ------------------------ |
+| ClientHello         | Initial             | initial_number_space     |
+| ServerHello         | Initial             | initial_number_space     |
+| EncryptedExtensions | Initial             | initial_number_space     |
+| Certificates        | Initial             | initial_number_space     |
+| CertificateVerify   | Initial             | initial_number_space     |
+| Finished            | Initial / Handshake | handshake_number_space   |
+| NewSessionTicket    | 1-RTT               | application_number_space |
 
 ### 2.3 TLS 握手流程中的 QUIC 帧序列
 
@@ -175,11 +175,11 @@ ClientHello 总长度: 3000 bytes
 
 ### 4.1 QUIC 使用的 AEAD
 
-| AEAD 类型 | 密钥长度 | Nonce 长度 | 用途 |
-|-----------|----------|-----------|------|
-| AEAD_AES_128_GCM | 128 bits | 96 bits | 推荐的最低要求 |
-| AEAD_AES_256_GCM | 256 bits | 96 bits | 更强安全性 |
-| AEAD_CHACHA20_POLY1305 | 256 bits | 96 bits | 可选 |
+| AEAD 类型              | 密钥长度 | Nonce 长度 | 用途           |
+| ---------------------- | -------- | ---------- | -------------- |
+| AEAD_AES_128_GCM       | 128 bits | 96 bits    | 推荐的最低要求 |
+| AEAD_AES_256_GCM       | 256 bits | 96 bits    | 更强安全性     |
+| AEAD_CHACHA20_POLY1305 | 256 bits | 96 bits    | 可选           |
 
 ### 4.2 密钥导出层次
 
@@ -356,7 +356,7 @@ Server:
   handshake_secret = HKDF-Extract(master_secret, "tls13 derived")
   server_handshake traffic secret = Derive-Secret(handshake_secret, "s hs")
   client_handshake traffic secret = Derive-Secret(handshake_secret, "c hs")
-  
+
   // 收到 ServerHello 后：
   application traffic secret = Derive-Secret(
       master_secret, "c ap", ServerHello...)
@@ -460,14 +460,14 @@ TLS 1.3 密钥派生：
 
 ### 7.3 关键差异总结
 
-| 特性 | TLS 1.2 | TLS 1.3 |
-|------|---------|---------|
-| 密钥材料 | RSA encrypted PMS / ECDH | ECDH / PSK |
-| 派生函数 | PRF (MD5/SHA-256) | HKDF (HMAC-SHA-256) |
-| 前向保密 | ❌ (RSA) / ✅ (ECDH) | ✅ (必须) |
-| 0-RTT | ❌ | ✅ (PSK) |
-| 握手轮数 | 2-RTT | 1-RTT |
-| 证书用途 | 加密 PMS | 仅认证 |
+| 特性     | TLS 1.2                  | TLS 1.3             |
+| -------- | ------------------------ | ------------------- |
+| 密钥材料 | RSA encrypted PMS / ECDH | ECDH / PSK          |
+| 派生函数 | PRF (MD5/SHA-256)        | HKDF (HMAC-SHA-256) |
+| 前向保密 | ❌ (RSA) / ✅ (ECDH)     | ✅ (必须)           |
+| 0-RTT    | ❌                       | ✅ (PSK)            |
+| 握手轮数 | 2-RTT                    | 1-RTT               |
+| 证书用途 | 加密 PMS                 | 仅认证              |
 
 ---
 
@@ -535,13 +535,13 @@ Client                                               Server
 
 ### QUIC + TLS 1.3 集成的优势
 
-| 传统 TLS over TCP | QUIC + TLS 1.3 |
-|------------------|----------------|
+| 传统 TLS over TCP   | QUIC + TLS 1.3      |
+| ------------------- | ------------------- |
 | TLS Record 分片阻塞 | CRYPTO 帧无队头阻塞 |
-| 2-RTT 握手 | 1-RTT 握手 |
-| 无 0-RTT | 0-RTT 支持（PSK） |
-| 密钥需 TCP 重传 | 包号空间独立加密 |
-| 无连接迁移 | CID 支持连接迁移 |
+| 2-RTT 握手          | 1-RTT 握手          |
+| 无 0-RTT            | 0-RTT 支持（PSK）   |
+| 密钥需 TCP 重传     | 包号空间独立加密    |
+| 无连接迁移          | CID 支持连接迁移    |
 
 ### 参考资料
 

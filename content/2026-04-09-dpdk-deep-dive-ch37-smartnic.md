@@ -30,25 +30,25 @@ description: "深入解析智能网卡架构：IPU/DPU 的演进、Capsule 技�
 
 ### 1.2 智能网卡演进
 
-| 时代 | 技术 | 能力 |
-|------|------|------|
-| **1G/10G** | 传统 NIC | 基础收发，无offload |
-| **10G/40G** | Basic Offload | checksum、RSS、TSO |
-| **25G/100G** | Advanced Offload | SR-IOV、flow director |
-| **100G+** | **SmartNIC/IPU** | 可编程、P4、ARM CPU |
-| **200G/400G** | **DPU** | 完整数据面+控制面 |
+| 时代          | 技术             | 能力                  |
+| ------------- | ---------------- | --------------------- |
+| **1G/10G**    | 传统 NIC         | 基础收发，无offload   |
+| **10G/40G**   | Basic Offload    | checksum、RSS、TSO    |
+| **25G/100G**  | Advanced Offload | SR-IOV、flow director |
+| **100G+**     | **SmartNIC/IPU** | 可编程、P4、ARM CPU   |
+| **200G/400G** | **DPU**          | 完整数据面+控制面     |
 
 ### 1.3 术语
 
-| 术语 | 全称 | 厂商/来源 |
-|------|------|----------|
-| **SmartNIC** | Smart Network Interface Card | 通用术语 |
-| **DPU** | Data Processing Unit | NVIDIA |
-| **IPU** | Infrastructure Processing Unit | Intel |
-| **DOCA** | Data Center On A Chip Architecture | NVIDIA |
-| **IPDK** | Infrastructure Programmer Development Kit | Intel |
-| **Cape** | Capsule | Pensando |
-| **Barefoot** | Barefoot Networks (已被 Intel 收购) | Intel |
+| 术语         | 全称                                      | 厂商/来源 |
+| ------------ | ----------------------------------------- | --------- |
+| **SmartNIC** | Smart Network Interface Card              | 通用术语  |
+| **DPU**      | Data Processing Unit                      | NVIDIA    |
+| **IPU**      | Infrastructure Processing Unit            | Intel     |
+| **DOCA**     | Data Center On A Chip Architecture        | NVIDIA    |
+| **IPDK**     | Infrastructure Programmer Development Kit | Intel     |
+| **Cape**     | Capsule                                   | Pensando  |
+| **Barefoot** | Barefoot Networks (已被 Intel 收购)       | Intel     |
 
 ## 2. DPU / IPU 架构
 
@@ -112,14 +112,14 @@ description: "深入解析智能网卡架构：IPU/DPU 的演进、Capsule 技�
 
 ### 2.3 核心能力对比
 
-| 特性 | BlueField-3 | Intel IPU E810 | Pensando DSC |
-|------|-------------|---------------|--------------|
-| **带宽** | 400GbE | 200GbE | 200GbE |
-| **ARM Cores** | 8x A78 | 4x A72 | 8x A72 |
-| **RDMA** | RoCEv2 | iWARP/RoCE | RoCEv2 |
-| **Crypto** | IPsec/TLS | IPsec | IPsec |
-| **编程方式** | DOCA/P4 | IPDK/P4 | P4/C |
-| **Storage Offload** | NVMe-oF | SPDK | NVMe-oF |
+| 特性                | BlueField-3 | Intel IPU E810 | Pensando DSC |
+| ------------------- | ----------- | -------------- | ------------ |
+| **带宽**            | 400GbE      | 200GbE         | 200GbE       |
+| **ARM Cores**       | 8x A78      | 4x A72         | 8x A72       |
+| **RDMA**            | RoCEv2      | iWARP/RoCE     | RoCEv2       |
+| **Crypto**          | IPsec/TLS   | IPsec          | IPsec        |
+| **编程方式**        | DOCA/P4     | IPDK/P4        | P4/C         |
+| **Storage Offload** | NVMe-oF     | SPDK           | NVMe-oF      |
 
 ## 3. Capsule / P4 可编程网卡
 
@@ -156,11 +156,11 @@ Capsule 是 Pensando（现 AMD）的高级可编程网卡架构：
 
 Intel 收购 Barefoot 后的 Tofino 系列：
 
-| 型号 | 端口 | 可编程管线 | 吞吐量 |
-|------|------|----------|--------|
-| **Tofino** | 64x 100G | P4-16 | 6.4Tbps |
-| **Tofino 2** | 128x 100G | P4-16 | 12.8Tbps |
-| **Tofino 3** | 256x 100G | P4-16 | 25.6Tbps |
+| 型号         | 端口      | 可编程管线 | 吞吐量   |
+| ------------ | --------- | ---------- | -------- |
+| **Tofino**   | 64x 100G  | P4-16      | 6.4Tbps  |
+| **Tofino 2** | 128x 100G | P4-16      | 12.8Tbps |
+| **Tofino 3** | 256x 100G | P4-16      | 25.6Tbps |
 
 ### 3.3 P4 工作流程
 

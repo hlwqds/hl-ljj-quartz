@@ -1,7 +1,8 @@
 ---
 title: "RDMA 第二十五章：Kubernetes RDMA——容器编排下的 RDMA"
 date: 2026-04-13
-tags: [rdma, kubernetes, k8s, device-plugin, rdma-shared, nvidia-rdma, gpu-direct, scheduler-extender]
+tags:
+  [rdma, kubernetes, k8s, device-plugin, rdma-shared, nvidia-rdma, gpu-direct, scheduler-extender]
 description: "详解 Kubernetes 环境下 RDMA 的完整部署方案：RDMA Device Plugin、RDMA Shared Device Plugin、NVIDIA GPU Operator、调度器扩展、以及生产环境配置示例。"
 ---
 
@@ -117,7 +118,7 @@ type RDMADevicePlugin struct {
     resourceName string           // 资源名称 (rdma/hca)
 }
 
-func (p *RDMADevicePlugin) GetDevicePluginOptions(ctx context.Context, 
+func (p *RDMADevicePlugin) GetDevicePluginOptions(ctx context.Context,
     empty *pluginapi.Empty) (*pluginapi.DevicePluginOptions, error) {
     return &pluginapi.DevicePluginOptions{
         // 支持 Pod 级别的设备分配
@@ -125,13 +126,13 @@ func (p *RDMADevicePlugin) GetDevicePluginOptions(ctx context.Context,
     }, nil
 }
 
-func (p *RDMADevicePlugin) PreStartContainer(ctx context.Context, 
+func (p *RDMADevicePlugin) PreStartContainer(ctx context.Context,
     request *pluginapi.PreStartContainerRequest) (*pluginapi.PreStartContainerResponse, error) {
     // 容器启动前的钩子，可用于重置设备状态
     return &pluginapi.PreStartContainerResponse{}, nil
 }
 
-func (p *RDMADevicePlugin) ListAndWatch(empty *pluginapi.Empty, 
+func (p *RDMADevicePlugin) ListAndWatch(empty *pluginapi.Empty,
     stream pluginapi.DevicePlugin_ListAndWatchServer) error {
     // 定期更新可用设备列表
     for {
@@ -143,13 +144,13 @@ func (p *RDMADevicePlugin) ListAndWatch(empty *pluginapi.Empty,
     }
 }
 
-func (p *RDMADevicePlugin) Allocate(ctx context.Context, 
+func (p *RDMADevicePlugin) Allocate(ctx context.Context,
     request *pluginapi.AllocateRequest) (*pluginapi.AllocateResponse, error) {
     // 分配设备给容器
     response := pluginapi.AllocateResponse{}
     for _, req := range request.ContainerRequests {
         devices := p.allocateDevices(req.DevicesIDs)
-        response.ContainerResponses = append(response.ContainerResponses, 
+        response.ContainerResponses = append(response.ContainerResponses,
             &pluginapi.ContainerAllocateResponse{
                 Envs: map[string]string{
                     "RDMA_DEVICE": "/dev/infiniband/uverbs0",
@@ -185,34 +186,34 @@ spec:
       nodeSelector:
         feature.node.kubernetes.io/rdma: "true"
       containers:
-      - name: rdma-plugin
-        image: rdma-device-plugin:latest
-        securityContext:
-          privileged: true
-        volumeMounts:
-        - name: dev
-          mountPath: /dev
-        - name: sys
-          mountPath: /sys
-        - name: cni
-          mountPath: /opt/cni/bin
-        env:
-        - name: RDMA_RESOURCE_NAME
-          value: "rdma.hca"
-        - name: RDMA_DEVICE_TYPE
-          value: "nvidia"  # 或 "mellanox"
+        - name: rdma-plugin
+          image: rdma-device-plugin:latest
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - name: dev
+              mountPath: /dev
+            - name: sys
+              mountPath: /sys
+            - name: cni
+              mountPath: /opt/cni/bin
+          env:
+            - name: RDMA_RESOURCE_NAME
+              value: "rdma.hca"
+            - name: RDMA_DEVICE_TYPE
+              value: "nvidia" # 或 "mellanox"
       volumes:
-      - name: dev
-        hostPath:
-          path: /dev
-      - name: sys
-        hostPath:
-          path: /sys
-      - name: cni
-        hostPath:
-          path: /opt/cni/bin
+        - name: dev
+          hostPath:
+            path: /dev
+        - name: sys
+          hostPath:
+            path: /sys
+        - name: cni
+          hostPath:
+            path: /opt/cni/bin
       tolerations:
-      - operator: Exists
+        - operator: Exists
 ```
 
 ```bash
@@ -275,28 +276,28 @@ spec:
     spec:
       hostNetwork: true
       containers:
-      - name: plugin
-        image: nvcr.io/nvidia/k8s-device-plugin:v0.13.0
-        args: ["--mig-strategy=combined", "--rdma-shared-device-plugin"]
-        securityContext:
-          capabilities:
-            add: ["IPC_LOCK"]
-        resources:
-          limits:
-            memory: "200Mi"
-            cpu: "500m"
-        volumeMounts:
-        - name: device-plugin
-          mountPath: /var/lib/kubelet/device-plugins
-        - name: dev
-          mountPath: /dev
+        - name: plugin
+          image: nvcr.io/nvidia/k8s-device-plugin:v0.13.0
+          args: ["--mig-strategy=combined", "--rdma-shared-device-plugin"]
+          securityContext:
+            capabilities:
+              add: ["IPC_LOCK"]
+          resources:
+            limits:
+              memory: "200Mi"
+              cpu: "500m"
+          volumeMounts:
+            - name: device-plugin
+              mountPath: /var/lib/kubelet/device-plugins
+            - name: dev
+              mountPath: /dev
       volumes:
-      - name: device-plugin
-        hostPath:
-          path: /var/lib/kubelet/device-plugins
-      - name: dev
-        hostPath:
-          path: /dev
+        - name: device-plugin
+          hostPath:
+            path: /var/lib/kubelet/device-plugins
+        - name: dev
+          hostPath:
+            path: /dev
 ```
 
 ### 3.3 请求共享 RDMA 设备
@@ -308,17 +309,17 @@ metadata:
   name: rdma-shared-pod
 spec:
   containers:
-  - name: main
-    image: nvidia/cuda:11.8-runtime-ubi8
-    resources:
-      limits:
-        rdma/shared-nvidia: "1"  # 请求 1 个共享 RDMA 设备
-        nvidia.com/gpu: 2
-    env:
-    - name: NCCL_SHARED_RDMA
-      value: "1"
-    - name: NCCL_IB_HCA
-      value: "mlx5_0,mlx5_1"
+    - name: main
+      image: nvidia/cuda:11.8-runtime-ubi8
+      resources:
+        limits:
+          rdma/shared-nvidia: "1" # 请求 1 个共享 RDMA 设备
+          nvidia.com/gpu: 2
+      env:
+        - name: NCCL_SHARED_RDMA
+          value: "1"
+        - name: NCCL_IB_HCA
+          value: "mlx5_0,mlx5_1"
 ```
 
 ### 3.4 共享模式工作原理
@@ -440,23 +441,23 @@ spec:
   nodeSelector:
     nvidia.com/gpu: "true"
   containers:
-  - name: nccl-test
-    image: nvcr.io/nvidia/nccl-tests:11.0
-    args: ["mpi_universe_size=2"]
-    resources:
-      limits:
-        nvidia.com/gpu: 2
-        rdma/hca: 1
-    env:
-    - name: NCCL_IB_HCA
-      value: "mlx5_0,mlx5_1"
-    - name: NCCL_NET_GDR_LEVEL
-      value: "IB"
-    - name: CUDA_VISIBLE_DEVICES
-      value: "0,1"
-    securityContext:
-      capabilities:
-        add: ["IPC_LOCK"]
+    - name: nccl-test
+      image: nvcr.io/nvidia/nccl-tests:11.0
+      args: ["mpi_universe_size=2"]
+      resources:
+        limits:
+          nvidia.com/gpu: 2
+          rdma/hca: 1
+      env:
+        - name: NCCL_IB_HCA
+          value: "mlx5_0,mlx5_1"
+        - name: NCCL_NET_GDR_LEVEL
+          value: "IB"
+        - name: CUDA_VISIBLE_DEVICES
+          value: "0,1"
+      securityContext:
+        capabilities:
+          add: ["IPC_LOCK"]
 ```
 
 ---
@@ -494,19 +495,20 @@ RDMA 调度需求：
 {
   "kind": "Policy",
   "apiVersion": "v1",
-  "extenders": [
-    {
-      "urlPrefix": "http://rdma-scheduler-extender:9000",
-      "filterVerb": "filter",
-      "prioritizeVerb": "prioritize",
-      "bindVerb": "bind",
-      "weight": 1,
-      "enableHttps": false,
-      "nodeCacheCapable": true,
-      "managedResources": ["rdma/hca"],
-      "ignoreResourceCollection": false
-    }
-  ]
+  "extenders":
+    [
+      {
+        "urlPrefix": "http://rdma-scheduler-extender:9000",
+        "filterVerb": "filter",
+        "prioritizeVerb": "prioritize",
+        "bindVerb": "bind",
+        "weight": 1,
+        "enableHttps": false,
+        "nodeCacheCapable": true,
+        "managedResources": ["rdma/hca"],
+        "ignoreResourceCollection": false,
+      },
+    ],
 }
 ```
 
@@ -568,23 +570,23 @@ spec:
     # 与其他 GPU 作业靠近
     podAffinity:
       requiredDuringSchedulingIgnoredDuringExecution:
-      - labelSelector:
-          matchLabels:
-            app: gpu-training
-        topologyKey: kubernetes.io/hostname
+        - labelSelector:
+            matchLabels:
+              app: gpu-training
+          topologyKey: kubernetes.io/hostname
     # 远离非 GPU 节点
     nodeAffinity:
       requiredDuringSchedulingIgnoredDuringExecution:
-      - matchExpressions:
-        - key: nvidia.com/gpu
-          operator: Exists
+        - matchExpressions:
+            - key: nvidia.com/gpu
+              operator: Exists
   containers:
-  - name: main
-    image: pytorch:latest
-    resources:
-      limits:
-        nvidia.com/gpu: 4
-        rdma/hca: 1
+    - name: main
+      image: pytorch:latest
+      resources:
+        limits:
+          nvidia.com/gpu: 4
+          rdma/hca: 1
 ```
 
 ---
@@ -694,7 +696,7 @@ metadata:
   namespace: gpu-jobs
 spec:
   hard:
-    rdma/hca: "8"  # 最多 8 个 RDMA 设备
+    rdma/hca: "8" # 最多 8 个 RDMA 设备
     nvidia.com/gpu: "16"
 ---
 # LimitRange - Pod 资源限制
@@ -705,13 +707,13 @@ metadata:
   namespace: gpu-jobs
 spec:
   limits:
-  - max:
-      rdma/hca: 4
-      nvidia.com/gpu: 8
-    min:
-      rdma/hca: 1
-      nvidia.com/gpu: 1
-    type: Pod
+    - max:
+        rdma/hca: 4
+        nvidia.com/gpu: 8
+      min:
+        rdma/hca: 1
+        nvidia.com/gpu: 1
+      type: Pod
 ```
 
 ---
@@ -744,8 +746,8 @@ metadata:
   namespace: kube-system
 spec:
   ports:
-  - port: 9800
-    name: metrics
+    - port: 9800
+      name: metrics
   selector:
     name: rdma-device-plugin
 ```

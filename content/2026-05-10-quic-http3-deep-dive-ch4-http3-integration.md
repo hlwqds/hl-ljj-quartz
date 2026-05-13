@@ -1,7 +1,24 @@
 ---
 title: QUIC & HTTP/3 深度探索 Ch4：HTTP/3 与 QUIC 集成
 date: 2026-05-10 09:00:00
-tags: [QUIC, HTTP/3, QPACK, Header Compression, Stream, Priority, Server Push, Settings, Frame, Request, Response, Multiplexing, 0-RTT, Push, Dependency Tree]
+tags:
+  [
+    QUIC,
+    HTTP/3,
+    QPACK,
+    Header Compression,
+    Stream,
+    Priority,
+    Server Push,
+    Settings,
+    Frame,
+    Request,
+    Response,
+    Multiplexing,
+    0-RTT,
+    Push,
+    Dependency Tree,
+  ]
 description: QUIC & HTTP/3 深度探索 Ch4：HTTP/3 协议详解、QPACK 头部压缩、Stream 管理、优先级机制、服务器推送、Settings 协商、与 HTTP/2 的对比。
 ---
 

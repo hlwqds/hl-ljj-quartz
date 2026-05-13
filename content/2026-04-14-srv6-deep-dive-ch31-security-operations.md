@@ -9,10 +9,8 @@ tags:
 ---
 
 > [!info] SRv6 2026 深度探索系列
-> ...
-> 30. [[2026-04-14-srv6-deep-dive-ch30-te-operations|第三十章：流量工程运营实战]]
-> **31. 第三一章：安全运营与攻击防御**
-> 32. [[2026-04-14-srv6-deep-dive-ch32-deployment-migration|第三二章：部署与迁移运营]]
+> ... 30. [[2026-04-14-srv6-deep-dive-ch30-te-operations|第三十章：流量工程运营实战]]
+> **31. 第三一章：安全运营与攻击防御** 32. [[2026-04-14-srv6-deep-dive-ch32-deployment-migration|第三二章：部署与迁移运营]]
 
 ---
 
@@ -30,7 +28,7 @@ graph TD
         E["分段攻击<br/>Fragmentation"]
         F["路由环<br/>Routing Loop"]
     end
-    
+
     A -->|"利用 SRH<br/>可写性"| G["控制平面<br/>瘫痪"]
     B -->|"绕过完整性<br/>保护"| G
     C -->|"发现内部<br/>拓扑"| H["进一步<br/>攻击"]
@@ -38,12 +36,12 @@ graph TD
 ```
 
 | 威胁类型 | 风险等级 | 影响范围 | 防护难度 |
-| :--- | :--- | :--- | :--- |
-| SRH 伪造 | Critical | 控制平面 | 中 |
-| ICV 绕过 | Critical | 数据平面 | 高 |
-| SID 枚举 | Medium | 情报收集 | 低 |
-| 放大攻击 | High | 带宽资源 | 中 |
-| 路由环 | High | 转发资源 | 中 |
+| :------- | :------- | :------- | :------- |
+| SRH 伪造 | Critical | 控制平面 | 中       |
+| ICV 绕过 | Critical | 数据平面 | 高       |
+| SID 枚举 | Medium   | 情报收集 | 低       |
+| 放大攻击 | High     | 带宽资源 | 中       |
+| 路由环   | High     | 转发资源 | 中       |
 
 ---
 
@@ -61,7 +59,7 @@ graph LR
     D -->|"验证 ICV"| E{"有效?"}
     E -->|是| F["转发 ✅"]
     E -->|否| G["丢弃 ❌"]
-    
+
     style A fill:#c8e6c9
     style D fill:#c8e6c9
     style G fill:#ff6b6b
@@ -127,13 +125,14 @@ graph TD
     D --> E["T+1: 新密钥生效"]
     E --> F["旧密钥保留一段时间"]
     F --> G["T+2: 旧密钥删除"]
-    
+
     style A fill:#fff3e0
     style E fill:#c8e6c9
     style G fill:#e3f2fd
 ```
 
 > [!warning] ICV 密钥轮换注意事项
+>
 > 1. 轮换期间新、旧密钥必须共存
 > 2. 建议使用双密钥机制实现无缝切换
 > 3. 删除旧密钥前需确认所有节点已完成切换
@@ -153,12 +152,12 @@ set srv6 sid allocator
   set sid-lifetime infinite
 ```
 
-| 安全策略 | 配置 | 效果 |
-| :--- | :--- | :--- |
-| SID 范围隔离 | `prefix-pool` | 防止跨域 SID 冲突 |
-| 单节点 SID 限制 | `maximum-sids` | 防止 SID 泛洪 |
-| SID 生命周期 | `sid-lifetime` | 自动回收过期 SID |
-| SID 访问控制 | `acl <name>` | 基于 ACL 的 SID 过滤 |
+| 安全策略        | 配置           | 效果                 |
+| :-------------- | :------------- | :------------------- |
+| SID 范围隔离    | `prefix-pool`  | 防止跨域 SID 冲突    |
+| 单节点 SID 限制 | `maximum-sids` | 防止 SID 泛洪        |
+| SID 生命周期    | `sid-lifetime` | 自动回收过期 SID     |
+| SID 访问控制    | `acl <name>`   | 基于 ACL 的 SID 过滤 |
 
 ### 3.2 SID 访问控制列表 (SACL)
 
@@ -194,13 +193,13 @@ show srv6 rate-limit sid-flood
 
 ### 4.1 SRH 选项安全
 
-| SRH Option Type | 处理规则 | 安全性 |
-| :--- | :--- | :--- |
-| 0x00 (Pad1) | 跳过 | 安全 |
-| 0x01 (PadN) | 跳过 | 安全 |
-| 0x02 (HMAC) | 验证 ICV | 安全 |
-| 0x05 | 提案选项，暂不支持 | 待定 |
-| 其他 | 按 Per-Hop Behavior | 需评估 |
+| SRH Option Type | 处理规则            | 安全性 |
+| :-------------- | :------------------ | :----- |
+| 0x00 (Pad1)     | 跳过                | 安全   |
+| 0x01 (PadN)     | 跳过                | 安全   |
+| 0x02 (HMAC)     | 验证 ICV            | 安全   |
+| 0x05            | 提案选项，暂不支持  | 待定   |
+| 其他            | 按 Per-Hop Behavior | 需评估 |
 
 ```bash
 # 限制允许的 SRH Option
@@ -222,7 +221,7 @@ graph TD
     E -->|是| F{"Segment List<br/>包含已撤销 SID?"}
     F -->|是| D
     F -->|否| G["处理包"]
-    
+
     style D fill:#ff6b6b
     style G fill:#c8e6c9
 ```
@@ -239,17 +238,17 @@ graph TD
 graph LR
     A["Attacker<br/>A::1"] -->|"反射请求<br/>SL=1, Seg=[B::1]"| B["中间节点<br/>B::1"]
     B -->|"放大响应<br/>~10x"| A
-    
+
     Note over A,B: 放大倍数取决于响应包与请求包的大小比
 ```
 
 **放大因子计算：**
 
-| 攻击类型 | 请求大小 | 响应大小 | 放大倍数 |
-| :--- | :--- | :--- | :--- |
-| SID 探测 | 40 bytes | 可达 1500 bytes | ~37x |
-| NSP 反射 | 64 bytes | 可达 1500 bytes | ~23x |
-| 全路径探测 | 40 bytes | traceroute 响应 | ~10x |
+| 攻击类型   | 请求大小 | 响应大小        | 放大倍数 |
+| :--------- | :------- | :-------------- | :------- |
+| SID 探测   | 40 bytes | 可达 1500 bytes | ~37x     |
+| NSP 反射   | 64 bytes | 可达 1500 bytes | ~23x     |
+| 全路径探测 | 40 bytes | traceroute 响应 | ~10x     |
 
 ### 5.2 放大攻击防护配置
 
@@ -311,7 +310,7 @@ graph TD
         A["IS-IS L2"] -->|"HMAC-MD5<br/>or SHA"| B["邻居认证"]
         C["OSPFv3"] -->|"IPsec<br/>AH/ESP"| B
     end
-    
+
     style A fill:#e3f2fd
     style C fill:#e3f2fd
 ```
@@ -358,12 +357,12 @@ show srv6 security statistics srh-errors
 
 **关键监控指标：**
 
-| 指标 | 正常范围 | 告警阈值 | 严重级别 |
-| :--- | :--- | :--- | :--- |
-| ICV 失败率 | < 0.01% | > 0.1% | Warning |
-| 未知 SID 率 | < 0.1% | > 1% | Warning |
-| SRH 错误率 | < 0.01% | > 0.1% | Warning |
-| 放大攻击流量 | 0 | > 0 | Critical |
+| 指标         | 正常范围 | 告警阈值 | 严重级别 |
+| :----------- | :------- | :------- | :------- |
+| ICV 失败率   | < 0.01%  | > 0.1%   | Warning  |
+| 未知 SID 率  | < 0.1%   | > 1%     | Warning  |
+| SRH 错误率   | < 0.01%  | > 0.1%   | Warning  |
+| 放大攻击流量 | 0        | > 0      | Critical |
 
 ### 7.2 安全告警规则
 
@@ -379,7 +378,7 @@ groups:
           severity: warning
         annotations:
           summary: "SRv6 ICV 失败率超过 0.1%"
-          
+
       - alert: SRv6AmplificationAttack
         expr: rate(srv6_amplification_bytes_total[1m]) / rate(srv6_incoming_bytes_total[1m]) > 5
         for: 1m
@@ -387,7 +386,7 @@ groups:
           severity: critical
         annotations:
           summary: "检测到 SRv6 放大攻击"
-          
+
       - alert: SRv6UnknownSIDFlood
         expr: rate(srv6_unknown_sid_packets_total[5m]) > 1000
         for: 5m
@@ -417,13 +416,13 @@ grep -E "attack|flood|scan" /var/log/srv6_security.log
 
 ### 8.1 SRv6 安全测试矩阵
 
-| 测试项 | 方法 | 工具 | 期望结果 |
-| :--- | :--- | :--- | :--- |
-| ICV 伪造 | 修改 SRH 并重新计算 ICV | Scapy | 被检测并丢弃 |
-| SID 扫描 | 枚举内部 SID 范围 | Nmap + srv6 NSE | 无法获取有效 SID |
-| SRH 篡改 | 修改 Segment List | Scapy | ICV 验证失败 |
-| 放大攻击 | 构造放大请求 | 自定义工具 | 被 rate-limit |
-| 路由环 | 构造闭环路径 | Scapy | Segments Left 递减检测 |
+| 测试项   | 方法                    | 工具            | 期望结果               |
+| :------- | :---------------------- | :-------------- | :--------------------- |
+| ICV 伪造 | 修改 SRH 并重新计算 ICV | Scapy           | 被检测并丢弃           |
+| SID 扫描 | 枚举内部 SID 范围       | Nmap + srv6 NSE | 无法获取有效 SID       |
+| SRH 篡改 | 修改 Segment List       | Scapy           | ICV 验证失败           |
+| 放大攻击 | 构造放大请求            | 自定义工具      | 被 rate-limit          |
+| 路由环   | 构造闭环路径            | Scapy           | Segments Left 递减检测 |
 
 ### 8.2 使用 Scapy 进行 SRv6 安全测试
 
@@ -443,55 +442,55 @@ def craft_sr6_packet():
         segments=["2001:db8:1::100", "2001:db8:1::200", "2001:db8:1::300"],
         segs_left=2
     )
-    
+
     # 构造 IPv6 头
     pkt = IPv6(dst="2001:db8:1::300", src="2001:db8::1") / sr6 / ICMPv6EchoRequest()
-    
+
     return pkt
 
 def test_icv_bypass():
     """测试 ICV 绕过"""
     print("[*] 测试 ICV 绕过攻击...")
-    
+
     # 构造正常包
     pkt = craft_sr6_packet()
-    
+
     # 篡改 Segment List (不重新计算 ICV)
     pkt.srh.segments[0] = "2001:db8:1::999"  # 恶意 SID
-    
+
     print(f"[*] 发送篡改后的包: {pkt.summary()}")
     send(pkt)
-    
+
     print("[*] 期望结果: 目标设备应检测到 ICV 验证失败并丢弃")
 
 def test_sid_enumeration():
     """测试 SID 枚举攻击"""
     print("[*] 测试 SID 枚举攻击...")
-    
+
     # 常见 SID 前缀
     prefixes = [
         "2001:db8::/32",
         "fc00::/7",
         "fe80::/10"
     ]
-    
+
     for prefix in prefixes:
         # 构造探测包
         pkt = IPv6(dst=prefix + "::1") / SRH(segments=[prefix + "::1"]) / ICMPv6EchoRequest()
         send(pkt, count=10)
-        
+
     print("[*] 期望结果: 内部 SID 不可被枚举")
 
 def test_amplification():
     """测试放大攻击"""
     print("[*] 测试放大攻击...")
-    
+
     # 构造小请求
     pkt = IPv6(dst="2001:db8:1::200") / SRH(segments=["2001:db8:1::300"]) / ICMPv6EchoRequest()
-    
+
     print(f"[*] 请求大小: {len(pkt)} bytes")
     print("[*] 期望放大响应: ~10x")
-    
+
     # 发送探测
     send(pkt, count=100)
 
@@ -499,11 +498,11 @@ if __name__ == "__main__":
     print("=" * 60)
     print("SRv6 安全测试工具")
     print("=" * 60)
-    
+
     test_icv_bypass()
     test_sid_enumeration()
     test_amplification()
-    
+
     print("\n[*] 测试完成")
 ```
 
@@ -536,20 +535,20 @@ end
 
 action = function(host, port)
     local results = {}
-    
+
     for _, prefix in ipairs(SID_PREFIXES) do
         -- 发送 ICMPv6 Echo 到 prefix::1
         local pkt = raw_packets.IPv6(dst=prefix .. "::1") /
                     raw_packets.SRH(segments={prefix .. "::1"}) /
                     raw_packets.ICMPv6EchoRequest()
-        
+
         local response = nmap.do_actual_send("ipv6", host, pkt)
-        
+
         if response and response.status == 0 then
             table.insert(results, string.format("可能的 SID: %s::1", prefix))
         end
     end
-    
+
     return stdnse.format_output(true, results)
 end
 ```
@@ -630,12 +629,12 @@ SRv6 安全合规报告
 
 ### 10.1 安全事件分级
 
-| 级别 | 事件类型 | 响应时间 | 升级路径 |
-| :--- | :--- | :--- | :--- |
-| L1 | ICV 失败率异常 | 15 分钟 | 安全运营 |
-| L2 | 未知 SID 流量激增 | 10 分钟 | 安全 + 网络 |
-| L3 | 可疑 SID 枚举行为 | 5 分钟 | SOC + NOC |
-| L4 | 确认的放大攻击 | 即时 | 安全 + NOC + CTO |
+| 级别 | 事件类型          | 响应时间 | 升级路径         |
+| :--- | :---------------- | :------- | :--------------- |
+| L1   | ICV 失败率异常    | 15 分钟  | 安全运营         |
+| L2   | 未知 SID 流量激增 | 10 分钟  | 安全 + 网络      |
+| L3   | 可疑 SID 枚举行为 | 5 分钟   | SOC + NOC        |
+| L4   | 确认的放大攻击    | 即时     | 安全 + NOC + CTO |
 
 ### 10.2 事件响应流程
 
@@ -644,19 +643,19 @@ graph TD
     A["安全告警"] --> B{"事件确认"}
     B -->|误报| C["记录并关闭"]
     B -->|确认| D["初步评估"]
-    
+
     D --> E["影响范围?"}
     E -->|"局部"| F["本地处理"]
     E -->|"全局"| G["启动应急响应"]
-    
+
     F --> H["溯源分析"]
     G --> I["上报并协调"]
     I --> H
-    
+
     H --> J["修复措施"]
     J --> K["验证"]
     K --> L["事件关闭"]
-    
+
     style G fill:#ff6b6b
     style L fill:#c8e6c9
 ```
@@ -699,7 +698,7 @@ graph TD
         C["微分段<br/>Microsegmentation"]
         D["持续监控<br/>Continuous Monitoring"]
     end
-    
+
     A -->|"SID 级别<br/>访问控制"| E["精细化<br/>安全策略"]
     B -->|"按需授权<br/>Just-in-Time"| E
     C -->|"端到端<br/>加密"| E
@@ -733,16 +732,17 @@ set security srv6 encryption
 
 SRv6 安全运营核心要点：
 
-| 安全领域 | 核心机制 | 运营要点 |
-| :--- | :--- | :--- |
-| **完整性** | ICV (HMAC-SHA-256) | 密钥轮换、验证失败监控 |
-| **SID 安全** | ACL + 访问控制 | 定期审计、异常检测 |
-| **SRH 安全** | Option 过滤 | 丢弃未知 Option |
-| **DDoS 防护** | URPF + Rate-limit | 放大攻击监控 |
-| **控制平面** | IGP/BGP 认证 | 密钥管理、协议安全 |
-| **合规** | 安全基线 + 审计 | 定期扫描、报告 |
+| 安全领域      | 核心机制           | 运营要点               |
+| :------------ | :----------------- | :--------------------- |
+| **完整性**    | ICV (HMAC-SHA-256) | 密钥轮换、验证失败监控 |
+| **SID 安全**  | ACL + 访问控制     | 定期审计、异常检测     |
+| **SRH 安全**  | Option 过滤        | 丢弃未知 Option        |
+| **DDoS 防护** | URPF + Rate-limit  | 放大攻击监控           |
+| **控制平面**  | IGP/BGP 认证       | 密钥管理、协议安全     |
+| **合规**      | 安全基线 + 审计    | 定期扫描、报告         |
 
 **安全运营黄金法则：**
+
 1. **默认拒绝**：未明确允许的一律丢弃
 2. **分层防御**：ICV + ACL + 监控 多层保护
 3. **持续监控**：安全事件实时检测

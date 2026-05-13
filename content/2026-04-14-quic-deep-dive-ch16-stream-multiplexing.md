@@ -57,12 +57,12 @@ Stream Type (2 bits):
   11 - Server-initiated, unidirectional
 ```
 
-| Stream Type | Stream ID (binary) | Description |
-|---|---|---|
-| Client bidirectional | `0x00` | 0, 4, 8, 12, ... |
-| Server bidirectional | `0x01` | 1, 5, 9, 13, ... |
-| Client unidirectional | `0x02` | 2, 6, 10, 14, ... |
-| Server unidirectional | `0x03` | 3, 7, 11, 15, ... |
+| Stream Type           | Stream ID (binary) | Description       |
+| --------------------- | ------------------ | ----------------- |
+| Client bidirectional  | `0x00`             | 0, 4, 8, 12, ...  |
+| Server bidirectional  | `0x01`             | 1, 5, 9, 13, ...  |
+| Client unidirectional | `0x02`             | 2, 6, 10, 14, ... |
+| Server unidirectional | `0x03`             | 3, 7, 11, 15, ... |
 
 The stream number increments by 1 for each new stream of the same type. Stream 0 is always the first client-initiated bidirectional stream (used for HTTP/3 control).
 
@@ -162,14 +162,14 @@ The rationale: different applications have different priority needs. A video str
 
 ## 16.8 Comparison: QUIC Streams vs. HTTP/2 Streams
 
-| Aspect | HTTP/2 Streams | QUIC Streams |
-|---|---|---|
-| HOL blocking | TCP-level (all streams) | None (transport-level per-stream) |
-| Delivery guarantee | Ordered byte stream | Ordered byte stream per stream |
-| Loss handling | TCP retransmit stalls all | Per-stream retransmit |
-| Flow control | Connection + stream level | Connection + stream level |
-| Priority | Defined in protocol | Delegated to application |
-| Frame types | HEADERS, DATA, etc. | STREAM frame (data only) |
+| Aspect             | HTTP/2 Streams            | QUIC Streams                      |
+| ------------------ | ------------------------- | --------------------------------- |
+| HOL blocking       | TCP-level (all streams)   | None (transport-level per-stream) |
+| Delivery guarantee | Ordered byte stream       | Ordered byte stream per stream    |
+| Loss handling      | TCP retransmit stalls all | Per-stream retransmit             |
+| Flow control       | Connection + stream level | Connection + stream level         |
+| Priority           | Defined in protocol       | Delegated to application          |
+| Frame types        | HEADERS, DATA, etc.       | STREAM frame (data only)          |
 
 ## 16.9 Summary
 

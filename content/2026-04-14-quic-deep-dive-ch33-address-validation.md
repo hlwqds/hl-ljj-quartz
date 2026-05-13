@@ -27,6 +27,7 @@ QUIC 的地址验证机制是为了防范两类攻击：
 2. **连接迁移劫持**：攻击者劫持正在迁移的连接
 
 QUIC 要求在以下场景进行地址验证：
+
 - 连接建立阶段（使用 Retry 或 cookie）
 - 连接迁移阶段（使用 PATH_CHALLENGE）
 - 收到可疑包时（被动验证）
@@ -103,11 +104,11 @@ PATH_CHALLENGE 发送规则：
 1. 每个路径最多发送 2 次 PATH_CHALLENGE
    - 防止无限重试
    - 每次使用不同的 Data（防止重放）
-   
+
 2. PATH_CHALLENGE 必须由 1-RTT 密钥保护
    - Initial 包不包含 PATH_CHALLENGE
    - 只有确认握手完成后才发送
-   
+
 3. 发送 PATH_CHALLENGE 不重置 idle timeout
    - 验证流量不算作连接活跃
 ```
@@ -138,6 +139,7 @@ Endpoint A                              Endpoint B
 Retry 机制是 Initial 包级别的地址验证。当服务器收到可疑的 Initial 包（无有效 Token）时，发送 Retry 包，要求客户端重新发送带 Token 的 Initial 包。
 
 Retry 的核心目的：
+
 - 验证客户端源地址确实有效
 - 防止 Initial 包泛洪攻击
 - 获取客户端的 Connection ID（用于后续包路由）
@@ -251,7 +253,7 @@ Preferred Address 协商流程：
 
 1. 服务器在握手时声明 Preferred Address
    - 在 transport parameters 中携带
-   
+
 2. 客户端收到后决定是否使用
    - 如果使用，发送 PATH_CHALLENGE 验证
    - 如果不使用，继续使用当前地址
@@ -309,10 +311,12 @@ Client                              Server
 ### 5.2 主动验证 vs 被动验证
 
 **主动验证（Active Validation）**：
+
 - 发送 PATH_CHALLENGE 探测新路径
 - 必须收到 PATH_RESPONSE 才认为验证通过
 
 **被动验证（Passive Validation）**：
+
 - 收到对方在新路径发送的包
 - 从包中推断地址有效性（不充分，不推荐）
 
@@ -326,15 +330,15 @@ RFC 9000 要求使用主动验证。
 1. 检测到路径变化（地址/端口改变）
    - PATH_RESPONSE 来自不同地址
    - 或者主动探测新地址
-   
+
 2. 发送 PATH_CHALLENGE 到新地址
    - 使用 1-RTT 密钥保护
    - Data = 随机数
-   
+
 3. 等待 PATH_RESPONSE
    - 收到响应，Data 匹配 -> 验证通过
    - 未收到响应 -> 验证失败
-   
+
 4. 验证通过后：
    - 停止旧路径的包发送
    - 切换到新路径
@@ -348,10 +352,10 @@ RFC 9000 要求使用主动验证。
 
 1. 发送 PATH_CHALLENGE 不重置 idle timeout
    - 验证流量不是活跃数据
-   
+
 2. 迁移成功后立即重置 idle timeout
    - 新路径上的活跃数据传输
-   
+
 3. 迁移失败后：
    - 继续使用旧路径
    - idle timeout 继续在旧路径计时
@@ -373,11 +377,11 @@ Initial 包泛洪防御：
 1. Retry Token 验证：
    - 无有效 Token 的 Initial 被直接丢弃
    - 服务器只处理带有效 Token 的 Initial
-   
+
 2. 速率限制：
    - 服务器限制发送 Retry 的频率
    - 超出限制的 Initial 被丢弃
-   
+
 3. 挑战-响应：
    - 每个 Retry 都需要客户端重新发送 Initial
    - 增加了攻击成本
@@ -394,10 +398,10 @@ Initial 包泛洪防御：
 
 1. PATH_RESPONSE 必须包含与 PATH_CHALLENGE 相同的 Data
    - 攻击者无法伪造匹配的 Data
-   
+
 2. PATH_RESPONSE 必须由 1-RTT 密钥保护
    - 攻击者没有 1-RTT 密钥无法伪造
-   
+
 3. PATH_CHALLENGE 使用一次性随机 Data
    - 防止重放攻击
 ```
@@ -410,11 +414,11 @@ Retry Token 安全设计：
 1. 加密：
    - Token 使用服务器密钥加密
    - 客户端无法伪造或修改
-   
+
 2. 时间戳：
    - Token 包含生成时间
    - 过期 Token 被拒绝
-   
+
 3. 单次使用：
    - 服务器记录已使用的 Token
    - 重放的 Token 被拒绝
@@ -431,15 +435,15 @@ class AddressValidationState:
     def __init__(self):
         # 路径验证状态
         self.paths = {}  # path_id -> PathState
-        
+
         # Retry Token 状态
         self.retry_tokens = set()  # 已使用的 Token
         self.token_secrets = {}     # Token 加密密钥
-        
+
         # 验证计数器
         self.path_challenge_count = 0
         self.path_response_timeout = 3.0  # 秒
-        
+
     def start_path_validation(self, path_id):
         """开始路径验证"""
         challenge_data = os.urandom(8)
@@ -449,7 +453,7 @@ class AddressValidationState:
             "challenge_count": 0,
         }
         return challenge_data
-    
+
     def validate_path_response(self, path_id, data):
         """验证 PATH_RESPONSE"""
         path = self.paths.get(path_id)
@@ -471,26 +475,26 @@ def send_path_challenge(path):
     if path.challenge_count >= 2:
         logger.warning("PATH_CHALLENGE 次数超限，验证失败")
         return False
-    
+
     # 生成新的随机 Data
     challenge_data = os.urandom(8)
-    
+
     # 构造 PATH_CHALLENGE 帧
     frame = PATH_CHALLENGE(challenge_data)
-    
+
     # 发送到新路径
     send_to_path(path, frame)
-    
+
     path.challenge_data = challenge_data
     path.challenge_count += 1
-    
+
     # 启动响应超时
     schedule_timeout(
         delay=path_response_timeout,
         callback=on_path_response_timeout,
         args=(path,)
     )
-    
+
     return True
 ```
 

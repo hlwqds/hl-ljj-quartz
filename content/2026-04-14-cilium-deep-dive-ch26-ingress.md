@@ -11,8 +11,8 @@ tags:
   - gateway-api
 ---
 
-> [!info] Cilium 2026 深度探索系列
-> 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+> [!info] Cilium 2026 深度探索系列 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+>
 > 1. [[2026-04-14-cilium-deep-dive-ch1-cilium-overview|第一章：Cilium 概述]]
 > 2. [[2026-04-14-cilium-deep-dive-ch2-architecture|第二章：Cilium 架构]]
 > 3. [[2026-04-14-cilium-deep-dive-ch3-ebpf-datapath|第三章：eBPF 数据面]]
@@ -22,9 +22,9 @@ tags:
 > 7. [[2026-04-14-cilium-deep-dive-ch7-nodeport|第七章：NodePort]]
 > 8. [[2026-04-14-cilium-deep-dive-ch8-loadbalancer|第八章：LoadBalancer]]
 > 9. [[2026-04-14-cilium-deep-dive-ch9-externalip|第九章：ExternalIP]]
-> ...
-> 25. [[2026-04-14-cilium-deep-dive-ch25-etcd|第二十五章：etcd]]
-> 26. **第二十六章：Cilium Ingress Controller** ←
+>    ...
+> 10. [[2026-04-14-cilium-deep-dive-ch25-etcd|第二十五章：etcd]]
+> 11. **第二十六章：Cilium Ingress Controller** ←
 
 ---
 
@@ -65,15 +65,15 @@ Ingress 是 Kubernetes 中管理外部 HTTP/HTTPS 访问的标准资源，它提
 
 ### 1.1 Cilium Ingress vs 传统 Ingress Controller
 
-| 特性 | Cilium Ingress | Nginx Ingress | HAProxy Ingress |
-|:---|:---|:---|:---|
-| **实现方式** | eBPF 数据面 | 用户态代理进程 | 用户态代理进程 |
-| **数据路径** | 内核 eBPF Hook | iptables → nginx | iptables → haproxy |
-| **延迟** | < 50ns | ~100-500μs | ~100-300μs |
-| **TLS 终止** | eBPF 直接处理 | nginx worker 处理 | haproxy 处理 |
-| **L7 策略** | 原生支持 | 需要额外配置 | 有限支持 |
-| **与 CNI 集成** | 深度集成 | 独立部署 | 独立部署 |
-| **资源占用** | 极低 | 中等 | 中等 |
+| 特性            | Cilium Ingress | Nginx Ingress     | HAProxy Ingress    |
+| :-------------- | :------------- | :---------------- | :----------------- |
+| **实现方式**    | eBPF 数据面    | 用户态代理进程    | 用户态代理进程     |
+| **数据路径**    | 内核 eBPF Hook | iptables → nginx  | iptables → haproxy |
+| **延迟**        | < 50ns         | ~100-500μs        | ~100-300μs         |
+| **TLS 终止**    | eBPF 直接处理  | nginx worker 处理 | haproxy 处理       |
+| **L7 策略**     | 原生支持       | 需要额外配置      | 有限支持           |
+| **与 CNI 集成** | 深度集成       | 独立部署          | 独立部署           |
+| **资源占用**    | 极低           | 中等              | 中等               |
 
 ---
 
@@ -129,27 +129,27 @@ metadata:
 spec:
   ingressClassName: cilium
   tls:
-  - hosts:
-    - cafe.example.com
-    secretName: cafe-tls
+    - hosts:
+        - cafe.example.com
+      secretName: cafe-tls
   rules:
-  - host: cafe.example.com
-    http:
-      paths:
-      - path: /tea
-        pathType: Prefix
-        backend:
-          service:
-            name: tea-svc
-            port:
-              number: 80
-      - path: /coffee
-        pathType: Exact
-        backend:
-          service:
-            name: coffee-svc
-            port:
-              number: 80
+    - host: cafe.example.com
+      http:
+        paths:
+          - path: /tea
+            pathType: Prefix
+            backend:
+              service:
+                name: tea-svc
+                port:
+                  number: 80
+          - path: /coffee
+            pathType: Exact
+            backend:
+              service:
+                name: coffee-svc
+                port:
+                  number: 80
 ```
 
 ---
@@ -227,20 +227,20 @@ metadata:
 spec:
   ingressClassName: cilium
   tls:
-  - hosts:
-    - cafe.example.com
-    secretName: cafe-tls
+    - hosts:
+        - cafe.example.com
+      secretName: cafe-tls
   rules:
-  - host: cafe.example.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: cafe
-            port:
-              number: 80
+    - host: cafe.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: cafe
+                port:
+                  number: 80
 ```
 
 **方式二：使用 cert-manager 自动管理（见第二十九章）**
@@ -264,16 +264,16 @@ metadata:
 spec:
   ingressClassName: cilium
   rules:
-  - host: api.example.com
-    http:
-      paths:
-      - path: /v1
-        pathType: ImplementationSpecific
-        backend:
-          service:
-            name: api-backend
-            port:
-              number: 8080
+    - host: api.example.com
+      http:
+        paths:
+          - path: /v1
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: api-backend
+                port:
+                  number: 8080
 ```
 
 ### 5.2 正则路径匹配
@@ -288,16 +288,16 @@ metadata:
 spec:
   ingressClassName: cilium
   rules:
-  - host: api.example.com
-    http:
-      paths:
-      - path: /users
-        pathType: ImplementationSpecific
-        backend:
-          service:
-            name: user-service
-            port:
-              number: 8080
+    - host: api.example.com
+      http:
+        paths:
+          - path: /users
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: user-service
+                port:
+                  number: 8080
 ```
 
 ---
@@ -322,16 +322,16 @@ metadata:
 spec:
   ingressClassName: cilium
   rules:
-  - host: cafe.example.com
-    http:
-      paths:
-      - path: /beverages
-        pathType: Prefix
-        backend:
-          service:
-            name: weighted-backend
-            port:
-              number: 80
+    - host: cafe.example.com
+      http:
+        paths:
+          - path: /beverages
+            pathType: Prefix
+            backend:
+              service:
+                name: weighted-backend
+                port:
+                  number: 80
 ```
 
 ### 6.2 会话亲和性
@@ -348,16 +348,16 @@ metadata:
 spec:
   ingressClassName: cilium
   rules:
-  - host: app.example.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: stateful-app
-            port:
-              number: 80
+    - host: app.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: stateful-app
+                port:
+                  number: 80
 ```
 
 ---
@@ -367,14 +367,14 @@ spec:
 > [!note] 演进路径
 > Cilium Ingress 是 Kubernetes 早期的入口标准，而 Gateway API 是下一代的入口标准。Cilium 同时支持两者，推荐新项目使用 Gateway API。
 
-| 特性 | Ingress | Gateway API |
-|:---|:---|:---|
-| **资源模型** | 单资源 | Gateway + HTTPRoute |
-| **层级关系** | 平坦 | 层级化 (Gateway → Route) |
-| **扩展性** | 注解驱动 | CRD 驱动 |
-| **多租户** | 有限 | 原生支持 |
-| **GVR (Route) 类型** | HTTP | HTTPRoute/GRPCRoute/TCPRoute/UDPRoute |
-| **后端引用** | Service | Service/ServiceImport/GRPCBackend |
+| 特性                 | Ingress  | Gateway API                           |
+| :------------------- | :------- | :------------------------------------ |
+| **资源模型**         | 单资源   | Gateway + HTTPRoute                   |
+| **层级关系**         | 平坦     | 层级化 (Gateway → Route)              |
+| **扩展性**           | 注解驱动 | CRD 驱动                              |
+| **多租户**           | 有限     | 原生支持                              |
+| **GVR (Route) 类型** | HTTP     | HTTPRoute/GRPCRoute/TCPRoute/UDPRoute |
+| **后端引用**         | Service  | Service/ServiceImport/GRPCBackend     |
 
 ---
 
@@ -434,36 +434,36 @@ metadata:
     # TLS 配置
     cilium.io/ingress-tls-min-version: "TLSv1.3"
     cilium.io/ingress-tls-cipher-suites: "TLS_AES_256_GCM_SHA384,TLS_CHACHA20_POLY1305_SHA256"
-    
+
     # 速率限制
     cilium.io/ingress-rate-limit: "1000"
     cilium.io/ingress-rate-limit-window: "1s"
-    
+
     # CORS 配置
     cilium.io/ingress-cors-allow-origin: "*"
     cilium.io/ingress-cors-allow-methods: "GET,POST,PUT,DELETE"
     cilium.io/ingress-cors-allow-headers: "Authorization,Content-Type"
-    
+
     # 代理配置
     cilium.io/ingress-proxy-timeout: "30s"
     cilium.io/ingress-proxy-buffering: "off"
 spec:
   ingressClassName: cilium
   tls:
-  - hosts:
-    - api.example.com
-    secretName: production-tls
+    - hosts:
+        - api.example.com
+      secretName: production-tls
   rules:
-  - host: api.example.com
-    http:
-      paths:
-      - path: /api
-        pathType: Prefix
-        backend:
-          service:
-            name: api-backend
-            port:
-              number: 80
+    - host: api.example.com
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: api-backend
+                port:
+                  number: 80
 ```
 
 ### 9.2 迁移注意事项

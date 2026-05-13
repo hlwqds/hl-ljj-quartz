@@ -1,19 +1,33 @@
 ---
 title: "Kernel Protocol Stack 深度探索 (三十四)：iptables 扩展模块"
 date: 2026-04-13
-tags: [linux, kernel, networking, series, iptables, netfilter, conntrack-match, string-match, u32-match, ipset, hashlimit, recent]
+tags:
+  [
+    linux,
+    kernel,
+    networking,
+    series,
+    iptables,
+    netfilter,
+    conntrack-match,
+    string-match,
+    u32-match,
+    ipset,
+    hashlimit,
+    recent,
+  ]
 description: "深入解析 iptables 扩展模块体系——match/target 扩展架构、conntrack 扩展、string/layer7 匹配、hashlimit 限速、recent 模块、ipset 集合匹配，以及编写自定义 iptables 扩展的完整流程"
 ---
 
-> [!info] Kernel Protocol Stack 深度探索系列
-> 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Kernel Protocol Stack 深度探索系列 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-kernel-protocol-stack-deep-dive-ch1-skbuff|第一章：sk_buff 与数据包生命周期]]
-> 14. [[2026-04-13-kernel-protocol-stack-deep-dive-ch14-iptables|第十四章：iptables 基础]]
-> 15. [[2026-04-13-kernel-protocol-stack-deep-dive-ch15-conntrack|第十五章：连接跟踪 Conntrack]]
-> 16. [[2026-04-13-kernel-protocol-stack-deep-dive-ch16-nat|第十六章：NAT 与地址转换]]
-> 32. [[2026-04-13-kernel-protocol-stack-deep-dive-ch32-unix-socket|第三十二章：Unix Domain Socket]]
-> 33. [[2026-04-13-kernel-protocol-stack-deep-dive-ch33-netfilter-hook|第三十三章：Netfilter 框架详解]]
-> 34. **第三十四章：iptables 扩展模块**
+> 2. [[2026-04-13-kernel-protocol-stack-deep-dive-ch14-iptables|第十四章：iptables 基础]]
+> 3. [[2026-04-13-kernel-protocol-stack-deep-dive-ch15-conntrack|第十五章：连接跟踪 Conntrack]]
+> 4. [[2026-04-13-kernel-protocol-stack-deep-dive-ch16-nat|第十六章：NAT 与地址转换]]
+> 5. [[2026-04-13-kernel-protocol-stack-deep-dive-ch32-unix-socket|第三十二章：Unix Domain Socket]]
+> 6. [[2026-04-13-kernel-protocol-stack-deep-dive-ch33-netfilter-hook|第三十三章：Netfilter 框架详解]]
+> 7. **第三十四章：iptables 扩展模块**
 
 ---
 
@@ -21,10 +35,10 @@ description: "深入解析 iptables 扩展模块体系——match/target 扩展�
 
 iptables 采用插件化设计，核心功能之外的所有匹配和动作均通过**扩展模块（extension）**实现。扩展分两类：
 
-| 类型 | 作用 | 示例 |
-|------|------|------|
-| **Match 扩展** | 匹配数据包的某个属性 | conntrack, string, multiport, hashlimit |
-| **Target 扩展** | 对匹配的包执行动作 | DNAT, SNAT, LOG, REJECT, MARK, TEE |
+| 类型            | 作用                 | 示例                                    |
+| --------------- | -------------------- | --------------------------------------- |
+| **Match 扩展**  | 匹配数据包的某个属性 | conntrack, string, multiport, hashlimit |
+| **Target 扩展** | 对匹配的包执行动作   | DNAT, SNAT, LOG, REJECT, MARK, TEE      |
 
 ### 1.1 内核侧扩展接口
 

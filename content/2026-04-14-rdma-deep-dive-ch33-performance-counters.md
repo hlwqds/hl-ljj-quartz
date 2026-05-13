@@ -95,15 +95,15 @@ VL15Dropped                          0
 
 ### 2.3 关键计数器解读
 
-| 计数器 | 含义 | 健康阈值 |
-|--------|------|----------|
-| `SymbolErrorCounter` | 物理层符号错误数 | 长期为 0 |
-| `LinkErrorRecoveryCounter` | 链路错误恢复次数 | < 10 / day |
-| `PortRcvErrors` | 接收错误包数 | 持续增长 = 问题 |
-| `PortRcvRemRouteErrors` | 远端路由错误 | = 0 |
-| `PortXmitDiscards` | 发送丢弃数 | 持续增长 = 拥塞 |
-| `PriorityXmitPause` | PFC 暂停帧发送数 | 反映拥塞程度 |
-| `VL15Dropped` | VL15 丢弃数（关键！）| = 0（丢弃说明 PFC 未生效） |
+| 计数器                     | 含义                  | 健康阈值                   |
+| -------------------------- | --------------------- | -------------------------- |
+| `SymbolErrorCounter`       | 物理层符号错误数      | 长期为 0                   |
+| `LinkErrorRecoveryCounter` | 链路错误恢复次数      | < 10 / day                 |
+| `PortRcvErrors`            | 接收错误包数          | 持续增长 = 问题            |
+| `PortRcvRemRouteErrors`    | 远端路由错误          | = 0                        |
+| `PortXmitDiscards`         | 发送丢弃数            | 持续增长 = 拥塞            |
+| `PriorityXmitPause`        | PFC 暂停帧发送数      | 反映拥塞程度               |
+| `VL15Dropped`              | VL15 丢弃数（关键！） | = 0（丢弃说明 PFC 未生效） |
 
 ---
 

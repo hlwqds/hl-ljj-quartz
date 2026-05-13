@@ -5,8 +5,8 @@ tags: [vpn, series, v2ray, vmess, vless, websocket, trojan, proxy]
 description: "V2Ray 全面解析——VMess/VLESS 协议、WebSocket/TLS/CDN 传输、Xray 分支、性能对比、配置模板与最佳实践"
 ---
 
-> [!info] VPN 技术深度探索系列
-> 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+> [!info] VPN 技术深度探索系列 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-vpn-deep-dive-ch26-shadowsocksr|ShadowsocksR]]
 > 2. **第二十七章：V2Ray 技术体系**
 > 3. [[2026-04-13-vpn-deep-dive-ch28-trojan|第二十八章：Trojan 协议]]

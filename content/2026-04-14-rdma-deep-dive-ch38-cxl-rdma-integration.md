@@ -1,7 +1,18 @@
 ---
 title: "RDMA 第三十八章：CXL 与 RDMA 融合——内存语义、加速器与未来架构"
 date: 2026-04-14
-tags: [rdma, CXL, CXL.mem, CXL.cache, compute-express-link, memory-expansion, ROCE, infiniband, heterogeneous]
+tags:
+  [
+    rdma,
+    CXL,
+    CXL.mem,
+    CXL.cache,
+    compute-express-link,
+    memory-expansion,
+    ROCE,
+    infiniband,
+    heterogeneous,
+  ]
 description: "详解 CXL（Compute Express Link）技术与 RDMA 的融合：CXL.mem 内存扩展、CXL.cache 缓存一致性、PCIe 5.0/6.0 带宽、CXL+RDMA 协同架构、以及未来数据中心的内存语义演进。"
 ---
 
@@ -132,15 +143,15 @@ CXL.mem 访问模型：
 
 ### 2.2 CXL.mem 与 RDMA 的对比
 
-| 特性 | CXL.mem | RDMA |
-|------|---------|------|
+| 特性     | CXL.mem               | RDMA                      |
+| -------- | --------------------- | ------------------------- |
 | 访问类型 | 加载/存储（内存语义） | Send/Recv/RDMA Read/Write |
-| 延迟 | 150-200ns | 1-3us |
-| 带宽 | 128-256 GB/s | 100-400 Gb/s |
-| 距离 | 同一机柜（<1m） | 跨网络 |
-| 编程模型 | 操作系统内存管理 | Verbs API |
-| 一致性 | 硬件缓存一致 | 无（单边操作） |
-| 典型用途 | 内存扩展 | 网络通信 |
+| 延迟     | 150-200ns             | 1-3us                     |
+| 带宽     | 128-256 GB/s          | 100-400 Gb/s              |
+| 距离     | 同一机柜（<1m）       | 跨网络                    |
+| 编程模型 | 操作系统内存管理      | Verbs API                 |
+| 一致性   | 硬件缓存一致          | 无（单边操作）            |
+| 典型用途 | 内存扩展              | 网络通信                  |
 
 ### 2.3 CXL.mem 的典型应用
 
@@ -343,14 +354,14 @@ ioctl(memdev->fd, CXL_MEM_COMMAND);
 
 ### 5.3 CXL 与现有标准的对比
 
-| 特性 | CXL | CCIX | OpenCAPI |
-|------|-----|------|----------|
-| 发起者 | Intel/AMD/Google等 | Arm | IBM/Google等 |
-| 物理层 | PCIe | PCIe | 自定义 |
-| 缓存一致性 | 硬件支持 | 硬件支持 | 硬件支持 |
-| 内存语义 | CXL.mem | 有限 | 有 |
-| 生态 | 最大 | 发展中 | 小 |
-| 主要用途 | 内存扩展/加速器 | 加速器互连 | 加速器互连 |
+| 特性       | CXL                | CCIX       | OpenCAPI     |
+| ---------- | ------------------ | ---------- | ------------ |
+| 发起者     | Intel/AMD/Google等 | Arm        | IBM/Google等 |
+| 物理层     | PCIe               | PCIe       | 自定义       |
+| 缓存一致性 | 硬件支持           | 硬件支持   | 硬件支持     |
+| 内存语义   | CXL.mem            | 有限       | 有           |
+| 生态       | 最大               | 发展中     | 小           |
+| 主要用途   | 内存扩展/加速器    | 加速器互连 | 加速器互连   |
 
 ---
 
@@ -468,6 +479,7 @@ CXL 面临的挑战：
 ---
 
 > [!tip] 延伸阅读
+>
 > - [[2026-04-13-rdma-deep-dive-ch2-rdma-architecture|第二章：RDMA 架构]] —— RDMA 技术基础
 > - [[2026-04-13-rdma-deep-dive-ch4-roce|第四章：RoCE v1/v2]] —— RoCE 协议详解
 > - [[2026-04-13-rdma-deep-dive-ch29-gpu-direct|GPU Direct RDMA]] —— GPU 与 RDMA 协同

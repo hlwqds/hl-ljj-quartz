@@ -24,6 +24,7 @@ tags:
 ### 1.1 什么是拥塞
 
 网络拥塞发生在**发送速率超过网络承载能力**时。中间路由器会：
+
 - 丢弃数据包
 - 增加排队延迟
 - 导致链路利用率下降
@@ -44,6 +45,7 @@ Sender                    Router                    Receiver
 ### 1.2 拥塞控制的目标
 
 拥塞控制算法的目标：
+
 1. **充分利用带宽**：尽量填满管道
 2. **避免拥塞**：不让网络过载
 3. **公平共享**：多个流公平竞争带宽
@@ -51,12 +53,13 @@ Sender                    Router                    Receiver
 
 ### 1.3 拥塞控制 vs 流量控制
 
-| 机制 | 控制目标 | 控制方 | 基于 |
-|------|----------|--------|------|
-| 拥塞控制 | 避免网络过载 | 发送方 | 网络反馈（丢包/RTT） |
-| 流量控制 | 避免接收方过载 | 接收方 | 接收缓冲区 |
+| 机制     | 控制目标       | 控制方 | 基于                 |
+| -------- | -------------- | ------ | -------------------- |
+| 拥塞控制 | 避免网络过载   | 发送方 | 网络反馈（丢包/RTT） |
+| 流量控制 | 避免接收方过载 | 接收方 | 接收缓冲区           |
 
 QUIC 同时实现了两种机制：
+
 - **流量控制**：通过 MAX_DATA / MAX_STREAM_DATA（连接级和流级）
 - **拥塞控制**：通过 cwnd 限制飞行中的数据量
 
@@ -85,6 +88,7 @@ sending_rate ≈ cwnd / RTT
 ```
 
 如果 cwnd = 100 KB，RTT = 50 ms：
+
 ```
 sending_rate = 100 KB / 50ms = 2 MB/s = 16 Mbps
 ```
@@ -136,17 +140,20 @@ def slow_start(acked_bytes):
 ```
 
 等价于：
+
 ```
 cwnd += MSS for each ACK received
 ```
 
 如果每个 ACK 确认一个 MSS（MSS = Max Segment Size），则：
+
 - 1 个 RTT 内，cwnd 加倍
 - cwnd 呈指数增长
 
 ### 3.3 慢启动终止条件
 
 慢启动在以下情况终止：
+
 1. `cwnd >= ssthresh`
 2. 检测到丢包
 
@@ -181,6 +188,7 @@ def congestion_avoidance(acked_bytes):
 ### 4.2 为什么线性增长
 
 进入拥塞避免意味着网络已经接近饱和。线性增长可以：
+
 - 更精细地探测带宽上限
 - 避免突然的拥塞
 
@@ -201,17 +209,18 @@ if loss_detected:
 其中 `beta` 通常是 0.5（TCP Reno）或 0.7（CUBIC）。
 
 这就是**乘法减少（Multiplicative Decrease, MD）**：
+
 - cwnd 突然减少到某个值
 - 然后重新开始慢启动或拥塞避免
 
 ### 5.2 CUBIC vs Reno 的区别
 
-| 特性 | Reno | CUBIC |
-|------|------|-------|
-| MD 因子 | 0.5 | 0.7 |
-| 恢复策略 | 快速恢复 | CUBIC 窗口函数 |
-| 稳定性 | 一般 | 更好（更平滑） |
-| 带宽利用率 | 较低 | 较高 |
+| 特性       | Reno     | CUBIC          |
+| ---------- | -------- | -------------- |
+| MD 因子    | 0.5      | 0.7            |
+| 恢复策略   | 快速恢复 | CUBIC 窗口函数 |
+| 稳定性     | 一般     | 更好（更平滑） |
+| 带宽利用率 | 较低     | 较高           |
 
 ---
 
@@ -222,6 +231,7 @@ if loss_detected:
 CUBIC（TCP CUBIC）是 Linux 默认的 TCP 拥塞控制算法，比 Reno 更适合高带宽网络。
 
 核心思想：
+
 - 丢包后快速减少 cwnd
 - 然后用 CUBIC 函数缓慢增长
 - 到达 Wmax 后再次降低（如果继续丢包）
@@ -248,11 +258,11 @@ cwnd
   ^
   |                    *  Wmax
   |                 *        *
-  |              *              *  
+  |              *              *
   |           *                  (重新丢包)
-  |        *                       
-  |     *                         
-  |   *                            
+  |        *
+  |     *
+  |   *
   +------------------------------------> t
    丢包   K   Wmax - beta*Wmax
 ```
@@ -273,7 +283,7 @@ class CUBIC:
         self.epoch_start = 0
         self.C = 0.4
         self.beta = 0.7
-    
+
     def update(self, acked_bytes, now):
         if self.cwnd < self.ssthresh:
             # 慢启动
@@ -282,12 +292,12 @@ class CUBIC:
             # CUBIC 拥塞避免
             t = now - self.epoch_start
             W_cubic = self.C * (t - self.K)**3 + self.Wmax
-            
+
             # 还要考虑线性增长的平滑版本
             W_est = self.Wmax + (acked_bytes / self.cwnd)
-            
+
             self.cwnd = min(W_cubic, W_est)
-    
+
     def on_loss(self):
         self.Wmax = self.cwnd
         self.cwnd = self.cwnd * self.beta
@@ -334,6 +344,7 @@ TCP Reno 是 TCP 拥塞控制的经典算法，引入"快速恢复"。
 ### 7.3 快速恢复
 
 Reno 在快速恢复阶段：
+
 1. 收到每个重复 ACK，cwnd += MSS
 2. 发送一个新数据包（如果 cwnd 允许）
 3. 当所有丢失包被确认，退出快速恢复
@@ -358,6 +369,7 @@ PRR（RFC 6937）是现代 TCP 的恢复算法，在丢包后更平滑地减少�
 ### 8.2 PRR 目标
 
 PRR 旨在：
+
 - 丢包后不要突然停止发送
 - 也不要突然发送太多
 
@@ -367,16 +379,17 @@ PRR 旨在：
 def prr_update(acked_bytes, snd_cwnd, snd_ssthresh):
     # PRR-Recovery 算法
     limit = max(snd_ssthresh, (snd_cwnd * beta) + acked_bytes)
-    
+
     # 允许发送的数据量
     prr_allowance = limit - pipesize
-    
+
     return min(prr_allowance, total_bytes_acked)
 ```
 
 ### 8.4 PRR 与 QUIC
 
 QUIC 实现可以采用类似的策略：
+
 - 丢包后平滑减少发送速率
 - 避免"急刹车"或"突发"
 
@@ -401,13 +414,13 @@ interface CongestionControl:
 
 ### 9.2 常见 QUIC 拥塞控制算法
 
-| 算法 | 描述 | 适用场景 |
-|------|------|----------|
-| Cubic | 默认，Linux 标准 | 通用 |
-| Reno | 简单，快速恢复 | 低带宽 |
-| BBR | 基于模型，延迟敏感 | 数据中心 |
-| Copa | 弹性速率 | 视频 |
-| SCREAM | 实时多媒体 | 交互式 |
+| 算法   | 描述               | 适用场景 |
+| ------ | ------------------ | -------- |
+| Cubic  | 默认，Linux 标准   | 通用     |
+| Reno   | 简单，快速恢复     | 低带宽   |
+| BBR    | 基于模型，延迟敏感 | 数据中心 |
+| Copa   | 弹性速率           | 视频     |
+| SCREAM | 实时多媒体         | 交互式   |
 
 ### 9.3 QUIC 的优势
 
@@ -465,6 +478,7 @@ else:
 ### 10.3 PTO 与恢复
 
 PTO（Probe Timeout）触发后：
+
 1. 发送 probe 包
 2. 如果 probe 被确认 → 退出恢复
 3. 如果 probe 超时 → 继续恢复
@@ -477,12 +491,12 @@ PTO（Probe Timeout）触发后：
 
 QUIC 连接应该监控：
 
-| 指标 | 含义 | 正常范围 |
-|------|------|----------|
-| cwnd | 当前拥塞窗口 | 取决于连接状态 |
-| ssthresh | 慢启动阈值 | 取决于历史 |
-| in_flight | 飞行中的字节 | <= cwnd |
-| pacing_rate | 发送速率 | <= bandwidth |
+| 指标        | 含义         | 正常范围       |
+| ----------- | ------------ | -------------- |
+| cwnd        | 当前拥塞窗口 | 取决于连接状态 |
+| ssthresh    | 慢启动阈值   | 取决于历史     |
+| in_flight   | 飞行中的字节 | <= cwnd        |
+| pacing_rate | 发送速率     | <= bandwidth   |
 
 ### 11.2 丢包率计算
 

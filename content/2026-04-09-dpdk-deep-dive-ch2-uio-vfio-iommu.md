@@ -5,8 +5,8 @@ tags: [dpdk, series, uio, vfio, iommu, kernel, pci]
 description: "深入理解 DPDK 用户态驱动两大基石——UIO 框架与 VFIO 框架的底层实现，以及 IOMMU 如何实现设备级别的 DMA 隔离"
 ---
 
-> [!info] DPDK 2026 深度探索系列
-> 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
+> [!info] DPDK 2026 深度探索系列 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-09-dpdk-deep-dive-ch1-architecture-overview|第一章：架构概述——kernel bypass 原理与 DPDK 定位]]
 > 2. **第二章：UIO/VFIO/IOMMU 用户态驱动框架**
 > 3. [[2026-04-09-dpdk-deep-dive-ch3-eal-initialization|第三章：EAL 初始化与 lcore 模型]]
@@ -36,6 +36,7 @@ DPDK 实现 kernel bypass 的第一步是**让用户态程序能够直接访问 
 用户态程序只能通过内核驱动的系统调用间接访问 PCI 设备，无法直接读写 PCI BAR（Base Address Register）或配置空间。
 
 **用户态驱动框架的目标**：
+
 1. 绕过内核，让用户态程序直接访问 PCI 配置空间和 BAR
 2. 支持内存映射（mmap），让用户态直接读写设备内存
 3. 支持 DMA，让设备直接访问用户态内存
@@ -114,31 +115,31 @@ static struct pci_driver igbuio_pci_driver = {
 static int igbuio_pci_probe(struct pci_dev *dev, const struct pci_device_id *id)
 {
     struct uio_info *info;
-    
+
     // 分配 UIO info 结构
     info = kzalloc(sizeof(struct uio_info), GFP_KERNEL);
-    
+
     // 设置 PCI 描述符地址
     info->name = "igb_uio";
     info->version = "1.0";
-    
+
     // 映射 PCI BAR
     info->mem[0].name = "regs";
     info->mem[0].addr = pci_resource_start(dev, 0);  // BAR0 起始地址
     info->mem[0].size = pci_resource_len(dev, 0);     // BAR0 大小
     info->mem[0].memtype = UIO_MEM_LOGICAL;          // 内存类型
-    
+
     // 注册 UIO 设备
     if (uio_register_device(&dev->dev, info) < 0)
         return -ENODEV;
-    
+
     // 保存私有数据
     pci_set_drvdata(dev, info);
-    
+
     // 启用 PCI 设备
     pci_enable_device(dev);
     pci_set_master(dev);
-    
+
     return 0;
 }
 
@@ -146,7 +147,7 @@ static int igbuio_pci_probe(struct pci_dev *dev, const struct pci_device_id *id)
 static irqreturn_t igbuio_handler(int irq, void *info)
 {
     struct uio_info *info = (struct uio_info *)dev_id;
-    
+
     // 对于轮询模式，不需要真正处理中断
     // 但我们需要能触发用户态的等待
     return IRQ_HANDLED;
@@ -164,11 +165,11 @@ int fd = open("/dev/uio0", O_RDWR);
 // 获取设备信息
 struct uio_info_t info;
 ioctl(fd, UIOC_INFO, &info);
-printf("BAR0 addr: 0x%lx, size: %lu\n", 
+printf("BAR0 addr: 0x%lx, size: %lu\n",
        info.mem[0].addr, info.mem[0].size);
 
 // mmap PCI BAR 到用户态虚拟地址
-void *bar0 = mmap(NULL, 
+void *bar0 = mmap(NULL,
                   info.mem[0].size,   // BAR 大小（通常是 32KB-256KB）
                   PROT_READ | PROT_WRITE,
                   MAP_SHARED,
@@ -202,10 +203,10 @@ ioctl(fd, UIOC_IRQ, &irq_on);
 // 轮询方式
 while (running) {
     uint64_t inter_occured;
-    
+
     // 读取中断计数（触发时增加）
     read(fd, &inter_occured, sizeof(inter_occured));
-    
+
     if (inter_occured > last_count) {
         // 有新的中断，处理
         process_interrupts();
@@ -235,12 +236,12 @@ epoll_wait(epfd, &ep_ev, 1, -1);
 
 ### 2.3 UIO 的局限性
 
-| 问题 | 说明 | 影响 |
-|------|------|------|
-| **无 IOMMU 支持** | DMA 地址直接是物理地址 | 安全隐患（设备可访问任意物理内存） |
-| **无设备隔离** | 错误驱动可能影响其他设备 | 稳定性问题 |
-| **需要 root 权限** | 访问 `/dev/uio*` 通常需要 root | 部署限制 |
-| **不支持 INTx MSI-X** | 仅支持 legacy 中断 | 性能限制 |
+| 问题                  | 说明                           | 影响                               |
+| --------------------- | ------------------------------ | ---------------------------------- |
+| **无 IOMMU 支持**     | DMA 地址直接是物理地址         | 安全隐患（设备可访问任意物理内存） |
+| **无设备隔离**        | 错误驱动可能影响其他设备       | 稳定性问题                         |
+| **需要 root 权限**    | 访问 `/dev/uio*` 通常需要 root | 部署限制                           |
+| **不支持 INTx MSI-X** | 仅支持 legacy 中断             | 性能限制                           |
 
 ---
 
@@ -299,15 +300,15 @@ VFIO 是 Linux 3.6 (2012) 引入的现代化用户态 I/O 框架，设计目标�
 
 ### 3.2 VFIO vs UIO：关键差异
 
-| 特性 | UIO | VFIO |
-|------|-----|------|
-| **IOMMU 支持** | ❌ | ✅ |
-| **DMA 地址翻译** | 物理地址直连 | IOMMU 虚拟化 |
-| **设备隔离** | ❌ 无 | ✅ 强隔离 |
-| **多虚拟机支持** | ❌ | ✅ 安全多租 |
-| **MSI-X 中断** | ❌ | ✅ |
-| **需要硬件 SR-IOV** | ❌ | 推荐但非必须 |
-| **权限要求** | root 或 CAP_SYS_RAWIO | iommu_group，可非 root |
+| 特性                | UIO                   | VFIO                   |
+| ------------------- | --------------------- | ---------------------- |
+| **IOMMU 支持**      | ❌                    | ✅                     |
+| **DMA 地址翻译**    | 物理地址直连          | IOMMU 虚拟化           |
+| **设备隔离**        | ❌ 无                 | ✅ 强隔离              |
+| **多虚拟机支持**    | ❌                    | ✅ 安全多租            |
+| **MSI-X 中断**      | ❌                    | ✅                     |
+| **需要硬件 SR-IOV** | ❌                    | 推荐但非必须           |
+| **权限要求**        | root 或 CAP_SYS_RAWIO | iommu_group，可非 root |
 
 ### 3.3 VFIO 工作原理
 
@@ -343,7 +344,7 @@ dev_t dev = st.st_rdev;
 
 // 从设备路径获取 iommu_group
 char group_path[256];
-sprintf(group_path, "/dev/vfio/%d", 
+sprintf(group_path, "/dev/vfio/%d",
         atoi(basename(readlink("/sys/bus/pci/devices/0000:01:00.0/iommu_group"))));
 
 int group_fd = open(group_path, O_RDWR);
@@ -421,7 +422,7 @@ struct vfio_region_info bar_info = {
 };
 ioctl(device_fd, VFIO_DEVICE_GET_REGION_INFO, &bar_info);
 
-void *bar0 = mmap(NULL, bar_info.size, 
+void *bar0 = mmap(NULL, bar_info.size,
                   PROT_READ | PROT_WRITE,
                   MAP_SHARED,
                   device_fd,
@@ -528,9 +529,9 @@ set_rx_desc(dma_map.iova);  // 设备 DMA 到 IOVA
 
 IOMMU（Input-Output Memory Management Unit）是连接外设和内存的硬件单元，类似于 CPU 的 MMU（内存管理单元）。
 
-| 组件 | 功能 | 映射方向 |
-|------|------|---------|
-| **MMU** | CPU 虚拟地址 → 物理地址 | CPU → RAM |
+| 组件      | 功能                          | 映射方向     |
+| --------- | ----------------------------- | ------------ |
+| **MMU**   | CPU 虚拟地址 → 物理地址       | CPU → RAM    |
 | **IOMMU** | 设备虚拟地址(IOVA) → 物理地址 | Device → RAM |
 
 ### 4.2 Intel VT-d 工作原理
@@ -619,12 +620,12 @@ struct intel_vt_context_entry {
 
 ### 4.4 VFIO IOMMU 类型
 
-| 类型 | 说明 | 适用平台 |
-|------|------|---------|
-| **VFIO_TYPE1** | 不支持 SAT（Second Address Translation） | Intel/AMD 通用 |
-| **VFIO_TYPE1v2** | 支持 SAT | 较新内核 |
-| **VFIO_SPAPR** | IBM PowerPC sPAPR TCE | PowerPC |
-| **VFIO_UNMANAGED** | 用户自行管理 DMA | 特殊场景 |
+| 类型               | 说明                                     | 适用平台       |
+| ------------------ | ---------------------------------------- | -------------- |
+| **VFIO_TYPE1**     | 不支持 SAT（Second Address Translation） | Intel/AMD 通用 |
+| **VFIO_TYPE1v2**   | 支持 SAT                                 | 较新内核       |
+| **VFIO_SPAPR**     | IBM PowerPC sPAPR TCE                    | PowerPC        |
+| **VFIO_UNMANAGED** | 用户自行管理 DMA                         | 特殊场景       |
 
 ```c
 // 检查 VFIO IOMMU 类型
@@ -681,13 +682,13 @@ echo "0000:01:00.1" > /sys/bus/pci/drivers/vfio-pci/bind
 
 ### 5.3 VFIO 在虚拟化中的优势
 
-| 场景 | 传统 VirtIO | VFIO + SR-IOV |
-|------|-------------|----------------|
-| **Latency** | ~10-20μs ( emulation) | ~1-2μs (直接访问) |
-| **Throughput** | 受限于 VirtIO 驱动 | 线速 (100G+) |
-| **CPU 开销** | 模拟器开销 | 几乎无 |
-| **特性支持** | VirtIO 特性 | 所有硬件特性 |
-| **迁移** | 支持 Live Migration | 有限支持 |
+| 场景           | 传统 VirtIO           | VFIO + SR-IOV     |
+| -------------- | --------------------- | ----------------- |
+| **Latency**    | ~10-20μs ( emulation) | ~1-2μs (直接访问) |
+| **Throughput** | 受限于 VirtIO 驱动    | 线速 (100G+)      |
+| **CPU 开销**   | 模拟器开销            | 几乎无            |
+| **特性支持**   | VirtIO 特性           | 所有硬件特性      |
+| **迁移**       | 支持 Live Migration   | 有限支持          |
 
 ---
 
@@ -732,12 +733,12 @@ ls /sys/kernel/iommu_groups/*/devices/
 
 ### 6.4 常见错误
 
-| 错误 | 原因 | 解决 |
-|------|------|------|
-| `VFIO: Error connecting to VFIO` | 权限不足 | `chmod 666 /dev/vfio/vfio` 或加入 `vfio` 组 |
-| `IOMMU required` | VT-d 未启用 | BIOS 启用或使用 `iommu=pt` |
-| `Group not viable` | 组内有其他驱动占用设备 | 将设备 bind 到 vfio-pci |
-| `DMA map failed` | 大页不足 | 增加 hugepages |
+| 错误                             | 原因                   | 解决                                        |
+| -------------------------------- | ---------------------- | ------------------------------------------- |
+| `VFIO: Error connecting to VFIO` | 权限不足               | `chmod 666 /dev/vfio/vfio` 或加入 `vfio` 组 |
+| `IOMMU required`                 | VT-d 未启用            | BIOS 启用或使用 `iommu=pt`                  |
+| `Group not viable`               | 组内有其他驱动占用设备 | 将设备 bind 到 vfio-pci                     |
+| `DMA map failed`                 | 大页不足               | 增加 hugepages                              |
 
 ---
 
@@ -756,13 +757,13 @@ graph TD
 
 **选择建议**：
 
-| 场景 | 推荐框架 | 原因 |
-|------|---------|------|
-| 裸机 DPDK | VFIO | 现代、安全、支持 IOMMU |
-| 虚拟机 DPDK | VFIO + SR-IOV | 最佳性能 |
-| 容器 (非特权) | VFIO | 支持 cgroup 权限控制 |
-| 旧系统/简单场景 | UIO | 配置简单 |
-| 多租户云 | VFIO | 必须的 IOMMU 隔离 |
+| 场景            | 推荐框架      | 原因                   |
+| --------------- | ------------- | ---------------------- |
+| 裸机 DPDK       | VFIO          | 现代、安全、支持 IOMMU |
+| 虚拟机 DPDK     | VFIO + SR-IOV | 最佳性能               |
+| 容器 (非特权)   | VFIO          | 支持 cgroup 权限控制   |
+| 旧系统/简单场景 | UIO           | 配置简单               |
+| 多租户云        | VFIO          | 必须的 IOMMU 隔离      |
 
 ---
 
@@ -785,6 +786,7 @@ graph TD
 ---
 
 > [!tip] 参考文献
+>
 > - Linux Kernel Documentation, "Linux Userspace I/O (UIO) HOWTO", https://www.kernel.org/doc/html/latest/driver-api/uio-howto.html
 > - Linux Kernel Documentation, "VFIO - Virtual Function I/O", https://www.kernel.org/doc/html/latest/driver-api/vfio.html
 > - Intel, "Intel Virtualization Technology for Directed I/O (VT-d)", https://www.intel.com/content/www/us/en/architecture-and-technology/vt-io-virtualization-technology.html

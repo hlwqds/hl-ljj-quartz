@@ -76,13 +76,13 @@ pto = max(1.5 * kGranularity, max(min_rtt, 8 * max_rttvar)) * (1 + count)
 
 ### 2.2 PTO 与 TCP Retransmission Timeout 的区别
 
-| 特性 | QUIC PTO | TCP RTO |
-|------|----------|---------|
-| 最小值 | 1ms (kGranularity) | 200ms-1000ms |
-| 退避策略 | 指数退避 | 指数退避 |
-| 检测对象 | 单个包/Packet Number | 单个 Segment |
-| Probe 内容 | 新包或重传包 | 重传最老未确认段 |
-| 连接状态影响 | 不直接导致连接关闭 | 连续超时导致连接死亡 |
+| 特性         | QUIC PTO             | TCP RTO              |
+| ------------ | -------------------- | -------------------- |
+| 最小值       | 1ms (kGranularity)   | 200ms-1000ms         |
+| 退避策略     | 指数退避             | 指数退避             |
+| 检测对象     | 单个包/Packet Number | 单个 Segment         |
+| Probe 内容   | 新包或重传包         | 重传最老未确认段     |
+| 连接状态影响 | 不直接导致连接关闭   | 连续超时导致连接死亡 |
 
 ### 2.3 PTO 触发后的行为
 
@@ -157,15 +157,15 @@ def detect_loss(pn):
     # 条件1: 包 PN 小于最大确认 PN
     if pn >= largest_acked:
         return False
-    
+
     # 条件2: 包的发送时间 < (当前时间 - 逃逸窗口)
     if now - sent_time[pn] <= escape_origin:
         return False
-    
+
     # 条件3: 收到 kAckPayloadEliding 个 PN > pn 的包的 ACK
     if count_acks_for_pns_greater_than(pn) >= 3:
         return True
-    
+
     return False
 ```
 
@@ -178,6 +178,7 @@ def detect_loss(pn):
 ### 4.1 逃逸窗口的引入原因
 
 网络包可能在网络中延迟（reordering），特别是：
+
 - 多路径传输
 - 网络拥塞导致排队
 - 中间设备重排
@@ -238,6 +239,7 @@ QUIC 重传：
 ```
 
 新 PN 的优势：
+
 - **无歧义**：接收方不会混淆原始包和重传包
 - **精确 RTT 测量**：重传包的 ACK 时间可以准确测量
 - **避免虚假重传**：TCP 因为重传导致 Sequence Number 重复，容易被中间设备误解
@@ -368,6 +370,7 @@ QUIC 有三个独立的 Packet Number Space：
 ```
 
 不同的拥塞控制算法对丢包的反应不同：
+
 - **CUBIC/Reno**：丢包 → 乘法减少（MD）cwnd
 - **BBR**：丢包 → 降低 pacing rate，但不减少 cwnd
 - **Copa**：丢包 → 增加目标延迟

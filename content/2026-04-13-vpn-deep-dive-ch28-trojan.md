@@ -5,8 +5,8 @@ tags: [vpn, series, trojan, tls, proxy, censorship, tunnel]
 description: "Trojan 协议深度解析——TLS 伪装原理、Trojan-Go 实现、WebSocket 支持、与 V2Ray/Xray 的关系、配置模板与安全考量"
 ---
 
-> [!info] VPN 技术深度探索系列
-> 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+> [!info] VPN 技术深度探索系列 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-vpn-deep-dive-ch27-v2ray|V2Ray 技术体系]]
 > 2. **第二十八章：Trojan 协议**
 > 3. [[2026-04-13-vpn-deep-dive-ch29-xray|第二十九章：Xray 核心]]
@@ -412,10 +412,10 @@ TLS 证书选择：
    └─ 仅用于测试
 
 3. 证书配置示例（Let's Encrypt）：
-   
+
    # 使用 certbot 获取证书
    certbot certonly --nginx -d example.com
-   
+
    # 证书路径
    /etc/letsencrypt/live/example.com/fullchain.pem
    /etc/letsencrypt/live/example.com/privkey.pem

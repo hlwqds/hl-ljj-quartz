@@ -491,14 +491,14 @@ top -H
 
 调试命令：
 
-| 命令 | 用途 |
-|------|------|
-| `show errors` | 错误统计 |
-| `show trace` | 包追踪 |
-| `show buffers` | Buffer 状态 |
-| `show memory` | 内存使用 |
-| `show node` | 节点状态 |
-| `show interface` | 接口统计 |
+| 命令             | 用途        |
+| ---------------- | ----------- |
+| `show errors`    | 错误统计    |
+| `show trace`     | 包追踪      |
+| `show buffers`   | Buffer 状态 |
+| `show memory`    | 内存使用    |
+| `show node`      | 节点状态    |
+| `show interface` | 接口统计    |
 
 ---
 

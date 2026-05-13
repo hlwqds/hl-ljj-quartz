@@ -5,8 +5,8 @@ tags: [vpn, series, wireguard, performance, benchmark, throughput, latency, batc
 description: "WireGuard 性能深度解析——极致性能背后的设计原理、AES-NI/ChaCha20 性能对比、批处理机制、吞吐量/延迟基准测试、网络栈集成优化"
 ---
 
-> [!info] VPN 技术深度探索系列
-> 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+> [!info] VPN 技术深度探索系列 0. [[2026-04-13-vpn-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-vpn-deep-dive-ch44-ipsec-offload|第四十四章：IPSec 硬件卸载]]
 > 2. **第四十五章：WireGuard 性能**
 > 3. [[2026-04-13-vpn-deep-dive-ch46-proxy-perf|第四十六章：翻墙协议性能]]
@@ -418,6 +418,7 @@ WireGuard 的极致性能源于精心设计：
 ---
 
 > [!tip] 延伸阅读
+>
 > - WireGuard 官方性能测试：https://www.wireguard.com/performance/
 > - BoringTun 源码：https://github.com/cloudflare/boringtun
 > - Noise 协议框架：http://www.noiseprotocol.org/

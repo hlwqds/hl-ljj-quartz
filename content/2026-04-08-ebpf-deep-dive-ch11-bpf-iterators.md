@@ -9,8 +9,8 @@ tags:
   - snapshots
 ---
 
-> [!info] eBPF 2026 深度探索系列
-> 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+> [!info] eBPF 2026 深度探索系列 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+>
 > 1. [[2026-04-08-ebpf-deep-dive-ch1-registers-and-instructions|第一章：寄存器与指令集]]
 > 2. [[2026-04-08-ebpf-deep-dive-ch1-5-function-calls|第一.五章：四种函数调用与动态内存]]
 > 3. [[2026-04-08-ebpf-deep-dive-ch1-6-the-verifier|第一.六章：验证器 (Verifier) 的底层逻辑]]
@@ -62,6 +62,7 @@ tags:
 > 49. [[2026-04-09-ebpf-deep-dive-ch40-network-protocols-deep-dive|第四十章：网络协议深度解析——TCP/UDP/QUIC 的 eBPF 视角]]
 > 50. [[2026-04-09-ebpf-deep-dive-ch41-memory-safety-and-vulnerabilities|第四十一章：eBPF 内存安全与漏洞分析]]
 > 51. [[2026-04-09-ebpf-deep-dive-ch42-service-mesh-integration|第四十二章：eBPF 与 Service Mesh 深度集成]]
+
 ---
 
 # BPF Iterators 内核对象迭代器
@@ -76,12 +77,12 @@ tags:
 
 传统的内核对象导出机制存在三大痛点：
 
-| 痛点 | 说明 | BPF Iterators 如何解决 |
-|------|------|------------------------|
+| 痛点         | 说明                                                                                     | BPF Iterators 如何解决                                         |
+| ------------ | ---------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
 | **性能低下** | `/proc` 文件系统每次 `read()` 都需要逐条格式化文本，涉及大量 `sprintf` 和内核-用户态拷贝 | 在内核态直接执行过滤，只输出感兴趣的字段，减少 90%+ 的数据传输 |
-| **格式固定** | `/proc`、`/sys` 的输出格式是内核硬编码的，无法按需裁剪 | 用户自定义 BPF 程序决定输出内容和格式 |
-| **缺乏过滤** | 无法在内核态进行过滤，所有数据都要传输到用户态再做筛选 | 过滤逻辑在 BPF 程序中完成，不匹配的对象零开销跳过 |
-| **原子性差** | 多次 `read()` 之间对象可能已被修改，无法获得一致快照 | 单次遍历在一个 seq_file session 中完成，保证快照一致性 |
+| **格式固定** | `/proc`、`/sys` 的输出格式是内核硬编码的，无法按需裁剪                                   | 用户自定义 BPF 程序决定输出内容和格式                          |
+| **缺乏过滤** | 无法在内核态进行过滤，所有数据都要传输到用户态再做筛选                                   | 过滤逻辑在 BPF 程序中完成，不匹配的对象零开销跳过              |
+| **原子性差** | 多次 `read()` 之间对象可能已被修改，无法获得一致快照                                     | 单次遍历在一个 seq_file session 中完成，保证快照一致性         |
 
 ### 1.2 与其他 BPF 程序类型的对比
 
@@ -370,13 +371,13 @@ int dump_tasks_text(struct bpf_iter__task *ctx) {
 
 ### 4.3 bpf_seq_write vs bpf_seq_printf 对比
 
-| 特性 | `bpf_seq_printf` | `bpf_seq_write` |
-|------|-----------------|-----------------|
-| 输出格式 | 文本（需要解析） | 二进制（直接可用） |
-| 参数数量限制 | 最多 3 个（早期内核） | 无限制 |
-| 性能 | 较低（格式化开销） | 高（零拷贝） |
-| 可读性 | 高（人类可读） | 低（需要结构体定义） |
-| 推荐场景 | 调试、日志 | 生产环境、高频采集 |
+| 特性         | `bpf_seq_printf`      | `bpf_seq_write`      |
+| ------------ | --------------------- | -------------------- |
+| 输出格式     | 文本（需要解析）      | 二进制（直接可用）   |
+| 参数数量限制 | 最多 3 个（早期内核） | 无限制               |
+| 性能         | 较低（格式化开销）    | 高（零拷贝）         |
+| 可读性       | 高（人类可读）        | 低（需要结构体定义） |
+| 推荐场景     | 调试、日志            | 生产环境、高频采集   |
 
 ---
 
@@ -386,21 +387,21 @@ int dump_tasks_text(struct bpf_iter__task *ctx) {
 
 Linux 内核（5.8+，截至 2026 年 6.x）支持以下 BPF 迭代器：
 
-| 迭代器类型 | SEC 名称 | 遍历目标 | 内核版本 | 典型用途 |
-|-----------|----------|---------|---------|---------|
-| task | `iter/task` | 所有进程/线程 | 5.8 | 进程画像、资源统计 |
-| task_file | `iter/task_file` | 进程打开的文件描述符 | 5.8 | 文件描述符泄露检测 |
-| task_vma | `iter/task_vma` | 进程虚拟内存区域 | 5.8 | 内存布局分析 |
-| tcp | `iter/tcp` | 所有 TCP socket | 5.8 | 连接状态审计 |
-| udp | `iter/udp` | 所有 UDP socket | 5.8 | UDP 连接追踪 |
-| bpf_map_elem | `iter/bpf_map_elem` | BPF Map 的所有元素 | 5.8 | Map 内容导出、GC |
-| bpf_sk_storage_map | `iter/bpf_sk_storage_map` | Socket 存储 Map | 5.8 | Socket 元数据查询 |
-| cgroup | `iter/cgroup` | cgroup 层级 | 5.9 | 容器资源统计 |
-| bpf_map | `iter/bpf_map` | 所有 BPF Map | 5.13 | Map 清单导出 |
-| bpf_prog | `iter/bpf_prog` | 所有 BPF 程序 | 5.13 | 程序清单导出 |
-| netlink | `iter/netlink` | Netlink socket | 5.16 | Netlink 监控 |
-| inode | `iter/inode` | VFS inode | 6.1 | 文件系统分析 |
-| btf | `iter/btf` | BTF 对象 | 6.4 | BTF 信息查询 |
+| 迭代器类型         | SEC 名称                  | 遍历目标             | 内核版本 | 典型用途           |
+| ------------------ | ------------------------- | -------------------- | -------- | ------------------ |
+| task               | `iter/task`               | 所有进程/线程        | 5.8      | 进程画像、资源统计 |
+| task_file          | `iter/task_file`          | 进程打开的文件描述符 | 5.8      | 文件描述符泄露检测 |
+| task_vma           | `iter/task_vma`           | 进程虚拟内存区域     | 5.8      | 内存布局分析       |
+| tcp                | `iter/tcp`                | 所有 TCP socket      | 5.8      | 连接状态审计       |
+| udp                | `iter/udp`                | 所有 UDP socket      | 5.8      | UDP 连接追踪       |
+| bpf_map_elem       | `iter/bpf_map_elem`       | BPF Map 的所有元素   | 5.8      | Map 内容导出、GC   |
+| bpf_sk_storage_map | `iter/bpf_sk_storage_map` | Socket 存储 Map      | 5.8      | Socket 元数据查询  |
+| cgroup             | `iter/cgroup`             | cgroup 层级          | 5.9      | 容器资源统计       |
+| bpf_map            | `iter/bpf_map`            | 所有 BPF Map         | 5.13     | Map 清单导出       |
+| bpf_prog           | `iter/bpf_prog`           | 所有 BPF 程序        | 5.13     | 程序清单导出       |
+| netlink            | `iter/netlink`            | Netlink socket       | 5.16     | Netlink 监控       |
+| inode              | `iter/inode`              | VFS inode            | 6.1      | 文件系统分析       |
+| btf                | `iter/btf`                | BTF 对象             | 6.4      | BTF 信息查询       |
 
 ---
 
@@ -758,12 +759,12 @@ struct bpf_link *link = bpf_program__attach_iter(prog, &opts);
 
 ### 8.3 参数化迭代器的优势
 
-| 场景 | 无参数（全量遍历） | 参数化（精确范围） |
-|------|-------------------|-------------------|
-| 遍历 10 万个 task | 扫描所有 task | 只扫描目标进程 |
-| 遍历 1000 个 Map | 扫描所有 Map | 只扫描目标 Map |
-| 遍历 cgroup 树 | 扫描整棵 cgroup 树 | 只扫描目标子树 |
-| 性能 | O(N)，N 为对象总数 | O(K)，K 为目标数量 |
+| 场景              | 无参数（全量遍历） | 参数化（精确范围） |
+| ----------------- | ------------------ | ------------------ |
+| 遍历 10 万个 task | 扫描所有 task      | 只扫描目标进程     |
+| 遍历 1000 个 Map  | 扫描所有 Map       | 只扫描目标 Map     |
+| 遍历 cgroup 树    | 扫描整棵 cgroup 树 | 只扫描目标子树     |
+| 性能              | O(N)，N 为对象总数 | O(K)，K 为目标数量 |
 
 ---
 
@@ -803,6 +804,7 @@ graph TD
 ```
 
 **注意事项：**
+
 - 迭代中可以删除当前元素，但不能依赖被删除元素之后的新元素是否会被遍历到
 - 不能在迭代中插入新元素（行为未定义）
 - `bpf_map_elem` 是唯一支持在迭代中修改集合的迭代器类型
@@ -831,15 +833,15 @@ __u32 pid_copy = task->pid;  // Verifier 允许
 
 ### 10.1 功能对比
 
-| 维度 | procfs / debugfs | BPF Iterators |
-|------|-----------------|---------------|
-| **输出格式** | 内核硬编码文本 | 用户自定义（二进制/文本） |
-| **过滤能力** | 无（全部输出） | 内核态自定义过滤 |
-| **性能** | 低（全量格式化+传输） | 高（按需输出） |
-| **扩展性** | 需要修改内核源码 | 无需修改内核，BPF 程序即可扩展 |
-| **一致性** | 差（多次 read 可能不一致） | 好（单次遍历获得快照） |
-| **权限模型** | 文件系统权限 | BPF 能力检查（CAP_BPF/CAP_SYS_ADMIN） |
-| **适用场景** | 人类调试 | 自动化监控、生产环境 |
+| 维度         | procfs / debugfs           | BPF Iterators                         |
+| ------------ | -------------------------- | ------------------------------------- |
+| **输出格式** | 内核硬编码文本             | 用户自定义（二进制/文本）             |
+| **过滤能力** | 无（全部输出）             | 内核态自定义过滤                      |
+| **性能**     | 低（全量格式化+传输）      | 高（按需输出）                        |
+| **扩展性**   | 需要修改内核源码           | 无需修改内核，BPF 程序即可扩展        |
+| **一致性**   | 差（多次 read 可能不一致） | 好（单次遍历获得快照）                |
+| **权限模型** | 文件系统权限               | BPF 能力检查（CAP_BPF/CAP_SYS_ADMIN） |
+| **适用场景** | 人类调试                   | 自动化监控、生产环境                  |
 
 ### 10.2 性能对比实例
 
@@ -878,6 +880,7 @@ time ./proc_snapshot
 ### 11.2 自愈型 Map 管理
 
 利用 `bpf_map_elem` 迭代器，可以实现"内核态垃圾回收"：
+
 - 遍历 Hash Map。
 - 检查每个 Value 的时间戳。
 - 如果超过 60 秒未更新，直接在内核态调用 `bpf_map_delete_elem`。
@@ -1010,6 +1013,7 @@ libbpf: prog 'my_iter': -- BEGIN PROG LOAD LOG --
 **问题 2：read() 返回 0 但没有任何输出**
 
 可能原因：
+
 - BPF 程序中的过滤条件过于严格，没有元素匹配
 - `ctx->task`（或对应的上下文指针）在遍历结束前就是 NULL
 - `bpf_seq_write` 的 buffer 溢出（每次 write 最大 4KB）
@@ -1088,14 +1092,14 @@ BPF Iterator 更适合**管理面**和**控制面**场景，如定时采集、�
 
 ## 15. 总结：何时使用迭代器？
 
-| 场景 | 推荐工具 | 原因 |
-|------|---------|------|
-| 需要全量或大批量内核对象状态 | **BPF Iterators** | 一次遍历、内核态过滤、结构化输出 |
-| 需要对特定事件即时拦截 | **Tracing (kprobe/fentry)** | 事件驱动、零延迟 |
-| 需要进行复杂的 Map 维护逻辑 | **Map Iterators** | 支持遍历中删除 |
-| 需要在数据面中遍历 Map | **bpf_for_each_map_elem()** | 程序内调用、无用户态参与 |
-| 需要内核对象变化通知 | **Ring Buffer + Tracing** | 增量推送、实时性好 |
-| 一次性调试内核状态 | **bpftool iter** | 无需编写代码 |
+| 场景                         | 推荐工具                    | 原因                             |
+| ---------------------------- | --------------------------- | -------------------------------- |
+| 需要全量或大批量内核对象状态 | **BPF Iterators**           | 一次遍历、内核态过滤、结构化输出 |
+| 需要对特定事件即时拦截       | **Tracing (kprobe/fentry)** | 事件驱动、零延迟                 |
+| 需要进行复杂的 Map 维护逻辑  | **Map Iterators**           | 支持遍历中删除                   |
+| 需要在数据面中遍历 Map       | **bpf_for_each_map_elem()** | 程序内调用、无用户态参与         |
+| 需要内核对象变化通知         | **Ring Buffer + Tracing**   | 增量推送、实时性好               |
+| 一次性调试内核状态           | **bpftool iter**            | 无需编写代码                     |
 
 BPF Iterators 是 eBPF 工具箱中不可或缺的"批量查询"工具。它与事件驱动的 tracing 程序形成互补，共同构成了完整的内核可观测性方案。在 2026 年的生产环境中，BPF Iterators 已经成为 Kubernetes 监控、网络审计、安全合规等场景的核心基础设施。
 

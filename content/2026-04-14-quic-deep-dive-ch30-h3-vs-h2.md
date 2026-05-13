@@ -47,12 +47,12 @@ Total: 1 RTT before HTTP/3 data (0-RTT if resumption available)
 
 ### 30.2.3 Comparison
 
-| Metric | HTTP/2 | HTTP/3 |
-|---|---|---|
-| Connection establishment | 2-3 RTTs | 1 RTT (0-RTT with 0-RTT) |
-| TLS version | TLS 1.2+ | TLS 1.3+ (bundled) |
-| Handshake separation | TCP and TLS separate | QUIC combines transport+crypto |
-| 0-RTT support | TLS 1.3 only | QUIC 0-RTT |
+| Metric                   | HTTP/2               | HTTP/3                         |
+| ------------------------ | -------------------- | ------------------------------ |
+| Connection establishment | 2-3 RTTs             | 1 RTT (0-RTT with 0-RTT)       |
+| TLS version              | TLS 1.2+             | TLS 1.3+ (bundled)             |
+| Handshake separation     | TCP and TLS separate | QUIC combines transport+crypto |
+| 0-RTT support            | TLS 1.3 only         | QUIC 0-RTT                     |
 
 ## 30.3 Multiplexing Architecture
 
@@ -74,6 +74,7 @@ Problem:
 ```
 
 HTTP/2's head-of-line blocking problem:
+
 - TCP delivers bytes in order
 - A lost packet delays all subsequent packets
 - All HTTP/2 streams stall waiting for retransmit
@@ -99,14 +100,14 @@ QUIC's stream abstraction means packet loss only affects the stream that lost da
 
 ### 30.3.3 Comparison
 
-| Feature | HTTP/2 | HTTP/3 |
-|---|---|---|
-| Transport | TCP | QUIC (over UDP) |
-| Stream separation | HTTP/2 streams | QUIC streams |
+| Feature                  | HTTP/2              | HTTP/3                       |
+| ------------------------ | ------------------- | ---------------------------- |
+| Transport                | TCP                 | QUIC (over UDP)              |
+| Stream separation        | HTTP/2 streams      | QUIC streams                 |
 | Cross-stream loss impact | All streams blocked | Only affected stream blocked |
-| Head-of-line blocking | Yes (TCP layer) | No |
-| Stream ordering | Per-stream, ordered | Per-stream, ordered |
-| Flow control | Stream + connection | Stream + connection |
+| Head-of-line blocking    | Yes (TCP layer)     | No                           |
+| Stream ordering          | Per-stream, ordered | Per-stream, ordered          |
+| Flow control             | Stream + connection | Stream + connection          |
 
 ## 30.4 Stream Dependencies
 
@@ -132,6 +133,7 @@ HTTP/3 deliberately omits HTTP-level stream dependencies:
 > "HTTP/3 does not define a mechanism for prioritizing one stream over another." -- RFC 9114
 
 Rationale:
+
 - QUIC provides connection-level flow control
 - Transport-level prioritization is implementation-specific
 - HTTP-level prioritization adds complexity with marginal gains
@@ -140,13 +142,13 @@ HTTP/3 relies on QUIC implementations to handle prioritization fairly across str
 
 ### 30.4.3 Dependency Comparison
 
-| Feature | HTTP/2 | HTTP/3 |
-|---|---|---|
-| Stream dependencies | Yes (priority tree) | No |
-| Exclusive dependencies | Yes | No |
-| Weighted priority | Yes | No |
-| Dynamic reprioritization | Yes (PRIORITY frame) | No |
-| Recommendation | Implement priorities | Implementation-defined |
+| Feature                  | HTTP/2               | HTTP/3                 |
+| ------------------------ | -------------------- | ---------------------- |
+| Stream dependencies      | Yes (priority tree)  | No                     |
+| Exclusive dependencies   | Yes                  | No                     |
+| Weighted priority        | Yes                  | No                     |
+| Dynamic reprioritization | Yes (PRIORITY frame) | No                     |
+| Recommendation           | Implement priorities | Implementation-defined |
 
 ## 30.5 Header Compression
 
@@ -176,14 +178,14 @@ QPACK requires:
 
 ### 30.5.3 Compression Comparison
 
-| Aspect | HPACK (HTTP/2) | QPACK (HTTP/3) |
-|---|---|---|
-| Delivery assumption | Ordered (TCP) | Unordered (QUIC) |
-| Control channel | None (same stream) | Dedicated QPACK stream |
-| Blocking | Implicit wait | Explicit via Required Insert Count |
-| Encoder tracking | Insert count | Insert count + unacked entries |
-| Memory bounds | Max table size | Max table size + capacity |
-| Baseline efficiency | ~75% compression | Similar (~70-80%) |
+| Aspect              | HPACK (HTTP/2)     | QPACK (HTTP/3)                     |
+| ------------------- | ------------------ | ---------------------------------- |
+| Delivery assumption | Ordered (TCP)      | Unordered (QUIC)                   |
+| Control channel     | None (same stream) | Dedicated QPACK stream             |
+| Blocking            | Implicit wait      | Explicit via Required Insert Count |
+| Encoder tracking    | Insert count       | Insert count + unacked entries     |
+| Memory bounds       | Max table size     | Max table size + capacity          |
+| Baseline efficiency | ~75% compression   | Similar (~70-80%)                  |
 
 ## 30.6 Flow Control
 
@@ -217,14 +219,14 @@ Flow control via QUIC:
 
 ### 30.6.3 Flow Control Comparison
 
-| Feature | HTTP/2 | HTTP/3 |
-|---|---|---|
-| Stream window | WINDOW_UPDATE | QUIC flow control |
-| Connection window | WINDOW_UPDATE | QUIC flow control |
-| Initial window | 65535 bytes | 1MB (typical) |
+| Feature             | HTTP/2                     | HTTP/3                            |
+| ------------------- | -------------------------- | --------------------------------- |
+| Stream window       | WINDOW_UPDATE              | QUIC flow control                 |
+| Connection window   | WINDOW_UPDATE              | QUIC flow control                 |
+| Initial window      | 65535 bytes                | 1MB (typical)                     |
 | Header table memory | SETTINGS_HEADER_TABLE_SIZE | SETTINGS_QPACK_MAX_TABLE_CAPACITY |
-| Field section limit | N/A | SETTINGS_MAX_FIELD_SECTION_SIZE |
-| Hop-by-hop | Yes | No (QUIC is end-to-end) |
+| Field section limit | N/A                        | SETTINGS_MAX_FIELD_SECTION_SIZE   |
+| Hop-by-hop          | Yes                        | No (QUIC is end-to-end)           |
 
 ## 30.7 Server Push
 
@@ -251,13 +253,13 @@ Server → Client: HEADERS + DATA (on push stream, server-initiated)
 
 ### 30.7.3 Server Push Comparison
 
-| Feature | HTTP/2 | HTTP/3 |
-|---|---|---|
-| Push announcement | PUSH_PROMISE (same stream) | PUSH_PROMISE (any stream) |
-| Push response stream | Same stream as promise | Server-initiated stream |
-| Client cancellation | N/A | CANCEL_PUSH frame |
-| Push ID limit | None | MAX_PUSH_ID frame |
-| Dependency tracking | Stream dependencies | None |
+| Feature              | HTTP/2                     | HTTP/3                    |
+| -------------------- | -------------------------- | ------------------------- |
+| Push announcement    | PUSH_PROMISE (same stream) | PUSH_PROMISE (any stream) |
+| Push response stream | Same stream as promise     | Server-initiated stream   |
+| Client cancellation  | N/A                        | CANCEL_PUSH frame         |
+| Push ID limit        | None                       | MAX_PUSH_ID frame         |
+| Dependency tracking  | Stream dependencies        | None                      |
 
 ## 30.8 Framing Format
 
@@ -294,19 +296,20 @@ HTTP/3 doesn't need its own length prefix because QUIC STREAM frames include len
 
 ### 30.8.3 Framing Comparison
 
-| Feature | HTTP/2 | HTTP/3 |
-|---|---|---|
+| Feature                | HTTP/2              | HTTP/3              |
+| ---------------------- | ------------------- | ------------------- |
 | Self-describing frames | Yes (length prefix) | No (relies on QUIC) |
-| Frame type field | 8 bits | varint |
-| Stream identification | Frame field | QUIC stream ID |
-| Stream association | Frame-based | Stream-based |
-| Padding support | PADDING frame | QUIC PADDING frame |
+| Frame type field       | 8 bits              | varint              |
+| Stream identification  | Frame field         | QUIC stream ID      |
+| Stream association     | Frame-based         | Stream-based        |
+| Padding support        | PADDING frame       | QUIC PADDING frame  |
 
 ## 30.9 Connection Management
 
 ### 30.9.1 HTTP/2 Connection Management
 
 TCP connection is the unit of management:
+
 - All streams on one TCP connection
 - Network change = connection break
 - Connection coalescing possible (same IP/port)
@@ -314,19 +317,20 @@ TCP connection is the unit of management:
 ### 30.9.2 HTTP/3 Connection Management
 
 QUIC connection is the unit of management:
+
 - All streams on one QUIC connection
 - Network change = connection migration (no break)
 - Connection ID enables migration
 
 ### 30.9.3 Connection Comparison
 
-| Feature | HTTP/2 | HTTP/3 |
-|---|---|---|
-| Connection identifier | None (4-tuple) | Connection ID |
-| Network change | Connection breaks | Connection migrates |
-| Connection reuse | Limited (IP:port) | Multiple CIDs |
-| Port reuse | Yes | Yes (via Alt-Svc) |
-| 0-RTT data | TLS 1.3 resumption | QUIC 0-RTT |
+| Feature               | HTTP/2             | HTTP/3              |
+| --------------------- | ------------------ | ------------------- |
+| Connection identifier | None (4-tuple)     | Connection ID       |
+| Network change        | Connection breaks  | Connection migrates |
+| Connection reuse      | Limited (IP:port)  | Multiple CIDs       |
+| Port reuse            | Yes                | Yes (via Alt-Svc)   |
+| 0-RTT data            | TLS 1.3 resumption | QUIC 0-RTT          |
 
 ## 30.10 Error Handling
 
@@ -376,24 +380,26 @@ QUIC error codes (different space):
 
 ### 30.10.3 Error Handling Comparison
 
-| Feature | HTTP/2 | HTTP/3 |
-|---|---|---|
-| Error code space | Single (stream + connection) | Separate HTTP + QUIC |
-| Stream errors | RST_STREAM | QUIC RST_STREAM |
-| Connection errors | GOAWAY | QUIC CONNECTION_CLOSE |
-| Unknown error handling | Undefined | Ignore (forward compat) |
-| Framing errors | FRAME_SIZE_ERROR | H3_FRAME_ERROR |
+| Feature                | HTTP/2                       | HTTP/3                  |
+| ---------------------- | ---------------------------- | ----------------------- |
+| Error code space       | Single (stream + connection) | Separate HTTP + QUIC    |
+| Stream errors          | RST_STREAM                   | QUIC RST_STREAM         |
+| Connection errors      | GOAWAY                       | QUIC CONNECTION_CLOSE   |
+| Unknown error handling | Undefined                    | Ignore (forward compat) |
+| Framing errors         | FRAME_SIZE_ERROR             | H3_FRAME_ERROR          |
 
 ## 30.11 Middlebox Compatibility
 
 ### 30.11.1 HTTP/2 Middlebox Behavior
 
 HTTP/2 uses ALPN negotiation over TLS:
+
 ```
 TLS Extension: ALPN = "h2"
 ```
 
 HTTP/2 typically passes through middleboxes because:
+
 - Port 443 (HTTPS) is open
 - TLS inspection can see HTTP/2 frames
 - TCP is universally understood
@@ -401,6 +407,7 @@ HTTP/2 typically passes through middleboxes because:
 ### 30.11.2 HTTP/3 Middlebox Behavior
 
 HTTP/3 may face UDP filtering:
+
 ```
 Problem:
   - Some firewalls block UDP port 443
@@ -409,6 +416,7 @@ Problem:
 ```
 
 HTTP/3 discovery via Alt-Svc:
+
 ```
 Client first tries HTTP/2 over TCP:443
 Server responds: Alt-Svc: h3=":443"
@@ -417,13 +425,13 @@ Client switches to QUIC:443 (HTTP/3)
 
 ### 30.11.3 Middlebox Comparison
 
-| Factor | HTTP/2 | HTTP/3 |
-|---|---|---|
-| Transport | TCP (widely supported) | UDP (may be filtered) |
-| Firewall traversal | Excellent | Variable |
-| NAT compatibility | Excellent | May have issues |
-| Connection establishment | Predictable | Variable |
-| Fallback | N/A (TCP always works) | Can fall back to HTTP/2 |
+| Factor                   | HTTP/2                 | HTTP/3                  |
+| ------------------------ | ---------------------- | ----------------------- |
+| Transport                | TCP (widely supported) | UDP (may be filtered)   |
+| Firewall traversal       | Excellent              | Variable                |
+| NAT compatibility        | Excellent              | May have issues         |
+| Connection establishment | Predictable            | Variable                |
+| Fallback                 | N/A (TCP always works) | Can fall back to HTTP/2 |
 
 ## 30.12 Performance Characteristics
 
@@ -474,6 +482,7 @@ HTTP/3:
 ### 30.13.1 HTTP/2 Implementation
 
 HTTP/2 over TCP is relatively straightforward:
+
 - OS provides TCP (kernel)
 - TLS library handles crypto
 - Application implements HTTP/2 framing
@@ -486,6 +495,7 @@ HTTP/2 stack:
 ### 30.13.2 HTTP/3 Implementation
 
 HTTP/3 requires a userspace QUIC implementation:
+
 - No OS kernel support for QUIC (yet)
 - Full transport layer in application
 - More code = more bugs potential
@@ -497,39 +507,41 @@ HTTP/3 stack:
 
 ### 30.13.3 Complexity Comparison
 
-| Component | HTTP/2 | HTTP/3 |
-|---|---|---|
-| Transport | TCP (kernel) | QUIC (userspace) |
-| Encryption | TLS (library) | QUIC crypto (integrated) |
-| Head-of-line blocking | Kernel TCP | Userspace QUIC |
-| Connection migration | App doesn't handle | App must handle |
-| CPU overhead | Lower | Higher (per-packet crypto) |
+| Component             | HTTP/2             | HTTP/3                     |
+| --------------------- | ------------------ | -------------------------- |
+| Transport             | TCP (kernel)       | QUIC (userspace)           |
+| Encryption            | TLS (library)      | QUIC crypto (integrated)   |
+| Head-of-line blocking | Kernel TCP         | Userspace QUIC             |
+| Connection migration  | App doesn't handle | App must handle            |
+| CPU overhead          | Lower              | Higher (per-packet crypto) |
 
 ## 30.14 Feature Comparison Summary
 
-| Feature | HTTP/2 | HTTP/3 | Winner |
-|---|---|---|---|
-| Connection establishment latency | 2-3 RTT | 1 RTT (0-RTT) | HTTP/3 |
-| Head-of-line blocking | Yes (TCP) | No | HTTP/3 |
-| Connection migration | No | Yes | HTTP/3 |
-| Loss resilience | Poor | Good | HTTP/3 |
-| Header compression | HPACK | QPACK | Tie |
-| Stream priorities | Yes | No | HTTP/2 |
-| Server push | Yes | Yes (enhanced) | Tie |
-| Middlebox compatibility | Excellent | Variable | HTTP/2 |
-| Implementation complexity | Lower | Higher | HTTP/2 |
-| QUIC 0-RTT | N/A | Yes | HTTP/3 |
-| Flow control | WINDOW_UPDATE | QUIC | HTTP/3 |
+| Feature                          | HTTP/2        | HTTP/3         | Winner |
+| -------------------------------- | ------------- | -------------- | ------ |
+| Connection establishment latency | 2-3 RTT       | 1 RTT (0-RTT)  | HTTP/3 |
+| Head-of-line blocking            | Yes (TCP)     | No             | HTTP/3 |
+| Connection migration             | No            | Yes            | HTTP/3 |
+| Loss resilience                  | Poor          | Good           | HTTP/3 |
+| Header compression               | HPACK         | QPACK          | Tie    |
+| Stream priorities                | Yes           | No             | HTTP/2 |
+| Server push                      | Yes           | Yes (enhanced) | Tie    |
+| Middlebox compatibility          | Excellent     | Variable       | HTTP/2 |
+| Implementation complexity        | Lower         | Higher         | HTTP/2 |
+| QUIC 0-RTT                       | N/A           | Yes            | HTTP/3 |
+| Flow control                     | WINDOW_UPDATE | QUIC           | HTTP/3 |
 
 ## 30.15 When to Use HTTP/3
 
 HTTP/3 is beneficial when:
+
 - Mobile clients on lossy networks
 - Applications benefit from connection migration
 - 0-RTT resumption is valuable (return visits)
 - Multiple streams compete for bandwidth
 
 HTTP/2 may be preferred when:
+
 - UDP is blocked/filtered in the network
 - CPU constraints (QUIC is more CPU-intensive)
 - Server push with complex dependencies is needed
@@ -540,6 +552,7 @@ HTTP/2 may be preferred when:
 ### 30.16.1 HTTP/2 Extensions
 
 HTTP/2 can be extended via:
+
 - New frame types (registered via IANA)
 - New SETTINGS parameters
 - New HTTP error codes
@@ -547,6 +560,7 @@ HTTP/2 can be extended via:
 ### 30.16.2 HTTP/3 Extensions
 
 HTTP/3 extensions similar to HTTP/2:
+
 - WebTransport over HTTP/3
 - Extended frame types
 - Datagram support (HTTP Datagrams)
@@ -554,6 +568,7 @@ HTTP/3 extensions similar to HTTP/2:
 ### 30.16.3 Future Directions
 
 HTTP/2 and HTTP/3 may eventually converge:
+
 - HTTP/2 over QUIC is theoretically possible
 - Alternative transports for HTTP/3 (not just QUIC)
 - Unified HTTP semantics across transport layers
@@ -567,12 +582,14 @@ HTTP/2 and HTTP/3 represent two approaches to improving HTTP:
 **HTTP/3** built on QUIC to eliminate transport-level head-of-line blocking, enable connection migration, and reduce connection establishment latency. Its main weakness is UDP filtering in some networks.
 
 Key takeways:
+
 - HTTP/3 wins on mobile/unreliable networks
 - HTTP/2 wins on CPU-constrained servers
 - Both support the same HTTP semantics
 - HTTP/3 adoption is growing as UDP filtering decreases
 
 The choice between HTTP/2 and HTTP/3 should consider:
+
 - Network conditions (loss rate, middlebox behavior)
 - Server capabilities (QUIC implementation quality)
 - Client mix (desktop vs mobile)

@@ -193,7 +193,7 @@ description: "深入解析 5G UPF (User Plane Function) 加速：3GPP 架构、N
 typedef struct {
     u32 pdr_id;              // PDR 唯一标识
     u32 session_id;           // 所属会话
-    
+
     // PDI (Packet Detection Information)
     u8  qfi;                  // QoS Flow ID (6 bits)
     u32 teid;                 // GTP-U TEID
@@ -204,16 +204,16 @@ typedef struct {
     u16 dst_port_start;       // 目标端口范围
     u16 dst_port_end;
     u8  protocol;             // IP 协议
-    
+
     // 匹配计数
     u64 packet_count;
     u64 byte_count;
-    
+
     // 关联规则
     u32 far_id;              // Forward Action Rule
     u32 qer_id;              // QoS Enforcement Rule
     u32 urr_id;              // Usage Reporting Rule
-    
+
     // 预处理标志
     u8  need_decap    : 1;
     u8  need_buff     : 1;
@@ -225,15 +225,15 @@ typedef struct {
 typedef struct {
     u32 far_id;
     u32 session_id;
-    
+
     // 转发参数
     u8  action;               // DROP, FORWARD, BUFFER, NOTIFY
-    
+
     // 输出信息
     u32 dst_teid;            // 目标 TEID (for N9/N3)
     ip46_address_t dst_ip;   // 目标 IP
     u16 dst_port;            // UDP 端口 (通常 2152)
-    
+
     // 封装参数
     u8  need_encap    : 1;
     u8  need_tos      : 1;
@@ -247,18 +247,18 @@ typedef struct {
 typedef struct {
     u32 qer_id;
     u32 session_id;
-    
+
     // QoS 参数
     u8  qfi;                  // QoS Flow ID
     u32 gbr;                  // Guaranteed Bit Rate (bps)
     u32 mbr;                  // Maximum Bit Rate (bps)
-    
+
     // MBR 以太网上限
     u64 gbr_ul;
     u64 gbr_dl;
     u64 mbr_ul;
     u64 mbr_dl;
-    
+
     // QoS 规则索引
     u32 qos_rule_id;
 } upf_qer_t;
@@ -306,13 +306,13 @@ gtpu_input (vlib_main_t * vm, vlib_buffer_t * b, gtpuhdr_t * gtp,
     if (gtp->ver != 1 || gtp->mt != 0xFF) {
         return GTP_BAD_HEADER;
     }
-    
+
     // 2. 查找 Session
     upf_session_t *s = session_lookup_by_teid(teid);
     if (!s) {
         return GTP_NO_SESSION;
     }
-    
+
     // 3. 检查序列号 (如果 S flag set)
     if (gtp->s) {
         u16 seq = clib_net_to_host_u16(gtp->seq);
@@ -320,7 +320,7 @@ gtpu_input (vlib_main_t * vm, vlib_buffer_t * b, gtpuhdr_t * gtp,
             return GTP_SEQ_ERROR;
         }
     }
-    
+
     // 4. 移除 GTP-U 头
     u8 ext_len = 0;
     if (gtp->e) {
@@ -328,19 +328,19 @@ gtpu_input (vlib_main_t * vm, vlib_buffer_t * b, gtpuhdr_t * gtp,
         gtp_ext_hdr_t *ext = (gtp_ext_hdr_t *)(gtp + 1);
         ext_len = ext->len * 4;
     }
-    
+
     vlib_buffer_advance(b, sizeof(gtpuhdr_t) + ext_len);
-    
+
     // 5. 查找 PDR
     upf_pdr_t *pdr = pdr_lookup(s, b);
     if (!pdr) {
         return GTP_NO_PDR;
     }
-    
+
     // 6. 更新统计
     pdr->packet_count++;
     pdr->byte_count += vlib_buffer_length_in_chain(vm, b);
-    
+
     *session_id = s->id;
     return GTP_OK;
 }
@@ -352,14 +352,14 @@ gtpu_input (vlib_main_t * vm, vlib_buffer_t * b, gtpuhdr_t * gtp,
 // GTP-U 封装 (N6 -> N3)
 
 static_always_inline void
-gtpu_encap (vlib_main_t * vm, vlib_buffer_t * b, 
+gtpu_encap (vlib_main_t * vm, vlib_buffer_t * b,
              ip4_header_t * ip, gtpuhdr_t * gtp,
              u32 teid, u32 seq)
 {
     // 1. 保存原始 IP 头
     ip4_header_t inner_ip = *ip;
     u16 inner_total_length = clib_net_to_host_u16(inner_ip.length);
-    
+
     // 2. 构建 GTP-U 头
     gtp->ver = 1;
     gtp->e = 0;        // 无扩展头
@@ -368,7 +368,7 @@ gtpu_encap (vlib_main_t * vm, vlib_buffer_t * b,
     gtp->mt = 0xFF;    // T-PDU
     gtp->teid = clib_net_to_host_u32(teid);
     gtp->seq = clib_net_to_host_u16(seq);
-    
+
     // 3. 构建 UDP 头
     udp_header_t *udp = (udp_header_t *)(gtp + 1);
     udp->src_port = clib_net_to_host_u16(2152);
@@ -377,18 +377,18 @@ gtpu_encap (vlib_main_t * vm, vlib_buffer_t * b,
         sizeof(gtpuhdr_t) + sizeof(udp_header_t) + inner_total_length
     );
     udp->checksum = 0;  // UDP 校验和可以忽略
-    
+
     // 4. 构建外层 IP 头
     ip->length = clib_net_to_host_u16(
-        sizeof(ip4_header_t) + sizeof(udp_header_t) + 
+        sizeof(ip4_header_t) + sizeof(udp_header_t) +
         sizeof(gtpuhdr_t) + inner_total_length
     );
     ip->ttl = 64;
     ip->protocol = IP_PROTOCOL_UDP;
     // 设置源/目标 IP (来自 FAR)
-    
+
     // 5. 调整 buffer
-    vlib_buffer_advance(b, -(sizeof(gtpuhdr_t) + sizeof(udp_header_t) + 
+    vlib_buffer_advance(b, -(sizeof(gtpuhdr_t) + sizeof(udp_header_t) +
                               sizeof(ip4_header_t)));
 }
 ```
@@ -442,23 +442,23 @@ PFCP Association Setup Response:
 # 2. Session Establishment (PDU Session 建立)
 PFCP Session Establishment Request:
   F-SEID: 0x1234567890ABCDEF (UPF SEID)
-  
+
   Create PDR:
     PDR ID: 1
     PDI:
       Source Interface: N6
       F-TEID: (TEID: 0x100, UE IP: 45.67.89.1)
       Network Instance: vlan100
-    
+
     Outer Header Removal: GTP-U/UDP/IPv4
-    
+
     Create FAR:
       FAR ID: 1
       Action: FORWARD
       Forward Parameters:
         Destination Interface: N3
         F-TEID: (TEID: 0x200, UE IP: 10.0.0.1)
-        
+
     Create QER:
       QER ID: 1
       QFI: 9
@@ -496,16 +496,16 @@ typedef enum {
 typedef struct {
     u64 local_seid;       // SMF SEID
     u64 remote_seid;      // UPF SEID
-    
+
     u32 pdr_count;
     upf_pdr_t *pdrs[8];   // 最多 8 个 PDR
-    
+
     u32 far_count;
     upf_far_t *fars[8];
-    
+
     u32 qer_count;
     upf_qer_t *qers[8];
-    
+
     // 定时器
     u32 heartbeat_interval;  // ms
     u32 heartbeat_timer;
@@ -513,37 +513,37 @@ typedef struct {
 
 /* 处理 PFCP Session 建立请求 */
 static int
-pfcp_handle_session_establishment(upf_pfcp_t *pfcp, 
+pfcp_handle_session_establishment(upf_pfcp_t *pfcp,
                                    pfcp_msg_t *req,
                                    pfcp_msg_t *rsp)
 {
     // 1. 解析 F-SEID
     u64 seid = pfcp_get_f_seid(req);
-    
+
     // 2. 创建 Session
     upf_pfcp_session_t *s = session_create(seid);
-    
+
     // 3. 解析并创建 PDR
     pfcp_ie_t *pdr_ie = pfcp_get_ie(req, PFCP_IE_CREATE_PDR);
     foreach pdr_ie {
         upf_pdr_t *pdr = pdr_parse(pdr_ie);
         session_add_pdr(s, pdr);
     }
-    
+
     // 4. 解析并创建 FAR
     pfcp_ie_t *far_ie = pfcp_get_ie(req, PFCP_IE_CREATE_FAR);
     upf_far_t *far = far_parse(far_ie);
     session_add_far(s, far);
-    
+
     // 5. 解析并创建 QER
     pfcp_ie_t *qer_ie = pfcp_get_ie(req, PFCP_IE_CREATE_QER);
     upf_qer_t *qer = qer_parse(qer_ie);
     session_add_qer(s, qer);
-    
+
     // 6. 构建响应
     rsp->cause = PFCP_CAUSE_REQUEST_ACCEPTED;
     rsp->create_far_response = /* FAR response IE */;
-    
+
     return 0;
 }
 ```
@@ -618,7 +618,7 @@ qos_enforce (vlib_buffer_t *b, upf_qer_t *qer, u8 direction)
 {
     u64 rate;
     u64 burst;
-    
+
     if (direction == UP_DIRECTION_UL) {
         rate = qer->mbr_ul;
         burst = qer->gbr_ul;
@@ -626,17 +626,17 @@ qos_enforce (vlib_buffer_t *b, upf_qer_t *qer, u8 direction)
         rate = qer->mbr_dl;
         burst = qer->gbr_dl;
     }
-    
+
     // 令牌桶限速
     if (!token_bucket_check(b->rate_limit_token, rate, burst)) {
         // 超过 MBR，标记丢弃
         return QOS_DROP;
     }
-    
+
     // 设置 DSCP (可选)
     u8 dscp = qfi_to_dscp(qer->qfi);
     set_dscp(b, dscp);
-    
+
     return QOS_ALLOW;
 }
 ```
@@ -780,13 +780,13 @@ cpu {
 dpdk {
   socket-mem 8192,8192
   no-tx-checksum-offload
-  
+
   # NIC 配置
   dev 0000:3b:00.0 {
     rx-queue-size 4096
     tx-queue-size 4096
   }
-  
+
   dev 0000:3b:00.1 {
     rx-queue-size 4096
     tx-queue-size 4096
@@ -796,13 +796,13 @@ dpdk {
 upf {
   # 会话表大小
   session-table-size 1000000
-  
+
   # 缓冲区大小
   buffer-size 65536
-  
+
   # GTP 并行处理
   gtpusize 2048
-  
+
   # 心跳间隔
   heartbeat 10000
 }

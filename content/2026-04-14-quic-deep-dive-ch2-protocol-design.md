@@ -9,6 +9,7 @@ QUIC occupies the transport layer (OSI Layer 4), sitting between the application
 ### Why User Space Matters
 
 TCP and UDP live in the operating system kernel. Any change to their behavior requires OS updates, kernel patches, and long deployment cycles. QUIC avoids this by building on UDP, which provides only:
+
 - Source port / destination port
 - Payload length
 - Checksum
@@ -80,6 +81,7 @@ Frame types (partial list):
 ```
 
 This framing means:
+
 - Each packet has an explicit length
 - Frame types are explicit (not implicit based on position in stream)
 - Lost packets can be identified precisely
@@ -98,6 +100,7 @@ Connection = f(Connection ID)   // not f(IP, port)
 A QUIC connection is identified by one or more Connection IDs. The client can add new CIDs, retire old ones, and change its network address -- the connection persists.
 
 This enables:
+
 - **Connection migration** (mobile handoff)
 - **Dual-stack operation** (IPv4/IPv6 transitions)
 - **Load balancing** (server can route by CID, not 4-tuple)
@@ -105,7 +108,7 @@ This enables:
 
 ## 2.7 Principle 6: Handshake as a Cryptographic Context Setup
 
-QUIC combines transport state setup and cryptographic handshake into a single 1-RTT exchange. The QUIC handshake is not separate from TLS -- it *is* a TLS 1.3 handshake, embedded in QUIC's CRYPTO frames and protected by QUIC's packet protection keys.
+QUIC combines transport state setup and cryptographic handshake into a single 1-RTT exchange. The QUIC handshake is not separate from TLS -- it _is_ a TLS 1.3 handshake, embedded in QUIC's CRYPTO frames and protected by QUIC's packet protection keys.
 
 ```
 Traditional model:
@@ -118,6 +121,7 @@ QUIC model:
 ```
 
 This tight integration means the handshake provides both:
+
 1. Transport parameters (idle timeout, max stream data, etc.)
 2. Cryptographic keys and authentication
 
@@ -139,6 +143,7 @@ QUIC mandates that receivers should accept packets that are "probably valid" rat
 > "Be conservative in what you send, be liberal in what you accept."
 
 Specifically, QUIC receivers MUST ignore (not drop packets for):
+
 - Unknown frame types
 - Unknown packet types
 - Extra bytes beyond what a frame declares
@@ -150,13 +155,13 @@ This allows forward compatibility: a QUIC v1 implementation can interoperate wit
 
 These design choices come with trade-offs:
 
-| Principle | Benefit | Cost |
-|---|---|---|
-| User-space | Fast deployment, flexible | Kernel doesn't help with scheduling |
-| Semantic transparency | Easy migration from TCP | Must reimplement TCP-friendly CC |
-| Encrypted by default | Privacy, no ossification | Can't do mid-stream diagnostics easily |
-| CID-based addressing | Migration, load balancing | CID management overhead |
-| Frame-based | Explicit, debuggable | Slightly more overhead per packet |
+| Principle             | Benefit                   | Cost                                   |
+| --------------------- | ------------------------- | -------------------------------------- |
+| User-space            | Fast deployment, flexible | Kernel doesn't help with scheduling    |
+| Semantic transparency | Easy migration from TCP   | Must reimplement TCP-friendly CC       |
+| Encrypted by default  | Privacy, no ossification  | Can't do mid-stream diagnostics easily |
+| CID-based addressing  | Migration, load balancing | CID management overhead                |
+| Frame-based           | Explicit, debuggable      | Slightly more overhead per packet      |
 
 ## 2.11 Summary
 

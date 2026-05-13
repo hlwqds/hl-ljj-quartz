@@ -12,8 +12,8 @@ tags:
 description: "深入解析 Suricata 的 Host 管理机制：Host 哈希表、Host 数据结构、IP 信誉系统、GeoIP 集成、以及 Host 日志源码实现"
 ---
 
-> [!info] Suricata 2026 深度探索系列
-> 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Suricata 2026 深度探索系列 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-15-suricata-deep-dive-ch1-overview|第一章：Suricata 概述]]
 > 2. [[2026-04-15-suricata-deep-dive-ch2-config|第二章：Suricata 配置系统]]
 > 3. [[2026-04-15-suricata-deep-dive-ch3-runmodes|第三章：Runmodes 运行模式]]
@@ -73,13 +73,13 @@ graph TD
 
 ### 1.1 Host vs Flow
 
-| 特性 | Host | Flow |
-|:---|:---|:---|
-| **粒度** | 单个 IP 地址 | 双向会话（5-tuple） |
-| **作用域** | 全局共享 | Per-Flow |
-| **生命周期** | 可配置超时 | 会话结束时结束 |
-| **典型用途** | IP 信誉、GeoIP | 会话追踪 |
-| **内存占用** | 较低 | 较高 |
+| 特性         | Host           | Flow                |
+| :----------- | :------------- | :------------------ |
+| **粒度**     | 单个 IP 地址   | 双向会话（5-tuple） |
+| **作用域**   | 全局共享       | Per-Flow            |
+| **生命周期** | 可配置超时     | 会话结束时结束      |
+| **典型用途** | IP 信誉、GeoIP | 会话追踪            |
+| **内存占用** | 较低           | 较高                |
 
 ### 1.2 Host 配置
 
@@ -88,16 +88,16 @@ graph TD
 host:
   # Host 哈希表大小
   hash_size: 16384
-  
+
   # Host 内存上限
   memcap: 32mb
-  
+
   # 预分配数量
   prealloc: 256
-  
+
   # 检测超时（无流量后多久认为主机离线）
   detection: 300
-  
+
   # 是否记录未分类的威胁情报
   log_only_app_events: no
 ```
@@ -113,58 +113,58 @@ host:
 typedef struct Host_ {
     /* 地址（支持 IPv4/IPv6） */
     Address ip_addr;
-    
+
     /* 引用计数 */
     uint16_t use_cnt;
-    
+
     /* Host ID（用于日志关联） */
     uint64_t host_id;
-    
+
     /* 时间戳 */
     struct timeval ts;        // 最后活动
     struct timeval firstts;   // 首次活动
-    
+
     /* 标志位 */
     uint32_t flags;
-    
+
     /* 字节/Packet 计数 */
     uint64_t src_bytes;
     uint64_t dst_bytes;
     uint64_t src_pktcnt;
     uint64_t dst_pktcnt;
-    
+
     /* 应用层事件计数 */
     uint32_t app_event_cnt;
-    
+
     /* TCP 标志计数 */
     uint32_t tcp_syn_cnt;
     uint32_t tcp_fin_cnt;
     uint32_t tcp_rst_cnt;
-    
+
     /* Host 锁 */
     SCMutex m;
-    
+
     /* IP 信誉数据 */
     HostIPReputation *ip_rep;
-    
+
     /* GeoIP 数据 */
     void *geoip;
-    
+
     /* 关联的 Flow 列表（仅统计） */
     uint32_t flow_count;
-    
+
     /* Host 变量存储 */
     HostStorage *host_storage;
-    
+
     /* 链表指针 */
     struct Host_ *hnext;
     struct Host_ *hprev;
-    
+
     /* 淘汰链表 */
     struct Host_ *tnext;
     struct Host_ *tprev;
     uint32_t timeout_at;
-    
+
 } Host;
 ```
 
@@ -176,18 +176,18 @@ typedef struct HostHashTable_ {
     /* 哈希桶数组 */
     Host **buckets;
     uint32_t hash_size;
-    
+
     /* 链表头尾 */
     Host *list_head;
     Host *list_tail;
-    
+
     /* 统计 */
     uint32_t host_count;
     uint32_t max_host_count;
-    
+
     /* 锁（分片锁） */
     STMtx *tbl_m;
-    
+
 } HostHashTable;
 
 // src/host.h — Host 桶
@@ -196,7 +196,7 @@ typedef struct HostBucket_ {
     Host *tail;
     STMtx m;
     uint32_t count;
-    
+
 } HostBucket;
 ```
 
@@ -211,7 +211,7 @@ typedef struct HostBucket_ {
 static inline uint32_t HostGetHash(Host *h)
 {
     uint32_t hash;
-    
+
     if (h->ip_addr.family == AF_INET) {
         /* IPv4 简单哈希 */
         hash = h->ip_addr.addrData32[0];
@@ -220,16 +220,16 @@ static inline uint32_t HostGetHash(Host *h)
         hash ^= (hash >> 13);
     } else {
         /* IPv6 哈希 */
-        hash = h->ip_addr.addrData32[0] ^ 
+        hash = h->ip_addr.addrData32[0] ^
                h->ip_addr.addrData32[1] ^
                h->ip_addr.addrData32[2] ^
                h->ip_addr.addrData32[3];
-        
+
         hash ^= (hash >> 16);
         hash = hash * 0x85ebca6b;
         hash ^= (hash >> 13);
     }
-    
+
     return hash % host_config.hash_size;
 }
 
@@ -239,13 +239,13 @@ static inline int HostCompare(Host *a, Host *b)
     if (a->ip_addr.family != b->ip_addr.family) {
         return 1;
     }
-    
+
     if (a->ip_addr.family == AF_INET) {
         return (a->ip_addr.addrData32[0] != b->ip_addr.addrData32[0]);
     } else if (a->ip_addr.family == AF_INET6) {
         return memcmp(a->ip_addr.addrData8, b->ip_addr.addrData8, 16);
     }
-    
+
     return 0;
 }
 
@@ -253,10 +253,10 @@ static inline int HostCompare(Host *a, Host *b)
 static inline Host *HostHashLookup(HostHashTable *ht, Address *ip)
 {
     uint32_t hash = HostGetHashFromIP(ip);
-    
+
     HostBucket *b = &ht->buckets[hash];
     STMtxLock(&b->m);
-    
+
     Host *h = b->head;
     while (h != NULL) {
         if (HostCompare(h, ip) == 0) {
@@ -266,7 +266,7 @@ static inline Host *HostHashLookup(HostHashTable *ht, Address *ip)
         }
         h = h->hnext;
     }
-    
+
     STMtxUnlock(&b->m);
     return NULL;
 }
@@ -283,29 +283,29 @@ static inline Host *HostHashLookup(HostHashTable *ht, Address *ip)
 Host *HostAlloc(void)
 {
     Host *h;
-    
+
     if (host_config.memcap + sizeof(Host) > host_config.memcap) {
         /* 检查内存 */
         if (SC_ATOMIC_LOAD(host_config.memcap) > host_config.memcap) {
             HostCutMemcap(sizeof(Host));
         }
     }
-    
+
     h = (Host *)SCCalloc(1, sizeof(Host));
     if (h == NULL) {
         return NULL;
     }
-    
+
     /* 初始化锁 */
     SCMutexInit(&h->m, NULL);
-    
+
     /* 初始化引用计数 */
     SC_ATOMIC_INIT(h->use_cnt);
     SC_ATOMIC_ADD(h->use_cnt, 1);
-    
+
     /* 生成 Host ID */
     h->host_id = GenerateHostId();
-    
+
     return h;
 }
 
@@ -313,26 +313,26 @@ Host *HostAlloc(void)
 static inline int HostInit(Host *h, Address *ip)
 {
     h->ip_addr = *ip;
-    
+
     struct timeval ts;
     gettimeofday(&ts, NULL);
     h->firstts = ts;
     h->ts = ts;
-    
+
     h->flags = 0;
     h->use_cnt = 1;
-    
+
     h->src_bytes = 0;
     h->dst_bytes = 0;
     h->src_pktcnt = 0;
     h->dst_pktcnt = 0;
-    
+
     h->ip_rep = NULL;
     h->geoip = NULL;
     h->host_storage = NULL;
-    
+
     h->flow_count = 0;
-    
+
     return 0;
 }
 
@@ -344,22 +344,22 @@ void HostFree(Host *h)
         SCFree(h->ip_rep);
         h->ip_rep = NULL;
     }
-    
+
     /* 清理 GeoIP */
     if (h->geoip != NULL) {
         GeoIPFree(h->geoip);
         h->geoip = NULL;
     }
-    
+
     /* 清理存储 */
     if (h->host_storage != NULL) {
         HostStorageFree(h->host_storage);
         h->host_storage = NULL;
     }
-    
+
     /* 销毁锁 */
     SCMutexDestroy(&h->m);
-    
+
     /* 释放 */
     SCFree(h);
 }
@@ -372,17 +372,17 @@ void HostFree(Host *h)
 Host *HostGetHostFromHash(Address *ip)
 {
     uint32_t hash = HostGetHashFromIP(ip);
-    
+
     HostBucket *b = &host_hash.buckets[hash];
     STMtxLock(&b->m);
-    
+
     /* 查找 */
     Host *h = HostHashLookup(&host_hash, ip);
     if (h != NULL) {
         STMtxUnlock(&b->m);
         return h;
     }
-    
+
     /* 分配新 Host */
     h = HostAlloc();
     if (h == NULL) {
@@ -394,17 +394,17 @@ Host *HostGetHostFromHash(Address *ip)
             return NULL;
         }
     }
-    
+
     /* 初始化 */
     HostInit(h, ip);
-    
+
     /* 加入哈希表 */
     HostAddToHash(h, hash);
-    
+
     host_config.host_count++;
-    
+
     STMtxUnlock(&b->m);
-    
+
     return h;
 }
 
@@ -412,19 +412,19 @@ Host *HostGetHostFromHash(Address *ip)
 static inline void HostAddToHash(Host *h, uint32_t hash)
 {
     HostBucket *b = &host_hash.buckets[hash];
-    
+
     h->hnext = b->head;
     h->hprev = NULL;
-    
+
     if (b->head != NULL) {
         b->head->hprev = h;
     }
     b->head = h;
-    
+
     if (b->tail == NULL) {
         b->tail = h;
     }
-    
+
     b->count++;
 }
 ```
@@ -440,20 +440,20 @@ static inline void HostAddToHash(Host *h, uint32_t hash)
 typedef struct HostIPReputation_ {
     /* 信誉级别（0-255，255 最危险） */
     uint8_t reputation;
-    
+
     /* 类别掩码（多个类别） */
     uint32_t categories;
-    
+
     /* 置信度（0-100） */
     uint8_t confidence;
-    
+
     /* 首次/最后见到时间 */
     struct timeval first_seen;
     struct timeval last_seen;
-    
+
     /* 关联的威胁情报源 */
     char *source;
-    
+
 } HostIPReputation;
 
 // src/host-reputation.h — 预定义类别
@@ -479,21 +479,21 @@ static int HostLoadIPReputation(Host *h)
     if (scip == NULL) {
         return 0;
     }
-    
+
     /* 分配信誉数据 */
     h->ip_rep = SCCalloc(1, sizeof(HostIPReputation));
     if (h->ip_rep == NULL) {
         return -1;
     }
-    
+
     /* 填充信誉信息 */
     h->ip_rep->reputation = scip->reputation;
     h->ip_rep->categories = scip->categories;
     h->ip_rep->confidence = scip->confidence;
     h->ip_rep->source = SCStrdup(scip->source);
-    
+
     gettimeofday(&h->ip_rep->last_seen, NULL);
-    
+
     return 0;
 }
 
@@ -510,18 +510,18 @@ static int HostIPReputationCheck(
             return 0;
         }
     }
-    
+
     /* 检查信誉级别 */
     if (h->ip_rep->reputation < min_rep) {
         return 0;
     }
-    
+
     /* 检查类别 */
-    if (category != 0 && 
+    if (category != 0 &&
         (h->ip_rep->categories & category) == 0) {
         return 0;
     }
-    
+
     return 1;
 }
 ```
@@ -537,27 +537,27 @@ static int HostIPReputationCheck(
 typedef struct HostGeoip_ {
     /* 国家代码（ISO 3166-1 alpha-2） */
     char country_code[3];
-    
+
     /* 国家名称 */
     char *country_name;
-    
+
     /* 地区代码 */
     char region[4];
-    
+
     /* 城市名称 */
     char *city;
-    
+
     /* 经纬度 */
     double latitude;
     double longitude;
-    
+
     /* 时区 */
     char *timezone;
-    
+
     /* ASN 信息 */
     uint32_t asn;
     char *asn_name;
-    
+
 } HostGeoip;
 ```
 
@@ -570,13 +570,13 @@ static HostGeoip *HostGeoipGet(Host *h)
     if (h->geoip != NULL) {
         return (HostGeoip *)h->geoip;
     }
-    
+
     /* 从 GeoIP 数据库查询 */
     h->geoip = GeoIPLookup(h->ip_addr);
     if (h->geoip == NULL) {
         return NULL;
     }
-    
+
     return (HostGeoip *)h->geoip;
 }
 
@@ -587,7 +587,7 @@ const char *HostGeoipCountryCode(Host *h)
     if (geo == NULL) {
         return NULL;
     }
-    
+
     return geo->country_code;
 }
 
@@ -598,7 +598,7 @@ uint32_t HostGeoipASN(Host *h)
     if (geo == NULL) {
         return 0;
     }
-    
+
     return geo->asn;
 }
 ```
@@ -622,7 +622,7 @@ typedef struct DetectHostbitsData_ {
     HostbitsType type;
     char *name;
     uint16_t idx;
-    
+
 } DetectHostbitsData;
 
 static int DetectHostbitsMatch(
@@ -632,23 +632,23 @@ static int DetectHostbitsMatch(
     DetectHostbitsData *hd)
 {
     HostBits *bits = HostGetHostBits(h);
-    
+
     switch (hd->type) {
         case HOSTBITS_TYPE_SET:
             HostBitSet(h, hd->idx);
             return 1;
-            
+
         case HOSTBITS_TYPE_UNSET:
             HostBitUnset(h, hd->idx);
             return 1;
-            
+
         case HOSTBITS_TYPE_ISSET:
             return HostBitIsset(h, hd->idx) ? 1 : 0;
-            
+
         case HOSTBITS_TYPE_ISNOTSET:
             return HostBitIsnotset(h, hd->idx) ? 1 : 0;
     }
-    
+
     return 0;
 }
 ```
@@ -661,7 +661,7 @@ typedef struct DetectIPRepData_ {
     uint8_t side;           // SRC/DST/BOTH
     uint8_t category;
     uint8_t min_rep;
-    
+
 } DetectIPRepData;
 
 static int DetectIPRepMatch(
@@ -671,16 +671,16 @@ static int DetectIPRepMatch(
     DetectIPRepData *rd)
 {
     Host *h = NULL;
-    
+
     switch (rd->side) {
         case DETECT_IPREP_SIDE_SRC:
             h = HostGetHostFromHash(&p->src);
             break;
-            
+
         case DETECT_IPREP_SIDE_DST:
             h = HostGetHostFromHash(&p->dst);
             break;
-            
+
         case DETECT_IPREP_SIDE_BOTH:
             /* 任一匹配即可 */
             if (HostIPReputationCheck(
@@ -695,11 +695,11 @@ static int DetectIPRepMatch(
             }
             return 0;
     }
-    
+
     if (h == NULL) {
         return 0;
     }
-    
+
     return HostIPReputationCheck(h, rd->min_rep, rd->category);
 }
 ```
@@ -745,22 +745,22 @@ static int DetectIPRepMatch(
 static void JsonHostLog(json_t *js, Host *h)
 {
     json_object_set_new(js, "ip", json_string(AddressToString(&h->ip_addr)));
-    
+
     /* 时间戳 */
     json_object_set_new(js, "first_seen", json_string(TimeAsISO(h->firstts)));
     json_object_set_new(js, "last_seen", json_string(TimeAsISO(h->ts)));
-    
+
     /* 流量统计 */
     json_object_set_new(js, "src_bytes", json_integer(h->src_bytes));
     json_object_set_new(js, "dst_bytes", json_integer(h->dst_bytes));
     json_object_set_new(js, "src_pktcnt", json_integer(h->src_pktcnt));
     json_object_set_new(js, "dst_pktcnt", json_integer(h->dst_pktcnt));
-    
+
     /* GeoIP */
     HostGeoip *geo = HostGeoipGet(h);
     if (geo != NULL) {
         json_t *geo_obj = json_object();
-        json_object_set_new(geo_obj, "country_code", 
+        json_object_set_new(geo_obj, "country_code",
                            json_string(geo->country_code));
         json_object_set_new(geo_obj, "country_name",
                            json_string(geo->country_name));
@@ -771,11 +771,11 @@ static void JsonHostLog(json_t *js, Host *h)
         json_object_set_new(geo_obj, "asn_name", json_string(geo->asn_name));
         json_object_set_new(js, "geoip", geo_obj);
     }
-    
+
     /* IP 信誉 */
     if (h->ip_rep != NULL) {
         json_t *rep_obj = json_object();
-        json_object_set_new(rep_obj, "reputation", 
+        json_object_set_new(rep_obj, "reputation",
                            json_integer(h->ip_rep->reputation));
         json_object_set_new(rep_obj, "category",
                            json_integer(h->ip_rep->categories));
@@ -800,6 +800,7 @@ Host 引擎是 Suricata IP 级别资源管理的核心：
 6. **EVE 日志**：完整的 Host 活动记录
 
 典型应用场景：
+
 - 恶意 IP 检测（结合 IP 信誉数据库）
 - 地理位置审计（合规性要求）
 - APT 追踪（长期监控特定 IP）

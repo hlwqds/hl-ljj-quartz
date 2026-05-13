@@ -1,12 +1,24 @@
 ---
 title: "Kernel Protocol Stack 深度探索 (三十)：Socket 内存管理"
 date: 2026-04-13
-tags: [linux, kernel, networking, series, sock-mem, sk-mem-allocated, skb-mem-pressure, memory-pressure, slab, vmalloc]
+tags:
+  [
+    linux,
+    kernel,
+    networking,
+    series,
+    sock-mem,
+    sk-mem-allocated,
+    skb-mem-pressure,
+    memory-pressure,
+    slab,
+    vmalloc,
+  ]
 description: "深入解析 Socket 内存管理——sk_buff 内存分配、sk_mem_under_memory_pressure、skb frag list、内存回收机制、slab allocator、vmalloc"
 ---
 
-> [!info] Kernel Protocol Stack 深度探索系列
-> 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Kernel Protocol Stack 深度探索系列 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-kernel-protocol-stack-deep-dive-ch1-skbuff|第一章：sk_buff 与数据包生命周期]]
 > 2. [[2026-04-13-kernel-protocol-stack-deep-dive-ch2-netdevice|第二章：Netdevice 与网卡抽象]]
 > 3. [[2026-04-13-kernel-protocol-stack-deep-dive-ch3-ring-buffer|第三章：Ring Buffer 与 DMA]]
@@ -43,6 +55,7 @@ description: "深入解析 Socket 内存管理——sk_buff 内存分配、sk_me
 ## 1. 概述
 
 Socket 内存管理是内核网络栈性能的关键因素。每个 socket 都需要内存用于：
+
 - 发送缓冲区：待发送数据
 - 接收缓冲区：已接收待读取数据
 - 控制结构：sk_buff 元数据、socket 对象本身
@@ -210,7 +223,7 @@ void __init skbuff_init(void)
 }
 ```
 
-### 4.3 __alloc_skb
+### 4.3 \_\_alloc_skb
 
 ```c
 // net/core/skbuff.c
@@ -333,7 +346,7 @@ int tcp_sendmsg(struct sock *sk, struct msghdr *msg, size_t size)
 {
     // 检查发送缓冲区空间
     while (size > 0) {
-        int copy = min_t(int, size, 
+        int copy = min_t(int, size,
                         min(sk->sk_sndbuf - sk->sk_wmem_queued,
                             MAX_TCP_HEADER));
 
@@ -546,13 +559,13 @@ try_to_free_pages()
 
 ## 10. 总结
 
-| 机制 | 说明 |
-|------|------|
-| sk_rcvbuf/sk_sndbuf | 用户配置的缓冲区大小 |
-| sk_rmem_alloc/sk_wmem_alloc | 实际已分配内存 |
-| sk_forward_alloc | 预分配内存 |
-| sk_mem_under_memory_pressure | 内存压力标志 |
-| skb head/cache | slab 缓存分配 |
-| vmalloc | 大 buffer 分配 |
+| 机制                         | 说明                 |
+| ---------------------------- | -------------------- |
+| sk_rcvbuf/sk_sndbuf          | 用户配置的缓冲区大小 |
+| sk_rmem_alloc/sk_wmem_alloc  | 实际已分配内存       |
+| sk_forward_alloc             | 预分配内存           |
+| sk_mem_under_memory_pressure | 内存压力标志         |
+| skb head/cache               | slab 缓存分配        |
+| vmalloc                      | 大 buffer 分配       |
 
 Socket 内存管理通过 sysctl 参数、slab 缓存、per-CPU 队列和内存压力回收机制，确保网络栈在内存受限环境下仍能稳定运行。

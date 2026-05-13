@@ -87,6 +87,7 @@ HTTP/3 is defined over QUIC v1 only.
 ## 4.6 Version Downgrade Attack Prevention
 
 The version negotiation mechanism is a potential attack surface. An on-path attacker could:
+
 1. Intercept the client's Initial packet
 2. Inject a VN packet listing only a weak/vulnerable version
 3. Client retries with the attacker's chosen version

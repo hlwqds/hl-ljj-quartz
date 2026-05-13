@@ -11,8 +11,8 @@ tags:
 description: "深入解析 Suricata 的 Lua 检测系统：lua 关键字、LuaJIT 集成、检测 API、编写自定义 Lua 检测规则、以及高级脚本技巧"
 ---
 
-> [!info] Suricata 2026 深度探索系列
-> 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Suricata 2026 深度探索系列 0. [[2026-04-15-suricata-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-15-suricata-deep-dive-ch1-overview|第一章：Suricata 概述]]
 > 2. [[2026-04-15-suricata-deep-dive-ch2-config|第二章：Suricata 配置系统]]
 > 3. [[2026-04-15-suricata-deep-dive-ch3-runmodes|第三章：Runmodes 运行模式]]
@@ -109,27 +109,27 @@ alert tcp any any -> any any (
 typedef struct DetectLuaData_ {
     /* Lua 脚本路径 */
     char *filename;                 // 脚本文件名
-    
+
     /* Lua 脚本内容（如果内联）*/
     char *script;                   // 内联脚本
     size_t script_len;              // 脚本长度
-    
+
     /* 脚本参数 */
     char *script_params;           // 参数
-    
+
     /* Lua 状态 */
     lua_State *lua_state;           // LuaJIT 虚拟机
-    
+
     /* 标志位 */
     uint8_t flags;
 #define LUA_FLAG_FILEDATA    0x01  // 检测 file-data
 #define LUA_FLAG_PAYLOAD     0x02  // 检测 payload
 #define LUA_FLAG_STREAM      0x04  // 检测 stream
 #define LUA_FLAG_HTTP_BODY   0x08  // 检测 HTTP body
-    
+
     /* 中断标志 */
     bool interrupted;               // 中断标志
-    
+
     /* 匹配结果 */
     int match_result;             // 匹配结果 (0/1)
 } DetectLuaData;
@@ -142,14 +142,14 @@ typedef struct DetectLuaData_ {
 static int ParseLua(const char *optstr, Signature *sig)
 {
     DetectLuaData *ld = SCCalloc(1, sizeof(DetectLuaData));
-    
+
     /* 解析 "lua.scriptfile:/path/to/script.lua" */
     const char *colon = strchr(optstr, ':');
     if (colon != NULL) {
         size_t key_len = colon - optstr;
         char *key = SCStrndup(optstr, key_len);
         char *value = SCStrdup(colon + 1);
-        
+
         if (strcmp(key, "lua.scriptfile") == 0) {
             ld->filename = value;
         } else if (strcmp(key, "lua.script") == 0) {
@@ -157,17 +157,17 @@ static int ParseLua(const char *optstr, Signature *sig)
         } else if (strcmp(key, "lua.scriptparams") == 0) {
             ld->script_params = value;
         }
-        
+
         SCFree(key);
     }
-    
+
     /* 设置检测标志 */
     ld->flags |= LUA_FLAG_PAYLOAD;
-    
+
     /* 添加到签名 */
     sig->lua = ld;
     sig->flags |= SIG_FLAG_LUA;
-    
+
     return 0;
 }
 ```
@@ -180,12 +180,12 @@ static int ParseLua(const char *optstr, Signature *sig)
 
 Suricata 使用 **LuaJIT** 而非标准 Lua，因为 LuaJIT 提供：
 
-| 特性 | Lua 5.1 | LuaJIT |
-| :--- | :--- | :--- |
-| **JIT 编译** | ❌ | ✅ x86/x64 ARM |
-| **执行速度** | 慢 | 快 10-50x |
-| **FFI 接口** | ❌ | ✅ C 调用 |
-| **内存占用** | 中 | 低 |
+| 特性         | Lua 5.1 | LuaJIT         |
+| :----------- | :------ | :------------- |
+| **JIT 编译** | ❌      | ✅ x86/x64 ARM |
+| **执行速度** | 慢      | 快 10-50x      |
+| **FFI 接口** | ❌      | ✅ C 调用      |
+| **内存占用** | 中      | 低             |
 
 ### 3.2 LuaJIT 初始化
 
@@ -199,13 +199,13 @@ lua_State *LuaJitInit(void)
         SCLogError("Failed to create LuaJIT state");
         return NULL;
     }
-    
+
     /* 加载基础库 */
     luaL_openlibs(L);
-    
+
     /* 注册 Suricata API */
     LuaRegisterFunctions(L);
-    
+
     return L;
 }
 
@@ -221,24 +221,24 @@ void LuaRegisterFunctions(lua_State *L)
     lua_register(L, "SCPacketSrcPort", LuaGetSrcPort);
     lua_register(L, "SCPacketDstPort", LuaGetDstPort);
     lua_register(L, "SCPacketProto", LuaGetProto);
-    
+
     /* Flow 信息 */
     lua_register(L, "SCFlowSrcIP", LuaFlowGetSrcIP);
     lua_register(L, "SCFlowDstIP", LuaFlowGetDstIP);
     lua_register(L, "SCFlowAge", LuaFlowGetAge);
     lua_register(L, "SCFlowState", LuaFlowGetState);
-    
+
     /* AppLayer 数据 */
     lua_register(L, "SCHTTPHost", LuaHTTPGetHost);
     lua_register(L, "SCHTTPUri", LuaHTTPGetUri);
     lua_register(L, "SCHTTPUserAgent", LuaHTTPGetUserAgent);
     lua_register(L, "SCHTTPMethod", LuaHTTPGetMethod);
-    
+
     /* 文件数据 */
     lua_register(L, "SCFileName", LuaFileGetName);
     lua_register(L, "SCFileSize", LuaFileGetSize);
     lua_register(L, "SCFileMd5", LuaFileGetMd5);
-    
+
     /* 输出函数 */
     lua_register(L, "SCDetect", LuaSetMatch);
     lua_register(L, "SCWarning", LuaPrintWarning);
@@ -262,16 +262,16 @@ static int LuaGetPayload(lua_State *L)
         lua_pushstring(L, "Usage: SCPacketPayload()");
         return lua_error(L);
     }
-    
+
     /* 获取当前 packet */
     Packet *p = LuaGetPacket(L);
     if (p == NULL) {
         return 0;
     }
-    
+
     /* 返回 payload */
     lua_pushlstring(L, (const char *)p->payload, p->payload_len);
-    
+
     return 1;
 }
 
@@ -282,14 +282,14 @@ static int LuaGetSrcIP(lua_State *L)
     if (p == NULL) {
         return 0;
     }
-    
+
     char ip_str[46];
     if (PKT_IS_IPV4(p)) {
         PrintInet(AF_INET, &p->src, ip_str, sizeof(ip_str));
     } else {
         PrintInet(AF_INET6, &p->src, ip_str, sizeof(ip_str));
     }
-    
+
     lua_pushstring(L, ip_str);
     return 1;
 }
@@ -305,14 +305,14 @@ static int LuaFlowGetAge(lua_State *L)
     if (f == NULL) {
         return 0;
     }
-    
+
     /* 计算 Flow 年龄 */
     struct timeval now;
     gettimeofday(&now, NULL);
-    
+
     uint64_t age = (now.tv_sec - f->lastts.tv_sec) * 1000 +
                    (now.tv_usec - f->lastts.tv_usec) / 1000;
-    
+
     lua_pushnumber(L, age);
     return 1;
 }
@@ -324,7 +324,7 @@ static int LuaFlowGetState(lua_State *L)
     if (f == NULL) {
         return 0;
     }
-    
+
     const char *state = "unknown";
     switch (f->flow_state) {
         case FLOW_STATE_NEW:
@@ -337,7 +337,7 @@ static int LuaFlowGetState(lua_State *L)
             state = "closed";
             break;
     }
-    
+
     lua_pushstring(L, state);
     return 1;
 }
@@ -353,18 +353,18 @@ static int LuaHTTPGetUri(lua_State *L)
     if (htp_state == NULL) {
         return 0;
     }
-    
+
     htp_tx_t *tx = htp_state->tx;
     if (tx == NULL) {
         return 0;
     }
-    
+
     /* 获取 URI */
     bstr *uri = tx->request_uri;
     if (uri == NULL) {
         return 0;
     }
-    
+
     lua_pushlstring(L, bstr_ptr(uri), bstr_len(uri));
     return 1;
 }
@@ -376,13 +376,13 @@ static int LuaHTTPGetHost(lua_State *L)
     if (htp_state == NULL) {
         return 0;
     }
-    
+
     htp_tx_t *tx = htp_state->tx;
     if (tx == NULL || tx->request_hostname == NULL) {
         return 0;
     }
-    
-    lua_pushlstring(L, 
+
+    lua_pushlstring(L,
                     bstr_ptr(tx->request_hostname),
                     bstr_len(tx->request_hostname));
     return 1;
@@ -409,17 +409,17 @@ function match(args)
     if uri == nil then
         return 0
     end
-    
+
     -- 获取 HTTP Host
     local host = SCPacketHttpHost()
-    
+
     -- 检测可疑 URI 模式
     if string.find(uri, "/admin") then
         if host and string.find(host, "suspicious.com") then
             return 1
         end
     end
-    
+
     return 0
 end
 ```
@@ -433,11 +433,11 @@ function match(args)
     -- 获取 DNS 查询类型
     local dns_type = SCDNSQueryType()
     local dns_name = SCDNSQueryName()
-    
+
     if dns_name == nil then
         return 0
     end
-    
+
     -- 检测 DNS 查询类型
     if dns_type == "A" then
         -- 检测可疑域名的 DNS 查询
@@ -451,7 +451,7 @@ function match(args)
             return 1
         end
     end
-    
+
     return 0
 end
 ```
@@ -473,23 +473,23 @@ function match(args)
     if md5 == nil then
         return 0
     end
-    
+
     -- 检查白名单
     if whitelist[md5] then
         return 0
     end
-    
+
     -- 检测已知的恶意哈希
     local malware_hashes = {
         ["ac4c7d2e15b1f1c1c1c1c1c1c1c1c1c1"] = "Ransomware payload",
         ["b1a2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"] = "Backdoor trojan",
     }
-    
+
     if malware_hashes[md5] then
         print("Malware detected: " .. malware_hashes[md5])
         return 1
     end
-    
+
     return 0
 end
 ```
@@ -504,11 +504,11 @@ function match(args)
     local cert_subject = SCTLSCertSubject()
     local cert_issuer = SCTLSCertIssuer()
     local cert_fingerprint = SCTLSCertFingerprint()
-    
+
     if cert_subject == nil then
         return 0
     end
-    
+
     -- 检测自签名证书
     if cert_subject == cert_issuer then
         -- 自签名证书可能是可疑的
@@ -517,16 +517,16 @@ function match(args)
             return 1
         end
     end
-    
+
     -- 检测已知的不良证书
     local bad_certs = {
         ["11:22:33:44:55:66:77:88:99:AA:BB:CC:DD:EE:FF:00"] = "Compromised CA",
     }
-    
+
     if bad_certs[cert_fingerprint] then
         return 1
     end
-    
+
     return 0
 end
 ```
@@ -540,11 +540,11 @@ function match(args)
     -- 获取完整 payload
     local payload = SCPacketPayload()
     local payload_len = SCPacketPayloadLen()
-    
+
     if payload_len < 8 then
         return 0
     end
-    
+
     -- 解析自定义协议头
     -- 格式: [1字节命令][2字节长度][4字节序列号][数据]
     local cmd = string.byte(payload, 1)
@@ -553,7 +553,7 @@ function match(args)
                 string.byte(payload, 5) * 65536 +
                 string.byte(payload, 6) * 256 +
                 string.byte(payload, 7)
-    
+
     -- 检测命令类型
     if cmd == 0x01 then
         -- 心跳包
@@ -569,7 +569,7 @@ function match(args)
         -- 控制包
         return 1  -- 可能是恶意控制流量
     end
-    
+
     return 0
 end
 ```
@@ -627,14 +627,14 @@ static int DetectLuaMatch(DetectEngineThreadCtx *det_ctx,
     if (ld == NULL) {
         return 0;
     }
-    
+
     /* 加载 Lua 脚本 */
     if (ld->lua_state == NULL) {
         ld->lua_state = LuaJitInit();
         if (ld->lua_state == NULL) {
             return 0;
         }
-        
+
         /* 加载脚本 */
         if (ld->filename != NULL) {
             if (luaL_dofile(ld->lua_state, ld->filename) != 0) {
@@ -649,7 +649,7 @@ static int DetectLuaMatch(DetectEngineThreadCtx *det_ctx,
                 return 0;
             }
         }
-        
+
         /* 调用 init 函数 */
         lua_getglobal(ld->lua_state, "init");
         if (lua_isfunction(ld->lua_state, -1)) {
@@ -657,30 +657,30 @@ static int DetectLuaMatch(DetectEngineThreadCtx *det_ctx,
             lua_pop(ld->lua_state, 1);
         }
     }
-    
+
     /* 设置 Packet/Flow 上下文 */
     LuaSetPacket(ld->lua_state, p);
     if (p->flow != NULL) {
         LuaSetFlow(ld->lua_state, p->flow);
     }
-    
+
     /* 调用 match 函数 */
     lua_getglobal(ld->lua_state, "match");
     if (!lua_isfunction(ld->lua_state, -1)) {
         SCLogError("Lua script missing match function");
         return 0;
     }
-    
+
     /* 执行 match */
     if (lua_pcall(ld->lua_state, 0, 1, 0) != 0) {
         SCLogError("Lua match error: %s", lua_tostring(ld->lua_state, -1));
         return 0;
     }
-    
+
     /* 获取返回值 */
     int result = lua_tointeger(ld->lua_state, -1);
     lua_pop(ld->lua_state, 1);
-    
+
     return result;
 }
 ```
@@ -697,14 +697,14 @@ detect:
   lua:
     # 是否启用 Lua 检测
     enabled: yes
-    
+
     # Lua 脚本目录
     scripts-dir: /etc/suricata/lua/
-    
+
     # 最大执行时间 (毫秒)
     # 防止恶意脚本死循环
     max-timeout: 100
-    
+
     # 最大内存使用 (MB)
     # 防止内存泄漏
     max-memory: 64
@@ -806,12 +806,12 @@ function match(args)
     print("Packet len: " .. tostring(SCPacketPayloadLen()))
     print("Src IP: " .. tostring(SCPacketSrcIP()))
     print("Dst Port: " .. tostring(SCPacketDstPort()))
-    
+
     local payload = SCPacketPayload()
     if payload then
         print("Payload (hex): " .. tohex(payload))
     end
-    
+
     return 0
 end
 
@@ -824,12 +824,12 @@ function safe_match(args)
             error("Payload too large")
         end
     end)
-    
+
     if not ok then
         print("Error in Lua script: " .. tostring(err))
         return 0
     end
-    
+
     return 1
 end
 ```

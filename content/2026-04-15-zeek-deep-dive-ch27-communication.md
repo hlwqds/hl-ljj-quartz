@@ -13,14 +13,8 @@ tags:
 description: "深入解析 Zeek 集群通信——ZeekControl 协议、Broker 通信框架、发布订阅、RPC 调用、消息序列化"
 ---
 
-> [!info] Zeek 2026 深度探索系列
-> 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
-> ...
-> 25. [[2026-04-15-zeek-deep-dive-ch25-cluster-arch|第二十五章：集群架构]]
-> 26. [[2026-04-15-zeek-deep-dive-ch26-cluster-config|第二十六章：集群配置]]
-> 27. **第二十七章：通信**
-> 28. [[2026-04-15-zeek-deep-dive-ch28-load-balancing|第二十八章：负载均衡]]
-> 29. [[2026-04-15-zeek-deep-dive-ch29-packet-loss|第二十九章：丢包处理]]
+> [!info] Zeek 2026 深度探索系列 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
+> ... 25. [[2026-04-15-zeek-deep-dive-ch25-cluster-arch|第二十五章：集群架构]] 26. [[2026-04-15-zeek-deep-dive-ch26-cluster-config|第二十六章：集群配置]] 27. **第二十七章：通信** 28. [[2026-04-15-zeek-deep-dive-ch28-load-balancing|第二十八章：负载均衡]] 29. [[2026-04-15-zeek-deep-dive-ch29-packet-loss|第二十九章：丢包处理]]
 
 ---
 
@@ -57,12 +51,12 @@ Zeek 集群使用 **Broker** 作为统一的通信中间件，实现节点间的
 
 ### 1.1 通信模式
 
-| 模式 | 用途 | 示例 |
-|:---|:---|:---|
-| **发布/订阅** | 事件广播 | Worker 发布事件，Manager 订阅 |
-| **RPC** | 请求/响应 | Manager 查询节点状态 |
-| **数据存储** | 键值对共享 | 同步连接表、配置 |
-| **点对点** | 直接消息 | 节点间直接通信 |
+| 模式          | 用途       | 示例                          |
+| :------------ | :--------- | :---------------------------- |
+| **发布/订阅** | 事件广播   | Worker 发布事件，Manager 订阅 |
+| **RPC**       | 请求/响应  | Manager 查询节点状态          |
+| **数据存储**  | 键值对共享 | 同步连接表、配置              |
+| **点对点**    | 直接消息   | 节点间直接通信                |
 
 ---
 
@@ -1002,14 +996,14 @@ void BrokerComm::EnableTLS(const SSLConfig& config)
 
 本章介绍了 Zeek 集群通信的核心内容：
 
-| 组件 | 功能 | 关键源码 |
-|:---|:---|:---|
-| **Broker Endpoint** | 通信端点管理 | `zeek/broker/Manager.cc` |
-| **Pub/Sub** | 发布订阅消息 | `zeek/broker/Comm.cc` |
-| **RPC** | 远程过程调用 | `zeek/broker/RPC.cc` |
-| **Data Store** | 分布式键值存储 | `zeek/broker/Store.cc` |
-| **Peer Manager** | 节点发现与连接 | `zeek/broker/Peer.cc` |
-| **ZeekControl** | 控制协议 | `zeek/control/Control.cc` |
+| 组件                | 功能           | 关键源码                  |
+| :------------------ | :------------- | :------------------------ |
+| **Broker Endpoint** | 通信端点管理   | `zeek/broker/Manager.cc`  |
+| **Pub/Sub**         | 发布订阅消息   | `zeek/broker/Comm.cc`     |
+| **RPC**             | 远程过程调用   | `zeek/broker/RPC.cc`      |
+| **Data Store**      | 分布式键值存储 | `zeek/broker/Store.cc`    |
+| **Peer Manager**    | 节点发现与连接 | `zeek/broker/Peer.cc`     |
+| **ZeekControl**     | 控制协议       | `zeek/control/Control.cc` |
 
 下一章我们将讨论**负载均衡**，包括 PF_RING、AF_PACKET 负载均衡的实现以及 Flow 哈希算法。
 

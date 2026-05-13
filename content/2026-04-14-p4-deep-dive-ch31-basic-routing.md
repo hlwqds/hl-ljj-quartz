@@ -5,16 +5,16 @@ tags: [p4, series, routing, l3, rib, fib, lpm, basic-routing, p4-16]
 description: "P4 基础路由编程深度解析——IPv4/IPv6 L3 转发、RIB/FIB 分离架构、Longest Prefix Match (LPM) 表查找、默认路由、TTL 处理、ECMP 哈希基础"
 ---
 
-> [!info] P4 深度探索系列
-> 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+> [!info] P4 深度探索系列 0. [[2026-04-14-p4-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-14-p4-deep-dive-ch1-p4-overview|第一章：P4 概述——诞生背景与协议无关包处理]]
 > 2. [[2026-04-14-p4-deep-dive-ch2-p4-architecture|第二章：P4 架构模型——PSA/V1Model、Ingress/Egress]]
 > 3. [[2026-04-14-p4-deep-dive-ch3-p4-vs-ebpf|第三章：P4 vs eBPF——适用场景与硬件/软件对比]]
 > 4. [[2026-04-14-p4-deep-dive-ch4-p4-program|第四章：P4 程序结构——Header/Parser/Control/Table]]
 > 5. [[2026-04-14-p4-deep-dive-ch5-p4-types|第五章：P4 类型系统——bit/varbit/enum/header/struct]]
-> ...
-> 30. [[2026-04-14-p4-deep-dive-ch30-p4-control-plane-advanced|第三十章：P4 控制面高级主题]]
-> 31. **第三十一章：P4 基础路由编程——L3 转发、RIB/FIB、Longest Prefix Match**
+>    ...
+> 6. [[2026-04-14-p4-deep-dive-ch30-p4-control-plane-advanced|第三十章：P4 控制面高级主题]]
+> 7. **第三十一章：P4 基础路由编程——L3 转发、RIB/FIB、Longest Prefix Match**
 
 ---
 
@@ -34,17 +34,17 @@ description: "P4 基础路由编程深度解析——IPv4/IPv6 L3 转发、RIB/F
        |                |                 |                |
        |            Extract             LPM              Send to
        |           dstAddr            Match              next hop
-       |                                                       
+       |
   [Parse Ethernet]    [Extract IPv4 header fields]    [Rewrite & Output]
 ```
 
 ### 1.1 RIB vs FIB
 
-|| 概念 | 说明 |
-|------|------|
-| **RIB (Routing Information Base)** | 控制面维护的路由信息库，包含所有路由策略、距离向量等 |
-| **FIB (Forwarding Information Base)** | 数据面使用的转发表，是 RIB 的子集，已优化为硬件查找格式 |
-| **分离架构** | 控制面计算 RIB，通过 P4 Runtime 写入 FIB，数据面只做快速查表 |
+|                                       | 概念                                                         | 说明 |
+| ------------------------------------- | ------------------------------------------------------------ | ---- |
+| **RIB (Routing Information Base)**    | 控制面维护的路由信息库，包含所有路由策略、距离向量等         |
+| **FIB (Forwarding Information Base)** | 数据面使用的转发表，是 RIB 的子集，已优化为硬件查找格式      |
+| **分离架构**                          | 控制面计算 RIB，通过 P4 Runtime 写入 FIB，数据面只做快速查表 |
 
 ```
 RIB/FIB 分离架构:
@@ -72,12 +72,12 @@ RIB/FIB 分离架构:
 
 传统精确匹配 (Exact Match) 只能匹配完整 key（如 MAC 地址），而路由查找需要找到**最长前缀匹配**：
 
-| 目的地址 | 路由表条目 | 匹配结果 |
-|---------|-----------|---------|
-| `10.1.2.3` | `10.1.0.0/16` | ✅ 匹配 (匹配 16 位) |
-| `10.1.2.3` | `10.1.2.0/24` | ✅ 匹配 (匹配 24 位，更优先) |
-| `10.1.2.3` | `10.2.0.0/16` | ❌ 不匹配 |
-| `10.1.2.3` | `0.0.0.0/0` | ✅ 匹配 (默认路由，匹配 0 位) |
+| 目的地址   | 路由表条目    | 匹配结果                      |
+| ---------- | ------------- | ----------------------------- |
+| `10.1.2.3` | `10.1.0.0/16` | ✅ 匹配 (匹配 16 位)          |
+| `10.1.2.3` | `10.1.2.0/24` | ✅ 匹配 (匹配 24 位，更优先)  |
+| `10.1.2.3` | `10.2.0.0/16` | ❌ 不匹配                     |
+| `10.1.2.3` | `0.0.0.0/0`   | ✅ 匹配 (默认路由，匹配 0 位) |
 
 **最长匹配原则**：选择前缀长度最长的路由条目。
 
@@ -478,12 +478,12 @@ entry.action.params.nexthop_mac = "00:11:22:33:44:55";
 
 ## 8. 常见问题与排查
 
-| 问题 | 原因 | 解决方案 |
-|------|------|---------|
-| 路由命中但转发失败 | 下一跳 MAC 未配置 | 检查 nexthop 表 |
-| 丢包率高 | ACL 规则覆盖 | 检查 ACL 表顺序 |
-| LPM 表满 | 路由数量超限 | 启用聚合路由/默认路由 |
-| TTL 不递减 | Parser 未提取 TTL | 检查 Parser 逻辑 |
+| 问题               | 原因              | 解决方案              |
+| ------------------ | ----------------- | --------------------- |
+| 路由命中但转发失败 | 下一跳 MAC 未配置 | 检查 nexthop 表       |
+| 丢包率高           | ACL 规则覆盖      | 检查 ACL 表顺序       |
+| LPM 表满           | 路由数量超限      | 启用聚合路由/默认路由 |
+| TTL 不递减         | Parser 未提取 TTL | 检查 Parser 逻辑      |
 
 ---
 

@@ -9,8 +9,8 @@ tags:
   - bpf-token
 ---
 
-> [!info] eBPF 2026 深度探索系列
-> 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+> [!info] eBPF 2026 深度探索系列 0. [[2026-04-08-ebpf-comprehensive-learning-roadmap|全栈学习路径总览]]
+>
 > 1. [[2026-04-08-ebpf-deep-dive-ch1-registers-and-instructions|第一章：寄存器与指令集]]
 > 2. [[2026-04-08-ebpf-deep-dive-ch1-5-function-calls|第一.五章：四种函数调用与动态内存]]
 > 3. [[2026-04-08-ebpf-deep-dive-ch1-6-the-verifier|第一.六章：验证器 (Verifier) 的底层逻辑]]
@@ -62,6 +62,7 @@ tags:
 > 49. [[2026-04-09-ebpf-deep-dive-ch40-network-protocols-deep-dive|第四十章：网络协议深度解析——TCP/UDP/QUIC 的 eBPF 视角]]
 > 50. [[2026-04-09-ebpf-deep-dive-ch41-memory-safety-and-vulnerabilities|第四十一章：eBPF 内存安全与漏洞分析]]
 > 51. [[2026-04-09-ebpf-deep-dive-ch42-service-mesh-integration|第四十二章：eBPF 与 Service Mesh 深度集成]]
+
 ---
 
 ## 1. 概述：告别 Root 时代
@@ -108,12 +109,12 @@ Linux 5.8（2020 年）引入了 `CAP_BPF`，这是 eBPF 权限拆分的里程�
 
 **`CAP_BPF` 的核心权限范围**：
 
-| 权限项 | 说明 | 典型场景 |
-|--------|------|----------|
-| 加载 BPF 程序 | 允许 `bpf(BPF_PROG_LOAD)` 系统调用 | 所有类型的 BPF 程序加载 |
-| 创建 BPF Map | 允许 `bpf(BPF_MAP_CREATE)` 系统调用 | 数据面配置存储 |
-| BPF Observe | 允许使用 bpf_probe_read 等观测类 helper | Tracing 程序的核心能力 |
-| 使用 BTF | 访问内核 BTF 信息 | CO-RE 程序的运行基础 |
+| 权限项        | 说明                                    | 典型场景                |
+| ------------- | --------------------------------------- | ----------------------- |
+| 加载 BPF 程序 | 允许 `bpf(BPF_PROG_LOAD)` 系统调用      | 所有类型的 BPF 程序加载 |
+| 创建 BPF Map  | 允许 `bpf(BPF_MAP_CREATE)` 系统调用     | 数据面配置存储          |
+| BPF Observe   | 允许使用 bpf_probe_read 等观测类 helper | Tracing 程序的核心能力  |
+| 使用 BTF      | 访问内核 BTF 信息                       | CO-RE 程序的运行基础    |
 
 ### 2.3 权限决策流程
 
@@ -141,13 +142,13 @@ flowchart TD
 
 对于可观测性场景，Linux 5.8 引入了 `CAP_PERFMON` 作为 `CAP_SYS_ADMIN` 的替代。其权限矩阵如下：
 
-| 场景 | 旧方案 | 新方案（最小特权） |
-|------|--------|-------------------|
-| 加载 XDP 程序 | `CAP_SYS_ADMIN` | `CAP_BPF` + `CAP_NET_ADMIN` |
-| 加载 kprobe 程序 | `CAP_SYS_ADMIN` | `CAP_BPF` + `CAP_PERFMON` |
-| 加载 LSM 钩子 | `CAP_SYS_ADMIN` | `CAP_BPF` + `CAP_MAC_ADMIN` |
-| 加载 cgroup 程序 | `CAP_SYS_ADMIN` | `CAP_BPF` |
-| 创建基本 Map | `CAP_SYS_ADMIN` | `CAP_BPF` |
+| 场景             | 旧方案          | 新方案（最小特权）          |
+| ---------------- | --------------- | --------------------------- |
+| 加载 XDP 程序    | `CAP_SYS_ADMIN` | `CAP_BPF` + `CAP_NET_ADMIN` |
+| 加载 kprobe 程序 | `CAP_SYS_ADMIN` | `CAP_BPF` + `CAP_PERFMON`   |
+| 加载 LSM 钩子    | `CAP_SYS_ADMIN` | `CAP_BPF` + `CAP_MAC_ADMIN` |
+| 加载 cgroup 程序 | `CAP_SYS_ADMIN` | `CAP_BPF`                   |
+| 创建基本 Map     | `CAP_SYS_ADMIN` | `CAP_BPF`                   |
 
 > [!tip] 实践建议
 > 在部署 eBPF 程序时，**永远不要使用 `CAP_SYS_ADMIN`**。即使是测试环境，也应该使用对应的细分能力组合，以便在开发阶段就暴露出潜在的权限越界问题。
@@ -193,12 +194,14 @@ graph TB
 **CAP_BPF**：这是 eBPF 的"地基能力"。拥有它意味着进程可以通过验证器的基本检查，加载安全的 BPF 字节码。但仅凭 `CAP_BPF` 无法挂载到任何需要额外权限的钩子点。
 
 **CAP_NET_ADMIN**：控制网络命名空间级别的操作。对于 eBPF 而言，它授权程序挂载到：
+
 - XDP（eXpress Data Path）
 - TC（Traffic Control）ingress/egress
 - Socket filter 和 sock_ops
 - cgroup 网络分类器
 
 **CAP_PERFMON**：性能监控专用能力。覆盖：
+
 - kprobe / kretprobe
 - fentry / fexit
 - tracepoint
@@ -251,14 +254,14 @@ sudo sysctl -w kernel.unprivileged_bpf_disabled=2
 
 ### 4.2 非特权 BPF 的限制范围
 
-| 限制项 | 说明 | 原因 |
-|--------|------|------|
-| 可用 Helper 函数 | 仅限安全子集（约 30 个） | 防止通过 helper 绕过安全检查 |
-| 程序类型 | 仅限 `BPF_PROG_TYPE_SOCKET_FILTER`、`BPF_PROG_TYPE_CGROUP_SKB` | 限制程序可挂载的钩子 |
-| Map 类型 | 仅限 `BPF_MAP_TYPE_HASH`、`BPF_MAP_TYPE_ARRAY` 等基础类型 | 防止使用 per-CPU Map 泄露内核数据 |
-| 指针操作 | 禁止 `bpf_probe_read_kernel()` | 防止读取内核内存 |
-| 字节码大小 | 受 `bpf_max_insns` 限制 | 防止 DoS 攻击（验证器资源耗尽） |
-| 尾调用 | 限制尾调用深度 | 防止栈溢出 |
+| 限制项           | 说明                                                           | 原因                              |
+| ---------------- | -------------------------------------------------------------- | --------------------------------- |
+| 可用 Helper 函数 | 仅限安全子集（约 30 个）                                       | 防止通过 helper 绕过安全检查      |
+| 程序类型         | 仅限 `BPF_PROG_TYPE_SOCKET_FILTER`、`BPF_PROG_TYPE_CGROUP_SKB` | 限制程序可挂载的钩子              |
+| Map 类型         | 仅限 `BPF_MAP_TYPE_HASH`、`BPF_MAP_TYPE_ARRAY` 等基础类型      | 防止使用 per-CPU Map 泄露内核数据 |
+| 指针操作         | 禁止 `bpf_probe_read_kernel()`                                 | 防止读取内核内存                  |
+| 字节码大小       | 受 `bpf_max_insns` 限制                                        | 防止 DoS 攻击（验证器资源耗尽）   |
+| 尾调用           | 限制尾调用深度                                                 | 防止栈溢出                        |
 
 ### 4.3 非特权 BPF 的典型应用场景
 
@@ -329,6 +332,7 @@ auditctl -a always,exit -F arch=b64 -S bpf -F auid>=1000 -F auid!=4294967295 -k 
 - **功能性需求**：容器内的服务（如 Cilium、Istio sidecar）需要加载 eBPF 程序
 
 传统的解决方案存在明显缺陷：
+
 - 授予容器完整 `CAP_BPF`：违反最小特权原则，容器可能加载 Tracing 程序窃取宿主机信息
 - 在宿主机侧代为加载：增加架构复杂度，破坏了 Pod 的自治性
 
@@ -467,6 +471,7 @@ spec:
 Landlock 是 Linux 5.13 引入的沙箱机制，它允许任何进程（无需特殊能力）为自己创建一个受限的执行环境。Landlock 通过**文件系统访问规则**和**网络访问规则**来限制进程的能力。
 
 与传统沙箱（如 seccomp-bpf）不同，Landlock 的关键优势在于：
+
 - **无需特权**：任何进程都可以使用
 - **声明式策略**：通过规则描述"允许做什么"，而非"禁止做什么"
 - **不可逆转**：一旦激活，无法被同一进程解除（防止提权后绕过）
@@ -542,12 +547,12 @@ graph LR
 
 **防御层级说明**：
 
-| 层级 | 技术 | 保护范围 | 可被谁部署 |
-|------|------|----------|-----------|
-| L1：网络入口 | XDP | 包过滤、DDoS 防御 | 宿主机特权进程 |
-| L2：流量控制 | TC | 带宽限制、流量整形 | 宿主机或持有 Token 的容器 |
-| L3：系统调用 | LSM BPF | 文件访问、进程创建审计 | 宿主机特权进程 |
-| L4：进程沙箱 | Landlock | 文件系统/网络访问限制 | 应用自身（无需特权） |
+| 层级         | 技术     | 保护范围               | 可被谁部署                |
+| ------------ | -------- | ---------------------- | ------------------------- |
+| L1：网络入口 | XDP      | 包过滤、DDoS 防御      | 宿主机特权进程            |
+| L2：流量控制 | TC       | 带宽限制、流量整形     | 宿主机或持有 Token 的容器 |
+| L3：系统调用 | LSM BPF  | 文件访问、进程创建审计 | 宿主机特权进程            |
+| L4：进程沙箱 | Landlock | 文件系统/网络访问限制  | 应用自身（无需特权）      |
 
 ---
 
@@ -790,6 +795,7 @@ int monitor_bpf_syscalls(struct trace_event_raw_sys_enter *ctx) {
 ### Q3: 非特权 BPF 是否存在安全风险？
 
 **存在，但可控。** 非特权 BPF 的主要风险在于：
+
 - **验证器资源消耗**：恶意用户可以通过反复提交复杂的 BPF 字节码来消耗内核验证器的 CPU 时间。内核通过 `bpf_max_insns` 和速率限制来缓解此风险。
 - **信息泄露**：即使在受限的 helper 集合中，某些组合仍可能泄露内核内存布局信息（如通过 `bpf_get_current_task()` 获取 task_struct 地址）。建议在高安全环境设置 `unprivileged_bpf_disabled=2`。
 
@@ -823,6 +829,7 @@ bpftool map list -j | jq '.[].id'
 ### Q6: eBPF 安全机制对性能的影响有多大？
 
 **影响极小，通常在 1% 以内。** 具体分析：
+
 - **权限检查**：`capable()` 调用是 O(1) 的位测试操作，开销可忽略。
 - **BPF Token 验证**：在程序加载时进行一次性验证，不影响运行时性能。
 - **LSM BPF 审计**：每个 BPF 程序加载时会触发一次审计程序执行，开销在微秒级。

@@ -98,14 +98,14 @@ sysctl -w net.ipv4.tcp_slow_start_after_id=1
 
 ### 3.1 连接级参数
 
-| 参数 | 默认值 | 调优建议 | 适用场景 |
-|------|--------|----------|----------|
-| `initial_window` | 10 * max_datagram_size | 10-50 | 高带宽延迟网络 |
-| `max_window` | 65536 * max_datagram_size | 更大的值 | 高吞吐量 |
-| `ack_delay_exponent` | 3 | 0-7 | 精确 vs 带宽节省 |
-| `max_ack_delay` | 25ms | 动态调整 | 移动网络 |
-| `active_connection_id_limit` | 2 | 5-10 | 连接迁移频繁 |
-| `enable_0rtt` | true | true | 短连接重复访问 |
+| 参数                         | 默认值                     | 调优建议 | 适用场景         |
+| ---------------------------- | -------------------------- | -------- | ---------------- |
+| `initial_window`             | 10 \* max_datagram_size    | 10-50    | 高带宽延迟网络   |
+| `max_window`                 | 65536 \* max_datagram_size | 更大的值 | 高吞吐量         |
+| `ack_delay_exponent`         | 3                          | 0-7      | 精确 vs 带宽节省 |
+| `max_ack_delay`              | 25ms                       | 动态调整 | 移动网络         |
+| `active_connection_id_limit` | 2                          | 5-10     | 连接迁移频繁     |
+| `enable_0rtt`                | true                       | true     | 短连接重复访问   |
 
 ### 3.2 拥塞控制参数调优
 
@@ -235,13 +235,13 @@ loss_detection = {
 
 ### 5.2 丢包场景优化矩阵
 
-| 丢包比例 | 推荐策略 | 参数调整 |
-|----------|----------|----------|
-| < 0.1% | 标准恢复 | 默认参数 |
-| 0.1% - 1% | 启用 TLP | tlp_retransmit=True |
-| 1% - 5% | 切换到 Cobra | use_cobra=True |
-| > 5% | 切换到 BBR | congestion_control=bbr |
-| 移动网络 | 自适应 | max_ack_delay 动态调整 |
+| 丢包比例  | 推荐策略     | 参数调整               |
+| --------- | ------------ | ---------------------- |
+| < 0.1%    | 标准恢复     | 默认参数               |
+| 0.1% - 1% | 启用 TLP     | tlp_retransmit=True    |
+| 1% - 5%   | 切换到 Cobra | use_cobra=True         |
+| > 5%      | 切换到 BBR   | congestion_control=bbr |
+| 移动网络  | 自适应       | max_ack_delay 动态调整 |
 
 ### 5.3 丢包率与吞吐量关系
 
@@ -270,11 +270,13 @@ zero_rtt_config = {
 ```
 
 **适用场景：**
+
 - 重复连接（CDN 场景）
 - 短连接微服务
 - 需要快速首字节的场景
 
 **避免场景：**
+
 - 首次连接
 - 安全敏感场景
 - 需要前向保密的连接
@@ -458,14 +460,15 @@ quic.rtt_var                        # RTT 方差
 
 QUIC 性能调优是一个系统性工程，需要从内核到应用的多层配合：
 
-| 层次 | 关键调优点 |
-|------|-----------|
-| 内核层 | UDP buffer、GRO/GSO、拥塞控制算法 |
+| 层次   | 关键调优点                          |
+| ------ | ----------------------------------- |
+| 内核层 | UDP buffer、GRO/GSO、拥塞控制算法   |
 | 传输层 | 拥塞控制参数、pacing_rate、ACK 频率 |
-| TLS 层 | 会话复用、0-RTT 策略 |
-| 应用层 | Stream 调度、连接管理 |
+| TLS 层 | 会话复用、0-RTT 策略                |
+| 应用层 | Stream 调度、连接管理               |
 
 **最佳实践**：
+
 1. 先建立基线，再逐步调优
 2. 优先调整影响最大的参数（80/20 法则）
 3. 在与生产环境相似的网络条件下测试

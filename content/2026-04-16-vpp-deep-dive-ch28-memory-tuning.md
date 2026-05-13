@@ -39,12 +39,12 @@ description: "深入解析 VPP Buffer 与 Memory 调优：heap 配置、cache �
 
 ### 1.2 Memory 类型
 
-| 类型 | 用途 | 分配方式 | 特点 |
-|------|------|----------|------|
-| **Buffer Pool** | 包数据存储 | DPDK mbuf | 固定大小，高性能 |
-| **Heap** | 动态分配 | glib | 可变大小，碎片管理 |
-| **Stats Segment** | 统计数据 | 共享内存 | 进程间共享 |
-| **API Segment** | API 消息 | 共享内存 | 进程间通信 |
+| 类型              | 用途       | 分配方式  | 特点               |
+| ----------------- | ---------- | --------- | ------------------ |
+| **Buffer Pool**   | 包数据存储 | DPDK mbuf | 固定大小，高性能   |
+| **Heap**          | 动态分配   | glib      | 可变大小，碎片管理 |
+| **Stats Segment** | 统计数据   | 共享内存  | 进程间共享         |
+| **API Segment**   | API 消息   | 共享内存  | 进程间通信         |
 
 ### 1.3 Hugepage 优势
 
@@ -186,11 +186,11 @@ vlib_buffer_free (vlib_main_t *vm, u32 *buffers, u32 n_buffers)
 # startup.conf 中的 mempool 配置
 dpdk {
     log_level debug
-    
+
     # Mempool cache size
     mbuf_pool_size 262144
     mbuf_cache_size 256
-    
+
     # 启用内存池跟踪
     trace heap
 }
@@ -238,7 +238,7 @@ create_numa_pool (u32 socket_id, u32 pool_size, u32 buffer_size)
         .buffer_size = buffer_size,
         .flags = MP_MAP_HUGE_PAGE | MP_CACHE_SZ,
     };
-    
+
     return mbuf_pool_create(&args);
 }
 
@@ -255,7 +255,7 @@ void
 configure_multi_socket_pools (vlib_main_t *vm)
 {
     u32 num_sockets = sysconf(_SC_NPROCESSORS_ONLN);
-    
+
     for (u32 s = 0; s < num_sockets; s++) {
         // 每个 socket 创建独立内存池
         vm->mempools_by_socket[s] = create_numa_pool(
@@ -287,7 +287,7 @@ buffer_cache_alloc (thread_local_buffer_cache_t *cache)
         // 从全局池补充
         refill_cache(cache, 256);
     }
-    
+
     return cache->cached_buffers[--cache->cache_len];
 }
 
@@ -298,7 +298,7 @@ buffer_cache_free (thread_local_buffer_cache_t *cache, u32 buffer_index)
         // 释放到全局池
         flush_cache(cache);
     }
-    
+
     cache->cached_buffers[cache->cache_len++] = buffer_index;
 }
 
@@ -309,7 +309,7 @@ buffer_cache_alloc_multi (thread_local_buffer_cache_t *cache, u32 n)
     while (cache->cache_len < n) {
         refill_cache(cache, 256);
     }
-    
+
     u32 *indices = &cache->cached_buffers[cache->cache_len - n];
     cache->cache_len -= n;
     return indices;
@@ -456,12 +456,12 @@ dpdk {
 
 ### 5.2 Cache Miss 类型
 
-| 类型 | 原因 | 影响 | 解决方法 |
-|------|------|------|----------|
-| **Compulsory** | 首次访问 | 无法避免 | 预取 |
-| **Capacity** | 工作集 > cache | 高 | 增加 cache/减少工作集 |
-| **Conflict** | hash 冲突 | 中 | 调整数据布局 |
-| **Coherence** | 多核一致 | 低 | 使用私有数据 |
+| 类型           | 原因           | 影响     | 解决方法              |
+| -------------- | -------------- | -------- | --------------------- |
+| **Compulsory** | 首次访问       | 无法避免 | 预取                  |
+| **Capacity**   | 工作集 > cache | 高       | 增加 cache/减少工作集 |
+| **Conflict**   | hash 冲突      | 中       | 调整数据布局          |
+| **Coherence**  | 多核一致       | 低       | 使用私有数据          |
 
 ### 5.3 Buffer 布局优化
 
@@ -516,7 +516,7 @@ always_inline void
 process_with_prefetch (vlib_main_t *vm, vlib_buffer_t **buffers, u32 n)
 {
     u32 i;
-    
+
     // Prefetch 接下来要处理的 buffer
     for (i = 0; i < n - 4; i += 4) {
         // 预取 buffer 元数据到 L1
@@ -524,14 +524,14 @@ process_with_prefetch (vlib_main_t *vm, vlib_buffer_t **buffers, u32 n)
         // 预取包数据到 L2
         prefetch_L2(buffer_data(buffers[i + 4]));
     }
-    
+
     // 处理当前 batch
     for (i = 0; i < n; i++) {
         vlib_buffer_t *b = buffers[i];
-        
+
         // 处理包数据...
         process_packet(b);
-        
+
         // 释放 buffer
         vlib_buffer_free(vm, 1);
     }
@@ -542,7 +542,7 @@ process_with_prefetch (vlib_main_t *vm, vlib_buffer_t **buffers, u32 n)
 
 // Prefetch levels:
 // 0 = temporal, no intention to write
-// 1 = temporal, intention to write  
+// 1 = temporal, intention to write
 // 2 = non-temporal, streaming
 // 3 = non-temporal, collecting
 ```
@@ -637,9 +637,9 @@ vppctl show numa
 #   Buffers:   262144
 #   Workers:    4 (cores 1-4)
 #   RX queues: 4
-# 
+#
 # NUMA 1:
-#   Memory:    1024 MB allocated  
+#   Memory:    1024 MB allocated
 #   Buffers:   262144
 #   Workers:    4 (cores 9-12)
 #   RX queues: 4
@@ -655,7 +655,7 @@ static void *
 numa_alloc (u32 socket, u32 size)
 {
     void *ptr;
-    
+
     if (socket == 0) {
         ptr = mmap(NULL, size, PROT_READ | PROT_WRITE,
                    MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB,
@@ -666,10 +666,10 @@ numa_alloc (u32 socket, u32 size)
                    MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB,
                    -1, 0);
     }
-    
+
     // 绑定到 NUMA node
     set_mempolicy(MMPOLICY_BIND, &socket, 1);
-    
+
     return ptr;
 }
 
@@ -698,23 +698,23 @@ always_inline u32 *
 smart_buffer_alloc (vlib_main_t *vm, u32 n_buffers, u32 preferred_socket)
 {
     u32 *indices;
-    
+
     // 首先尝试本地分配
     indices = vlib_buffer_alloc_on_socket(vm, n_buffers, preferred_socket);
-    
+
     if (indices)
         return indices;
-    
+
     // 本地不足，尝试远程
     for (u32 s = 0; s < num_sockets; s++) {
         if (s == preferred_socket)
             continue;
-        
+
         indices = vlib_buffer_alloc_on_socket(vm, n_buffers, s);
         if (indices)
             return indices;
     }
-    
+
     return 0; // 分配失败
 }
 ```
@@ -729,7 +729,7 @@ dpdk {
         # RX 队列数 = CPU cores per socket
         num-rx-queues 4
         num-tx-queues 4
-        
+
         # 启用 RSS
         rxq-size 1024
         txq-size 1024
@@ -744,7 +744,7 @@ vppctl show hardware
 #   NUMA node: 0
 #   RX queues: 4 (queue 0-3 on core 1-4)
 #   TX queues: 4 (queue 0-3 on core 1-4)
-#   
+#
 # Interface: TenGigabitEthernet0/1/0
 #   NUMA node: 1
 #   RX queues: 4 (queue 0-3 on core 9-12)
@@ -755,12 +755,12 @@ vppctl show hardware
 
 ### 7.1 典型调优场景
 
-| 场景 | 问题 | 解决方案 |
-|------|------|----------|
-| **高吞吐丢包** | Buffer 不足 | 增加 buffer 数量 |
-| **延迟抖动** | Cache miss | 优化数据布局 |
-| **内存碎片** | 长期运行 | 使用 hugepage |
-| **跨 NUMA 访问** | 远端内存延迟 | 亲和性配置 |
+| 场景             | 问题         | 解决方案         |
+| ---------------- | ------------ | ---------------- |
+| **高吞吐丢包**   | Buffer 不足  | 增加 buffer 数量 |
+| **延迟抖动**     | Cache miss   | 优化数据布局     |
+| **内存碎片**     | 长期运行     | 使用 hugepage    |
+| **跨 NUMA 访问** | 远端内存延迟 | 亲和性配置       |
 
 ### 7.2 调优命令参考
 
@@ -805,17 +805,17 @@ void
 benchmark_memory_config (vlib_main_t *vm, memory_config_t *config)
 {
     memory_perf_stats_t stats = {0};
-    
+
     // 测试分配性能
     u64 start = clib_cpu_time_now();
     u32 *buffers = vlib_buffer_alloc(vm, 10000);
     u64 alloc_time = clib_cpu_time_now() - start;
-    
+
     // 测试释放性能
     start = clib_cpu_time_now();
     vlib_buffer_free(vm, buffers, 10000);
     u64 free_time = clib_cpu_time_now() - start;
-    
+
     // 输出结果
     fformat(stdout, "Allocation: %lu cycles\n", alloc_time);
     fformat(stdout, "Free: %lu cycles\n", free_time);
@@ -828,13 +828,13 @@ generate_tuning_recommendations (vlib_main_t *vm)
 {
     u64 buffer_miss_rate = get_buffer_miss_rate();
     u64 cache_miss_rate = get_cache_miss_rate();
-    
+
     if (buffer_miss_rate > 0.1) {
         fformat(stdout, "建议: 增加 buffer 数量\n");
         fformat(stdout, "  当前: %u buffers\n", get_buffer_count());
         fformat(stdout, "  建议: %u buffers\n", get_buffer_count() * 2);
     }
-    
+
     if (cache_miss_rate > 0.05) {
         fformat(stdout, "建议: 优化数据布局\n");
         fformat(stdout, "  - 使用 prefetch\n");
@@ -920,13 +920,13 @@ vppctl show memory verbose
 void leak_example_1 (api_main_t *am)
 {
     vl_api_registration_t *reg;
-    
+
     // 分配消息
     vlapi_create_message(&reg->pool, &msg);
-    
+
     // 忘记释放
     // vlapi_free_message(msg);  // ← 缺少这行
-    
+
     return;
 }
 
@@ -934,18 +934,18 @@ void leak_example_1 (api_main_t *am)
 void leak_example_2 (vlib_main_t *vm, u32 *buffers, u32 n)
 {
     vlib_buffer_t *b;
-    
+
     for (u32 i = 0; i < n; i++) {
         b = vlib_get_buffer(vm, buffers[i]);
         // 处理 buffer
         process_buffer(b);
-        
+
         // 某些条件下未释放
         if (should_drop(b)) {
             continue;  // ← buffer 泄漏
         }
     }
-    
+
     return;
 }
 
@@ -954,12 +954,12 @@ void no_leak_example (vlib_main_t *vm, u32 *buffers, u32 n)
 {
     for (u32 i = 0; i < n; i++) {
         vlib_buffer_t *b = vlib_get_buffer(vm, buffers[i]);
-        
+
         if (should_drop(b)) {
             vlib_buffer_free(vm, 1);  // ← 明确释放
             continue;
         }
-        
+
         process_buffer(b);
         vlib_buffer_free(vm, 1);
     }
@@ -984,14 +984,14 @@ always_inline u32 *
 trace_buffer_alloc (vlib_main_t *vm, char *file, int line, u32 n)
 {
     u32 *indices = vlib_buffer_alloc(vm, n);
-    
+
     if (vm->buffer_trace) {
         fformat(stderr, "%s:%d: allocated %u buffers\n", file, line, n);
         for (u32 i = 0; i < n; i++) {
             fformat(stderr, "  buffer[%u] index %u\n", i, indices[i]);
         }
     }
-    
+
     return indices;
 }
 
@@ -1048,12 +1048,14 @@ validate_buffer (vlib_buffer_t *b)
 ---
 
 > [!tip] 最佳实践
+>
 > 1. 生产环境必须使用 hugepage，2MB 起步，1GB 最佳
 > 2. Buffer 数量保守配置为计算值的 2 倍
 > 3. NUMA 配置时，确保内存分配在本地 socket
 > 4. 定期监控内存使用，检测泄漏
 
 > [!warning] 注意事项
+>
 > - Buffer 过少导致丢包，过多浪费内存
 > - Hugepage 过小会导致 TLB miss 增加
 > - 跨 NUMA 访问会有显著延迟惩罚

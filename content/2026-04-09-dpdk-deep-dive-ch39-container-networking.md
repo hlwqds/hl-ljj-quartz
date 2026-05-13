@@ -15,6 +15,7 @@ description: "深入解析容器网络与 DPDK 的集成：DPDK-CNI、OVS-DPDK�
 ### 1.1 传统容器网络 vs DPDK 容器网络
 
 **传统容器网络**：
+
 ```
 ┌──────────────────────────────────────────────────────────┐
 │                     Host Namespace                       │
@@ -36,6 +37,7 @@ description: "深入解析容器网络与 DPDK 的集成：DPDK-CNI、OVS-DPDK�
 ```
 
 **DPDK 容器网络**：
+
 ```
 ┌──────────────────────────────────────────────────────────┐
 │                     Host Namespace                       │
@@ -61,12 +63,12 @@ description: "深入解析容器网络与 DPDK 的集成：DPDK-CNI、OVS-DPDK�
 
 ### 1.2 核心挑战
 
-| 挑战 | 说明 | 解决方案 |
-|------|------|----------|
-| **Hugepages** | Pod 需要访问 hugepage 内存 | 安全上下文/hostPath |
-| **设备访问** | VF/设备透传 | Device Plugin / SR-IOV CNI |
-| **网络命名空间** | Pod 独立的网络栈 | CNI 实现 |
-| **多租户** | 隔离与资源共享 | Resource limits |
+| 挑战             | 说明                       | 解决方案                   |
+| ---------------- | -------------------------- | -------------------------- |
+| **Hugepages**    | Pod 需要访问 hugepage 内存 | 安全上下文/hostPath        |
+| **设备访问**     | VF/设备透传                | Device Plugin / SR-IOV CNI |
+| **网络命名空间** | Pod 独立的网络栈           | CNI 实现                   |
+| **多租户**       | 隔离与资源共享             | Resource limits            |
 
 ## 2. DPDK-CNI
 
@@ -131,26 +133,26 @@ metadata:
     k8s.v1.cni.cncf.io/networks: dpdk-network
 spec:
   containers:
-  - name: dpdk-app
-    image: dpdk-test:latest
-    securityContext:
-      privileged: true  # 需要特权才能访问 hugepages
-    resources:
-      requests:
-        hugepages-2Mi: 1Gi
-        memory: 2Gi
-        cpu: "2"
-      limits:
-        hugepages-2Mi: 1Gi
-        memory: 2Gi
-        cpu: "2"
-    volumeMounts:
-    - name: hugepgs
-      mountPath: /hugepages
+    - name: dpdk-app
+      image: dpdk-test:latest
+      securityContext:
+        privileged: true # 需要特权才能访问 hugepages
+      resources:
+        requests:
+          hugepages-2Mi: 1Gi
+          memory: 2Gi
+          cpu: "2"
+        limits:
+          hugepages-2Mi: 1Gi
+          memory: 2Gi
+          cpu: "2"
+      volumeMounts:
+        - name: hugepgs
+          mountPath: /hugepages
   volumes:
-  - name: hugepgs
-    emptyDir:
-      medium: HugePages
+    - name: hugepgs
+      emptyDir:
+        medium: HugePages
 ```
 
 ### 2.4 DPDK-CNI 工作原理
@@ -521,12 +523,12 @@ kubectl run --image=nginx nginx
 
 ## 7. 性能对比
 
-| 方案 | 吞吐量 | 延迟 | CPU 开销 | 复杂度 |
-|------|--------|------|----------|--------|
-| **默认 veth** | ~500Kpps | ~20us | 高 | 低 |
-| **OVS-DPDK** | ~10Mpps | ~5us | 中 | 中 |
-| **DPDK-CNI** | ~15Mpps | ~3us | 低 | 高 |
-| **SR-IOV CNI** | ~30Mpps | ~1us | 极低 | 高 |
+| 方案           | 吞吐量   | 延迟  | CPU 开销 | 复杂度 |
+| -------------- | -------- | ----- | -------- | ------ |
+| **默认 veth**  | ~500Kpps | ~20us | 高       | 低     |
+| **OVS-DPDK**   | ~10Mpps  | ~5us  | 中       | 中     |
+| **DPDK-CNI**   | ~15Mpps  | ~3us  | 低       | 高     |
+| **SR-IOV CNI** | ~30Mpps  | ~1us  | 极低     | 高     |
 
 ## 8. 总结
 

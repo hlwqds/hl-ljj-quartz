@@ -1,7 +1,25 @@
 ---
 title: WireGuard 内核深度探索 Ch4：数据包接收路径
 date: 2026-05-04 09:00:00
-tags: [WireGuard, Kernel, RX, Receive, Packet, Decryption, Handshake, UDP, Socket, Protocol Stack, Injection, NAPI, dst_entry, Routing, Noise, Authentication]
+tags:
+  [
+    WireGuard,
+    Kernel,
+    RX,
+    Receive,
+    Packet,
+    Decryption,
+    Handshake,
+    UDP,
+    Socket,
+    Protocol Stack,
+    Injection,
+    NAPI,
+    dst_entry,
+    Routing,
+    Noise,
+    Authentication,
+  ]
 description: WireGuard 内核源码深度解析 Ch4：数据包接收路径详解——Socket 接收、握手处理、传输数据解密、注入内核协议栈、防重放检查与性能分析。
 ---
 

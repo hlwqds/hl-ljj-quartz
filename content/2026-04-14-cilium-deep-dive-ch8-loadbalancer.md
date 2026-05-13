@@ -12,8 +12,8 @@ tags:
   - networking
 ---
 
-> [!info] Cilium 2026 深度探索系列
-> 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+> [!info] Cilium 2026 深度探索系列 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+>
 > 1. [[2026-04-14-cilium-deep-dive-ch1-cilium-overview|第一章：Cilium 概述]]
 > 2. [[2026-04-14-cilium-deep-dive-ch2-architecture|第二章：Cilium 架构]]
 > 3. [[2026-04-14-cilium-deep-dive-ch3-ebpf-datapath|第三章：eBPF 数据面]]
@@ -42,8 +42,8 @@ spec:
   selector:
     app: my-app
   ports:
-  - port: 80
-    targetPort: 8080
+    - port: 80
+      targetPort: 8080
   # externalTrafficPolicy: Local
   # sessionAffinity: ClientIP
 ```
@@ -66,11 +66,11 @@ spec:
 
 ### 2.1 三层负载均衡对比
 
-| 层次 | 协议 | 例子 | Cilium 支持 |
-|:---|:---|:---|:---|
-| **L2 (Data Link)** | Ethernet | MetalLB L2 | ✅ |
-| **L4 (Transport)** | TCP/UDP | NLB, Cloud LB | ✅ |
-| **L7 (Application)** | HTTP/HTTPS | ALB, Ingress | ✅ (via Envoy) |
+| 层次                 | 协议       | 例子          | Cilium 支持    |
+| :------------------- | :--------- | :------------ | :------------- |
+| **L2 (Data Link)**   | Ethernet   | MetalLB L2    | ✅             |
+| **L4 (Transport)**   | TCP/UDP    | NLB, Cloud LB | ✅             |
+| **L7 (Application)** | HTTP/HTTPS | ALB, Ingress  | ✅ (via Envoy) |
 
 ### 2.2 L2 Load Balancing (ARP/NDP)
 
@@ -160,6 +160,7 @@ L7 负载均衡在应用层工作，支持 HTTP/HTTPS 路由、Cookie 亲和等�
 ```
 
 Cilium 支持两种 L7 方式：
+
 1. **Cilium Ingress**：基于 Envoy 的 L7 Ingress Controller
 2. **Cilium Gateway API**：标准的 Kubernetes Gateway API 实现
 
@@ -369,9 +370,9 @@ spec:
   selector:
     app: my-app
   ports:
-  - port: 80
-    targetPort: 8080
-  externalTrafficPolicy: Local  # 保持源 IP
+    - port: 80
+      targetPort: 8080
+  externalTrafficPolicy: Local # 保持源 IP
 ```
 
 ```bash
@@ -408,8 +409,8 @@ spec:
   type: LoadBalancer
   externalTrafficPolicy: Cluster
   ports:
-  - port: 443
-    targetPort: 6443
+    - port: 443
+      targetPort: 6443
   selector:
     app: my-app
 ```
@@ -455,8 +456,8 @@ metadata:
 spec:
   type: LoadBalancer
   ports:
-  - port: 80
-    targetPort: 8080
+    - port: 80
+      targetPort: 8080
   selector:
     app: my-app
 ```
@@ -477,20 +478,20 @@ spec:
   type: LoadBalancer
   loadBalancerIP: 20.0.0.100
   ports:
-  - port: 80
-    targetPort: 8080
+    - port: 80
+      targetPort: 8080
   selector:
     app: my-app
 ```
 
 ### 5.4 云厂商集成对比
 
-| 云厂商 | LB 类型 | Cilium 注解 | 源 IP 保留 |
-|:---|:---|:---|:---|
-| **AWS** | NLB | `aws-load-balancer-type: nlb` | 是 |
-| **GCP** | Cloud LB | `cloud.google.com/backend-config` | 是 |
-| **Azure** | Standard LB | `azure-load-balancer-mode: standard` | 是 |
-| **阿里云** | SLB | `alibaba.cloud.loadbalancerid` | 是 |
+| 云厂商     | LB 类型     | Cilium 注解                          | 源 IP 保留 |
+| :--------- | :---------- | :----------------------------------- | :--------- |
+| **AWS**    | NLB         | `aws-load-balancer-type: nlb`        | 是         |
+| **GCP**    | Cloud LB    | `cloud.google.com/backend-config`    | 是         |
+| **Azure**  | Standard LB | `azure-load-balancer-mode: standard` | 是         |
+| **阿里云** | SLB         | `alibaba.cloud.loadbalancerid`       | 是         |
 
 ---
 
@@ -618,25 +619,25 @@ kubectl exec -it backend-pod -- \
 
 ### 8.4 常见问题与解决
 
-| 问题 | 原因 | 解决方法 |
-|:---|:---|:---|
-| LoadBalancer IP 一直 pending | MetalLB 未安装/IP 池耗尽 | 安装 MetalLB，配置 IP 池 |
-| 云厂商 LB 无法连接后端 | 健康检查失败 | 检查安全组，开放 NodePort 范围 |
-| 源 IP 未保留 | externalTrafficPolicy: Cluster | 改为 Local |
-| 跨集群访问失败 | ClusterMesh 未配置 | 配置集群对等连接 |
-| MetalLB GARP 不生效 | 交换机过滤 ARP | 使用 L4 模式替代 |
+| 问题                         | 原因                           | 解决方法                       |
+| :--------------------------- | :----------------------------- | :----------------------------- |
+| LoadBalancer IP 一直 pending | MetalLB 未安装/IP 池耗尽       | 安装 MetalLB，配置 IP 池       |
+| 云厂商 LB 无法连接后端       | 健康检查失败                   | 检查安全组，开放 NodePort 范围 |
+| 源 IP 未保留                 | externalTrafficPolicy: Cluster | 改为 Local                     |
+| 跨集群访问失败               | ClusterMesh 未配置             | 配置集群对等连接               |
+| MetalLB GARP 不生效          | 交换机过滤 ARP                 | 使用 L4 模式替代               |
 
 ---
 
 ## 9. 章节总结
 
-|| 模式 | 适用场景 | 特点 |
-|:---|:---|:---|:---|
-| **L2 (ARP/NDP)** | 裸金属、小规模 | 简单，所有流量经过 Leader |
-| **L4 (DSR/XDP)** | 生产环境、高性能 | XDP 处理，源 IP 保留 |
-| **L7 (HTTP)** | Web 服务、路由 | Ingress/Gateway API |
-| **云厂商 NLB** | AWS/GCP/Azure | 原生集成，高可用 |
-| **MetalLB** | 裸金属 | L2/L4 负载均衡 |
+|                  | 模式             | 适用场景                  | 特点 |
+| :--------------- | :--------------- | :------------------------ | :--- |
+| **L2 (ARP/NDP)** | 裸金属、小规模   | 简单，所有流量经过 Leader |
+| **L4 (DSR/XDP)** | 生产环境、高性能 | XDP 处理，源 IP 保留      |
+| **L7 (HTTP)**    | Web 服务、路由   | Ingress/Gateway API       |
+| **云厂商 NLB**   | AWS/GCP/Azure    | 原生集成，高可用          |
+| **MetalLB**      | 裸金属           | L2/L4 负载均衡            |
 
 **Cilium LoadBalancer 优势**：
 

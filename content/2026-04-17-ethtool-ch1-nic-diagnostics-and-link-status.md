@@ -68,16 +68,16 @@ ethtool eth0
 
 ### 2.2 关键字段解读
 
-| 字段 | 含义 | 排查价值 |
-|------|------|---------|
-| `Speed` | 协商速率（可能 < 物理速率） | 协商成 100Mbps → 检查网线/光模块 |
-| `Duplex` | 半双工/全双工 | 半双工 → 协商问题或对端不支持全双工 |
-| `Auto-negotiation` | 是否开启自协商 | 关闭可能协商失败 |
-| `Port` | 介质类型 | TP=电口，Fiber=光口 |
-| `Transceiver` | 收发器位置 | internal=板载，external=可插拔 |
-| `Link detected` | 链路是否 UP | no → 物理层断（光纤/网线/模块） |
-| `Wake-on` | 远程唤醒支持 | 关闭可省电但无法远程开机 |
-| `Current message level` | 驱动日志级别 | 0x07=Errors+Link+Probe |
+| 字段                    | 含义                        | 排查价值                            |
+| ----------------------- | --------------------------- | ----------------------------------- |
+| `Speed`                 | 协商速率（可能 < 物理速率） | 协商成 100Mbps → 检查网线/光模块    |
+| `Duplex`                | 半双工/全双工               | 半双工 → 协商问题或对端不支持全双工 |
+| `Auto-negotiation`      | 是否开启自协商              | 关闭可能协商失败                    |
+| `Port`                  | 介质类型                    | TP=电口，Fiber=光口                 |
+| `Transceiver`           | 收发器位置                  | internal=板载，external=可插拔      |
+| `Link detected`         | 链路是否 UP                 | no → 物理层断（光纤/网线/模块）     |
+| `Wake-on`               | 远程唤醒支持                | 关闭可省电但无法远程开机            |
+| `Current message level` | 驱动日志级别                | 0x07=Errors+Link+Probe              |
 
 ### 2.3 链路状态异常排查
 
@@ -439,15 +439,15 @@ ethtool -i eth0
 
 ### 6.1 按场景选网卡
 
-| 场景 | 推荐网卡 | 理由 |
-|------|---------|------|
-| 通用服务器 | Intel i350 / i210 | 驱动成熟，稳定 |
-| 虚拟化宿主机 | Intel i350 + SR-IOV | 支持 PCI-SIG SR-IOV |
-| 25GbE 网络 | Mellanox ConnectX-5 / Intel XXV710 | 性价比最高的 25G |
-| 100GbE 网络 | Mellanox ConnectX-6 | 当前主流 100G |
-| RDMA/存储 | Mellanox ConnectX | 原生 InfiniBand + RoCE |
-| KVM 虚拟机 | virtio-net（半虚拟化） | Linux 内置，无需额外驱动 |
-| VMware 虚拟机 | vmxnet3 | VMware Tools 配合 |
+| 场景          | 推荐网卡                           | 理由                     |
+| ------------- | ---------------------------------- | ------------------------ |
+| 通用服务器    | Intel i350 / i210                  | 驱动成熟，稳定           |
+| 虚拟化宿主机  | Intel i350 + SR-IOV                | 支持 PCI-SIG SR-IOV      |
+| 25GbE 网络    | Mellanox ConnectX-5 / Intel XXV710 | 性价比最高的 25G         |
+| 100GbE 网络   | Mellanox ConnectX-6                | 当前主流 100G            |
+| RDMA/存储     | Mellanox ConnectX                  | 原生 InfiniBand + RoCE   |
+| KVM 虚拟机    | virtio-net（半虚拟化）             | Linux 内置，无需额外驱动 |
+| VMware 虚拟机 | vmxnet3                            | VMware Tools 配合        |
 
 ### 6.2 虚拟网卡（KVM/libvirt）传递物理网卡
 

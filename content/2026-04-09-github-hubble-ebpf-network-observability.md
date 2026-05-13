@@ -9,14 +9,14 @@ description: Hubble 是构建在 Cilium 和 eBPF 之上的分布式网络和安�
 
 ## 项目概览
 
-| 属性 | 值 |
-|------|-----|
-| **GitHub** | [cilium/hubble](https://github.com/cilium/hubble) |
-| **Stars** | 4.1k |
-| **语言** | Go |
-| **最新更新** | 3天前 (2026-03-31) |
-| **最新版本** | v1.18 |
-| **License** | Apache-2.0 |
+| 属性         | 值                                                |
+| ------------ | ------------------------------------------------- |
+| **GitHub**   | [cilium/hubble](https://github.com/cilium/hubble) |
+| **Stars**    | 4.1k                                              |
+| **语言**     | Go                                                |
+| **最新更新** | 3天前 (2026-03-31)                                |
+| **最新版本** | v1.18                                             |
+| **License**  | Apache-2.0                                        |
 
 ## 核心定位
 
@@ -25,20 +25,24 @@ Hubble 是构建在 **Cilium** 和 **eBPF** 之上的完全分布式网络和安
 ### 它能回答的问题
 
 **服务依赖与通信地图：**
+
 - 哪些服务在相互通信？频率如何？服务依赖图长什么样？
 - 哪些 HTTP 调用正在发生？服务消费哪些 Kafka topics？
 
 **运维监控与告警：**
+
 - 是否有网络通信失败？为什么失败？是 DNS、应用还是网络问题？
 - 哪些服务最近遇到 TCP 连接中断或超时？
 - TCP SYN 请求未回复率是多少？
 
 **应用监控：**
+
 - 某服务或整个集群的 5xx/4xx HTTP 响应码比率是多少？
 - HTTP 请求与响应的 P95/P99 延迟是多少？
 - 两服务之间的延迟是多少？
 
 **安全可观测性：**
+
 - 哪些服务因网络策略被阻止连接？
 - 哪些服务从集群外部访问？
 - 哪些服务解析了特定 DNS 名称？
@@ -63,13 +67,13 @@ Hubble 是构建在 **Cilium** 和 **eBPF** 之上的完全分布式网络和安
 
 ### 核心组件状态
 
-| 组件 | 领域 | 状态 |
-|------|------|------|
-| Hubble CLI | 核心 | Stable |
-| Hubble Server | 核心 | Stable |
-| Hubble Metrics | 核心 | Stable |
-| Hubble Relay | 多节点 | Stable |
-| Hubble UI | UI | Beta |
+| 组件           | 领域   | 状态   |
+| -------------- | ------ | ------ |
+| Hubble CLI     | 核心   | Stable |
+| Hubble Server  | 核心   | Stable |
+| Hubble Metrics | 核心   | Stable |
+| Hubble Relay   | 多节点 | Stable |
+| Hubble UI      | UI     | Beta   |
 
 ## 核心功能
 
@@ -131,18 +135,19 @@ hubble observe
 
 ## 与 DeepFlow 对比
 
-| 维度 | Hubble | DeepFlow |
-|------|--------|----------|
-| 依赖 | 必须配合 Cilium | 独立部署 |
-| 语言 | Go | Go |
-| L7 协议 | HTTP/Kafka/DNS | 多种协议 |
-| 服务图 | 支持 | 支持 |
-| 集成方式 | Kubernetes Native | 多环境 |
+| 维度     | Hubble            | DeepFlow |
+| -------- | ----------------- | -------- |
+| 依赖     | 必须配合 Cilium   | 独立部署 |
+| 语言     | Go                | Go       |
+| L7 协议  | HTTP/Kafka/DNS    | 多种协议 |
+| 服务图   | 支持              | 支持     |
+| 集成方式 | Kubernetes Native | 多环境   |
 
 Hubble 更适合已经使用 Cilium 的 Kubernetes 环境，DeepFlow 则提供更广泛的环境支持和更丰富的 L7 协议支持。
 
 ---
 
 **相关项目**：
+
 - [Cilium](https://github.com/cilium/cilium) - 24.1k stars，eBPF-based Networking, Security, and Observability
 - [eCapture](https://github.com/gojue/ecapture) - 无 CA 证书捕获 SSL/TLS 明文

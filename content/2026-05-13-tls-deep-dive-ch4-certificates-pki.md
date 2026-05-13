@@ -78,16 +78,16 @@ AlgorithmIdentifier ::= SEQUENCE {
 
 **OID（Object Identifier）** 是 ASN.1 中用于唯一标识各种算法和扩展的对象标识符。以下是常见 OID：
 
-| OID 数值 | 含义 | 备注 |
-|----------|------|------|
+| OID 数值                | 含义                    | 备注            |
+| ----------------------- | ----------------------- | --------------- |
 | `1.2.840.113549.1.1.11` | sha256WithRSAEncryption | RSA-SHA256 签名 |
 | `1.2.840.113549.1.1.12` | sha384WithRSAEncryption | RSA-SHA384 签名 |
-| `1.2.840.10045.4.3.2` | ecdsaWithSHA256 | ECDSA-SHA256 |
-| `2.5.4.3` | commonName | CN 字段 |
-| `2.5.4.6` | countryName | C（国家） |
-| `2.5.4.10` | organizationName | O（组织） |
-| `2.5.29.17` | subjectAltName | SAN 扩展 |
-| `2.5.29.19` | basicConstraints | 基本约束 |
+| `1.2.840.10045.4.3.2`   | ecdsaWithSHA256         | ECDSA-SHA256    |
+| `2.5.4.3`               | commonName              | CN 字段         |
+| `2.5.4.6`               | countryName             | C（国家）       |
+| `2.5.4.10`              | organizationName        | O（组织）       |
+| `2.5.29.17`             | subjectAltName          | SAN 扩展        |
+| `2.5.29.19`             | basicConstraints        | 基本约束        |
 
 ### 1.3 DER 与 PEM 格式
 
@@ -147,7 +147,7 @@ graph TD
     subgraph "X.509 Certificate"
         A["tbsCertificate<br/>待签名证书"] --> B["signatureAlgorithm<br/>签名算法"]
         A --> C["signatureValue<br/>CA 签名"]
-        
+
         A --> D["version: v3"]
         A --> E["serialNumber<br/>序列号"]
         A --> F["signature<br/>签名算法标识"]
@@ -156,7 +156,7 @@ graph TD
         A --> I["subject<br/>主题"]
         A --> J["subjectPublicKeyInfo<br/>公钥信息"]
         A --> K["extensions<br/>扩展（v3）"]
-        
+
         K --> K1["subjectAltName"]
         K --> K2["keyUsage"]
         K --> K3["basicConstraints"]
@@ -164,7 +164,7 @@ graph TD
         K --> K5["crlDistributionPoints"]
         K --> K6["authorityInfoAccess"]
     end
-    
+
     style A fill:#e1f5fe
     style K fill:#fff3e0
 ```
@@ -175,13 +175,13 @@ graph TD
 
 `Subject` 字段标识证书持有者的身份，采用 **RDN（RelativDistinguishedName，相对可分辨名称）** 的层级结构。常见 RDN 类型：
 
-| 属性 | OID | 示例 |
-|------|-----|------|
-| CN (Common Name) | 2.5.4.3 | `*.example.com` |
-| C (Country) | 2.5.4.6 | `CN`, `US` |
-| ST (State) | 2.5.4.8 | `Beijing` |
-| L (Locality) | 2.5.4.7 | `Beijing` |
-| O (Organization) | 2.5.4.10 | `Example Inc.` |
+| 属性                     | OID      | 示例             |
+| ------------------------ | -------- | ---------------- |
+| CN (Common Name)         | 2.5.4.3  | `*.example.com`  |
+| C (Country)              | 2.5.4.6  | `CN`, `US`       |
+| ST (State)               | 2.5.4.8  | `Beijing`        |
+| L (Locality)             | 2.5.4.7  | `Beijing`        |
+| O (Organization)         | 2.5.4.10 | `Example Inc.`   |
 | OU (Organizational Unit) | 2.5.4.11 | `Security Dept.` |
 
 一个完整的 Subject DN 示例：
@@ -212,6 +212,7 @@ serial=0DF1D52D3B2C2F5C
 证书的有效期由 `notBefore` 和 `notAfter` 两个时间点界定。TLS 握手时，客户端**必须**验证当前时间落在有效期内，否则拒绝连接。
 
 有效期设计原则：
+
 - **不能过长**：私钥泄露风险随时间增加
 - **不能过短**：频繁续期带来运维压力
 - 行业惯例：90 天（Let's Encrypt）到 3 年（老旧做法）不等
@@ -232,12 +233,12 @@ notAfter=Jun 13 23:59:59 2024 GMT
 
 SAN 是 X.509 v3 扩展（OID `2.5.29.17`），解决了 `CN` 字段只能包含单个域名的问题。SAN 支持多种名称类型：
 
-| 类型 | 标签 | 示例 |
-|------|------|------|
-| DNS Name | `dNSName` | `example.com`, `*.example.com` |
-| IP Address | `iPAddress` | `192.168.1.1`, `2001:db8::1` |
-| Email | `rfc822Name` | `admin@example.com` |
-| URI | `uniformResourceIdentifier` | `https://example.com/` |
+| 类型       | 标签                        | 示例                           |
+| ---------- | --------------------------- | ------------------------------ |
+| DNS Name   | `dNSName`                   | `example.com`, `*.example.com` |
+| IP Address | `iPAddress`                 | `192.168.1.1`, `2001:db8::1`   |
+| Email      | `rfc822Name`                | `admin@example.com`            |
+| URI        | `uniformResourceIdentifier` | `https://example.com/`         |
 
 **RFC 6125** 明确规定：TLS 客户端应该**只使用 SAN 进行主机名验证**，忽略 `CN`。
 
@@ -263,21 +264,21 @@ func verifyHostname(cert *tls.Certificate, hostname string) error {
     if leaf == nil {
         return fmt.Errorf("failed to parse certificate")
     }
-    
+
     // 尝试匹配 DNS 名称
     for _, dns := range leaf.DNSNames {
         if matchWildcard(dns, hostname) || dns == hostname {
             return nil
         }
     }
-    
+
     // 尝试匹配 IP 地址
     for _, ip := range leaf.IPAddresses {
         if ip.String() == hostname || ip.Equal(net.ParseIP(hostname)) {
             return nil
         }
     }
-    
+
     return fmt.Errorf("no SAN match for %s", hostname)
 }
 
@@ -296,7 +297,7 @@ func matchWildcard(pattern, hostname string) bool {
 
 ```bash
 $ openssl x509 -in cert.pem -noout -ext keyUsage
-X509v3 Key Usage: 
+X509v3 Key Usage:
     Digital Signature, Key Encipherment
 ```
 
@@ -309,7 +310,7 @@ X509v3 Key Usage:
 
 ```bash
 $ openssl x509 -in cert.pem -noout -ext extendedKeyUsage
-X509v3 Extended Key Usage: 
+X509v3 Extended Key Usage:
     TLS Web Server Authentication, TLS Web Client Authentication
 ```
 
@@ -322,7 +323,7 @@ X509v3 Extended Key Usage:
 
 ```bash
 $ openssl x509 -in cert.pem -noout -ext basicConstraints
-X509v3 Basic Constraints: 
+X509v3 Basic Constraints:
     CA:FALSE   # 或 CA:TRUE 表示 CA 证书
 ```
 
@@ -341,7 +342,7 @@ graph LR
         A["Root CA<br/>根证书<br/>自签名<br/>CA:TRUE"] --> B["Intermediate CA<br/>中间证书<br/>CA:TRUE<br/>由 Root CA 签发"]
         B --> C["End-Entity / Leaf<br/>终端实体证书<br/>CA:FALSE<br/>由 Intermediate CA 签发"]
     end
-    
+
     style A fill:#c8e6c9
     style B fill:#fff9c4
     style C fill:#ffcdd2
@@ -366,6 +367,7 @@ graph LR
 **信任锚（Trust Anchor）** 是客户端本地预先配置的可信根证书。操作系统（Windows/macOS/Linux）和浏览器维护着自己的根证书存储。
 
 主流根证书颁发机构：
+
 - **DigiCert**（收购了 VeriSign/GTE CyberTrust）
 - **IdenTrust**（DigiCert Global Root G2）
 - **GoDaddy / GlobalSign**
@@ -408,7 +410,7 @@ from cryptography.hazmat.backends import default_backend
 import tempfile
 import os
 
-def verify_certificate_chain(cert_pem: bytes, chain_pem: list[bytes], 
+def verify_certificate_chain(cert_pem: bytes, chain_pem: list[bytes],
                               ca_certs_pem: list[bytes]) -> dict:
     """
     验证证书链：
@@ -421,29 +423,29 @@ def verify_certificate_chain(cert_pem: bytes, chain_pem: list[bytes],
         "chain": [],
         "errors": []
     }
-    
+
     # 加载所有证书
     cert = x509.load_pem_x509_certificate(cert_pem, default_backend())
-    intermediates = [x509.load_pem_x509_certificate(p, default_backend()) 
+    intermediates = [x509.load_pem_x509_certificate(p, default_backend())
                      for p in chain_pem]
-    ca_certs = [x509.load_pem_x509_certificate(p, default_backend()) 
+    ca_certs = [x509.load_pem_x509_certificate(p, default_backend())
                 for p in ca_certs_pem]
-    
+
     all_certs = intermediates + ca_certs
     cert_dict = {c.subject: c for c in all_certs}
-    
+
     # 查找签发者
     current_cert = cert
     depth = 0
     max_depth = 10
-    
+
     while depth < max_depth:
         issuer = None
         for c in all_certs:
             if c.subject == current_cert.issuer:
                 issuer = c
                 break
-        
+
         if issuer is None:
             if depth == 0:
                 # 自签名根证书
@@ -453,7 +455,7 @@ def verify_certificate_chain(cert_pem: bytes, chain_pem: list[bytes],
                 results["errors"].append(
                     f"Cannot find issuer for {current_cert.subject}")
             break
-        
+
         # 验证签名
         try:
             issuer.public_key().verify(
@@ -469,7 +471,7 @@ def verify_certificate_chain(cert_pem: bytes, chain_pem: list[bytes],
         except Exception as e:
             results["valid"] = False
             results["errors"].append(f"Signature invalid: {e}")
-        
+
         if issuer.subject == issuer.issuer:
             # 到达根证书
             results["chain"].append({
@@ -478,21 +480,21 @@ def verify_certificate_chain(cert_pem: bytes, chain_pem: list[bytes],
                 "is_root": True
             })
             break
-        
+
         current_cert = issuer
         depth += 1
-    
+
     return results
 ```
 
 ### 3.4 证书链深度对比
 
-| 证书类型 | CA 标记 | 能否签名其他证书 | 典型用途 |
-|---------|---------|----------------|---------|
-| Root CA | CA:TRUE | 是（自签名） | 预置在系统/浏览器信任库 |
-| Intermediate CA | CA:TRUE | 是 | 实际签发终端证书 |
-| Cross-Sign CA | CA:TRUE | 是 | 跨不同根证书的交叉签名 |
-| End-Entity | CA:FALSE | 否 | 服务器/客户端身份标识 |
+| 证书类型        | CA 标记  | 能否签名其他证书 | 典型用途                |
+| --------------- | -------- | ---------------- | ----------------------- |
+| Root CA         | CA:TRUE  | 是（自签名）     | 预置在系统/浏览器信任库 |
+| Intermediate CA | CA:TRUE  | 是               | 实际签发终端证书        |
+| Cross-Sign CA   | CA:TRUE  | 是               | 跨不同根证书的交叉签名  |
+| End-Entity      | CA:FALSE | 否               | 服务器/客户端身份标识   |
 
 ## 4. 证书验证流程
 
@@ -509,12 +511,12 @@ flowchart TD
     E --> F{"6. 检查撤销状态<br/>CRL / OCSP"}
     F --> G["7. 检查策略约束<br/>EKU / keyUsage / basicConstraints"]
     G --> H["验证通过<br/>提取公钥用于密钥交换"]
-    
+
     C --> I["签名验证失败 → 拒绝连接"]
     D --> J["有效期过期 → 拒绝连接"]
     E --> K["主机名不匹配 → 拒绝连接"]
     F --> L["证书已撤销 → 拒绝连接"]
-    
+
     style A fill:#e3f2fd
     style H fill:#c8e6c9
     style I fill:#ffcdd2
@@ -528,40 +530,41 @@ flowchart TD
 链构建的目标是从服务器提供的证书列表中，找到一条连续的信任路径，到达本地信任锚。
 
 算法步骤：
+
 1. 以 leaf 证书为起点
 2. 在证书列表或本地存储中查找 `subject == 当前证书.issuer` 的证书
 3. 重复直到找到自签名根证书，或确定链不完整
 
 ```python
-def build_certificate_path(cert: x509.Certificate, 
+def build_certificate_path(cert: x509.Certificate,
                             trust_store: list[x509.Certificate],
                             intermediates: list[x509.Certificate]) -> list[x509.Certificate]:
     """构建从 leaf 到 root 的证书路径"""
     all_certs = intermediates + trust_store
     cert_dict = {c.subject: c for c in all_certs}
-    
+
     path = [cert]
     current = cert
     visited = set()
-    
+
     while current.issuer != current.subject:  # 直到自签名根
         if current.subject in visited:
             raise ValueError("Cycle detected in certificate chain")
         visited.add(current.subject)
-        
+
         issuer = cert_dict.get(current.issuer)
         if issuer is None:
             raise ValueError(f"Cannot find issuer for {current.issuer}")
-        
+
         path.append(issuer)
         current = issuer
-        
+
         if current.subject == current.issuer:
             # 自签名根
             if issuer not in trust_store:
                 raise ValueError("Root certificate not in trust store")
             break
-    
+
     return path
 ```
 
@@ -583,6 +586,7 @@ valid = CA_public_key.verify(
 ```
 
 关键检查点：
+
 - 签名算法一致性：`tbsCertificate.signature` 与 `signatureAlgorithm` 必须匹配
 - 公钥算法兼容性：如 RSA 公钥不能验证 ECDSA 签名
 - 签名参数正确性：ECDSA 签名需要曲线的参数
@@ -592,18 +596,18 @@ valid = CA_public_key.verify(
 ```python
 from datetime import datetime, timezone
 
-def check_validity(cert: x509.Certificate, 
+def check_validity(cert: x509.Certificate,
                    now: datetime = None) -> tuple[bool, str]:
     """检查证书有效期"""
     if now is None:
         now = datetime.now(timezone.utc)
-    
+
     if now < cert.not_valid_before_utc:
         return False, f"Certificate not yet valid. Valid from {cert.not_valid_before_utc}"
-    
+
     if now > cert.not_valid_after_utc:
         return False, f"Certificate expired at {cert.not_valid_after_utc}"
-    
+
     return True, "Certificate is valid"
 ```
 
@@ -642,6 +646,7 @@ $ openssl crl -in ca.crl -inform DER -noout -text | head -30
 ```
 
 CRL 的主要缺点：
+
 - **实时性差**：CRL 更新周期可能是小时级甚至天级
 - **体积膨胀**：热门 CA 的 CRL 可能达到数百 MB
 - **分发效率低**：每次验证都需要下载完整列表
@@ -655,7 +660,7 @@ sequenceDiagram
     participant C as TLS Client
     participant S as Web Server
     participant CA as OCSP Responder
-    
+
     C->>S: ClientHello
     S->>C: Certificate + CertificateStatus(OCSP Stapling)
     Note over C: 验证证书时发现需要检查OCSP
@@ -706,14 +711,14 @@ func verifyTLSConnection(hostname string, caCertPath string) error {
     if err != nil {
         return fmt.Errorf("failed to read CA cert: %w", err)
     }
-    
+
     caCertPool := x509.NewCertPool()
     if !caCertPool.AppendCertsFromPEM(caCertPEM) {
         return fmt.Errorf("failed to parse CA certificate")
     }
-    
+
     // 建立 TLS 连接
-    conn, err := tls.Dial("tcp", net.JoinHostPort(hostname, "443"), 
+    conn, err := tls.Dial("tcp", net.JoinHostPort(hostname, "443"),
         &tls.Config{
             RootCAs:    caCertPool,
             MinVersion: tls.VersionTLS12,
@@ -723,19 +728,19 @@ func verifyTLSConnection(hostname string, caCertPath string) error {
         return fmt.Errorf("TLS dial failed: %w", err)
     }
     defer conn.Close()
-    
+
     // 验证证书链
     state := conn.ConnectionState()
     if len(state.VerifiedChains) == 0 {
         return fmt.Errorf("no verified chain - verification failed")
     }
-    
+
     chain := state.VerifiedChains[0]
     fmt.Printf("Verified chain (%d certs):\n", len(chain))
     for i, cert := range chain {
         fmt.Printf("  [%d] %s\n", i, cert.Subject)
     }
-    
+
     return nil
 }
 ```
@@ -745,6 +750,7 @@ func verifyTLSConnection(hostname string, caCertPath string) error {
 ### 5.1 自签名证书
 
 自签名证书是自己给自己签发的证书，不依赖任何外部 CA。适用于：
+
 - 本地开发环境（HTTPS localhost）
 - 内网服务（无外部 CA 访问需求）
 - 测试/演示环境
@@ -803,19 +809,19 @@ def generate_self_signed_cert(
     validity_days: int = 365
 ) -> tuple[x509.Certificate, rsa.RSAPrivateKey]:
     """生成自签名 RSA 证书"""
-    
+
     # 生成私钥
     private_key = rsa.generate_private_key(
         public_exponent=65537,
         key_size=key_size,
         backend=default_backend()
     )
-    
+
     # 构建 Subject
     subject = issuer = x509.Name([
         x509.NameAttribute(NameOID.COMMON_NAME, cn),
     ])
-    
+
     # 构建证书
     cert = (
         x509.CertificateBuilder()
@@ -825,7 +831,7 @@ def generate_self_signed_cert(
         .serial_number(x509.random_serial_number())
         .not_valid_before(datetime.datetime.now(datetime.timezone.utc))
         .not_valid_after(
-            datetime.datetime.now(datetime.timezone.utc) + 
+            datetime.datetime.now(datetime.timezone.utc) +
             datetime.timedelta(days=validity_days)
         )
         .add_extension(
@@ -836,7 +842,7 @@ def generate_self_signed_cert(
         )
         .sign(private_key, hashes.SHA256(), default_backend())
     )
-    
+
     return cert, private_key
 
 # 使用示例
@@ -974,45 +980,45 @@ $ cfssl serve -ca=ca.pem -ca-key=ca-key.pem
 ```json
 // ca-config.json
 {
-    "signing": {
-        "default": {
-            "expiry": "8760h",
-            "usages": ["digital signature", "key encipherment", "server auth"]
-        },
-        "profiles": {
-            "intermediate": {
-                "expiry": "87600h",
-                "ca_constraint": {"is_ca": true, "max_path_len": 0}
-            },
-            "end-entity": {
-                "expiry": "720h",
-                "usages": ["digital signature", "key encipherment", "server auth"]
-            }
-        }
+  "signing": {
+    "default": {
+      "expiry": "8760h",
+      "usages": ["digital signature", "key encipherment", "server auth"]
+    },
+    "profiles": {
+      "intermediate": {
+        "expiry": "87600h",
+        "ca_constraint": { "is_ca": true, "max_path_len": 0 }
+      },
+      "end-entity": {
+        "expiry": "720h",
+        "usages": ["digital signature", "key encipherment", "server auth"]
+      }
     }
+  }
 }
 ```
 
 ### 5.4 自建 CA 工具对比
 
-| 工具 | 复杂度 | API 支持 | 适用场景 |
-|------|--------|---------|---------|
-| `openssl ca` | 中 | 无 | 手动签发、小规模内部 CA |
-| CFSSL | 中 | 是 | 自动化 PKI、Kubernetes Istio |
-| step (Smallstep) | 低 | 是 | 云原生环境、自动化 |
-| Vault PKI | 高 | 是 | 企业级 PKI、密钥管理 |
-| mkcert | 极低 | 无 | 本地开发仅限 |
-| CFSSL + cfssljson | 中 | 是 | 需要脚本化 CA 管理的场景 |
+| 工具              | 复杂度 | API 支持 | 适用场景                     |
+| ----------------- | ------ | -------- | ---------------------------- |
+| `openssl ca`      | 中     | 无       | 手动签发、小规模内部 CA      |
+| CFSSL             | 中     | 是       | 自动化 PKI、Kubernetes Istio |
+| step (Smallstep)  | 低     | 是       | 云原生环境、自动化           |
+| Vault PKI         | 高     | 是       | 企业级 PKI、密钥管理         |
+| mkcert            | 极低   | 无       | 本地开发仅限                 |
+| CFSSL + cfssljson | 中     | 是       | 需要脚本化 CA 管理的场景     |
 
 ## 6. 证书类型详解
 
 ### 6.1 证书验证级别对比
 
-| 类型 | 全称 | 验证内容 | 签发速度 | 浏览器标识 |
-|------|------|---------|---------|-----------|
-| **DV** | Domain Validation | 域名控制权 | 分钟级 | 绿色锁（无单位名） |
-| **OV** | Organization Validation | 域名 + 申请者组织信息 | 1-3 天 | 锁 + 组织名 |
-| **EV** | Extended Validation | 严格人工审核 + 组织法律存在性 | 3-7 天 | 绿色地址栏（部分浏览器已移除） |
+| 类型   | 全称                    | 验证内容                      | 签发速度 | 浏览器标识                     |
+| ------ | ----------------------- | ----------------------------- | -------- | ------------------------------ |
+| **DV** | Domain Validation       | 域名控制权                    | 分钟级   | 绿色锁（无单位名）             |
+| **OV** | Organization Validation | 域名 + 申请者组织信息         | 1-3 天   | 锁 + 组织名                    |
+| **EV** | Extended Validation     | 严格人工审核 + 组织法律存在性 | 3-7 天   | 绿色地址栏（部分浏览器已移除） |
 
 ```bash
 # DV 证书示例（Let's Encrypt）
@@ -1042,7 +1048,7 @@ $ openssl req -newkey rsa:4096 -keyout code_signing_key.pem \
 
 # 查看代码签名证书扩展
 $ openssl x509 -in code_sign_cert.pem -noout -ext extKeyUsage
-X509v3 Extended Key Usage: 
+X509v3 Extended Key Usage:
     Code Signing (1.3.6.1.5.5.7.3.3)
 ```
 
@@ -1069,18 +1075,18 @@ Verified container: signed.exe
 ```
 *.example.com 匹配：
   ✓ api.example.com
-  ✓ webapp.example.com  
+  ✓ webapp.example.com
   ✓ cdn.example.com
   ✗ example.com        （根域名不匹配）
   ✗ sub.api.example.com（多级子域名不匹配）
 ```
 
-| 特性 | 单域名证书 | Wildcard 证书 |
-|------|-----------|--------------|
-| 覆盖范围 | 1 个域名 | 同一级别全部子域名 |
-| 私钥管理 | 简单 | 风险集中（一个私钥=所有子域名） |
-| 安全性 | 高（最小权限） | 中（私钥泄露影响面大） |
-| 成本 | 低-中 | 高 |
+| 特性     | 单域名证书     | Wildcard 证书                   |
+| -------- | -------------- | ------------------------------- |
+| 覆盖范围 | 1 个域名       | 同一级别全部子域名              |
+| 私钥管理 | 简单           | 风险集中（一个私钥=所有子域名） |
+| 安全性   | 高（最小权限） | 中（私钥泄露影响面大）          |
+| 成本     | 低-中          | 高                              |
 
 **安全建议**：如果子域名数量可预期（<10），优先使用多个单域名证书而非通配符证书，以限制私钥泄露的影响范围。
 
@@ -1153,7 +1159,7 @@ $ openssl ca -in san_csr.pem -out san_cert.pem -extensions v3_req
 
 # 验证
 $ openssl x509 -in san_cert.pem -noout -ext subjectAltName
-X509v3 Subject Alternative Name: 
+X509v3 Subject Alternative Name:
     DNS:example.com, DNS:www.example.com, DNS:api.example.com
     DNS:*.app.example.com, IP Address:10.0.0.1, IP Address:192.168.1.100
 ```
@@ -1177,17 +1183,18 @@ hex: 0a000001
 ```
 
 **浏览器限制**：
+
 - Chrome/Firefox 仅接受**公共 IP**（RFC 1918 私有 IP 在公网证书中不受信任）
 - 建议：内网服务使用私有 CA 而非公网信任的 CA
 
 ### 7.4 常见 SAN 配置错误
 
-| 错误 | 后果 | 修复方法 |
-|------|------|---------|
-| SAN 中缺少主域名（仅 CN 有） | 现代浏览器不读取 CN | 在 SAN 中同时包含主域名 |
-| 通配符级别不匹配 | `*.example.com` 不覆盖 `sub.example.com` | 使用 `*.sub.example.com` |
-| Punycode 编码错误 | IDN 域名验证失败 | 正确使用 `xn--` 前缀 |
-| IP 地址格式错误 | IP SAN 验证失败 | 使用 RFC 3779 正确编码 |
+| 错误                         | 后果                                     | 修复方法                 |
+| ---------------------------- | ---------------------------------------- | ------------------------ |
+| SAN 中缺少主域名（仅 CN 有） | 现代浏览器不读取 CN                      | 在 SAN 中同时包含主域名  |
+| 通配符级别不匹配             | `*.example.com` 不覆盖 `sub.example.com` | 使用 `*.sub.example.com` |
+| Punycode 编码错误            | IDN 域名验证失败                         | 正确使用 `xn--` 前缀     |
+| IP 地址格式错误              | IP SAN 验证失败                          | 使用 RFC 3779 正确编码   |
 
 ## 8. 证书透明度（Certificate Transparency）
 
@@ -1208,28 +1215,28 @@ flowchart LR
     subgraph "CA 侧"
         CA["CA<br/>签发证书"]
     end
-    
+
     subgraph "CT 生态系统"
         subgraph "Log Server（公开日志）"
             L1["Google Argon<br/>Rock Squid<br/>Cloudflare<br/>DigiCert"]
             L2["..."
         ]
     end
-    
+
     subgraph "监控与审计"
         M["CT Monitor<br/>监控异常证书"]
         A["CT Auditor<br/>验证日志一致性"]
     end
-    
+
     CA -->|"1. 签发前：提交 PreCertificate| SCT|"| L1
     L1 -->|"2. 返回 SCT<br/>（Signed Certificate Timestamp）"| CA
     CA -->|"3. 在证书中嵌入 SCT<br/>（X.509 扩展或 TLS 扩展）"| S["Web Server"]
     S -->|"4. TLS 握手"| C["Client"]
     C -->|"5. 验证 SCT| 连接"]
-    
+
     L1 -->|"6. 定期签名"| M
     L1 -->|"7. Merkle 一致性证明"| A
-    
+
     style L1 fill:#e8f5e9
     style M fill:#fff3e0
     style A fill:#fff3e0
@@ -1238,6 +1245,7 @@ flowchart LR
 ### 8.3 SCT（Signed Certificate Timestamp）
 
 SCT 是日志服务器对 PreCertificate 的签名承诺，包含：
+
 - **日志名称**：签发 SCT 的服务器身份
 - **签名时间**：日志接收到请求的时间
 - **Merkle 树索引**：证书在日志中的位置
@@ -1245,11 +1253,11 @@ SCT 是日志服务器对 PreCertificate 的签名承诺，包含：
 
 SCT 的嵌入方式（优先级从高到低）：
 
-| 方式 | 说明 | RFC |
-|------|------|-----|
-| **X.509 扩展** | `poison` + `sct-list` 扩展嵌入证书本身 | RFC 6962B |
-| **TLS 扩展** | 在 TLS 握手中通过 `extension_type=18` 传输 | RFC 6962 |
-| **OCSP 响应** | 通过 OCSP stapling 提供 | RFC 6962 |
+| 方式           | 说明                                       | RFC       |
+| -------------- | ------------------------------------------ | --------- |
+| **X.509 扩展** | `poison` + `sct-list` 扩展嵌入证书本身     | RFC 6962B |
+| **TLS 扩展**   | 在 TLS 握手中通过 `extension_type=18` 传输 | RFC 6962  |
+| **OCSP 响应**  | 通过 OCSP stapling 提供                    | RFC 6962  |
 
 ```bash
 # 查看证书中的 SCT
@@ -1286,12 +1294,12 @@ Merkle Tree (示例 4 叶子节点):
 
 ### 8.5 Google Argon 与主流 CT 日志
 
-| 日志服务器 | 运营商 | 证书数量 | 备注 |
-|-----------|--------|---------|------|
-| Argon | Google | ~50 亿 | 最大最活跃 |
-| Rock Squid | DigiCert | ~30 亿 | 企业友好 |
-| Fortinet | Cloudflare | ~10 亿 | 与 WAF 集成 |
-| Izenpe | Izenpe | ~5 亿 | 欧洲 CA 主导 |
+| 日志服务器 | 运营商     | 证书数量 | 备注         |
+| ---------- | ---------- | -------- | ------------ |
+| Argon      | Google     | ~50 亿   | 最大最活跃   |
+| Rock Squid | DigiCert   | ~30 亿   | 企业友好     |
+| Fortinet   | Cloudflare | ~10 亿   | 与 WAF 集成  |
+| Izenpe     | Izenpe     | ~5 亿    | 欧洲 CA 主导 |
 
 **浏览器要求**：Chrome 要求所有 EV 证书必须嵌入至少 2 个 CT 日志的 SCT，EV 证书没有 CT 则不受信任。
 
@@ -1315,9 +1323,9 @@ client.start()
 
 # crt.sh 离线查询
 $ psql -h crt.sh -p 5432 -U guest certwatch \
-    -c \"SELECT name, not_before, issuer_name 
-         FROM certificate_view 
-         WHERE name ~ '.*example\\.com' 
+    -c \"SELECT name, not_before, issuer_name
+         FROM certificate_view
+         WHERE name ~ '.*example\\.com'
          ORDER BY not_before DESC LIMIT 10;\"
 ```
 
@@ -1327,14 +1335,14 @@ $ psql -h crt.sh -p 5432 -U guest certwatch \
 
 证书吊销是 PKI 中最复杂也最容易出问题的环节之一。当私钥泄露或不再需要时，CA 需要能够声明某张证书"立即失效"。
 
-| 机制 | 协议 | 实时性 | 隐私 | 性能影响 |
-|------|------|--------|------|---------|
-| **CRL** | 文件分发 | 几小时-几天 | 好 | 大（全量下载） |
-| **OCSP** | HTTP 查询 | 分钟级 | 差（CA 知道你查谁） | 中（额外 RTT） |
-| **OCSP Stapling** | TLS 内嵌 | 分钟级 | 好 | 无（握手内完成） |
-| **OCSP Must-Staple** | 证书扩展 | 分钟级 | 好 | 无 |
-| **CRLite** | 布隆过滤器 | 好 | 好 | 极小 |
-| **CRLite + Mozilla** | 布隆过滤器 | 天级 | 好 | 极小 |
+| 机制                 | 协议       | 实时性      | 隐私                | 性能影响         |
+| -------------------- | ---------- | ----------- | ------------------- | ---------------- |
+| **CRL**              | 文件分发   | 几小时-几天 | 好                  | 大（全量下载）   |
+| **OCSP**             | HTTP 查询  | 分钟级      | 差（CA 知道你查谁） | 中（额外 RTT）   |
+| **OCSP Stapling**    | TLS 内嵌   | 分钟级      | 好                  | 无（握手内完成） |
+| **OCSP Must-Staple** | 证书扩展   | 分钟级      | 好                  | 无               |
+| **CRLite**           | 布隆过滤器 | 好          | 好                  | 极小             |
+| **CRLite + Mozilla** | 布隆过滤器 | 天级        | 好                  | 极小             |
 
 ### 9.2 CRL 详解
 
@@ -1349,7 +1357,7 @@ Certificate Revocation List (CRL):
     Issuer: /CN=MyRootCA/O=TestOrg
     Last Update: May 13 00:00:00 2026 GMT
     Next Update: May 14 00:00:00 2026 GMT
-    
+
     Revoked Certificates:
     Serial Number: 01
         Revocation Date: May 10 00:00:00 2026 GMT
@@ -1386,6 +1394,7 @@ $ openssl ocsp -respin resp.der -text
 ```
 
 OCSP 响应状态：
+
 - **good**：证书未撤销，且 CA 确认状态
 - **revoked**：证书已被撤销（`revocationTime` 表示撤销时间，`revocationReason` 表示原因）
 - **unknown**：CA 不认识这张证书（可能在其他 CA 签发）
@@ -1399,17 +1408,17 @@ sequenceDiagram
     participant S as Server
     participant C as Client
     participant CA as OCSP Responder
-    
+
     Note over S,CA: 预取阶段（定期）
     S->>CA: OCSP Request
     CA->>S: OCSP Response (signed)
     S->>S: Cache response
-    
+
     Note over S,C: TLS 握手阶段
     C->>S: ClientHello
     S->>C: ServerHello<br/>Certificate<br/>CertificateStatus (stapled)<br/>...
     Note over C: 直接验证 stapled OCSP<br/>无需额外网络往返
-    
+
     C->>C: 验证通过，继续握手
 ```
 
@@ -1419,7 +1428,7 @@ server {
     listen 443 ssl;
     ssl_certificate     /path/to/cert.pem;      # 包含中间证书
     ssl_certificate_key /path/to/key.pem;
-    
+
     ssl_stapling on;
     ssl_stapling_verify on;
     ssl_trusted_certificate /path/to/chain.pem;  # 完整链（不含 leaf）
@@ -1449,6 +1458,7 @@ X509v3 TLS Feature:
 ```
 
 如果服务器未 stapling OCSP 响应，客户端必须：
+
 1. 尝试 OCSP 查询
 2. 如果查询失败（网络问题），**连接失败**（fail-closed）
 
@@ -1488,24 +1498,24 @@ def check_revoked_in_crlite(serial: bytes, crlite_file: str) -> bool:
 sequenceDiagram
     participant C as ACME Client<br/>（certbot/acme.sh）
     participant S as Let's Encrypt<br/>ACME Server
-    
+
     Note over C,S: 1. 注册账户
     C->>S: POST /newAccount (termsAgreed=true)
     S->>C: Account URL (Location header)
-    
+
     Note over C,S: 2. 授权域名
     C->>S: POST /newOrder (identifiers=[DNS:name])
     S->>C: Authorization URLs
     C->>S: POST /authz/... (触发挑战)
-    
+
     Note over C,S: 3. 证明域名控制权
     C->>S: HTTP-01 Challenge:<br/>在 .well-known/acme-challenge/<br/>放置 token 文件
     S->>C: GET .well-known/acme-challenge/<br/>验证 token 可访问
-    
+
     Note over C,S: 4. 签发证书
     C->>S: POST /newCertificate (CSR)
     S->>C: Certificate (PEM chain)
-    
+
     Note over C,S: 5. 续期（自动，30天后）
     C->>S: POST /newOrder (same identifiers)
     S->>C: Reuse authorization (无需重新验证)
@@ -1513,11 +1523,11 @@ sequenceDiagram
 
 ### 10.2 ACME 挑战类型
 
-| 挑战类型 | 原理 | 适用场景 | 限制 |
-|---------|------|---------|------|
-| **HTTP-01** | 在 `http://域名/.well-known/acme-challenge/` 下放置验证文件 | Web 服务器可访问 80 端口 | 需要 80 端口、无法泛域名 |
-| **DNS-01** | 在 DNS TXT 记录中添加 `_acme-challenge.域名` 的验证信息 | 无法开放端口、内网 | 需要 DNS API 权限 |
-| **TLS-ALPN-01** | 通过 TLS ALPN 协议验证 | 仅限部分 ACME 客户端支持 | 需要 443 端口 |
+| 挑战类型        | 原理                                                        | 适用场景                 | 限制                     |
+| --------------- | ----------------------------------------------------------- | ------------------------ | ------------------------ |
+| **HTTP-01**     | 在 `http://域名/.well-known/acme-challenge/` 下放置验证文件 | Web 服务器可访问 80 端口 | 需要 80 端口、无法泛域名 |
+| **DNS-01**      | 在 DNS TXT 记录中添加 `_acme-challenge.域名` 的验证信息     | 无法开放端口、内网       | 需要 DNS API 权限        |
+| **TLS-ALPN-01** | 通过 TLS ALPN 协议验证                                      | 仅限部分 ACME 客户端支持 | 需要 443 端口            |
 
 **HTTP-01 挑战**示例：
 
@@ -1768,24 +1778,25 @@ SCT List:
     Version: v1
     Log ID: E2E2E2... (Google Argon)
     Timestamp: 1715500800000
-    Extensions: 
+    Extensions:
     Signature: ...
-    
+
     Log ID: A1A1A1... (DigiCert)
     ...
 ```
 
 ### 10.7 常见问题与最佳实践
 
-| 问题 | 原因 | 解决方案 |
-|------|------|---------|
-| 续期失败：HTTP-01 验证 404 | `.well-known` 路径不可访问 | 检查 nginx alias 配置 |
-| 续期失败：DNS 传播延迟 | TXT 记录未同步 | 使用 `dns_sleep` 等待传播 |
-| 证书链不完整 | 只安装了 leaf cert | 安装 `fullchain.pem` |
-| ECDSA 证书某些系统不支持 | 旧系统 | 使用 `--key-type rsa4096` |
-| OCSP Must-Staple 缺失 | 默认不启用 | certbot 使用 `--must-staple` |
+| 问题                       | 原因                       | 解决方案                     |
+| -------------------------- | -------------------------- | ---------------------------- |
+| 续期失败：HTTP-01 验证 404 | `.well-known` 路径不可访问 | 检查 nginx alias 配置        |
+| 续期失败：DNS 传播延迟     | TXT 记录未同步             | 使用 `dns_sleep` 等待传播    |
+| 证书链不完整               | 只安装了 leaf cert         | 安装 `fullchain.pem`         |
+| ECDSA 证书某些系统不支持   | 旧系统                     | 使用 `--key-type rsa4096`    |
+| OCSP Must-Staple 缺失      | 默认不启用                 | certbot 使用 `--must-staple` |
 
 **Let's Encrypt 限制**（Rate Limits）：
+
 - **每账户每周 50 张新证书**
 - **每个域名每 7 天 5 张证书**
 - **验证失败限制**：每小时 5 次失败后封禁
@@ -1844,17 +1855,17 @@ openssl ca -gencrl -out crl.pem                       # 生成 CRL
 
 ### 证书字段与 OID 速查表
 
-| 字段/扩展 | OID | openssl 显示名 |
-|-----------|-----|---------------|
-| Basic Constraints | 2.5.29.19 | basicConstraints |
-| Key Usage | 2.5.29.15 | keyUsage |
-| Extended Key Usage | 2.5.29.37 | extendedKeyUsage |
-| Subject Alt Name | 2.5.29.17 | subjectAltName |
-| CRL Distribution Points | 2.5.29.31 | crlDistributionPoints |
-| Authority Info Access | 1.3.6.1.5.5.7.1.1 | authorityInfoAccess |
-| TLS Feature (Must-Staple) | 1.3.6.1.5.5.7.1.24 | tlsfeature |
-| Certificate Policies | 2.5.29.32 | certificatePolicies |
-| CT Precertificate SCT | 1.3.6.1.4.1.11129.2.4.2 | SCT List |
+| 字段/扩展                 | OID                     | openssl 显示名        |
+| ------------------------- | ----------------------- | --------------------- |
+| Basic Constraints         | 2.5.29.19               | basicConstraints      |
+| Key Usage                 | 2.5.29.15               | keyUsage              |
+| Extended Key Usage        | 2.5.29.37               | extendedKeyUsage      |
+| Subject Alt Name          | 2.5.29.17               | subjectAltName        |
+| CRL Distribution Points   | 2.5.29.31               | crlDistributionPoints |
+| Authority Info Access     | 1.3.6.1.5.5.7.1.1       | authorityInfoAccess   |
+| TLS Feature (Must-Staple) | 1.3.6.1.5.5.7.1.24      | tlsfeature            |
+| Certificate Policies      | 2.5.29.32               | certificatePolicies   |
+| CT Precertificate SCT     | 1.3.6.1.4.1.11129.2.4.2 | SCT List              |
 
 ### 进一步阅读
 
@@ -1869,4 +1880,4 @@ openssl ca -gencrl -out crl.pem                       # 生成 CRL
 
 ---
 
-*本文是"TLS 深度探索"系列第 4 章。前置章节：《TLS 握手协议详解》。《PKI 体系实战》与《mTLS 与客户端证书》已在规划中。*
+_本文是"TLS 深度探索"系列第 4 章。前置章节：《TLS 握手协议详解》。《PKI 体系实战》与《mTLS 与客户端证书》已在规划中。_

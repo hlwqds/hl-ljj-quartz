@@ -10,11 +10,8 @@ tags:
   - optimization
 ---
 
-> [!info] SRv6 2026 深度探索系列
-> 0. [[2026-04-14-srv6-comprehensive-learning-roadmap|SRv6 全栈学习路径总览]]
-> ...
-> 38. [[2026-04-14-srv6-deep-dive-ch38-srv6-security-rfc|第三八章：SRv6 Source Address Validation 与 uRPF]]
-> 39. [[2026-04-14-srv6-deep-dive-ch39-srv6-ipsec|第三九章：SRv6 + IPsec 端到端加密]]
+> [!info] SRv6 2026 深度探索系列 0. [[2026-04-14-srv6-comprehensive-learning-roadmap|SRv6 全栈学习路径总览]]
+> ... 38. [[2026-04-14-srv6-deep-dive-ch38-srv6-security-rfc|第三八章：SRv6 Source Address Validation 与 uRPF]] 39. [[2026-04-14-srv6-deep-dive-ch39-srv6-ipsec|第三九章：SRv6 + IPsec 端到端加密]]
 > **40. 第四十章：SRv6 转发性能与 TCAM**
 
 ---
@@ -32,19 +29,19 @@ graph TD
         D["ICV 校验"]
         E["TCAM 深度限制"]
     end
-    
+
     subgraph "性能影响"
         F["延迟增加"]
         G["吞吐量下降"]
         H["CPU 负载上升"]
     end
-    
+
     A --> F
     B --> G
     C --> G
     D --> H
     E --> G
-    
+
     style A fill:#ff6b6b,color:#000
     style E fill:#ff6b6b,color:#000
     style F fill:#ffd43b,color:#000
@@ -56,14 +53,14 @@ graph TD
 
 ### 2.1 转发架构对比
 
-| 特性 | 软件转发 (Linux/iproute2) | 硬件转发 (ASIC/NPU) |
-| :--- | :--- | :--- |
-| SID 查找 | 128-bit hash table | TCAM + RAM |
-| SRH 解析 | CPU 逐字节解析 | 硬件 Pipeline |
-| Segment 更新 | 内存读写 | 寄存器操作 |
-| 最大速率 | ~10 Gbps | ~400+ Gbps |
-| 延迟 | 50-100 μs | < 5 μs |
-| Segment 栈深度 | 实际无限制 | 受 TCAM 限制 |
+| 特性           | 软件转发 (Linux/iproute2) | 硬件转发 (ASIC/NPU) |
+| :------------- | :------------------------ | :------------------ |
+| SID 查找       | 128-bit hash table        | TCAM + RAM          |
+| SRH 解析       | CPU 逐字节解析            | 硬件 Pipeline       |
+| Segment 更新   | 内存读写                  | 寄存器操作          |
+| 最大速率       | ~10 Gbps                  | ~400+ Gbps          |
+| 延迟           | 50-100 μs                 | < 5 μs              |
+| Segment 栈深度 | 实际无限制                | 受 TCAM 限制        |
 
 ### 2.2 软件转发路径 (Linux)
 
@@ -79,7 +76,7 @@ graph LR
     H --> I["skb 发送"]
     F --> J["IPtables 处理"]
     J --> I
-    
+
     style E fill:#ffd43b,color:#000
     style G fill:#ff6b6b,color:#000
 ```
@@ -93,22 +90,22 @@ static int srv6_xmit(struct sk_buff *skb, struct net_device *dev)
     struct ipv6_sr_hdr *srh;
     struct rt6_info *rt;
     struct dst_entry *dst;
-    
+
     // 1. 解析 SRH
     srh = ipv6_srh(skb);
     if (!srh)
         return -EINVAL;
-    
+
     // 2. SID 查找
     rt = srv6_lookup_sid(srh->segments + srh->segments_left);
     if (!rt)
         return -EREMOTEIO;
-    
+
     // 3. 更新 DA 和 SL
     skb->dst = dst;
     ipv6_hdr(skb)->daddr = rt->rt6i_gateway;
     srh->segments_left--;
-    
+
     // 4. 发送
     return dev_queue_xmit(skb);
 }
@@ -148,12 +145,12 @@ static int srv6_xmit(struct sk_buff *skb, struct net_device *dev)
 
 ### 3.1 SRv6 TCAM 需求分析
 
-| SID 类型 | TCAM 条目大小 | 典型条目数 |
-| :--- | :--- | :--- |
-| End (128-bit) | 256 bits (full SID) | 64K |
-| End.X (128-bit) | 256 bits | 32K |
-| uSID (64-bit block) | 128 bits | 128K |
-| Policy (SID list) | 512 bits (4 SID) | 16K |
+| SID 类型            | TCAM 条目大小       | 典型条目数 |
+| :------------------ | :------------------ | :--------- |
+| End (128-bit)       | 256 bits (full SID) | 64K        |
+| End.X (128-bit)     | 256 bits            | 32K        |
+| uSID (64-bit block) | 128 bits            | 128K       |
+| Policy (SID list)   | 512 bits (4 SID)    | 16K        |
 
 ### 3.2 TCAM 溢出处理策略
 
@@ -167,7 +164,7 @@ graph TD
     E -->|否| F["LRU 驱逐"]
     F --> G["卸载到软件"]
     G --> H["软件转发"]
-    
+
     style F fill:#ff6b6b,color:#000
     style H fill:#ffd43b,color:#000
 ```
@@ -218,23 +215,23 @@ graph LR
     A["测试拓扑"] --> B["单跳测试"]
     A --> C["多跳测试"]
     A --> D["压力测试"]
-    
+
     B --> E["吞吐量"]
     B --> F["延迟"]
     C --> G["PPS"]
     D --> H["丢包率"]
-    
+
     style A fill:#4dabf7,color:#000
 ```
 
 ### 4.2 单跳吞吐量测试
 
-| 配置 | 理论最大 (64B) | 实际测试 (64B) | 效率 |
-| :--- | :--- | :--- | :--- |
-| Native IPv6 | 14.88 Mpps | 14.2 Mpps | 95.4% |
-| SRv6 (1 Seg) | 14.88 Mpps | 13.1 Mpps | 88.0% |
-| SRv6 (4 Seg) | 14.88 Mpps | 11.8 Mpps | 79.3% |
-| SRv6 + IPsec | 14.88 Mpps | 8.5 Mpps | 57.1% |
+| 配置         | 理论最大 (64B) | 实际测试 (64B) | 效率  |
+| :----------- | :------------- | :------------- | :---- |
+| Native IPv6  | 14.88 Mpps     | 14.2 Mpps      | 95.4% |
+| SRv6 (1 Seg) | 14.88 Mpps     | 13.1 Mpps      | 88.0% |
+| SRv6 (4 Seg) | 14.88 Mpps     | 11.8 Mpps      | 79.3% |
+| SRv6 + IPsec | 14.88 Mpps     | 8.5 Mpps       | 57.1% |
 
 ### 4.3 多跳延迟测试
 
@@ -247,7 +244,7 @@ for seg_count in 1 2 4 8; do
     echo "Testing $seg_count segments..."
     # 构造不同深度的 SRv6 包
     python3 create_srv6_pkt.py --segs $seg_count > /tmp/srv6_${seg_count}.pcap
-    
+
     # 使用 MoonGen 测试
     ./MoonGen/build/MoonGen \
         -p 0 \
@@ -274,7 +271,7 @@ PPS (Mpps)
    5 |
      +---+---+---+---+---+---+---+---+
        1   2   3   4   5   6   7   8  Segments
-     
+
      趋势: 每增加 1 Segment，约下降 5-8% 吞吐量
 ```
 
@@ -328,32 +325,32 @@ segment-routing srv6
 
 ### 6.1 Cisco IOS-XR
 
-| 特性 | 支持情况 | 备注 |
-| :--- | :--- | :--- |
-| 硬件转发 | ASR9k, NCS5500, 8000 | 支持 |
-| TCAM 深度 | 64K - 512K SID | 取决于线卡 |
-| uSID | 支持 | IOS-XR 7.3+ |
-| IPsec 卸载 | 支持 | 需要 CESM 卡 |
-| PSP/USP | 支持 | 自动检测 |
+| 特性       | 支持情况             | 备注         |
+| :--------- | :------------------- | :----------- |
+| 硬件转发   | ASR9k, NCS5500, 8000 | 支持         |
+| TCAM 深度  | 64K - 512K SID       | 取决于线卡   |
+| uSID       | 支持                 | IOS-XR 7.3+  |
+| IPsec 卸载 | 支持                 | 需要 CESM 卡 |
+| PSP/USP    | 支持                 | 自动检测     |
 
 ### 6.2 Juniper Junos
 
-| 特性 | 支持情况 | 备注 |
-| :--- | :--- | :--- |
-| 硬件转发 | MX960, PTX1000+ | 支持 |
-| TCAM 深度 | 128K SID | 取决于 FPC |
-| uSID | 支持 | Junos 21.2+ |
-| IPsec 卸载 | 支持 | 集成在 Trio ASIC |
-| 动态 SID | 支持 | 自动卸载/加载 |
+| 特性       | 支持情况        | 备注             |
+| :--------- | :-------------- | :--------------- |
+| 硬件转发   | MX960, PTX1000+ | 支持             |
+| TCAM 深度  | 128K SID        | 取决于 FPC       |
+| uSID       | 支持            | Junos 21.2+      |
+| IPsec 卸载 | 支持            | 集成在 Trio ASIC |
+| 动态 SID   | 支持            | 自动卸载/加载    |
 
 ### 6.3 Huawei VRP
 
-| 特性 | 支持情况 | 备注 |
-| :--- | :--- | :--- |
-| 硬件转发 | NE40E, CloudEngine | 支持 |
-| TCAM 深度 | 64K - 256K SID | 取决于单板 |
-| uSID | 支持 | VRP 8.0+ |
-| IPsec 卸载 | 支持 | 独立加密卡 |
+| 特性       | 支持情况           | 备注       |
+| :--------- | :----------------- | :--------- |
+| 硬件转发   | NE40E, CloudEngine | 支持       |
+| TCAM 深度  | 64K - 256K SID     | 取决于单板 |
+| uSID       | 支持               | VRP 8.0+   |
+| IPsec 卸载 | 支持               | 独立加密卡 |
 
 ---
 
@@ -380,7 +377,7 @@ show segment-routing-srv6 statistics
 ```
 TCAM SID 需求计算:
 
-TCAM_SID_Count = 
+TCAM_SID_Count =
     Node_SIDs
   + (Adj_SIDs × Interface_Count)
   + (uSID_Count × Compression_Ratio)
@@ -390,18 +387,19 @@ TCAM_SID_Count =
 
 ### 7.3 性能预警阈值
 
-| 指标 | 警告阈值 | 严重阈值 | 行动 |
-| :--- | :--- | :--- | :--- |
-| TCAM 使用率 | > 70% | > 85% | 扩容/压缩 |
-| CPU 利用率 | > 60% | > 80% | 启用硬件卸载 |
-| 延迟 P99 | > 5 ms | > 10 ms | 检查拥塞 |
-| 丢包率 | > 0.1% | > 1% | 排查故障 |
+| 指标        | 警告阈值 | 严重阈值 | 行动         |
+| :---------- | :------- | :------- | :----------- |
+| TCAM 使用率 | > 70%    | > 85%    | 扩容/压缩    |
+| CPU 利用率  | > 60%    | > 80%    | 启用硬件卸载 |
+| 延迟 P99    | > 5 ms   | > 10 ms  | 检查拥塞     |
+| 丢包率      | > 0.1%   | > 1%     | 排查故障     |
 
 ---
 
 ## 8. 总结：SRv6 性能最佳实践
 
 > [!tip] SRv6 性能优化 checklist
+>
 > - [ ] 选择支持 SRv6 硬件卸载的转发芯片
 > - [ ] 启用 uSID 压缩减少 TCAM 使用
 > - [ ] 启用 PSP/USP 优化最后一跳
@@ -417,15 +415,15 @@ TCAM_SID_Count =
 
 本系列 40 章全面覆盖了 SRv6 从基础概念到高级特性的完整知识体系：
 
-| Part | 主题 | 核心内容 |
-| :--- | :--- | :--- |
-| I | 基础 | MPLS 演进、SR 概念、SID 结构 |
-| II | 协议 | IPv6 Extension Header、SRH、Behavior |
-| III | 转发 | 转发流程、uSID、TI-LFA、SR Policy |
-| IV | VPN | SRv6 VPN、EVPN、VPLS、IOAM |
-| V | 流量工程 | FlexAlgo、SR-TE、流量导向 |
-| VI | 云骨干 | SD-WAN、阿里云/华为云/AWS |
-| VII | 运维 | IOS XR/Junos/Linux 配置 |
-| VIII | 故障诊断 | Debug、Traceroute、性能监控 |
-| IX | 高级 | 安全、SAVAL、IPsec、性能 |
-| X | 对比 | SRv6 vs SR-MPLS/VXLAN/WireGuard |
+| Part | 主题     | 核心内容                             |
+| :--- | :------- | :----------------------------------- |
+| I    | 基础     | MPLS 演进、SR 概念、SID 结构         |
+| II   | 协议     | IPv6 Extension Header、SRH、Behavior |
+| III  | 转发     | 转发流程、uSID、TI-LFA、SR Policy    |
+| IV   | VPN      | SRv6 VPN、EVPN、VPLS、IOAM           |
+| V    | 流量工程 | FlexAlgo、SR-TE、流量导向            |
+| VI   | 云骨干   | SD-WAN、阿里云/华为云/AWS            |
+| VII  | 运维     | IOS XR/Junos/Linux 配置              |
+| VIII | 故障诊断 | Debug、Traceroute、性能监控          |
+| IX   | 高级     | 安全、SAVAL、IPsec、性能             |
+| X    | 对比     | SRv6 vs SR-MPLS/VXLAN/WireGuard      |

@@ -90,6 +90,7 @@ Switch   0x0011ff00000a2c3a [mlx5_0]
 ```
 
 **关键信息解读：**
+
 - 显示每个交换机的级联拓扑和下游节点
 - 节点旁的 GUID 和名称（如果是已知节点）
 - 端口连接关系帮助定位物理布线问题
@@ -227,15 +228,15 @@ $ sudo ibv_err_ce mlx5_0
 
 ### 4.3 错误分类与对策
 
-| 错误码 | 类别 | 常见原因 | 排错步骤 |
-|--------|------|----------|----------|
-| `WR_FLUSH_ERR` | 通信方 QP 销毁 | 对端进程崩溃/QP 重建 | 检查对端应用状态 |
-| `RNR_RETRY_EXC_ERR` | 接收方无 WR | 本端 Receive Q 未准备 | 预 posting Receive WR |
-| `REM_INV_REQ_ERR` | R_KEY 失效 | 内存区域被注销 | 检查 MR 生命周期 |
-| `LOC_QP_OP_ERR` | QP 状态错误 | 未进入 RTS 状态 | 检查 QP state machine |
-| `RETRY_EXC_ERR` | 重试耗尽 | 丢包/拥塞/链路故障 | 检查链路错误计数 |
-| `BAD_RESP_ERR` | 协议错误 | 版本不匹配/格式错误 | 检查驱动和固件版本 |
-| `MW_BIND_ERR` | MW 绑定错误 | 权限或地址无效 | 检查 bind 参数 |
+| 错误码              | 类别           | 常见原因              | 排错步骤              |
+| ------------------- | -------------- | --------------------- | --------------------- |
+| `WR_FLUSH_ERR`      | 通信方 QP 销毁 | 对端进程崩溃/QP 重建  | 检查对端应用状态      |
+| `RNR_RETRY_EXC_ERR` | 接收方无 WR    | 本端 Receive Q 未准备 | 预 posting Receive WR |
+| `REM_INV_REQ_ERR`   | R_KEY 失效     | 内存区域被注销        | 检查 MR 生命周期      |
+| `LOC_QP_OP_ERR`     | QP 状态错误    | 未进入 RTS 状态       | 检查 QP state machine |
+| `RETRY_EXC_ERR`     | 重试耗尽       | 丢包/拥塞/链路故障    | 检查链路错误计数      |
+| `BAD_RESP_ERR`      | 协议错误       | 版本不匹配/格式错误   | 检查驱动和固件版本    |
+| `MW_BIND_ERR`       | MW 绑定错误    | 权限或地址无效        | 检查 bind 参数        |
 
 ---
 
@@ -426,20 +427,20 @@ RDMA 排错流程图：
 
 ## 9. 常用命令速查表
 
-| 命令 | 用途 |
-|------|------|
-| `ibv_devinfo` | 查看本地设备信息、GID、QP 数量 |
-| `ibstat` | 查看所有端口状态和 SM |
-| `iblinkinfo` | 链路信息和错误计数 |
-| `ibnetdiscover` | 发现子网拓扑 |
-| `ibdiagnet` | 完整子网诊断 |
-| `ibv_rc_pingpong` | RC 连通性测试 |
-| `ibv_ud_pingpong` | UD 连通性测试 |
-| `rping` | RDMA socket 连通性测试 |
-| `perfquery` | 读取端口性能计数器 |
-| `ibv_err_ce` | 解析 CQE 错误信息 |
-| `ibaddr` | 查询 LID/GID 地址 |
-| `smpquery` | 查询子网管理属性 |
+| 命令              | 用途                           |
+| ----------------- | ------------------------------ |
+| `ibv_devinfo`     | 查看本地设备信息、GID、QP 数量 |
+| `ibstat`          | 查看所有端口状态和 SM          |
+| `iblinkinfo`      | 链路信息和错误计数             |
+| `ibnetdiscover`   | 发现子网拓扑                   |
+| `ibdiagnet`       | 完整子网诊断                   |
+| `ibv_rc_pingpong` | RC 连通性测试                  |
+| `ibv_ud_pingpong` | UD 连通性测试                  |
+| `rping`           | RDMA socket 连通性测试         |
+| `perfquery`       | 读取端口性能计数器             |
+| `ibv_err_ce`      | 解析 CQE 错误信息              |
+| `ibaddr`          | 查询 LID/GID 地址              |
+| `smpquery`        | 查询子网管理属性               |
 
 ---
 

@@ -5,10 +5,8 @@ tags: [dpdk, series, vdpa, virtio, datapath, hardware-offload, driver, vhost]
 description: "深入理解 VDPA 机制——virtio 数据面的硬件卸载、vDPA 驱动、virtio-blk/virtio-net 加速、mlx5-vdpa、DPDK vdpa 库"
 ---
 
-> [!info] DPDK 深度探索系列
-> 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
-> 1-18. 前十八章已完成
-> 19. **第十九章：VDPA 数据面加速与驱动**
+> [!info] DPDK 深度探索系列 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
+> 1-18. 前十八章已完成 19. **第十九章：VDPA 数据面加速与驱动**
 
 ---
 
@@ -115,22 +113,22 @@ VDPA (vhost Data Path Acceleration) 是将 vhost 数据路径卸载到硬件的�
 
 ### 1.2 VDPA vs vhost-user vs KNI
 
-| 特性 | KNI | vhost-user | VDPA |
-|------|-----|------------|------|
-| **数据路径** | 内核网络栈 | 用户态 DPDK | 硬件 DMA |
-| **CPU 参与** | 每次操作 | virtqueue 管理 | 仅控制平面 |
-| **延迟** | 高 (~50μs) | 中 (~5-10μs) | 低 (~3-5μs) |
-| **吞吐量** | 受限 | 高 | 线速 |
-| **功能** | 完整内核栈 | 灵活 | 受硬件限制 |
-| **部署** | 简单 | 中等 | 需要 DPU/SmartNIC |
+| 特性         | KNI        | vhost-user     | VDPA              |
+| ------------ | ---------- | -------------- | ----------------- |
+| **数据路径** | 内核网络栈 | 用户态 DPDK    | 硬件 DMA          |
+| **CPU 参与** | 每次操作   | virtqueue 管理 | 仅控制平面        |
+| **延迟**     | 高 (~50μs) | 中 (~5-10μs)   | 低 (~3-5μs)       |
+| **吞吐量**   | 受限       | 高             | 线速              |
+| **功能**     | 完整内核栈 | 灵活           | 受硬件限制        |
+| **部署**     | 简单       | 中等           | 需要 DPU/SmartNIC |
 
 ### 1.3 VDPA 支持的设备类型
 
-| 设备类型 | 说明 | 硬件厂商 |
-|----------|------|----------|
-| **virtio-net** | 网络 I/O 加速 | Mellanox, Intel, NVIDIA |
-| **virtio-blk** | 块设备加速 | Mellanox, Intel |
-| **virtio-scsi** | SCSI 加速 | 较少 |
+| 设备类型        | 说明          | 硬件厂商                |
+| --------------- | ------------- | ----------------------- |
+| **virtio-net**  | 网络 I/O 加速 | Mellanox, Intel, NVIDIA |
+| **virtio-blk**  | 块设备加速    | Mellanox, Intel         |
+| **virtio-scsi** | SCSI 加速     | 较少                    |
 
 ---
 
@@ -435,6 +433,7 @@ qemu-system-x86_64 \
 ```
 
 > [!note] 两种模式对比
+>
 > - **内核模式**：QEMU 直接打开 `/dev/vhost-vdpa/N`，通过内核 ioctl 配置 VDPA 设备，简单高效
 > - **用户态模式**：通过 vhost-user 协议与用户态 VDPA 守护进程（如 DPDK vdpa example）通信，灵活但多一层
 
@@ -793,6 +792,7 @@ vhost_vdpa_open(struct vhost_vdpa *v)
 ```
 
 > [!note] 关键理解点
+>
 > 1. **控制面和数据面分离**：QEMU/CPU 只在阶段 1（初始化）工作，阶段 2/3（收发数据）完全由 DPU 硬件完成
 > 2. **IOMMU 是桥梁**：Guest 用 GPA（Guest 物理地址），DPU 通过 IOMMU 将 GPA 转为 HPA（Host 物理地址），才能 DMA 读写
 > 3. **vring 格式不变**：DPU 直接读取标准 virtio vring，不需要 VM 做任何修改，Guest 完全不知道后端是软件还是硬件
@@ -885,6 +885,7 @@ struct rte_vdpa_dev_ops {
 ```
 
 > [!note] DPDK vdpa API 说明
+>
 > - 操作函数的第一个参数是 `vid`（vhost device ID），不是设备结构体指针
 > - `setup_vring` 统一负责设置/禁用 virtqueue，不区分 setup/start/stop
 > - 不存在 `poll_completion` 等函数 — VDPA 数据路径由硬件完成，软件无需轮询
@@ -978,6 +979,7 @@ main(int argc, char *argv[])
 ```
 
 > [!note] VDPA 与 vhost-user 软件模式的关键区别
+>
 > - 上面代码看起来和 vhost-user sample 几乎一样 — 这正是 VDPA 的设计意图
 > - 控制平面代码（回调注册、特性协商）完全相同
 > - 区别在于 `rte_vdpa_get_device()` 返回的是 VDPA 设备，其 ops 指向硬件驱动
@@ -1127,14 +1129,14 @@ struct dma_request {
 
 ### 7.2 VDPA 加速比
 
-| 场景 | 方案 | 吞吐量 | CPU 利用率 | 加速比 |
-|------|------|--------|------------|--------|
-| **64B 小包** | vhost-user | 5-10 Mpps | ~100% | 1x |
-| **64B 小包** | VDPA (mlx5) | 20-30 Mpps | <10% | 3-5x |
-| **Jumbo 帧** | vhost-user | 10-15 Gbps | ~80% | 1x |
-| **Jumbo 帧** | VDPA (mlx5) | 80-100 Gbps | <15% | 5-8x |
-| **存储 IOPS** | vhost-blk | 200K IOPS | ~90% | 1x |
-| **存储 IOPS** | VDPA (mlx5) | 800K-1.2M IOPS | <20% | 4-6x |
+| 场景          | 方案        | 吞吐量         | CPU 利用率 | 加速比 |
+| ------------- | ----------- | -------------- | ---------- | ------ |
+| **64B 小包**  | vhost-user  | 5-10 Mpps      | ~100%      | 1x     |
+| **64B 小包**  | VDPA (mlx5) | 20-30 Mpps     | <10%       | 3-5x   |
+| **Jumbo 帧**  | vhost-user  | 10-15 Gbps     | ~80%       | 1x     |
+| **Jumbo 帧**  | VDPA (mlx5) | 80-100 Gbps    | <15%       | 5-8x   |
+| **存储 IOPS** | vhost-blk   | 200K IOPS      | ~90%       | 1x     |
+| **存储 IOPS** | VDPA (mlx5) | 800K-1.2M IOPS | <20%       | 4-6x   |
 
 > [!note] 关于 64B 小包性能
 > 原稿中 VDPA 64B 吞吐量标为 50 Mpps 过于乐观。实际在 ConnectX-6/7 上，纯硬件转发（无软件开销）在 64B 场景通常为 20-30 Mpps，主要瓶颈在 PCIe 带宽和硬件 desc 处理流水线深度。50 Mpps 通常需要多端口聚合或特殊硬件。
@@ -1145,13 +1147,13 @@ struct dma_request {
 
 ### 8.1 硬件要求
 
-| 组件 | 要求 |
-|------|------|
+| 组件             | 要求                                        |
+| ---------------- | ------------------------------------------- |
 | **DPU/SmartNIC** | Mellanox ConnectX-6/7, NVIDIA BlueField-2/3 |
-| **驱动** | mlx5_core, mlx5_vdpa (Linux kernel 5.10+) |
-| **固件** | 最新 VDPA 固件 |
-| **QEMU** | 6.0+ |
-| **DPDK** | 21.02+ |
+| **驱动**         | mlx5_core, mlx5_vdpa (Linux kernel 5.10+)   |
+| **固件**         | 最新 VDPA 固件                              |
+| **QEMU**         | 6.0+                                        |
+| **DPDK**         | 21.02+                                      |
 
 ### 8.2 部署步骤
 
@@ -1206,6 +1208,7 @@ qemu-system-x86_64 \
 ---
 
 > [!tip] 参考文献
+>
 > - "VDPA 规范", https://www.kernel.org/doc/html/latest/userspace-api/vdpa.html
 > - Intel, "DPDK Vhost", https://doc.dpdk.org/guides/prog_guide/vhost_lib.html
 > - Mellanox, "mlx5 VDPA driver", https://docs.nvidia.com/networking/category/mlx5drivers

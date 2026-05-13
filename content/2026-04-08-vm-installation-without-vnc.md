@@ -7,6 +7,7 @@ tags: [vnc, libvirt, qemu, kvm, automation, kickstart]
 # 虚拟机无 VNC 安装方案：纯文本全链路管理
 
 > [!info] VNC 协议系列
+>
 > - [[2026-04-08-vnc-protocol-and-traffic-fingerprint|VNC 协议原理与流量特征分析]]
 > - [[2026-04-08-vnc-framebuffer-reading-mechanism|VNC 帧缓冲区读取机制：物理机与虚拟机的差异]]
 > - **虚拟机无 VNC 安装方案：纯文本全链路管理**（本文）
@@ -35,21 +36,21 @@ virt-install \
 
 核心启动参数：
 
-| 参数 | 作用 |
-|------|------|
-| `inst.text` | 强制文本模式安装，不启动图形界面 |
-| `console=ttyS0,115200` | 安装器输出重定向到串口 |
-| `inst.ks=` | 指向自动应答文件，全程无人值守 |
+| 参数                   | 作用                             |
+| ---------------------- | -------------------------------- |
+| `inst.text`            | 强制文本模式安装，不启动图形界面 |
+| `console=ttyS0,115200` | 安装器输出重定向到串口           |
+| `inst.ks=`             | 指向自动应答文件，全程无人值守   |
 
 ### 各发行版的应答文件方案
 
-| 发行版 | 应答文件格式 | 引导参数 | 说明 |
-|--------|------------|---------|------|
-| RHEL/CentOS/Fedora | Kickstart (`.ks`) | `inst.ks=` | Red Hat 系标准方案，功能最全 |
-| Debian/Ubuntu | Preseed (`.cfg`) | `auto=true url=` | Debian 系标准方案 |
-| openSUSE/SLES | AutoYaST (`.xml`) | `autoyast=` | SUSE 系标准方案 |
-| Arch Linux | 无安装器，脚本化 | pacstrap | 直接用脚本构建系统 |
-| Alpine | answerfile | `Answerfile=` | 天然文本模式 |
+| 发行版             | 应答文件格式      | 引导参数         | 说明                         |
+| ------------------ | ----------------- | ---------------- | ---------------------------- |
+| RHEL/CentOS/Fedora | Kickstart (`.ks`) | `inst.ks=`       | Red Hat 系标准方案，功能最全 |
+| Debian/Ubuntu      | Preseed (`.cfg`)  | `auto=true url=` | Debian 系标准方案            |
+| openSUSE/SLES      | AutoYaST (`.xml`) | `autoyast=`      | SUSE 系标准方案              |
+| Arch Linux         | 无安装器，脚本化  | pacstrap         | 直接用脚本构建系统           |
+| Alpine             | answerfile        | `Answerfile=`    | 天然文本模式                 |
 
 ### Kickstart 示例（RHEL/CentOS/Fedora）
 
@@ -175,14 +176,14 @@ runcmd:
 
 ### 常用 Cloud Image 来源
 
-| 发行版 | 下载地址 |
-|--------|---------|
-| CentOS Stream | https://cloud.centos.org/centos/ |
-| Ubuntu | https://cloud-images.ubuntu.com/ |
-| Fedora | https://kojipkgs.fedoraproject.org/compose/cloud/ |
-| Debian | https://cloud.debian.org/images/cloud/ |
-| Alpine | https://alpinelinux.org/cloud/ |
-| openSUSE | https://download.opensuse.org/repositories/Cloud:/Images:/Leap_/ |
+| 发行版        | 下载地址                                                         |
+| ------------- | ---------------------------------------------------------------- |
+| CentOS Stream | https://cloud.centos.org/centos/                                 |
+| Ubuntu        | https://cloud-images.ubuntu.com/                                 |
+| Fedora        | https://kojipkgs.fedoraproject.org/compose/cloud/                |
+| Debian        | https://cloud.debian.org/images/cloud/                           |
+| Alpine        | https://alpinelinux.org/cloud/                                   |
+| openSUSE      | https://download.opensuse.org/repositories/Cloud:/Images:/Leap_/ |
 
 ## 方案三：Packer 自动构建镜像
 
@@ -241,12 +242,12 @@ Packer 的优势在于**镜像版本化**：每次构建产出固定哈希的镜
 
 ## 方案对比
 
-| 方案 | 需要 VNC？ | 自动化程度 | 安装时间 | 适用场景 |
-|------|:---------:|:---------:|:-------:|---------|
-| 图形安装器 + VNC | 是 | 低 | 10-30min | 偶尔手动装一台 |
-| 文本模式 + Kickstart/Preseed | **不需要** | 高 | 5-15min | 批量部署，标准化配置 |
-| Cloud Image + cloud-init | **不需要** | 最高 | < 1min | 云环境，快速拉起 |
-| Packer 构建 | **不需要** | 最高 | 10-20min | CI/CD，版本化镜像 |
+| 方案                         | 需要 VNC？ | 自动化程度 | 安装时间 | 适用场景             |
+| ---------------------------- | :--------: | :--------: | :------: | -------------------- |
+| 图形安装器 + VNC             |     是     |     低     | 10-30min | 偶尔手动装一台       |
+| 文本模式 + Kickstart/Preseed | **不需要** |     高     | 5-15min  | 批量部署，标准化配置 |
+| Cloud Image + cloud-init     | **不需要** |    最高    |  < 1min  | 云环境，快速拉起     |
+| Packer 构建                  | **不需要** |    最高    | 10-20min | CI/CD，版本化镜像    |
 
 ## 总结
 

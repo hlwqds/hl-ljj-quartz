@@ -1,14 +1,23 @@
 ---
 title: "DPDK 深度探索 (三十)：性能调优——Batching、RSS、Flow Director"
 date: 2026-04-09
-tags: [dpdk, series, performance, batching, rss, flow-director, optimization, receive-scaling, swx-pipeline]
+tags:
+  [
+    dpdk,
+    series,
+    performance,
+    batching,
+    rss,
+    flow-director,
+    optimization,
+    receive-scaling,
+    swx-pipeline,
+  ]
 description: "深入理解 DPDK 性能调优——Batching 策略、RSS (Receive Side Scaling)、Flow Director、队列优化、性能调优清单"
 ---
 
-> [!info] DPDK 深度探索系列
-> 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
-> 1-29. 前二十九章已完成
-> 30. **第三十章：性能调优——Batching、RSS、Flow Director**
+> [!info] DPDK 深度探索系列 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
+> 1-29. 前二十九章已完成 30. **第三十章：性能调优——Batching、RSS、Flow Director**
 
 ---
 
@@ -122,7 +131,7 @@ description: "深入理解 DPDK 性能调优——Batching 策略、RSS (Receive
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 2.2 DPDK Burst  API
+### 2.2 DPDK Burst API
 
 ```c
 // DPDK Burst API
@@ -1751,6 +1760,7 @@ DPDK 深度探索系列 (1-30) 至此完成。系列涵盖了 DPDK 核心知识�
 ---
 
 > [!tip] 参考文献
+>
 > - Intel, "Data Plane Development Kit Performance Tuning Guide"
 > - Intel, "Intel 82599 10GbE Controller Datasheet" (RSS/Flow Director)
 > - DPDK Flow API, https://doc.dpdk.org/guides/prog_guide/rte_flow.html

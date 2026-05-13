@@ -199,24 +199,24 @@ void ncclRingAllReduce(float* buffer, int count, int nGPUs) {
     int rank = getGPUId();
     int left = (rank - 1 + nGPUs) % nGPUs;
     int right = (rank + 1) % nGPUs;
-    
+
     // Phase 1: Reduce (nGPUs - 1 步)
     // 每个 GPU 接收来自左侧的梯度并累加
     for (int step = 0; step < nGPUs - 1; step++) {
         int src = left;
         int dst = right;
-        
+
         // RDMA Read + Local Reduce
         rdmaGetFromGPU(src, buffer, count);  // 从远端 GPU 读
         reduce(buffer, temp_buffer);          // 累加到本地
     }
-    
+
     // Phase 2: Broadcast (nGPUs - 1 步)
     // 每个 GPU 将完整结果发送给右侧
     for (int step = 0; step < nGPUs - 1; step++) {
         int src = right;
         int dst = left;
-        
+
         // RDMA Write to 远端
         rdmaWriteToGPU(dst, buffer, count);
     }
@@ -241,19 +241,19 @@ void ncclHierarchicalAllReduce(float* buffer, int count) {
     if (localGPUs > 1) {
         ncclGroupStart();
         for (int i = 0; i < localGPUs; i++) {
-            ncclAllReduce(local_buffers[i], local_buffers[i], 
+            ncclAllReduce(local_buffers[i], local_buffers[i],
                          count/localGPUs, ...);  // NVLink
         }
         ncclGroupEnd();
     }
-    
+
     // Global RDMA AllReduce (跨节点)
     if (nNodes > 1) {
-        ncclAllReduce(node_buffers[localRank], 
+        ncclAllReduce(node_buffers[localRank],
                      node_buffers[localRank],
                      count, ...);  // InfiniBand RDMA
     }
-    
+
     // Local Broadcast
     if (localGPUs > 1) {
         broadcast_via_nvlink(buffer, localGPUs);
@@ -272,7 +272,7 @@ void ncclHierarchicalAllReduce(float* buffer, int count) {
 ncclResult_t ncclInit() {
     // 1. 加载 NCCL-NET 插件
     loadNcclNetPlugin();
-    
+
     // 2. 检测 RDMA 设备
     ncclNet->devices(&nIbDevs);
     for (int i = 0; i < nIbDevs; i++) {
@@ -282,13 +282,13 @@ ncclResult_t ncclInit() {
         // props.speed: 100 Gbps
         // props.port: 1
     }
-    
+
     // 3. 建立 P2P 连接
     for (int peer = 0; peer < nPeers; peer++) {
         ncclNet->connect(ibDev, peerHandle, &sendComm[peer]);
         ncclNet->accept(listenComm, &recvComm[peer]);
     }
-    
+
     // 4. 分配通信器
     ncclCommInitRank(&comm, nGPUs * nNodes, uniqueId, myRank);
 }
@@ -302,7 +302,7 @@ struct ncclComm {
     int rank;           // 当前进程 rank (0 ~ nRanks-1)
     int nRanks;         // 总 GPU 数量
     uint64_t uid;       // 唯一标识，用于连接建立
-    
+
     // RDMA 连接信息
     struct ncclConnector {
         void* sendbuff;      // 发送缓冲区
@@ -311,7 +311,7 @@ struct ncclComm {
         uint32_t rkey;        // RDMA 远程密钥
         int      remoteAddr; // 远端 IB 地址
     }* connectors;
-    
+
     // 传输层选择
     int transitive;     // 是否使用传递路径
     int shareInts;      // 是否共享 IB 接口
@@ -350,18 +350,18 @@ export NCCL_NVLS_MAX_NCHANNELS=4    # NVLS 通道数 (Hopper+)
 # 查看 NCCL 拓扑检测结果
 $ NCCL_DEBUG=INFO ./train.py 2>&1 | grep -E "(NCCL|IB|Topology)"
 
-NCCL INFO rank 0 PciDevice 0 : gfx906 
-NCCL INFO rank 1 PciDevice 1 : gfx906 
-NCCL INFO rank 2 PciDevice 2 : gfx906 
-NCCL INFO rank 3 PciDevice 3 : gfx906 
-NCCL INFO rank 4 PciDevice 0 : gfx906 
-NCCL INFO rank 5 PciDevice 1 : gfx906 
-NCCL INFO rank 6 PciDevice 2 : gfx906 
-NCCL INFO rank 7 PciDevice 3 : gfx906 
+NCCL INFO rank 0 PciDevice 0 : gfx906
+NCCL INFO rank 1 PciDevice 1 : gfx906
+NCCL INFO rank 2 PciDevice 2 : gfx906
+NCCL INFO rank 3 PciDevice 3 : gfx906
+NCCL INFO rank 4 PciDevice 0 : gfx906
+NCCL INFO rank 5 PciDevice 1 : gfx906
+NCCL INFO rank 6 PciDevice 2 : gfx906
+NCCL INFO rank 7 PciDevice 3 : gfx906
 
 NCCL INFO Topology detect: NVLS Path Found
-NCCL INFO Topology P165: 
-     NVLS     NET     NET     
+NCCL INFO Topology P165:
+     NVLS     NET     NET
     0  1  2  3  4  5  6  7   NUMA
     X  X  X  X  X  X  X  X   0   First subsystem
     X  X  X  X  X  X  X  X   1   Second subsystem

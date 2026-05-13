@@ -49,12 +49,12 @@ sequenceDiagram
   participant Attacker as 攻击者
   participant VictimSwitch as 目标交换机
   participant LegitSwitch as 合法交换机
-  
+
   Attacker->>VictimSwitch: 发送 DTP Desirable 报文
   Note over Attacker: 模拟为可协商 Trunk 的交换机
   VictimSwitch->>Attacker: DTP Success - Trunk 建立
   Note over Attacker: 攻击者现在可以访问所有 VLAN
-  
+
   Attacker->>LegitSwitch: 通过 Trunk 发送不同 VLAN 流量
   LegitSwitch-->>Attacker: 响应流量
 ```
@@ -73,10 +73,10 @@ sequenceDiagram
   participant Switch1 as 第一跳交换机
   participant Switch2 as 第二跳交换机
   participant Victim as 目标服务器
-  
+
   Note over Attacker: 攻击者位于 Access 端口
   Note over Attacker: VLAN 10 = 攻击者所在 VLAN<br/>VLAN 99 = Native VLAN
-  
+
   Attacker->>Switch1: 双标签帧<br/>[VLAN 99][VLAN 20] + 数据
   Note over Switch1: 第一层 VLAN 99 标签被移除<br/>（Native VLAN 处理）
   Switch1->>Switch2: 移除外层标签后发送<br/>只剩 [VLAN 20] + 数据
@@ -92,10 +92,10 @@ sequenceDiagram
 
 ### 1.3 攻击对比
 
-| 攻击类型 | 原理 | 前提条件 | 影响范围 |
-|---------|------|---------|---------|
-| Switch Spoofing | 伪装成交换机建立 Trunk | DTP 自动协商启用 | 所有 VLAN |
-| Double Tagging | 利用双标签穿越 Trunk | Native VLAN 未标记 | 单向到目标 VLAN |
+| 攻击类型        | 原理                   | 前提条件           | 影响范围        |
+| --------------- | ---------------------- | ------------------ | --------------- |
+| Switch Spoofing | 伪装成交换机建立 Trunk | DTP 自动协商启用   | 所有 VLAN       |
+| Double Tagging  | 利用双标签穿越 Trunk   | Native VLAN 未标记 | 单向到目标 VLAN |
 
 ---
 
@@ -167,7 +167,7 @@ vlan 999
 
 ```bash
 # Juniper EX 系列配置
-set interfaces ge-0/0/1 unit 0 family ethernet-switching 
+set interfaces ge-0/0/1 unit 0 family ethernet-switching
     vlan members 999
 set protocols mvrp interface ge-0/0/1
 
@@ -228,7 +228,7 @@ graph TB
         end
         Promisc["Promiscuous Port<br/>(连接网关)"]
     end
-    
+
     Promisc --> I1
     Promisc --> I2
     Promisc --> C1
@@ -239,11 +239,11 @@ graph TB
 
 **PVLAN 三种端口类型：**
 
-| 端口类型 | 缩写 | 与其他端口通信 | 与网关通信 | 典型用途 |
-|---------|------|--------------|-----------|---------|
-| Isolated（隔离端口） | - | 否 | 是 | 访客网络、隔离用户 |
-| Community（社区端口） | - | 同社区内可以 | 是 | 部门内部通信 |
-| Promiscuous（混杂端口） | - | 与所有端口 | - | 路由器、服务器 |
+| 端口类型                | 缩写 | 与其他端口通信 | 与网关通信 | 典型用途           |
+| ----------------------- | ---- | -------------- | ---------- | ------------------ |
+| Isolated（隔离端口）    | -    | 否             | 是         | 访客网络、隔离用户 |
+| Community（社区端口）   | -    | 同社区内可以   | 是         | 部门内部通信       |
+| Promiscuous（混杂端口） | -    | 与所有端口     | -          | 路由器、服务器     |
 
 ### 3.2 PVLAN 配置示例（Cisco IOS）
 
@@ -303,7 +303,7 @@ graph LR
         CoreSw <-->|Isolated| Server3["App 服务器"]
         Server1 <-->|Community| Server2
     end
-    
+
     style Router fill:#ff6b6b
     style CoreSw fill:#4ecdc4
     style Server1 fill:#95e1d3
@@ -351,23 +351,23 @@ sequenceDiagram
   participant LegitServer as 合法 DHCP 服务器
   participant Attacker as 恶意 DHCP 服务器
   participant Switch as 交换机
-  
+
   Note over Client: 发送 DHCP Discover 广播
-  
+
   Client->>Switch: DHCP Discover
   Switch->>LegitServer: DHCP Discover
   Switch->>Attacker: DHCP Discover
-  
+
   Note over LegitServer: 响应延迟（正常服务器）
   Note over Attacker: 响应快速（恶意服务器）
-  
+
   Attacker-->>Client: DHCP Offer<br/>IP: 10.1.1.200<br/>Gateway: 10.1.1.254<br/>DNS: 恶意DNS
   LegitServer-->>Client: DHCP Offer<br/>IP: 10.1.1.100<br/>Gateway: 10.1.1.1
-  
+
   Note over Client: 选择最先收到的 Offer
   Client->>Switch: DHCP Request
   Attacker-->>Client: DHCP ACK
-  
+
   Note over Client: 获取恶意分配的 IP<br/>流量被重定向到攻击者
 ```
 
@@ -388,12 +388,12 @@ graph TB
         Trust["可信端口<br/>(Gi0/24 - 连接合法 DHCP)"]
         Untrust1["不可信端口<br/>(Gi0/1 - 用户接入)"]
         Untrust2["不可信端口<br/>(Gi0/2 - 用户接入)"]
-        
+
         Trust --> DB[(DHCP Binding Table)]
         Untrust1 -->|DHCP Offer/NACK| Filter["过滤"]
         Untrust2 -->|DHCP Offer/NACK| Filter
     end
-    
+
     Legit["合法 DHCP 服务器<br/>10.1.1.10"] --> Trust
     User1["用户 1"] --> Untrust1
     User2["用户 2"] --> Untrust2
@@ -484,13 +484,13 @@ class "snooping" {
 
 ### 4.5 DHCP 防御参数对比
 
-| 参数 | 推荐值 | 说明 |
-|-----|-------|------|
-| Snooping 全局启用 | Yes | 交换机级别启用 |
-| 速率限制 | 10-100 pps | 防止耗尽攻击 |
-| MAC 验证 | Enabled | 验证 CHADDR 字段 |
-| Option 82 | Enabled | 提供位置追踪能力 |
-| 可信端口 | 仅 DHCP 服务器所在端口 | 最小权限原则 |
+| 参数              | 推荐值                 | 说明             |
+| ----------------- | ---------------------- | ---------------- |
+| Snooping 全局启用 | Yes                    | 交换机级别启用   |
+| 速率限制          | 10-100 pps             | 防止耗尽攻击     |
+| MAC 验证          | Enabled                | 验证 CHADDR 字段 |
+| Option 82         | Enabled                | 提供位置追踪能力 |
+| 可信端口          | 仅 DHCP 服务器所在端口 | 最小权限原则     |
 
 ---
 
@@ -505,19 +505,19 @@ sequenceDiagram
   participant Victim as 受害者
   participant Attacker as 攻击者
   participant Gateway as 默认网关
-  
+
   Note over Attacker: 正常 ARP 映射：
   Note over Attacker: Gateway IP: 10.1.1.1 -> MAC: 00:11:22:33:44:55
-  
+
   Attacker->>Victim: ARP Response
   Note over Attimacker: 伪造的 ARP 响应
   Note over Attacker: Gateway IP: 10.1.1.1 -> MAC: AA:BB:CC:DD:EE:FF<br/>(攻击者 MAC)
-  
+
   Victim->>Attacker: 发往网关的流量
   Attacker->>Gateway: 转发流量（可能修改）
   Gateway->>Attacker: 响应流量
   Attacker->>Victim: 转发响应流量
-  
+
   Note over Victim: 中间人攻击成功
 ```
 
@@ -538,10 +538,10 @@ graph TB
             Entry1["10.1.1.100 -> MAC: 00:11:22:33:44:55<br/>Port: Gi0/1, VLAN 10"]
             Entry2["10.1.1.101 -> MAC: 00:11:22:33:44:66<br/>Port: Gi0/2, VLAN 10"]
         end
-        
+
         ARPReq["ARP Request"] --> Inspect["DAI 检查"]
         ARPResp["ARP Response"] --> Inspect
-        
+
         Inspect -->|匹配 snooping 表| Allow["允许通过"]
         Inspect -->|不匹配| Drop["丢弃并告警"]
     end
@@ -606,7 +606,7 @@ show ip arp inspection statistics vlan 10
 
 ### 5.4 IP Source Guard（IPSG）
 
-IPSG 与 DAI 协同工作，基于 DHCP Snooping 表或静态绑定防止 IP  spoofing 攻击。
+IPSG 与 DAI 协同工作，基于 DHCP Snooping 表或静态绑定防止 IP spoofing 攻击。
 
 ```网络配置
 ! ============================================
@@ -643,13 +643,13 @@ show ip source binding
 
 ### 5.5 DAI 与 IPSG 对比
 
-| 特性 | DAI | IPSG |
-|-----|-----|------|
-| 检查对象 | ARP 响应 | IP 数据包 |
-| 验证依据 | DHCP Snooping 表 / 静态 ARP ACL | DHCP Snooping 表 / 静态绑定 |
-| 工作层次 | 三层 ARP | 二层 IP 头 |
-| 防御攻击 | ARP 欺骗 | IP 欺骗 |
-| 配置复杂度 | 中等 | 低 |
+| 特性       | DAI                             | IPSG                        |
+| ---------- | ------------------------------- | --------------------------- |
+| 检查对象   | ARP 响应                        | IP 数据包                   |
+| 验证依据   | DHCP Snooping 表 / 静态 ARP ACL | DHCP Snooping 表 / 静态绑定 |
+| 工作层次   | 三层 ARP                        | 二层 IP 头                  |
+| 防御攻击   | ARP 欺骗                        | IP 欺骗                     |
+| 配置复杂度 | 中等                            | 低                          |
 
 ---
 
@@ -665,7 +665,7 @@ graph LR
         Attacker["攻击者"] -->|伪造 MAC: 00:11:22:33:44:55| Switch["交换机"]
         Legit["合法服务器<br/>MAC: 00:11:22:33:44:55"] --> Switch
     end
-    
+
     Switch -->|CAM 表更新为<br/>攻击者端口| AttackPath["攻击者接收流量"]
     Switch -.->|MAC 漂移检测<br/>可能触发安全事件| Alert["告警"]
 ```
@@ -795,13 +795,13 @@ show mac address-table notification mac-move
 
 ### 6.5 Port Security 与 MAC 相关的功能对比
 
-| 功能 | Port Security | 动态 CAM | 静态 MAC |
-|-----|---------------|---------|----------|
-| 配置复杂度 | 中等 | 无 | 高 |
-| 持久化 | 可配置 | 否 | 是 |
-| 自动化 | Sticky 可自动学习 | 自动学习 | 手动配置 |
-| 适用场景 | 接入层 | 汇聚层 | 关键设备 |
-| 违规检测 | 支持 | 有限 | 支持 |
+| 功能       | Port Security     | 动态 CAM | 静态 MAC |
+| ---------- | ----------------- | -------- | -------- |
+| 配置复杂度 | 中等              | 无       | 高       |
+| 持久化     | 可配置            | 否       | 是       |
+| 自动化     | Sticky 可自动学习 | 自动学习 | 手动配置 |
+| 适用场景   | 接入层            | 汇聚层   | 关键设备 |
+| 违规检测   | 支持              | 有限     | 支持     |
 
 ---
 
@@ -814,16 +814,16 @@ show mac address-table notification mac-move
 ```mermaid
 graph TB
     subgraph "VLAN 安全过滤"
-        PACL["PACL<br/>Port ACL<br/>入方向"] 
+        PACL["PACL<br/>Port ACL<br/>入方向"]
         RACL["RACL<br/>Router ACL<br/>三层出方向"]
         VACL["VACL<br/>VLAN ACL<br/>入/出方向"]
-        
+
         subgraph "数据包流程"
             In["入站"]
             L3["三层路由"]
             Out["出站"]
         end
-        
+
         In --> PACL
         PACL --> L3
         L3 --> RACL
@@ -831,11 +831,11 @@ graph TB
     end
 ```
 
-| ACL 类型 | 作用位置 | 过滤方向 | 生效时机 |
-|---------|---------|---------|---------|
-| PACL | 交换机端口 | 入站 | 二层入口 |
-| RACL | VLAN SVI | 出站（路由后） | 三层出口 |
-| VACL | VLAN 内部 | 入/出站 | 二层处理 |
+| ACL 类型 | 作用位置   | 过滤方向       | 生效时机 |
+| -------- | ---------- | -------------- | -------- |
+| PACL     | 交换机端口 | 入站           | 二层入口 |
+| RACL     | VLAN SVI   | 出站（路由后） | 三层出口 |
+| VACL     | VLAN 内部  | 入/出站        | 二层处理 |
 
 ### 7.2 PACL（Port ACL）配置
 
@@ -933,7 +933,7 @@ flowchart LR
         R1["3. RACL<br/>(路由后出站)"]
         V1["4. VACL<br/>(VLAN 内部)"]
     end
-    
+
     P1 --> SVI
     SVI -->|路由到同 VLAN| V1
     SVI -->|路由到其他 VLAN| R1
@@ -947,13 +947,13 @@ flowchart LR
 
 ### 7.6 PACL 与 RACL 对比
 
-| 特性 | PACL | RACL |
-|-----|------|------|
-| 应用位置 | 物理端口 | VLAN SVI |
-| 过滤时机 | 入站（路由前） | 出站（路由后） |
-| 过滤范围 | 端口所有流量 | 路由流量 |
-| 广播流量 | 过滤 | 不过滤（广播不路由） |
-| CPU 负载 | 低 | 中 |
+| 特性     | PACL           | RACL                 |
+| -------- | -------------- | -------------------- |
+| 应用位置 | 物理端口       | VLAN SVI             |
+| 过滤时机 | 入站（路由前） | 出站（路由后）       |
+| 过滤范围 | 端口所有流量   | 路由流量             |
+| 广播流量 | 过滤           | 不过滤（广播不路由） |
+| CPU 负载 | 低             | 中                   |
 
 ---
 
@@ -971,20 +971,20 @@ graph TB
             A2["导致 STP 重新计算"]
             A3["网络收敛变慢"]
         end
-        
+
         subgraph "2. STP 伪装攻击"
             B1["攻击者成为根桥"]
             B2["改变拓扑结构"]
             B3["流量经过攻击者"]
         end
-        
+
         subgraph "3. 拓扑改变泛洪"
             C1["发送 TCN BPDU"]
             C2["触发大量 MAC 学习"]
             C3["网络不稳定"]
         end
     end
-    
+
     A1 --> A2 --> A3
     B1 --> B2 --> B3
     C1 --> C2 --> C3
@@ -1077,12 +1077,12 @@ show spanning-tree interface GigabitEthernet0/1 guard
 
 ### 8.5 BPDU 防护参数配置总结
 
-| 特性 | 作用 | 适用端口 | 配置建议 |
-|-----|------|---------|---------|
-| PortFast | 跳过 STP 监听/学习 | 接入层 Access 端口 | 接入层默认启用 |
-| BPDU Guard | 收到 BPDU 时 err-disable | 连接终端的 PortFast 端口 | 接入层默认启用 |
-| Root Guard | 阻止成为根桥 | 上联端口 | 连接非信任交换机的上联口 |
-| Loop Guard | 检测单向链路 | 所有端口 | 汇聚层/核心层端口 |
+| 特性       | 作用                     | 适用端口                 | 配置建议                 |
+| ---------- | ------------------------ | ------------------------ | ------------------------ |
+| PortFast   | 跳过 STP 监听/学习       | 接入层 Access 端口       | 接入层默认启用           |
+| BPDU Guard | 收到 BPDU 时 err-disable | 连接终端的 PortFast 端口 | 接入层默认启用           |
+| Root Guard | 阻止成为根桥             | 上联端口                 | 连接非信任交换机的上联口 |
+| Loop Guard | 检测单向链路             | 所有端口                 | 汇聚层/核心层端口        |
 
 ```网络配置
 ! ============================================
@@ -1117,26 +1117,26 @@ graph TB
         subgraph "核心层（Core Layer）"
             Core["核心交换机<br/>L3 路由核心"]
         end
-        
+
         subgraph "汇聚层（Distribution Layer）"
             Dist1["汇聚交换机 1"]
             Dist2["汇聚交换机 2"]
         end
-        
+
         subgraph "接入层（Access Layer）"
             Access1["接入交换机 1"]
             Access2["接入交换机 2"]
             Access3["接入交换机 3"]
             Access4["接入交换机 4"]
         end
-        
+
         subgraph "安全 Zone"
             Internet["DMZ Zone<br/>VLAN 100-109"]
             Server["服务器 Zone<br/>VLAN 200-209"]
             User["用户 Zone<br/>VLAN 300-399"]
             Management["管理 Zone<br/>VLAN 999"]
         end
-        
+
         Core <--> Dist1
         Core <--> Dist2
         Dist1 <--> Access1
@@ -1144,7 +1144,7 @@ graph TB
         Dist2 <--> Access3
         Dist2 <--> Access4
     end
-    
+
     style Core fill:#ff6b6b,stroke:#333,stroke-width:2px
     style Dist1 fill:#feca57,stroke:#333,stroke-width:2px
     style Dist2 fill:#feca57,stroke:#333,stroke-width:2px
@@ -1153,14 +1153,14 @@ graph TB
 
 ### 9.2 Zone 划分策略
 
-| Zone | VLAN 范围 | 安全性级别 | 访问控制策略 |
-|-----|----------|-----------|-------------|
-| Management | 999 | 最高 | 仅允许管理流量，SSH/HTTPS |
-| Server Farm | 200-209 | 高 | 严格访问控制，ACL 细化 |
-| DMZ | 100-109 | 中高 | 允许外部访问，限制入站 |
-| User | 300-399 | 中 | 基于角色的访问控制 |
-| Guest | 400-409 | 低 | 互联网访问，禁止访问内网 |
-| IoT | 500-599 | 低 | 网络隔离，禁止访问办公网络 |
+| Zone        | VLAN 范围 | 安全性级别 | 访问控制策略               |
+| ----------- | --------- | ---------- | -------------------------- |
+| Management  | 999       | 最高       | 仅允许管理流量，SSH/HTTPS  |
+| Server Farm | 200-209   | 高         | 严格访问控制，ACL 细化     |
+| DMZ         | 100-109   | 中高       | 允许外部访问，限制入站     |
+| User        | 300-399   | 中         | 基于角色的访问控制         |
+| Guest       | 400-409   | 低         | 互联网访问，禁止访问内网   |
+| IoT         | 500-599   | 低         | 网络隔离，禁止访问办公网络 |
 
 ### 9.3 最小权限配置示例
 
@@ -1216,17 +1216,17 @@ graph LR
         VA2["VLAN 102<br/>10.1.102.0/24"]
         VA3["VLAN 103<br/>10.1.103.0/24"]
     end
-    
+
     subgraph "租户 B"
         VB1["VLAN 201<br/>10.2.201.0/24"]
         VB2["VLAN 202<br/>10.2.202.0/24"]
         VB3["VLAN 203<br/>10.2.203.0/24"]
     end
-    
+
     subgraph "共享服务"
         Shared["VLAN 999<br/>共享 DNS/DHCP"]
     end
-    
+
     VA1 <-->|通过 VRF 隔离| Shared
     VB1 <-->|通过 VRF 隔离| Shared
     VA1 -x VB1
@@ -1235,22 +1235,22 @@ graph LR
 
 ### 9.5 企业 VLAN 安全检查表
 
-| 检查项 | 优先级 | 状态 |
-|-------|-------|------|
-| 禁用未使用端口 | 必须 | ☐ |
-| 所有 Access 端口配置 switchport mode access | 必须 | ☐ |
-| 所有 Access 端口配置 switchport nonegotiate | 必须 | ☐ |
-| Native VLAN 标记或使用独立 VLAN | 必须 | ☐ |
-| 启用 DHCP Snooping | 必须 | ☐ |
-| DHCP 服务器端口配置为 trust | 必须 | ☐ |
-| 启用 DAI | 必须 | ☐ |
-| 启用 Port Security（接入层） | 强烈推荐 | ☐ |
-| 启用 BPDU Guard（接入层） | 强烈推荐 | ☐ |
-| 配置 Root Guard（上联端口） | 强烈推荐 | ☐ |
-| 启用 IPSG（接入层） | 推荐 | ☐ |
-| 配置 VTY 访问限制 | 必须 | ☐ |
-| 禁用 CDP/LLDP（边缘端口） | 推荐 | ☐ |
-| 配置日志服务器 | 推荐 | ☐ |
+| 检查项                                      | 优先级   | 状态 |
+| ------------------------------------------- | -------- | ---- |
+| 禁用未使用端口                              | 必须     | ☐    |
+| 所有 Access 端口配置 switchport mode access | 必须     | ☐    |
+| 所有 Access 端口配置 switchport nonegotiate | 必须     | ☐    |
+| Native VLAN 标记或使用独立 VLAN             | 必须     | ☐    |
+| 启用 DHCP Snooping                          | 必须     | ☐    |
+| DHCP 服务器端口配置为 trust                 | 必须     | ☐    |
+| 启用 DAI                                    | 必须     | ☐    |
+| 启用 Port Security（接入层）                | 强烈推荐 | ☐    |
+| 启用 BPDU Guard（接入层）                   | 强烈推荐 | ☐    |
+| 配置 Root Guard（上联端口）                 | 强烈推荐 | ☐    |
+| 启用 IPSG（接入层）                         | 推荐     | ☐    |
+| 配置 VTY 访问限制                           | 必须     | ☐    |
+| 禁用 CDP/LLDP（边缘端口）                   | 推荐     | ☐    |
+| 配置日志服务器                              | 推荐     | ☐    |
 
 ---
 
@@ -1347,15 +1347,15 @@ snmp-server host 10.1.999.10 version 3 auth admin
 
 ### 10.4 安全事件监控矩阵
 
-| 事件类型 | 监控协议 | 告警级别 | 响应时间 |
-|---------|---------|---------|---------|
-| DHCP Snooping 丢弃 | Syslog/SNMP Trap | 高 | 立即 |
-| DAI 验证失败 | Syslog/SNMP Trap | 高 | 立即 |
-| Port Security 违规 | Syslog/SNMP Trap | 中 | 5 分钟 |
-| BPDU Guard 触发 | Syslog/SNMP Trap | 高 | 立即 |
-| Root Guard 阻止 | Syslog/SNMP Trap | 中 | 10 分钟 |
-| CAM 表接近上限 | SNMP 轮询 | 低 | 30 分钟 |
-| 异常流量模式 | NetFlow/sFlow | 中 | 15 分钟 |
+| 事件类型           | 监控协议         | 告警级别 | 响应时间 |
+| ------------------ | ---------------- | -------- | -------- |
+| DHCP Snooping 丢弃 | Syslog/SNMP Trap | 高       | 立即     |
+| DAI 验证失败       | Syslog/SNMP Trap | 高       | 立即     |
+| Port Security 违规 | Syslog/SNMP Trap | 中       | 5 分钟   |
+| BPDU Guard 触发    | Syslog/SNMP Trap | 高       | 立即     |
+| Root Guard 阻止    | Syslog/SNMP Trap | 中       | 10 分钟  |
+| CAM 表接近上限     | SNMP 轮询        | 低       | 30 分钟  |
+| 异常流量模式       | NetFlow/sFlow    | 中       | 15 分钟  |
 
 ### 10.5 自动化安全监控脚本
 
@@ -1377,7 +1377,7 @@ SYSLOG_SERVER = 'http://10.1.999.10:8080/api/logs'
 def check_dhcp_snooping_violations():
     """检查 DHCP Snooping 违规"""
     oid = '1.3.6.1.4.1.9.9.380.1.1.2.0'  # CISCO-DHCP-SNOOPING-MIB
-    
+
     iterator = getCmd(
         SnmpEngine(),
         CommunityData(SNMP_COMMUNITY),
@@ -1385,13 +1385,13 @@ def check_dhcp_snooping_violations():
         ContextData(),
         ObjectType(ObjectIdentity(oid))
     )
-    
+
     errorIndication, errorStatus, errorIndex, varBinds = next(iterator)
-    
+
     if errorIndication:
         print(f"SNMP Error: {errorIndication}")
         return
-    
+
     for varBind in varBinds:
         violations = int(varBind[1])
         if violations > 0:
@@ -1400,7 +1400,7 @@ def check_dhcp_snooping_violations():
 def check_port_security_violations():
     """检查 Port Security 违规"""
     oid = '1.3.6.1.4.1.9.9.315.1.1.2.0'  # CISCO-PORT-SECURITY-MIB
-    
+
     iterator = getCmd(
         SnmpEngine(),
         CommunityData(SNMP_COMMUNITY),
@@ -1408,9 +1408,9 @@ def check_port_security_violations():
         ContextData(),
         ObjectType(ObjectIdentity(oid))
     )
-    
+
     errorIndication, errorStatus, errorIndex, varBinds = next(iterator)
-    
+
     if not errorIndication:
         for varBind in varBinds:
             violations = int(varBind[1])
@@ -1481,14 +1481,14 @@ echo "=== 检查完成 ==="
 
 VLAN 安全是企业网络安全的重要组成部分。本章涵盖了从攻击原理到防御实践的完整知识体系：
 
-| 攻击类型 | 核心防御技术 | 配置复杂度 |
-|---------|------------|-----------|
-| VLAN Hopping | DTP 禁用、Native VLAN 标记 | 低 |
-| DHCP 欺骗 | DHCP Snooping + Option 82 | 中 |
-| ARP 欺骗 | DAI + IPSG | 中 |
-| MAC 欺骗 | Port Security + Sticky MAC | 低 |
-| BPDU 攻击 | BPDU Guard + Root Guard | 低 |
-| 流量泛洪 | ACL + 流量监控 | 中 |
+| 攻击类型     | 核心防御技术               | 配置复杂度 |
+| ------------ | -------------------------- | ---------- |
+| VLAN Hopping | DTP 禁用、Native VLAN 标记 | 低         |
+| DHCP 欺骗    | DHCP Snooping + Option 82  | 中         |
+| ARP 欺骗     | DAI + IPSG                 | 中         |
+| MAC 欺骗     | Port Security + Sticky MAC | 低         |
+| BPDU 攻击    | BPDU Guard + Root Guard    | 低         |
+| 流量泛洪     | ACL + 流量监控             | 中         |
 
 **最佳实践要点：**
 
@@ -1511,4 +1511,4 @@ VLAN 安全是企业网络安全的重要组成部分。本章涵盖了从攻击
 
 ---
 
-*本文档为《VLAN 深度探索》系列第六章，更多内容请关注本系列其他章节。*
+_本文档为《VLAN 深度探索》系列第六章，更多内容请关注本系列其他章节。_

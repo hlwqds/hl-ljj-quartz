@@ -10,8 +10,8 @@ tags:
 description: "深入解析 Zeek Kafka 集成——Kafka Writer 配置、日志流输出、Kafka Topic、Partition 策略、实战配置"
 ---
 
-> [!info] Zeek 2026 深度探索系列
-> 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Zeek 2026 深度探索系列 0. [[2026-04-15-zeek-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-15-zeek-deep-dive-ch1-overview|第一章：Zeek 概述]]
 > 2. [[2026-04-15-zeek-deep-dive-ch2-installation|第二章：安装部署]]
 > 3. [[2026-04-15-zeek-deep-dive-ch3-config|第三章：配置系统]]
@@ -421,16 +421,17 @@ output {
 
 本章介绍了 Zeek Kafka 集成：
 
-| 配置项 | 说明 |
-|--------|------|
-| **kafka_brokers** | Kafka Broker 地址列表 |
-| **topic_prefix** | Topic 名称前缀 |
-| **logs_to_send** | 要发送的日志类型 |
+| 配置项             | 说明                        |
+| ------------------ | --------------------------- |
+| **kafka_brokers**  | Kafka Broker 地址列表       |
+| **topic_prefix**   | Topic 名称前缀              |
+| **logs_to_send**   | 要发送的日志类型            |
 | **partition_type** | 分区策略 (源IP/目标IP/轮询) |
-| **queue_size** | 内存队列大小 |
-| **compression** | 压缩算法 |
+| **queue_size**     | 内存队列大小                |
+| **compression**    | 压缩算法                    |
 
 Kafka 集成使得 Zeek 可以：
+
 - 实时流式输出日志
 - 支持大规模分布式日志处理
 - 与 SIEM 系统无缝集成

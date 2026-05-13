@@ -1,7 +1,24 @@
 ---
 title: WireGuard 内核深度探索 Ch5：WireGuard vs 内核网络栈
 date: 2026-05-05 09:00:00
-tags: [WireGuard, Kernel, Network Stack, Performance, Comparison, UDP, IPsec, Overhead, Latency, Throughput, Optimization, Tuning, Use Cases, Benchmark, Baseline]
+tags:
+  [
+    WireGuard,
+    Kernel,
+    Network Stack,
+    Performance,
+    Comparison,
+    UDP,
+    IPsec,
+    Overhead,
+    Latency,
+    Throughput,
+    Optimization,
+    Tuning,
+    Use Cases,
+    Benchmark,
+    Baseline,
+  ]
 description: WireGuard 与内核网络栈的深度对比分析：性能基准测试、开销分解、适用场景、调优建议，以及与 IPsec/OpenVPN/UDP 的全面对比。
 ---
 

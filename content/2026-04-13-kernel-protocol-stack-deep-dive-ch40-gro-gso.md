@@ -1,16 +1,23 @@
 ---
 title: "Kernel Protocol Stack 深度探索 (四十)：GRO 与 GSO"
 date: 2026-04-13
-tags: [linux, kernel, networking, series, gro, gso, generic-receive-offload, generic-segmentation-offload, netdev, napi]
+tags:
+  [
+    linux,
+    kernel,
+    networking,
+    series,
+    gro,
+    gso,
+    generic-receive-offload,
+    generic-segmentation-offload,
+    netdev,
+    napi,
+  ]
 description: "深入解析 GRO（Generic Receive Offload）与 GSO（Generic Segmentation Offload）——两者的协作原理、dev_gro_receive 实现、GSO 分片机制、NETIF_F_GSO 标志、以及如何协同 NAPI 和 RPS 提升吞吐"
 ---
 
-> [!info] Kernel Protocol Stack 深度探索系列
-> 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
-> 39. [[2026-04-13-kernel-protocol-stack-deep-dive-ch39-xdp-integration|第三十九章：XDP 与高性能网络处理]]
-> 40. **第四十章：GRO 与 GSO**
-> 41. [[2026-04-13-kernel-protocol-stack-deep-dive-ch41-rss-rps|第四十一章：RSS 与 RPS]]
-> 42. [[2026-04-13-kernel-protocol-stack-deep-dive-ch42-tso|第四十二章：TSO 与 UFO]]
+> [!info] Kernel Protocol Stack 深度探索系列 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]] 39. [[2026-04-13-kernel-protocol-stack-deep-dive-ch39-xdp-integration|第三十九章：XDP 与高性能网络处理]] 40. **第四十章：GRO 与 GSO** 41. [[2026-04-13-kernel-protocol-stack-deep-dive-ch41-rss-rps|第四十一章：RSS 与 RPS]] 42. [[2026-04-13-kernel-protocol-stack-deep-dive-ch42-tso|第四十二章：TSO 与 UFO]]
 
 ---
 
@@ -232,12 +239,12 @@ struct gro_recvburs {
 
 不同协议有不同的合并规则：
 
-| 协议 | 合并条件 |
-|------|---------|
-| **TCP** | 序列号连续、flag 兼容（PSH+ACK 可以合并，FIN/RST 不行） |
-| **UDP** | 5 元组完全一致即可合并 |
-| **UDP 隧道** | 外层 5 元组一致 + 内层 payload 长度一致 |
-| **GRE** | 外层一致，内层 key 一致 |
+| 协议         | 合并条件                                                |
+| ------------ | ------------------------------------------------------- |
+| **TCP**      | 序列号连续、flag 兼容（PSH+ACK 可以合并，FIN/RST 不行） |
+| **UDP**      | 5 元组完全一致即可合并                                  |
+| **UDP 隧道** | 外层 5 元组一致 + 内层 payload 长度一致                 |
+| **GRE**      | 外层一致，内层 key 一致                                 |
 
 ### 3.3 dev_gro_receive 实现
 
@@ -463,11 +470,11 @@ sysctl -w net.core.gro_normal_batch=1  # 减少每次 batch 大小
 
 ## 6. 总结
 
-| 机制 | 方向 | 作用 | 位置 |
-|------|------|------|------|
-| **GSO** | 发送 | 将大块数据分片后再交给网卡 | IP 层和网卡之间 |
-| **GRO** | 接收 | 合并同 flow 的小段再提交协议栈 | NAPI 和协议栈之间 |
-| **TSO** | 发送 | GSO 的硬件实现，网卡完成 TCP 分段 | 网卡硬件 |
-| **LRO** | 接收 | GRO 的旧版本（已被 gro 取代） | 网卡驱动（已废弃） |
+| 机制    | 方向 | 作用                              | 位置               |
+| ------- | ---- | --------------------------------- | ------------------ |
+| **GSO** | 发送 | 将大块数据分片后再交给网卡        | IP 层和网卡之间    |
+| **GRO** | 接收 | 合并同 flow 的小段再提交协议栈    | NAPI 和协议栈之间  |
+| **TSO** | 发送 | GSO 的硬件实现，网卡完成 TCP 分段 | 网卡硬件           |
+| **LRO** | 接收 | GRO 的旧版本（已被 gro 取代）     | 网卡驱动（已废弃） |
 
 GSO/GRO 的核心价值在于**减少协议栈处理次数**——通过 batch processing 的思路，让 CPU 在一次中断或一次 poll 中处理尽可能多的同 flow 数据，是现代高速网络不可或缺的基础设施。

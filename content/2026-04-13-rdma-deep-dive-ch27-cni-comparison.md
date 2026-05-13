@@ -1,7 +1,8 @@
 ---
 title: "RDMA 第二十七章：RDMA CNI 对比——如何选择最适合的方案"
 date: 2026-04-13
-tags: [rdma, cni, comparison, kubernetes, host-device, ipvlan, macvlan, sriov, ipoib, selection-guide]
+tags:
+  [rdma, cni, comparison, kubernetes, host-device, ipvlan, macvlan, sriov, ipoib, selection-guide]
 description: "系统对比四种 RDMA CNI 方案（host-device、ipvlan、macvlan、SR-IOV）的性能、隔离性、运维复杂度，并通过实际场景给出选型建议。"
 ---
 
@@ -96,14 +97,14 @@ RDMA CNI 评估六维模型：
 # 容器内的 /dev/infiniband/uverbsX 直接映射到主机网卡
 ```
 
-| 维度 | 评分 | 说明 |
-|------|------|------|
-| 性能 | 5/5 | 零拷贝路径，延迟 3-5 μs，接近线速 |
-| 隔离性 | 2/5 | 共享物理网卡，无硬件隔离，带宽竞争 |
-| 扩展性 | 3/5 | 受限于主机网卡数量，通常 1-4 个 |
-| 运维复杂度 | 3/5 | 需要预先配置设备，依赖设备发现 |
-| 兼容性 | 4/5 | 应用无需改造，标准 verbs API |
-| 成本 | 3/5 | 需要多网卡或预先规划 |
+| 维度       | 评分 | 说明                               |
+| ---------- | ---- | ---------------------------------- |
+| 性能       | 5/5  | 零拷贝路径，延迟 3-5 μs，接近线速  |
+| 隔离性     | 2/5  | 共享物理网卡，无硬件隔离，带宽竞争 |
+| 扩展性     | 3/5  | 受限于主机网卡数量，通常 1-4 个    |
+| 运维复杂度 | 3/5  | 需要预先配置设备，依赖设备发现     |
+| 兼容性     | 4/5  | 应用无需改造，标准 verbs API       |
+| 成本       | 3/5  | 需要多网卡或预先规划               |
 
 ```
 host-device 核心特性：
@@ -131,14 +132,14 @@ host-device 核心特性：
 # ipvlan L2/L3 模式创建虚拟接口，共享父接口 MAC
 ```
 
-| 维度 | 评分 | 说明 |
-|------|------|------|
-| 性能 | 3/5 | 轻微软件开销，延迟 4-7 μs |
-| 隔离性 | 3/5 | 共享 PCIe 带宽，IP 隔离（L3 模式） |
-| 扩展性 | 5/5 | 支持高密度容器，100+/节点 |
-| 运维复杂度 | 4/5 | 标准化配置，自动 IPAM |
-| 兼容性 | 4/5 | 适合普通应用迁移 |
-| 成本 | 4/5 | 无需特殊硬件 |
+| 维度       | 评分 | 说明                               |
+| ---------- | ---- | ---------------------------------- |
+| 性能       | 3/5  | 轻微软件开销，延迟 4-7 μs          |
+| 隔离性     | 3/5  | 共享 PCIe 带宽，IP 隔离（L3 模式） |
+| 扩展性     | 5/5  | 支持高密度容器，100+/节点          |
+| 运维复杂度 | 4/5  | 标准化配置，自动 IPAM              |
+| 兼容性     | 4/5  | 适合普通应用迁移                   |
+| 成本       | 4/5  | 无需特殊硬件                       |
 
 ```
 ipvlan 核心特性：
@@ -168,14 +169,14 @@ ipvlan 核心特性：
 # 比 ipvlan 更多的广播域，但更好的兼容性
 ```
 
-| 维度 | 评分 | 说明 |
-|------|------|------|
-| 性能 | 3/5 | 与 ipvlan 类似，延迟 4-7 μs |
-| 隔离性 | 4/5 | 独立 MAC，广播隔离，但共享 PCIe |
-| 扩展性 | 4/5 | 良好，支持 50-100 容器/节点 |
-| 运维复杂度 | 3/5 | 需要 MAC 地址管理 |
-| 兼容性 | 4/5 | 兼容遗留网络配置 |
-| 成本 | 4/5 | 无需特殊硬件 |
+| 维度       | 评分 | 说明                            |
+| ---------- | ---- | ------------------------------- |
+| 性能       | 3/5  | 与 ipvlan 类似，延迟 4-7 μs     |
+| 隔离性     | 4/5  | 独立 MAC，广播隔离，但共享 PCIe |
+| 扩展性     | 4/5  | 良好，支持 50-100 容器/节点     |
+| 运维复杂度 | 3/5  | 需要 MAC 地址管理               |
+| 兼容性     | 4/5  | 兼容遗留网络配置                |
+| 成本       | 4/5  | 无需特殊硬件                    |
 
 ```
 macvlan 核心特性：
@@ -204,14 +205,14 @@ macvlan 核心特性：
 # 物理网卡虚拟化成多个 VF，每个 VF 独立 RDMA 能力
 ```
 
-| 维度 | 评分 | 说明 |
-|------|------|------|
-| 性能 | 5/5 | VF 接近 PF 性能，延迟 3-5 μs |
-| 隔离性 | 5/5 | 硬件级带宽/资源隔离 |
-| 扩展性 | 4/5 | 每个 PF 可生成 8-64 VF |
-| 运维复杂度 | 2/5 | SR-IOV 配置复杂，需要专业知识 |
-| 兼容性 | 3/5 | 需要网卡和 BIOS 支持 |
-| 成本 | 2/5 | 需要 SR-IOV 网卡（如 ConnectX） |
+| 维度       | 评分 | 说明                            |
+| ---------- | ---- | ------------------------------- |
+| 性能       | 5/5  | VF 接近 PF 性能，延迟 3-5 μs    |
+| 隔离性     | 5/5  | 硬件级带宽/资源隔离             |
+| 扩展性     | 4/5  | 每个 PF 可生成 8-64 VF          |
+| 运维复杂度 | 2/5  | SR-IOV 配置复杂，需要专业知识   |
+| 兼容性     | 3/5  | 需要网卡和 BIOS 支持            |
+| 成本       | 2/5  | 需要 SR-IOV 网卡（如 ConnectX） |
 
 ```
 SR-IOV 核心特性：
@@ -505,17 +506,17 @@ spec:
       nodeSelector:
         feature.node.kubernetes.io/rdma: "true"
       containers:
-      - name: app
-        image: rdma-app:latest
-        securityContext:
-          capabilities:
-            add: ["IPC_LOCK", "NET_RAW"]
-        resources:
-          limits:
-            rdma/rdma: "1"
-        env:
-        - name: RDMA_DEVICE
-          value: "/dev/infiniband/uverbs0"
+        - name: app
+          image: rdma-app:latest
+          securityContext:
+            capabilities:
+              add: ["IPC_LOCK", "NET_RAW"]
+          resources:
+            limits:
+              rdma/rdma: "1"
+          env:
+            - name: RDMA_DEVICE
+              value: "/dev/infiniband/uverbs0"
 ---
 apiVersion: k8s.cni.cncf.io/v1
 kind: NetworkAttachmentDefinition
@@ -560,15 +561,15 @@ spec:
       nodeSelector:
         feature.node.kubernetes.io/rdma: "true"
       containers:
-      - name: app
-        image: rdma-app:latest
-        securityContext:
-          capabilities:
-            add: ["IPC_LOCK"]
-        resources:
-          limits:
-            rdma/rdma: "1"
-            nvidia.com/gpu: 2
+        - name: app
+          image: rdma-app:latest
+          securityContext:
+            capabilities:
+              add: ["IPC_LOCK"]
+          resources:
+            limits:
+              rdma/rdma: "1"
+              nvidia.com/gpu: 2
 ---
 apiVersion: sriovnetwork.openshift.io/v1
 kind: SriovNetwork
@@ -622,11 +623,11 @@ spec:
           [{"name": "ipvlan-rdma-net"}]
     spec:
       containers:
-      - name: app
-        image: rdma-app:latest
-        resources:
-          limits:
-            rdma/ipvlan-rdma: "1"
+        - name: app
+          image: rdma-app:latest
+          resources:
+            limits:
+              rdma/ipvlan-rdma: "1"
 ---
 apiVersion: k8s.cni.cncf.io/v1
 kind: NetworkAttachmentDefinition

@@ -488,11 +488,11 @@ Stats 架构：
 
 Counter 类型：
 
-| 类型 | 用途 | 特点 |
-|------|------|------|
-| **Simple Counter** | 32+32 位 | 避免溢出 |
-| **64 Counter** | 64 位 | 单值 |
-| **Combined Counter** | packet + byte | 双计数 |
+| 类型                 | 用途          | 特点     |
+| -------------------- | ------------- | -------- |
+| **Simple Counter**   | 32+32 位      | 避免溢出 |
+| **64 Counter**       | 64 位         | 单值     |
+| **Combined Counter** | packet + byte | 双计数   |
 
 Telemetry 用途：
 

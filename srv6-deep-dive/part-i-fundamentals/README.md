@@ -6,13 +6,13 @@ Part I establishes the foundational knowledge required to understand SRv6, traci
 
 ## Chapters
 
-| Chapter | Title | Key Topics |
-|---------|-------|------------|
-| 01 | [MPLS Evolution](ch01-mpls-evolution.md) | ATM history, MPLS architecture, RSVP-TE, BGP/MPLS VPNs, scaling challenges |
-| 02 | [Segment Routing Overview](ch02-sr-overview.md) | Core concepts, segment types, SID semantics, TI-LFA, SR architecture |
-| 03 | [SR-MPLS](ch03-sr-mpls.md) | SR over MPLS data plane, label stack as segment list, PCE integration, migration |
-| 04 | [SRv6 Origin](ch04-srv6-origin.md) | IPv6 motivation, SRH specification, RH0 deprecation, network programming vision |
-| 05 | [SID Structure](ch05-sid-structure.md) | LOCATOR:FUNCTION:ARGUMENT format, behaviors, uSID compression, allocation |
+| Chapter | Title                                           | Key Topics                                                                       |
+| ------- | ----------------------------------------------- | -------------------------------------------------------------------------------- |
+| 01      | [MPLS Evolution](ch01-mpls-evolution.md)        | ATM history, MPLS architecture, RSVP-TE, BGP/MPLS VPNs, scaling challenges       |
+| 02      | [Segment Routing Overview](ch02-sr-overview.md) | Core concepts, segment types, SID semantics, TI-LFA, SR architecture             |
+| 03      | [SR-MPLS](ch03-sr-mpls.md)                      | SR over MPLS data plane, label stack as segment list, PCE integration, migration |
+| 04      | [SRv6 Origin](ch04-srv6-origin.md)              | IPv6 motivation, SRH specification, RH0 deprecation, network programming vision  |
+| 05      | [SID Structure](ch05-sid-structure.md)          | LOCATOR:FUNCTION:ARGUMENT format, behaviors, uSID compression, allocation        |
 
 ## Learning Path
 

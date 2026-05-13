@@ -5,8 +5,8 @@ tags: [linux, kernel, networking, series, bridge, switch, switchdev, stp, vlan]
 description: "深入解析 Linux 网桥（Bridge）实现——软件交换机架构、STP 生成树协议、VLAN 过滤、switchdev offload 机制、以及 bridge 与 iptables/eBPF 的协作"
 ---
 
-> [!info] Kernel Protocol Stack 深度探索系列
-> 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Kernel Protocol Stack 深度探索系列 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+>
 > 1. [[2026-04-13-kernel-protocol-stack-deep-dive-ch1-skbuff|第一章：sk_buff 与数据包生命周期]]
 > 2. [[2026-04-13-kernel-protocol-stack-deep-dive-ch2-netdevice|第二章：Netdevice 与网卡抽象]]
 > 3. [[2026-04-13-kernel-protocol-stack-deep-dive-ch3-ring-buffer|第三章：Ring Buffer 与 DMA]]
@@ -33,12 +33,12 @@ graph LR
     subgraph "Bridge"
         B["br0<br/>网桥设备"]
     end
-    
+
     A["eth0<br/>物理网卡"] --> B
     C["eth1<br/>物理网卡"] --> B
     D["tap0<br/>虚拟网卡"] --> B
     E["veth0<br/>虚拟网卡"] --> B
-    
+
     style B fill:#f59f00,stroke:#333
 ```
 
@@ -56,15 +56,15 @@ struct net_bridge {
     struct net_bridge           *br;           // 指向自身的指针
     spinlock_t                   lock;         // 保护网桥状态
     struct net_device            *dev;          // 网桥对应的 net_device
-    
+
     // 端口列表
     struct list_head             port_list;
     struct net_bridge_port       *dev_port;     // 自己的端口
-    
+
     // MAC 地址表
     struct rhashtable            fdb_hash_tbl;    // MAC -> port 映射
     unsigned long                features;
-    
+
     // STP 配置
     struct net_bridge_mc_fdb    mc_lazy;       // 组播转发表
     u16                           bridge_id;     // 网桥优先级 + MAC
@@ -72,16 +72,16 @@ struct net_bridge {
     unsigned long                bridge_max_age;
     unsigned long                 bridge_hello_time;
     unsigned long                 bridge_forward_delay;
-    
+
     // VLAN 配置
     struct net_bridge_vlan_group     vlan_group;
     u16                         vlan_enabled;
-    
+
     // 生成树协议状态
     struct timer_list           hello_timer;
     struct timer_list           tcn_timer;
     struct timer_list           topology_change_timer;
-    
+
     struct rcu_head             rcu;
 };
 ```
@@ -95,25 +95,25 @@ struct net_bridge_port {
     struct net_bridge           *br;           // 所属网桥
     struct net_device           *dev;           // 对应的网络设备
     struct list_head             list;          // 加入网桥的 port_list
-    
+
     // 端口标识
     u16                           port_no;      // 端口号 (1-255)
     unsigned char                 prio;          // 端口优先级
     u8                            state;         // 当前状态 (disabled/learning/forwarding)
-    
+
     // 配置参数
     unsigned long                 path_cost;    // 路径成本
     unsigned long                 designated_cost;
     u16                           designated_port;
     u16                           designated_bridge;
     u16                           root_id;
-    
+
     // 标志位
     unsigned long                 flags;
-    
+
     // Topology Change Acknowledgment
     u8                            topology_change_ack;
-    
+
     struct rcu_head             rcu;
 };
 ```
@@ -126,14 +126,14 @@ struct net_bridge_port {
 struct net_bridge_fdb_entry {
     struct rhash_head           rhnode;
     struct net_bridge_port      *dst;           // 出端口
-    
+
     unsigned char                addr[ETH_ALEN]; // MAC 地址
     __u16                        vlan_id;       // VLAN ID
     unsigned long               updated;
     unsigned long               used;
-    
+
     atomic_t                     usage;
-    
+
     /* 标志位 */
     unsigned char                is_local:1;     // 本地 MAC
     unsigned char                is_static:1;    // 静态条目
@@ -170,25 +170,25 @@ ip link set br0 up
 int br_add_if(struct net_bridge *br, struct net_device *dev)
 {
     struct net_bridge_port *p;
-    
+
     // 1. 分配新的 port 结构
     p = new_nbp(br, dev, index);
     if (IS_ERR(p))
         return PTR_ERR(p);
-    
+
     // 2. 设置 rx_handler（核心！）
     dev->rx_handler = br_handle_frame;
     dev->rx_handler_data = p;
-    
+
     // 3. 添加到网桥的 port_list
     list_add_rcu(&p->list, &br->port_list);
-    
+
     // 4. 通知上层地址变化
     call_netdevice_notifiers(NETDEV_CHANGEADDR, dev);
-    
+
     // 5. 更新 MAC 地址表
     br_fdb_insert(br, p, dev->dev_addr, 0);
-    
+
     return 0;
 }
 ```
@@ -205,37 +205,37 @@ static rx_handler_result_t br_handle_frame(struct sk_buff **pskb)
     struct net_bridge_port *p = rcu_dereference(skb->dev->rx_handler_data);
     struct net_bridge *br;
     const unsigned char *dest;
-    
+
     // 1. 进入快速路径前检查
     if (p->state == BR_STATE_DISABLED)
         return RX_HANDLER_PASS;
-    
+
     br = p->br;
-    
+
     // 2. 更新统计信息
     br_port_stats_inc(p, rx_packets, rx_bytes);
-    
+
     // 3. 提取目标 MAC
     dest = eth_hdr(skb)->h_dest;
-    
+
     // 4. 处理 BPDU（生成树协议）
     if (unlikely(is_link_local(dest))) {
         br_handle_local_finish(skb);
         return RX_HANDLER_PASS;
     }
-    
+
     // 5. 学习源 MAC（源地址学习）
     br_fdb_update(br, p, eth_hdr(skb)->h_source, skb->vlan_tci & VLAN_VID_MASK);
-    
+
     // 6. 查找目标 MAC
     if (br_fdb_find(br, dest, skb->vlan_tci & VLAN_VID_MASK)) {
         // 已知单播地址，转发到对应端口
         return br_forward_finish(skb);
     }
-    
+
     // 7. 广播/未知单播——泛洪
     br_flood_deliver(br, skb, false);
-    
+
     return RX_HANDLER_CONSUMED;
 }
 ```
@@ -248,15 +248,15 @@ void br_fdb_update(struct net_bridge *br, struct net_bridge_port *p,
                     const unsigned char *addr, u16 vlan_id)
 {
     struct net_bridge_fdb_entry *fdb;
-    
+
     // 查找是否已存在
     fdb = rhltable_lookup(&br->fdb_hash_tbl, &addr, br_fdb_hash_params);
-    
+
     if (likely(fdb)) {
         // 已存在条目——更新
         if (likely(fdb->dst == p))
             return;  // 同一端口，直接返回
-        
+
         // 不同端口，更新（可能是 MAC 漂移）
         fdb->dst = p;
         fdb->used = jiffies;
@@ -265,14 +265,14 @@ void br_fdb_update(struct net_bridge *br, struct net_bridge_port *p,
         fdb = kmalloc(sizeof(*fdb), GFP_ATOMIC);
         if (!fdb)
             return;
-        
+
         memcpy(fdb->addr, addr, ETH_ALEN);
         fdb->dst = p;
         fdb->vlan_id = vlan_id;
         fdb->updated = fdb->used = jiffies;
         fdb->is_local = 0;
         fdb->is_static = 0;
-        
+
         rhashtable_insert_fast(&br->fdb_hash_tbl, &fdb->rhnode,
                                br_fdb_hash_params);
     }
@@ -287,12 +287,12 @@ sequenceDiagram
     participant BR as br_handle_frame
     participant FDB as FDB (MAC表)
     participant FWD as br_forward
-    
+
     NIC->>BR: skb 到达
     BR->>BR: 检查端口状态 (disabled/learning/forwarding)
     BR->>FDB: 查找目标 MAC
     FDB-->>BR: 找到：端口 A
-    
+
     alt 已知单播
         BR->>FWD: 转发到端口 A
     else 未知单播/广播
@@ -310,13 +310,13 @@ sequenceDiagram
 
 **STP 端口状态机：**
 
-| 状态 | 说明 | 能学习 MAC | 能转发数据 | 能接收 BPDU |
-|------|------|-----------|-----------|-------------|
-| Disabled | 端口关闭 | 否 | 否 | 否 |
-| Blocking | 初始状态，阻塞冗余 | 否 | 否 | 是 |
-| Listening | 等待 BPDU 确认 | 否 | 否 | 是 |
-| Learning | 学习 MAC | 是 | 否 | 是 |
-| Forwarding | 正常转发 | 是 | 是 | 是 |
+| 状态       | 说明               | 能学习 MAC | 能转发数据 | 能接收 BPDU |
+| ---------- | ------------------ | ---------- | ---------- | ----------- |
+| Disabled   | 端口关闭           | 否         | 否         | 否          |
+| Blocking   | 初始状态，阻塞冗余 | 否         | 否         | 是          |
+| Listening  | 等待 BPDU 确认     | 否         | 否         | 是          |
+| Learning   | 学习 MAC           | 是         | 否         | 是          |
+| Forwarding | 正常转发           | 是         | 是         | 是          |
 
 ### 4.2 BPDU 格式
 
@@ -332,7 +332,7 @@ struct stp_bpdu {
     __be16  protocol;     // 0x0000 (STP)
     __u8    version;      // 0x00 (STP), 0x02 (RSTP), 0x03 (MSTP)
     __u8    type;        // 0x00 (Config), 0x80 (TCN)
-    
+
     // Config BPDU
     __u8    flags;        // Topology Change flag, etc.
     __u8    root_id[8];  // Root Bridge ID (Priority + MAC)
@@ -354,7 +354,7 @@ void br_bpdu_send_config(struct net_bridge_port *p)
 {
     struct br_config_bpdu bpdu;
     struct sk_buff *skb;
-    
+
     // 构造 BPDU
     bpdu.protocol = htons(0);
     bpdu.version = p->br->stp_enabled;  // STP/RSTP/MSTP
@@ -364,7 +364,7 @@ void br_bpdu_send_config(struct net_bridge_port *p)
     bpdu.root_path_cost = ...;
     bpdu.bridge_id = ...;
     bpdu.port_id = p->port_id;
-    
+
     // 发送到设计端口
     br_send_bpdu(p, &bpdu);
 }
@@ -372,13 +372,13 @@ void br_bpdu_send_config(struct net_bridge_port *p)
 static void br_send_bpdu(struct net_bridge_port *p, struct br_config_bpdu *bpdu)
 {
     struct sk_buff *skb;
-    
+
     skb = dev_alloc_skb(size);
     // ... 填充 BPDU 数据 ...
-    
+
     // 设置目标 MAC 为桥接多播地址
     eth hdr(skb)->h_dest = bridge_addr;  // 01:80:C2:00:00:00
-    
+
     // 发送到物理网络
     dev_queue_xmit(skb);
 }
@@ -413,7 +413,7 @@ struct net_bridge_vlan {
     struct net_bridge_port   *port;    // NULL 表示网桥自身
     u16                  vid;          // VLAN ID (1-4094)
     u16                  flags;        // BRIDGE_VLAN_INFO_* flags
-    
+
     atomic_t              refcount;   // 引用计数
     struct timer_list     timer;       // VLAN 条目超时
     struct rcu_head       rcu;
@@ -434,19 +434,19 @@ static void __br_forward(const struct net_bridge_port *to,
                          struct sk_buff *skb, bool local_orig)
 {
     struct net_device *indev;
-    
+
     // 获取入端口
     indev = skb->dev;
-    
+
     // 设置出端口
     skb->dev = to->dev;
-    
+
     // VLAN 处理：检查出端口是否允许此 VLAN
     if (skb->vlan_tci && !br_vlan_allowed(to, skb->vlan_tci & VLAN_VID_MASK)) {
         kfree_skb(skb);
         return;
     }
-    
+
     // Forward
     __br_forward_finish(skb);
 }
@@ -454,11 +454,11 @@ static void __br_forward(const struct net_bridge_port *to,
 static int br_vlan_allowed(const struct net_bridge_port *p, u16 vid)
 {
     struct net_bridge_vlan_group *vg;
-    
+
     vg = nla_data(rca_dereference(p->vlgrp));
     if (!vg)
         return 0;  // 无 VLAN 组，不允许
-    
+
     // 检查此 VID 是否在允许列表中
     return br_vlan_find(vg, vid) != NULL;
 }
@@ -538,10 +538,10 @@ static int mydev_port_attr_set(struct net_device *dev,
     case SWITCHDEV_ATTR_ID_PORT_STP_STATE:
         // 通知硬件设置端口 STP 状态
         return mydev_set_stp_state(dev, attr->u.Port_stp_state.state);
-        
+
     case SWITCHDEV_ATTR_ID_BRIDGE_VLAN_FILTERING:
         // 启用/禁用 VLAN 过滤
-        return mydev_set_vlan_filtering(dev, 
+        return mydev_set_vlan_filtering(dev,
                                         attr->u.bridge_vlan_filtering);
     }
     return -EOPNOTSUPP;
@@ -583,18 +583,18 @@ static unsigned int br_nf_pre_routing(void *priv,
                                       const struct nf_hook_state *state)
 {
     struct nf_bridge_info *nf_bridge;
-    
+
     if (skb->protocol != htons(ETH_P_IP))
         return NF_ACCEPT;
-    
+
     // 分配并初始化 bridge info
     nf_bridge = nf_bridge_alloc(skb);
     if (!nf_bridge)
         return NF_DROP;
-    
+
     // 挂载到 skb
     skb->nf_bridge = nf_bridge;
-    
+
     // 调用 iptables 规则（PREROUTING）
     return nf_hook(skb, NF_INET_PRE_ROUTING);
 }
@@ -662,7 +662,7 @@ graph TD
     subgraph "数据平面"
         SKB["sk_buff"]
     end
-    
+
     subgraph "L2 网桥层"
         BR_FRAME["br_handle_frame<br/>入口"]
         BR_FDB["FDB 查询<br/>MAC -> Port"]
@@ -670,18 +670,18 @@ graph TD
         BR_VLAN["VLAN 过滤"]
         BR_FWD["br_forward<br/>转发"]
     end
-    
+
     subgraph "L3 协议层"
         IP_RCV["ip_rcv"]
         IP_FWD["ip_forward"]
     end
-    
+
     subgraph "Netfilter"
         NF_PREROUTING["NF_INET_PREROUTING"]
         NF_FORWARD["NF_INET_FORWARD"]
         NF_POSTROUTING["NF_INET_POSTROUTING"]
     end
-    
+
     SKB --> BR_FRAME
     BR_FRAME --> BR_STP
     BR_STP --> BR_FDB
@@ -689,7 +689,7 @@ graph TD
     BR_VLAN --> BR_FWD
     BR_FWD --> NF_FORWARD
     BR_FRAME --> NF_PREROUTING
-    
+
     style BR_FRAME fill:#f59f00,stroke:#333
 ```
 

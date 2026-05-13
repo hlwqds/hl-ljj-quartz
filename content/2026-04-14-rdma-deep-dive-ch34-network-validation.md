@@ -1,7 +1,8 @@
 ---
 title: "RDMA 第三十四章：RDMA 网络验证——链路测试、拥塞验证与一致性检查"
 date: 2026-04-14
-tags: [rdma, validation, network-test, perftest, congestion, consistency, link-check, roce, infiniband]
+tags:
+  [rdma, validation, network-test, perftest, congestion, consistency, link-check, roce, infiniband]
 description: "详解 RDMA 网络验证方法：物理链路验证、端到端带宽测试、拥塞模拟、一致性检查、抖动与延迟验证、以及生产环境部署前的验收测试。"
 ---
 
@@ -191,12 +192,12 @@ $ ib_read_bw -d mlx5_0 -F <A_gid>
 
 **关键参数：**
 
-| 参数 | 含义 | 推荐值 |
-|------|------|--------|
-| `-F` | 使用 inline data（减少内存访问） | 高带宽测试用 |
-| `-s <size>` | 消息大小 | 2KB~4MB |
-| `-D <duration>` | 测试持续时间 | 10~60s |
-| `-x <count>` | 并发连接数 | 多 QP 测试用 |
+| 参数            | 含义                             | 推荐值       |
+| --------------- | -------------------------------- | ------------ |
+| `-F`            | 使用 inline data（减少内存访问） | 高带宽测试用 |
+| `-s <size>`     | 消息大小                         | 2KB~4MB      |
+| `-D <duration>` | 测试持续时间                     | 10~60s       |
+| `-x <count>`    | 并发连接数                       | 多 QP 测试用 |
 
 ### 4.2 延迟测试
 

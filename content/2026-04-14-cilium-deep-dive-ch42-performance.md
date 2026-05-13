@@ -12,14 +12,8 @@ tags:
   - operations
 ---
 
-> [!info] Cilium 2026 深度探索系列
-> 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
-> ...
-> 38. [[2026-04-14-cilium-deep-dive-ch38-sockmap|第三十八章：Sockmap]]
-> 39. [[2026-04-14-cilium-deep-dive-ch39-install|第三十九章：生产级安装指南]]
-> 40. [[2026-04-14-cilium-deep-dive-ch40-upgrade|第四十章：升级策略]]
-> 41. [[2026-04-14-cilium-deep-dive-ch41-debug|第四十一章：故障诊断]]
-> 42. **第四十二章：性能调优与基准测试** ←
+> [!info] Cilium 2026 深度探索系列 0. [[2026-04-14-cilium-deep-dive-series-index|系列索引]]
+> ... 38. [[2026-04-14-cilium-deep-dive-ch38-sockmap|第三十八章：Sockmap]] 39. [[2026-04-14-cilium-deep-dive-ch39-install|第三十九章：生产级安装指南]] 40. [[2026-04-14-cilium-deep-dive-ch40-upgrade|第四十章：升级策略]] 41. [[2026-04-14-cilium-deep-dive-ch41-debug|第四十一章：故障诊断]] 42. **第四十二章：性能调优与基准测试** ←
 
 ---
 
@@ -60,13 +54,13 @@ Cilium 的性能取决于多个层面的优化，从内核 eBPF 运行引擎到�
 
 ### 1.1 性能关键指标
 
-| 指标 | 典型值 | 说明 |
-|:---|:---|:---|
-| **P99 延迟** | 10-50 µs | Pod-to-Pod 延迟 |
-| **吞吐量** | 10-40 Gbps | 单链路 |
-| **CPS** | 100K-500K | 每秒新建连接数 |
-| **PPS** | 1-5 Mpps | 每秒数据包数 |
-| **CPU 开销** | 1-5% | Agent 平均 CPU |
+| 指标         | 典型值     | 说明            |
+| :----------- | :--------- | :-------------- |
+| **P99 延迟** | 10-50 µs   | Pod-to-Pod 延迟 |
+| **吞吐量**   | 10-40 Gbps | 单链路          |
+| **CPS**      | 100K-500K  | 每秒新建连接数  |
+| **PPS**      | 1-5 Mpps   | 每秒数据包数    |
+| **CPU 开销** | 1-5%       | Agent 平均 CPU  |
 
 ---
 
@@ -79,7 +73,7 @@ Cilium 的性能取决于多个层面的优化，从内核 eBPF 运行引擎到�
 ```yaml
 # cilium-values.yaml
 bpf:
-  hostRouting: true  # 需要内核 5.10+
+  hostRouting: true # 需要内核 5.10+
   # 启用后，本地流量直接路由，不经过额外处理
 ```
 
@@ -110,19 +104,19 @@ XDP (eXpress Data Path) 在网卡驱动层处理包，实现最高性能：
 ```yaml
 # 启用 XDP 加速
 loadBalancer:
-  acceleration: always  # always | opt-in | disabled
+  acceleration: always # always | opt-in | disabled
 
 # XDP 模式选择
 xdp:
-  mode: adaptive  # native | generic | redirect | adaptive
+  mode: adaptive # native | generic | redirect | adaptive
 ```
 
-| XDP 模式 | 性能 | 兼容性 |
-|:---|:---|:---|
-| **native** | 最高 | 需要驱动支持 |
-| **generic** | 中等 | 所有驱动 |
-| **redirect** | 最高 | 智能网卡 |
-| **adaptive** | 自动选择 | 推荐 |
+| XDP 模式     | 性能     | 兼容性       |
+| :----------- | :------- | :----------- |
+| **native**   | 最高     | 需要驱动支持 |
+| **generic**  | 中等     | 所有驱动     |
+| **redirect** | 最高     | 智能网卡     |
+| **adaptive** | 自动选择 | 推荐         |
 
 ### 2.3 BPF Map 大小调优
 
@@ -132,16 +126,16 @@ xdp:
 bpf:
   # Service Map
   mapDynamicSockRecords: 65536
-  
+
   # NAT Map
   natMapMaxEntries: 65536
-  
-  # Conntrack Map  
+
+  # Conntrack Map
   ctMapMaxEntries: 65536
 
 # 动态调整示例
 # small cluster (< 100 nodes): 65536
-# medium cluster (100-500): 262144  
+# medium cluster (100-500): 262144
 # large cluster (> 500): 1048576
 ```
 
@@ -152,7 +146,7 @@ bpf:
 bpf:
   lbExternalAddressIPPort: true
   lbL7: true
-  
+
 loadBalancer:
   # LRU Map 大小
   lruMapSize: 65536
@@ -168,15 +162,15 @@ loadBalancer:
 
 ```yaml
 loadBalancer:
-  algorithm: MagLev  # maglev | round_robin | weighted_round_robin | random
+  algorithm: MagLev # maglev | round_robin | weighted_round_robin | random
 ```
 
-| 算法 | 特点 | 适用场景 |
-|:---|:---|:---|
-| **MagLev** | 一致性哈希，连接稳定 | 长连接服务 |
-| **Weighted Round Robin** | 权重轮询 | 异构后端 |
-| **Round Robin** | 简单轮询 | 无状态服务 |
-| **Random** | 随机选择 | 负载均衡测试 |
+| 算法                     | 特点                 | 适用场景     |
+| :----------------------- | :------------------- | :----------- |
+| **MagLev**               | 一致性哈希，连接稳定 | 长连接服务   |
+| **Weighted Round Robin** | 权重轮询             | 异构后端     |
+| **Round Robin**          | 简单轮询             | 无状态服务   |
+| **Random**               | 随机选择             | 负载均衡测试 |
 
 ### 3.2 DSR vs SNAT
 
@@ -210,7 +204,7 @@ loadBalancer:
 
 ```yaml
 loadBalancer:
-  mode: hybrid  # snat | dsr | hybrid
+  mode: hybrid # snat | dsr | hybrid
 ```
 
 ### 3.3 MagLev 一致性哈希
@@ -279,7 +273,7 @@ spec:
               protocol: TCP
       bandwidth:
         egress:
-          rate: 100Mbps  # 限速 100Mbps
+          rate: 100Mbps # 限速 100Mbps
 ```
 
 ---
@@ -329,14 +323,14 @@ bpf:
 
 ### 6.1 关键延迟来源
 
-| 阶段 | 延迟 (µs) | 优化方式 |
-|:---|:---|:---|
-| XDP 处理 | 1-2 | Native XDP |
-| eBPF 转发 | 2-5 | Host Routing |
-| Service 查找 | 5-10 | LRU 缓存 |
-| Conntrack | 5-15 | 禁用（可选）|
-| NAT | 10-20 | DSR 模式 |
-| 加密 (WireGuard) | 50-200 | 硬件卸载 |
+| 阶段             | 延迟 (µs) | 优化方式     |
+| :--------------- | :-------- | :----------- |
+| XDP 处理         | 1-2       | Native XDP   |
+| eBPF 转发        | 2-5       | Host Routing |
+| Service 查找     | 5-10      | LRU 缓存     |
+| Conntrack        | 5-15      | 禁用（可选） |
+| NAT              | 10-20     | DSR 模式     |
+| 加密 (WireGuard) | 50-200    | 硬件卸载     |
 
 ### 6.2 减少延迟的配置
 
@@ -344,16 +338,16 @@ bpf:
 # 低延迟配置
 bpf:
   hostRouting: true
-  clockProbe: false  # 禁用时钟探测
+  clockProbe: false # 禁用时钟探测
   fragments-map-max-entries: 4096
 
 loadBalancer:
-  mode: dsr  # 直接返回
-  
+  mode: dsr # 直接返回
+
 # 禁用不必要的功能
 enable:
-  mascara: false  # 禁用 masquerade
-  pop/pop: false  # 禁用 port preservation
+  mascara: false # 禁用 masquerade
+  pop/pop: false # 禁用 port preservation
 ```
 
 ### 6.3 NAPI 和gro_batch
@@ -419,8 +413,9 @@ ethtool -K cilium+ gso on
 ```yaml
 # Agent CPU 亲和
 agent:
-  cpuAffinity: "0-7"  # 固定到特定 CPU
-  
+  cpuAffinity: "0-7" # 固定到特定 CPU
+
+
 # 使用 kubelet 隔离的 CPU
 # 需要配合 kubelet --cpu-manager policy=static
 ```
@@ -560,7 +555,7 @@ cilium bpf ct list | wc -l
 prometheus:
   enabled: true
   port: 9090
-  
+
 # 关键指标
 # - cilium_bpf_forward_count: 转发统计
 # - cilium_bpf_drop_count: 丢包统计
@@ -608,22 +603,22 @@ cilium_lb_cache_hits_total / (cilium_lb_cache_hits_total + cilium_lb_cache_misse
 # 高性能/低延迟配置
 cluster:
   name: production
-  
+
 bpf:
   hostRouting: true
   clockProbe: false
   mode: native
-  
+
 loadBalancer:
   mode: dsr
   algorithm: maglev
   acceleration: always
   lruMapSize: 262144
-  
+
 bandwidth-manager:
   enabled: true
-  bbr: true  # 需要内核 5.18+
-  
+  bbr: true # 需要内核 5.18+
+
 encryption:
   type: wireguard
 ```
@@ -636,10 +631,10 @@ bpf:
   mapDynamicSockRecords: 262144
   natMapMaxEntries: 262144
   ctMapMaxEntries: 524288
-  
+
 loadBalancer:
   lruMapSize: 524288
-  
+
 bandwidth-manager:
   enabled: true
 ```
@@ -651,10 +646,10 @@ bandwidth-manager:
 bpf:
   sockmap: true
   masquerade: true
-  
+
 encryption:
   type: ipsec
-  
+
 # 启用所有审计功能
 hubble:
   enabled: true

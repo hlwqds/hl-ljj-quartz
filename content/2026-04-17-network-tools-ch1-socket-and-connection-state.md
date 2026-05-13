@@ -36,7 +36,7 @@ Linux 网络工具的本质，是对 **socket inode 的读取和解释**。每�
 netstat -tunapl
 
 问题 1：调用链长
-  netstat → /proc/net/tcp → 解析文本 
+  netstat → /proc/net/tcp → 解析文本
            → 额外调用 getpidcon() 查进程上下文（SELinux）
            → 额外调用 resolv() 做反向 DNS 解析
            → 额外查询 /proc/<pid>/fd/ 获取 socket inode
@@ -73,7 +73,7 @@ ss -tunapl
 
 ```bash
 # 制造大量 TIME_WAIT 连接（模拟高并发场景）
-for i in {1..5000}; do 
+for i in {1..5000}; do
     nc -z -w1 8.8.8.8 53 &
 done
 wait
@@ -89,13 +89,13 @@ time ss -tan state time-wait | wc -l
 # 差距：20x（连接数越多差距越大）
 ```
 
-| 指标 | netstat | ss |
-|------|---------|-----|
-| 底层协议 | /proc 文本解析 | netlink + inet_diag |
-| 5000 TIME_WAIT 耗时 | ~800ms | ~40ms |
-| 过滤能力 | 用户态过滤 | 内核 BPF 过滤 |
-| 进程信息 | getpidcon() 逐条查 | inode → fd → pid 一次性 |
-| 内存/队列信息 | ❌ 无 | ✅ getsockopt |
+| 指标                | netstat            | ss                      |
+| ------------------- | ------------------ | ----------------------- |
+| 底层协议            | /proc 文本解析     | netlink + inet_diag     |
+| 5000 TIME_WAIT 耗时 | ~800ms             | ~40ms                   |
+| 过滤能力            | 用户态过滤         | 内核 BPF 过滤           |
+| 进程信息            | getpidcon() 逐条查 | inode → fd → pid 一次性 |
+| 内存/队列信息       | ❌ 无              | ✅ getsockopt           |
 
 ---
 
@@ -126,19 +126,19 @@ ESTABLISHED ──────────────────────�
 
 ### 3.2 各状态含义
 
-| 状态 | 含义 | 常见场景 |
-|------|------|---------|
-| `CLOSED` | 无连接 | 初始状态 |
-| `LISTEN` | 服务端监听中 | `ss -lt` 看到的 |
-| `SYN_SENT` | 客户端发了 SYN，等待 ACK | 连接建立中 |
-| `SYN_RECV` | 服务端收到 SYN，发了 SYN+ACK | 三次握手中间 |
-| `ESTABLISHED` | 连接建立，双方可传数据 | 正常通信 |
-| `FIN_WAIT1` | 主动关闭，发了 FIN，等待对方 ACK | close() 后 |
-| `FIN_WAIT2` | 收到对方 ACK，等待对方 FIN | 另一半已确认关闭 |
-| `CLOSE_WAIT` | 被动关闭，收到 FIN 后 | 对端已关闭，本地还没 |
-| `CLOSING` | 双方同时关闭 | 罕见 |
-| `LAST_ACK` | 被动关闭，发了 FIN，等待最后 ACK | close() 后 |
-| `TIME_WAIT` | 等待 2MSL，确保对方收到最后的 ACK | close() 后，2min |
+| 状态          | 含义                              | 常见场景             |
+| ------------- | --------------------------------- | -------------------- |
+| `CLOSED`      | 无连接                            | 初始状态             |
+| `LISTEN`      | 服务端监听中                      | `ss -lt` 看到的      |
+| `SYN_SENT`    | 客户端发了 SYN，等待 ACK          | 连接建立中           |
+| `SYN_RECV`    | 服务端收到 SYN，发了 SYN+ACK      | 三次握手中间         |
+| `ESTABLISHED` | 连接建立，双方可传数据            | 正常通信             |
+| `FIN_WAIT1`   | 主动关闭，发了 FIN，等待对方 ACK  | close() 后           |
+| `FIN_WAIT2`   | 收到对方 ACK，等待对方 FIN        | 另一半已确认关闭     |
+| `CLOSE_WAIT`  | 被动关闭，收到 FIN 后             | 对端已关闭，本地还没 |
+| `CLOSING`     | 双方同时关闭                      | 罕见                 |
+| `LAST_ACK`    | 被动关闭，发了 FIN，等待最后 ACK  | close() 后           |
+| `TIME_WAIT`   | 等待 2MSL，确保对方收到最后的 ACK | close() 后，2min     |
 
 ### 3.3 TIME_WAIT 的作用
 
@@ -381,7 +381,7 @@ ip netns exec ns1 ss -tunapl
 
 宿主机：
   ss -tunapl -p   # 看不到容器内的进程（namespace 隔离）
-  
+
   # 解法：知道容器 PID → nsenter 进入该 PID 的 namespace
   docker inspect nginx --format '{{.State.Pid}}'
   # 假设返回 12345

@@ -12,11 +12,11 @@ description: "深入对比 DPDK procinfo、ethtool、netstat 三大网络诊断�
 
 ## 1. 工具定位概述
 
-| 工具 | 来源 | 定位 | 适用场景 |
-|------|------|------|----------|
-| **ethtool** | Linux 内核 | 网卡硬件配置与状态查询 | 物理网卡驱动参数、协商速率 |
-| **netstat/ss** | Linux 内核 | Socket 连接状态 | TCP/UDP 连接数、端口监听 |
-| **dpdk-procinfo** | DPDK | DPDK 端口统计与性能 | DPDK 轮询模式、队列统计 |
+| 工具              | 来源       | 定位                   | 适用场景                   |
+| ----------------- | ---------- | ---------------------- | -------------------------- |
+| **ethtool**       | Linux 内核 | 网卡硬件配置与状态查询 | 物理网卡驱动参数、协商速率 |
+| **netstat/ss**    | Linux 内核 | Socket 连接状态        | TCP/UDP 连接数、端口监听   |
+| **dpdk-procinfo** | DPDK       | DPDK 端口统计与性能    | DPDK 轮询模式、队列统计    |
 
 **关键区别**：DPDK 应用程序通常**绕过内核网络栈**，因此 `ethtool` 和 `netstat` **看不到** DPDK 端口的流量。
 
@@ -282,6 +282,7 @@ ss -m
 ### 5.1 工具定位
 
 `dpdk-procinfo` 是 DPDK 自带的应用程序，用于：
+
 - 查看 DPDK 端口的详细统计
 - 分析 lcore 负载分布
 - 报告队列级统计
@@ -379,18 +380,18 @@ sudo ./dpdk-procinfo -- -m 0a:00.0 --json
 
 ### 6.1 功能矩阵
 
-| 功能 | ethtool | netstat/ss | dpdk-procinfo |
-|------|---------|------------|----------------|
-| **物理网卡配置** | ✅ | ❌ | ❌ |
-| **网卡速率/双工** | ✅ | ❌ | ❌ |
-| **Ring buffer** | ✅ | ❌ | ❌ |
-| **端口统计** | ✅ | ❌ | ✅ |
-| **TCP/UDP 连接** | ❌ | ✅ | ❌ |
-| **Socket 状态** | ❌ | ✅ | ❌ |
-| **DPDK lcore** | ❌ | ❌ | ✅ |
-| **Mbuf 统计** | ❌ | ❌ | ✅ |
-| **队列深度** | 部分 | ❌ | ✅ |
-| **实时监控** | ❌ | ❌ | ✅ |
+| 功能              | ethtool | netstat/ss | dpdk-procinfo |
+| ----------------- | ------- | ---------- | ------------- |
+| **物理网卡配置**  | ✅      | ❌         | ❌            |
+| **网卡速率/双工** | ✅      | ❌         | ❌            |
+| **Ring buffer**   | ✅      | ❌         | ❌            |
+| **端口统计**      | ✅      | ❌         | ✅            |
+| **TCP/UDP 连接**  | ❌      | ✅         | ❌            |
+| **Socket 状态**   | ❌      | ✅         | ❌            |
+| **DPDK lcore**    | ❌      | ❌         | ✅            |
+| **Mbuf 统计**     | ❌      | ❌         | ✅            |
+| **队列深度**      | 部分    | ❌         | ✅            |
+| **实时监控**      | ❌      | ❌         | ✅            |
 
 ### 6.2 选型指南
 
@@ -463,18 +464,18 @@ LOGFILE="/var/log/network_monitor.log"
 
 while true; do
     echo "=== $(date) ===" >> $LOGFILE
-    
+
     # ethtool 统计
     ethtool -S eth0 >> $LOGFILE 2>&1
-    
+
     # ss 连接统计
     ss -s >> $LOGFILE
-    
+
     # 如果有 DPDK 端口，也检查
     if command -v dpdk-procinfo &> /dev/null; then
         sudo ./usertools/dpdk-procinfo.py -m 0a:00.0 >> $LOGFILE 2>&1
     fi
-    
+
     sleep $INTERVAL
 done
 ```
@@ -504,11 +505,11 @@ fi
 
 ## 8. 总结
 
-| 工具 | 核心能力 | 使用时机 |
-|------|----------|----------|
-| **ethtool** | 物理网卡配置、协商参数、硬件统计 | 链路故障、速率异常 |
-| **netstat/ss** | Socket 连接、端口监听、路由 | 连接数异常、端口冲突 |
-| **dpdk-procinfo** | DPDK 队列、lcore、Mbuf | DPDK 应用性能问题 |
+| 工具              | 核心能力                         | 使用时机             |
+| ----------------- | -------------------------------- | -------------------- |
+| **ethtool**       | 物理网卡配置、协商参数、硬件统计 | 链路故障、速率异常   |
+| **netstat/ss**    | Socket 连接、端口监听、路由      | 连接数异常、端口冲突 |
+| **dpdk-procinfo** | DPDK 队列、lcore、Mbuf           | DPDK 应用性能问题    |
 
 **最佳实践**：三个工具配合使用，先用 `ss` 快速定位网络层，再用 `ethtool` 检查物理层，最后用 `dpdk-procinfo` 深入 DPDK 内部。
 

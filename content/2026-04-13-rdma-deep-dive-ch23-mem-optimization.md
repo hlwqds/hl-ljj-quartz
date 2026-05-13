@@ -695,13 +695,13 @@ void bandwidth_test(char *buf) {
 
 ### 9.1 问题排查
 
-| 问题 | 症状 | 解决方案 |
-|------|------|---------|
-| MR 注册失败 | ibv_reg_mr 返回 NULL | 增加 hugepages；检查权限 |
-| lkey 错误 | CQE status = LOC_QP_OP_ERR | 验证 lkey 正确 |
-| DMA 错误 | 传输数据不正确 | 检查对齐；验证内存已注册 |
-| 内存不足 | ENOMEM | 增加 hugepages；减少 MR 数量 |
-| 性能下降 | 带宽低于预期 | 检查 NUMA；使用 hugepages |
+| 问题        | 症状                       | 解决方案                     |
+| ----------- | -------------------------- | ---------------------------- |
+| MR 注册失败 | ibv_reg_mr 返回 NULL       | 增加 hugepages；检查权限     |
+| lkey 错误   | CQE status = LOC_QP_OP_ERR | 验证 lkey 正确               |
+| DMA 错误    | 传输数据不正确             | 检查对齐；验证内存已注册     |
+| 内存不足    | ENOMEM                     | 增加 hugepages；减少 MR 数量 |
+| 性能下降    | 带宽低于预期               | 检查 NUMA；使用 hugepages    |
 
 ### 9.2 内存优化 checklist
 
