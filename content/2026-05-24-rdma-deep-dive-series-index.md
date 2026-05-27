@@ -1,0 +1,80 @@
+---
+title: "RDMA 深度探索系列索引"
+date: 2026-05-24
+pin: true
+description: "RDMA 深度探索系列文章索引，覆盖 RDMA 基础概念、verbs 编程模型、Soft-RoCE 实验环境、RC QP 生命周期、Send/Recv、RDMA Read/Write、调试与性能优化。"
+tags: [rdma, series, networking, linux, performance]
+---
+
+# RDMA 深度探索系列
+
+> [!tip] 系列说明
+> 本系列面向熟悉 C 语言、Linux 和基础网络编程的工程师，从“为什么需要 RDMA”讲起，逐步进入 verbs 对象模型、RC QP 状态机、send/recv、RDMA Read/Write、完成队列、调试方法和性能优化。
+>
+> 学习主线选择 `libibverbs + RC QP`。`rdma_cm`、SRQ、Atomic、ODP、UCX/libfabric 等内容放到进阶篇，避免初学阶段概念过载。
+
+---
+
+## 快速入口
+
+| 文章 | 作用 | 状态 |
+| --- | --- | --- |
+| [[2026-05-24-rdma-beginner-guide\|RDMA 入门教程：从概念到第一个 verbs 程序]] | 单篇总览，适合先快速建立全局图 | ✅ |
+
+---
+
+## Part I：基础模型
+
+理解 RDMA 解决的问题，以及它和传统 socket、DPDK、XDP 的边界。
+
+| # | 章节 | 主题 | 状态 |
+| --- | --- | --- | --- |
+| 1 | [[2026-05-24-rdma-deep-dive-ch1-overview\|第一章]] | RDMA 是什么：从内核网络栈到远程直接内存访问 | ✅ |
+| 2 | [[2026-05-24-rdma-deep-dive-ch2-verbs-objects\|第二章]] | verbs 对象模型：PD、MR、CQ、QP、WR、WC | ✅ |
+
+---
+
+## Part II：实验环境与连接管理
+
+先把环境跑通，再理解 RC QP 如何从 RESET 走到 RTS。
+
+| # | 章节 | 主题 | 状态 |
+| --- | --- | --- | --- |
+| 3 | [[2026-05-24-rdma-deep-dive-ch3-rxe-lab\|第三章]] | Soft-RoCE/RXE 实验环境搭建与 perftest 验证 | ✅ |
+| 4 | [[2026-05-24-rdma-deep-dive-ch4-rc-qp-lifecycle\|第四章]] | RC QP 生命周期：INIT、RTR、RTS 状态转换 | ✅ |
+
+---
+
+## Part III：数据操作
+
+从消息通信进入真正的一边直接读写另一边内存。
+
+| # | 章节 | 主题 | 状态 |
+| --- | --- | --- | --- |
+| 5 | [[2026-05-24-rdma-deep-dive-ch5-send-recv\|第五章]] | Send/Recv：第一个可靠消息通信程序 | ✅ |
+| 6 | [[2026-05-24-rdma-deep-dive-ch6-read-write\|第六章]] | RDMA Read/Write：addr、rkey 与远程内存语义 | ✅ |
+
+---
+
+## Part IV：工程化与性能
+
+定位错误、控制完成队列压力，并建立性能优化方向。
+
+| # | 章节 | 主题 | 状态 |
+| --- | --- | --- | --- |
+| 7 | [[2026-05-24-rdma-deep-dive-ch7-completion-debugging\|第七章]] | Completion Queue、错误码与调试方法 | ✅ |
+| 8 | [[2026-05-24-rdma-deep-dive-ch8-performance-roadmap\|第八章]] | 性能优化路线：batch、inline、unsignaled、NUMA | ✅ |
+
+---
+
+## 建议阅读顺序
+
+如果你从未写过 RDMA 程序，建议顺序如下：
+
+```text
+快速总览 -> 第一章 -> 第二章 -> 第三章 -> 第四章 -> 第五章 -> 第六章
+```
+
+如果你已经能跑通 `ibv_rc_pingpong`，可以直接从第二章和第四章开始，把 verbs 对象和 QP 状态机补扎实。
+
+如果你正在排查程序卡住、completion 失败或性能不稳定，优先看第七章和第八章。

@@ -10,6 +10,10 @@ description: "深入解析 VPP 与 DPDK 集成：PMD 驱动、buffer 映射、�
 > [!abstract] 核心要点
 > VPP 使用 DPDK 作为其数据平面库。本章深入解析 DPDK PMD、buffer 映射、零拷贝机制、中断与轮询模式以及联合调优。
 
+> [!tip] 延伸阅读
+> VPP 和另一个 VPP/DPDK 应用之间通过共享内存交换 packet 时，常用 memif：
+> [[2026-05-26-vpp-deep-dive-ch19a-memif|VPP 深入探讨 ch19a：memif 内存接口]]
+
 ## 1. VPP + DPDK 概述
 
 ### 1.1 关系

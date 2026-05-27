@@ -120,11 +120,12 @@ description: "深入理解 DPDK 多核同步机制——Spinlock、MCS Lock、RC
 │  ─────────────────────────────                                              │
 │  编译器优化可能改变代码顺序以提高性能                                       │
 │                                                                             │
-│  源代码:                           编译后:                                  │
-│  ────────────                      ────────                                  │
-│  a = 1;                            a = 1;           (被优化掉)             │
-│  b = 2;                            c = a + b;  // a 还未赋值!              │
-│  c = a + b;                                                                │
+│  源代码:                           可能重排为:                              │
+│  ────────────                      ────────────                              │
+│  data = 42;                        flag = true;   // flag 先于 data!        │
+│  flag = true;                      data = 42;                              │
+│  // 另一线程: 如果先看到 flag==true,                              │
+│  // 可能 data 还是旧值                                          │
 │                                                                             │
 │  ─────────────────────────────────────────────────────────────────────────  │
 │                                                                             │
@@ -684,18 +685,18 @@ struct rte_rwlock_t {
 static inline void
 rte_rwlock_read_lock(rte_rwlock_t *rwl)
 {
-    int32_t old, new;
+    int32_t old, new_val;
 
     do {
         old = rwl->cnt;
-        new = old + 1;
+        new_val = old + 1;
 
-        if (new > 0x7FFFFFFF)  // 溢出检查
+        if (new_val > 0x7FFFFFFF)  // 溢出检查
             rte_panic("RWLock overflow\n");
 
-    } while (__atomic_compare_exchange_n(&rwl->cnt, &old, new, 0,
+    } while (!__atomic_compare_exchange_n(&rwl->cnt, &old, new_val, 0,
                                           __ATOMIC_ACQ_REL,
-                                          __ATOMIC_RELAXED) != old);
+                                          __ATOMIC_RELAXED));
 }
 
 // 读锁尝试
@@ -703,16 +704,17 @@ static inline int
 rte_rwlock_read_trylock(rte_rwlock_t *rwl)
 {
     int32_t old = rwl->cnt;
+    int32_t new_val;
 
     do {
         if (old < 0)  // 有写者
             return 0;
 
-        new = old + 1;
+        new_val = old + 1;
 
-    } while (__atomic_compare_exchange_n(&rwl->cnt, &old, new, 0,
+    } while (!__atomic_compare_exchange_n(&rwl->cnt, &old, new_val, 0,
                                           __ATOMIC_ACQ_REL,
-                                          __ATOMIC_RELAXED) != old);
+                                          __ATOMIC_RELAXED));
 
     return 1;
 }
@@ -728,34 +730,28 @@ rte_rwlock_read_unlock(rte_rwlock_t *rwl)
 static inline void
 rte_rwlock_write_lock(rte_rwlock_t *rwl)
 {
-    int32_t old, new;
+    int32_t old;
 
     do {
-        old = rwl->cnt;
-        new = -1;  // 写锁标记
+        old = 0;  // 期望无读者、无写者
 
-    } while (__atomic_compare_exchange_n(&rwl->cnt, &old, new, 0,
+    } while (!__atomic_compare_exchange_n(&rwl->cnt, &old, -1, 0,
                                           __ATOMIC_ACQ_REL,
-                                          __ATOMIC_RELAXED) != old);
+                                          __ATOMIC_RELAXED));
 }
 
 // 写锁尝试
 static inline int
 rte_rwlock_write_trylock(rte_rwlock_t *rwl)
 {
-    int32_t old = rwl->cnt;
+    int32_t old = 0;  // 期望无读者、无写者
 
-    do {
-        if (old != 0)  // 有读者或写者
-            return 0;
+    if (__atomic_compare_exchange_n(&rwl->cnt, &old, -1, 0,
+                                     __ATOMIC_ACQ_REL,
+                                     __ATOMIC_RELAXED))
+        return 1;  // 成功获取写锁
 
-        new = -1;
-
-    } while (__atomic_compare_exchange_n(&rwl->cnt, &old, new, 0,
-                                          __ATOMIC_ACQ_REL,
-                                          __ATOMIC_RELAXED) != old);
-
-    return 1;
+    return 0;  // 有读者或写者
 }
 
 // 写锁解锁
@@ -795,6 +791,10 @@ update_routing_table(struct route_entry *new_routes, int count)
 ---
 
 ## 5. RCU (Read-Copy-Update)
+
+> [!tip] RCU 原理与实现详解
+>
+> 本章聚焦于 DPDK RCU 的 API 和使用模式。如果想深入理解 RCU 的底层原理——包括 Linux 内核抢占机制如何决定 RCU 实现方式、Tree RCU 状态机、QSBR 的 token 机制、以及 Linux 与 DPDK RCU 的完整流程对比，请参阅：[[2026-05-27-rcu-deep-dive-linux-vs-dpdk|RCU 原理深度解析：Linux 内核与 DPDK 实现对比]]
 
 ### 5.1 RCU 原理
 
@@ -1069,7 +1069,7 @@ route_free_thread(void *arg)
     void *entry;
 
     while (!quit) {
-        if (rte_ring_sc_dequeue(g_rt.routes, &entry, 1000) == 0) {
+        if (rte_ring_sc_dequeue(g_rt.routes, &entry) == 0) {
             rte_free(entry);
         }
     }
@@ -1099,7 +1099,7 @@ rte_rcu_qsbr_thread_register(struct rte_rcu_qsbr *v, unsigned int thread_id);
 
 // 报告 quiescent state (在读临界区之间调用)
 void
-rte_rcu_qsbr quiescent(struct rte_rcu_qsbr *v, unsigned int thread_id);
+rte_rcu_qsbr_quiescent(struct rte_rcu_qsbr *v, unsigned int thread_id);
 
 // 同步等待 (阻塞直到 Grace Period)
 void
@@ -1233,7 +1233,7 @@ rcu_update_thread(void *arg)
 │  特性:                                                                    │
 │  - 原子性: 由硬件保证                                                       │
 │  - 乐观锁: 不阻塞，失败 重试                                                │
-│  - 无 ABA 问题: 原子的 value 比较能检测到中间修改                           │
+│  - 存在 ABA 问题: 原子比较无法检测值从 A→B→A 的中间变化                    │
 │                                                                             │
 │  ─────────────────────────────────────────────────────────────────────────  │
 │                                                                             │
@@ -1335,60 +1335,77 @@ rte_ring_lf_dequeue(struct rte_ring_lf *r)
 
 struct node {
     void *data;
-    int counter;  // 版本号
+    struct node *next;  // 链表指针
+    int counter;        // 版本号
 };
 
-// tagged pointer 操作
-struct tagged_ptr {
-    void *ptr;
-    uint64_t tag;
-};
+// tagged pointer: 将指针与版本号打包到一个 64 位整数中
+// 假设 64 位系统，指针低 48 位有效，高 16 位用作 tag
+typedef uint64_t tagged_ptr_t;
 
-struct tagged_ptr
-make_tagged(void *ptr, uint64_t tag)
+static inline tagged_ptr_t
+make_tagged(void *ptr, uint16_t tag)
 {
-    return (struct tagged_ptr){ptr, tag};
+    return ((uint64_t)tag << 48) | ((uint64_t)ptr & 0x0000FFFFFFFFFFFF);
+}
+
+static inline void *
+tagged_ptr(tagged_ptr_t tp)
+{
+    return (void *)(tp & 0x0000FFFFFFFFFFFF);
+}
+
+static inline uint16_t
+tagged_tag(tagged_ptr_t tp)
+{
+    return (uint16_t)(tp >> 48);
 }
 
 bool
-tagged_cas(struct tagged_ptr *dst, struct tagged_ptr old, struct tagged_ptr new)
+tagged_cas(_Atomic(tagged_ptr_t) *dst, tagged_ptr_t old, tagged_ptr_t new_val)
 {
-    return __atomic_compare_exchange_n(
-        (void **)dst, &old.ptr, new.ptr, 0,
-        __ATOMIC_ACQ_REL, __ATOMIC_ACQUIRE);
+    return __atomic_compare_exchange_n(dst, &old, new_val, 0,
+                                       __ATOMIC_ACQ_REL, __ATOMIC_ACQUIRE);
 }
 
 // 使用 tagged pointer 的 lock-free stack
 struct lf_stack {
-    _Atomic(struct tagged_ptr) top;
+    _Atomic(tagged_ptr_t) top;
 };
 
 void
 push(struct lf_stack *s, void *data)
 {
-    struct tagged_ptr new_top, old_top;
+    tagged_ptr_t new_top, old_top;
+    struct node *new_node;
 
-    do {
+    old_top = atomic_load(&s->top);
+    new_node = create_node(data, tagged_ptr(old_top));
+    uint16_t new_tag = tagged_tag(old_top) + 1;
+    new_top = make_tagged(new_node, new_tag);
+
+    while (!tagged_cas(&s->top, old_top, new_top)) {
+        // CAS 失败，重试
         old_top = atomic_load(&s->top);
-        struct node *new_node = create_node(data, old_top.tag + 1);
-        new_top = make_tagged(new_node, old_top.tag + 1);
-
-        // 如果 top 变化，重试
-    } while (!tagged_cas(&s->top, old_top, new_top));
+        new_node->next = tagged_ptr(old_top);
+        new_tag = tagged_tag(old_top) + 1;
+        new_top = make_tagged(new_node, new_tag);
+    }
 }
 
 void *
 pop(struct lf_stack *s)
 {
-    struct tagged_ptr old_top, new_top;
+    tagged_ptr_t old_top, new_top;
 
     do {
         old_top = atomic_load(&s->top);
-        if (old_top.ptr == NULL)
+        if (tagged_ptr(old_top) == NULL)
             return NULL;  // 空
 
-        struct node *node = old_top.ptr;
-        new_top = make_tagged(node->next, old_top.tag + 1);
+        struct node *node = tagged_ptr(old_top);
+        uint16_t new_tag = tagged_tag(old_top) + 1;
+        new_top = make_tagged(node->next, new_tag);
 
     } while (!tagged_cas(&s->top, old_top, new_top));
 
@@ -1422,9 +1439,9 @@ struct stats_counter {
 
 // 每个 lcore 的本地计数器 (避免 False Sharing)
 struct local_stats {
-    __thread uint64_t packets;
-    __thread uint64_t bytes;
-    __thread uint64_t errors;
+    uint64_t packets;
+    uint64_t bytes;
+    uint64_t errors;
 };
 
 // 全局聚合
@@ -1438,12 +1455,13 @@ struct global_stats {
 struct global_stats g_stats;
 _Atomic uint64_t g_sync_count = 0;
 
+// TLS: 每个 lcore 的本地统计 (避免 False Sharing)
+static __thread struct local_stats local = {0, 0, 0};
+
 // 收集本地统计
 void
 collect_local_stats(void)
 {
-    __thread struct local_stats local;
-
     // 增加本地计数 (无锁)
     for (int i = 0; i < 1000; i++) {
         local.packets++;
@@ -1717,3 +1735,5 @@ flow_update(struct flow_table *ft, struct flow_key *key, uint32_t action)
 > - "The Art of Multiprocessor Programming", Herlihy & Shavit
 > - Intel, "DPDK Synchronization Primitives", https://doc.dpdk.org/guides/prog_guide/env_abstraction_layer.html
 > - "RCU in the Linux Kernel", https://www.kernel.org/doc/html/latest/RCU/
+> - [[2026-05-27-rcu-deep-dive-linux-vs-dpdk|RCU 原理深度解析：Linux 内核与 DPDK 实现对比]]
+> - [[2026-05-27-linux-kernel-context-scheduling-preemption|Linux 内核上下文、调度与抢占：完整图解]]

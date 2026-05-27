@@ -7,6 +7,14 @@ description: "深入理解 VDPA 机制——virtio 数据面的硬件卸载、vD
 
 > [!info] DPDK 深度探索系列 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
 > 1-18. 前十八章已完成 19. **第十九章：VDPA 数据面加速与驱动**
+> 如果你想从 Host/Guest copy、DSA/dmadev 和 vDPA 选型角度理解硬件卸载，可以接着看：
+> [[2026-04-09-dpdk-deep-dive-ch27a-vdpa-dsa-host-guest-accel|第二十七章补充：vDPA、DSA 与 Host/Guest 数据面卸载]]
+
+> [!note] 地址术语说明
+> 本文早期图示里有些地方用 `GPA -> HPA` 表示硬件访问 Guest memory 的地址翻译。更准确地说，
+> 设备侧看到的是 IOVA / device address，IOMMU 或平台 DMA 映射再把它翻译到实际物理页。
+> 如果要理解 `GPA -> HVA -> IOVA -> PA` 的完整链路，先看
+> [[2026-04-09-dpdk-deep-dive-ch27-memory-dma|第二十七章：内存优化——DMA 引擎与零拷贝]]。
 
 ---
 

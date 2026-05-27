@@ -494,7 +494,7 @@ enum rte_ring_sync_type {
     RTE_RING_SYNC_MT_HTS, // 多线程 Head-Tail Sync (头尾一起原子更新)
 };
 
-// 创建时指定同步模式
+// 创建时可分别指定 enqueue/dequeue 侧同步模式
 struct rte_ring *r = rte_ring_create("my_ring", 1024,
     rte_socket_id(),  // NUMA socket
     RING_F_MP_RTS_ENQ);  // 使用 RTS 模式入队
@@ -502,10 +502,228 @@ struct rte_ring *r = rte_ring_create("my_ring", 1024,
 
 > [!tip] 什么时候用哪种同步模式？
 >
-> - `RTE_RING_SYNC_ST`：单生产者 + 单消费者，无锁最快
+> - `RTE_RING_SYNC_ST`：单生产者或单消费者侧使用，无锁最快
 > - `RTE_RING_SYNC_MT`：通用多线程，使用 CAS
-> - `RTE_RING_SYNC_MT_RTS`：多生产者/多消费者，放宽 tail 同步以减少原子操作
+> - `RTE_RING_SYNC_MT_RTS`：多生产者/多消费者，放宽 tail 同步以避免在 tail 上自旋等待
 > - `RTE_RING_SYNC_MT_HTS`：多生产者/多消费者，head/tail 作为 64 位原子变量一起更新
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│              rte_ring 四种同步模式详解                                      │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ① RTE_RING_SYNC_ST — 单线程模式                                          │
+│  ════════════════════════════                                               │
+│                                                                             │
+│  Producer (唯一):                    Consumer (唯一):                      │
+│  ┌─────────────────────────────┐     ┌─────────────────────────────┐      │
+│  │ 1. prod.head += n  (普通写) │     │ 1. cons.head += n  (普通写) │      │
+│  │ 2. ring[slot] = data       │     │ 2. data = ring[slot]       │      │
+│  │ 3. prod.tail = head (普通写)│     │ 3. cons.tail = head (普通写)│      │
+│  └─────────────────────────────┘     └─────────────────────────────┘      │
+│                                                                             │
+│  零同步开销: 无 CAS、无 memory barrier、无自旋等待                        │
+│  前提: 保证只有一个线程入队、一个线程出队                                 │
+│                                                                             │
+│  Ring 状态 (单线程模式，size=8):                                          │
+│                                                                             │
+│     prod.head = prod.tail = 5                                               │
+│     cons.head = cons.tail = 2                                               │
+│                                                                             │
+│     Slot   [0]  [1]  [2]  [3]  [4]  [5]  [6]  [7]                         │
+│           ┌────┬────┬────┬────┬────┬────┬────┬────┐                        │
+│           │    │    │▓▓▓▓│▓▓▓▓│▓▓▓▓│    │    │    │                        │
+│           └────┴────┴────┴────┴────┴────┴────┴────┘                        │
+│                       ▲              ▲                                      │
+│                   cons.tail=2    prod.tail=5                                │
+│                                                                             │
+│  区域说明:                                                                  │
+│  ┌────┬────┐ ┌────┬────┬────┐ ┌────┬────┬────┐                            │
+│  │ 已读 │ │ ▓▓数据▓▓ │ │  空闲  │                            │
+│  │ 可复用│ │ 等待消费 │ │ 可写入 │                            │
+│  └────┴────┘ └────┴────┴────┘ └────┴────┴────┘                            │
+│   [0]  [1]    [2]  [3]  [4]    [5]  [6]  [7]                              │
+│   ▲                                  ▲                                      │
+│   └── cons.tail ────────── prod.tail ┘─►                                   │
+│                                                                             │
+│  单线程下 head 始终 == tail (没有并发操作，一步到位)                       │
+│  consumer 只看 prod.tail=5，知道 slot 2~4 有数据可读                     │
+│                                                                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ② RTE_RING_SYNC_MT — 标准多线程模式 (默认)                              │
+│  ════════════════════════════════════════                                   │
+│                                                                             │
+│  多个 Producer 竞争入队 — 四步 CAS 协议:                                  │
+│                                                                             │
+│  Producer A:                          Producer B:                         │
+│  ┌──────────────────────────────┐     ┌──────────────────────────────┐    │
+│  │ ① CAS(prod.head, h, h+n)    │     │ ① CAS(prod.head, h, h+m)    │    │
+│  │    成功! → 预留 slot h~h+n  │     │    失败! → 回到 ① 重试      │    │
+│  │                              │     │ ①' CAS(prod.head, h', h'+m) │    │
+│  │ ② ring[h..h+n] = data       │     │    成功! → 预留 h'~h'+m     │    │
+│  │    (写入自己的 slot)         │     │                              │    │
+│  │                              │     │ ② ring[h'..h'+m] = data     │    │
+│  │ ③ 等待 prod.tail == h       │     │                              │    │
+│  │    (等前面的 producer 完成)  │     │ ③ 等待 prod.tail == h'      │    │
+│  │                              │     │    (等 A 先更新 tail!)       │    │
+│  │ ④ prod.tail = h + n         │     │                              │    │
+│  │    (轮到自己，更新 tail)     │     │ ④ prod.tail = h' + m        │    │
+│  └──────────────────────────────┘     └──────────────────────────────┘    │
+│                                                                             │
+│  关键问题: Step ③ — 队头阻塞 (Head-of-Line Blocking)                    │
+│  ════════════════════════════════════════════                               │
+│                                                                             │
+│  tail 必须按 CAS 成功的顺序更新:                                          │
+│                                                                             │
+│  时间 ─────────────────────────────────────────────────────────►          │
+│                                                                             │
+│  A: ─CAS─┤    慢写入...     ├─tail=4─┤                                    │
+│  B: ───────CAS─┤ 快写入 ├──等 A tail──├─tail=8─┤                         │
+│  C: ──────────────────CAS─┤ 写 ├────等 B tail────├─tail=12                │
+│                          ▲                    ▲                             │
+│                          │                    │                             │
+│                     B 写完了但               C 也得等                      │
+│                     必须等 A!                                              │
+│                                                                             │
+│  Ring 状态快照 (队头阻塞，size=16):                                       │
+│                                                                             │
+│  prod.head = 12  (A 预留 0-3, B 预留 4-7, C 预留 8-11)                  │
+│  prod.tail = 0   (A 还没写完 → tail 卡住)                                │
+│                                                                             │
+│  Slot  [0]  [1]  [2]  [3]  [4]  [5]  [6]  [7]  [8]  [9]  [10] [11]      │
+│       ┌────┬────┬────┬────┬────┬────┬────┬────┬────┬────┬────┬────┐      │
+│       │ ?? │ ?? │ ?? │ ?? │▓D4▓│▓D5▓│▓D6▓│▓D7▓│    │    │    │    │      │
+│       └────┴────┴────┴────┴────┴────┴────┴────┴────┴────┴────┴────┘      │
+│        ▲    A 正在写入      ▲    B 已写完        ▲    C 还没写            │
+│        │    (0-3)           │    (4-7)           │    (8-11)              │
+│     tail=0              但 consumer              head=12                  │
+│                          看不见!                                          │
+│                                                                             │
+│  各角色视角:                                                                │
+│  ───────────                                                               │
+│  Consumer:  看 prod.tail=0 → "没有数据可读"                               │
+│  Producer B: 写完了 slot 4-7 → 等 prod.tail==4 → 但 A 还没更新 tail!     │
+│  Producer A: 正在写 slot 0-3 → 写完才能更新 tail → 其他人才能动          │
+│                                                                             │
+│  虽然 B 的数据 (4-7) 已在 ring 中，但 tail=0 导致                        │
+│  consumer 以为没有数据。这就是队头阻塞: A 卡住了所有人。                │
+│                                                                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ③ RTE_RING_SYNC_MT_RTS — Relaxed Tail Sync                              │
+│  ════════════════════════════════════════════                               │
+│                                                                             │
+│  解决 MT 模式的 tail 自旋等待: 写完者更新完成计数，最后完成者推进 tail    │
+│  ════════════════════════════════════════════                               │
+│                                                                             │
+│  Producer A (CAS 获得 0-3, 写入慢):                                      │
+│  ┌──────────────────────────────────────────────────────────┐             │
+│  │ ① CAS(prod.head, h, h+n) → 成功                         │             │
+│  │ ② ring[h..h+n] = data (写入中... 慢)                    │             │
+│  │ ③ 更新 tail.cnt；若自己是最后完成者，则推进 tail.pos     │             │
+│  └──────────────────────────────────────────────────────────┘             │
+│                                                                             │
+│  Producer B (CAS 获得 4-7, 写入快):                                      │
+│  ┌──────────────────────────────────────────────────────────┐             │
+│  │ ① CAS(prod.head, h', h'+m) → 成功                       │             │
+│  │ ② ring[h'..h'+m] = data (写入完成! 快)                   │             │
+│  │ ③ 更新 tail.cnt；A 未完成时不把 tail.pos 推过 A          │             │
+│  └──────────────────────────────────────────────────────────┘             │
+│                                                                             │
+│  对比 MT vs RTS 时间线:                                                   │
+│  ═════════════════════                                                     │
+│                                                                             │
+│  MT 模式 (严格顺序):                                                      │
+│  A: ─CAS─┤     慢写入      ├──── tail=4 ────┤                            │
+│  B: ───────CAS─┤ 快写 ├──────── 等 A ───────┤ tail=8 ──┤                │
+│                     ▲                                                       │
+│                     ╳ B 写完了但被 A 阻塞!                                │
+│                                                                             │
+│  RTS 模式 (relaxed tail update):                                          │
+│  A: ─CAS(cnt=1)─┤     慢写入      ├──── tail.cnt=2, tail.pos=8 ──┤       │
+│  B: ────────────CAS(cnt=2)─┤ 快写 ├──── tail.cnt=1, tail.pos=0 ──┤       │
+│                                ▲                                            │
+│                                ✓ B 不自旋等 A；但不会发布 A 前面的空洞     │
+│                                                                             │
+│  RTS 额外机制:                                                            │
+│  ──────────────                                                            │
+│  - head 和 tail 都携带 cnt/pos，使用 64-bit CAS 原子更新                  │
+│  - 每个完成者都会推进 tail.cnt，表示一个 in-flight 操作完成               │
+│  - 只有当 tail.cnt + 1 == head.cnt 时，说明当前线程是最后完成者           │
+│    才把 tail.pos 推到 head.pos                                            │
+│  - tail.pos 仍然表示 consumer 可见的连续完成边界，不允许跳过空洞          │
+│                                                                             │
+│  适用: 高竞争/过度订阅场景，多个 producer/consumer 频繁操作               │
+│  代价: 每次操作需要额外一次 64-bit CAS，结构和推理更复杂                  │
+│                                                                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ④ RTE_RING_SYNC_MT_HTS — Head-Tail Sync                                │
+│  ════════════════════════════════════════════                               │
+│                                                                             │
+│  核心思想: head 和 tail 打包为 64 位原子变量                              │
+│  ══════════════════════════════════════════                                 │
+│                                                                             │
+│         32 bits         │        32 bits                                   │
+│  ┌─────────────────────┼─────────────────────┐                            │
+│  │       head          │       tail           │  → 单个 uint64_t          │
+│  └─────────────────────┼─────────────────────┘                            │
+│          CAS 一次同时更新 head 和 tail                                     │
+│                                                                             │
+│  状态含义:                                                                 │
+│  ──────────                                                                │
+│  head == tail → 空闲 (idle)，没有操作进行                                 │
+│  head >  tail → 操作进行中 (in-progress)                                  │
+│                                                                             │
+│  入队操作 (两步 CAS):                                                     │
+│  ┌───────────────────────────────────────────────────────────────┐        │
+│  │                                                               │        │
+│  │  Step 1: 预留 slot                                           │        │
+│  │  CAS(prod, {head=0, tail=0}, {head=n, tail=0})               │        │
+│  │  → head 前进, tail 不动 → head != tail → "正在写"           │        │
+│  │                                                               │        │
+│  │  Step 2: 写入数据                                            │        │
+│  │  ring[0..n] = data                                           │        │
+│  │                                                               │        │
+│  │  Step 3: 完成通知                                            │        │
+│  │  CAS(prod, {head=n, tail=0}, {head=n, tail=n})               │        │
+│  │  → tail 追上 head → head == tail → "写完了"                 │        │
+│  │                                                               │        │
+│  └───────────────────────────────────────────────────────────────┘        │
+│                                                                             │
+│  与 MT 的关键区别 — 严格串行化:                                          │
+│  ═════════════════════════════════                                         │
+│                                                                             │
+│  MT 模式 (并行):                                                          │
+│  A: ─CAS head─┤   write   ├───── tail ─────┤                             │
+│  B: ───────────CAS head─┤   write   ├─tail─┤                             │
+│     ← 两个 producer 可以同时写入不同 slot →                              │
+│                                                                             │
+│  HTS 模式 (串行):                                                         │
+│  A: ─CAS{h,t}→{h+n,t}─┤ write ├─CAS{h+n,t}→{h+n,h+n}─                   │
+│  B: ─────────────── 自旋等待 head==tail ──────────CAS─┤ write ├─CAS─      │
+│     ← 同一时刻只有一个 producer 能操作 →                                 │
+│                                                                             │
+│  为什么需要串行?                                                           │
+│  ────────────────                                                          │
+│  ✓ 保证操作的严格顺序 (FIFO)                                              │
+│  ✓ 适用于 ordered messaging、分布式 log                                   │
+│  ✓ 更容易推理和调试 (同一时刻只有一个写者)                               │
+│  ✗ 吞吐量低于 MT/RTS (无法并行写入)                                      │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+| 特性 | ST | MT | MT_RTS | MT_HTS |
+|------|-----|-----|--------|--------|
+| **同步机制** | 无 | CAS (32-bit) + tail 等待 | 2×64-bit CAS + relaxed tail | CAS (64-bit) |
+| **原子操作/次** | 0 | 1 CAS + tail store | 2 CAS | 2 CAS |
+| **并发写入** | N/A | 并行 | 并行 | 严格串行 |
+| **tail 等待** | 无 | 有 (tail 按序自旋) | 避免自旋等待 | 无 (串行避免) |
+| **吞吐量** | 最高 | 高 | 较高 | 较低 |
+| **延迟确定性** | 确定 | 不确定 | 不确定 | 确定 |
+| **适用场景** | SPSC | 通用 MPMC | 高竞争 MPMC | 顺序敏感 MPMC |
 
 ### 3.3 rte_mbuf 结构与 Cache
 
@@ -695,29 +913,54 @@ lcore_main(void *arg)
 ### 3.5 单写者原则 (Single Writer Principle)
 
 > [!important] 现代高性能系统的核心设计原则
-> **一个 Cache Line，尽量只有一个 CPU 高频写入。**
-> 其他人只读。这样 cache line ownership 很少需要迁移。
+> **一个 Cache Line，尽量减少不同角色、不同核的高频写入。**
+> 最理想是单写者；在多生产者/多消费者场景做不到单写者时，也要把写入按角色分区，
+> 把冲突限制在同一类线程内部，避免 producer 和 consumer 跨角色互相写同一条 Cache Line。
+
+可以把 ring 控制字段的冲突分成三层：
+
+```text
+1. 没有 Cache Line 分离:
+   producer 和 consumer 都写同一条 control cache line
+   => 跨角色写写冲突最严重
+
+2. DPDK prod/cons 分离:
+   producer group 写 prod line
+   consumer group 写 cons line
+   => 去掉 producer/consumer 跨角色写写 false sharing
+   => 但 MP/MC 内部同角色竞争仍然存在
+
+3. SP/SC 或 per-lcore 数据:
+   每条热 cache line 尽量只有一个 writer
+   => 最接近理想单写者模型
+```
+
+所以这里的重点不是“没有人写同一条 Cache Line”，而是**减少冲突维度**：
+把一个 producer/consumer 混在一起的全局冲突，拆成 producer group 和 consumer group
+各自内部的局部冲突。
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                    单写者原则与 Cache Ownership 拓扑                        │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│  DPDK rte_ring 的真正智慧:                                                 │
+│  DPDK rte_ring 的真正智慧: 写者分区，而不是完全没人竞争                    │
 │  ═════════════════════════                                                 │
 │                                                                             │
 │  Producer:                                                                 │
-│    高频写 prod Cache Line (head/tail)                                      │
+│    producer group 高频写 prod Cache Line (head/tail)                      │
 │    读  cons Cache Line (检查空闲空间)                                      │
 │                                                                             │
 │  Consumer:                                                                 │
-│    高频写 cons Cache Line (head/tail)                                      │
+│    consumer group 高频写 cons Cache Line (head/tail)                      │
 │    读  prod Cache Line (检查可用数据)                                      │
 │                                                                             │
-│  每个 Cache Line 只有 1 个高频 Writer                                      │
-│  其他人都是 Reader → S 状态，无需频繁 ownership transfer                  │
+│  SP/SC: 每个控制 Cache Line 近似只有 1 个 Writer                          │
+│  MP/MC: 同一类线程内部仍会竞争，但 producer/consumer 不再跨角色互写       │
+│         同一条控制 Cache Line                                             │
 │                                                                             │
-│  这才是 DPDK ring 快的真正原因——不是 CAS，而是 Cache Line Ownership 拓扑  │
+│  这才是 DPDK ring 快的重要原因——不是完全没有 CAS/竞争，                  │
+│  而是把 Cache Line Ownership 冲突范围压小了                               │
 │                                                                             │
 │  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ │
 │                                                                             │
@@ -739,7 +982,7 @@ lcore_main(void *arg)
 │  本质: 都在优化 Cache Ownership Topology                                   │
 │  ─────────────────────────────────────                                     │
 │  不是简单减少锁，不是算法复杂度优化                                        │
-│  而是: 减少 cache line 在 CPU 之间的迁移 (coherence traffic)             │
+│  而是: 减少 cache line 在 CPU 之间不必要的迁移 (coherence traffic)        │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -747,7 +990,8 @@ lcore_main(void *arg)
 > [!note] 现代 lock-free 真正优化的东西
 > 很多人以为是"减少锁"，实际上更重要的是**减少 Cache Line Ownership Bouncing**。
 > 一个设计良好的无锁数据结构，核心价值不在于 CAS 比 mutex 快多少，
-> 而在于它把"谁写什么 Cache Line"设计得非常合理——ownership 很少需要迁移。
+> 而在于它把"谁写什么 Cache Line"设计得非常合理——冲突被限制在必要范围内，
+> ownership 不再因为无关角色写同一条 Cache Line 而来回迁移。
 
 ---
 
@@ -792,11 +1036,26 @@ lcore_main(void *arg)
 
 ### 4.2 软件预取指令
 
+`locality` 描述的是**时间局部性提示**，也就是这次预取的数据在使用后是否可能很快再次被访问。它不是应用层的缓存开关，也不是严格指定"必须放进 L1/L2/L3 哪一级 Cache"。编译器和 CPU 会根据这个提示选择合适的预取指令或缓存策略，最终行为仍取决于具体架构。
+
+可以这样理解：
+
+| locality | 含义 | 典型场景 |
+|----------|------|----------|
+| `0` | Non-temporal，用完即弃，尽量减少 cache 污染 | 流式拷贝、只读一次的数据 |
+| `1` | 低时间局部性，后续复用概率较低 | 偶尔可能再访问的数据 |
+| `2` | 中等时间局部性 | 有一定复用的数据 |
+| `3` | 高时间局部性，倾向保留在 cache 中 | 循环中反复访问的热点数据 |
+
+注意：真正访问数据仍然是普通的内存读写，`prefetch` 只是提前发出提示，不返回数据，也不改变程序语义。
+
 ```c
 // 通用编译器内置预取
 // __builtin_prefetch(addr, rw, locality)
 // rw: 0 = read, 1 = write
-// locality: 0-3, 0 = 无 temporal (用完即弃), 3 = 最高 temporal (保留在 cache)
+// locality: 0-3, 时间局部性提示
+//   0 = non-temporal，用完即弃，减少 cache 污染
+//   3 = high temporal locality，后续可能复用，倾向保留在 cache
 
 // 预取用于读取
 void
@@ -817,11 +1076,13 @@ void
 prefetch_write_example(int *dst, int *src, int n)
 {
     for (int i = 0; i < n; i++) {
-        // 预取源数据 (读)
-        __builtin_prefetch(&src[i + 16], 0, 0);  // read, no locality
+        if (i + 16 < n) {
+            // 预取源数据 (读)
+            __builtin_prefetch(&src[i + 16], 0, 0);  // read, no locality
 
-        // 预取目标位置 (写，避免 dirty cache line)
-        __builtin_prefetch(&dst[i + 16], 1, 0);  // write, no locality
+            // 预取目标位置 (写意图，提前获得可写 cache line)
+            __builtin_prefetch(&dst[i + 16], 1, 0);  // write, no locality
+        }
 
         dst[i] = process(src[i]);
     }
@@ -830,7 +1091,7 @@ prefetch_write_example(int *dst, int *src, int n)
 // x86 特定预取 (SSE/AVX intrinsics)
 #include <xmmintrin.h>
 
-// 预取到不同 Cache 层级
+// x86 预取 hint 示例: 表达期望的 cache 层级/保留策略，不是强制保证
 _mm_prefetch(addr, _MM_HINT_T0);  // 预取到 L1
 _mm_prefetch(addr, _MM_HINT_T1);  // 预取到 L2
 _mm_prefetch(addr, _MM_HINT_T2);  // 预取到 L3
@@ -843,28 +1104,36 @@ DPDK 在 `lib/eal/include/generic/rte_prefetch.h` 中定义了跨平台的预取
 
 ```c
 // ── 基本预取 (读) ──
+// 读预取的目标: 后面要 load 这条 cache line，提前把数据拉近。
+// 它通常只需要可读副本；多核共享读时可以处于 Shared 状态，
+// 不一定需要让其他核心的副本失效。
 
-// 预取到所有 Cache 层级 (L1 + L2 + L3)
+// T0 hint: 面向马上要用的数据，倾向预取到最靠近 CPU 的 cache 层级
 static inline void rte_prefetch0(const volatile void *p);
 
-// 预取到 L2 及以上 (跳过 L1，减少 L1 污染)
+// T1 hint: 面向稍后使用的数据，倾向放在较远 cache 层级，减少 L1 压力
 static inline void rte_prefetch1(const volatile void *p);
 
-// 预取到 L3 (跳过 L1 和 L2)
+// T2 hint: 面向更晚使用的数据，倾向放在更远 cache 层级
 static inline void rte_prefetch2(const volatile void *p);
 
-// 非临时预取 — 数据用完即弃，不替换 Cache 中的有用数据
+// NTA hint: non-temporal，数据用完即弃，尽量减少 cache 污染
 static inline void rte_prefetch_non_temporal(const volatile void *p);
 
 // ── 写预取 (实验性 API) ──
+// 写预取的目标: 后面要 store 这条 cache line，提前为写入做准备。
+// 写入通常需要当前核心获得独占/可修改 ownership (MESI 的 E/M 状态)。
+// 如果其他核心也缓存了这条 line，真正获得写权限时可能触发 invalidate，
+// 让其他核心的共享副本失效；写预取就是把这部分延迟尽量提前隐藏。
+// 注意: 这仍然只是 hint，不保证 CPU 一定立即发起 invalidate。
 
-// 预取并标记为即将写入 (L1)
+// 写预取 T0 hint: 后面马上要写，倾向提前获得可写 cache line
 static inline void rte_prefetch0_write(const void *p);
 
-// 预取并标记为即将写入 (L2+)
+// 写预取 T1 hint: 后面稍后要写，倾向降低 L1 压力
 static inline void rte_prefetch1_write(const void *p);
 
-// 预取并标记为即将写入 (L3)
+// 写预取 T2 hint: 后面更晚要写，倾向使用更远层级的提示
 static inline void rte_prefetch2_write(const void *p);
 
 // ── Cache Line 降级 (实验性 API) ──
@@ -880,6 +1149,25 @@ static inline void rte_cldemote(const volatile void *p);
 > - x86: 使用 `prefetcht0`/`prefetcht1`/`prefetcht2`/`prefetchnta` 汇编指令
 > - ARM: 使用 `PRFM PLDL1KEEP`/`PLDL2KEEP`/`PLDL3KEEP` 等指令
 > - 写预取使用 `__builtin_prefetch(addr, 1, locality)` 实现
+
+> [!important] 预取 hint 不是 Cache 管理命令
+> `rte_prefetch0/1/2()` 和 `rte_prefetch_non_temporal()` 都只是给 CPU 的提示，
+> 不是硬性命令。尤其注意两个常见误解：
+>
+> 1. **不是"某一级 Cache 满了就退到下一级"**  
+>    Cache 满时通常发生的是替换/淘汰：CPU 选择一条旧 cache line 让位，
+>    新 line 进入目标层级；被淘汰的旧 line 如果是脏的，再写回下一级或内存。
+>    `T0/T1/T2/NTA` 影响的是 CPU 对预取位置、保留价值和替换压力的判断，
+>    不是简单的逐级回退规则。
+>
+> 2. **"用完即弃"不是 CPU 维护的一次性状态**  
+>    `non_temporal` 表示程序员认为这段数据时间局部性很低，
+>    用完后短期内大概率不会再访问。CPU 不会记录"这个地址只能用一次"，
+>    第二次访问仍然正常；如果 cache line 还在 cache 中就是 hit，
+>    如果已经被替换掉就是 miss。
+>
+> 可以把 `rte_prefetch_non_temporal(p)` 理解为：
+> "我等一下要访问 `p`，但它不像热点数据，不值得为了它挤掉 cache 里的长期有用数据。"
 
 DPDK 还为 mbuf 提供了专用的预取函数（`lib/mbuf/rte_mbuf.h`）：
 
@@ -909,34 +1197,45 @@ rte_mbuf_prefetch_part2(struct rte_mbuf *m)
 ### 4.4 DPDK 中的预取模式
 
 ```c
-// 模式 1: 批量接收时预取 mbuf
+// 模式 1: 批量接收 / Ring 出队时预取 mbuf
+// 无论包来自 rte_eth_rx_burst 还是 rte_ring_dequeue_burst，
+// 核心模式一样: 预取分散在内存中的 mbuf 对象本体。
+// ring slot 本身是顺序访问，硬件预取器已覆盖，无需软件预取。
 
-#define PREFETCH_OFFSET 8
+#define PREFETCH_OFFSET 4
 
-uint16_t
-dpdk_eth_rx_prefetch(uint16_t port_id, uint16_t queue_id,
-                      struct rte_mbuf **mbufs, uint16_t nb_pkts)
+// 通用模式: 给定 mbuf 数组，边预取边处理
+static inline void
+process_mbufs_with_prefetch(struct rte_mbuf **pkts, uint16_t nb_pkts)
 {
     uint16_t i;
 
-    // 预取前几个 mbuf 的 metadata 和数据
+    // 预取前几个 mbuf 的 metadata 和包数据
     for (i = 0; i < PREFETCH_OFFSET && i < nb_pkts; i++) {
-        rte_mbuf_prefetch_part1(mbufs[i]);
-        rte_prefetch0(rte_pktmbuf_mtod(mbufs[i], const void *));
+        rte_mbuf_prefetch_part1(pkts[i]);
+        rte_prefetch0(rte_pktmbuf_mtod(pkts[i], const void *));
     }
 
     // 处理已预取的包，同时预取后续包
     for (i = 0; i < nb_pkts; i++) {
         if (i + PREFETCH_OFFSET < nb_pkts) {
-            rte_mbuf_prefetch_part1(mbufs[i + PREFETCH_OFFSET]);
-            rte_prefetch0(rte_pktmbuf_mtod(mbufs[i + PREFETCH_OFFSET],
+            rte_mbuf_prefetch_part1(pkts[i + PREFETCH_OFFSET]);
+            rte_prefetch0(rte_pktmbuf_mtod(pkts[i + PREFETCH_OFFSET],
                                             const void *));
         }
 
-        // 处理 mbufs[i] (此时已在 cache 中)
-        process_packet(mbufs[i]);
+        // 处理 pkts[i] (此时已在 cache 中)
+        process_packet(pkts[i]);
     }
 }
+
+// 用法 A: 从网卡接收
+uint16_t nb_rx = rte_eth_rx_burst(port, queue, mbufs, BURST_SIZE);
+process_mbufs_with_prefetch(mbufs, nb_rx);
+
+// 用法 B: 从 ring 出队
+uint16_t n = rte_ring_dequeue_burst(ring, (void **)pkts, BURST_SIZE, NULL);
+process_mbufs_with_prefetch(pkts, n);
 
 // 模式 2: Flow Table 查找预取
 
@@ -966,41 +1265,23 @@ flow_table_lookup(struct flow_table *tbl, uint32_t flow_hash)
     return NULL;
 }
 
-// 模式 3: Ring 操作预取
-
-void
-ring_enqueue_prefetch(struct rte_ring *r, void **obj_table, uint32_t n)
-{
-    uint32_t prod_head = r->prod.head;
-    uint32_t mask = r->mask;
-    void **ring = r->ring;
-
-    // 预取要写入的位置
-    for (uint32_t i = 0; i < 8 && i < n; i++) {
-        uint32_t idx = (prod_head + i) & mask;
-        rte_prefetch0(&ring[idx]);
-    }
-
-    // 入队
-    for (uint32_t i = 0; i < n; i++) {
-        uint32_t idx = (prod_head + i) & mask;
-        ring[idx] = obj_table[i];
-
-        // 预取下一个
-        if (i + 8 < n)
-            rte_prefetch0(&ring[(prod_head + i + 8) & mask]);
-    }
-}
-
-// 模式 4: LPM 路由查找预取
+// 模式 3: LPM 路由查找预取 (反面教材!)
+//
+// 以下写法看似合理，实际上 prefetch 完全无效:
+//   rte_prefetch0 发出预取
+//   → 紧接着 rte_lpm_lookup 内部就访问 tbl24
+//   → prefetch 需要 100+ cycles 才能完成，但 lookup 只有 ~20 cycles
+//   → 数据还没到 cache 就被访问了，等于没预取
+//
+// 正确做法见 Section 4.5 的 lpm_lookup_bulk — 批量处理时
+// 提前一轮预取下一批 IP 的 tbl24 entry，才有足够的预取窗口。
 
 uint8_t
-lpm_lookup(struct rte_lpm *lpm, uint32_t ip)
+lpm_lookup_naive(struct rte_lpm *lpm, uint32_t ip)
 {
-    // 查找步骤 1: 查主表 tbl24
     uint32_t tbl24_idx = ip >> 8;
 
-    // 预取 tbl24 entry
+    // 这条 prefetch 没用 — 和下面的 lookup 之间没有足够的计算来填满预取窗口
     rte_prefetch0(&lpm->tbl24[tbl24_idx]);
 
     uint8_t next_hop;
@@ -1013,37 +1294,149 @@ lpm_lookup(struct rte_lpm *lpm, uint32_t ip)
 }
 ```
 
-### 4.5 预取注意事项
+### 4.5 预取生效的三个必要条件
+
+> [!important] 三个条件必须**同时满足**，预取才有意义
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                 预取生效的三个必要条件 (缺一不可)                           │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  条件 1: 单次操作足够重                                                    │
+│  ═════════════════════                                                     │
+│  prefetch 到真正使用之间必须有足够的 cycle 数 (通常 100-200 cycles)        │
+│  如果操作太轻量，prefetch 还没完成数据就已经被用了 → 等于没预取          │
+│                                                                             │
+│  条件 2: 访问模式可预测                                                    │
+│  ═════════════════════                                                     │
+│  必须在访问数据之前就知道地址                                               │
+│  顺序遍历、批量操作天然满足                                                 │
+│  随机地址无法预取                                                           │
+│                                                                             │
+│  条件 3: 工作集超出 cache                                                  │
+│  ═════════════════════                                                     │
+│  如果数据本来就在 L1 里，预取指令纯属浪费 (约 5 cycles 开销)               │
+│  只在工作集 > L1 (32-64KB) 时预取才有价值                                  │
+│                                                                             │
+│  三个条件的直觉:                                                           │
+│  ─────────────────                                                         │
+│  条件 1 决定了预取窗口够不够长 (能不能藏住延迟)                           │
+│  条件 2 决定了能不能提前知道地址 (发不出 prefetch 就没意义)               │
+│  条件 3 决定了数据是否真的不在 cache (cache hit 了还预取是浪费)           │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+用这三个条件审视上面的三个模式：
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│              三个模式的预取有效性分析                                       │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  模式 1: mbuf 批量预取 (process_mbufs_with_prefetch)                      │
+│  ══════════════════════════════════════════════════════                     │
+│                                                                             │
+│  条件 1 ✓ process_packet 包含头部解析、查表、校验等，                      │
+│          单包处理 200+ cycles，预取窗口充裕                                │
+│  条件 2 ✓ mbuf 指针数组顺序遍历，地址已知                                 │
+│  条件 3 ✓ 32 个 mbuf × (128B metadata + ~1500B 数据) ≈ 50KB，             │
+│          远超 L1 的 32-64KB                                                │
+│                                                                             │
+│  结论: 三个条件全部满足，预取有效 ✓                                        │
+│                                                                             │
+│  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ │
+│                                                                             │
+│  模式 2: Flow Table 单条预取                                               │
+│  ═════════════════════════════════════                                      │
+│                                                                             │
+│  条件 1 △ prefetch 和使用之间只有一个 hash 计算的距离:                    │
+│          uint32_t bucket = flow_hash & tbl->mask;  // 几个 cycle           │
+│          rte_prefetch0(entry);                     // 发出预取             │
+│          // 立刻就访问 entry — 窗口太短!                                  │
+│                                                                             │
+│  条件 2 ✓ bucket 地址已知                                                 │
+│  条件 3 ✓ Flow table 通常 > L1                                            │
+│                                                                             │
+│  结论: 条件 1 勉强，单条预取收益有限。                                    │
+│        批量 flow 查找 (先预取所有 bucket，再逐个比较) 才有价值             │
+│                                                                             │
+│  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ │
+│                                                                             │
+│  模式 3: LPM 路由查找预取 — 实际无效!                                     │
+│  ═════════════════════════════════════════════                              │
+│                                                                             │
+│  条件 1 ✗ rte_lpm_lookup 本身只有 ~20 cycles:                             │
+│          uint32_t tbl24_idx = ip >> 8;       // 1 cycle                    │
+│          rte_prefetch0(&lpm->tbl24[idx]);    // 发出预取                   │
+│          rte_lpm_lookup(lpm, ip, &next_hop); // 内部立刻访问 tbl24        │
+│          // 预取还没完成就访问了! 完全没有窗口                             │
+│                                                                             │
+│  条件 2 ✓ 索引可计算                                                      │
+│  条件 3 △ tbl24 只有 16K entries × 4B = 64KB，可能在 L2/L3 命中          │
+│                                                                             │
+│  结论: 条件 1 不满足，预取无效。                                          │
+│        rte_lpm_lookup 太轻量，来不及藏住内存延迟。                        │
+│        正确做法: 在批量处理中提前一轮预取下一批 IP 的 tbl24 entry          │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+模式 3 的正确写法——批量 LPM 预取：
 
 ```c
-// ── 何时预取有效 ──
-
-// 1. 顺序访问 — 非常有效
-//    数组遍历、链表顺序遍历、ring 操作
-void sequential_prefetch(int *array, int n)
+// 正确: 批量路由查找，提前一轮预取
+void
+lpm_lookup_bulk(struct rte_lpm *lpm, uint32_t *ips, uint8_t *hops,
+                uint16_t n)
 {
+    #define LPM_PREFETCH_AHEAD 4
+
+    // 第一轮: 预取前几个 tbl24 entry
+    for (int i = 0; i < LPM_PREFETCH_AHEAD && i < n; i++)
+        rte_prefetch0(&lpm->tbl24[ips[i] >> 8]);
+
+    // 主循环: 处理当前 IP 的同时预取后续
     for (int i = 0; i < n; i++) {
-        if (i + PREFETCH_OFFSET < n)
-            __builtin_prefetch(&array[i + PREFETCH_OFFSET]);
-        process(array[i]);
+        if (i + LPM_PREFETCH_AHEAD < n)
+            rte_prefetch0(&lpm->tbl24[ips[i + LPM_PREFETCH_AHEAD] >> 8]);
+
+        // rte_lpm_lookup 此时访问的 tbl24 entry 已在 cache 中
+        rte_lpm_lookup(lpm, ips[i], &hops[i]);
     }
 }
+```
 
-// 2. 固定步长访问 — 有效
-//    哈希表探测、stride 访问
+### 4.6 预取无效场景对照表
 
-// ── 何时预取无效甚至有害 ──
+| 场景 | 条件 1 (操作够重) | 条件 2 (模式可预测) | 条件 3 (超出 cache) | 结论 | 替代方案 |
+|------|:-:|:-:|:-:|------|------|
+| mbuf 批量预取 | ✓ 200+ cycles | ✓ 顺序遍历 | ✓ ~50KB | **有效** | — |
+| Flow Table 批量预取 | ✓ 多条比较 | ✓ bucket 已知 | ✓ 表 > L1 | **有效** | 批量先预取所有 bucket |
+| Flow Table 单条预取 | △ 窗口短 | ✓ | ✓ | **勉强** | 改为批量模式 |
+| LPM 单条预取 | ✗ ~20 cycles | ✓ | △ 64KB | **无效** | 批量提前一轮预取 |
+| Ring slot 预取 | ✓ | ✓ | ✗ 顺序在 cache | **无效** | 硬件预取器已覆盖 |
+| 小数组遍历 (< 4KB) | ✓ | ✓ | ✗ 全在 L1 | **无效** | 无需优化 |
+| 随机地址访问 | — | ✗ 无法预判 | — | **无效** | 减少随机性，改用 hash |
+| 链表遍历 | ✓ | △ next 指针 | ✓ | **有效** | prefetch(node->next) |
 
-// 1. 随机访问 — 硬件预取器已经失效，软件预取也无济于事
-//    而且预取错误的地址会污染 Cache
+> [!tip] 实测数据参考
+>
+> 以下为 DPDK 邮件列表和社区 benchmark 中的典型数据（具体数值因平台和配置而异）：
+>
+> | 场景 | 无预取 | 有预取 | 提升 |
+> |------|--------|--------|------|
+> | RX burst 32 pkts, 重处理 (parse + flow lookup) | ~45 Mpps | ~58 Mpps | **~29%** |
+> | RX burst 32 pkts, 轻处理 (仅 len 统计) | ~72 Mpps | ~71 Mpps | **~0%** (负优化) |
+> | LPM 单条查找 | ~48 Mlookups/s | ~47 Mlookups/s | **~0%** (窗口太短) |
+> | LPM 批量查找 (32 IPs, prefetch ahead) | ~48 Mlookups/s | ~56 Mlookups/s | **~17%** |
+>
+> 关键发现：轻处理场景下预取反而略慢（预取指令的开销 > 收益），只有单次操作足够重时预取才有正收益。
 
-// 2. 工作集完全在 L1 中 — 预取指令本身有开销 (约 5 cycles)
+### 4.7 非临时预取的使用场景
 
-// 3. 已经被硬件预取器覆盖 — x86/ARM 的硬件预取器能识别
-//    顺序和固定步长模式，重复预取浪费指令带宽
-
-// ── 非临时预取的使用场景 ──
-
+```c
 // 大块数据只读一次 (如校验和计算、数据包复制到不同 NUMA 节点)
 // 使用 rte_prefetch_non_temporal() 或 _mm_prefetch(addr, _MM_HINT_NTA)
 // 避免将大量临时数据挤占 L1/L2 Cache
@@ -1072,18 +1465,23 @@ struct particle_soa {
     double mass[1024];
 };
 
-// AoS 访问 (不利于 SIMD 和顺序访问)
+// AoS 访问：每个粒子的字段打包在一起
+// 问题不是单个粒子的 x/y/z 不连续，而是只处理 x/y/z 时，
+// CPU 仍会把 vx/vy/vz/mass 这些暂时用不到的字段一起加载进 Cache。
+// 结构体越大，访问 p[i].x -> p[i+1].x 的跨度越大，跨 Cache Line 的概率越高。
 void
 update_particles_aos(struct particle_aos *p, int n)
 {
     for (int i = 0; i < n; i++) {
-        p[i].x += p[i].vx;  // x, y, z 可能不在同一 Cache Line
+        p[i].x += p[i].vx;  // 下一次 x 访问要跨过整个 struct
         p[i].y += p[i].vy;
         p[i].z += p[i].vz;
     }
 }
 
-// SoA 访问 (有利于 Cache 预取和 SIMD)
+// SoA 访问：同类字段连续存放
+// x[i], x[i+1], x[i+2] 连续，vx[i], vx[i+1], vx[i+2] 也连续，
+// 更利于硬件预取和 SIMD 批量处理。
 void
 update_particles_soa(struct particle_soa *p, int n)
 {
@@ -1095,6 +1493,11 @@ update_particles_soa(struct particle_soa *p, int n)
 }
 
 // 方案 2: 结构对齐和填充
+//
+// 注意：__rte_cache_aligned 不是单线程下的默认优化。
+// 它主要用于避免跨线程 False Sharing、满足硬件/DMA 对齐要求，
+// 或保证一个很热的小对象不会跨两个 Cache Line。
+// 如果只是单线程顺序遍历普通结构体数组，强行 64B 对齐会降低 Cache 密度。
 
 struct aligned_struct {
     uint64_t field1;        // 8 bytes
@@ -1118,7 +1521,9 @@ struct packet_stats {
     char ifname[32];
 };
 
-// 将热点字段放在结构体开头，保证在同一 Cache Line
+// DPDK 中很常见：把快路径频繁读取/写入的 metadata 放在结构体前部，
+// 尽量让热点字段落在第一个 Cache Line；冷字段放后面，甚至拆到单独结构。
+// rte_mbuf 就是典型例子：包长、数据偏移、offload 标志等快路径字段集中在前部。
 ```
 
 ### 5.2 批量内存操作
@@ -1220,20 +1625,18 @@ numa_aware_mbuf_alloc(void)
     return rte_pktmbuf_alloc(mp);
 }
 
-// NUMA 感知内存池创建
+// NUMA 感知 mbuf 内存池创建
 struct rte_mempool *
 create_numa_mempool(const char *name, unsigned n, unsigned cache_size)
 {
-    // rte_mempool_create 会在指定 socket 上分配内存
-    return rte_mempool_create(
+    // rte_pktmbuf_pool_create 是 pktmbuf pool 的推荐 wrapper，
+    // 内部会设置正确的 private area、mbuf 初始化回调和 data room。
+    return rte_pktmbuf_pool_create(
         name, n,
-        sizeof(struct rte_mbuf),
-        cache_size,               // per-lcore cache 大小
-        sizeof(struct rte_pktmbuf_pool_private),
-        rte_pktmbuf_pool_init, NULL,    // obj_init
-        rte_pktmbuf_init, NULL,        // mp_init
-        rte_socket_id(),               // 在本地 NUMA 节点分配
-        0);                            // flags
+        cache_size,                  // per-lcore cache 大小
+        0,                           // priv_size
+        RTE_MBUF_DEFAULT_BUF_SIZE,   // data room, 含 RTE_PKTMBUF_HEADROOM
+        rte_socket_id());            // 在本地 NUMA 节点分配
 }
 
 // 跨 NUMA 访问的代价
@@ -1257,39 +1660,43 @@ create_numa_mempool(const char *name, unsigned n, unsigned cache_size)
 如 Section 3.2 所示，rte_ring 的核心设计就是 Cache Line 隔离。这里补充说明 ring 数据区的访问模式：
 
 ```c
-// Ring 数据区的顺序访问天然适合预取
+// Ring 数据区的顺序访问天然适合硬件预取
 // 入队操作: 顺序写入 ring[head], ring[head+1], ...
 // 出队操作: 顺序读取 ring[tail], ring[tail+1], ...
+// CPU 硬件预取器自动识别这种线性模式，无需软件预取
+//
+// 真正需要软件预取的是 ring 中存放的对象本身 (如 mbuf)
+// 因为对象物理上分散，硬件预取器无法预测
 
-// DPDK ring 内部的预取模式 (简化示意)
-// 实际实现在 lib/ring/rte_ring_elem.h
+// 实际模式: 从 ring 出队后，预取 mbuf 再处理
+#define BURST_SIZE 32
+#define PREFETCH_AHEAD 4
 
-// 批量入队时预取要写入的位置
-static inline void
-ring_enqueue_with_prefetch(struct rte_ring *r, void * const *obj_table,
-                           unsigned int n)
+static void
+ring_dequeue_and_process(struct rte_ring *r)
 {
-    uint32_t prod_head = r->prod.head;
-    uint32_t cons_tail = r->cons.tail;
-    uint32_t mask = r->mask;
-    void **ring = r->ring;
+    struct rte_mbuf *pkts[BURST_SIZE];
 
-    // 计算空闲空间
-    uint32_t free_entries = mask + cons_tail - prod_head;
-    if (n > free_entries)
-        return;  // ring 满
+    // 批量出队 (ring 内部顺序访问，硬件预取器已覆盖)
+    uint32_t n = rte_ring_dequeue_burst(r, (void **)pkts,
+                                         BURST_SIZE, NULL);
+    if (n == 0)
+        return;
 
-    // 预取前面几个 slot (硬件预取器通常会覆盖这个场景)
-    for (unsigned int i = 0; i < RTE_MIN(n, 4U); i++)
-        rte_prefetch0(&ring[(prod_head + i) & mask]);
+    // 预取出队对象的 mbuf metadata 和包数据
+    // 这些对象在内存中分散，必须软件预取
+    for (uint32_t i = 0; i < n; i++) {
+        if (i + PREFETCH_AHEAD < n) {
+            rte_mbuf_prefetch_part1(pkts[i + PREFETCH_AHEAD]);
+            rte_prefetch0(rte_pktmbuf_mtod(pkts[i + PREFETCH_AHEAD],
+                                            const void *));
+        }
 
-    // 批量拷贝对象到 ring
-    for (unsigned int i = 0; i < n; i++)
-        ring[(prod_head + i) & mask] = obj_table[i];
+        // 此时 pkts[i] 的 metadata 和数据大概率已在 cache 中
+        process_packet(pkts[i]);
+    }
 
-    // 更新 producer tail (写入与 consumer 不同的 Cache Line)
-    rte_smp_wmb();
-    r->prod.tail = prod_head + n;
+    rte_pktmbuf_free_bulk(pkts, n);
 }
 ```
 
@@ -1456,23 +1863,32 @@ perf script | ./FlameGraph/stackcollapse-perf.pl | ./FlameGraph/flamegraph.pl > 
 
 ```c
 // 简单的顺序读带宽测试
-
-#include <emmintrin.h>
+//
+// 注意：这是粗略 micro-benchmark，用来观察 local/remote NUMA、
+// cache-hot/cache-cold 场景的相对差异，不替代 STREAM/mbw/perf 等工具。
 
 double
 measure_read_bandwidth(void *addr, size_t size, int iterations)
 {
     uint64_t start, end;
     volatile uint64_t sink = 0;  // 防止编译器优化掉读操作
+    uint8_t *base = addr;
 
     start = rte_rdtsc();
 
     for (int iter = 0; iter < iterations; iter++) {
-        // 按 Cache Line 步长遍历整个 buffer
+        // 按 Cache Line 步长遍历整个 buffer，并读完整条 64B Cache Line。
         for (size_t offset = 0; offset < size; offset += RTE_CACHE_LINE_SIZE) {
-            __m128i val = _mm_stream_load_si128(
-                (__m128i *)((char *)addr + offset));
-            sink += _mm_extract_epi64(val, 0);
+            uint64_t *line = (uint64_t *)(base + offset);
+
+            sink += line[0];
+            sink += line[1];
+            sink += line[2];
+            sink += line[3];
+            sink += line[4];
+            sink += line[5];
+            sink += line[6];
+            sink += line[7];
         }
     }
 
@@ -1495,13 +1911,9 @@ print_dpdk_memory_info(void)
     int nb_sockets = rte_socket_count();
     printf("NUMA nodes: %d\n", nb_sockets);
 
-    // 每个 socket 的内存
-    for (int i = 0; i < nb_sockets; i++) {
-        // 通过 rte_eal_get_configuration 获取内存通道数
-        // (注意: nchannel 在新版本中已废弃，这里仅作展示)
-        struct rte_mem_config *mcfg = rte_eal_get_configuration()->mem_config;
-        printf("Memory channels: %d\n", mcfg->nchannel);
-    }
+    // 打印 EAL 管理的 hugepage/memseg 布局，可观察内存分布在哪些 socket。
+    rte_dump_physmem_layout(stdout);
+    rte_malloc_dump_stats(stdout, NULL);
 }
 ```
 
@@ -1517,10 +1929,14 @@ process_hot_loop_unrolled(struct rte_mbuf **pkts, int nb)
     // 每次处理 4 个包，减少循环开销
     for (i = 0; i < nb - 3; i += 4) {
         // 预取 4 个包
-        rte_mbuf_prefetch_part1(pkts[i + 4]);
-        rte_mbuf_prefetch_part1(pkts[i + 5]);
-        rte_mbuf_prefetch_part1(pkts[i + 6]);
-        rte_mbuf_prefetch_part1(pkts[i + 7]);
+        if (i + 4 < nb)
+            rte_mbuf_prefetch_part1(pkts[i + 4]);
+        if (i + 5 < nb)
+            rte_mbuf_prefetch_part1(pkts[i + 5]);
+        if (i + 6 < nb)
+            rte_mbuf_prefetch_part1(pkts[i + 6]);
+        if (i + 7 < nb)
+            rte_mbuf_prefetch_part1(pkts[i + 7]);
 
         // 处理
         process_ipv4(rte_pktmbuf_mtod(pkts[i],   struct rte_ipv4_hdr *));
@@ -1539,23 +1955,29 @@ process_hot_loop_unrolled(struct rte_mbuf **pkts, int nb)
 void
 process_with_separation(struct rte_mbuf **pkts, int nb)
 {
-    struct rte_ipv4_hdr *headers[256];
-    uint16_t lengths[256];
+    enum { MAX_BATCH = 256 };
+    struct rte_ipv4_hdr *headers[MAX_BATCH];
+    uint16_t lengths[MAX_BATCH];
 
-    // 提取热点数据到连续数组 (Cache 友好)
-    for (int i = 0; i < nb; i++) {
-        headers[i] = rte_pktmbuf_mtod(pkts[i], struct rte_ipv4_hdr *);
-        lengths[i] = rte_pktmbuf_pkt_len(pkts[i]);
-    }
+    for (int base = 0; base < nb; base += MAX_BATCH) {
+        int count = RTE_MIN(nb - base, MAX_BATCH);
 
-    // 处理连续数组 (全部在 Cache 中)
-    for (int i = 0; i < nb; i++) {
-        process_header(headers[i], lengths[i]);
-    }
+        // 提取热点数据到连续数组 (Cache 友好)
+        for (int i = 0; i < count; i++) {
+            headers[i] = rte_pktmbuf_mtod(pkts[base + i],
+                                          struct rte_ipv4_hdr *);
+            lengths[i] = rte_pktmbuf_pkt_len(pkts[base + i]);
+        }
 
-    // 释放 mbuf (冷路径)
-    for (int i = 0; i < nb; i++) {
-        rte_pktmbuf_free(pkts[i]);
+        // 处理连续数组 (全部在 Cache 中)
+        for (int i = 0; i < count; i++) {
+            process_header(headers[i], lengths[i]);
+        }
+
+        // 释放 mbuf (冷路径)
+        for (int i = 0; i < count; i++) {
+            rte_pktmbuf_free(pkts[base + i]);
+        }
     }
 }
 
@@ -1576,10 +1998,18 @@ copy_with_restrict(uint64_t *restrict dst, const uint64_t *restrict src, int n)
 ### 8.1 DPDK Packet Processing Pipeline
 
 ```c
-// 优化后的 DPDK 包处理流水线
+// DPDK 包处理流水线示例
+//
+// 前提：
+// - RSS/flow director 保证同一个 flow 固定落到同一个 RX queue/lcore。
+// - flow table 是 per-lcore 的，lookup/create 不需要跨 lcore 加锁。
+// - flow_table_create() 应使用 mempool/cache，避免在热路径里做昂贵分配。
+// - Flow table 预取只有在表较大、访问近似随机、工作集超出 Cache 时才可能有效。
+//   如果 flow table 很小/cache-hot，或者使用 rte_hash bulk API，手工预取可能没有收益。
 
 #define BATCH_SIZE 32
-#define PREFETCH_OFFSET 8
+#define PKT_PREFETCH_OFFSET 4
+#define FLOW_PREFETCH_OFFSET 8
 
 struct lcore_conf {
     uint16_t port_id;
@@ -1600,6 +2030,9 @@ static void
 pkt_processing_pipeline(struct lcore_conf *conf)
 {
     struct rte_mbuf *pkts[BATCH_SIZE];
+    struct rte_mbuf *tx_pkts[BATCH_SIZE];
+    struct flow_key keys[BATCH_SIZE];
+    uint32_t hashes[BATCH_SIZE];
     struct flow_entry *flows[BATCH_SIZE];
 
     while (!quit) {
@@ -1610,48 +2043,74 @@ pkt_processing_pipeline(struct lcore_conf *conf)
         if (nb_rx == 0)
             continue;
 
-        // 2. 预取包数据
-        for (int i = 0; i < PREFETCH_OFFSET && i < nb_rx; i++) {
+        // 2. 预热前几个包。预取不是为了马上使用，而是给内存访问留延迟窗口。
+        // rte_mbuf_prefetch_part1() 预取 mbuf metadata，后面的 flow_key_extract() 会消费它。
+        // rte_prefetch0(pkt data) 预取包头数据，用于解析五元组。
+        for (int i = 0; i < PKT_PREFETCH_OFFSET && i < nb_rx; i++) {
             rte_mbuf_prefetch_part1(pkts[i]);
             rte_prefetch0(rte_pktmbuf_mtod(pkts[i], void *));
         }
 
-        // 3. Flow 查找 (预取 Flow Table Entry)
+        // 3. 解析当前包，同时预取未来包。
+        // key/hash 保存下来，避免 flow lookup 时重复解析 packet header。
         for (int i = 0; i < nb_rx; i++) {
-            if (i + PREFETCH_OFFSET < nb_rx) {
-                uint32_t hash = flow_hash(pkts[i + PREFETCH_OFFSET]);
-                flow_table_prefetch(conf->ft, hash);
+            if (i + PKT_PREFETCH_OFFSET < nb_rx) {
+                rte_mbuf_prefetch_part1(pkts[i + PKT_PREFETCH_OFFSET]);
+                rte_prefetch0(rte_pktmbuf_mtod(pkts[i + PKT_PREFETCH_OFFSET],
+                                               void *));
             }
 
-            flows[i] = flow_table_lookup(conf->ft, pkts[i]);
+            flow_key_extract(pkts[i], &keys[i]);
+            hashes[i] = flow_hash(&keys[i]);
         }
 
-        // 4. 批量处理
+        // 4. Flow 查找。先预热前几个 flow bucket，后续循环滚动预取。
+        // 这不是无条件优化：只有大表随机访问且 prefetch 距离足够时才值得保留。
+        for (int i = 0; i < FLOW_PREFETCH_OFFSET && i < nb_rx; i++)
+            flow_table_prefetch(conf->ft, hashes[i]);
+
+        for (int i = 0; i < nb_rx; i++) {
+            if (i + FLOW_PREFETCH_OFFSET < nb_rx)
+                flow_table_prefetch(conf->ft, hashes[i + FLOW_PREFETCH_OFFSET]);
+
+            flows[i] = flow_table_lookup(conf->ft, &keys[i], hashes[i]);
+        }
+
+        // 5. 批量处理，并只保留仍需发送的 mbuf。
+        // 前面的 packet data 预取主要服务 flow_key_extract()。
+        // 如果 process_with_flow() 还会深度读取 packet data/payload，
+        // 应在这个循环里对 pkts[i + PKT_PREFETCH_OFFSET] 再做一次近距离预取。
+        uint16_t nb_to_tx = 0;
         for (int i = 0; i < nb_rx; i++) {
             if (flows[i]) {
                 // 命中 flow
                 process_with_flow(pkts[i], flows[i]);
-                conf->stats.packets++;
-                conf->stats.bytes += rte_pktmbuf_pkt_len(pkts[i]);
+                tx_pkts[nb_to_tx++] = pkts[i];
             } else {
                 // Miss flow (慢路径)
-                flows[i] = flow_table_create(pkts[i]);
-                if (flows[i])
+                flows[i] = flow_table_create(conf->ft, &keys[i], hashes[i]);
+                if (flows[i]) {
                     process_with_flow(pkts[i], flows[i]);
-                else
+                    tx_pkts[nb_to_tx++] = pkts[i];
+                } else {
                     rte_pktmbuf_free(pkts[i]);
-
-                conf->stats.dropped++;
+                    conf->stats.dropped++;
+                }
             }
         }
 
-        // 5. 发送
+        // 6. 发送
         uint16_t nb_tx = rte_eth_tx_burst(conf->port_id, conf->queue_id,
-                                           pkts, nb_rx);
+                                           tx_pkts, nb_to_tx);
 
-        // 释放未发送的包
-        for (uint16_t i = nb_tx; i < nb_rx; i++) {
-            rte_pktmbuf_free(pkts[i]);
+        conf->stats.packets += nb_tx;
+        for (uint16_t i = 0; i < nb_tx; i++)
+            conf->stats.bytes += rte_pktmbuf_pkt_len(tx_pkts[i]);
+
+        // 示例中直接释放未发送的包；生产代码可使用 rte_eth_tx_buffer/retry。
+        for (uint16_t i = nb_tx; i < nb_to_tx; i++) {
+            rte_pktmbuf_free(tx_pkts[i]);
+            conf->stats.dropped++;
         }
     }
 }
@@ -1660,75 +2119,56 @@ pkt_processing_pipeline(struct lcore_conf *conf)
 ### 8.2 延迟测量
 
 ```c
-// Cache 友好的延迟测量
+// Cache / Memory 访问延迟测量
+//
+// 要点：
+// - 不要每次访问都读 TSC，rdtsc 本身的开销会淹没 L1/L2 延迟。
+// - 不要用独立随机索引 load/store，CPU 可能并行发出多个 miss。
+// - 使用 pointer chasing，让下一次访问依赖上一次访问结果，
+//   这样测到的是接近“单次依赖 load latency”的值。
 
-struct latency_measure {
-    uint64_t total_cycles;
-    uint64_t min_cycles;
-    uint64_t max_cycles;
-    uint64_t samples;
-};
+struct latency_node {
+    uint32_t next;
+    uint8_t pad[RTE_CACHE_LINE_SIZE - sizeof(uint32_t)];
+} __rte_cache_aligned;
 
-static inline void
-latency_add_sample(struct latency_measure *m, uint64_t cycles)
-{
-    m->total_cycles += cycles;
-    if (cycles < m->min_cycles || m->samples == 0)
-        m->min_cycles = cycles;
-    if (cycles > m->max_cycles)
-        m->max_cycles = cycles;
-    m->samples++;
-}
-
-static inline double
-latency_avg_ns(struct latency_measure *m, double cpu_freq_ghz)
-{
-    if (m->samples == 0)
-        return 0;
-    return (double)m->total_cycles / m->samples / cpu_freq_ghz;
-}
-
-// 测量 Cache / Memory 访问延迟
-// 通过调整 buffer 大小可以分别测 L1 / L2 / L3 / DRAM 延迟
+// 通过调整 buffer 大小观察 L1 / L2 / L3 / DRAM 延迟。
+// 例如：4KB 常驻 L1，256KB-1MB 观察 L2，几十 MB 观察 LLC/DRAM。
 void
 measure_cache_latency(void)
 {
-    struct latency_measure m = {0};
-
-    // 32MB buffer — 超出 L3，确保每次访问都打到 DRAM
-    // 改小 (如 4KB) 可以测 L1 延迟
+    // 32MB 不一定超出所有 CPU 的 L3，只能作为大工作集示例。
     size_t buf_size = 32 * 1024 * 1024;
-    int *array = rte_malloc(NULL, buf_size, 64);
-    size_t stride = 64;  // 一个 Cache Line
+    size_t n_lines = buf_size / sizeof(struct latency_node);
+    struct latency_node *nodes = rte_zmalloc(NULL,
+                                             n_lines * sizeof(*nodes),
+                                             RTE_CACHE_LINE_SIZE);
 
-    // 热身: 顺序遍历一遍，让 page table 就位
-    for (size_t off = 0; off < buf_size; off += stride)
-        *(int *)((char *)array + off) = 0;
+    // 构造一个跨 cache line 的依赖访问链。
+    // n_lines 为 2 的幂时，奇数 step 可以遍历所有 line。
+    uint32_t step = 131071;
+    for (uint32_t i = 0; i < n_lines; i++)
+        nodes[i].next = (i + step) & (n_lines - 1);
 
-    // 随机步长访问，防止硬件预取器把数据提前拉进 cache
-    // (简单做法: 用线性同余伪随机生成索引)
-    size_t idx = 0;
-    size_t n_lines = buf_size / stride;
-    uint64_t seed = 0x12345678;
+    // 热身：建立页表映射，避免把首次缺页成本算进结果。
+    volatile uint32_t idx = 0;
+    for (uint64_t i = 0; i < n_lines; i++)
+        idx = nodes[idx].next;
 
-    for (int i = 0; i < 100000; i++) {
-        seed = seed * 6364136223846793005ULL + 1442695040888963407ULL;
-        idx = (seed >> 33) % n_lines;
-        int *ptr = (int *)((char *)array + idx * stride);
+    uint64_t iterations = 10000000;
+    uint64_t start = rte_rdtsc_precise();
+    for (uint64_t i = 0; i < iterations; i++)
+        idx = nodes[idx].next;
+    uint64_t end = rte_rdtsc_precise();
 
-        uint64_t start = rte_rdtsc();
-        *ptr = i;
-        uint64_t end = rte_rdtsc();
+    double avg_cycles = (double)(end - start) / iterations;
+    double avg_ns = avg_cycles * 1e9 / rte_get_tsc_hz();
 
-        latency_add_sample(&m, end - start);
-    }
+    printf("Dependent load latency (%zu MB working set):\n",
+           buf_size / 1024 / 1024);
+    printf("  Avg: %.2f cycles, %.2f ns\n", avg_cycles, avg_ns);
 
-    printf("Memory access latency (32MB buffer, random stride):\n");
-    printf("  Min: %" PRIu64 " cycles\n", m.min_cycles);
-    printf("  Max: %" PRIu64 " cycles\n", m.max_cycles);
-    printf("  Avg: %.2f ns\n", latency_avg_ns(&m, 3.0));  // 假设 3GHz
-
-    rte_free(array);
+    rte_free(nodes);
 }
 ```
 
@@ -1766,9 +2206,14 @@ measure_cache_latency(void)
 
 14. **写写冲突是真正的杀手**：两个核频繁写同一 Cache Line 会导致 M↔I 疯狂 bouncing，性能下降 10-50x。而读写共享只下降 ~2-3x，因为读者只需 S 状态，不需要 ownership transfer。
 
-15. **单写者原则**：现代高性能系统的核心设计原则——一个 Cache Line 尽量只有一个高频 Writer。DPDK ring、Linux per-cpu、io_uring、Go scheduler 本质都在优化 Cache Ownership Topology，而非简单算法复杂度。
+15. **写者分区原则**：现代高性能系统会尽量让一个 Cache Line 只有一个高频 Writer；做不到时，也要把写入按角色或 CPU 分区，把冲突限制在必要范围内。DPDK ring、Linux per-cpu、io_uring、Go scheduler 本质都在优化 Cache Ownership Topology，而非简单算法复杂度。
 
 16. **Cache Coherence Traffic 是真正的瓶颈**：现代多核性能很多时候瓶颈不是算力，而是 Cache Line 在 CPU 之间迁移的成本。DPDK ring 真正厉害的地方不是 CAS，而是它把"谁写什么 Cache Line"设计得非常合理。
+
+**相关阅读**：
+
+- [[2026-04-09-dpdk-deep-dive-ch25a-simd-vectorization|第二十五-A章：SIMD 向量化——单核里的数据并行]]
+- [[2026-04-09-dpdk-deep-dive-ch25b-prefetch-deep-dive|第二十五-B章：预取技术——把内存等待变成后台工作]]
 
 **下一篇预告**：[[2026-04-09-dpdk-deep-dive-ch26-numa-optimization|第二十六章]]将讲解 NUMA 亲和性优化——local/remote 访问、内存分配策略、多核调度。
 

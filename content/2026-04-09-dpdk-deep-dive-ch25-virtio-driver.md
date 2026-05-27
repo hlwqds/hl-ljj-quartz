@@ -278,7 +278,203 @@ uint16_t virtio_recv_mergeable_pkts_packed(void *rx_queue,
                                            uint16_t nb_pkts);
 ```
 
-### 3.2 初始化流程
+### 3.2 Guest virtio PMD 与 Host 后端
+
+虚拟机场景下，Guest 内的 DPDK virtio PMD **不是直连物理网卡**。它驱动的是
+Guest 看到的 virtio-net 设备；真正连接物理网卡的是 Host 侧后端，例如
+vhost-net、vhost-user、OVS-DPDK、VPP 或 vDPA。
+
+经典 vhost-user 场景的数据路径如下：
+
+```
+                         Host / Physical Machine
+┌──────────────────────────────────────────────────────────────────────┐
+│                                                                      │
+│  Physical NIC                                                        │
+│  ┌──────────────┐                                                    │
+│  │   RX Queue   │                                                    │
+│  └──────┬───────┘                                                    │
+│         │ DMA 到 Host hugepage mbuf                                  │
+│         ▼                                                            │
+│  Host NIC PMD                                                        │
+│  mlx5 / i40e / ixgbe PMD                                             │
+│         │                                                            │
+│         │ rte_eth_rx_burst()                                         │
+│         ▼                                                            │
+│  OVS-DPDK / VPP / DPDK vhost backend                                 │
+│  ┌──────────────────────────────┐                                    │
+│  │  查流表 / 转发决策            │                                    │
+│  │  output: vhost-user port     │                                    │
+│  └──────────────┬───────────────┘                                    │
+│                 │                                                    │
+│                 │ vhost-user backend                                 │
+│                 │ 读取 Guest RX virtqueue 的空 descriptor             │
+│                 │ 把 packet data 写入 Guest 提供的 RX buffer          │
+│                 ▼                                                    │
+│        vhost-user socket                                             │
+│        /var/run/vhost-user0.sock                                     │
+│                 │                                                    │
+└─────────────────┼────────────────────────────────────────────────────┘
+                  │
+                  │ Guest hugepage memory 被 QEMU/vhost 后端映射到 Host
+                  ▼
+                              Guest VM
+┌──────────────────────────────────────────────────────────────────────┐
+│                                                                      │
+│  virtio-net PCI device                                               │
+│  ┌──────────────────────────────┐                                    │
+│  │ RX virtqueue                 │                                    │
+│  │ avail ring: Guest 提供空 buffer│                                    │
+│  │ used ring : Host 填好包后返回  │                                    │
+│  └──────────────┬───────────────┘                                    │
+│                 │                                                    │
+│                 │ virtio PMD 轮询 used ring                          │
+│                 │ rte_eth_rx_burst()                                 │
+│                 ▼                                                    │
+│  Guest DPDK App                                                      │
+│  ┌──────────────────────────────┐                                    │
+│  │ struct rte_mbuf *pkts[]      │                                    │
+│  │ packet data 已写入 Guest mbuf │                                    │
+│  └──────────────────────────────┘                                    │
+│                                                                      │
+└──────────────────────────────────────────────────────────────────────┘
+```
+
+RX 方向的关键流程：
+
+1. Guest virtio PMD 提前分配 mbuf，并把空 RX buffer 通过 descriptor 挂到
+   available ring。
+2. Host vhost-user backend 可以访问 Guest hugepage memory，因此能看到这些
+   virtqueue descriptor。
+3. 物理 NIC 收到包后，Host PMD 先把包收到 Host mbuf。
+4. OVS-DPDK/VPP/DPDK vhost backend 查流表，决定输出到某个 vhost-user port。
+5. vhost backend 从 Guest RX virtqueue 取一个空 buffer，把 packet data 写进去，
+   然后更新 used ring。
+6. Guest virtio PMD 轮询 used ring，`rte_eth_rx_burst()` 返回已经填好数据的
+   `rte_mbuf`。
+
+TX 方向反过来：
+
+```
+Guest DPDK App
+  -> rte_eth_tx_burst()
+  -> virtio PMD
+  -> TX virtqueue available ring
+  -> Host vhost-user backend
+  -> OVS-DPDK / VPP 转发
+  -> Host NIC PMD
+  -> Physical NIC TX Queue
+```
+
+因此可以把职责边界理解为：
+
+| 组件             | 作用                                                         |
+| ---------------- | ------------------------------------------------------------ |
+| Guest virtio PMD | 驱动 Guest 内 virtio-net 设备，读写 virtqueue                |
+| vhost-user 后端  | Host 侧访问 Guest virtqueue，在 Guest buffer 与 Host mbuf 间搬运数据 |
+| Host NIC PMD     | 驱动物理网卡，从物理 RX/TX queue 收发包                      |
+| OVS-DPDK / VPP   | Host 侧虚拟交换或转发平面，决定包进入哪个 VM 或物理端口      |
+
+这最后一行已经属于云网络设计：Host 上通常不只有一个 VM，也不只有一个出口。
+同一台物理机上可能同时存在多个 VM vhost-user port、物理 NIC port、overlay tunnel port
+和本地服务端口，因此需要一个虚拟交换或转发平面来执行云网络规则。
+
+#### 控制面：决定虚拟网络长什么样
+
+控制面不直接搬运每个 packet，它负责创建拓扑和下发规则：
+
+```
+Cloud API / OpenStack Neutron / Kubernetes CNI / libvirt
+        │
+        │ 创建 VM、端口、网络、子网、安全组、路由、浮动 IP
+        ▼
+Network Controller
+OVN Northbound / Neutron Server / SDN Controller
+        │
+        │ 生成逻辑交换机、逻辑路由器、ACL、NAT、QoS、tunnel 信息
+        ▼
+Host Agent
+ovn-controller / ovs-vswitchd / vpp-agent / 自研 agent
+        │
+        │ 在本机落实配置
+        │ - 创建 vhost-user socket
+        │ - 启动 QEMU virtio-net 设备
+        │ - 将 VM port 接入 bridge / datapath
+        │ - 下发 flow table / ACL / tunnel / route
+        ▼
+Host Datapath
+OVS-DPDK / VPP / Linux bridge / TC / eBPF
+```
+
+控制面最终回答的是：
+
+```text
+这个 VM 的 vNIC 属于哪个网络？
+这个 vNIC 对应哪个 vhost-user port？
+发往某个 MAC/IP/VNI 的包应该进入哪个 VM、哪个 tunnel 或哪个物理口？
+安全组、ACL、NAT、QoS 应该怎么执行？
+```
+
+#### 数据面：按规则转发每个 packet
+
+数据面是真正处理 packet 的路径。以 vhost-user + OVS-DPDK/VPP 为例：
+
+```text
+外部包进入 VM：
+
+Physical NIC
+  -> Host NIC PMD
+  -> OVS-DPDK / VPP datapath
+       match: dst MAC / VLAN / VNI / IP / 5-tuple
+       actions:
+         - security group / ACL
+         - tunnel decap
+         - NAT / route / bridge lookup
+         - output: vhost-user port of VM-A
+  -> vhost-user backend
+  -> Guest RX virtqueue
+  -> Guest virtio PMD
+  -> Guest DPDK app / Guest kernel
+```
+
+```text
+VM 发包到外部：
+
+Guest app / Guest kernel
+  -> Guest virtio PMD
+  -> Guest TX virtqueue
+  -> vhost-user backend
+  -> OVS-DPDK / VPP datapath
+       match: src VM port / dst MAC / IP / tunnel metadata
+       actions:
+         - security group / ACL
+         - NAT / route / bridge lookup
+         - tunnel encap
+         - output: physical NIC port
+  -> Host NIC PMD
+  -> Physical NIC
+```
+
+```text
+同 Host 上 VM-A 到 VM-B：
+
+VM-A virtio TX
+  -> vhost-user port A
+  -> OVS-DPDK / VPP datapath
+       match: dst MAC = VM-B
+       action: output vhost-user port B
+  -> VM-B virtio RX
+```
+
+所以 virtio/vhost 只解决 **Guest 和 Host datapath 之间如何高效传包**；
+包最终进入哪个 VM、哪个 tunnel、哪个物理端口，是云网络控制面下发规则后，
+由 Host 数据面执行的结果。
+
+如果 VM 需要更接近直通物理网卡的路径，通常使用 SR-IOV VF 或 PCI passthrough。
+这种情况下 Guest 内看到的是 VF/物理设备，使用的是 mlx5、i40e、ixgbe 等真实
+NIC PMD，而不是 virtio PMD。
+
+### 3.3 初始化流程
 
 ```c
 // drivers/net/virtio/virtio_ethdev.c (简化)
@@ -769,7 +965,31 @@ virtio_recv_mergeable_pkts(void *rx_queue,
 
 ### 8.1 TX 方向的 Descriptor Chain
 
-TX 时，如果 mbuf 有多个 segment（nb_segs > 1），需要用 descriptor chain 实现 scatter-gather：
+TX 时，如果一个 `rte_mbuf` 是多 segment，也就是：
+
+```text
+mbuf_head -> seg1 -> seg2 -> ...
+nb_segs > 1
+```
+
+virtio PMD 不能假设 packet data 是一段连续内存。它要把每个 segment 映射成一个
+virtio descriptor，并用 `VRING_DESC_F_NEXT` 串成 descriptor chain。
+
+映射规则：
+
+```text
+virtio net header -> 1 个 descriptor
+mbuf segment 0    -> 1 个 descriptor
+mbuf segment 1    -> 1 个 descriptor
+mbuf segment 2    -> 1 个 descriptor
+...
+```
+
+也就是：
+
+```text
+descriptor 数量 = 1 个 virtio_net_hdr + mbuf->nb_segs
+```
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -793,6 +1013,48 @@ TX 时，如果 mbuf 有多个 segment（nb_segs > 1），需要用 descriptor c
 │  注意: TX 方向的 descriptor 没有 VRING_DESC_F_WRITE flag      │
 │  (WRITE 表示 Host 写入，TX 是 Guest → Host，不需要)         │
 └─────────────────────────────────────────────────────────────┘
+```
+
+上图中的对应关系是：
+
+| mbuf 内容          | virtio descriptor | descriptor addr 指向什么              | flags                  |
+| ------------------ | ----------------- | ------------------------------------- | ---------------------- |
+| virtio net header  | Desc H            | `struct virtio_net_hdr`               | `VRING_DESC_F_NEXT`    |
+| `seg0`             | Desc 0            | `rte_pktmbuf_mtod(seg0)`              | `VRING_DESC_F_NEXT`    |
+| `seg1`             | Desc 1            | `rte_pktmbuf_mtod(seg1)`              | `VRING_DESC_F_NEXT`    |
+| `seg2`             | Desc 2            | `rte_pktmbuf_mtod(seg2)`              | 0，表示 chain 结束     |
+
+TX 方向没有 `VRING_DESC_F_WRITE`，因为数据方向是 Guest -> Host。Host 只需要读取
+这些 descriptor 指向的数据，然后发送出去。
+
+简化伪代码：
+
+```c
+// 先放 virtio net header
+desc[h].addr = virtio_hdr_iova;
+desc[h].len = sizeof(struct virtio_net_hdr);
+desc[h].flags = VRING_DESC_F_NEXT;
+desc[h].next = first_data_desc;
+
+// 再把每个 mbuf segment 映射成一个 descriptor
+for (seg = m; seg != NULL; seg = seg->next) {
+    desc[d].addr = rte_mbuf_data_iova(seg);
+    desc[d].len = rte_pktmbuf_data_len(seg);
+
+    if (seg->next != NULL) {
+        desc[d].flags = VRING_DESC_F_NEXT;
+        desc[d].next = next_desc;
+    } else {
+        desc[d].flags = 0;  // 最后一个 descriptor
+    }
+}
+```
+
+Host/vhost 后端看到的是一条 descriptor chain。它不要求 packet data 在 Guest 内存中
+连续，只要按 chain 顺序读取每个 descriptor 指向的内存，就能重建完整 packet：
+
+```text
+完整 packet = Desc 0 data + Desc 1 data + Desc 2 data + ...
 ```
 
 ## 9. 性能优化
@@ -821,6 +1083,140 @@ TX 时，如果 mbuf 有多个 segment（nb_segs > 1），需要用 descriptor c
 ```
 
 ### 9.2 Kick 优化
+
+Kick 不是 CPU 异常，也不是普通 Unix signal。它是 virtio 的设备通知机制：
+Guest 把 descriptor 放进 available ring 后，通过一次设备通知告诉 Host
+"队列里有新 descriptor 了"。
+
+不同后端的通知路径不同：
+
+| 场景              | Guest -> Host kick 的形式                                      |
+| ----------------- | -------------------------------------------------------------- |
+| virtio PCI        | Guest 写 PCI notify BAR / queue notify 寄存器                  |
+| virtio MMIO       | Guest 写 MMIO QueueNotify 寄存器                               |
+| vhost-net         | notify 写入经 QEMU/ioeventfd 转成 Host kernel vhost 事件       |
+| vhost-user        | Guest 写 notify 地址先被 KVM 捕获；KVM 匹配 ioeventfd 后 signal kickfd，用户态后端 poll 到事件 |
+
+在 vhost-user 场景里，常见的是：
+
+```
+Guest virtio PMD
+  -> 更新 avail ring
+  -> 写 virtio notify register/MMIO 地址
+  -> VM-Exit 到 KVM
+  -> KVM 发现该地址注册了 ioeventfd
+  -> KVM signal 对应的 eventfd
+  -> Host vhost-user backend 的 kickfd 可读
+  -> 后端处理 virtqueue
+```
+
+如果没有 `ioeventfd`，这次 MMIO/PIO 写通常会变成 `KVM_EXIT_MMIO` /
+`KVM_EXIT_IO` 返回给 QEMU，由 QEMU 设备模型处理。`ioeventfd` 的优化点是：
+**仍然由 KVM 捕获 notify 写，但不再每次都回到 QEMU 主循环**。
+
+#### kick eventfd 的原理
+
+`eventfd` 是 Linux 提供的轻量事件通知 fd。可以把它理解成一个内核里的计数器：
+
+```text
+write(eventfd):
+  counter += value
+  唤醒 poll/epoll 等待者
+
+read(eventfd):
+  读取并清空 counter
+```
+
+vhost-user 场景里，每个 virtqueue 通常会有一个 **kickfd**：
+
+```text
+kickfd = Guest -> Host 通知
+callfd = Host -> Guest 通知
+```
+
+kickfd 的建立过程：
+
+```text
+QEMU
+  -> 创建 eventfd，作为某个 virtqueue 的 kickfd
+  -> 通过 KVM_IOEVENTFD 告诉 KVM：
+       Guest 如果写 virtio notify 地址，就 signal 这个 eventfd
+  -> 通过 vhost-user 协议把这个 eventfd fd 传给用户态后端
+       VHOST_USER_SET_VRING_KICK
+
+vhost-user backend
+  -> epoll/poll 这个 kickfd
+  -> kickfd 可读时，说明 Guest 对该 virtqueue 做了 notify
+```
+
+运行时路径：
+
+```text
+Guest virtio PMD
+  -> 把 descriptor 放进 avail ring
+  -> 写 virtio notify register/MMIO 地址
+       例如：通知 queue 0 有新 descriptor
+  -> CPU VM-Exit 到 KVM
+  -> KVM 匹配 ioeventfd 规则
+  -> KVM eventfd_signal(kickfd)
+  -> vhost-user backend epoll 被唤醒
+  -> backend read(kickfd)
+  -> backend 读取 avail ring，处理 descriptor
+```
+
+没有 kick eventfd 时，路径更重：
+
+```text
+Guest 写 notify
+  -> VM-Exit 到 KVM
+  -> KVM_EXIT_MMIO / KVM_EXIT_IO 返回给 QEMU
+  -> QEMU 主循环处理 virtio notify
+  -> QEMU 再通知 vhost 后端或自己处理 virtqueue
+```
+
+有 kick eventfd 后：
+
+```text
+Guest 写 notify
+  -> VM-Exit 到 KVM
+  -> KVM 直接 signal eventfd
+  -> vhost 后端直接醒来处理 virtqueue
+```
+
+它解决的问题是：
+
+| 问题                       | kick eventfd 的作用                                      |
+| -------------------------- | -------------------------------------------------------- |
+| 每次 kick 都进入 QEMU 主循环 | KVM 直接 signal eventfd，绕过 QEMU 设备模型热路径         |
+| QEMU 成为数据面瓶颈         | vhost-user 后端直接处理 virtqueue                         |
+| 多一次用户态调度和锁竞争     | 减少 KVM -> QEMU -> backend 的中转                         |
+| 后端阻塞等待新 descriptor   | backend 可以 epoll kickfd，被 Guest notify 精准唤醒        |
+
+注意：kick eventfd **没有消除 VM-Exit 本身**。Guest 写 notify 地址仍然会被 KVM
+捕获。它优化的是 VM-Exit 之后的处理路径：让 KVM 在内核里完成事件转发，而不是把
+每一次数据面 kick 都交给 QEMU 用户态设备模型。
+
+如果 vhost 后端本身在 busy polling virtqueue，kickfd 的唤醒价值会下降；但在
+阻塞等待、低流量、控制面切换、或不想让后端线程一直满核空转的场景中，kickfd
+仍然是关键机制。
+
+epoll 能告诉后端的是 **哪个 kickfd 可读**，也就是哪个 VM 的哪个 virtqueue
+被 Guest notify 了。它不会告诉后端具体新增了几个 descriptor，也不会直接给出
+descriptor 内容。后端醒来后仍然要读取该 virtqueue 的 available ring：
+
+```text
+epoll 返回 kickfd(queue 3) 可读
+  -> read(kickfd) 清事件计数
+  -> 读取 queue 3 的 avail.idx
+  -> 从上次处理位置继续消费 descriptor
+```
+
+所以 kickfd/epoll 解决的是"不用在空闲时遍历所有 virtqueue 等事件"；
+真正的数据仍然来自共享内存中的 virtqueue。
+
+反方向也有通知：Host 处理完 descriptor 后更新 used ring，如果 Guest 需要通知，
+Host 会通过 callfd / interrupt 通知 Guest。但 DPDK virtio PMD 通常运行在轮询模式，
+更多时候直接轮询 used ring，避免依赖中断。
 
 ```c
 // 不是每次 enqueue 都需要 kick

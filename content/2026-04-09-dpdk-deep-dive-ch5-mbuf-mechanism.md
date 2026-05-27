@@ -147,6 +147,9 @@ uint16_t data_off;             // 数据起始偏移
 // 使用：获取以太网头指针
 struct rte_ether_hdr *eth = rte_pktmbuf_mtod(m, struct rte_ether_hdr *);
 
+// 给设备 descriptor 使用的是 IOVA，不是 CPU 指针
+rte_iova_t data_iova = rte_pktmbuf_iova(m);  // m->buf_iova + m->data_off
+
 // 带偏移的版本
 #define rte_pktmbuf_mtod_offset(m, type, offset) \
     ((type)((char *)(m)->buf_addr + (m)->data_off + (offset)))
@@ -163,6 +166,11 @@ rte_pktmbuf_read(const struct rte_mbuf *m, uint32_t off,
     // ...
 }
 ```
+
+`buf_addr` 给 CPU 用，`buf_iova` 给设备 DMA 用。`buf_iova` 在 mbuf pool 初始化时由
+`rte_pktmbuf_init()` 根据 mempool object 所在 memseg 的 IOVA 计算出来，不是每次收发包
+临时查询。完整解释见：
+[[2026-04-09-dpdk-deep-dive-ch27-memory-dma|第二十七章：内存优化——DMA 引擎与零拷贝]]。
 
 #### 2.2.2 分段管理字段
 

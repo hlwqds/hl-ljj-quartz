@@ -263,28 +263,36 @@ mz = rte_memzone_reserve("packet_buffer",
 
 ### 3.3 IOVA 模式详解
 
-IOVA (I/O Virtual Address) 是 DPDK 内存模型的核心概念：
+IOVA (I/O Virtual Address) 是 DPDK 内存模型的核心概念。它是设备在 DMA descriptor
+里看到的地址，不等于 CPU 直接使用的普通指针。
 
-| 模式           | IOVA 含义       | 依赖                 | 适用场景                    |
-| -------------- | --------------- | -------------------- | --------------------------- |
-| **IOVA as PA** | IOVA = 物理地址 | UIO 或 VFIO no-IOMMU | 物理地址直接用于 DMA        |
-| **IOVA as VA** | IOVA = 虚拟地址 | VFIO + IOMMU         | 虚拟化场景，VA 与 IOVA 统一 |
+| 模式           | IOVA 数值来源           | 依赖                       | 适用场景                         |
+| -------------- | ----------------------- | -------------------------- | -------------------------------- |
+| **IOVA as PA** | 通常等于物理地址         | UIO、no-IOMMU 或兼容旧部署 | 设备 descriptor 里写物理地址语义 |
+| **IOVA as VA** | 通常按用户态 VA 数值布局 | VFIO + IOMMU               | IOMMU 隔离、地址空间更灵活       |
 
 ```c
 // 检测 IOVA 模式
 enum rte_iova_mode {
     RTE_IOVA_DC = 0,    // 未检测
-    RTE_IOVA_PA = 'p',  // 物理地址模式
-    RTE_IOVA_VA = 'v'   // 虚拟地址模式
+    RTE_IOVA_PA = 1,    // IOVA-as-PA
+    RTE_IOVA_VA = 2     // IOVA-as-VA
 };
 
 // DPDK 内存映射（IOVA = VA 模式）
-// 用户虚拟地址自动映射到 IOVA，无需手动管理
+// 应用仍然用 VA 访问内存，设备 descriptor 使用 IOVA
 
 void *ptr = rte_malloc("packet", 1024, 0);
-// ptr 同时是虚拟地址和 IOVA
-// 网卡可以直接使用 ptr 作为 DMA 地址
+rte_iova_t iova = rte_mem_virt2iova(ptr);
+if (iova == RTE_BAD_IOVA) {
+    // 这块内存不能直接给设备 DMA
+}
 ```
+
+在 IOVA-as-VA 模式下，IOVA 的数值经常和 VA 数值一致或按 VA 布局分配，但设备不是走
+CPU MMU。EAL/VFIO 会把这个 IOVA range 映射到实际物理页，DMA 设备访问时由 IOMMU
+翻译。完整链路见：
+[[2026-04-09-dpdk-deep-dive-ch27-memory-dma|第二十七章：内存优化——DMA 引擎与零拷贝]]。
 
 ### 3.4 多 socket 内存分配
 

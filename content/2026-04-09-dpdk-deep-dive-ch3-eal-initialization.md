@@ -320,18 +320,18 @@ struct rte_memzone {
 
 ### 5.1 两种 IOVA 模式
 
-| 模式           | 说明            | 适用场景             |
-| -------------- | --------------- | -------------------- |
-| **IOVA as PA** | IOVA = 物理地址 | VFIO with IOMMU, UIO |
-| **IOVA as VA** | IOVA = 虚拟地址 | 虚拟化场景，VFIO     |
+| 模式           | 说明                         | 适用场景                         |
+| -------------- | ---------------------------- | -------------------------------- |
+| **IOVA as PA** | IOVA 数值通常使用物理地址     | UIO、no-IOMMU 或兼容旧部署       |
+| **IOVA as VA** | IOVA 数值通常按用户态 VA 布局 | VFIO/IOMMU 隔离、虚拟化内存映射 |
 
 ```c
 // lib/eal/common/eal_memory.c
 
 enum rte_iova_mode {
     RTE_IOVA_DC = 0,    // Don't care (未检测)
-    RTE_IOVA_PA = 'p',  // IOVA as Physical Address
-    RTE_IOVA_VA = 'v'   // IOVA as Virtual Address
+    RTE_IOVA_PA = 1,    // IOVA-as-PA
+    RTE_IOVA_VA = 2     // IOVA-as-VA
 };
 
 // 检测 VFIO IOMMU 是否支持 DMA 地址翻译

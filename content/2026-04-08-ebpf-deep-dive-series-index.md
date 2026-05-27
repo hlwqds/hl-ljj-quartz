@@ -58,6 +58,7 @@ eBPF 的性能杀手锏——XDP、TC、AF_XDP 及高级网络应用。
 | 6   | [[2026-04-08-ebpf-deep-dive-ch6-tc-traffic-control\|第六章]]         | TC (Traffic Control) 流量调度艺术 | ✅   |
 | 9   | [[2026-04-08-ebpf-deep-dive-ch9-af-xdp-zero-copy\|第九章]]           | AF_XDP 零拷贝与用户态协议栈       | ✅   |
 | 29  | [[2026-04-08-ebpf-deep-dive-ch29-networking-deep-dive\|第二十九章]]  | 负载均衡、Sockmap 与拥塞控制      | ✅   |
+| 29.5 | [[2026-05-26-ebpf-deep-dive-netkit-container-networking\|第二十九.五章]] | netkit、veth 与容器网络加速    | ✅   |
 
 ---
 
@@ -141,7 +142,7 @@ eBPF 的性能杀手锏——XDP、TC、AF_XDP 及高级网络应用。
 
 ```
 入门基础线:  Ch1 → 1.5 → 1.6 → 2 → 2.5 → 3 → 4
-网络性能线:  Ch5 → 6 → 9 → 29
+网络性能线:  Ch5 → 6 → 9 → 29 → 29.5
 安全攻防线:  Ch7 → 23 → 26 → 28 → 31 → 34
 可观测性线:  Ch4 → 13 → 25 → 25.5 → 14 → 27
 工程实践线:  Ch8 → 12 → 18 → 19 → 21 → 22

@@ -53,16 +53,17 @@ tags:
 
 ## Part III：虚拟化与加速 (Virtualization & Acceleration)
 
-DPDK 与虚拟化技术的深度融合——KNI、vhost、VDPA、向量加速。
+DPDK 与虚拟化技术的深度融合——KNI、vhost、vDPA、向量加速。
 
 | #   | 章节                                                           | 主题                                        | 状态 |
 | --- | -------------------------------------------------------------- | ------------------------------------------- | ---- |
 | 15  | [[2026-04-09-dpdk-deep-dive-ch15-kni-interface\|第十五章]]     | KNI (Kernel NIC Interface) 用户态与内核通信 | ✅   |
 | 15b | [[2026-04-09-dpdk-deep-dive-ch15b-af-xdp\|第十五章补充]]       | AF_XDP —— KNI 的现代替代                    | ✅   |
 | 16  | [[2026-04-09-dpdk-deep-dive-ch16-vhost-user\|第十六章]]        | vhost-user 与 virtio 加速                   | ✅   |
+| 16a | [[2026-04-09-dpdk-deep-dive-ch16a-ovs-dpdk-vhost-user-lab\|第十六章补充]] | OVS-DPDK 与 vhost-user 最小实战 | ✅   |
 | 17  | [[2026-04-09-dpdk-deep-dive-ch17-vhost-scsi\|第十七章]]        | vhost-scsi 存储虚拟化                       | ✅   |
 | 18  | [[2026-04-09-dpdk-deep-dive-ch18-ivshmem\|第十八章]]           | IVSHMEM VM 间共享内存                       | ✅   |
-| 19  | [[2026-04-09-dpdk-deep-dive-ch19-vdpa\|第十九章]]              | VDPA 数据面加速与驱动                       | ✅   |
+| 19  | [[2026-04-09-dpdk-deep-dive-ch19-vdpa\|第十九章]]              | vDPA 数据面加速与驱动                       | ✅   |
 | 19b | [[2026-04-09-dpdk-deep-dive-ch19b-dpu-smartnic\|第十九章补充]] | DPU/SmartNIC 基础                           | ✅   |
 | 20  | [[2026-04-09-dpdk-deep-dive-ch20-simd-avx512\|第二十章]]       | AVX512/SIMD 数据包处理向量化                | ✅   |
 
@@ -90,6 +91,7 @@ DPDK 极致性能的工程实践——Cache、NUMA、同步机制与 profiling�
 | 25  | [[2026-04-09-dpdk-deep-dive-ch25-cache-optimization\|第二十五章]] | Cache 优化：false sharing 与预取        | ✅   |
 | 26  | [[2026-04-09-dpdk-deep-dive-ch26-numa-optimization\|第二十六章]]  | NUMA 亲和性与 local/remote 访问         | ✅   |
 | 27  | [[2026-04-09-dpdk-deep-dive-ch27-memory-dma\|第二十七章]]         | 内存优化：DMA 引擎与零拷贝              | ✅   |
+| 27a | [[2026-04-09-dpdk-deep-dive-ch27a-vdpa-dsa-host-guest-accel\|第二十七章补充]] | vDPA、DSA 与 Host/Guest 数据面卸载 | ✅   |
 | 28  | [[2026-04-09-dpdk-deep-dive-ch28-multicore-sync\|第二十八章]]     | 多核同步：spinlock、RCU、memory reorder | ✅   |
 | 29  | [[2026-04-09-dpdk-deep-dive-ch29-profiling\|第二十九章]]          | Profiling：dpdk-procinfo、perf、火焰图  | ✅   |
 | 30  | [[2026-04-09-dpdk-deep-dive-ch30-performance-tuning\|第三十章]]   | 性能调优：batching、RSS、flow director  | ✅   |
@@ -102,7 +104,7 @@ DPDK 生态工具链——testpmd、pktgen、debug 技巧与诊断方法。
 
 | #   | 章节                                                              | 主题                                | 状态 |
 | --- | ----------------------------------------------------------------- | ----------------------------------- | ---- |
-| 31  | [[2026-04-09-dpdk-deep-dive-ch31-debugging-tools\|第三十一章]]    | 调试工具：dpdk-devbind、ethool      | ✅   |
+| 31  | [[2026-04-09-dpdk-deep-dive-ch31-debugging-tools\|第三十一章]]    | 调试工具：dpdk-devbind、ethtool     | ✅   |
 | 32  | [[2026-04-09-dpdk-deep-dive-ch32-pktgen\|第三十二章]]             | pktgen 流量生成与测试场景           | ✅   |
 | 33  | [[2026-04-09-dpdk-deep-dive-ch33-debug-techniques\|第三十三章]]   | 调试技巧：日志、assert、crash 分析  | ✅   |
 | 34  | [[2026-04-09-dpdk-deep-dive-ch34-ethtool-comparison\|第三十四章]] | dpdk-procinfo vs ethtool vs netstat | ✅   |

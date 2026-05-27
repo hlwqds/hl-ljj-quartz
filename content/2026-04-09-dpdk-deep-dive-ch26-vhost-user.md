@@ -9,6 +9,10 @@ description: "深入解析 DPDK vhost-user：协议交互、Unix Socket、共享
 
 > [!abstract] 核心要点
 > vhost-user 是 vhost 协议的用户态实现，允许 QEMU 与 DPDK 应用共享 virtqueue。本章深入解析协议、Socket 通信、内存映射与同步机制。
+>
+> 如果想先用一个最小实验观察 OVS-DPDK、QEMU、vhost-user socket 和 Guest
+> `virtio-net` 的关系，可以看：
+> [[2026-04-09-dpdk-deep-dive-ch16a-ovs-dpdk-vhost-user-lab|第十六章补充：OVS-DPDK 与 vhost-user 最小实战]]。
 
 ## 1. vhost-user 概述
 
@@ -38,27 +42,159 @@ vhost-user (DPDK):
 ┌─────────────────────────────────────────────────────────────┐
 │                    vhost-user 架构                          │
 │                                                              │
-│  ┌──────────────────────────────────────────────────────┐  │
-│  │              QEMU/KVM                                  │  │
-│  │                                                       │  │
-│  │  ┌──────────────────────────────────────────────┐   │  │
-│  │  │            Virtio-net (Guest Driver)         │   │  │
-│  │  └──────────────────────────────────────────────┘   │  │
-│  │                         ↓                            │  │
-│  │  ┌──────────────────────────────────────────────┐   │  │
-│  │  │            vhost-user backend (QEMU)          │   │  │
-│  │  └──────────────────────────────────────────────┘   │  │
-│  └──────────────────────────────────────────────────────┘  │
-│                            ↓ Unix Socket                     │
-│  ┌──────────────────────────────────────────────────────┐  │
-│  │              DPDK vhost-user (如 VPP)                │  │
-│  │                                                       │  │
-│  │  - Virtqueue 访问                                    │  │
-│  │  - 内存映射                                          │  │
-│  │  - 包处理                                            │  │
-│  └──────────────────────────────────────────────────────┘  │
+│  Guest VM                                                    │
+│  ┌──────────────────────────────────────────────────────┐    │
+│  │  Guest Driver / Guest DPDK                           │    │
+│  │  - virtio-net kernel driver                          │    │
+│  │  - or DPDK virtio PMD                                │    │
+│  │                                                       │    │
+│  │  TX/RX virtqueue 位于 Guest memory                    │    │
+│  └──────────────────────────┬───────────────────────────┘    │
+│                             │                                │
+│                             │ virtio PCI/MMIO notify         │
+│                             ▼                                │
+│  QEMU + KVM                                                   │
+│  ┌──────────────────────────────────────────────────────┐    │
+│  │  QEMU virtio device model                            │    │
+│  │  - 创建 virtio-net PCI 设备                          │    │
+│  │  - 协商 feature                                      │    │
+│  │  - 将 Guest memory table / vring / eventfd 传给后端  │    │
+│  │                                                       │    │
+│  │  KVM                                                 │    │
+│  │  - 运行 vCPU                                         │    │
+│  │  - 处理 notify MMIO/PIO + ioeventfd                  │    │
+│  └──────────────────────────┬───────────────────────────┘    │
+│                             │                                │
+│                             │ vhost-user Unix socket         │
+│                             │ 控制面消息 + fd 传递            │
+│                             ▼                                │
+│  Host vhost-user backend                                      │
+│  ┌──────────────────────────────────────────────────────┐    │
+│  │  DPDK / OVS-DPDK / VPP / SPDK                        │    │
+│  │  - mmap Guest memory                                 │    │
+│  │  - GPA -> HVA 转换                                   │    │
+│  │  - 访问 virtqueue                                    │    │
+│  │  - 处理 packet / block request                       │    │
+│  │  - 连接 Host NIC PMD / vSwitch / storage backend     │    │
+│  └──────────────────────────────────────────────────────┘    │
 └─────────────────────────────────────────────────────────────┘
 ```
+
+注意：`vhost-user backend` 通常不在 QEMU 里面。QEMU 负责创建 Guest 看到的
+virtio 设备，并通过 vhost-user socket 把 Guest memory、vring 地址、kickfd/callfd
+交给外部 backend。真正的数据面 backend 是 socket 另一端的 DPDK、OVS-DPDK、
+VPP 或 SPDK 进程。
+
+这里的 `virtio-net` 不是一个额外的交换模块，而是 Guest 前端驱动和 Host 后端共同
+遵守的虚拟网卡设备协议：
+
+```text
+Guest 前端:
+  virtio-net kernel driver
+  or DPDK virtio PMD
+
+Host 后端:
+  vhost-user backend
+  OVS-DPDK / VPP / SPDK / DPDK app
+
+共同协议:
+  virtio-net feature bits
+  virtio_net_hdr
+  RX/TX virtqueue
+  descriptor / avail ring / used ring
+```
+
+Guest 必须看到一个具体的虚拟 PCI/MMIO 设备，才能枚举设备、加载驱动、协商 feature、
+配置 queue。这个设备模型就是 QEMU 提供的 `virtio-net`。vhost-user 把它的数据面
+交给外部 backend，但不取消 Guest 侧的 virtio-net 设备语义。
+
+### 1.3 最常见的云主机网络架构
+
+普通云主机通常不是 Guest DPDK 场景，而是 Guest 使用 Linux 内核里的
+`virtio-net` driver。应用仍然使用普通 socket，包会经过 Guest kernel 网络栈。
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        普通云主机 virtio-net 网络路径                       │
+│                                                                             │
+│  Guest VM                                                                   │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  Application                                                        │    │
+│  │  nginx / ssh / database / app server                                │    │
+│  │       │                                                             │    │
+│  │       │ socket API                                                  │    │
+│  │       ▼                                                             │    │
+│  │  Guest Linux Network Stack                                          │    │
+│  │  TCP/IP / routing / iptables / nftables / qdisc                     │    │
+│  │       │                                                             │    │
+│  │       ▼                                                             │    │
+│  │  virtio-net kernel driver                                           │    │
+│  │  - 使用 RX/TX virtqueue                                             │    │
+│  │  - 收发普通 skb                                                     │    │
+│  └───────┬─────────────────────────────────────────────────────────────┘    │
+│          │ virtqueue in Guest memory                                        │
+│          │ notify / interrupt / eventfd                                     │
+│          ▼                                                                  │
+│  QEMU + KVM                                                                 │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  QEMU virtio-net device model                                       │    │
+│  │  - PCI 设备枚举                                                     │    │
+│  │  - feature 协商                                                     │    │
+│  │  - queue 配置                                                       │    │
+│  │                                                                     │    │
+│  │  数据面后端通常是：                                                  │    │
+│  │  - vhost-net: Host kernel 处理 virtqueue                            │    │
+│  │  - vhost-user: OVS-DPDK/VPP 等用户态后端处理 virtqueue              │    │
+│  └───────┬─────────────────────────────────────────────────────────────┘    │
+│          │                                                                  │
+│          ▼                                                                  │
+│  Host Virtual Switch / Datapath                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  Linux bridge / OVS kernel / OVN / OVS-DPDK / VPP                   │    │
+│  │  - 二层转发                                                         │    │
+│  │  - 安全组 / ACL                                                     │    │
+│  │  - 路由 / NAT                                                       │    │
+│  │  - VXLAN/Geneve tunnel encap/decap                                  │    │
+│  │  - output: another VM / tunnel / physical NIC                       │    │
+│  └───────┬─────────────────────────────────────────────────────────────┘    │
+│          │                                                                  │
+│          ▼                                                                  │
+│  Physical NIC                                                               │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  ToR switch / underlay network / other compute node                 │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+这条路径里的核心分工：
+
+| 层次              | 作用                                                     |
+| ----------------- | -------------------------------------------------------- |
+| Guest application | 使用普通 socket，不感知 virtio/vhost                     |
+| Guest kernel      | 处理 TCP/IP、路由、防火墙、skb                           |
+| virtio-net driver | Guest 前端驱动，把 skb 映射到 virtqueue                  |
+| QEMU/KVM          | 提供 virtio-net 设备模型，处理控制面和通知机制           |
+| vhost 后端        | 在 Host 侧处理 virtqueue，减少 QEMU 数据面开销           |
+| Host vSwitch      | 执行云网络规则，决定包进入哪个 VM、tunnel 或物理端口     |
+| Physical NIC      | 连接物理网络或 underlay 网络                             |
+
+对比 Guest DPDK 场景：
+
+```text
+普通云主机:
+  Guest app -> socket -> Guest kernel -> virtio-net kernel driver -> Host
+
+NFV/高性能 VM:
+  Guest DPDK app -> DPDK virtio PMD -> virtqueue -> Host
+```
+
+所以最常见的云主机网络不是 Guest DPDK，而是 `virtio-net kernel driver +
+Host vSwitch/vhost`。
+
+> [!tip] 延伸阅读
+> 如果想从商业和架构视角理解为什么会有 vhost-user、OVS-DPDK、Guest DPDK、
+> SR-IOV 这些方案，可以继续看：
+> [[2026-05-26-nfv-network-functions-virtualization|NFV 深入理解：网络功能虚拟化的商业逻辑与技术架构]]
 
 ## 2. vhost-user 协议
 
@@ -85,7 +221,7 @@ vhost-user (DPDK):
 │  - VHOST_USER_GET_VRING_BASE                            │
 │                                                              │
 │  连接管理：                                                  │
-│  - VHOST_USER_GET城南                                 │
+│  - VHOST_USER_GET_QUEUE_NUM                              │
 │  - VHOST_USER_SET_OWNER                                  │
 │  - VHOST_USER_RESET_OWNER                                │
 └─────────────────────────────────────────────────────────────┘
@@ -97,7 +233,7 @@ vhost-user (DPDK):
 // vhost-user 消息头
 typedef struct {
     uint32_t request;        // 消息类型
-    uint32_t flags;          // 标志 (MASTER | SLACE | NEED_REPLY)
+    uint32_t flags;          // 版本和标志 (VERSION | REPLY | NEED_REPLY)
     uint64_t size;           // 负载大小
 } __attribute__((packed)) vhost_user_msg_t;
 
@@ -500,6 +636,10 @@ wait=off
 ```
 
 ### 7.2 vhost-user + DPDK
+
+配套实践可以参考仓库里的 `practice/guest_dpdk_virtio/`，里面给了
+Host OVS-DPDK vhost-user 端口、QEMU 启动参数、Guest DPDK virtio PMD
+绑定和 `testpmd` 验证步骤。
 
 ```bash
 # VPP 监听 vhost-user socket

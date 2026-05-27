@@ -10,6 +10,10 @@ description: "深入解析 VPP 与 Kubernetes 集成：Service、LBM、Gateway�
 > [!abstract] 核心要点
 > VPP 在 Kubernetes 中可作为高性能数据平面。本章深入解析 VPP CNI、Service、LBM、Gateway、Ingress 与 Envoy 集成。
 
+> [!tip] 延伸阅读
+> 如果关注 VPP 容器/CNF 中的进程间高速连接，可以继续看：
+> [[2026-05-26-vpp-deep-dive-ch19a-memif|VPP 深入探讨 ch19a：memif 内存接口]]
+
 ## 1. Kubernetes 网络概述
 
 ### 1.1 Kubernetes 网络模型

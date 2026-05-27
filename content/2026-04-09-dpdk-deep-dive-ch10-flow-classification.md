@@ -1360,7 +1360,7 @@ setup_ddos_protection(uint16_t port_id)
 
 8. **选型**：负载均衡选 RSS，简单精确匹配选 FDIR，复杂规则选 rte_flow 或 librte_acl。
 
-**下一篇预告**：[[2026-04-09-dpdk-deep-dive-ch11-hyper-scan|第十一章]]将深入讲解 hyperscan 数据库 ——向量化匹配、霍夫曼压缩、以及在入侵检测中的应用。
+**下一篇预告**：[[2026-04-09-dpdk-deep-dive-ch11-ether-ip-udp|第十一章]]将深入讲解 Ether/IP/UDP 协议处理与 checksum offload。
 
 ---
 

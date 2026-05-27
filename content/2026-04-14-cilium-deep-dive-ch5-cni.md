@@ -26,6 +26,10 @@ tags:
 
 CNI（Container Networking Interface）是 CNCF 定义的**容器网络接口标准**。它规定了容器运行时（如 containerd、cri-o）与网络插件（如 Cilium、Calico、Flannel）之间的接口。
 
+> [!tip] 延伸阅读
+> 如果想进一步理解 veth、netkit、`bpf_redirect_peer()` 这些容器网络快路径，
+> 可以看：[[2026-05-26-ebpf-deep-dive-netkit-container-networking|eBPF 深入理解：netkit、veth 与容器网络加速]]
+
 ```
 容器运行时                    CNI 插件
     │                            │

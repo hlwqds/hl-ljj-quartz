@@ -729,71 +729,128 @@ numa_aware_hash_lookup(struct numa_aware_hash *ht, const void *key)
 // EAL 参数指定 lcore 亲和性
 
 /*
-  EAL 选项:
-  --lcores: 指定 lcore 映射到 CPU
-  --master-lcore: 指定 master lcore
-  --socket-mem: 每个 socket 的内存大小
-  --socket-limit: 每个 socket 的内存限制
+  先区分两个概念:
 
-  示例:
-  ./dpdk_app -l 0-3 -n 4 --lcores='(0-2)@0,(3)@1' --socket-mem=1024,1024
+  - Linux CPU id:
+      操作系统看到的真实 CPU 编号，例如 CPU 0、1、2、3。
+
+  - DPDK lcore id:
+      DPDK 内部使用的逻辑核编号。默认情况下 lcore id 常常等于 CPU id，
+      但使用 --lcores 后，二者可以显式映射，不应混为一谈。
+
+  常用 EAL 选项:
+
+  - -l 0-3:
+      启用 CPU/lcore 0、1、2、3。简单场景可理解为 lcore id == CPU id。
+
+  - --lcores='0@4,1@5':
+      显式指定映射关系:
+        lcore 0 运行在 Linux CPU 4
+        lcore 1 运行在 Linux CPU 5
+
+  - --main-lcore 0:
+      指定 main lcore。旧版本里常见 --master-lcore，新版本推荐 --main-lcore。
+
+  - --socket-mem=1024,1024:
+      在 NUMA socket 0 和 socket 1 上各预留 1024 MB hugepage 内存。
+
+  - --socket-limit=2048,2048:
+      限制每个 socket 最多使用多少 MB 内存。
+
+  示例 1: 简单绑定，lcore id 与 CPU id 相同
+
+    ./dpdk_app -l 0-3 -n 4 --socket-mem=1024,1024
 
   含义:
-  - lcore 0,1,2 绑定到 socket 0
-  - lcore 3 绑定到 socket 1
-  - 每个 socket 分配 1024 MB
+    启用 lcore 0、1、2、3；通常分别跑在 Linux CPU 0、1、2、3。
+    socket 0 和 socket 1 各分配 1024 MB hugepage。
+
+  示例 2: 显式映射 lcore 到 Linux CPU
+
+    ./dpdk_app --lcores='0@4,1@5,2@12,3@13' -n 4 --socket-mem=1024,1024
+
+  含义:
+    DPDK lcore 0 -> Linux CPU 4
+    DPDK lcore 1 -> Linux CPU 5
+    DPDK lcore 2 -> Linux CPU 12
+    DPDK lcore 3 -> Linux CPU 13
+
+  注意:
+    --lcores 里的 @ 后面是 Linux CPU id，不是 socket id。
+    CPU 属于哪个 NUMA socket，需要通过 lscpu、numactl --hardware，
+    或 rte_lcore_to_socket_id(lcore_id) 查看。
 */
 
-// 运行时获取 lcore 亲和性
+// 运行时打印 lcore -> CPU/socket 映射
+//
+// 注意：
+// - rte_thread_get_affinity() 查询的是“当前线程”的 affinity，不是任意 lcore。
+// - lcore id 不一定等于 Linux CPU id，尤其使用 --lcores 做映射时。
+// - rte_lcore_count() 是 enabled lcore 数量，不是最大 lcore id。
+
+#include <stdio.h>
 #include <sched.h>
+#include <rte_lcore.h>
 
-cpu_set_t
-get_lcore_cpuset(unsigned lcore_id)
+static void
+print_cpuset(const rte_cpuset_t *cpuset)
 {
-    cpu_set_t cpuset;
-    CPU_ZERO(&cpuset);
+    int first = 1;
 
-    // 获取 lcore 关联的 CPU mask
-    rte_thread_get_affinity(&cpuset);
+    printf("{");
+    for (int cpu = 0; cpu < CPU_SETSIZE; cpu++) {
+        if (!CPU_ISSET(cpu, cpuset))
+            continue;
 
-    return cpuset;
-}
-
-// 设置 lcore 亲和性
-int
-set_lcore_affinity(unsigned lcore_id, unsigned socket_id)
-{
-    cpu_set_t cpuset;
-    CPU_ZERO(&cpuset);
-
-    // 获取指定 socket 上的 CPU
-    for (unsigned i = 0; i < rte_lcore_count(); i++) {
-        if (rte_lcore_to_socket_id(i) == socket_id)
-            CPU_SET(i, &cpuset);
+        printf("%s%d", first ? "" : ",", cpu);
+        first = 0;
     }
-
-    return rte_thread_set_affinity(&cpuset);
+    printf("}");
 }
 
-// DPDK lcore role
-enum rte_lcore_role {
-    ROLE_RTE = 0,         // 普通 DPDK lcore
-    ROLE_SERVICE,         // Service lcore
-    ROLE_OFF,            // 禁用
-};
-
-// 设置 lcore role
-int
-set_lcore_role(unsigned lcore_id, enum rte_lcore_role role)
+void
+print_lcore_mapping(void)
 {
-    struct rte_config *config = rte_eal_get_configuration();
-    config->lcore_config[lcore_id].role = role;
+    unsigned lcore_id;
 
-    return 0;
+    RTE_LCORE_FOREACH(lcore_id) {
+        const rte_cpuset_t *cpuset = rte_lcore_cpuset(lcore_id);
+
+        printf("lcore %u: socket %d, cpuset ",
+               lcore_id, rte_lcore_to_socket_id(lcore_id));
+        print_cpuset(cpuset);
+        printf("\n");
+    }
 }
+
+// 不建议直接修改 rte_eal_get_configuration()->lcore_config[lcore_id].role。
+// lcore role 是 EAL 内部状态，直接写内部结构容易破坏调度和服务核管理。
+// 普通 worker lcore 通过 EAL 启动参数决定；service lcore 使用 rte_service_* API 管理。
 ```
 
 ### 4.3 动态负载均衡
+
+NUMA 优化的默认原则是 **数据在哪个 socket，就尽量在哪个 socket 处理**。
+但如果某个 socket 已经持续过载，而另一个 socket 明显空闲，跨 socket 分担负载是合理的。
+
+关键判断是：
+
+```text
+本地 socket 继续处理的排队/丢包/延迟成本
+    >
+跨 socket 访问 mbuf、flow state、ring 的 remote memory/cache 成本
+```
+
+跨 socket 均衡时，优先迁移 **flow/queue 的所有权**，而不是临时搬运单个 packet：
+
+| 做法                  | 评价                                                         |
+| --------------------- | ------------------------------------------------------------ |
+| 同 socket 内重新分配队列 | 首选，保持本地内存访问                                       |
+| 迁移 flow 到远端 socket | 可行，但要迁移/复制 flow state，并保证后续包也去新 socket     |
+| 临时把 packet 丢到远端 ring | 只能作为 overflow/慢路径，容易引入远端访问、乱序和 cache bouncing |
+| 重新配置 RSS/RTE Flow  | 更接近生产做法，让未来 packet 直接进入目标 queue/lcore        |
+
+下面的伪代码表达的是策略，不是建议在热路径里逐包跨 socket 搬运：
 
 ```c
 // 基于 NUMA 的动态负载均衡
@@ -801,73 +858,49 @@ set_lcore_role(unsigned lcore_id, enum rte_lcore_role role)
 struct worker_stats {
     uint64_t packets_processed;
     uint64_t cycles_elapsed;
+    uint64_t drops;
+    uint64_t queue_depth;
     double packets_per_cycle;
 };
 
 static struct worker_stats worker_stats[RTE_MAX_LCORE];
 
-// 定期调整负载
+static inline int
+same_socket(unsigned a, unsigned b)
+{
+    return rte_lcore_to_socket_id(a) == rte_lcore_to_socket_id(b);
+}
+
+// 定期调整负载：优先在同 socket 内均衡；只有本地没有余量时才跨 socket。
 void
 rebalance_load(void)
 {
-    // 计算每个 worker 的负载
-    struct {
-        unsigned lcore_id;
-        double load;
-    } workers[32];
+    unsigned hot = find_hottest_lcore(worker_stats);
+    unsigned local_cold = find_cold_lcore_on_same_socket(hot, worker_stats);
 
-    int n = 0;
-    unsigned lcore_id;
-
-    RTE_LCORE_FOREACH_WORKER(lcore_id) {
-        double ppb = (double)worker_stats[lcore_id].packets_processed /
-                     worker_stats[lcore_id].cycles_elapsed;
-
-        workers[n].lcore_id = lcore_id;
-        workers[n].load = ppb;
-        n++;
+    if (local_cold != RTE_MAX_LCORE) {
+        // 首选：同 socket 内迁移 flow/queue，避免 remote memory。
+        migrate_flow_ownership(hot, local_cold);
+        return;
     }
 
-    // 按负载排序
-    qsort(workers, n, sizeof(workers[0]), compare_load);
+    unsigned remote_cold = find_cold_lcore_on_other_socket(hot, worker_stats);
+    if (remote_cold == RTE_MAX_LCORE)
+        return;
 
-    // 将高负载 worker 的队列迁移到低负载 worker
-    // 简化示例
-    for (int i = 0; i < n / 2; i++) {
-        unsigned src = workers[i].lcore_id;  // 高负载
-        unsigned dst = workers[n - 1 - i].lcore_id;  // 低负载
+    if (!remote_is_worth_it(hot, remote_cold, worker_stats))
+        return;
 
-        migrate_queue(src, dst);
+    // 跨 socket 是兜底策略：只迁移持续重流或整条 queue 的未来流量。
+    // 生产中通常通过 RSS reta、rte_flow、flow director 或控制面重配完成。
+    migrate_flow_ownership(hot, remote_cold);
+    reprogram_steering_for_future_packets(hot, remote_cold);
+
+    if (!same_socket(hot, remote_cold)) {
+        // 可选：为远端 socket 准备本地 mempool/flow state，
+        // 避免长期处理远端 socket 上分配的 mbuf 和状态。
+        prepare_remote_socket_resources(remote_cold);
     }
-
-    // 重置统计
-    memset(worker_stats, 0, sizeof(worker_stats));
-}
-
-// 迁移队列
-int
-migrate_queue(unsigned src_lcore, unsigned dst_lcore)
-{
-    struct rte_ring *src_ring = worker_rings[src_lcore];
-    struct rte_ring *dst_ring = worker_rings[dst_lcore];
-
-    void *pkts[256];
-    unsigned int count = 0;
-
-    // 从源 ring 移动到目标 ring
-    count = rte_ring_dequeue_burst(src_ring, pkts, 256, NULL);
-
-    for (unsigned i = 0; i < count; i++) {
-        if (rte_ring_enqueue(dst_ring, pkts[i]) != 0) {
-            // 放回源 ring
-            rte_ring_enqueue(src_ring, pkts[i]);
-        }
-    }
-
-    printf("Migrated %u packets from lcore %u to %u\n",
-           count, src_lcore, dst_lcore);
-
-    return count;
 }
 ```
 
@@ -1582,8 +1615,9 @@ monitor_numa_access_ratio(void)
 │                                                                             │
 │  5. 数据面设计                                                             │
 │  ─────────────                                                              │
-│     □ 跨 socket 传递数据使用 DMA buffer                                     │
-│     □ 批量操作减少跨 socket 次数                                            │
+│     □ 优先迁移 flow/queue 所有权，而不是逐包跨 socket 传 mbuf               │
+│     □ 必须跨 socket 时批量传递，减少 ring/cache line 迁移次数               │
+│     □ 长期由远端 socket 处理时，考虑复制/重分配到目标 socket 本地 mbuf       │
 │     □ 使用 socket 感知的 flow table                                        │
 │     □ 避免跨 socket 的 mbuf 引用                                           │
 │                                                                             │

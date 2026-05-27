@@ -5,6 +5,11 @@ tags: [dpdk, series, kni, kernel, netdev, ioctl, mbuf, virtio, rx-tx]
 description: "深入理解 DPDK KNI 的实现——KNI 与 Linux 内核网络栈的集成、mbuf 与 sk_buff 转换、ioctl 控制通道、收发包路径、以及典型应用场景"
 ---
 
+> [!warning] 历史草稿提示
+> 这篇是早期 KNI 草稿，保留作历史参考。KNI 已在 DPDK 23.11 移除，系列索引中的正式章节请看
+> [[2026-04-09-dpdk-deep-dive-ch15-kni-interface|第十五章：KNI 历史机制]]；
+> 新项目优先看 [[2026-04-09-dpdk-deep-dive-ch15b-af-xdp|第十五章补充：AF_XDP —— KNI 的现代替代]]。
+
 > [!info] DPDK 深度探索系列 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
 >
 > 1. [[2026-04-09-dpdk-deep-dive-ch1-architecture-overview|第一章：架构概述——kernel bypass 原理与 DPDK 定位]]
