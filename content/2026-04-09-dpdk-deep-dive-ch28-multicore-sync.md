@@ -1330,17 +1330,48 @@ rte_ring_lf_dequeue(struct rte_ring_lf *r)
 
 ### 6.3 ABA 问题与解决
 
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        ABA 问题                                            │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  CAS 只检查"值是否相同"，不检查"是否经历了变化"                          │
+│                                                                             │
+│  场景: 无锁栈 pop，初始 top → A → B → C                                   │
+│                                                                             │
+│  Thread 1 要 pop:                                                          │
+│  ─────────────────                                                          │
+│  ① 读 top = A              ← 记住 old_val = A                            │
+│  ② 读 A->next = B          ← 准备把 top 改成 B                            │
+│                                                                             │
+│  ⚡ 此时被中断，Thread 2 介入                                              │
+│                                                                             │
+│  Thread 2 做了一堆操作:                                                    │
+│  ──────────────────────                                                     │
+│  pop A → top = B                                                           │
+│  pop B → top = C         ← B 被 free 了!                                  │
+│  push A → top → A → C   ← A 又回来了!                                     │
+│                                                                             │
+│  Thread 1 恢复:                                                            │
+│  ──────────────                                                             │
+│  ③ CAS(&top, old_val=A, new=B)                                             │
+│     top 现在是 A? 是的! → CAS 成功 ✅                                      │
+│     把 top 改成 B                                                          │
+│                                                                             │
+│  ❌ 但 B 已经被 pop 掉并释放了!                                            │
+│  → top → B (已释放的内存) → use-after-free                                │
+│                                                                             │
+│  本质: 值经历了 A→B→A 的变化，但 CAS 只看到"A=A"就认为没变               │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
 ```c
-// ABA 问题演示
+// 解决方案: tagged pointer — 把指针和版本号打包到一起
+// 每次 CAS 时不仅比较指针，还比较版本号
+// 版本号每次修改 +1，即使指针回到相同的值，版本号也不同
 
-struct node {
-    void *data;
-    struct node *next;  // 链表指针
-    int counter;        // 版本号
-};
-
-// tagged pointer: 将指针与版本号打包到一个 64 位整数中
-// 假设 64 位系统，指针低 48 位有效，高 16 位用作 tag
+// 64 位系统，指针低 48 位有效，高 16 位用作版本号
 typedef uint64_t tagged_ptr_t;
 
 static inline tagged_ptr_t
@@ -1415,11 +1446,24 @@ pop(struct lf_stack *s)
     return data;
 }
 
-// DPDK 使用版本号解决 ABA
-struct rte_rcu_qsbr_elem {
-    uint64_t version;  // 每次修改递增
-    void *ptr;
-};
+// 回到上面的 ABA 场景，使用 tagged pointer 后:
+//
+// 初始:  top = (A, version=0)
+//
+// Thread 1:
+//   ① 读 top = (A, v=0)       ← 记住 old = (A, v=0)
+//   ② 准备 new = (B, v=1)
+//
+// Thread 2:
+//   pop A  → top = (B, v=1)
+//   pop B  → top = (C, v=2)
+//   push A → top = (A, v=3)   ← A 回来了，但版本号变了!
+//
+// Thread 1 恢复:
+//   ③ CAS(&top, (A, v=0), (B, v=1))
+//      top 现在是 (A, v=3)
+//      (A, v=0) != (A, v=3)   ← 版本号不同!
+//      → CAS 失败 ❌ → 重试 ✅
 ```
 
 ---
