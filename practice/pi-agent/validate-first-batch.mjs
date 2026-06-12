@@ -59,7 +59,7 @@ function checkPermalinks(file, source) {
 function checkWikiLinks(file, source) {
   const links = source.matchAll(/\[\[([^|\]#]+)(?:[|#][^\]]*)?\]\]/g)
   for (const match of links) {
-    const target = match[1]
+    const target = match[1].replace(/\\$/, "")
     if (target.includes("pi-agent-deep-dive") && !expectedSlugs.has(target)) {
       report(`${file}: unresolved first-batch Wiki link "${target}"`)
     }
