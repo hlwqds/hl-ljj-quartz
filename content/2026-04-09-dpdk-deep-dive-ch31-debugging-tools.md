@@ -32,9 +32,11 @@ description: "深入理解 DPDK 调试工具——dpdk-devbind 设备绑定、et
 │                                                                             │
 │  3. DPDK 内部调试                                                          │
 │     - rte_log                : 日志系统                                    │
-│     - pdump                  : 包抓取                                      │
-│     - ethdump                 : 包转储                                      │
-│     - procinfo               : 运行时统计 (Ch29)                           │
+│     - rte_trace              : 轻量级 trace                                │
+│     - dpdk-proc-info         : 运行时统计查看                              │
+│     - dpdk-telemetry         : JSON 格式运行时监控                         │
+│     - dpdk-dumpcap           : 抓包 (推荐)                                │
+│     - dpdk-pdump             : 抓包 (旧版)                                 │
 │                                                                             │
 │  4. 内核诊断                                                               │
 │     - dmesg                   : 内核消息                                    │
@@ -213,7 +215,57 @@ cat /sys/bus/pci/drivers/igb_uio/82:00.0  # 确认存在
 dpdk-devbind --bind=ixgbe 82:00.0
 ```
 
-### 2.5 常见问题排查
+### 2.5 VFIO vs igb_uio：选哪个
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                     VFIO vs igb_uio 对比                                    │
+├──────────────────┬──────────────────────────┬──────────────────────────────┤
+│                  │  VFIO (vfio-pci)          │  igb_uio                     │
+├──────────────────┼──────────────────────────┼──────────────────────────────┤
+│ IOMMU 隔离       │ 支持，DMA 受 IOMMU 保护   │ 无隔离                       │
+│ 安全性           │ 高                        │ 低                           │
+│ 性能             │ 略低于 igb_uio            │ 略高 (无 IOMMU 开销)         │
+│ 内核主线         │ 是                        │ 否 (out-of-tree)             │
+│ VF 支持          │ SR-IOV VF 需要 VFIO       │ 不支持 VF                    │
+│ 设备热迁移       │ 支持                      │ 不支持                       │
+│ 推荐度           │ ★★★ 生产首选              │ ★★ 开发/测试可用             │
+├──────────────────┴──────────────────────────┴──────────────────────────────┤
+│                                                                             │
+│  实际选择:                                                                  │
+│  - 生产环境: VFIO + IOMMU (安全性和可维护性更重要)                          │
+│  - 性能测试: 如果差 1-2% 对你很重要，可以对比 igb_uio                      │
+│  - 虚拟化: 必须用 VFIO (SR-IOV / PCI passthrough)                         │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 2.6 IOMMU group 冲突排查
+
+VFIO 绑定时，同一个 IOMMU group 里的所有设备必须同时绑定到 VFIO，否则会失败。
+
+```bash
+# 查看 IOMMU group
+ls /sys/kernel/iommu_groups/
+
+# 查看某个 group 里的设备
+ls /sys/kernel/iommu_groups/1/devices/
+
+# 查看网卡的 IOMMU group
+readlink /sys/bus/pci/devices/82:00.0/iommu_group
+# 输出: ../../kernel/iommu_groups/42
+
+# 常见错误:
+# "vfio_pci: group N is not viable"
+# → 这个 group 里有其他设备还没绑定到 VFIO
+
+# 解决:
+# 1. 把同 group 的设备都绑到 VFIO
+# 2. 或在 GRUB 加 iommu=pt (pass-through) 减少共享 group
+# 3. 有些服务器 BIOS 可以调整 ACS 设置来拆分 group
+```
+
+### 2.7 常见问题排查
 
 ```bash
 # 问题 1: VFIO 绑定失败
@@ -556,7 +608,8 @@ setpci -s 82:00.0 COMMAND.l      # 读取 Command register
 setpci -s 82:00.0 STATUS.l       # 读取 Status register
 setpci -s 82:00.0 4.W            # 读取某个 word
 
-# 修改 PCI 配置 (小心!)
+# 修改 PCI 配置 (危险! 可能导致设备不可用)
+# 除非你完全理解 PCI 配置空间，否则不要执行下面的命令
 setpci -s 82:00.0 COMMAND.l=0x7 # 启用 memory, I/O, bus master
 
 # 查看 BAR (Base Address Register)
@@ -592,32 +645,46 @@ lspci -vvv -s 82:00.0 | grep -i width
 
 ## 5. 其他调试工具
 
-### 5.1 内核网络诊断
+### 5.1 内核中断诊断
+
+DPDK 数据面是轮询模式，收发包不产生中断。**但查看 `/proc/interrupts` 仍然有意义：目的是确认无关中断没有落在 DPDK 数据面核心上。**
+
+```
+DPDK 用 lcore 2-7 跑数据面:
+
+CPU 0,1: 管理核心，承载内核中断、ssh、系统服务
+CPU 2-7: DPDK 数据面，干净无中断
+
+如果 /proc/interrupts 显示 CPU2-7 上有中断:
+  → 这些中断会打断 DPDK 轮询循环
+  → 刷 cache、破坏流水线
+  → 造成延迟抖动
+  → 需要把它们赶到 CPU 0,1
+```
 
 ```bash
-# 查看中断分布
-cat /proc/interrupts | grep -E "eth|ixgbe|i40e"
+# 查看中断分布，关注 DPDK 核心上是否有无关中断
+# 假设 DPDK 用 CPU 2-7
+cat /proc/interrupts | head -1
+#            CPU0  CPU1  CPU2  CPU3  CPU4  CPU5  CPU6  CPU7
 
-# 输出:
-#  85:   123456   0   IR-PCI-MSI   edge   eth0-rx-0
-#  86:   234567   0   IR-PCI-MSI   edge   eth0-tx-0
-#  87:   345678   0   IR-PCI-MSI   edge   eth0-rx-1
-# ...
+# 查看是否有中断落在 DPDK 核心
+cat /proc/interrupts | awk 'NR==1 || ($3+$4+$5+$6+$7+$8) > 0 {print}'
 
-# 设置 IRQ affinity
-echo "1" > /proc/irq/85/smp_affinity
-echo "2" > /proc/irq/86/smp_affinity
+# 把 DPDK 核心的中断全部赶到管理核心
+for irq in $(cut -f1 -d: /proc/interrupts | tr -d ' '); do
+    echo "3" > /proc/irq/$irq/smp_affinity 2>/dev/null
+    # 3 = 0b11 = CPU 0 和 CPU 1
+done
 
-# 查看 softirqs
-cat /proc/softirqs | head -20
+# 更好的做法: 在 GRUB 里一次性配置
+# irqaffinity=0,1  把所有默认中断绑定到 CPU 0,1
+# isolcpus=2-15    把 CPU 2-15 从内核调度器隔离
+# nohz_full=2-15   减少时钟中断
+# rcu_nocbs=2-15   RCU 回调迁移到其他核
 
-# 输出:
-#                    CPU0       CPU1       CPU2
-#   HI:          123        234        345
-#   TIMER:      12345      23456      34567
-#   NET_TX:        12         23         34
-#   NET_RX:     12345      23456      34567
-# ...
+# 查看 softirqs (确认 NET_RX/NET_TX 不在 DPDK 核心上)
+cat /proc/softirqs
 
 # 查看网络统计
 cat /proc/net/snmp
@@ -639,166 +706,249 @@ cat /proc/net/nf_conntrack | head
 conntrack -L  # 需要 conntrack-tools
 ```
 
-### 5.2 DPDK 内部调试
+### 5.2 DPDK 日志系统 (rte_log)
 
 ```c
-// DPDK 日志系统 (rte_log)
-
 // 头文件
 #include <rte_log.h>
 
+// 日志级别 (从高到低):
+// RTE_LOG_EMERG   (1)  紧急
+// RTE_LOG_ALERT   (2)  警报
+// RTE_LOG_CRIT    (3)  严重
+// RTE_LOG_ERR     (4)  错误
+// RTE_LOG_WARNING (5)  警告
+// RTE_LOG_NOTICE  (6)  通知
+// RTE_LOG_INFO    (7)  信息
+// RTE_LOG_DEBUG   (8)  调试
+
+// ──────────────────────────────────────
 // 设置日志级别
-// EAL 选项: --log-level=<level>
-// 级别: emergency(0), alert(1), critical(2), error(3), warning(4),
-//       notice(5), info(6), debug(7)
+// ──────────────────────────────────────
 
-int
-setup_logging(void)
-{
-    // 全局日志级别
-    rte_log_set_global_level(RTE_LOG_INFO);
+// 全局日志级别
+rte_log_set_global_level(RTE_LOG_INFO);
 
-    // 模块日志级别
-    rte_log_set_level(RTE_LOG_DPdk, RTE_LOG_INFO);
-    rte_log_set_level(RTE_LOG_PMD, RTE_LOG_DEBUG);
+// 按模块设置 (EAL 选项或代码)
+rte_log_set_level(RTE_LOGTYPE_EAL, RTE_LOG_INFO);
 
-    return 0;
-}
+// 运行时通过 EAL 参数控制:
+// --log-level=lib.eal:info
+// --log-level=pmd.net.mlx5:debug
+// --log-level=user1:debug
 
-// 使用日志
-RTE_LOG(INFO, EAL, "Initializing EAL with %d args\n", argc);
-RTE_LOG(DEBUG, PMD, "TX packet on port %u queue %u\n", port_id, queue_id);
-RTE_LOG(ERR, APP, "Failed to initialize port %u\n", port_id);
+// ──────────────────────────────────────
+// 动态注册日志类型
+// ──────────────────────────────────────
 
-// 动态日志控制
-int
-set_module_log_level(const char *module, int level)
-{
-    struct rte_log_dynamic_reg {
-        const char *name;
-        uint32_t level;
-    };
+// 在应用中注册自己的日志类型
+RTE_LOG_REGISTER_DEFAULT(my_app_logtype, RTE_LOG_INFO);
 
-    // 运行时更改日志级别
-    // 通过 EAL 选项: --log-level=pmd.net.ixgbe:debug
-}
+// 使用:
+RTE_LOG(INFO, MY_APP, "Initializing port %u\n", port_id);
+RTE_LOG(ERR, MY_APP, "Failed to allocate mbuf\n");
+RTE_LOG(DEBUG, MY_APP, "packet len=%u on queue %u\n", m->pkt_len, q);
 
-// DPDK trace (DPDK 20.11+)
-#include <rte_trace.h>
-
-// 启用 trace
-// EAL 选项: --trace=.*
-
-// 定义 trace point
-RTE_TRACE_POINT(
-    rte_pktmbuf_alloc,
-    RTE_TRACE_POINT_ARGS(struct rte_mbuf *mbuf, uint16_t size),
-    rte_trace_point_emit_ptr(mbuf);
-    rte_trace_point_emit_uint16(size);
-);
-
-// 录制 trace
-rte_pktmbuf_alloc_trace(mbuf, size);
-
-// dump trace
-// app --trace-dump=/tmp/trace.dat
+// PMD 的日志类型由驱动自己注册，通过 EAL 参数控制:
+// --log-level=pmd.net.ixgbe:debug    // 只开 ixgbe PMD 的 debug
+// --log-level=pmd.net.*:info         // 所有 PMD 用 info 级别
 ```
 
-### 5.3 pdump 抓包
+### 5.3 DPDK trace (20.11+)
+
+DPDK trace 提供轻量级的 instrumentation，可以在不显著影响性能的情况下记录事件。
 
 ```c
-// DPDK pdump 工具
+#include <rte_trace_point.h>
 
-// pdump 启动需要 secondary 进程
-// ./dpdk-pdump -- --pdump  stats:stats.txt,flows:flows.txt
+// ──────────────────────────────────────
+// 定义 trace point (通常在头文件中)
+// ──────────────────────────────────────
 
-// 在应用中启用 pdump
-// EAL 参数: --vdev=net_pdump0
+// RTE_TRACE_POINT(名称, 参数列表, 字段emit)
+RTE_TRACE_POINT(
+    my_app_rx_burst,
+    RTE_TRACE_POINT_ARGS(uint16_t port, uint16_t queue, uint16_t nb),
+    rte_trace_point_emit_u16(port);
+    rte_trace_point_emit_u16(queue);
+    rte_trace_point_emit_u16(nb);
+)
 
-// 示例: 使用 pdump 抓包
-int
-enable_pdump(uint16_t port, uint16_t queue)
-{
-    struct rte_pdump_params params = {
-        .port = port,
-        .queue = queue,
-        .filter = {
-            .filtermask = RTE_PDUMP_FILTER_RX,
-        },
-        .ring = NULL,  // 使用默认 ring
-    };
+// ──────────────────────────────────────
+// 注册 trace point (在 C 文件中)
+// ──────────────────────────────────────
 
-    return rte_pdump_enable(&params);
-}
+RTE_TRACE_POINT_REGISTER(my_app_rx_burst, "my_app.rx_burst")
 
-// 抓取特定端口/队列
-rte_pdump_enable_by_deviceid("82:00.0", 0,
-                               RTE_PDUMP_FILTER_RX,
-                               NULL, NULL);
+// ──────────────────────────────────────
+// 在代码中调用 (内联函数，零开销或极低开销)
+// ──────────────────────────────────────
+
+my_app_rx_burst(port_id, queue_id, nb_rx);
+
+// ──────────────────────────────────────
+// 启用和录制
+// ──────────────────────────────────────
+
+// EAL 参数:
+// --trace=.*                    // 启用所有 trace point
+// --trace=my_app.*              // 只启用 my_app 的
+// --trace-dir=/tmp/trace        // 输出目录
 ```
 
-### 5.4 网络状态检查脚本
+### 5.4 dpdk-proc-info：运行时统计查看
+
+`dpdk-proc-info` 以 secondary 进程方式连接到运行中的 DPDK 应用，读取统计信息。
 
 ```bash
-#!/bin/bash
-# check_nic_status.sh - NIC 状态检查脚本
+# 查看端口基本统计
+dpdk-proc-info -- -p 0x3
 
-ETH=${1:-eth0}
+# 查看扩展统计 (xstats)
+dpdk-proc-info -- -p 0x3 --xstats
 
-echo "=============================================="
-echo " NIC Status Check: $ETH"
-echo "=============================================="
+# 只看特定前缀的 xstats
+dpdk-proc-info -- -p 0x3 --xstats-name-prefix=rx_
 
-echo ""
-echo "--- Device Info ---"
-ethtool -i $ETH 2>/dev/null || echo "ethtool failed (device may be DPDK-bound)"
+# 查看 mempool 信息
+dpdk-proc-info -- -p 0x3 --mempool
 
-echo ""
-echo "--- Link Status ---"
-ethtool $ETH 2>/dev/null | grep -E "Speed|Duplex|Link|Auto-neg"
+# 查看 RSS RETA
+dpdk-proc-info -- -p 0x3 --rss-hash
 
-echo ""
-echo "--- Offload Features ---"
-ethtool -k $ETH 2>/dev/null | grep -E "on|off"
-
-echo ""
-echo "--- Ring Buffers ---"
-ethtool -g $ETH 2>/dev/null
-
-echo ""
-echo "--- Interrupt Coalescing ---"
-ethtool -c $ETH 2>/dev/null | grep -E "usecs|frames|adaptive"
-
-echo ""
-echo "--- Statistics ---"
-ethtool -S $ETH 2>/dev/null | grep -E "packets|bytes|errors|dropped" | head -20
-
-echo ""
-echo "--- PCI Info ---"
-lspci -vvv -s $(cat /sys/class/net/$ETH/device/../vendor 2>/dev/null | sed 's/0x//'):$(cat /sys/class/net/$ETH/device/../device 2>/dev/null | sed 's/0x//') 2>/dev/null | head -30
-
-echo ""
-echo "--- Driver Binding ---"
-ls -la /sys/class/net/$ETH/device/driver 2>/dev/null
-cat /sys/class/net/$ETH/device/driver/module 2>/dev/null
-
-echo ""
-echo "--- Interrupt Affinity ---"
-for irq in $(grep -E "$ETH" /proc/interrupts | awk '{print $1}' | tr -d :); do
-    echo "IRQ $irq: $(cat /proc/irq/$irq/smp_affinity 2>/dev/null)"
-done
-
-echo ""
-echo "--- Socket Buffer ---"
-cat /proc/sys/net/core/rmem_max
-cat /proc/sys/net/core/wmem_max
-cat /proc/sys/net/core/rmem_default
-cat /proc/sys/net/core/wmem_default
-
-echo ""
-echo "--- Network Errors ---"
-ip -s link show $ETH | grep -E "errors|dropped|overrun|carrier"
+# 导出 xstats 到文件 (定时采集)
+dpdk-proc-info -- -p 0x3 --xstats --xstats-reset
 ```
+
+在应用内获取 xstats：
+
+```c
+// 获取 xstats 名称和值
+int nb_xstats = rte_eth_xstats_get(port_id, NULL, 0);
+struct rte_eth_xstat *xstats = calloc(nb_xstats, sizeof(*xstats));
+rte_eth_xstats_get(port_id, xstats, nb_xstats);
+
+// 获取 xstat 名称
+struct rte_eth_xstat_name *names = calloc(nb_xstats, sizeof(*names));
+rte_eth_xstats_get_names(port_id, names, nb_xstats);
+
+// 打印所有 xstats
+for (int i = 0; i < nb_xstats; i++)
+    printf("%s: %"PRIu64"\n", names[i].name, xstats[i].value);
+
+// 按 ID 获取单个 xstat
+uint64_t val;
+rte_eth_xstats_get_by_id(port_id, &xstat_id, &val, 1);
+
+// 重置 xstats
+rte_eth_xstats_reset(port_id);
+```
+
+### 5.5 dpdk-telemetry：现代运行时监控
+
+DPDK 21.11+ 引入了 telemetry 接口，通过 UNIX socket 提供 JSON 格式的运行时数据。比 `dpdk-proc-info` 更灵活。
+
+```bash
+# DPDK 应用需要启用 telemetry (默认启用)
+# EAL 参数: --telemetry
+
+# 使用 dpdk-telemetry 客户端
+dpdk-telemetry
+
+# 连接后可以执行命令:
+--> /ethdev/list
+{"status": "OK", "data": [0, 1]}
+
+--> /ethdev/stats,0
+{"status": "OK", "data": {"ipackets": 12345, "opackets": 67890, ...}}
+
+--> /ethdev/xstats,0
+{"status": "OK", "data": {"rx_good_packets": 12345, ...}}
+
+--> /mempool/list
+{"status": "OK", "data": ["mbuf_pool_socket0"]}
+
+--> /mempool/stats,mbuf_pool_socket0
+{"status": "OK", "data": {"avail": 7800, "in_use": 391, ...}}
+
+# 也可以直接用 curl/socat
+echo -e "/ethdev/stats,0\nquit" | socat - UNIX-CONNECT:/run/dpdk/rte/dpdk_telemetry.v2
+```
+
+### 5.6 pdump 和 dpdk-dumpcap 抓包
+
+DPDK 提供两种抓包工具。`dpdk-dumpcap`（推荐）替代了旧的 `dpdk-pdump`。
+
+```
+架构:
+
+Primary 进程 (你的 DPDK 应用)
+    │
+    │  调用 rte_pdump_init()  ← 必须显式调用
+    │
+    ├─ IPC socket
+    │
+    ▼
+Secondary 进程 (dpdk-dumpcap / dpdk-pdump)
+    │
+    ├─ rte_pdump_enable() 请求抓包
+    │   Primary 把 mbuf 复制到 ring
+    │
+    ▼
+  写 pcap/pcapng 文件
+```
+
+```bash
+# 1. Primary 进程必须初始化 pdump
+# 在你的 DPDK 应用启动时调用:
+rte_pdump_init(NULL);
+
+# 或者用 testpmd (自带 pdump init):
+dpdk-testpmd -l 0-3 -n 4 -- -i --port-topology=chained
+
+# 2. 用 dpdk-dumpcap 抓包 (推荐)
+dpdk-dumpcap -w /tmp/capture.pcapng
+
+# 3. 用 tcpdump 分析
+tcpdump -nr /tmp/capture.pcapng
+
+# 旧的 dpdk-pdump (兼容)
+dpdk-pdump -- --pdump 'port=0,queue=*,rx-dev=/tmp/rx.pcap,tx-dev=/tmp/tx.pcap'
+```
+
+应用内编程接口：
+
+```c
+#include <rte_pdump.h>
+
+// 初始化 (primary 进程)
+rte_pdump_init(NULL);
+
+// 启用抓包 (secondary 进程)
+struct rte_ring *ring = rte_ring_create("pdump_ring", 8192, socket, RING_F_SP_HK);
+struct rte_mempool *mp = rte_pktmbuf_pool_create("pdump_mp", 8191, 250, 0,
+        RTE_MBUF_DEFAULT_BUF_SIZE, socket);
+
+// 抓 port 0 的 RX 和 TX
+rte_pdump_enable(0, RTE_PDUMP_ALL_QUEUES,
+                 RTE_PDUMP_FLAG_RXTX,
+                 ring, mp, NULL);
+
+// 从 ring 读取抓到的包
+struct rte_mbuf *pkts[32];
+uint16_t n = rte_ring_dequeue_burst(ring, (void **)pkts, 32, NULL);
+for (uint16_t i = 0; i < n; i++) {
+    // 处理 pkts[i]
+    rte_pktmbuf_free(pkts[i]);
+}
+
+// 停止抓包
+rte_pdump_disable(0, RTE_PDUMP_ALL_QUEUES, RTE_PDUMP_FLAG_RXTX);
+```
+
+注意：pdump 会复制 mbuf，**不适合在高性能数据面开启**，仅用于调试。
+
+### 5.7 网络状态检查脚本
 
 ---
 
@@ -860,7 +1010,7 @@ perf 显示 RX-dropped 增加
 ─────────────────────────────────────
 
 1. 检查 mbuf pool 大小
-   $ ./dpdk-procinfo -l 0-7 -n 4 -- -p 0
+   $ dpdk-proc-info -l 0-7 -n 4 -- -p 0
    Mbuf Pool: mbuf_pool_socket0
      Count: 16384    In Use: 16384    Free: 0
 
@@ -931,7 +1081,7 @@ perf 显示 RX-dropped 增加
    # CPI > 2 说明有内存瓶颈
 
 5. 检查 RSS 配置
-   $ ./dpdk-procinfo -- -p 0
+   $ dpdk-proc-info -- -p 0
 
    # 确认 RSS 分布在多个队列
    # 确认应用从多个队列读取
@@ -960,29 +1110,33 @@ perf 显示 RX-dropped 增加
 
 1. **dpdk-devbind**：DPDK 设备绑定管理脚本，支持绑定/解绑 NIC 到 UIO/VFIO 驱动。
 
-2. **绑定流程**：检查 IOMMU → 加载驱动 (igb_uio/vfio-pci) → dpdk-devbind 绑定 → 验证。
+2. **VFIO 优于 igb_uio**：VFIO 支持 IOMMU 隔离，在内核主线，SR-IOV 必须用 VFIO。igb_uio 是 out-of-tree 模块，生产环境不推荐。
 
-3. **VFIO 优于 igb_uio**：VFIO 支持 IOMMU 隔离，更安全，性能更好。
+3. **IOMMU group**：同 group 的设备必须同时绑定 VFIO，否则会失败。可通过 `readlink /sys/bus/pci/devices/xxx/iommu_group` 查看。
 
-4. **常见绑定问题**：VFIO 权限、IOMMU 未启用、设备被占用、驱动不兼容。
+4. **绑定流程**：检查 IOMMU → 加载驱动 (vfio-pci) → dpdk-devbind 绑定 → 验证。
 
-5. **ethtool**：Linux NIC 配置工具，查看/设置 offload、ring buffer、中断合并、speed/duplex。
+5. **常见绑定问题**：VFIO 权限、IOMMU 未启用、IOMMU group 冲突、设备被占用、驱动不兼容。
 
-6. **DPDK 占用时 ethtool 限制**：DPDK 占用的 NIC 无法用 ethtool 管理，需先解绑。
+6. **ethtool**：Linux NIC 配置工具，查看/设置 offload、ring buffer、中断合并、speed/duplex。DPDK 占用的 NIC 无法用 ethtool。
 
-7. **lspci**：PCI 设备诊断，查看配置空间 BAR、链路状态、能力寄存器。
+7. **lspci**：PCI 设备诊断，查看配置空间 BAR、链路状态、能力寄存器。`setpci` 可修改配置空间但危险，除非完全理解否则不要用。
 
-8. **内核网络诊断**：`/proc/interrupts` (中断分布)、`/proc/softirqs` (软中断)、`/proc/net/snmp` (网络统计)。
+8. **rte_log**：日志系统，使用 `RTE_LOG_REGISTER_DEFAULT()` 注册自定义类型，`--log-level=EAL:info` 控制。旧的 `RTE_LOGTYPE_PMD` 已移除，PMD 日志由驱动自行注册。
 
-9. **DPDK rte_log**：日志系统，支持模块级别控制，`RTE_LOG()` 宏，`--log-level` EAL 选项。
+9. **rte_trace** (20.11+)：`RTE_TRACE_POINT()` 定义 trace point，`--trace=.*` EAL 选项启用。
 
-10. **DPDK trace** (20.11+)：`RTE_TRACE_POINT()` 定义跟踪点，`--trace` EAL 选项启用录制。
+10. **dpdk-proc-info**：secondary 进程方式读取运行中应用的 stats/xstats/mempool 信息。
 
-11. **pdump**：DPDK 内置抓包工具，需要 secondary 进程。
+11. **dpdk-telemetry** (21.11+)：通过 UNIX socket 提供 JSON 格式数据，比 proc-info 更灵活。
 
-12. **调试脚本**：自动化检查 NIC 状态、PCI 信息、中断亲和、socket buffer。
+12. **dpdk-dumpcap**：推荐抓包工具，替代旧版 dpdk-pdump。Primary 进程需调用 `rte_pdump_init()`。pdump 会复制 mbuf，仅用于调试。
 
-13. **实战案例**：NIC 绑定权限问题 (chown/chmod)、mbuf pool 耗尽 (增大 pool)、性能低于预期 (HugePage/透明大页)。
+13. **pdump API**：`rte_pdump_enable(port, queue, flags, ring, mp, NULL)`，不是传入 struct。
+
+14. **xstats API**：`rte_eth_xstats_get()` 获取详细统计，可按名称前缀过滤。
+
+15. **实战案例**：NIC 绑定权限问题 (chown/chmod)、mbuf pool 耗尽 (增大 pool)、性能低于预期 (HugePage/透明大页)。
 
 **下一篇预告**：[[2026-04-09-dpdk-deep-dive-ch32-pktgen|第三十二章]]将讲解流量生成——pktgen 流量生成与测试场景。
 

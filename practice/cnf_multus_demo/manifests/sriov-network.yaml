@@ -1,0 +1,94 @@
+# SR-IOV based CNF data path
+# Requires: SR-IOV Network Operator, Multus, DPDK-enabled NIC
+#
+# Data path:
+#   App Pod → SR-IOV VF (PF: ens1f0) → DPDK PMD in CNF → memif → next hop
+#
+# Hardware:
+#   Intel XXV710 (i40e), Intel E810 (ice), Mellanox ConnectX-5/6 (mlx5)
+#
+# Each VF is passed through to the CNF Pod via vfio-pci driver.
+# The CNF uses DPDK PMD to poll the VF directly — no kernel involvement.
+---
+apiVersion: sriovnetwork.openshift.io/v1
+kind: SriovNetwork
+metadata:
+  name: cnf-sriov-net
+spec:
+  resourceName: intel_nic
+  networkNamespace: cnf-namespace
+  ipam: |
+    {
+      "type": "whereabouts",
+      "range": "10.10.2.0/24",
+      "gateway": "10.10.2.254"
+    }
+  spoofChk: "off"
+  trust: "on"
+  linkState: "enable"
+
+---
+# CNF Pod using SR-IOV VF with DPDK
+apiVersion: v1
+kind: Pod
+metadata:
+  name: cnf-sriov-pod
+  annotations:
+    k8s.v1.cni.cncf.io/networks: |
+      [
+        {
+          "name": "inside-memif",
+          "interface": "net1",
+          "cni-args": {
+            "memifRole": "master",
+            "memifSocket": "/tmp/memif_cnf_in.sock"
+          }
+        },
+        {
+          "name": "cnf-sriov-net",
+          "interface": "net2",
+          "ips": ["10.10.2.1/24"]
+        }
+      ]
+spec:
+  containers:
+    - name: vpp-cnf
+      image: ghcr.io/projectcalico/vpp:latest
+      securityContext:
+        privileged: true
+      resources:
+        requests:
+          cpu: "4"
+          memory: "2Gi"
+          hugepages-1Gi: "2Gi"
+          # Request the SR-IOV VF resource
+          intel.com/intel_nic: "1"
+        limits:
+          cpu: "4"
+          memory: "2Gi"
+          hugepages-1Gi: "2Gi"
+          intel.com/intel_nic: "1"
+      volumeMounts:
+        - name: hugepages
+          mountPath: /dev/hugepages
+        - name: memif-socket
+          mountPath: /tmp/memif_cnf_in.sock
+      command:
+        - vpp
+        - -c
+        - /etc/vpp/startup.conf
+      # VPP startup.conf would use DPDK to bind the VF:
+      # dpdk {
+      #   dev 0000:af:01.0 { name net2 }  # SR-IOV VF
+      # }
+      # Then create memif for the inside interface:
+      # create interface memif id 1 master mif-socket /tmp/memif_cnf_in.sock
+
+  volumes:
+    - name: hugepages
+      emptyDir:
+        medium: HugePages
+    - name: memif-socket
+      hostPath:
+        path: /tmp/memif_cnf_in.sock
+        type: SocketOrCreate

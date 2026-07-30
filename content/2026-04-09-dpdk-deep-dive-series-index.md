@@ -55,17 +55,18 @@ tags:
 
 DPDK 与虚拟化技术的深度融合——KNI、vhost、vDPA、向量加速。
 
-| #   | 章节                                                           | 主题                                        | 状态 |
-| --- | -------------------------------------------------------------- | ------------------------------------------- | ---- |
-| 15  | [[2026-04-09-dpdk-deep-dive-ch15-kni-interface\|第十五章]]     | KNI (Kernel NIC Interface) 用户态与内核通信 | ✅   |
-| 15b | [[2026-04-09-dpdk-deep-dive-ch15b-af-xdp\|第十五章补充]]       | AF_XDP —— KNI 的现代替代                    | ✅   |
-| 16  | [[2026-04-09-dpdk-deep-dive-ch16-vhost-user\|第十六章]]        | vhost-user 与 virtio 加速                   | ✅   |
-| 16a | [[2026-04-09-dpdk-deep-dive-ch16a-ovs-dpdk-vhost-user-lab\|第十六章补充]] | OVS-DPDK 与 vhost-user 最小实战 | ✅   |
-| 17  | [[2026-04-09-dpdk-deep-dive-ch17-vhost-scsi\|第十七章]]        | vhost-scsi 存储虚拟化                       | ✅   |
-| 18  | [[2026-04-09-dpdk-deep-dive-ch18-ivshmem\|第十八章]]           | IVSHMEM VM 间共享内存                       | ✅   |
-| 19  | [[2026-04-09-dpdk-deep-dive-ch19-vdpa\|第十九章]]              | vDPA 数据面加速与驱动                       | ✅   |
-| 19b | [[2026-04-09-dpdk-deep-dive-ch19b-dpu-smartnic\|第十九章补充]] | DPU/SmartNIC 基础                           | ✅   |
-| 20  | [[2026-04-09-dpdk-deep-dive-ch20-simd-avx512\|第二十章]]       | AVX512/SIMD 数据包处理向量化                | ✅   |
+| #   | 章节                                                                      | 主题                                        | 状态 |
+| --- | ------------------------------------------------------------------------- | ------------------------------------------- | ---- |
+| 15  | [[2026-04-09-dpdk-deep-dive-ch15-kni-interface\|第十五章]]                | KNI (Kernel NIC Interface) 用户态与内核通信 | ✅   |
+| 15b | [[2026-04-09-dpdk-deep-dive-ch15b-af-xdp\|第十五章补充]]                  | AF_XDP —— KNI 的现代替代                    | ✅   |
+| 16  | [[2026-04-09-dpdk-deep-dive-ch16-vhost-user\|第十六章]]                   | vhost-user 与 virtio 加速                   | ✅   |
+| 16a | [[2026-04-09-dpdk-deep-dive-ch16a-ovs-dpdk-vhost-user-lab\|第十六章补充]] | OVS-DPDK 与 vhost-user 最小实战             | ✅   |
+| 16b | [[2026-04-09-dpdk-deep-dive-ch33-cloud-hypervisor\|第十六章补充]]         | Cloud Hypervisor 与 DPDK 虚拟化路径         | ✅   |
+| 17  | [[2026-04-09-dpdk-deep-dive-ch17-vhost-scsi\|第十七章]]                   | vhost-scsi 存储虚拟化                       | ✅   |
+| 18  | [[2026-04-09-dpdk-deep-dive-ch18-ivshmem\|第十八章]]                      | IVSHMEM VM 间共享内存                       | ✅   |
+| 19  | [[2026-04-09-dpdk-deep-dive-ch19-vdpa\|第十九章]]                         | vDPA 数据面加速与驱动                       | ✅   |
+| 19b | [[2026-04-09-dpdk-deep-dive-ch19b-dpu-smartnic\|第十九章补充]]            | DPU/SmartNIC 基础                           | ✅   |
+| 20  | [[2026-04-09-dpdk-deep-dive-ch20-simd-avx512\|第二十章]]                  | AVX512/SIMD 数据包处理向量化                | ✅   |
 
 ---
 
@@ -86,15 +87,15 @@ DPDK 的安全能力——cryptodev、IPsec、WireGuard 与硬件卸载。
 
 DPDK 极致性能的工程实践——Cache、NUMA、同步机制与 profiling。
 
-| #   | 章节                                                              | 主题                                    | 状态 |
-| --- | ----------------------------------------------------------------- | --------------------------------------- | ---- |
-| 25  | [[2026-04-09-dpdk-deep-dive-ch25-cache-optimization\|第二十五章]] | Cache 优化：false sharing 与预取        | ✅   |
-| 26  | [[2026-04-09-dpdk-deep-dive-ch26-numa-optimization\|第二十六章]]  | NUMA 亲和性与 local/remote 访问         | ✅   |
-| 27  | [[2026-04-09-dpdk-deep-dive-ch27-memory-dma\|第二十七章]]         | 内存优化：DMA 引擎与零拷贝              | ✅   |
-| 27a | [[2026-04-09-dpdk-deep-dive-ch27a-vdpa-dsa-host-guest-accel\|第二十七章补充]] | vDPA、DSA 与 Host/Guest 数据面卸载 | ✅   |
-| 28  | [[2026-04-09-dpdk-deep-dive-ch28-multicore-sync\|第二十八章]]     | 多核同步：spinlock、RCU、memory reorder | ✅   |
-| 29  | [[2026-04-09-dpdk-deep-dive-ch29-profiling\|第二十九章]]          | Profiling：dpdk-procinfo、perf、火焰图  | ✅   |
-| 30  | [[2026-04-09-dpdk-deep-dive-ch30-performance-tuning\|第三十章]]   | 性能调优：batching、RSS、flow director  | ✅   |
+| #   | 章节                                                                          | 主题                                    | 状态 |
+| --- | ----------------------------------------------------------------------------- | --------------------------------------- | ---- |
+| 25  | [[2026-04-09-dpdk-deep-dive-ch25-cache-optimization\|第二十五章]]             | Cache 优化：false sharing 与预取        | ✅   |
+| 26  | [[2026-04-09-dpdk-deep-dive-ch26-numa-optimization\|第二十六章]]              | NUMA 亲和性与 local/remote 访问         | ✅   |
+| 27  | [[2026-04-09-dpdk-deep-dive-ch27-memory-dma\|第二十七章]]                     | 内存优化：DMA 引擎与零拷贝              | ✅   |
+| 27a | [[2026-04-09-dpdk-deep-dive-ch27a-vdpa-dsa-host-guest-accel\|第二十七章补充]] | vDPA、DSA 与 Host/Guest 数据面卸载      | ✅   |
+| 28  | [[2026-04-09-dpdk-deep-dive-ch28-multicore-sync\|第二十八章]]                 | 多核同步：spinlock、RCU、memory reorder | ✅   |
+| 29  | [[2026-04-09-dpdk-deep-dive-ch29-profiling\|第二十九章]]                      | Profiling：dpdk-procinfo、perf、火焰图  | ✅   |
+| 30  | [[2026-04-09-dpdk-deep-dive-ch30-performance-tuning\|第三十章]]               | 性能调优：batching、RSS、flow director  | ✅   |
 
 ---
 
@@ -118,6 +119,7 @@ DPDK 与前沿技术的融合——P4、SR-IOV、智能网卡、DOCA、云原生
 | #   | 章节                                                                | 主题                                 | 状态 |
 | --- | ------------------------------------------------------------------- | ------------------------------------ | ---- |
 | 35  | [[2026-04-09-dpdk-deep-dive-ch35-sr-iov\|第三十五章]]               | SR-IOV 与 VF 管理机制                | ✅   |
+| 35a | [[2026-04-09-dpdk-deep-dive-ch32-sriov-vf\|第三十五章补充]]         | SR-IOV 与 VF 实战补充                | ✅   |
 | 36  | [[2026-04-09-dpdk-deep-dive-ch36-p4-dpdk\|第三十六章]]              | P4 可编程数据面与 behavioral model   | ✅   |
 | 37  | [[2026-04-09-dpdk-deep-dive-ch37-smartnic\|第三十七章]]             | 智能网卡：IPU/DPU、Capsule、Barefoot | ✅   |
 | 38  | [[2026-04-09-dpdk-deep-dive-ch38-dpdk-ebpf\|第三十八章]]            | DPDK + eBPF：XDP 与 AF_XDP 协同      | ✅   |

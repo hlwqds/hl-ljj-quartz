@@ -143,14 +143,14 @@ Compute Pool
 
 商业收益：
 
-| 方向       | 价值                                                   |
-| ---------- | ------------------------------------------------------ |
-| CAPEX      | 减少专用硬件采购，使用通用服务器                       |
-| OPEX       | 自动化部署、扩缩容、升级，降低人工运维                 |
-| 上线速度   | 新业务从采购硬件变成部署软件镜像                       |
-| 多租户     | 同一资源池给多个客户开不同规格实例                     |
-| 弹性       | 流量高峰扩容，低峰回收资源                             |
-| 供应链     | 降低对单一硬件盒子厂商的绑定                           |
+| 方向     | 价值                                   |
+| -------- | -------------------------------------- |
+| CAPEX    | 减少专用硬件采购，使用通用服务器       |
+| OPEX     | 自动化部署、扩缩容、升级，降低人工运维 |
+| 上线速度 | 新业务从采购硬件变成部署软件镜像       |
+| 多租户   | 同一资源池给多个客户开不同规格实例     |
+| 弹性     | 流量高峰扩容，低峰回收资源             |
+| 供应链   | 降低对单一硬件盒子厂商的绑定           |
 
 ---
 
@@ -192,13 +192,13 @@ Compute Pool
 
 几个术语：
 
-| 术语 | 含义 |
-| ---- | ---- |
-| NFVI | NFV Infrastructure，承载 NFV 的基础设施 |
-| VNF  | Virtual Network Function，运行在 VM 里的网络功能 |
+| 术语 | 含义                                                       |
+| ---- | ---------------------------------------------------------- |
+| NFVI | NFV Infrastructure，承载 NFV 的基础设施                    |
+| VNF  | Virtual Network Function，运行在 VM 里的网络功能           |
 | CNF  | Cloud-native Network Function，运行在容器/K8s 里的网络功能 |
-| MANO | Management and Orchestration，管理编排系统 |
-| VIM  | Virtualized Infrastructure Manager，例如 OpenStack |
+| MANO | Management and Orchestration，管理编排系统                 |
+| VIM  | Virtualized Infrastructure Manager，例如 OpenStack         |
 
 ---
 
@@ -224,14 +224,14 @@ Kubernetes Pod
 
 对比：
 
-| 维度       | VNF                                  | CNF                                      |
-| ---------- | ------------------------------------ | ---------------------------------------- |
-| 承载形式   | VM                                   | 容器 / Pod                               |
-| 隔离       | 强，硬件虚拟化隔离                   | 较轻，依赖 namespace/cgroup/seccomp 等   |
-| 启动速度   | 较慢                                 | 快                                       |
-| 运维模型   | OpenStack / VM 生命周期              | Kubernetes / Helm / Operator             |
-| 性能路径   | virtio/vhost-user/SR-IOV             | SR-IOV/CNI/AF_XDP/DPDK/vhost-user/memif  |
-| 典型场景   | 传统电信云、虚拟网络设备             | 云原生 5G、边缘网络、安全网关            |
+| 维度     | VNF                      | CNF                                     |
+| -------- | ------------------------ | --------------------------------------- |
+| 承载形式 | VM                       | 容器 / Pod                              |
+| 隔离     | 强，硬件虚拟化隔离       | 较轻，依赖 namespace/cgroup/seccomp 等  |
+| 启动速度 | 较慢                     | 快                                      |
+| 运维模型 | OpenStack / VM 生命周期  | Kubernetes / Helm / Operator            |
+| 性能路径 | virtio/vhost-user/SR-IOV | SR-IOV/CNI/AF_XDP/DPDK/vhost-user/memif |
+| 典型场景 | 传统电信云、虚拟网络设备 | 云原生 5G、边缘网络、安全网关           |
 
 ---
 
@@ -400,17 +400,17 @@ NFV 的难点不是“把程序放进 VM”这么简单，而是要让软件网�
 
 关键挑战：
 
-| 挑战          | 说明 |
-| ------------- | ---- |
-| 性能确定性    | p99/p999 延迟、pps、抖动都要可控 |
-| NUMA          | NIC、CPU、mempool、VNF 必须同 socket 对齐 |
-| CPU pinning   | 不能让 vCPU 被随意调度迁移 |
-| hugepage      | 减少 TLB miss，保证 vhost-user 共享内存稳定 |
-| 多队列/RSS    | flow 必须稳定分配到正确 queue/lcore |
-| 状态迁移      | flow table、NAT state、防火墙会话状态难迁移 |
-| 可观测性      | 丢包点可能在 NIC、vSwitch、vhost、Guest、VNF 任意一层 |
-| 升级和回滚    | 网络功能升级不能大面积中断流量 |
-| 多租户隔离    | 性能隔离和安全隔离都要保证 |
+| 挑战        | 说明                                                  |
+| ----------- | ----------------------------------------------------- |
+| 性能确定性  | p99/p999 延迟、pps、抖动都要可控                      |
+| NUMA        | NIC、CPU、mempool、VNF 必须同 socket 对齐             |
+| CPU pinning | 不能让 vCPU 被随意调度迁移                            |
+| hugepage    | 减少 TLB miss，保证 vhost-user 共享内存稳定           |
+| 多队列/RSS  | flow 必须稳定分配到正确 queue/lcore                   |
+| 状态迁移    | flow table、NAT state、防火墙会话状态难迁移           |
+| 可观测性    | 丢包点可能在 NIC、vSwitch、vhost、Guest、VNF 任意一层 |
+| 升级和回滚  | 网络功能升级不能大面积中断流量                        |
+| 多租户隔离  | 性能隔离和安全隔离都要保证                            |
 
 ---
 
@@ -437,13 +437,13 @@ Guest DPDK app
 
 区别：
 
-| 维度       | 普通云主机                  | NFV VM |
-| ---------- | --------------------------- | ------ |
-| 应用模型   | socket 应用                 | packet processing app |
-| 网络栈     | Guest Linux kernel          | DPDK/VPP/自研 fast path |
-| 目标       | 通用业务                    | 转发、安全、NAT、路由 |
-| 性能指标   | 带宽、连接数、延迟          | pps、cycles/packet、tail latency |
-| 运维复杂度 | 低                          | 高 |
+| 维度       | 普通云主机         | NFV VM                           |
+| ---------- | ------------------ | -------------------------------- |
+| 应用模型   | socket 应用        | packet processing app            |
+| 网络栈     | Guest Linux kernel | DPDK/VPP/自研 fast path          |
+| 目标       | 通用业务           | 转发、安全、NAT、路由            |
+| 性能指标   | 带宽、连接数、延迟 | pps、cycles/packet、tail latency |
+| 运维复杂度 | 低                 | 高                               |
 
 ---
 

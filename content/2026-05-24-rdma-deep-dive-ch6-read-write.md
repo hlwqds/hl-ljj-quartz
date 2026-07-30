@@ -5,11 +5,7 @@ description: "解释 RDMA Read/Write 的远程内存访问语义，以及 remote
 tags: [rdma, series, libibverbs, memory, networking]
 ---
 
-> [!info] RDMA 深度探索系列
-> 0. [[2026-05-24-rdma-deep-dive-series-index|系列索引]]
-> 5. [[2026-05-24-rdma-deep-dive-ch5-send-recv|第五章：Send/Recv]]
-> 6. **第六章：RDMA Read/Write**
-> 7. [[2026-05-24-rdma-deep-dive-ch7-completion-debugging|第七章：Completion 与调试]]
+> [!info] RDMA 深度探索系列 0. [[2026-05-24-rdma-deep-dive-series-index|系列索引]] 5. [[2026-05-24-rdma-deep-dive-ch5-send-recv|第五章：Send/Recv]] 6. **第六章：RDMA Read/Write** 7. [[2026-05-24-rdma-deep-dive-ch7-completion-debugging|第七章：Completion 与调试]]
 
 # RDMA 深度探索（六）：RDMA Read/Write 远程内存语义
 
@@ -17,11 +13,11 @@ RDMA Read/Write 是 RDMA 最有代表性的能力：一端可以直接读写另�
 
 ## 1. 和 Send/Recv 的区别
 
-| 操作 | 远端是否需要 post_recv | 是否需要 `remote_addr + rkey` | 典型语义 |
-| --- | --- | --- | --- |
-| Send/Recv | 需要 | 不需要 | 消息通信 |
-| RDMA Write | 不需要 | 需要 | 写远端内存 |
-| RDMA Read | 不需要 | 需要 | 读远端内存 |
+| 操作       | 远端是否需要 post_recv | 是否需要 `remote_addr + rkey` | 典型语义   |
+| ---------- | ---------------------- | ----------------------------- | ---------- |
+| Send/Recv  | 需要                   | 不需要                        | 消息通信   |
+| RDMA Write | 不需要                 | 需要                          | 写远端内存 |
+| RDMA Read  | 不需要                 | 需要                          | 读远端内存 |
 
 Send/Recv 的接收位置由远端 receive WR 决定。
 

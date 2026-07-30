@@ -634,16 +634,16 @@ ovs-appctl dpif/show
 
 这个手工实验和 OpenStack 的对应关系大概是：
 
-| 手工实验对象 | OpenStack 里谁负责 |
-| --- | --- |
-| QEMU 进程 | Nova compute / libvirt |
-| `virtio-net-pci` | Nova/libvirt domain XML |
-| hugepage memory backend | Nova flavor + image metadata + libvirt |
-| vhost-user socket path | Nova + Neutron port binding |
-| `dpdkvhostuserclient` port | Neutron OVS agent / OVSDB |
-| `br-vhu` | br-int / br-phy / provider bridge |
-| OVS-DPDK userspace datapath | ovs-vswitchd + DPDK PMD |
-| 物理 DPDK NIC | Neutron bridge mapping + OVS DPDK physical port |
+| 手工实验对象                | OpenStack 里谁负责                              |
+| --------------------------- | ----------------------------------------------- |
+| QEMU 进程                   | Nova compute / libvirt                          |
+| `virtio-net-pci`            | Nova/libvirt domain XML                         |
+| hugepage memory backend     | Nova flavor + image metadata + libvirt          |
+| vhost-user socket path      | Nova + Neutron port binding                     |
+| `dpdkvhostuserclient` port  | Neutron OVS agent / OVSDB                       |
+| `br-vhu`                    | br-int / br-phy / provider bridge               |
+| OVS-DPDK userspace datapath | ovs-vswitchd + DPDK PMD                         |
+| 物理 DPDK NIC               | Neutron bridge mapping + OVS DPDK physical port |
 
 OpenStack 做的是自动化编排，不改变 vhost-user 的本质：
 

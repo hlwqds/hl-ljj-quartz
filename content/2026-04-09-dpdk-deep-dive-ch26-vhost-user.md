@@ -168,15 +168,15 @@ Guest 必须看到一个具体的虚拟 PCI/MMIO 设备，才能枚举设备、�
 
 这条路径里的核心分工：
 
-| 层次              | 作用                                                     |
-| ----------------- | -------------------------------------------------------- |
-| Guest application | 使用普通 socket，不感知 virtio/vhost                     |
-| Guest kernel      | 处理 TCP/IP、路由、防火墙、skb                           |
-| virtio-net driver | Guest 前端驱动，把 skb 映射到 virtqueue                  |
-| QEMU/KVM          | 提供 virtio-net 设备模型，处理控制面和通知机制           |
-| vhost 后端        | 在 Host 侧处理 virtqueue，减少 QEMU 数据面开销           |
-| Host vSwitch      | 执行云网络规则，决定包进入哪个 VM、tunnel 或物理端口     |
-| Physical NIC      | 连接物理网络或 underlay 网络                             |
+| 层次              | 作用                                                 |
+| ----------------- | ---------------------------------------------------- |
+| Guest application | 使用普通 socket，不感知 virtio/vhost                 |
+| Guest kernel      | 处理 TCP/IP、路由、防火墙、skb                       |
+| virtio-net driver | Guest 前端驱动，把 skb 映射到 virtqueue              |
+| QEMU/KVM          | 提供 virtio-net 设备模型，处理控制面和通知机制       |
+| vhost 后端        | 在 Host 侧处理 virtqueue，减少 QEMU 数据面开销       |
+| Host vSwitch      | 执行云网络规则，决定包进入哪个 VM、tunnel 或物理端口 |
+| Physical NIC      | 连接物理网络或 underlay 网络                         |
 
 对比 Guest DPDK 场景：
 

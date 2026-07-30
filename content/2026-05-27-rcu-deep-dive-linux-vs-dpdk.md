@@ -31,11 +31,11 @@ RCU（Read-Copy-Update）是一种**读端几乎零开销**的同步机制。核
 
 ### 1.2 RCU 的三个角色
 
-| 角色 | 职责 | 开销 |
-|------|------|------|
-| **Reader（读者）** | 读共享数据 | 几乎为零 |
-| **Updater（写者）** | 创建副本，替换指针，注册回调 | 中等 |
-| **Reclaimer（回收者）** | Grace Period 结束后释放旧数据 | 低 |
+| 角色                    | 职责                          | 开销     |
+| ----------------------- | ----------------------------- | -------- |
+| **Reader（读者）**      | 读共享数据                    | 几乎为零 |
+| **Updater（写者）**     | 创建副本，替换指针，注册回调  | 中等     |
+| **Reclaimer（回收者）** | Grace Period 结束后释放旧数据 | 低       |
 
 ### 1.3 核心问题
 
@@ -1691,13 +1691,13 @@ Updater: ──[替换指针]──[call_rcu]──[GP 开始]──────
 
 Linux 内核的 GP 检测是**自动的**，由内核基础设施驱动，不需要应用线程主动参与：
 
-| 驱动源 | 机制 | 作用 |
-|--------|------|------|
-| 时钟中断 | `CONFIG_HZ`（通常 250/1000 Hz） | 周期性触发 `rcu_check_callbacks()` |
-| 软中断 | `RCU_SOFTIRQ` | 处理 QS 上报、GP 推进、回调执行 |
-| 上下文切换 | `schedule()` | 标记当前 CPU 通过 QS |
-| kthread | `rcu_gp_kthread` | 管理 GP 状态机（启动/推进/结束） |
-| NOCB kthread | `rcu_nocb_kthread` | 卸载回调执行到专用 CPU |
+| 驱动源       | 机制                            | 作用                               |
+| ------------ | ------------------------------- | ---------------------------------- |
+| 时钟中断     | `CONFIG_HZ`（通常 250/1000 Hz） | 周期性触发 `rcu_check_callbacks()` |
+| 软中断       | `RCU_SOFTIRQ`                   | 处理 QS 上报、GP 推进、回调执行    |
+| 上下文切换   | `schedule()`                    | 标记当前 CPU 通过 QS               |
+| kthread      | `rcu_gp_kthread`                | 管理 GP 状态机（启动/推进/结束）   |
+| NOCB kthread | `rcu_nocb_kthread`              | 卸载回调执行到专用 CPU             |
 
 ---
 
@@ -2027,19 +2027,19 @@ void update_route(uint32_t ip, struct route_entry *new_route)
 
 ### 6.2 详细特性对比
 
-| 维度 | Linux Tree RCU | DPDK QSBR RCU |
-|------|---------------|----------------|
+| 维度             | Linux Tree RCU                                          | DPDK QSBR RCU                                   |
+| ---------------- | ------------------------------------------------------- | ----------------------------------------------- |
 | **静默状态检测** | 自动（调度器/时钟中断检测上下文切换、idle、用户态切换） | 手动（线程主动调用 `rte_rcu_qsbr_quiescent()`） |
-| **读者开销** | `preempt_disable/enable` 或 per-task 嵌套计数 | 写一个 per-thread `locked` 标志 |
-| **写者等待** | `call_rcu()` 异步回调 或 `synchronize_rcu()` 阻塞 | `synchronize()` 阻塞 或 `check()` 非阻塞轮询 |
-| **GP 检测粒度** | 全系统所有 CPU | 仅注册的线程 |
-| **GP 检测架构** | Tree RCU 分层（`rcu_node` 树，O(log N)） | 直接遍历 per-thread 计数器（O(N)） |
-| **回调执行** | 内核软中断 `RCU_SOFTIRQ` 或 NOCB kthread | 写者线程自己执行或在 `check()` 后执行 |
-| **抢占支持** | 支持（Preemptible RCU） | 不需要（无抢占环境） |
-| **适用场景** | 通用内核代码（文件系统、网络协议栈、驱动） | DPDK 数据面（固定核绑定的 poll-mode 线程） |
-| **代码规模** | ~10000+ 行 | ~500 行 |
-| **CPU 热插拔** | 支持 | 不支持 |
-| **内存屏障** | `rcu_dereference` 包含依赖屏障 | 读者无需屏障（同核绑定） |
+| **读者开销**     | `preempt_disable/enable` 或 per-task 嵌套计数           | 写一个 per-thread `locked` 标志                 |
+| **写者等待**     | `call_rcu()` 异步回调 或 `synchronize_rcu()` 阻塞       | `synchronize()` 阻塞 或 `check()` 非阻塞轮询    |
+| **GP 检测粒度**  | 全系统所有 CPU                                          | 仅注册的线程                                    |
+| **GP 检测架构**  | Tree RCU 分层（`rcu_node` 树，O(log N)）                | 直接遍历 per-thread 计数器（O(N)）              |
+| **回调执行**     | 内核软中断 `RCU_SOFTIRQ` 或 NOCB kthread                | 写者线程自己执行或在 `check()` 后执行           |
+| **抢占支持**     | 支持（Preemptible RCU）                                 | 不需要（无抢占环境）                            |
+| **适用场景**     | 通用内核代码（文件系统、网络协议栈、驱动）              | DPDK 数据面（固定核绑定的 poll-mode 线程）      |
+| **代码规模**     | ~10000+ 行                                              | ~500 行                                         |
+| **CPU 热插拔**   | 支持                                                    | 不支持                                          |
+| **内存屏障**     | `rcu_dereference` 包含依赖屏障                          | 读者无需屏障（同核绑定）                        |
 
 ### 6.3 根本差异
 
@@ -2132,21 +2132,21 @@ void update_route(uint32_t ip, struct route_entry *new_route)
 
 ### 7.1 核心操作
 
-| 操作 | API | 说明 |
-|------|-----|------|
-| 创建 | `rte_rcu_qsbr_create()` | 分配并初始化 QSBR 变量 |
-| 销毁 | `rte_rcu_qsbr_destroy()` | 释放 QSBR 变量 |
-| 注册线程 | `rte_rcu_qsbr_thread_register()` | 将线程加入监控列表 |
-| 上线 | `rte_rcu_qsbr_thread_online()` | 标记线程为活跃 |
-| 下线 | `rte_rcu_qsbr_thread_offline()` | 标记线程为不活跃 |
-| 注销线程 | `rte_rcu_qsbr_thread_unregister()` | 从监控列表移除 |
-| 进入临界区 | `rte_rcu_qsbr_lock()` | 标记线程进入 RCU 临界区 |
-| 退出临界区 | `rte_rcu_qsbr_unlock()` | 标记线程退出 RCU 临界区 |
-| 报告静默 | `rte_rcu_qsbr_quiescent()` | 报告线程已通过静默状态 |
-| 启动 GP | `rte_rcu_qsbr_start()` | 递增 token，返回新 token |
-| 检查 GP | `rte_rcu_qsbr_check()` | 检查指定 token 的 GP 是否结束 |
-| 同步等待 | `rte_rcu_qsbr_synchronize()` | 阻塞等待 GP 结束 |
-| 轮询 GP | `rte_rcu_qsbr_poll()` | 非阻塞检查并等待 |
+| 操作       | API                                | 说明                          |
+| ---------- | ---------------------------------- | ----------------------------- |
+| 创建       | `rte_rcu_qsbr_create()`            | 分配并初始化 QSBR 变量        |
+| 销毁       | `rte_rcu_qsbr_destroy()`           | 释放 QSBR 变量                |
+| 注册线程   | `rte_rcu_qsbr_thread_register()`   | 将线程加入监控列表            |
+| 上线       | `rte_rcu_qsbr_thread_online()`     | 标记线程为活跃                |
+| 下线       | `rte_rcu_qsbr_thread_offline()`    | 标记线程为不活跃              |
+| 注销线程   | `rte_rcu_qsbr_thread_unregister()` | 从监控列表移除                |
+| 进入临界区 | `rte_rcu_qsbr_lock()`              | 标记线程进入 RCU 临界区       |
+| 退出临界区 | `rte_rcu_qsbr_unlock()`            | 标记线程退出 RCU 临界区       |
+| 报告静默   | `rte_rcu_qsbr_quiescent()`         | 报告线程已通过静默状态        |
+| 启动 GP    | `rte_rcu_qsbr_start()`             | 递增 token，返回新 token      |
+| 检查 GP    | `rte_rcu_qsbr_check()`             | 检查指定 token 的 GP 是否结束 |
+| 同步等待   | `rte_rcu_qsbr_synchronize()`       | 阻塞等待 GP 结束              |
+| 轮询 GP    | `rte_rcu_qsbr_poll()`              | 非阻塞检查并等待              |
 
 ### 7.2 典型使用模式
 
@@ -2217,10 +2217,10 @@ void update_route(uint32_t ip, struct route_entry *new_route)
 
 ### 8.2 选择建议
 
-| 场景 | 推荐 |
-|------|------|
-| Linux 内核开发 | Tree RCU（`rcu_read_lock` / `call_rcu`） |
-| DPDK 数据面 | QSBR RCU（`rte_rcu_qsbr` + defer queue） |
-| 用户态通用程序 | `liburcu`（userspace RCU 库，提供多种变体） |
-| 读多写少、延迟敏感 | RCU 通常是好选择 |
-| 写多读少、写延迟敏感 | RCU 不合适，考虑读写锁或 SeqLock |
+| 场景                 | 推荐                                        |
+| -------------------- | ------------------------------------------- |
+| Linux 内核开发       | Tree RCU（`rcu_read_lock` / `call_rcu`）    |
+| DPDK 数据面          | QSBR RCU（`rte_rcu_qsbr` + defer queue）    |
+| 用户态通用程序       | `liburcu`（userspace RCU 库，提供多种变体） |
+| 读多写少、延迟敏感   | RCU 通常是好选择                            |
+| 写多读少、写延迟敏感 | RCU 不合适，考虑读写锁或 SeqLock            |

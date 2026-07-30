@@ -188,13 +188,13 @@ netkit:
 
 对比：
 
-| 维度 | veth + BPF redirect | netkit |
-| --- | --- | --- |
-| 基础模型 | 传统 veth pair 上挂 BPF | BPF-first 虚拟网卡 |
-| 生态成熟度 | 很成熟，Linux/CNI 工具链熟悉 | 较新，主要跟 Cilium 等新数据面结合 |
-| 快路径能力 | 支持 `bpf_redirect_peer()` | 以 BPF redirect/policy 为核心 |
-| 运维可理解性 | 高，`ip link`/tc/bpftool 都熟悉 | 需要理解 netkit/tcx/Cilium 模式 |
-| 目标 | 在现有 veth 模型上加速 | 用新设备模型减少容器网络开销 |
+| 维度         | veth + BPF redirect             | netkit                             |
+| ------------ | ------------------------------- | ---------------------------------- |
+| 基础模型     | 传统 veth pair 上挂 BPF         | BPF-first 虚拟网卡                 |
+| 生态成熟度   | 很成熟，Linux/CNI 工具链熟悉    | 较新，主要跟 Cilium 等新数据面结合 |
+| 快路径能力   | 支持 `bpf_redirect_peer()`      | 以 BPF redirect/policy 为核心      |
+| 运维可理解性 | 高，`ip link`/tc/bpftool 都熟悉 | 需要理解 netkit/tcx/Cilium 模式    |
+| 目标         | 在现有 veth 模型上加速          | 用新设备模型减少容器网络开销       |
 
 所以，如果你的观点是“veth 现在也能做到很多 netkit 目标”，这是对的。
 
@@ -273,13 +273,13 @@ DPDK/VPP app
 
 所以选型应该是：
 
-| 场景 | 推荐 |
-| --- | --- |
-| 普通微服务 Pod-to-Pod | veth + eBPF 或 netkit |
-| 希望少改应用，同时提升容器网络性能 | Cilium eBPF 数据面 / netkit |
-| 要 Kubernetes Service、NetworkPolicy、Hubble 可观测 | eBPF 数据面 |
-| 5G UPF、防火墙、LB、NAT、网关 | DPDK/VPP/SR-IOV |
-| 极限 PPS、极限尾延迟 | DPDK 或 SR-IOV |
+| 场景                                                | 推荐                        |
+| --------------------------------------------------- | --------------------------- |
+| 普通微服务 Pod-to-Pod                               | veth + eBPF 或 netkit       |
+| 希望少改应用，同时提升容器网络性能                  | Cilium eBPF 数据面 / netkit |
+| 要 Kubernetes Service、NetworkPolicy、Hubble 可观测 | eBPF 数据面                 |
+| 5G UPF、防火墙、LB、NAT、网关                       | DPDK/VPP/SR-IOV             |
+| 极限 PPS、极限尾延迟                                | DPDK 或 SR-IOV              |
 
 一句话：
 

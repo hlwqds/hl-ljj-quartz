@@ -5,11 +5,7 @@ description: "围绕 CQ/WC 讲解 RDMA 操作完成语义、常见错误码、RN
 tags: [rdma, series, debugging, libibverbs, linux]
 ---
 
-> [!info] RDMA 深度探索系列
-> 0. [[2026-05-24-rdma-deep-dive-series-index|系列索引]]
-> 6. [[2026-05-24-rdma-deep-dive-ch6-read-write|第六章：RDMA Read/Write]]
-> 7. **第七章：Completion Queue 与调试方法**
-> 8. [[2026-05-24-rdma-deep-dive-ch8-performance-roadmap|第八章：性能优化路线]]
+> [!info] RDMA 深度探索系列 0. [[2026-05-24-rdma-deep-dive-series-index|系列索引]] 6. [[2026-05-24-rdma-deep-dive-ch6-read-write|第六章：RDMA Read/Write]] 7. **第七章：Completion Queue 与调试方法** 8. [[2026-05-24-rdma-deep-dive-ch8-performance-roadmap|第八章：性能优化路线]]
 
 # RDMA 深度探索（七）：Completion Queue 与调试方法
 
@@ -44,13 +40,13 @@ wc.status == IBV_WC_SUCCESS
 
 常见原因：
 
-| 原因 | 说明 |
-| --- | --- |
-| 没有 `IBV_SEND_SIGNALED` | unsignaled WR 不产生 send completion |
-| poll 错了 CQ | QP 绑定的 CQ 和当前 poll 的 CQ 不是同一个 |
-| QP 没到 RTS | WR 没有真正执行 |
-| 操作还在重试 | 例如 RNR 或网络丢包 |
-| CQ 深度不够 | completion 溢出会造成严重问题 |
+| 原因                     | 说明                                      |
+| ------------------------ | ----------------------------------------- |
+| 没有 `IBV_SEND_SIGNALED` | unsignaled WR 不产生 send completion      |
+| poll 错了 CQ             | QP 绑定的 CQ 和当前 poll 的 CQ 不是同一个 |
+| QP 没到 RTS              | WR 没有真正执行                           |
+| 操作还在重试             | 例如 RNR 或网络丢包                       |
+| CQ 深度不够              | completion 溢出会造成严重问题             |
 
 入门阶段建议：所有 send WR 都加 `IBV_SEND_SIGNALED`。
 
@@ -58,15 +54,15 @@ wc.status == IBV_WC_SUCCESS
 
 不同版本头文件里的枚举值可能略有差异，但常见状态包括：
 
-| 状态 | 常见原因 |
-| --- | --- |
-| `IBV_WC_SUCCESS` | 操作成功 |
-| `IBV_WC_LOC_LEN_ERR` | 本地 SGE 长度或接收 buffer 长度不匹配 |
-| `IBV_WC_LOC_PROT_ERR` | 本地内存权限或 lkey 错误 |
-| `IBV_WC_WR_FLUSH_ERR` | QP 进入错误态后，队列中 WR 被 flush |
-| `IBV_WC_RETRY_EXC_ERR` | 重试次数耗尽，可能远端不可达 |
-| `IBV_WC_RNR_RETRY_EXC_ERR` | 远端没有 receive WR，RNR 重试耗尽 |
-| `IBV_WC_REM_ACCESS_ERR` | 远端访问权限错误，常见于 rkey 或 MR 权限问题 |
+| 状态                       | 常见原因                                     |
+| -------------------------- | -------------------------------------------- |
+| `IBV_WC_SUCCESS`           | 操作成功                                     |
+| `IBV_WC_LOC_LEN_ERR`       | 本地 SGE 长度或接收 buffer 长度不匹配        |
+| `IBV_WC_LOC_PROT_ERR`      | 本地内存权限或 lkey 错误                     |
+| `IBV_WC_WR_FLUSH_ERR`      | QP 进入错误态后，队列中 WR 被 flush          |
+| `IBV_WC_RETRY_EXC_ERR`     | 重试次数耗尽，可能远端不可达                 |
+| `IBV_WC_RNR_RETRY_EXC_ERR` | 远端没有 receive WR，RNR 重试耗尽            |
+| `IBV_WC_REM_ACCESS_ERR`    | 远端访问权限错误，常见于 rkey 或 MR 权限问题 |
 
 打印错误时至少输出：
 

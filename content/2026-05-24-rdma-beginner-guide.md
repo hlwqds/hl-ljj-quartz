@@ -41,10 +41,10 @@ RDMA 的核心思想是：
 
 可以粗略对比：
 
-| 模型 | 数据路径 | 应用接口 | CPU 参与度 |
-| --- | --- | --- | --- |
-| TCP socket | 应用 -> 内核 -> 网卡 -> 网络 -> 内核 -> 应用 | `send()` / `recv()` | 较高 |
-| RDMA | 应用注册内存 -> 网卡直接搬运数据 -> 应用轮询完成 | `post_send()` / `post_recv()` / `poll_cq()` | 较低 |
+| 模型       | 数据路径                                         | 应用接口                                    | CPU 参与度 |
+| ---------- | ------------------------------------------------ | ------------------------------------------- | ---------- |
+| TCP socket | 应用 -> 内核 -> 网卡 -> 网络 -> 内核 -> 应用     | `send()` / `recv()`                         | 较高       |
+| RDMA       | 应用注册内存 -> 网卡直接搬运数据 -> 应用轮询完成 | `post_send()` / `post_recv()` / `poll_cq()` | 较低       |
 
 RDMA 常见于分布式存储、HPC、数据库、参数服务器、NVMe-oF 和低延迟交易系统。
 
@@ -52,11 +52,11 @@ RDMA 常见于分布式存储、HPC、数据库、参数服务器、NVMe-oF 和�
 
 RDMA 不是一种单独的网线或协议栈，常见实现有三类：
 
-| 类型 | 说明 | 常见场景 |
-| --- | --- | --- |
-| InfiniBand | 原生 RDMA 网络，需要 IB 交换机和 HCA | HPC、专用集群 |
-| RoCE | RDMA over Converged Ethernet，跑在以太网上 | 数据中心、高性能存储 |
-| iWARP | RDMA over TCP | 相对少见 |
+| 类型       | 说明                                       | 常见场景             |
+| ---------- | ------------------------------------------ | -------------------- |
+| InfiniBand | 原生 RDMA 网络，需要 IB 交换机和 HCA       | HPC、专用集群        |
+| RoCE       | RDMA over Converged Ethernet，跑在以太网上 | 数据中心、高性能存储 |
+| iWARP      | RDMA over TCP                              | 相对少见             |
 
 RoCE 又分两类：
 
@@ -69,17 +69,17 @@ RoCE 又分两类：
 
 先不要急着写代码。RDMA verbs 程序里最常见的对象如下：
 
-| 概念 | 全称 | 作用 |
-| --- | --- | --- |
-| HCA / RNIC | Host Channel Adapter / RDMA NIC | 支持 RDMA 的网卡 |
-| Context | Device Context | 打开 RDMA 设备后得到的上下文 |
-| PD | Protection Domain | 资源隔离域，MR 和 QP 都挂在 PD 下 |
-| MR | Memory Region | 注册给网卡访问的一段内存 |
-| CQ | Completion Queue | 完成队列，保存已完成 WR 的结果 |
-| QP | Queue Pair | 队列对，包含发送队列和接收队列 |
-| WR | Work Request | 应用提交给网卡的工作请求 |
-| WC | Work Completion | 网卡写入 CQ 的完成结果 |
-| SGE | Scatter/Gather Entry | 描述一段本地内存的位置和长度 |
+| 概念       | 全称                            | 作用                              |
+| ---------- | ------------------------------- | --------------------------------- |
+| HCA / RNIC | Host Channel Adapter / RDMA NIC | 支持 RDMA 的网卡                  |
+| Context    | Device Context                  | 打开 RDMA 设备后得到的上下文      |
+| PD         | Protection Domain               | 资源隔离域，MR 和 QP 都挂在 PD 下 |
+| MR         | Memory Region                   | 注册给网卡访问的一段内存          |
+| CQ         | Completion Queue                | 完成队列，保存已完成 WR 的结果    |
+| QP         | Queue Pair                      | 队列对，包含发送队列和接收队列    |
+| WR         | Work Request                    | 应用提交给网卡的工作请求          |
+| WC         | Work Completion                 | 网卡写入 CQ 的完成结果            |
+| SGE        | Scatter/Gather Entry            | 描述一段本地内存的位置和长度      |
 
 最重要的是 QP、MR、CQ。
 
@@ -97,8 +97,8 @@ MR 是注册过的内存。RDMA 不能直接操作任意 `malloc()` 出来的地
 
 注册后会得到两个 key：
 
-| key | 含义 |
-| --- | --- |
+| key    | 含义                       |
+| ------ | -------------------------- |
 | `lkey` | 本地网卡访问本地 MR 时使用 |
 | `rkey` | 远端网卡访问这块 MR 时使用 |
 
@@ -125,13 +125,13 @@ CQ 是完成通知的地方。`ibv_post_send()` 成功只代表 WR 成功提交�
 
 第 7 步很容易被忽略：verbs 本身只负责数据面，不负责帮你交换连接信息。实际程序通常会先用 TCP socket 交换这些信息：
 
-| 信息 | 作用 |
-| --- | --- |
-| QP number | 标识远端 QP |
-| LID / GID | 标识远端端口地址 |
-| PSN | Packet Sequence Number，RC 连接需要 |
-| remote address | RDMA Read/Write 要访问的远端虚拟地址 |
-| rkey | RDMA Read/Write 访问远端 MR 的权限 key |
+| 信息           | 作用                                   |
+| -------------- | -------------------------------------- |
+| QP number      | 标识远端 QP                            |
+| LID / GID      | 标识远端端口地址                       |
+| PSN            | Packet Sequence Number，RC 连接需要    |
+| remote address | RDMA Read/Write 要访问的远端虚拟地址   |
+| rkey           | RDMA Read/Write 访问远端 MR 的权限 key |
 
 可以把 TCP socket 理解为“控制面”，把 RDMA QP 理解为“数据面”。
 
@@ -463,11 +463,11 @@ IBV_ACCESS_REMOTE_READ
 
 ### 8.3 send/recv 和 read/write 的区别
 
-| 操作 | 是否需要远端 post_recv | 是否需要 remote addr + rkey | 语义 |
-| --- | --- | --- | --- |
-| Send/Recv | 需要 | 不需要 | 消息传递 |
-| RDMA Write | 不需要 | 需要 | 写远端内存 |
-| RDMA Read | 不需要 | 需要 | 读远端内存 |
+| 操作       | 是否需要远端 post_recv | 是否需要 remote addr + rkey | 语义       |
+| ---------- | ---------------------- | --------------------------- | ---------- |
+| Send/Recv  | 需要                   | 不需要                      | 消息传递   |
+| RDMA Write | 不需要                 | 需要                        | 写远端内存 |
+| RDMA Read  | 不需要                 | 需要                        | 读远端内存 |
 
 刚入门时可以这样理解：
 
@@ -572,30 +572,30 @@ RDMA 入门不要追求一次理解所有特性。建议按下面顺序推进：
 
 进阶主题可以后面再看：
 
-| 主题 | 价值 |
-| --- | --- |
-| `rdma_cm` | 简化连接管理 |
-| SRQ | 多 QP 共享接收队列，减少内存消耗 |
-| Inline Send | 小消息减少一次 DMA |
-| Unsignaled WR | 降低 CQ 压力 |
-| Atomic | 远程原子操作 |
-| ODP | 按需分页注册内存 |
-| UCX / libfabric | 更高层通信框架 |
+| 主题            | 价值                             |
+| --------------- | -------------------------------- |
+| `rdma_cm`       | 简化连接管理                     |
+| SRQ             | 多 QP 共享接收队列，减少内存消耗 |
+| Inline Send     | 小消息减少一次 DMA               |
+| Unsignaled WR   | 降低 CQ 压力                     |
+| Atomic          | 远程原子操作                     |
+| ODP             | 按需分页注册内存                 |
+| UCX / libfabric | 更高层通信框架                   |
 
 ## 11. 一张速查表
 
-| 你想做什么 | verbs 里的动作 |
-| --- | --- |
-| 使用 RDMA 设备 | `ibv_get_device_list()` + `ibv_open_device()` |
-| 隔离资源 | `ibv_alloc_pd()` |
-| 让网卡能访问内存 | `ibv_reg_mr()` |
-| 创建完成队列 | `ibv_create_cq()` |
-| 创建通信端点 | `ibv_create_qp()` |
-| 提交接收请求 | `ibv_post_recv()` |
-| 提交发送请求 | `ibv_post_send()` |
-| 等待完成 | `ibv_poll_cq()` |
-| 写远端内存 | `IBV_WR_RDMA_WRITE` |
-| 读远端内存 | `IBV_WR_RDMA_READ` |
+| 你想做什么       | verbs 里的动作                                |
+| ---------------- | --------------------------------------------- |
+| 使用 RDMA 设备   | `ibv_get_device_list()` + `ibv_open_device()` |
+| 隔离资源         | `ibv_alloc_pd()`                              |
+| 让网卡能访问内存 | `ibv_reg_mr()`                                |
+| 创建完成队列     | `ibv_create_cq()`                             |
+| 创建通信端点     | `ibv_create_qp()`                             |
+| 提交接收请求     | `ibv_post_recv()`                             |
+| 提交发送请求     | `ibv_post_send()`                             |
+| 等待完成         | `ibv_poll_cq()`                               |
+| 写远端内存       | `IBV_WR_RDMA_WRITE`                           |
+| 读远端内存       | `IBV_WR_RDMA_READ`                            |
 
 ## 12. 小练习
 

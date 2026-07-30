@@ -14,6 +14,7 @@ description: "深入解析 VPP memif：共享内存接口、master/slave、VPP-t
 > virtio/QEMU/OVS-DPDK/VM 生态。
 
 > [!info] 相关章节
+>
 > - [[2026-04-09-vpp-deep-dive-ch18-vpp-kubernetes|VPP + Kubernetes]]
 > - [[2026-04-09-vpp-deep-dive-ch19-vpp-dpdk|VPP + DPDK]]
 > - [[2026-04-09-dpdk-deep-dive-ch27-container-networking|DPDK 容器网络]]
@@ -190,15 +191,15 @@ CNI / Multus / Operator
 
 ## 6. 和 vhost-user 的区别
 
-| 维度 | memif | vhost-user |
-| --- | --- | --- |
-| 生态 | FD.io/VPP | virtio/vhost/QEMU/OVS-DPDK |
-| 典型对象 | VPP-to-VPP、VPP-to-DPDK app | VM/CNF/OVS-DPDK/QEMU |
-| 数据结构 | memif ring + shared memory | virtqueue descriptor/avail/used ring |
-| 控制面 | memif socket/control protocol | vhost-user Unix socket protocol |
-| VM 兼容性 | 不是 virtio-net 生态 | 强，天然连接 virtio/vhost |
-| OVS-DPDK | 不是最主流入口 | 一等端口类型 |
-| VPP | 很自然 | 也支持，但更偏 virtio 生态 |
+| 维度      | memif                         | vhost-user                           |
+| --------- | ----------------------------- | ------------------------------------ |
+| 生态      | FD.io/VPP                     | virtio/vhost/QEMU/OVS-DPDK           |
+| 典型对象  | VPP-to-VPP、VPP-to-DPDK app   | VM/CNF/OVS-DPDK/QEMU                 |
+| 数据结构  | memif ring + shared memory    | virtqueue descriptor/avail/used ring |
+| 控制面    | memif socket/control protocol | vhost-user Unix socket protocol      |
+| VM 兼容性 | 不是 virtio-net 生态          | 强，天然连接 virtio/vhost            |
+| OVS-DPDK  | 不是最主流入口                | 一等端口类型                         |
+| VPP       | 很自然                        | 也支持，但更偏 virtio 生态           |
 
 选型可以这样记：
 

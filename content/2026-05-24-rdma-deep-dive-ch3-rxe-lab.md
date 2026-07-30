@@ -5,11 +5,7 @@ description: "使用 Soft-RoCE/RXE 在普通以太网环境中搭建 RDMA 学习
 tags: [rdma, series, roce, rxe, linux]
 ---
 
-> [!info] RDMA 深度探索系列
-> 0. [[2026-05-24-rdma-deep-dive-series-index|系列索引]]
-> 2. [[2026-05-24-rdma-deep-dive-ch2-verbs-objects|第二章：verbs 对象模型]]
-> 3. **第三章：Soft-RoCE/RXE 实验环境搭建**
-> 4. [[2026-05-24-rdma-deep-dive-ch4-rc-qp-lifecycle|第四章：RC QP 生命周期]]
+> [!info] RDMA 深度探索系列 0. [[2026-05-24-rdma-deep-dive-series-index|系列索引]] 2. [[2026-05-24-rdma-deep-dive-ch2-verbs-objects|第二章：verbs 对象模型]] 3. **第三章：Soft-RoCE/RXE 实验环境搭建** 4. [[2026-05-24-rdma-deep-dive-ch4-rc-qp-lifecycle|第四章：RC QP 生命周期]]
 
 # RDMA 深度探索（三）：Soft-RoCE/RXE 实验环境搭建
 

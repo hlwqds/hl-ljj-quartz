@@ -9,3 +9,29 @@ tsconfig.tsbuildinfo
 private/
 .replit
 replit.nix
+
+# agent tooling & local caches
+.codex
+.gsd/
+.bg-shell/
+.claude/
+excalidraw.log
+__pycache__/
+*.pyc
+
+# build artifacts & VM images under practice/
+*.o
+*.so
+*.bpf.o
+a.out
+*.qcow2
+*.img
+practice/guest_dpdk_virtio/generated/
+practice/cpu_cache/false_sharing/false_sharing
+practice/cpu_cache/false_sharing/ring_false_sharing
+practice/simd_vectorization/simd_demo
+
+# personal resume artifacts (not published)
+docs/黄琳*
+docs/assets/huanglin-resume-photo.jpg
+scripts/

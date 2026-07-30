@@ -5,11 +5,7 @@ description: "解释 Reliable Connection QP 从 RESET 到 INIT、RTR、RTS 的�
 tags: [rdma, series, libibverbs, qp, networking]
 ---
 
-> [!info] RDMA 深度探索系列
-> 0. [[2026-05-24-rdma-deep-dive-series-index|系列索引]]
-> 3. [[2026-05-24-rdma-deep-dive-ch3-rxe-lab|第三章：Soft-RoCE/RXE 实验环境]]
-> 4. **第四章：RC QP 生命周期**
-> 5. [[2026-05-24-rdma-deep-dive-ch5-send-recv|第五章：Send/Recv]]
+> [!info] RDMA 深度探索系列 0. [[2026-05-24-rdma-deep-dive-series-index|系列索引]] 3. [[2026-05-24-rdma-deep-dive-ch3-rxe-lab|第三章：Soft-RoCE/RXE 实验环境]] 4. **第四章：RC QP 生命周期** 5. [[2026-05-24-rdma-deep-dive-ch5-send-recv|第五章：Send/Recv]]
 
 # RDMA 深度探索（四）：RC QP 生命周期
 
@@ -40,14 +36,14 @@ verbs 不负责连接管理。最常见做法是先用 TCP socket 交换 RDMA �
 
 RC QP 至少需要交换：
 
-| 字段 | 说明 |
-| --- | --- |
-| `qpn` | QP number，远端 QP 编号 |
-| `psn` | Packet Sequence Number，初始包序号 |
-| `lid` | InfiniBand 本地标识 |
-| `gid` | RoCE 常用，全局标识 |
-| `rkey` | RDMA Read/Write 需要的远端 key |
-| `vaddr` | RDMA Read/Write 需要的远端地址 |
+| 字段    | 说明                               |
+| ------- | ---------------------------------- |
+| `qpn`   | QP number，远端 QP 编号            |
+| `psn`   | Packet Sequence Number，初始包序号 |
+| `lid`   | InfiniBand 本地标识                |
+| `gid`   | RoCE 常用，全局标识                |
+| `rkey`  | RDMA Read/Write 需要的远端 key     |
+| `vaddr` | RDMA Read/Write 需要的远端地址     |
 
 send/recv 只需要连接级信息，不需要 `rkey` 和 `vaddr`。RDMA Read/Write 才需要远端内存信息。
 
@@ -123,12 +119,12 @@ struct ibv_qp_attr attr = {
 
 几个参数含义：
 
-| 字段 | 说明 |
-| --- | --- |
-| `timeout` | ACK 超时时间编码值 |
-| `retry_cnt` | 传输失败重试次数 |
-| `rnr_retry` | Receiver Not Ready 重试次数 |
-| `sq_psn` | 本端发送队列初始 PSN |
+| 字段            | 说明                                   |
+| --------------- | -------------------------------------- |
+| `timeout`       | ACK 超时时间编码值                     |
+| `retry_cnt`     | 传输失败重试次数                       |
+| `rnr_retry`     | Receiver Not Ready 重试次数            |
+| `sq_psn`        | 本端发送队列初始 PSN                   |
 | `max_rd_atomic` | 本端可发起的并发 RDMA Read/Atomic 数量 |
 
 入门阶段常见配置是 `retry_cnt = 7`、`rnr_retry = 7`，降低因为暂时没 post_recv 导致实验失败的概率。

@@ -1,0 +1,118 @@
+# Production CNF Pod: VPP with DPDK/memif data plane
+# Requires: Multus, hugepages, SR-IOV or AF_XDP CNI
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vpp-cnf-config
+data:
+  startup.conf: |
+    unix {
+      cli-listen /run/vpp/cli.sock
+      log /var/log/vpp/vpp.log
+    }
+    cpu {
+      main-core 0
+      workers 2
+    }
+    memory {
+      hugepages 512
+    }
+    dpdk {
+      dev 0000:af:01.0  { devargs "class=af_xdp,rx_queue_size=2048,tx_queue_size=2048" }
+    }
+    plugins {
+      plugin default { enable }
+    }
+  cnf.conf: |
+    # VPP data plane config applied after startup
+    create interface memif id 1 master mif-socket /tmp/memif_cnf.sock
+    set interface state memif0/1 up
+    set interface ip address memif0/1 10.10.1.1/24
+
+    # ACL for security
+    ip table add 10
+    ip route add 10.10.0.0/16 via 10.10.2.254 memif0/1
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: cnf-vpp-pod
+  annotations:
+    k8s.v1.cni.cncf.io/networks: |
+      [
+        {
+          "name": "inside-net",
+          "interface": "net1",
+          "ips": ["10.10.1.1/24"]
+        },
+        {
+          "name": "outside-net",
+          "interface": "net2",
+          "ips": ["10.10.2.1/24"]
+        }
+      ]
+spec:
+  containers:
+    - name: vpp-cnf
+      image: ghcr.io/projectcalico/vpp:latest
+      securityContext:
+        privileged: true
+      resources:
+        requests:
+          cpu: "3"
+          memory: "1Gi"
+          hugepages-1Gi: "1Gi"
+        limits:
+          cpu: "3"
+          memory: "1Gi"
+          hugepages-1Gi: "1Gi"
+      volumeMounts:
+        - name: config
+          mountPath: /etc/vpp/startup.conf
+          subPath: startup.conf
+        - name: hugepages
+          mountPath: /dev/hugepages
+        - name: memif-socket
+          mountPath: /tmp/memif_cnf.sock
+      command: ["vpp", "-c", "/etc/vpp/startup.conf"]
+
+    - name: control-agent
+      image: cnf-control-agent:latest
+      ports:
+        - containerPort: 9191 # gRPC management API
+        - containerPort: 9192 # Prometheus metrics
+      env:
+        - name: VPP_CLI_SOCK
+          value: "/run/vpp/cli.sock"
+      volumeMounts:
+        - name: vpp-sock
+          mountPath: /run/vpp/cli.sock
+
+  volumes:
+    - name: config
+      configMap:
+        name: vpp-cnf-config
+    - name: hugepages
+      emptyDir:
+        medium: HugePages
+    - name: vpp-sock
+      hostPath:
+        path: /run/vpp/cli.sock
+        type: SocketOrCreate
+    - name: memif-socket
+      hostPath:
+        path: /tmp/memif_cnf.sock
+        type: SocketOrCreate
+
+  # Pin to specific NUMA node for cache locality
+  # (matches the NUMA node of the physical NIC)
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: node.kubernetes.io/numa-node
+                operator: In
+                values: ["0"]

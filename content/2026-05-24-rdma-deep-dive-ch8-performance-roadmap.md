@@ -5,10 +5,7 @@ description: "建立 RDMA 性能优化路线图，覆盖 batching、inline、uns
 tags: [rdma, series, performance, numa, networking]
 ---
 
-> [!info] RDMA 深度探索系列
-> 0. [[2026-05-24-rdma-deep-dive-series-index|系列索引]]
-> 7. [[2026-05-24-rdma-deep-dive-ch7-completion-debugging|第七章：Completion 与调试]]
-> 8. **第八章：性能优化路线**
+> [!info] RDMA 深度探索系列 0. [[2026-05-24-rdma-deep-dive-series-index|系列索引]] 7. [[2026-05-24-rdma-deep-dive-ch7-completion-debugging|第七章：Completion 与调试]] 8. **第八章：性能优化路线**
 
 # RDMA 深度探索（八）：性能优化路线
 
@@ -186,14 +183,14 @@ RDMA Read 需要从远端拉数据，受并发 read credit、往返延迟和 `ma
 
 至少同时看：
 
-| 指标 | 说明 |
-| --- | --- |
-| 平均延迟 | 常规请求成本 |
-| P99/P999 | 尾延迟 |
-| 吞吐 | 单连接和多连接带宽 |
-| CPU 占用 | 是否真的节省 CPU |
-| CQ poll 次数 | 是否 busy polling 过重 |
-| retry / error | 是否有隐藏网络问题 |
+| 指标          | 说明                   |
+| ------------- | ---------------------- |
+| 平均延迟      | 常规请求成本           |
+| P99/P999      | 尾延迟                 |
+| 吞吐          | 单连接和多连接带宽     |
+| CPU 占用      | 是否真的节省 CPU       |
+| CQ poll 次数  | 是否 busy polling 过重 |
+| retry / error | 是否有隐藏网络问题     |
 
 高吞吐但 P999 很差，对很多低延迟业务没有意义。
 

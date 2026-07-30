@@ -5,8 +5,8 @@ description: "理解 RDMA 的问题背景、数据路径、和 socket/DPDK/XDP �
 tags: [rdma, series, networking, linux, performance]
 ---
 
-> [!info] RDMA 深度探索系列
-> 0. [[2026-05-24-rdma-deep-dive-series-index|系列索引]]
+> [!info] RDMA 深度探索系列 0. [[2026-05-24-rdma-deep-dive-series-index|系列索引]]
+>
 > 1. **第一章：从内核网络栈到远程直接内存访问**
 > 2. [[2026-05-24-rdma-deep-dive-ch2-verbs-objects|第二章：verbs 对象模型]]
 > 3. [[2026-05-24-rdma-deep-dive-ch3-rxe-lab|第三章：Soft-RoCE/RXE 实验环境]]
@@ -82,11 +82,11 @@ MR + QP + CQ -> post WR -> poll WC
 
 ## 4. 三种常见 RDMA 网络
 
-| 类型 | 说明 | 特点 |
-| --- | --- | --- |
-| InfiniBand | 原生 RDMA 网络 | 低延迟、专用生态、HPC 常见 |
-| RoCE | RDMA over Converged Ethernet | 数据中心常见，可复用以太网 |
-| iWARP | RDMA over TCP | 基于 TCP，生态相对小 |
+| 类型       | 说明                         | 特点                       |
+| ---------- | ---------------------------- | -------------------------- |
+| InfiniBand | 原生 RDMA 网络               | 低延迟、专用生态、HPC 常见 |
+| RoCE       | RDMA over Converged Ethernet | 数据中心常见，可复用以太网 |
+| iWARP      | RDMA over TCP                | 基于 TCP，生态相对小       |
 
 RoCE 又分 RoCE v1 和 RoCE v2：
 
@@ -99,11 +99,11 @@ RoCE 又分 RoCE v1 和 RoCE v2：
 
 RDMA、DPDK、XDP 都常被放在高性能网络语境里讨论，但它们解决的问题不同。
 
-| 技术 | 核心目标 | 编程位置 | 典型用途 |
-| --- | --- | --- | --- |
+| 技术 | 核心目标         | 编程位置               | 典型用途                      |
+| ---- | ---------------- | ---------------------- | ----------------------------- |
 | RDMA | 远程内存直接访问 | 用户态 verbs / rdma_cm | 存储、HPC、数据库、低延迟 RPC |
-| DPDK | 用户态高速包处理 | 用户态 PMD | 网关、负载均衡、DPI、虚拟交换 |
-| XDP | 内核早期包处理 | 驱动/内核 eBPF hook | 丢包、防护、转发、负载均衡 |
+| DPDK | 用户态高速包处理 | 用户态 PMD             | 网关、负载均衡、DPI、虚拟交换 |
+| XDP  | 内核早期包处理   | 驱动/内核 eBPF hook    | 丢包、防护、转发、负载均衡    |
 
 简单判断：
 
@@ -115,12 +115,12 @@ RDMA、DPDK、XDP 都常被放在高性能网络语境里讨论，但它们解�
 
 入门阶段重点掌握四类操作：
 
-| 操作 | 语义 | 是否需要远端 post_recv |
-| --- | --- | --- |
-| Send | 发送一条消息 | 需要 |
-| Recv | 接收一条消息 | 本端提交 |
-| RDMA Write | 写远端内存 | 不需要 |
-| RDMA Read | 读远端内存 | 不需要 |
+| 操作       | 语义         | 是否需要远端 post_recv |
+| ---------- | ------------ | ---------------------- |
+| Send       | 发送一条消息 | 需要                   |
+| Recv       | 接收一条消息 | 本端提交               |
+| RDMA Write | 写远端内存   | 不需要                 |
+| RDMA Read  | 读远端内存   | 不需要                 |
 
 Send/Recv 是消息语义，适合入门和控制消息。
 

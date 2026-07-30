@@ -18,12 +18,12 @@ Function，云原生网络功能）** 的网络。
 商业上，它对应的是把原来运行在专用硬件或 VM 里的网络设备，搬到 Kubernetes
 Pod 里运行：
 
-| 传统形态      | VM/NFV 形态           | 容器/CNF 形态              |
-| ------------- | --------------------- | -------------------------- |
-| 硬件防火墙    | VM 防火墙 VNF         | 防火墙 Pod                 |
-| 硬件负载均衡  | VM 负载均衡 VNF       | LB / Gateway Pod           |
-| EPC/5GC 网元  | VM UPF / BNG / CGNAT  | UPF / BNG / CGNAT Pod      |
-| 硬件路由器    | VM Router / vBNG      | VPP / FRR / Router Pod     |
+| 传统形态     | VM/NFV 形态          | 容器/CNF 形态          |
+| ------------ | -------------------- | ---------------------- |
+| 硬件防火墙   | VM 防火墙 VNF        | 防火墙 Pod             |
+| 硬件负载均衡 | VM 负载均衡 VNF      | LB / Gateway Pod       |
+| EPC/5GC 网元 | VM UPF / BNG / CGNAT | UPF / BNG / CGNAT Pod  |
+| 硬件路由器   | VM Router / vBNG     | VPP / FRR / Router Pod |
 
 普通 Kubernetes 网络的目标是“让业务 Pod 能通信”。DPDK 容器网络的目标是：
 
@@ -88,14 +88,14 @@ Packet
 
 也就是说：
 
-| 模块                    | 属于哪一面 | 作用                                         |
-| ----------------------- | ---------- | -------------------------------------------- |
-| Kubernetes API/kubelet  | 控制面     | 调度 Pod，调用 CNI                           |
-| CNI                     | 控制面     | 创建接口、分配 IP、连接网络                  |
-| Multus                  | 控制面     | 给一个 Pod 挂多个网络                        |
-| Device Plugin           | 控制面     | 把 VF、DPDK 设备、大页等资源暴露给 K8s       |
-| veth / OVS / OVS-DPDK   | 数据面     | 处理包转发                                   |
-| DPDK PMD / VPP / UPF    | 数据面     | 在用户态高速收发包                           |
+| 模块                   | 属于哪一面 | 作用                                   |
+| ---------------------- | ---------- | -------------------------------------- |
+| Kubernetes API/kubelet | 控制面     | 调度 Pod，调用 CNI                     |
+| CNI                    | 控制面     | 创建接口、分配 IP、连接网络            |
+| Multus                 | 控制面     | 给一个 Pod 挂多个网络                  |
+| Device Plugin          | 控制面     | 把 VF、DPDK 设备、大页等资源暴露给 K8s |
+| veth / OVS / OVS-DPDK  | 数据面     | 处理包转发                             |
+| DPDK PMD / VPP / UPF   | 数据面     | 在用户态高速收发包                     |
 
 ### 1.4 三种典型流量路径
 
@@ -286,14 +286,14 @@ Container DPDK/VPP/UPF
 
 它绕过了普通 socket 和内核 TCP/IP 栈，要求应用本身就是 packet processor。
 
-| 维度 | veth/netkit fast redirect | DPDK/vhost-user/SR-IOV |
-| --- | --- | --- |
-| 目标 | 加速通用容器网络 | 构建专用高性能网络功能 |
-| 应用模型 | 普通 socket 应用 | DPDK/VPP/UPF 等 packet processor |
-| 数据结构 | `skb` + Linux 网络栈 | `mbuf` / userspace ring / VF |
-| 转发位置 | 内核 eBPF hook | 用户态轮询或 NIC 硬件 |
-| Kubernetes 语义 | 保留较完整 | 需要额外集成和资源编排 |
-| 典型场景 | 微服务、Service、同节点 Pod-to-Pod | UPF、防火墙、LB、NAT、DDoS |
+| 维度            | veth/netkit fast redirect          | DPDK/vhost-user/SR-IOV           |
+| --------------- | ---------------------------------- | -------------------------------- |
+| 目标            | 加速通用容器网络                   | 构建专用高性能网络功能           |
+| 应用模型        | 普通 socket 应用                   | DPDK/VPP/UPF 等 packet processor |
+| 数据结构        | `skb` + Linux 网络栈               | `mbuf` / userspace ring / VF     |
+| 转发位置        | 内核 eBPF hook                     | 用户态轮询或 NIC 硬件            |
+| Kubernetes 语义 | 保留较完整                         | 需要额外集成和资源编排           |
+| 典型场景        | 微服务、Service、同节点 Pod-to-Pod | UPF、防火墙、LB、NAT、DDoS       |
 
 所以：
 
@@ -601,11 +601,11 @@ ovs-ofctl show br0
 
 VPP 容器网络里最容易混淆的是：同一个“连接”会同时出现三个不同层面的对象。
 
-| 对象 | 在哪里 | 谁创建 | 作用 |
-| --- | --- | --- | --- |
-| Pod `eth0/net1` | Linux container netns | CNI / Multus | 普通 Linux 网口，用于管理流量或 secondary network |
-| VPP vhost-user interface | VPP 进程内部 | VPP CLI / VPP 配置 | VPP 的用户态收发包接口，不一定能在 `ip link` 里看到 |
-| OVS `vhost-client1` | OVS-DPDK 进程内部 | `ovs-vsctl add-port` | OVS-DPDK bridge 上的用户态端口 |
+| 对象                     | 在哪里                | 谁创建               | 作用                                                |
+| ------------------------ | --------------------- | -------------------- | --------------------------------------------------- |
+| Pod `eth0/net1`          | Linux container netns | CNI / Multus         | 普通 Linux 网口，用于管理流量或 secondary network   |
+| VPP vhost-user interface | VPP 进程内部          | VPP CLI / VPP 配置   | VPP 的用户态收发包接口，不一定能在 `ip link` 里看到 |
+| OVS `vhost-client1`      | OVS-DPDK 进程内部     | `ovs-vsctl add-port` | OVS-DPDK bridge 上的用户态端口                      |
 
 严格按职责划分：
 
@@ -734,11 +734,11 @@ packet
 
 所以更准确的分层是：
 
-| 层次 | 例子 | 作用 |
-| --- | --- | --- |
-| Kubernetes 声明层 | Pod、NAD、CRD、Device Plugin resource | 描述期望状态 |
-| 集成层 | CNI、Multus、Operator、vpp-agent、ovs-operator | 把 K8s 对象翻译成数据面配置 |
-| 数据面层 | OVS-DPDK、VPP、DPDK PMD、SR-IOV VF | 真正收发和转发 packet |
+| 层次              | 例子                                           | 作用                        |
+| ----------------- | ---------------------------------------------- | --------------------------- |
+| Kubernetes 声明层 | Pod、NAD、CRD、Device Plugin resource          | 描述期望状态                |
+| 集成层            | CNI、Multus、Operator、vpp-agent、ovs-operator | 把 K8s 对象翻译成数据面配置 |
+| 数据面层          | OVS-DPDK、VPP、DPDK PMD、SR-IOV VF             | 真正收发和转发 packet       |
 
 这就是为什么 OVS-DPDK 看起来“不在 K8s 体系内”，却能左右 K8s Pod 流量：
 
@@ -891,14 +891,14 @@ memif 很合适，协议更轻，路径也很直接。
 
 但在 OVS-DPDK / QEMU / virtio 混合场景里，vhost-user 更常见，原因是：
 
-| 维度 | vhost-user | memif |
-| --- | --- | --- |
-| 生态来源 | virtio/vhost/QEMU/OVS-DPDK | FD.io/VPP |
-| VM 兼容性 | 强，能直接接 virtio-net/vhost-user 体系 | 弱，VM virtio-net 不使用 memif |
-| OVS-DPDK 支持 | 一等端口类型：`dpdkvhostuserclient` | 取决于 DPDK PMD/部署方式，不如 vhost-user 通用 |
-| VPP 支持 | 支持 | 很强，是 VPP 常用高性能接口 |
-| 协议语义 | virtqueue、virtio feature、eventfd、共享内存 | memif ring、共享内存、轻量控制协议 |
-| 适合场景 | VM/CNF/OVS-DPDK 统一接入 Host vSwitch | VPP-to-VPP 或明确支持 memif 的进程间高速连接 |
+| 维度          | vhost-user                                   | memif                                          |
+| ------------- | -------------------------------------------- | ---------------------------------------------- |
+| 生态来源      | virtio/vhost/QEMU/OVS-DPDK                   | FD.io/VPP                                      |
+| VM 兼容性     | 强，能直接接 virtio-net/vhost-user 体系      | 弱，VM virtio-net 不使用 memif                 |
+| OVS-DPDK 支持 | 一等端口类型：`dpdkvhostuserclient`          | 取决于 DPDK PMD/部署方式，不如 vhost-user 通用 |
+| VPP 支持      | 支持                                         | 很强，是 VPP 常用高性能接口                    |
+| 协议语义      | virtqueue、virtio feature、eventfd、共享内存 | memif ring、共享内存、轻量控制协议             |
+| 适合场景      | VM/CNF/OVS-DPDK 统一接入 Host vSwitch        | VPP-to-VPP 或明确支持 memif 的进程间高速连接   |
 
 所以选型不是：
 
@@ -1432,14 +1432,14 @@ metadata:
     k8s.v1.cni.cncf.io/networks: sriov-dpdk-net
 spec:
   containers:
-  - name: dpdk-app
-    image: dpdk-app:latest
-    securityContext:
-      privileged: true
-    resources:
-      limits:
-        hugepages-2Mi: 1Gi
-        example.com/sriov_dpdk: "1"
+    - name: dpdk-app
+      image: dpdk-app:latest
+      securityContext:
+        privileged: true
+      resources:
+        limits:
+          hugepages-2Mi: 1Gi
+          example.com/sriov_dpdk: "1"
 ```
 
 这里 `example.com/sriov_dpdk: "1"` 表示：Pod 要求 kubelet 给它分配 1 个符合条件的
@@ -1592,22 +1592,22 @@ CNF Pod CPU pinning
 
 选择建议：
 
-| 场景                 | 推荐方案                     |
-| -------------------- | ---------------------------- |
-| **开发测试**         | veth + bridge                |
-| **一般生产**         | veth + eBPF / OVS kernel     |
-| **通用容器网络加速** | veth fast redirect / netkit  |
-| **网络功能高性能**   | OVS-DPDK / VPP / vhost-user  |
-| **超高性能**         | SR-IOV                       |
+| 场景                 | 推荐方案                    |
+| -------------------- | --------------------------- |
+| **开发测试**         | veth + bridge               |
+| **一般生产**         | veth + eBPF / OVS kernel    |
+| **通用容器网络加速** | veth fast redirect / netkit |
+| **网络功能高性能**   | OVS-DPDK / VPP / vhost-user |
+| **超高性能**         | SR-IOV                      |
 
 从流量路径角度看：
 
-| 场景                  | 数据面路径                                                 | 关键取舍                           |
-| --------------------- | ---------------------------------------------------------- | ---------------------------------- |
-| 普通业务 Pod          | App → socket → Pod kernel → veth → Host bridge/OVS → NIC   | 最通用，性能不是极限               |
-| veth/netkit fast path | App → socket → Pod kernel → BPF redirect → peer/NIC        | 保留通用语义，同时缩短内核路径     |
-| OVS-DPDK/vhost-user   | DPDK/VPP → vhost-user ring → OVS-DPDK flow table → NIC     | 性能高，还能保留 Host vSwitch 编排 |
-| SR-IOV Pod            | DPDK app → VF → NIC hardware                               | 性能最高，但平台管控能力变弱       |
+| 场景                  | 数据面路径                                               | 关键取舍                           |
+| --------------------- | -------------------------------------------------------- | ---------------------------------- |
+| 普通业务 Pod          | App → socket → Pod kernel → veth → Host bridge/OVS → NIC | 最通用，性能不是极限               |
+| veth/netkit fast path | App → socket → Pod kernel → BPF redirect → peer/NIC      | 保留通用语义，同时缩短内核路径     |
+| OVS-DPDK/vhost-user   | DPDK/VPP → vhost-user ring → OVS-DPDK flow table → NIC   | 性能高，还能保留 Host vSwitch 编排 |
+| SR-IOV Pod            | DPDK app → VF → NIC hardware                             | 性能最高，但平台管控能力变弱       |
 
 ---
 

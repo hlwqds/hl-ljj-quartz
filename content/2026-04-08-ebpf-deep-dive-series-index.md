@@ -52,13 +52,13 @@ tags:
 
 eBPF 的性能杀手锏——XDP、TC、AF_XDP 及高级网络应用。
 
-| #   | 章节                                                                 | 主题                              | 状态 |
-| --- | -------------------------------------------------------------------- | --------------------------------- | ---- |
-| 5   | [[2026-04-08-ebpf-deep-dive-ch5-xdp-networking-performance\|第五章]] | XDP 极致网络性能与全栈架构        | ✅   |
-| 6   | [[2026-04-08-ebpf-deep-dive-ch6-tc-traffic-control\|第六章]]         | TC (Traffic Control) 流量调度艺术 | ✅   |
-| 9   | [[2026-04-08-ebpf-deep-dive-ch9-af-xdp-zero-copy\|第九章]]           | AF_XDP 零拷贝与用户态协议栈       | ✅   |
-| 29  | [[2026-04-08-ebpf-deep-dive-ch29-networking-deep-dive\|第二十九章]]  | 负载均衡、Sockmap 与拥塞控制      | ✅   |
-| 29.5 | [[2026-05-26-ebpf-deep-dive-netkit-container-networking\|第二十九.五章]] | netkit、veth 与容器网络加速    | ✅   |
+| #    | 章节                                                                     | 主题                              | 状态 |
+| ---- | ------------------------------------------------------------------------ | --------------------------------- | ---- |
+| 5    | [[2026-04-08-ebpf-deep-dive-ch5-xdp-networking-performance\|第五章]]     | XDP 极致网络性能与全栈架构        | ✅   |
+| 6    | [[2026-04-08-ebpf-deep-dive-ch6-tc-traffic-control\|第六章]]             | TC (Traffic Control) 流量调度艺术 | ✅   |
+| 9    | [[2026-04-08-ebpf-deep-dive-ch9-af-xdp-zero-copy\|第九章]]               | AF_XDP 零拷贝与用户态协议栈       | ✅   |
+| 29   | [[2026-04-08-ebpf-deep-dive-ch29-networking-deep-dive\|第二十九章]]      | 负载均衡、Sockmap 与拥塞控制      | ✅   |
+| 29.5 | [[2026-05-26-ebpf-deep-dive-netkit-container-networking\|第二十九.五章]] | netkit、veth 与容器网络加速       | ✅   |
 
 ---
 

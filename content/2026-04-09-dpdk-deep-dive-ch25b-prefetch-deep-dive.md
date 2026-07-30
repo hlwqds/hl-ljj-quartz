@@ -106,14 +106,14 @@ CPU prefetch:
 
 ### 2.2 和 async I/O 的区别
 
-| 项目 | 普通 async I/O | CPU prefetch |
-| --- | --- | --- |
-| 请求对象 | 文件、网络、磁盘 | 内存 cache line |
-| 是否保证执行 | 通常有明确语义 | 只是 hint，CPU 可忽略 |
-| 是否返回结果 | 有 callback/future/result | 没有结果 |
-| 是否报错 | 可能报错 | 不报错 |
-| 是否改变程序语义 | 会 | 不应该改变语义 |
-| 等待方式 | await/poll/callback | 后续 load 自然命中或 miss |
+| 项目             | 普通 async I/O            | CPU prefetch              |
+| ---------------- | ------------------------- | ------------------------- |
+| 请求对象         | 文件、网络、磁盘          | 内存 cache line           |
+| 是否保证执行     | 通常有明确语义            | 只是 hint，CPU 可忽略     |
+| 是否返回结果     | 有 callback/future/result | 没有结果                  |
+| 是否报错         | 可能报错                  | 不报错                    |
+| 是否改变程序语义 | 会                        | 不应该改变语义            |
+| 等待方式         | await/poll/callback       | 后续 load 自然命中或 miss |
 
 一句话：
 

@@ -1,1770 +1,1536 @@
 ---
-title: "DPDK 深度探索 (三十)：性能调优——Batching、RSS、Flow Director"
+title: "DPDK 深度探索 (三十)：性能调优——Batching、RSS、rte_flow 与队列设计"
 date: 2026-04-09
-tags:
-  [
-    dpdk,
-    series,
-    performance,
-    batching,
-    rss,
-    flow-director,
-    optimization,
-    receive-scaling,
-    swx-pipeline,
-  ]
-description: "深入理解 DPDK 性能调优——Batching 策略、RSS (Receive Side Scaling)、Flow Director、队列优化、性能调优清单"
+tags: [dpdk, series, performance, batching, rss, rte-flow, queue, optimization, receive-scaling]
+description: "深入理解 DPDK 性能调优：批处理、预取、RSS、RETA、rte_flow、队列描述符、offload、轮询与调优验证"
 ---
 
 > [!info] DPDK 深度探索系列 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
-> 1-29. 前二十九章已完成 30. **第三十章：性能调优——Batching、RSS、Flow Director**
+> 1-29. 前二十九章已完成 30. **第三十章：性能调优——Batching、RSS、rte_flow 与队列设计**
 
 ---
 
-## 1. 概述：性能调优金字塔
+## 1. 性能调优的主线
+
+DPDK 性能问题通常不是某一个 API 慢，而是以下几件事叠加：
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                        性能调优金字塔                                       │
+│                         DPDK 数据面性能主线                                  │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│                              ▲                                              │
-│                             /│\                                             │
-│                            / │ \                                            │
-│                           /  │  \                                           │
-│                          /   │   \                                          │
-│                         /────│────\                                         │
-│                        /     │     \                                        │
-│                       /      │      \                                       │
-│                      ▼───────┴───────▼                                      │
+│  1. 减少每包固定开销                                                        │
+│     单包调用 RX/TX → burst 批量处理                                         │
 │                                                                             │
-│  L5: 算法/架构优化                                                         │
-│  ────────────────────                                                      │
-│  - 数据结构选择 (hash vs trie)                                            │
-│  - 批处理流水线设计                                                        │
-│  - 异步 vs 同步                                                           │
+│  2. 减少 cache miss                                                         │
+│     mbuf / descriptor / flow table 尽量 NUMA 本地                            │
+│     预取下一批包头和元数据                                                   │
 │                                                                             │
-│  L4: 核亲和性/拓扑优化                                                      │
-│  ───────────────────────                                                   │
-│  - NUMA 亲和性 (Ch26)                                                      │
-│  - lcore role 绑定 (Ch26)                                                  │
-│  - HT/SMT 利用                                                             │
+│  3. 减少跨核共享                                                             │
+│     每个 lcore 固定 RX queue / TX queue                                      │
+│     per-lcore 统计和 per-lcore mempool cache                                │
 │                                                                             │
-│  L3: 内存优化                                                             │
-│  ─────────────                                                             │
-│  - Cache 优化 (Ch25)                                                       │
-│  - Hugepage (Ch2)                                                         │
-│  - DMA/零拷贝 (Ch27)                                                       │
+│  4. 把分类下推给硬件                                                         │
+│     RSS 做通用分流                                                           │
+│     rte_flow 做精确规则：queue / rss / drop / mark                          │
 │                                                                             │
-│  L2: 同步/锁优化                                                          │
-│  ───────────────                                                           │
-│  - Spinlock vs RCU (Ch28)                                                 │
-│  - per-lcore 数据                                                         │
-│  - 无锁数据结构                                                            │
-│                                                                             │
-│  L1: 基本配置优化                                                         │
-│  ──────────────────                                                        │
-│  - Batching (批量处理)                                                     │
-│  - RSS (负载均衡)                                                          │
-│  - Flow Director (流分类)                                                  │
-│  - 队列/描述符大小                                                        │
-│  - 中断 vs 轮询                                                            │
+│  5. 只开启有收益的 offload                                                   │
+│     checksum / TSO / scatter / RSS hash                                      │
+│     不需要的 offload 不开，避免 PMD 走慢路径                                 │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
+本文使用现代 DPDK API 讲解，重点纠正几个容易混淆的点：
+
+| 主题              | 正确做法                                                                            |
+| ----------------- | ----------------------------------------------------------------------------------- |
+| RSS hash 配置     | `rte_eth_dev_rss_hash_update()` / `rte_eth_dev_rss_hash_conf_get()`                 |
+| RSS RETA 配置     | `rte_eth_dev_rss_reta_update()`，使用 `struct rte_eth_rss_reta_entry64`             |
+| Flow Director     | 新代码使用 `rte_flow`，不要再使用旧 `rte_eth_fdir_*` 私有接口                       |
+| IPv4/Ether 结构体 | `struct rte_ipv4_hdr`、`struct rte_ether_hdr`                                       |
+| RX 中断           | 用 `rte_eth_dev_rx_intr_enable()` + `rte_eth_dev_rx_intr_ctl_q_get_fd()` 接入 epoll |
+| link 事件         | 用 `rte_eth_dev_callback_register(..., RTE_ETH_EVENT_INTR_LSC, ...)`                |
+
 ---
 
-## 2. Batching (批量处理)
+## 2. Batching：先把固定开销摊薄
 
-### 2.1 为什么需要 Batching
+### 2.1 为什么 batch 是第一层优化
+
+单包处理的问题是每个包都要付出函数调用、ring 状态检查、doorbell、分支判断等固定成本。
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                        Batching 原理                                       │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│  问题: 每次操作都有固定开销                                                  │
-│  ────                                                                    │
-│                                                                             │
-│  单包处理:                                                                 │
-│  ┌─────────────────────────────────────────────────────────────────────┐ │
-│  │  for each packet:                                                  │ │
-│  │      rx_burst(1 packet)    ← 函数调用 + 参数检查                   │ │
-│  │      process(packet)       ← 小批量计算                              │ │
-│  │      tx_burst(1 packet)    ← 函数调用 + 可能的锁                     │ │
-│  └─────────────────────────────────────────────────────────────────────┘ │
-│  总开销 = N × (rx_call + tx_call)                                         │
-│                                                                             │
-│  ─────────────────────────────────────────────────────────────────────────  │
-│                                                                             │
-│  批量处理:                                                                 │
-│  ┌─────────────────────────────────────────────────────────────────────┐ │
-│  │  rx_burst(batch)           ← 一次调用处理 N 包                      │ │
-│  │  for each packet in batch: │                                        │ │
-│  │      process(packet)       │                                        │ │
-│  │  tx_burst(batch)           ← 一次调用发送 N 包                       │ │
-│  └─────────────────────────────────────────────────────────────────────┘ │
-│  总开销 = rx_call + tx_call + N × process                                 │
-│                                                                             │
-│  节省: (N-1) × (rx_call + tx_call)                                         │
-│                                                                             │
-│  ─────────────────────────────────────────────────────────────────────────  │
-│                                                                             │
-│  性能对比 (理论):                                                          │
-│                                                                             │
-│  假设:                                                                    │
-│  - rx_call 耗时: 200 ns                                                   │
-│  - tx_call 耗时: 200 ns                                                   │
-│  - 每包处理: 50 ns                                                        │
-│                                                                             │
-│  单包 (64B包):                                                            │
-│  - 总时间/包 = 200 + 50 + 200 = 450 ns                                    │
-│  - 吞吐 = 2.2 Gp/s (每核)                                                │
-│                                                                             │
-│  批量 32:                                                                 │
-│  - 总时间/包 = (200 + 50×32 + 200) / 32 = 56.25 ns                       │
-│  - 吞吐 = 17.8 Gp/s (每核)                                               │
-│                                                                             │
-│  增益: ~8x                                                                │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
+单包:
+
+for each packet:
+    rx_burst(1)      固定开销
+    process(pkt)     业务开销
+    tx_burst(1)      固定开销
+
+批量:
+
+rx_burst(32)         固定开销只付一次
+for pkt in batch:
+    process(pkt)
+tx_burst(32)         固定开销只付一次
 ```
 
-### 2.2 DPDK Burst API
+64B 小包场景下，batch 往往比单包路径重要得多。`rte_eth_rx_burst()` 和 `rte_eth_tx_burst()` 本身就是为这个模型设计的。
+
+### 2.2 基础 burst loop
 
 ```c
-// DPDK Burst API
+#include <rte_ethdev.h>
+#include <rte_mbuf.h>
 
-// RX burst - 批量接收
-uint16_t
-rte_eth_rx_burst(uint16_t port_id, uint16_t queue_id,
-                  struct rte_mbuf **rx_pkts, uint16_t nb_pkts);
+#define BURST_SIZE 32
 
-// 参数:
-//   port_id: 端口 ID
-//   queue_id: 队列 ID
-//   rx_pkts: mbuf 指针数组 (输出)
-//   nb_pkts: 最大接收数量
-// 返回: 实际接收数量
-
-// TX burst - 批量发送
-uint16_t
-rte_eth_tx_burst(uint16_t port_id, uint16_t queue_id,
-                  struct rte_mbuf **tx_pkts, uint16_t nb_pkts);
-
-// 参数:
-//   tx_pkts: mbuf 指针数组 (输入)
-//   nb_pkts: 发送数量
-// 返回: 实际发送数量
-
-// 示例: 基本 burst 处理
-#define RX_BURST_SIZE 32
-#define TX_BURST_SIZE 32
-
-struct rte_mbuf *rx_mbufs[RX_BURST_SIZE];
-struct rte_mbuf *tx_mbufs[TX_BURST_SIZE];
+static inline void
+free_unsent(struct rte_mbuf **pkts, uint16_t sent, uint16_t total)
+{
+    for (uint16_t i = sent; i < total; i++)
+        rte_pktmbuf_free(pkts[i]);
+}
 
 static void
-packet_process_loop(void *arg)
+forward_loop(uint16_t rx_port, uint16_t tx_port, uint16_t queue_id)
 {
-    uint16_t port_id = *(uint16_t *)arg;
+    struct rte_mbuf *pkts[BURST_SIZE];
 
-    while (!quit) {
-        // 批量接收
-        uint16_t nb_rx = rte_eth_rx_burst(port_id, 0, rx_mbufs, RX_BURST_SIZE);
+    while (!force_quit) {
+        uint16_t nb_rx = rte_eth_rx_burst(rx_port, queue_id, pkts, BURST_SIZE);
 
         if (nb_rx == 0)
             continue;
 
-        // 处理
-        uint16_t nb_tx = 0;
-        for (uint16_t i = 0; i < nb_rx; i++) {
-            if (process_packet(rx_mbufs[i]) == 0) {
-                tx_mbufs[nb_tx++] = rx_mbufs[i];
-            } else {
-                rte_pktmbuf_free(rx_mbufs[i]);
-            }
-        }
+        for (uint16_t i = 0; i < nb_rx; i++)
+            process_packet(pkts[i]);
 
-        // 批量发送
-        if (nb_tx > 0) {
-            uint16_t sent = rte_eth_tx_burst(port_id, 0, tx_mbufs, nb_tx);
-
-            // 释放未发送的
-            for (uint16_t i = sent; i < nb_tx; i++) {
-                rte_pktmbuf_free(tx_mbufs[i]);
-            }
-        }
+        uint16_t nb_tx = rte_eth_tx_burst(tx_port, queue_id, pkts, nb_rx);
+        if (unlikely(nb_tx < nb_rx))
+            free_unsent(pkts, nb_tx, nb_rx);
     }
 }
 ```
 
-### 2.3 批量优化策略
+注意点：
+
+- `tx_burst()` 可能只发送一部分，未发送的 mbuf 必须由应用释放或重试。
+- 每个 lcore 尽量使用独占队列，避免多个 lcore 共享同一个 queue。
+- 小包常用 `BURST_SIZE=32` 或 `64`，大包可降到 `16`，最终以实测为准。
+
+### 2.3 分阶段 batch
+
+复杂业务不要每个包完整走完所有阶段，可以按阶段处理一批包：
+
+```
+RX batch
+  │
+  ├─ stage 1: 预取 packet header
+  ├─ stage 2: 解析 L2/L3/L4
+  ├─ stage 3: 查表 / 分类
+  ├─ stage 4: 修改 header / 统计
+  └─ TX batch
+```
 
 ```c
-// 策略 1: 动态批量大小
-
-// 根据负载动态调整 burst size
-#define MIN_BURST 16
-#define MAX_BURST 64
-#define BURST_THRESHOLD 0.8  // 80% 利用率时增加
-
-static uint16_t
-adaptive_rx_burst(uint16_t port_id, uint16_t queue,
-                   struct rte_mbuf **mbufs, uint16_t max_burst)
-{
-    static __thread uint16_t current_burst = MAX_BURST;
-    static __thread uint64_t last_check = 0;
-    static __thread uint64_t hit_count = 0;
-
-    uint64_t now = rte_rdtsc();
-
-    // 每 1M cycles 检查一次
-    if (now - last_check > 1000000) {
-        if (hit_count > max_burst * BURST_THRESHOLD) {
-            current_burst = RTE_MIN(current_burst + 8, MAX_BURST);
-        } else {
-            current_burst = RTE_MAX(current_burst - 8, MIN_BURST);
-        }
-        hit_count = 0;
-        last_check = now;
-    }
-
-    uint16_t nb = rte_eth_rx_burst(port_id, queue, mbufs, current_burst);
-
-    if (nb >= current_burst * BURST_THRESHOLD)
-        hit_count += nb;
-
-    return nb;
-}
-
-// 策略 2: Pipeline Batching
-
-// 将处理分成多个阶段，每阶段批量处理
-struct packet_batch {
-    struct rte_mbuf *mbufs[64];
-    uint16_t count;
-
-    // 元数据
-    uint16_t ports[64];
-    uint8_t proto[64];
-};
+#include <rte_ether.h>
+#include <rte_ip.h>
+#include <rte_prefetch.h>
 
 static void
-batch_init(struct packet_batch *batch)
+process_batch(struct rte_mbuf **pkts, uint16_t n)
 {
-    batch->count = 0;
-}
+    for (uint16_t i = 0; i < n && i < 4; i++)
+        rte_prefetch0(rte_pktmbuf_mtod(pkts[i], void *));
 
-static void
-batch_add(struct packet_batch *batch, struct rte_mbuf *m)
-{
-    batch->mbufs[batch->count++] = m;
-}
+    for (uint16_t i = 0; i < n; i++) {
+        if (i + 4 < n)
+            rte_prefetch0(rte_pktmbuf_mtod(pkts[i + 4], void *));
 
-static void
-batch_process_stage1(struct packet_batch *batch)
-{
-    // Stage 1: 解析 header，分类
-    for (int i = 0; i < batch->count; i++) {
-        struct rte_mbuf *m = batch->mbufs[i];
-        struct ether_hdr *eth = rte_pktmbuf_mtod(m, struct ether_hdr *);
+        struct rte_ether_hdr *eth =
+            rte_pktmbuf_mtod(pkts[i], struct rte_ether_hdr *);
 
-        batch->ports[i] = m->port;
+        if (eth->ether_type != rte_cpu_to_be_16(RTE_ETHER_TYPE_IPV4))
+            continue;
 
-        if (eth->ether_type == rte_cpu_to_be_16(ETHER_TYPE_IPv4)) {
-            struct ipv4_hdr *iph = (struct ipv4_hdr *)(eth + 1);
-            batch->proto[i] = iph->next_proto_id;
-        }
-    }
-}
-
-static void
-batch_process_stage2(struct packet_batch *batch)
-{
-    // Stage 2: 基于分类的处理
-    for (int i = 0; i < batch->count; i++) {
-        switch (batch->proto[i]) {
-        case IPPROTO_TCP:
-            process_tcp(batch->mbufs[i]);
-            break;
-        case IPPROTO_UDP:
-            process_udp(batch->mbufs[i]);
-            break;
-        default:
-            process_other(batch->mbufs[i]);
-        }
-    }
-}
-
-static void
-batch_tx(struct packet_batch *batch)
-{
-    uint16_t sent = rte_eth_tx_burst(batch->ports[0], 0,
-                                       batch->mbufs, batch->count);
-    // 处理未发送
-}
-
-// 策略 3: Zero-Copy Batching
-
-// 避免在批处理中复制
-static void
-zero_copy_batch_process(struct rte_mbuf **mbufs, uint16_t count)
-{
-    struct rte_mbuf *tx_bufs[64];
-    uint16_t tx_count = 0;
-
-    for (int i = 0; i < count; i++) {
-        // 就地修改，不复制
-        modify_in_place(mbufs[i]);
-
-        if (should_forward(mbufs[i])) {
-            tx_bufs[tx_count++] = mbufs[i];
-        } else {
-            rte_pktmbuf_free(mbufs[i]);
-        }
-    }
-
-    if (tx_count > 0) {
-        rte_eth_tx_burst(0, 0, tx_bufs, tx_count);
+        struct rte_ipv4_hdr *ip = (struct rte_ipv4_hdr *)(eth + 1);
+        handle_ipv4(pkts[i], ip);
     }
 }
 ```
 
-### 2.4 Burst 调优参数
-
-```bash
-# burst size 设置 (testpmd)
-./dpdk-testpmd -l 0-7 -n 4 -- -i \
-    --rxq 4 --txq 4 \
-    --rxd 512 --txd 512 \      # 描述符数量
-    --burst 32 \               # burst 大小
-    --mbuf-size 2048 \         # mbuf 数据区大小
-    --max-pkt-len 9000         # 最大包长
-
-# 推荐的 burst 设置
-# 小包 (64-128B): burst=32, rxq=4-8
-# 大包 (1500B+):  burst=16, rxq=2-4
-# 混合:           burst=32, rxq=4
-
-# rx/tx descriptors
-# 更多描述符 = 更多 buffering，但更多内存占用
-# 推荐: rxqd=512, txqd=512 (DPDK 默认)
-```
+预取不是越多越好。预取距离太近没有效果，太远会污染 cache。一般先从 `i + 4` 或 `i + 8` 开始测。
 
 ---
 
-## 3. RSS (Receive Side Scaling)
+## 3. RSS：通用流量分摊
 
-### 3.1 RSS 原理
+### 3.1 RSS 的作用
+
+RSS (Receive Side Scaling) 用硬件 hash 把流量分发到多个 RX queue：
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                        RSS 原理                                            │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│  问题: 单队列网卡成为瓶颈                                                    │
-│  ────                                                                    │
-│                                                                             │
-│       ┌─────────────────────────────────────────────────┐                 │
-│       │                    NIC                          │                 │
-│       │                                                  │                 │
-│       │    ┌──────────────────────────────────────┐   │                 │
-│       │    │           RSS Indirection Table       │   │                 │
-│       │    │  [0,1,2,3,0,1,2,3,0,1,2,3,...]        │   │                 │
-│       │    └──────────────────────────────────────┘   │                 │
-│       │                        │                         │                 │
-│       │    ┌────────┬────────┬────────┬────────┐        │                 │
-│       │    │        │        │        │        │        │                 │
-│       │    ▼        ▼        ▼        ▼        │        │                 │
-│       │  Queue0  Queue1   Queue2  Queue3      │        │                 │
-│       └────┼────────┼────────┼────────┼────────┘        │                 │
-│            │        │        │        │                 │                 │
-│            ▼        ▼        ▼        ▼                 │                 │
-│         ┌──────────────────────────────────────────┐   │                 │
-│         │            CPU Core 分配                  │   │                 │
-│         │  Core0 ← Queue0 | Core1 ← Queue1        │   │                 │
-│         │  Core2 ← Queue2 | Core3 ← Queue3        │   │                 │
-│         └──────────────────────────────────────────┘   │                 │
-│                                                                             │
-│  RSS 计算流程:                                                              │
-│  ─────────────                                                              │
-│                                                                             │
-│  1. Toeplitz Hash 计算                                                    │
-│     ┌─────────────────────────────────────────────────────────────────┐   │
-│     │  Hash = Toeplitz(SecretKey, Tuple)                              │   │
-│     │                                                                 │   │
-│     │  Tuple = (src_ip, dst_ip, src_port, dst_port, protocol)       │   │
-│     │                                                                 │   │
-│     │  Result = 32-bit or 64-bit hash value                         │   │
-│     └─────────────────────────────────────────────────────────────────┘   │
-│                                                                             │
-│  2. Indirection Table 映射                                                │
-│     ┌─────────────────────────────────────────────────────────────────┐   │
-│     │  Queue_Index = Hash & (Table_Size - 1)                         │   │
-│     │                                                                 │   │
-│     │  Table_Size 通常是 128 或 256                                  │   │
-│     │  Table[i] 指定队列索引 (0 to N-1)                             │   │
-│     └─────────────────────────────────────────────────────────────────┘   │
-│                                                                             │
-│  3. 多队列分发                                                             │
-│     - 同一流的包 → 同一队列 (保持顺序)                                     │
-│     - 不同流的包 → 不同队列 (负载均衡)                                     │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
+┌─────────────┐
+│   Packet    │
+│ 5-tuple     │
+└──────┬──────┘
+       │
+       ▼
+┌──────────────────────┐
+│ NIC RSS hash          │
+│ src/dst ip + port     │
+└──────┬───────────────┘
+       │ hash
+       ▼
+┌──────────────────────┐
+│ RETA                 │
+│ hash % reta_size     │
+└──────┬───────────────┘
+       │ queue id
+       ▼
+ RX queue 0/1/2/3...
 ```
 
-### 3.2 RSS 配置
+RSS 解决的是**大量普通流量的粗粒度均衡**。如果需要把特定 VIP、端口、租户精确打到某个队列，应使用 `rte_flow`。
+
+### 3.2 RSS 本质上就是 rte_flow 的一种 action
+
+很多教程把"全局 RSS"和 `rte_flow` 说成两个独立机制，容易误导。实际上：
+
+**RSS 是 `rte_flow` 的一种 action，和 QUEUE、DROP 同级：**
 
 ```c
-// RSS 配置 API
+RTE_FLOW_ACTION_TYPE_QUEUE    // 匹配 → 固定到一个 queue
+RTE_FLOW_ACTION_TYPE_RSS      // 匹配 → 在一组 queue 内 hash 均衡
+RTE_FLOW_ACTION_TYPE_DROP     // 匹配 → 丢弃
+RTE_FLOW_ACTION_TYPE_MARK     // 匹配 → 打标记
+RTE_FLOW_ACTION_TYPE_COUNT    // 匹配 → 硬件计数
+RTE_FLOW_ACTION_TYPE_SECURITY // 匹配 → 安全卸载 (IPsec/TLS)
+```
 
+所谓"全局 RSS"（通过 `port_conf.rss_conf` 配置），本质就是一条**低优先级的 catch-all 默认规则**：
+
+```
+网卡硬件里的 match-action pipeline:
+
+规则 1: match VLAN 100    → action RSS queues {0,1}
+规则 2: match VLAN 200    → action RSS queues {2,3}
+规则 3: match 黑名单 IP   → action DROP
+...
+默认规则: match * (所有)   → action RSS queues {0,1,2,3}
+                              ↑ 这就是 port_conf.rss_conf 配的
+```
+
+所以完整图是这样的：
+
+```
+所有流量进入 NIC
+    │
+    ▼
+rte_flow match table（网卡硬件执行）
+    │
+    ├─ VIP 10.0.0.10:443
+    │     └─ action QUEUE 0              精确指定一个 queue
+    │
+    ├─ 租户 A / VLAN 100
+    │     └─ action RSS queues {0,1}     这类流量只在 0,1 内 hash 均衡
+    │
+    ├─ 租户 B / VLAN 200
+    │     └─ action RSS queues {2,3}     这类流量只在 2,3 内 hash 均衡
+    │
+    ├─ 黑名单 IP
+    │     └─ action DROP                 包在网卡里直接丢弃，CPU 看不到
+    │
+    └─ 没有命中任何规则
+          └─ action RSS queues {0,1,2,3} 这就是 port_conf 配的"全局 RSS"
+```
+
+关键理解：
+
+```
+rte_flow QUEUE:
+  匹配 → 固定到一个 queue
+  最精确，没有均衡
+  适用: VIP、特定服务必须由特定核处理
+
+rte_flow RSS:
+  匹配 → 在指定 queue set 内 hash 均衡
+  精确分类 + 组内均衡
+  适用: 某类流量需要隔离但不能只用一个核
+
+port_conf "全局 RSS":
+  没被任何规则命中的流量 → 所有队列 hash 均衡
+  最粗粒度的 catch-all
+  适用: 普通流量不需要特殊处理
+```
+
+两种配置入口，同一个硬件机制：
+
+```
+port_conf.rss_conf:
+  配置简单，启动时设一次
+  所有流量共用一张 RETA
+  不能区分流量类型
+
+rte_flow_create():
+  灵活，可以动态添加/删除规则
+  每条规则可以指定不同的 queue set
+  可以按 pattern 区分流量
+  消耗硬件 flow table 资源（TCAM/SRAM）
+```
+
+### 3.3 隧道流量为什么会 RSS 失衡
+
+普通 L4 流量通常直接 RSS 就够了，因为不同连接的五元组不同：
+
+```
+client1:1234 → VIP:443
+client2:2345 → VIP:443
+client3:3456 → VIP:443
+
+外层五元组都不同
+→ RSS hash 分散
+→ queue 0/1/2/3 比较均匀
+```
+
+全隧道/封装流量就不一样：
+
+```
+Gateway A → Gateway B
+  outer src_ip = A
+  outer dst_ip = B
+  outer UDP port = 4500 / 4789 / 6081
+
+隧道内部有成千上万条连接:
+  client1 → server1
+  client2 → server2
+  client3 → server3
+
+但 NIC 默认 RSS 只看到外层:
+  A:4500 → B:4500
+  A:4500 → B:4500
+  A:4500 → B:4500
+
+hash 结果一样或高度集中
+→ 全部进同一个 queue
+→ 单核打满，其他核空闲
+```
+
+解决顺序：
+
+```
+1. 优先看网卡的 RSS hash type 是否支持隧道内层
+
+   某些网卡配置了 RTE_ETH_RSS_VXLAN / RTE_ETH_RSS_GENEVE 等 hash type 后，
+   默认 RSS 就能自动解析隧道并对 inner 5-tuple 做 hash。
+   这时候不需要 rte_flow，直接配好 rss_hf 就行。
+
+2. 如果网卡能解 inner 但默认不做 → 用 rte_flow 显式指定
+
+   有些网卡需要显式规则才能对隧道流量启用 inner RSS：
+     match outer UDP dst port 4789 / Geneve / NVGRE
+     action RSS queues {0,1,2,3}, level=inner
+
+   也可以用 rte_flow 把隧道流量限制在特定 queue group 内：
+     match VXLAN → RSS queues {4,5,6,7}
+     其他流量 → RSS queues {0,1,2,3}
+
+3. 如果网卡完全不支持 inner RSS → 只能软件兜底
+
+   所有隧道包先集中到一个 queue，软件解封装后按 inner 5-tuple 分发。
+   能均衡后续业务处理，但入口 lcore 仍然是瓶颈。
+```
+
+场景 1 和场景 2 的区别：
+
+```
+场景 1: 网卡默认 inner RSS 自动生效
+
+  配置:
+    rss_conf.rss_hf = RTE_ETH_RSS_VXLAN | RTE_ETH_RSS_TCP;
+
+  效果:
+    NIC 收到 VXLAN 包 → 自动解析 inner → 用 inner 5-tuple hash
+    不需要 rte_flow
+    所有队列统一参与均衡
+
+场景 2: 网卡能解 inner 但需要 rte_flow 显式触发
+
+  配置:
+    rte_flow: match VXLAN → action RSS level=inner queues {4,5,6,7}
+
+  效果:
+    VXLAN 流量只在 queue 4-7 内均衡（可以和普通流量隔离）
+    需要 rte_flow_validate() 确认支持
+
+场景 3: 需要隔离隧道和普通流量到不同队列组
+
+  配置:
+    rte_flow: match VXLAN → RSS queues {4,5,6,7} level=inner
+    默认 RSS → queues {0,1,2,3}
+
+  效果:
+    隧道流量不占用普通流量的队列
+    两类流量互不干扰
+```
+
+`rte_flow` 的 RSS action 支持 `level` 字段，可请求对指定封装层级做 hash：
+
+```c
+struct rte_flow_action_rss rss = {
+    .level = 2,              /* 请求 inner 层级，具体语义取决于 PMD */
+    .types = RTE_ETH_RSS_TCP,
+    .queue_num = nb_queues,
+    .queue = queues,
+};
+```
+
+是否真的支持要以当前 PMD 的 `rte_flow_validate()` 为准。
+
+硬件 inner RSS 成功时：
+
+```
+tunnel packet
+    │
+    ▼
+NIC parser
+    │
+    ├─ 解析 outer tunnel
+    ├─ 解析 inner 5-tuple
+    │
+    ▼
+RSS(inner 5-tuple)
+    │
+    ├─ queue 0 → lcore 0
+    ├─ queue 1 → lcore 1
+    ├─ queue 2 → lcore 2
+    └─ queue 3 → lcore 3
+```
+
+硬件做不了时的软件兜底：
+
+```
+所有隧道包先进入 queue 0
+    │
+    ▼
+lcore 0 解封装 / 解密 / 解析 inner
+    │
+    ▼
+hash(inner 5-tuple)
+    │
+    ├─ enqueue 到 worker 0
+    ├─ enqueue 到 worker 1
+    ├─ enqueue 到 worker 2
+    └─ enqueue 到 worker 3
+```
+
+这个兜底方案的代价：
+
+- 入口 lcore 仍然要收所有隧道包，可能先被打满。
+- mbuf 已经落在入口 queue 的 mempool/cache 路径上。
+- 转给其他 worker 后会产生跨核 cache line 迁移。
+- 如果跨 NUMA，还会有远端内存访问。
+
+IPsec 全隧道更特殊：
+
+| 场景                    | RSS 能看到什么               | 结果                       |
+| ----------------------- | ---------------------------- | -------------------------- |
+| 普通网卡收 ESP          | outer IP + SPI，inner 是密文 | 无法基于 inner 5-tuple RSS |
+| 多 SA/SPI               | SPI 不同                     | 可以按 SPI 粗分流          |
+| NIC inline IPsec        | NIC 解密后看到 inner         | 可做 inner RSS，效果最好   |
+| 软件/QAT lookaside 解密 | CPU 解密后才看到 inner       | 只能软件分发               |
+
+所以普通非隧道流量通常 RSS 就够了；全隧道流量优先找硬件 inner RSS / inline 解密能力，硬件做不了时才用软件负载均衡。
+
+### 3.4 配置 RSS
+
+```c
 #include <rte_ethdev.h>
 
-// 启用 RSS
-int
-configure_rss(struct rte_port *port)
+static int
+configure_port_with_rss(uint16_t port_id, uint16_t nb_rxq, uint16_t nb_txq)
 {
+    struct rte_eth_dev_info dev_info;
+    int ret = rte_eth_dev_info_get(port_id, &dev_info);
+    if (ret != 0)
+        return ret;
+
+    uint64_t rss_hf = RTE_ETH_RSS_IP | RTE_ETH_RSS_TCP | RTE_ETH_RSS_UDP;
+    rss_hf &= dev_info.flow_type_rss_offloads;
+
+    uint64_t rx_offloads = 0;
+    if (dev_info.rx_offload_capa & RTE_ETH_RX_OFFLOAD_RSS_HASH)
+        rx_offloads |= RTE_ETH_RX_OFFLOAD_RSS_HASH;
+
     struct rte_eth_conf port_conf = {
         .rxmode = {
-            .mq_mode = RTE_ETH_MQ_RX_RSS,  // 启用 RSS
+            .mq_mode = RTE_ETH_MQ_RX_RSS,
+            .offloads = rx_offloads,
         },
         .rx_adv_conf = {
             .rss_conf = {
-                .rss_key = NULL,  // NULL = 使用默认 key
-                .rss_key_len = 40,  // 通常 40 字节
-                .rss_hf = RTE_ETH_RSS_IP |           // IP 哈希
-                          RTE_ETH_RSS_TCP |           // TCP 哈希
-                          RTE_ETH_RSS_UDP |           // UDP 哈希
-                          RTE_ETH_RSS_SCTP |          // SCTP
-                          RTE_ETH_RSS_TUNNEL,        // Tunnel (VXLAN)
+                .rss_key = NULL,       /* PMD 使用默认 key */
+                .rss_key_len = 0,
+                .rss_hf = rss_hf,
             },
         },
     };
 
-    return rte_eth_dev_configure(port->id, rxq_count, txq_count, &port_conf);
+    return rte_eth_dev_configure(port_id, nb_rxq, nb_txq, &port_conf);
 }
-
-// 设置 RSS key
-int
-set_rss_key(uint16_t port_id, uint8_t *key, uint8_t key_len)
-{
-    return rte_eth_dev_rss_hash_key_set(port_id, key, key_len);
-}
-
-// 设置 RSS hash 字段
-int
-set_rss_hash_fields(uint16_t port_id, uint64_t rss_hf)
-{
-    return rte_eth_dev_rss_hash_update(port_id, rss_hf);
-}
-
-// 获取 RSS 配置
-int
-get_rss_conf(uint16_t port_id, struct rte_eth_rss_conf *rss_conf)
-{
-    return rte_eth_dev_rss_conf_get(port_id, rss_conf);
-}
-
-// 设置 Indirection Table
-int
-set_rss_indirection_table(uint16_t port_id, uint16_t *table, uint16_t size)
-{
-    struct rte_eth_rss_indir_table_conf conf = {
-        .table = table,
-        .table_size = size,
-    };
-
-    return rte_eth_dev_rss_indir_table_update(port_id, &conf);
-}
-
-// 示例: 完整 RSS 配置
-void
-init_rss(uint16_t port_id, uint16_t nb_queues)
-{
-    // 1. 配置 RSS
-    struct rte_eth_rss_conf rss_conf = {
-        .rss_key = rss_key_default,  // 40 字节 secret key
-        .rss_key_len = 40,
-        .rss_hf = RTE_ETH_RSS_IP |
-                  RTE_ETH_RSS_TCP |
-                  RTE_ETH_RSS_UDP,
-    };
-
-    rte_eth_dev_configure(port_id, nb_queues, nb_queues, &(struct rte_eth_conf){
-        .rxmode = {
-            .mq_mode = RTE_ETH_MQ_RX_RSS,
-        },
-        .rx_adv_conf = {
-            .rss_conf = rss_conf,
-        },
-    });
-
-    // 2. 设置 indirection table (每个队列等权重)
-    uint16_t reta_size = rte_eth_dev_info_get(port_id)->reta_size;
-    uint16_t *reta = malloc(reta_size * sizeof(uint16_t));
-
-    for (int i = 0; i < reta_size; i++) {
-        reta[i] = i % nb_queues;
-    }
-
-    struct rte_eth_rss_indir_table_conf indir_conf = {
-        .table = reta,
-        .table_size = reta_size,
-        .mask = (1ULL << nb_queues) - 1,  // nb_queues 位掩码
-    };
-
-    rte_eth_dev_rss_indir_table_update(port_id, &indir_conf);
-
-    free(reta);
-}
-
-// 默认 RSS key (Intel 提供)
-static uint8_t rss_key_default[40] = {
-    0x6D, 0x5A, 0x6D, 0x5A, 0x6D, 0x5A, 0x6D, 0x5A,
-    0x6D, 0x5A, 0x6D, 0x5A, 0x6D, 0x5A, 0x6D, 0x5A,
-    0x6D, 0x5A, 0x6D, 0x5A, 0x6D, 0x5A, 0x6D, 0x5A,
-    0x6D, 0x5A, 0x6D, 0x5A, 0x6D, 0x5A, 0x6D, 0x5A,
-    0x6D, 0x5A, 0x6D, 0x5A, 0x6D, 0x5A, 0x6D, 0x5A,
-};
 ```
 
-### 3.3 RSS hash 处理
+关键点：
+
+- `rss_key=NULL` 表示让 PMD 使用默认 key。不要假设所有 PMD 默认 key 都一样。
+- `rss_hf` 必须与 `dev_info.flow_type_rss_offloads` 做交集，否则可能配置失败。
+- `RTE_ETH_RX_OFFLOAD_RSS_HASH` 让 PMD 在 mbuf 中填 `hash.rss` 和 `RTE_MBUF_F_RX_RSS_HASH`。
+
+### 3.5 更新 RSS hash 配置
+
+现代 DPDK 没有 `rte_eth_dev_rss_hash_key_set()` 这种 API。更新 key 和 hash 字段都通过 `rte_eth_dev_rss_hash_update()`。
 
 ```c
-// 处理 RSS hash
-
-// 从 mbuf 获取 RSS hash
-static inline uint32_t
-get_rss_hash(struct rte_mbuf *m)
+static int
+update_rss_key(uint16_t port_id, uint8_t *key, uint8_t key_len, uint64_t rss_hf)
 {
-    return m->hash.rss;
-}
-
-// 从 mbuf 获取 RSS hash 类型
-static inline uint32_t
-get_rss_hash_type(struct rte_mbuf *m)
-{
-    return m->hash.fdir.hash;
-}
-
-// 示例: 基于 RSS hash 的负载均衡
-void
-rss_based_process(struct rte_mbuf **mbufs, uint16_t count)
-{
-    // RSS 已经将同一流的包分到同一队列
-    // 这里按队列处理即可
-
-    for (int i = 0; i < count; i++) {
-        uint32_t flow_hash = get_rss_hash(mbufs[i]);
-
-        // 可以使用 hash 做负载均衡
-        uint16_t worker_id = flow_hash % num_workers;
-
-        // 或者直接处理
-        process_packet(mbufs[i]);
-    }
-}
-
-// 示例: 基于 5-tuple 的流表查找
-struct flow_entry {
-    uint32_t src_ip;
-    uint32_t dst_ip;
-    uint16_t src_port;
-    uint16_t dst_port;
-    uint8_t proto;
-    uint32_t action;
-};
-
-static struct flow_entry *
-flow_lookup_by_mbuf(struct rte_mbuf *m, struct rte_hash *flow_table)
-{
-    struct ipv4_hdr *iph = rte_pktmbuf_mtod_offset(m, struct ipv4_hdr *,
-                                                     sizeof(struct ether_hdr));
-    struct tcp_hdr *tcph;
-    struct udp_hdr *udph;
-
-    struct flow_key key = {
-        .src_ip = iph->src_addr,
-        .dst_ip = iph->dst_addr,
+    struct rte_eth_rss_conf conf = {
+        .rss_key = key,
+        .rss_key_len = key_len,
+        .rss_hf = rss_hf,
     };
 
-    if (iph->next_proto_id == IPPROTO_TCP) {
-        tcph = (struct tcp_hdr *)((char *)iph + sizeof(*iph));
-        key.src_port = tcph->src_port;
-        key.dst_port = tcph->dst_port;
-        key.proto = IPPROTO_TCP;
-    } else if (iph->next_proto_id == IPPROTO_UDP) {
-        udph = (struct udp_hdr *)((char *)iph + sizeof(*iph));
-        key.src_port = udph->src_port;
-        key.dst_port = udph->dst_port;
-        key.proto = IPPROTO_UDP;
-    }
+    return rte_eth_dev_rss_hash_update(port_id, &conf);
+}
 
-    int32_t idx = rte_hash_lookup(flow_table, &key);
-
-    if (idx >= 0) {
-        return (struct flow_entry *)rte_hash_get_key(flow_table, idx);
-    }
-
-    return NULL;
+static int
+query_rss_conf(uint16_t port_id, uint8_t *key_buf, uint8_t key_buf_len,
+               struct rte_eth_rss_conf *out)
+{
+    out->rss_key = key_buf;
+    out->rss_key_len = key_buf_len;
+    return rte_eth_dev_rss_hash_conf_get(port_id, out);
 }
 ```
 
-### 3.4 常见 RSS 配置
+查询 RSS key 时，`rss_key_len` 至少要等于 `dev_info.hash_key_size`，否则即使 API 返回成功，结果也可能不可靠。
 
-```bash
-# 查看 NIC RSS 支持
-ethtool -x eth0
+### 3.6 配置 RETA
 
-# 输出示例:
-# RX flow hash indirection table for eth0:
-# ...
-# Preset value: 0x...
+RETA (Redirection Table) 决定 hash 桶到 queue 的映射。现代 DPDK 使用 `struct rte_eth_rss_reta_entry64`，每 64 个 entry 一组。
 
-# 设置 RSS hash key
-ethtool -X eth0 hfunc toeplitz西北  key 6d5a6d5a6d5a6d5a...
+```c
+#include <rte_malloc.h>
 
-# 设置 indirection table
-ethtool -X eth0 equal 4  # 4 个队列等权重
+static int
+set_reta_round_robin(uint16_t port_id, uint16_t nb_rxq)
+{
+    struct rte_eth_dev_info dev_info;
+    int ret = rte_eth_dev_info_get(port_id, &dev_info);
+    if (ret != 0)
+        return ret;
 
-# 查看 RSS 配置
-ethtool -n eth0
+    uint16_t reta_size = dev_info.reta_size;
+    if (reta_size == 0)
+        return -ENOTSUP;
 
-# DPDK RSS 配置选项
-# RTE_ETH_RSS_IP         - IPv4/IPv6
-# RTE_ETH_RSS_TCP        - TCP
-# RTE_ETH_RSS_UDP        - UDP
-# RTE_ETH_RSS_SCTP      - SCTP
-# RTE_ETH_RSS_TUNNEL    - Tunnel (VXLAN, GRE)
-# RTE_ETH_RSS_L2_PAYLOAD - L2 payload
-# RTE_ETH_RSS_PORT      - 源/目标端口
-# RTE_ETH_RSS_SVF       - Single VLAN filter
-# RTE_ETH_RSS_DVF       - Double VLAN filter
+    uint16_t groups = RTE_ALIGN_CEIL(reta_size, RTE_ETH_RETA_GROUP_SIZE) /
+                      RTE_ETH_RETA_GROUP_SIZE;
+
+    struct rte_eth_rss_reta_entry64 *reta =
+        rte_zmalloc(NULL, groups * sizeof(*reta), 0);
+    if (reta == NULL)
+        return -ENOMEM;
+
+    for (uint16_t i = 0; i < reta_size; i++) {
+        uint16_t group = i / RTE_ETH_RETA_GROUP_SIZE;
+        uint16_t idx = i % RTE_ETH_RETA_GROUP_SIZE;
+
+        reta[group].mask |= RTE_BIT64(idx);
+        reta[group].reta[idx] = i % nb_rxq;
+    }
+
+    ret = rte_eth_dev_rss_reta_update(port_id, reta, reta_size);
+    rte_free(reta);
+    return ret;
+}
 ```
+
+这段代码替代旧文档中的 `rte_eth_rss_indir_table_conf` / `rte_eth_dev_rss_indir_table_update()`，那些不是当前 ethdev RSS RETA API。
+
+### 3.7 使用 mbuf 中的 RSS hash
+
+```c
+#include <rte_mbuf.h>
+
+static inline uint32_t
+mbuf_rss_hash(const struct rte_mbuf *m)
+{
+    if (m->ol_flags & RTE_MBUF_F_RX_RSS_HASH)
+        return m->hash.rss;
+
+    return 0; /* 硬件没有提供 RSS hash，应用可自行计算 */
+}
+```
+
+不要把 RSS hash 当成安全 hash。它的用途是负载均衡，不是身份认证或防攻击。
 
 ---
 
-## 4. Flow Director
+## 4. rte_flow：精确分类与硬件规则
 
-### 4.1 Flow Director 原理
+### 4.1 Flow Director 与 rte_flow 的关系
+
+老资料里常见的 Flow Director 私有接口已经不适合新代码：
+
+```
+旧路径:
+  rte_eth_fdir_* / rte_eth_dev_fdir_*   已被现代 rte_flow 模型取代
+
+现代路径:
+  pattern + action
+
+  pattern: ETH / VLAN / IPV4 / TCP / UDP / VXLAN ...
+  action:  QUEUE / RSS / DROP / MARK / COUNT / SECURITY ...
+```
+
+`rte_flow` 的好处是统一。不同网卡 PMD 可以暴露不同能力，但上层 API 是同一个。
+
+### 4.2 rte_flow / RSS / queue / lcore / NUMA 的配合
+
+性能上真正有价值的是：**包 DMA 到内存之前，就已经由硬件决定进入哪个 RX queue**。
+
+这几层的关系是：
+
+```
+流量分类规则  →  RX Queue  →  lcore  →  NUMA-local mempool
+rte_flow/RSS     硬件队列      CPU核      mbuf内存
+```
+
+完整路径如下：
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                        Flow Director 原理                                   │
+│                   硬件分流的正确路径：包进 CPU 前已经选好队列               │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│  Flow Director (Intel 82599 及以上):                                       │
-│  ────────────────────────────────────────                                   │
-│  - 精确匹配 5-tuple (或更多字段)                                           │
-│  - 将特定流导向特定队列                                                     │
-│  - 支持 Action: 接收、丢弃、重定向                                          │
-│  - 支持 Mask: 可配置哪些字段参与匹配                                        │
+│  NIC port 在 NUMA 0                                                          │
 │                                                                             │
-│  与 RSS 的区别:                                                            │
-│  ─────────────                                                              │
+│  ┌──────────────┐                                                           │
+│  │  Wire packet │                                                           │
+│  └──────┬───────┘                                                           │
+│         │                                                                   │
+│         ▼                                                                   │
+│  ┌──────────────────────────────┐                                           │
+│  │ NIC parser / match pipeline   │                                          │
+│  │ - RSS hash                    │                                          │
+│  │ - rte_flow match table        │                                          │
+│  └──────┬───────────────────────┘                                           │
+│         │                                                                   │
+│         │  硬件动作: QUEUE / RSS                                            │
+│         ▼                                                                   │
+│  ┌────────────┬────────────┬────────────┬────────────┐                     │
+│  │ RX queue 0 │ RX queue 1 │ RX queue 2 │ RX queue 3 │                     │
+│  │ pool N0    │ pool N0    │ pool N0    │ pool N0    │                     │
+│  └─────┬──────┴─────┬──────┴─────┬──────┴─────┬──────┘                     │
+│        │            │            │            │                            │
+│        ▼            ▼            ▼            ▼                            │
+│  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐                       │
+│  │ lcore 0 │  │ lcore 1 │  │ lcore 2 │  │ lcore 3 │                       │
+│  │ NUMA 0  │  │ NUMA 0  │  │ NUMA 0  │  │ NUMA 0  │                       │
+│  └─────────┘  └─────────┘  └─────────┘  └─────────┘                       │
 │                                                                             │
-│  ┌─────────────────────────────────────────────────────────────────────┐ │
-│  │     RSS                    │  Flow Director                         │ │
-│  ├─────────────────────────────────────────────────────────────────────┤ │
-│  │  Hash-based 分散           │  Exact match 精确分流                  │ │
-│  │  负载均衡                   │  QoS/安全                              │ │
-│  │  自动                      │  手动配置                              │ │
-│  │  所有流共享规则            │  每个流独立规则                       │ │
-│  │  无需 CPU                  │  小量 CPU 配置                         │ │
-│  └─────────────────────────────────────────────────────────────────────┘ │
-│                                                                             │
-│  Flow Director 工作流程:                                                   │
-│  ─────────────────────                                                      │
-│                                                                             │
-│  ┌─────────────────────────────────────────────────────────────────────┐ │
-│  │  1. 添加 Flow Director 规则                                          │ │
-│  │     - 指定 5-tuple (src_ip, dst_ip, src_port, dst_port, proto)    │ │
-│  │     - 指定目标队列                                                   │ │
-│  │     - 指定 Action (接收/丢弃)                                        │ │
-│  └─────────────────────────────────────────────────────────────────────┘ │
-│                              │                                              │
-│                              ▼                                              │
-│  ┌─────────────────────────────────────────────────────────────────────┐ │
-│  │  2. NIC 硬件匹配                                                     │ │
-│  │     - 每个包在 hardware 中匹配规则                                   │ │
-│  │     - 匹配成功 → 发送到指定队列                                     │ │
-│  │     - 匹配失败 → 按 RSS/普通方式处理                                │ │
-│  └─────────────────────────────────────────────────────────────────────┘ │
-│                              │                                              │
-│                              ▼                                              │
-│  ┌─────────────────────────────────────────────────────────────────────┐ │
-│  │  3. 应用程序在特定队列处理特定流                                    │ │
-│  │     - 队列 0: TCP 流量                                             │ │
-│  │     - 队列 1: UDP 流量                                             │ │
-│  │     - 队列 2: HTTP 流量                                             │ │
-│  │     - 队列 3: 其他                                                 │ │
-│  └─────────────────────────────────────────────────────────────────────┘ │
+│  结果: packet / mbuf / RX ring / lcore 都在同一个 NUMA 节点                 │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 4.2 Flow Director API
+`rte_flow` 和 RSS 的典型组合是：
 
-```c
-// Flow Director API
-
-#include <rte_ethdev.h>
-#include <rte_flow.h>
-
-// Flow Director 过滤器配置
-struct rte_eth_fdir_flow {
-    enum rte_eth_flow_type flow_type;
-    union {
-        struct rte_eth_ipv4_flow ipv4;
-        struct rte_eth_ipv4_tcp_flow ipv4_tcp;
-        struct rte_eth_ipv4_udp_flow ipv4_udp;
-        struct rte_eth_ipv6_flow ipv6;
-        struct rte_eth_ipv6_tcp_flow ipv6_tcp;
-        struct rte_eth_ipv6_udp_flow ipv6_udp;
-    };
-};
-
-// Flow Director mask
-struct rte_eth_fdir_masks {
-    uint16_t vlan_mask;
-    uint16_t src_mask_ipv4;      // IPv4 源地址掩码
-    uint16_t dst_mask_ipv4;      // IPv4 目标地址掩码
-    uint32_t src_mask_ipv6;      // IPv6 源地址掩码
-    uint32_t dst_mask_ipv6;      // IPv6 目标地址掩码
-    uint16_t src_port_mask;      // 源端口掩码
-    uint16_t dst_port_mask;      // 目标端口掩码
-};
-
-// 添加 Flow Director 规则
-int
-rte_eth_dev_fdir_add_perfect_filter(uint16_t port_id,
-                                      struct rte_eth_fdir_filter *filter,
-                                      uint16_t rx_queue,
-                                      uint8_t soft_id,
-                                      uint32_t flags);
-
-// 删除 Flow Director 规则
-int
-rte_eth_dev_fdir_remove_perfect_filter(uint16_t port_id,
-                                         struct rte_eth_fdir_filter *filter);
-
-// 更新 Flow Director 规则
-int
-rte_eth_dev_fdir_update_perfect_filter(uint16_t port_id,
-                                         struct rte_eth_fdir_filter *filter,
-                                         uint16_t rx_queue,
-                                         uint8_t soft_id);
-
-// 配置 Flow Director masks
-int
-rte_eth_dev_fdir_set_masks(uint16_t port_id,
-                             struct rte_eth_fdir_masks *masks);
-
-// 示例: 添加 TCP 流规则
-int
-add_tcp_flow_rule(uint16_t port_id, uint32_t src_ip, uint32_t dst_ip,
-                   uint16_t src_port, uint16_t dst_port, uint16_t rx_queue)
-{
-    struct rte_eth_fdir_filter filter = {
-        .filter_type = RTE_ETH_FILTER_FDIR,
-        .flow_type = RTE_ETH_FLOW_TYPE_TCPv4,
-        .flow.tcp4_flow = {
-            .src_ip = src_ip,
-            .dst_ip = dst_ip,
-            .src_port = src_port,
-            .dst_port = dst_port,
-        },
-    };
-
-    return rte_eth_dev_fdir_add_perfect_filter(port_id, &filter,
-                                                 rx_queue, 0, 0);
-}
-
-// 示例: 添加 UDP 流规则
-int
-add_udp_flow_rule(uint16_t port_id, uint32_t src_ip, uint32_t dst_ip,
-                   uint16_t src_port, uint16_t dst_port, uint16_t rx_queue)
-{
-    struct rte_eth_fdir_filter filter = {
-        .filter_type = RTE_ETH_FILTER_FDIR,
-        .flow_type = RTE_ETH_FLOW_TYPE_UDPv4,
-        .flow.udp4_flow = {
-            .src_ip = src_ip,
-            .dst_ip = dst_ip,
-            .src_port = src_port,
-            .dst_port = dst_port,
-        },
-    };
-
-    return rte_eth_dev_fdir_add_perfect_filter(port_id, &filter,
-                                                 rx_queue, 0, 0);
-}
-
-// 示例: 添加丢弃规则
-int
-add_drop_rule(uint16_t port_id, uint32_t src_ip, uint32_t dst_ip)
-{
-    struct rte_eth_fdir_filter filter = {
-        .filter_type = RTE_ETH_FILTER_FDIR,
-        .flow_type = RTE_ETH_FLOW_TYPE_UDPv4,
-        .flow.udp4_flow = {
-            .src_ip = src_ip,
-            .dst_ip = dst_ip,
-            .src_port = 0,
-            .dst_port = 0,
-        },
-    };
-
-    // 特殊处理: rx_queue = -1 表示丢弃
-    return rte_eth_dev_fdir_add_perfect_filter(port_id, &filter,
-                                                 0xFFFF, 0, RTE_ETH_FDIR_NO_REPORT_QUEUE);
-}
+```
+所有流量进入 NIC
+    │
+    ▼
+rte_flow match
+    │
+    ├── tenant A / VLAN 100 / VIP A
+    │       │
+    │       ▼
+    │     RSS to queues {0,1}
+    │       ├── queue 0 → lcore 0 → mempool NUMA 0
+    │       └── queue 1 → lcore 1 → mempool NUMA 0
+    │
+    ├── tenant B / VLAN 200 / VIP B
+    │       │
+    │       ▼
+    │     RSS to queues {2,3}
+    │       ├── queue 2 → lcore 2 → mempool NUMA 0
+    │       └── queue 3 → lcore 3 → mempool NUMA 0
+    │
+    └── bad traffic
+            │
+            ▼
+          DROP
 ```
 
-### 4.3 rte_flow API (现代 API)
+这里 `rte_flow` 做粗分类，RSS 做组内均衡，queue 和 lcore 做固定绑定。
+
+如果一个连接不走硬件 `rte_flow`，而是先落到默认 RSS queue，再由软件转给目标 worker，就会变成这样：
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                  软件后置分流：逻辑上能转发，但性能代价已经发生             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  目标: 连接 C 应该由 lcore 3 处理                                           │
+│                                                                             │
+│  实际路径:                                                                  │
+│                                                                             │
+│  NIC 收到连接 C 的包                                                        │
+│      │                                                                      │
+│      ├─ 没有命中 rte_flow 规则                                              │
+│      │                                                                      │
+│      ├─ 默认 RSS 把包打到 queue 0                                           │
+│      │                                                                      │
+│      ├─ DMA 到 queue 0 的 RX ring                                           │
+│      │  mbuf 来自 queue 0 绑定的 mempool                                    │
+│      │                                                                      │
+│      ▼                                                                      │
+│  lcore 0 收到包                                                             │
+│      │                                                                      │
+│      ├─ 软件解析 header                                                     │
+│      ├─ 查连接表: 发现连接 C 应该归 lcore 3                                  │
+│      │                                                                      │
+│      └─ 把 mbuf 指针 enqueue 到 lcore 3 的 software ring                    │
+│             │                                                               │
+│             ▼                                                               │
+│        lcore 3 读取这个 mbuf                                                │
+│        但 packet 数据和 mbuf 元数据可能仍在 queue 0 / NUMA 0 的 cache 路径   │
+│                                                                             │
+│  代价:                                                                      │
+│  - lcore 0 白白解析了一次包                                                  │
+│  - lcore 0 和 lcore 3 之间多一次 ring 传递                                   │
+│  - mbuf cache line 在两个 core 之间迁移                                      │
+│  - 如果 lcore 3 在另一个 NUMA 节点，每包都可能跨 NUMA 读数据                 │
+│  - 后续同一连接的包如果仍然没有硬件规则，会持续重复这个代价                 │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+所以 `rte_flow -> QUEUE/RSS` 的价值不是“软件里给包贴一个队列号”，而是让 NIC 在 DMA 前就把包放到正确 RX queue。软件 fallback 可以用于兼容和控制面，但不能当高性能数据面的主路径。
+
+实战原则：
+
+1. 每个 NUMA socket 建自己的 mempool。
+2. 每个 RX queue 绑定本 NUMA mempool。
+3. 每个 RX queue 由固定同 NUMA lcore 轮询。
+4. RSS 做默认均衡，`rte_flow` 做 VIP、tenant、隧道、端口等精确 steering。
+5. `rte_flow_validate()` / `rte_flow_create()` 失败时要明确降级，并降低性能预期。
+
+### 4.3 TCP dst port 到指定队列
+
+下面规则把 IPv4 TCP 目的端口 `dst_port` 的流量导向 `queue_id`。
 
 ```c
-// rte_flow API (DPDK 18.11+, 推荐)
-
 #include <rte_flow.h>
+#include <rte_ether.h>
+#include <rte_tcp.h>
 
-// Flow 属性
-struct rte_flow_attr {
-    uint32_t group;       // Flow group (0-15)
-    uint32_t priority;    // 优先级 (0 = 最高)
-    uint32_t attr;         // RTE_FLOW_ATTR_*
-};
-
-// Flow 匹配模式
-struct rte_flow_pattern {
-    enum rte_flow_item_type type;
-    union {
-        struct rte_flow_item_ipv4 ipv4;
-        struct rte_flow_item_ipv6 ipv6;
-        struct rte_flow_item_tcp tcp;
-        struct rte_flow_item_udp udp;
-        struct rte_flow_item_eth eth;
-        struct rte_flow_item_vlan vlan;
-    };
-};
-
-// Flow 动作
-struct rte_flow_action {
-    enum rte_flow_action_type type;
-    union {
-        struct rte_flow_action_queue {
-            uint16_t index;  // 队列索引
-        } queue;
-        struct rte_flow_action_drop {
-            // 无字段，丢弃
-        } drop;
-        struct rte_flow_action_passthru {
-            // 继续正常处理
-        } passthru;
-    };
-};
-
-// 创建 Flow
-struct rte_flow *
-rte_flow_create(uint16_t port_id,
-                 const struct rte_flow_attr *attr,
-                 const struct rte_flow_pattern *pattern,
-                 const struct rte_flow_action *actions,
-                 struct rte_flow_error *error);
-
-// 验证 Flow 规则是否支持
-int
-rte_flow_validate(uint16_t port_id,
-                   const struct rte_flow_attr *attr,
-                   const struct rte_flow_pattern *pattern,
-                   const struct rte_flow_action *actions,
-                   struct rte_flow_error *error);
-
-// 销毁 Flow
-int
-rte_flow_destroy(uint16_t port_id,
-                  struct rte_flow *flow,
-                  struct rte_flow_error *error);
-
-// 刷新所有 Flow
-int
-rte_flow_flush(uint16_t port_id, struct rte_flow_error *error);
-
-// 示例: 将 TCP 流量导向特定队列
-struct rte_flow *
-create_tcp_to_queue_flow(uint16_t port_id, uint16_t queue_id,
-                          uint32_t src_ip, uint32_t dst_ip,
-                          uint16_t src_port, uint16_t dst_port)
+static struct rte_flow *
+create_tcp_dst_port_to_queue(uint16_t port_id, uint16_t dst_port,
+                             uint16_t queue_id)
 {
+    struct rte_flow_error error;
+
     struct rte_flow_attr attr = {
-        .group = 0,      // 默认 group
-        .priority = 0,   // 高优先级
-        .ingress = 1,    // 入口流量
+        .ingress = 1,
     };
 
-    // 匹配模式
-    struct rte_flow_pattern pattern[] = {
+    struct rte_flow_item_eth eth_spec = {
+        .hdr.ether_type = rte_cpu_to_be_16(RTE_ETHER_TYPE_IPV4),
+    };
+    struct rte_flow_item_eth eth_mask = {
+        .hdr.ether_type = RTE_BE16(0xffff),
+    };
+
+    struct rte_flow_item_tcp tcp_spec = {
+        .hdr.dst_port = rte_cpu_to_be_16(dst_port),
+    };
+    struct rte_flow_item_tcp tcp_mask = {
+        .hdr.dst_port = RTE_BE16(0xffff),
+    };
+
+    struct rte_flow_item pattern[] = {
         {
             .type = RTE_FLOW_ITEM_TYPE_ETH,
-            .spec = &(struct rte_flow_item_eth){
-                .type = 0x0800,  // IPv4
-            },
-            .mask = &(struct rte_flow_item_eth){
-                .type = 0xFFFF,
-            },
+            .spec = &eth_spec,
+            .mask = &eth_mask,
         },
         {
             .type = RTE_FLOW_ITEM_TYPE_IPV4,
-            .spec = &(struct rte_flow_item_ipv4){
-                .hdr = {
-                    .src_addr = src_ip,
-                    .dst_addr = dst_ip,
-                },
-            },
-            .mask = &(struct rte_flow_item_ipv4){
-                .hdr = {
-                    .src_addr = 0xFFFFFFFF,
-                    .dst_addr = 0xFFFFFFFF,
-                },
-            },
         },
         {
             .type = RTE_FLOW_ITEM_TYPE_TCP,
-            .spec = &(struct rte_flow_item_tcp){
-                .hdr = {
-                    .src_port = src_port,
-                    .dst_port = dst_port,
-                },
-            },
-            .mask = &(struct rte_flow_item_tcp){
-                .hdr = {
-                    .src_port = 0xFFFF,
-                    .dst_port = 0xFFFF,
-                },
-            },
+            .spec = &tcp_spec,
+            .mask = &tcp_mask,
         },
         {
             .type = RTE_FLOW_ITEM_TYPE_END,
         },
     };
 
-    // 动作
+    struct rte_flow_action_queue queue = {
+        .index = queue_id,
+    };
     struct rte_flow_action actions[] = {
         {
             .type = RTE_FLOW_ACTION_TYPE_QUEUE,
-            .conf = &(struct rte_flow_action_queue){
-                .index = queue_id,
-            },
+            .conf = &queue,
         },
         {
             .type = RTE_FLOW_ACTION_TYPE_END,
         },
     };
 
-    // 验证
-    if (rte_flow_validate(port_id, &attr, pattern, actions, NULL) != 0) {
+    if (rte_flow_validate(port_id, &attr, pattern, actions, &error) != 0) {
+        printf("flow validate failed: %s\n",
+               error.message ? error.message : "unknown");
         return NULL;
     }
 
-    // 创建
-    return rte_flow_create(port_id, &attr, pattern, actions, NULL);
+    return rte_flow_create(port_id, &attr, pattern, actions, &error);
 }
+```
 
-// 示例: 丢弃特定 UDP 流
-struct rte_flow *
-create_udp_drop_flow(uint16_t port_id, uint32_t dst_ip, uint16_t dst_port)
+### 4.4 特定流量做 RSS
+
+`QUEUE` 是精确打到一个队列，`RSS` 是命中特定 pattern 后再在一组队列内分流。
+
+```c
+static struct rte_flow *
+create_ipv4_tcp_rss_flow(uint16_t port_id, const uint16_t *queues,
+                         uint32_t nb_queues)
 {
+    struct rte_flow_error error;
+
     struct rte_flow_attr attr = {
-        .group = 0,
-        .priority = 0,
         .ingress = 1,
     };
 
-    struct rte_flow_pattern pattern[] = {
+    struct rte_flow_item_eth eth_spec = {
+        .hdr.ether_type = rte_cpu_to_be_16(RTE_ETHER_TYPE_IPV4),
+    };
+    struct rte_flow_item_eth eth_mask = {
+        .hdr.ether_type = RTE_BE16(0xffff),
+    };
+
+    struct rte_flow_item pattern[] = {
         {
             .type = RTE_FLOW_ITEM_TYPE_ETH,
-            .spec = &(struct rte_flow_item_eth){ .type = 0x0800 },
-            .mask = &(struct rte_flow_item_eth){ .type = 0xFFFF },
+            .spec = &eth_spec,
+            .mask = &eth_mask,
         },
         {
             .type = RTE_FLOW_ITEM_TYPE_IPV4,
-            .spec = &(struct rte_flow_item_ipv4){
-                .hdr = { .dst_addr = dst_ip },
-            },
-            .mask = &(struct rte_flow_item_ipv4){
-                .hdr = { .dst_addr = 0xFFFFFFFF },
-            },
         },
         {
-            .type = RTE_FLOW_ITEM_TYPE_UDP,
-            .spec = &(struct rte_flow_item_udp){
-                .hdr = { .dst_port = dst_port },
-            },
-            .mask = &(struct rte_flow_item_udp){
-                .hdr = { .dst_port = 0xFFFF },
-            },
+            .type = RTE_FLOW_ITEM_TYPE_TCP,
         },
         {
             .type = RTE_FLOW_ITEM_TYPE_END,
         },
     };
 
-    struct rte_flow_action actions[] = {
-        {
-            .type = RTE_FLOW_ACTION_TYPE_DROP,
-        },
-        {
-            .type = RTE_FLOW_ACTION_TYPE_END,
-        },
-    };
-
-    if (rte_flow_validate(port_id, &attr, pattern, actions, NULL) != 0) {
-        return NULL;
-    }
-
-    return rte_flow_create(port_id, &attr, pattern, actions, NULL);
-}
-
-// 示例: 负载均衡 (RSS + Flow Director)
-struct rte_flow *
-create_rss_flow(uint16_t port_id, uint16_t *queues, int nb_queues)
-{
-    struct rte_flow_attr attr = {
-        .group = 0,
-        .priority = 1,  // 低于精确匹配
-        .ingress = 1,
-    };
-
-    // 匹配所有 IPv4
-    struct rte_flow_pattern pattern[] = {
-        {
-            .type = RTE_FLOW_ITEM_TYPE_ETH,
-            .spec = &(struct rte_flow_item_eth){ .type = 0x0800 },
-            .mask = &(struct rte_flow_item_eth){ .type = 0xFFFF },
-        },
-        {
-            .type = RTE_FLOW_ITEM_TYPE_IPV4,
-            .spec = NULL,  // 匹配所有
-            .mask = NULL,
-        },
-        {
-            .type = RTE_FLOW_ITEM_TYPE_END,
-        },
-    };
-
-    struct rte_flow_action_rss rss_conf = {
-        .types = RTE_ETH_RSS_IP | RTE_ETH_RSS_TCP | RTE_ETH_RSS_UDP,
-        .key_len = 40,
+    struct rte_flow_action_rss rss = {
+        .types = RTE_ETH_RSS_TCP,
         .queue_num = nb_queues,
         .queue = queues,
     };
-
     struct rte_flow_action actions[] = {
         {
             .type = RTE_FLOW_ACTION_TYPE_RSS,
-            .conf = &rss_conf,
+            .conf = &rss,
         },
         {
             .type = RTE_FLOW_ACTION_TYPE_END,
         },
     };
 
-    if (rte_flow_validate(port_id, &attr, pattern, actions, NULL) != 0) {
+    if (rte_flow_validate(port_id, &attr, pattern, actions, &error) != 0) {
+        printf("rss flow validate failed: %s\n",
+               error.message ? error.message : "unknown");
         return NULL;
     }
 
-    return rte_flow_create(port_id, &attr, pattern, actions, NULL);
+    return rte_flow_create(port_id, &attr, pattern, actions, &error);
 }
 ```
 
+### 4.5 drop 和 count
+
+硬件 drop 适合丢弃明确不需要进入 CPU 的流量，比如黑名单、异常端口、攻击流量。
+
+```c
+struct rte_flow_action actions[] = {
+    { .type = RTE_FLOW_ACTION_TYPE_DROP },
+    { .type = RTE_FLOW_ACTION_TYPE_END },
+};
+```
+
+很多 PMD 支持 `COUNT`，但不是所有规则组合都支持。生产代码必须先 `rte_flow_validate()`，失败时降级到软件路径。
+
 ---
 
-## 5. 队列优化
+## 5. 队列、描述符和 NUMA
 
-### 5.1 队列数量选择
+### 5.1 队列数怎么选
+
+```
+常见模型:
+
+1 lcore : 1 RX queue : 1 TX queue
+
+┌────────┐     ┌──────────┐     ┌────────┐
+│ queue0 │ ──> │ lcore 0  │ ──> │ txq0   │
+│ queue1 │ ──> │ lcore 1  │ ──> │ txq1   │
+│ queue2 │ ──> │ lcore 2  │ ──> │ txq2   │
+│ queue3 │ ──> │ lcore 3  │ ──> │ txq3   │
+└────────┘     └──────────┘     └────────┘
+```
+
+经验规则：
+
+- 队列数不要超过实际处理 lcore 数，否则只是在制造空轮询。
+- 一个队列不要被多个 lcore 轮询，除非 PMD 明确支持并且你愿意承担同步成本。
+- 端口所在 NUMA 节点上的 lcore 优先处理该端口。
+
+### 5.2 主动外发时如何选择 lcore 和 TX queue
+
+转发程序的回包通常可以继承 RX owner：哪个 lcore 收到连接，哪个 lcore 负责后续处理和发包。
+
+主动外发不一样。比如 DPDK 应用自己作为客户端发起连接，第一包不是从 RX queue 进来的，就没有现成的 owner。此时应用需要自己做一次归属分配：
+
+```
+主动外发 flow
+    │
+    ▼
+route lookup
+    │
+    ├─ 决定 tx_port
+    │
+    ▼
+tx_port 所在 NUMA
+    │
+    ├─ 选择同 NUMA 的 lcore 集合
+    │
+    ├─ 选择同 NUMA 的 mempool
+    │
+    ▼
+5-tuple hash
+    │
+    ├─ 在候选 lcore 里选 owner_lcore
+    │
+    ▼
+owner_lcore
+    │
+    ├─ 使用它独占的 tx_queue
+    └─ 后续这个 flow 的发送都交回这个 owner
+```
+
+完整关系如下：
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                        队列数量选择                                         │
+│                         主动外发的推荐归属模型                              │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│  考虑因素:                                                                 │
-│  ────────                                                                  │
+│  应用要主动连接 203.0.113.10:443                                            │
 │                                                                             │
-│  1. CPU 核心数量                                                           │
-│     - 每个队列通常绑定一个 lcore                                           │
-│     - 队列数 ≤ lcore 数                                                    │
+│  1. 路由查找                                                                │
+│     dst_ip=203.0.113.10 → tx_port 0                                         │
 │                                                                             │
-│  2. NIC 能力                                                               │
-│     - 1G NIC: 通常 4-8 队列                                                │
-│     - 10G NIC: 通常 16-32 队列                                             │
-│     - 40G/100G NIC: 64+ 队列                                               │
+│  2. 查询网卡 NUMA                                                           │
+│     rte_eth_dev_socket_id(port 0) → NUMA 0                                  │
 │                                                                             │
-│  3. 流量特征                                                               │
-│     - 流数量: 更多流 = 更多队列                                             │
-│     - 流大小: 大流可能独占队列                                              │
+│  3. 只在 NUMA 0 的 lcore 中选择 owner                                       │
 │                                                                             │
-│  4. 软件开销                                                               │
-│     - 每队列有独立 Rx/Tx descriptors                                      │
-│     - 内存占用 = nb_queues × queue_size × desc_size                       │
+│     NUMA 0 lcore set:                                                       │
+│       lcore 0 → tx_queue 0 → mempool N0                                     │
+│       lcore 1 → tx_queue 1 → mempool N0                                     │
+│       lcore 2 → tx_queue 2 → mempool N0                                     │
+│       lcore 3 → tx_queue 3 → mempool N0                                     │
 │                                                                             │
-│  推荐配置:                                                                 │
-│  ──────────                                                                │
+│  4. 使用 5-tuple hash 选一个稳定 owner                                      │
 │                                                                             │
-│  NIC         CPU Cores    Rx Queues    Tx Queues    每队列 Descriptor     │
-│  ──────────────────────────────────────────────────────────────────────── │
-│  10G          4            4            4            512                   │
-│  10G          8            8            8            512                   │
-│  40G          8            8            8            512                   │
-│  40G          16           16           16           512                   │
-│  100G         16           16           16           512                   │
-│  100G         32           32           32           512                   │
+│       hash(src_ip, dst_ip, src_port, dst_port, proto) % 4 = 2               │
+│                                                                             │
+│       → owner_lcore = lcore 2                                                │
+│       → tx_queue = 2                                                        │
+│       → mbuf pool = mempool N0                                              │
+│                                                                             │
+│  5. 后续这个 flow 的所有发送都走 lcore 2                                    │
+│                                                                             │
+│       lcore 2: rte_eth_tx_burst(port 0, queue 2, pkts, n)                  │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 5.2 描述符大小
+可以把主动外发的归属信息记录在 flow/session 里：
 
 ```c
-// 描述符大小配置
-
-struct rte_eth_conf conf = {
-    .rxmode = {
-        .mq_mode = RTE_ETH_MQ_RX_RSS,
-    },
+struct flow_owner {
+    uint16_t tx_port;
+    uint16_t tx_queue;
+    unsigned owner_lcore;
+    int socket_id;
+    struct rte_mempool *mp;
 };
 
+static struct flow_owner
+assign_outgoing_flow(const struct five_tuple *ft)
+{
+    uint16_t tx_port = route_lookup(ft->dst_ip);
+    int socket = rte_eth_dev_socket_id(tx_port);
+    if (socket < 0)
+        socket = 0;
+
+    const struct lcore_set *set = &lcores_on_socket[socket];
+    unsigned idx = hash_five_tuple(ft) % set->count;
+    unsigned owner = set->lcores[idx];
+
+    return (struct flow_owner) {
+        .tx_port = tx_port,
+        .tx_queue = lcore_to_txq[owner],
+        .owner_lcore = owner,
+        .socket_id = socket,
+        .mp = mempool_on_socket[socket],
+    };
+}
+```
+
+发包时有两种情况：
+
+```
+当前 lcore == owner_lcore
+    │
+    └─ 直接 rte_eth_tx_burst(tx_port, tx_queue, ...)
+
+当前 lcore != owner_lcore
+    │
+    └─ 不要直接抢 owner 的 tx_queue
+       把 mbuf 指针 enqueue 到 owner_lcore 的 tx_ring
+       由 owner_lcore 统一 tx_burst
+```
+
+错误模型如下：
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           主动外发选错的代价                                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  tx_port 0 在 NUMA 0                                                         │
+│  但应用在 NUMA 1 的 lcore 20 上分配 mbuf 并直接发包                         │
+│                                                                             │
+│  lcore 20 (NUMA 1)                                                           │
+│      │                                                                      │
+│      ├─ 从 NUMA 1 mempool 分配 mbuf                                          │
+│      ├─ 写 packet buffer                                                     │
+│      └─ rte_eth_tx_burst(port 0, queue 0, mbuf)                              │
+│             │                                                               │
+│             ▼                                                               │
+│        NIC port 0 (NUMA 0) 通过 DMA 读取 NUMA 1 内存                         │
+│                                                                             │
+│  结果:                                                                      │
+│  - lcore 访问远端 NIC descriptor / doorbell                                  │
+│  - NIC DMA 读取远端 NUMA 内存                                                │
+│  - cache line 跨 socket 迁移                                                 │
+│  - 多 lcore 共享 TX queue 时还可能产生同步竞争                               │
+│                                                                             │
+│  通常不会功能错误，但吞吐和尾延迟会变差。                                   │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+主动外发的原则就是：**先根据路由选 port，再根据 port 的 NUMA 选 lcore/mempool/TX queue，最后用 5-tuple hash 保证同一连接稳定归属同一个 lcore。**
+
+### 5.3 描述符设置
+
+```c
+static int
+setup_queues(uint16_t port_id, uint16_t nb_rxq, uint16_t nb_txq,
+             uint16_t nb_rxd, uint16_t nb_txd,
+             struct rte_mempool **pools_by_socket)
+{
+    struct rte_eth_dev_info dev_info;
+    int ret = rte_eth_dev_info_get(port_id, &dev_info);
+    if (ret != 0)
+        return ret;
+
+    ret = rte_eth_dev_adjust_nb_rx_tx_desc(port_id, &nb_rxd, &nb_txd);
+    if (ret != 0)
+        return ret;
+
+    int socket_id = rte_eth_dev_socket_id(port_id);
+    unsigned int setup_socket = socket_id < 0 ? SOCKET_ID_ANY : (unsigned int)socket_id;
+    unsigned int pool_socket = socket_id < 0 ? 0 : (unsigned int)socket_id;
+
+    struct rte_eth_rxconf rxq_conf = dev_info.default_rxconf;
+    rxq_conf.offloads = 0;
+    rxq_conf.rx_free_thresh = 32;
+    rxq_conf.rx_drop_en = 1;
+
+    struct rte_eth_txconf txq_conf = dev_info.default_txconf;
+    txq_conf.offloads = 0;
+    txq_conf.tx_free_thresh = 32;
+    txq_conf.tx_rs_thresh = 32;
+
+    for (uint16_t q = 0; q < nb_rxq; q++) {
+        ret = rte_eth_rx_queue_setup(port_id, q, nb_rxd, setup_socket,
+                                     &rxq_conf, pools_by_socket[pool_socket]);
+        if (ret != 0)
+            return ret;
+    }
+
+    for (uint16_t q = 0; q < nb_txq; q++) {
+        ret = rte_eth_tx_queue_setup(port_id, q, nb_txd, setup_socket, &txq_conf);
+        if (ret != 0)
+            return ret;
+    }
+
+    return 0;
+}
+```
+
+描述符不是越大越好：
+
+| 参数             | 太小             | 太大                           |
+| ---------------- | ---------------- | ------------------------------ |
+| RX desc          | 突发流量容易丢包 | 占内存、cache 压力大、延迟变高 |
+| TX desc          | 短 burst 容易堵  | mbuf 回收滞后，内存占用升高    |
+| `rx_free_thresh` | 频繁回收描述符   | 回收滞后                       |
+| `tx_rs_thresh`   | 写回频繁         | 完成通知滞后                   |
+
+常用起点：`rxq=core_count`、`txq=core_count`、`rxd=1024`、`txd=1024`。小包极限压测可以试 `2048`，低延迟场景可以试 `512`。
+
+### 5.4 NUMA 对齐
+
+```c
+static unsigned
+pick_lcores_on_port_socket(uint16_t port_id, unsigned *lcores, unsigned max_lcores)
+{
+    int socket = rte_eth_dev_socket_id(port_id);
+    unsigned n = 0;
+
+    RTE_LCORE_FOREACH_WORKER(lcore_id) {
+        if (socket >= 0 && rte_lcore_to_socket_id(lcore_id) != socket)
+            continue;
+
+        lcores[n++] = lcore_id;
+        if (n == max_lcores)
+            break;
+    }
+
+    return n;
+}
+```
+
+跨 NUMA 的代价很真实：
+
+```
+NIC DMA 到 socket 0 hugepage
+        │
+        ▼
+socket 1 lcore 读取 mbuf 和 packet
+        │
+        └─ 每包都跨 UPI/QPI 访问内存，吞吐下降且尾延迟上升
+```
+
+---
+
+## 6. Offload：只打开你真的使用的能力
+
+### 6.1 offload 是什么
+
+offload 就是**让网卡硬件代劳某些工作**，而不是 CPU 做完再交给网卡。
+
+```
+没有 offload:
+
+CPU 构建包头 → CPU 计算 checksum → CPU 拷贝到 NIC buffer → NIC 发送
+                   ↑
+               这步可以卸载给网卡
+
+
+有 TX checksum offload:
+
+CPU 构建包头 (checksum 填 0) → CPU 填 l2_len/l3_len → NIC 发送时自动算 checksum
+                                                       ↑
+                                                   硬件完成
+```
+
+### 6.2 offload 不是总开关，是一组 bit flag
+
+offload 不是 `ON/OFF` 一个总开关，而是**每个能力一个 bit**，按需组合：
+
+```c
+// 不是这样:
+offloads = ON;   // 全开
+offloads = OFF;  // 全关
+
+// 而是这样，每个 bit 控制一个能力:
+uint64_t rx_offloads =
+    RTE_ETH_RX_OFFLOAD_IPV4_CKSUM      // bit: 硬件验证 IPv4 checksum
+  | RTE_ETH_RX_OFFLOAD_TCP_CKSUM       // bit: 硬件验证 TCP checksum
+  | RTE_ETH_RX_OFFLOAD_RSS_HASH;       // bit: 硬件把 RSS hash 写入 mbuf
+```
+
+常见 RX offload：
+
+| bit          | 含义                                    | 什么时候开           |
+| ------------ | --------------------------------------- | -------------------- |
+| `IPV4_CKSUM` | 硬件验证入包 IPv4 checksum              | 做路由/防火墙/转发时 |
+| `TCP_CKSUM`  | 硬件验证入包 TCP checksum               | L4 处理时            |
+| `UDP_CKSUM`  | 硬件验证入包 UDP checksum               | UDP 场景             |
+| `VLAN_STRIP` | 硬件自动剥离 VLAN tag                   | 做 VLAN 终结时       |
+| `RSS_HASH`   | 硬件把 RSS hash 写入 `mbuf->hash.rss`   | 用 RSS 时必须开      |
+| `SCATTER`    | 允许一个包分散在多个 mbuf (jumbo frame) | 大包场景             |
+| `TIMESTAMP`  | 硬件打时间戳写入 mbuf                   | 精确延迟测量时       |
+
+常见 TX offload：
+
+| bit          | 含义                       | 什么时候开     |
+| ------------ | -------------------------- | -------------- |
+| `IPV4_CKSUM` | 硬件计算发包 IPv4 checksum | 几乎总开       |
+| `TCP_CKSUM`  | 硬件计算发包 TCP checksum  | 几乎总开       |
+| `UDP_CKSUM`  | 硬件计算发包 UDP checksum  | UDP 场景       |
+| `TCP_TSO`    | TCP 大段分段卸载           | 大段发送时     |
+| `MULTI_SEGS` | 允许跨多个 mbuf 发送       | jumbo frame 时 |
+
+### 6.3 两层配置：port-level 和 queue-level
+
+offload 配置分两层，最终效果是**两层取并集**：
+
+```
+port-level offloads
+  rte_eth_conf.rxmode.offloads
+  rte_eth_conf.txmode.offloads
+  │
+  │ 在 rte_eth_dev_configure() 时设置
+  │ 声明这个端口的所有队列共享的能力
+  │
+  └── 每个 queue 继承 port-level 设置
+      │
+      + queue-level offloads
+        rte_eth_rxconf.offloads
+        rte_eth_txconf.offloads
+        │
+        │ 在 rte_eth_rx_queue_setup() 时设置
+        │ 可以额外补充 port-level 没开的能力
+        │
+        └── 最终 = port-level | queue-level
+```
+
+```c
+// port-level: 所有队列共享的能力
+struct rte_eth_conf port_conf = {
+    .rxmode = {
+        .offloads = RTE_ETH_RX_OFFLOAD_IPV4_CKSUM
+                  | RTE_ETH_RX_OFFLOAD_TCP_CKSUM
+                  | RTE_ETH_RX_OFFLOAD_RSS_HASH,
+    },
+    .txmode = {
+        .offloads = RTE_ETH_TX_OFFLOAD_IPV4_CKSUM
+                  | RTE_ETH_TX_OFFLOAD_TCP_CKSUM
+                  | RTE_ETH_TX_OFFLOAD_TCP_TSO,
+    },
+};
+rte_eth_dev_configure(port, nb_rxq, nb_txq, &port_conf);
+
+// queue-level: 某个队列额外启用 scatter
+struct rte_eth_rxconf rxq_conf = {
+    .offloads = RTE_ETH_RX_OFFLOAD_SCATTER,  // 额外能力
+};
+rte_eth_rx_queue_setup(port, queue_id, ..., &rxq_conf, mp);
+// 这个 queue 最终 = port_offloads | RTE_ETH_RX_OFFLOAD_SCATTER
+```
+
+### 6.4 开之前先查硬件能力
+
+不是所有网卡都支持所有 offload。**开之前必须查 `dev_info` 确认**：
+
+```c
 struct rte_eth_dev_info dev_info;
 rte_eth_dev_info_get(port_id, &dev_info);
 
-// rx_desc_best: NIC 支持的最大值
-// tx_desc_best: NIC 支持的最大值
+// 查看支持哪些
+printf("RX offload capa: 0x%lx\n", dev_info.rx_offload_capa);
+printf("TX offload capa: 0x%lx\n", dev_info.tx_offload_capa);
 
-// 配置描述符数量
-int
-configure_descriptors(uint16_t port_id, uint16_t nb_rx_desc, uint16_t nb_tx_desc)
-{
-    struct rte_eth_conf conf = {
-        .rx_adv_conf = {
-            .rss_conf = {
-                .rss_key = NULL,
-                .rss_hf = RTE_ETH_RSS_IP,
-            },
-        },
-    };
-
-    return rte_eth_dev_configure(port_id, rxq_count, txq_count, &conf);
+// 检查某个能力
+if (dev_info.tx_offload_capa & RTE_ETH_TX_OFFLOAD_TCP_TSO) {
+    // 网卡支持 TSO，可以开
 }
 
-// 设置每队列描述符数
-int
-setup_queues(uint16_t port_id)
-{
-    struct rte_eth_rxq_conf rxq_conf = {
-        .rx_thresh = {
-            .pthresh = 8,    // 预取阈值
-            .hthresh = 8,    // 主机阈值
-            .wthresh = 0,    // 写回阈值
-        },
-        .rx_free_thresh = 32,   // 批量释放 mbuf
-        .rx_drop_en = 0,        // 不丢弃
-    };
-
-    struct rte_eth_txq_conf txq_conf = {
-        .tx_thresh = {
-            .pthresh = 32,   // 预取阈值
-            .hthresh = 32,   // 主机阈值
-            .wthresh = 0,    // 写回阈值
-        },
-        .tx_free_thresh = 32,   // 释放描述符阈值
-        .tx_rs_thresh = 0,      // RS 阈值 (0 = 自动)
-    };
-
-    for (int i = 0; i < rxq_count; i++) {
-        rte_eth_rx_queue_setup(port_id, i, nb_rx_desc,
-                                 rte_eth_dev_socket_id(port_id),
-                                 &rxq_conf,
-                                 mbuf_pool[rte_eth_dev_socket_id(port_id)]);
-    }
-
-    for (int i = 0; i < txq_count; i++) {
-        rte_eth_tx_queue_setup(port_id, i, nb_tx_desc,
-                                 rte_eth_dev_socket_id(port_id),
-                                 &txq_conf);
-    }
-}
-
-// 阈值调优
-void
-tune_thresholds(void)
-{
-    // Rx thresholds
-    // pthresh: 预取多少 descriptor
-    // hthresh: 触发 DMA 的阈值
-    // wthresh: 写回阈值 (0 = 每包)
-
-    // 推荐:
-    // 小包: pthresh=8, hthresh=8 (低延迟)
-    // 大包: pthresh=16, hthresh=16 (高吞吐)
-
-    // Tx thresholds
-    // pthresh: 预取多少 free descriptor
-    // hthresh: 触发 DMA 的阈值
-    // wthresh: 写回阈值
-
-    // tx_free_thresh: 多少 TX descriptor 后释放 mbuf
-    // tx_rs_thresh: 多少 TX descriptor 后设置 RS (报告状态)
-}
+// 如果你开了一个网卡不支持的能力，rte_eth_dev_configure() 会失败
 ```
 
-### 5.3 多队列分配策略
+推荐做法：用 `dev_info.default_rxconf` 和 `dev_info.default_txconf` 作为起点，只修改你确定需要的能力。
+
+### 6.2 checksum offload
+
+TX checksum offload 不是只配置端口就完了，发送每个 mbuf 时也要填 header 长度和 `ol_flags`。
 
 ```c
-// 多队列分配策略
-
-// 策略 1: RSS (自动负载均衡)
-void
-allocate_rss_queues(uint16_t port_id)
-{
-    int num_cores = rte_lcore_count();
-    int num_queues = num_cores;
-
-    // RSS 会自动将流分散到各队列
-    // 应用程序无需关心队列分配
-}
-
-// 策略 2: Flow Director (按流定向)
-void
-allocate_fdir_queues(uint16_t port_id)
-{
-    // 队列分配
-    // 队列 0: 管理/控制流量
-    // 队列 1: TCP 流量
-    // 队列 2: UDP 流量
-    // 队列 3: 其他
-
-    // 添加 Flow Director 规则
-    add_tcp_flow_rule(port_id, 0, 0, 0, 80, 1);  // HTTP → 队列 1
-    add_tcp_flow_rule(port_id, 0, 0, 0, 443, 1); // HTTPS → 队列 1
-    add_udp_flow_rule(port_id, 0, 0, 0, 53, 2);   // DNS → 队列 2
-}
-
-// 策略 3: Core 绑定 (NUMA 感知)
-void
-allocate_numa_queues(uint16_t port_id)
-{
-    int numa = rte_eth_dev_socket_id(port_id);
-
-    // 分配本地 lcore
-    unsigned *lcores = malloc(sizeof(unsigned) * num_queues);
-    int count = 0;
-
-    unsigned lcore_id;
-    RTE_LCORE_FOREACH(lcore_id) {
-        if (rte_lcore_to_socket_id(lcore_id) == numa && count < num_queues) {
-            lcores[count++] = lcore_id;
-        }
-    }
-
-    // 按 lcore 分配队列
-    for (int i = 0; i < count; i++) {
-        printf("Queue %d → lcore %d\n", i, lcores[i]);
-    }
-}
-
-// 策略 4: 动态队列调度
-struct queue_scheduler {
-    uint16_t current;
-    uint16_t *queues;
-    uint16_t count;
-};
+#include <rte_ip.h>
+#include <rte_udp.h>
 
 static void
-round_robin_next(struct queue_scheduler *s)
+prepare_ipv4_udp_tx_cksum(struct rte_mbuf *m)
 {
-    s->current = (s->current + 1) % s->count;
-}
+    struct rte_ether_hdr *eth = rte_pktmbuf_mtod(m, struct rte_ether_hdr *);
+    struct rte_ipv4_hdr *ip = (struct rte_ipv4_hdr *)(eth + 1);
+    struct rte_udp_hdr *udp = (struct rte_udp_hdr *)((char *)ip + sizeof(*ip));
 
-static uint16_t
-get_next_queue(struct queue_scheduler *s)
-{
-    uint16_t q = s->queues[s->current];
-    round_robin_next(s);
-    return q;
+    m->l2_len = sizeof(struct rte_ether_hdr);
+    m->l3_len = sizeof(struct rte_ipv4_hdr);
+
+    ip->hdr_checksum = 0;
+    udp->dgram_cksum = rte_ipv4_phdr_cksum(ip, RTE_MBUF_F_TX_UDP_CKSUM);
+
+    m->ol_flags |= RTE_MBUF_F_TX_IPV4 |
+                   RTE_MBUF_F_TX_IP_CKSUM |
+                   RTE_MBUF_F_TX_UDP_CKSUM;
 }
 ```
+
+如果 `m->l2_len` / `m->l3_len` 没填，很多 PMD 无法知道从哪里开始计算 checksum。
 
 ---
 
-## 6. 中断与轮询
+## 7. 轮询、中断与混合模式
 
-### 6.1 轮询 vs 中断
+### 7.1 数据面默认用轮询
+
+DPDK 的核心假设是 poll mode：
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                        轮询 vs 中断                                        │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│  轮询 (Polling):                                                           │
-│  ───────────                                                                │
-│  - CPU 持续检查 NIC 是否有包                                                │
-│  - 优点: 低延迟、无中断开销                                                  │
-│  - 缺点: CPU 占用高 (100%)                                                  │
-│  - 适用: 高吞吐、短包、持续流量                                              │
-│                                                                             │
-│  中断 (Interrupt):                                                         │
-│  ───────────                                                                │
-│  - NIC 有包时触发中断                                                       │
-│  - 优点: CPU 空闲时无开销                                                   │
-│  - 缺点: 中断处理延迟高、开销大                                              │
-│  - 适用: 低流量、稀疏流量                                                   │
-│                                                                             │
-│  混合模式 (Adaptive):                                                      │
-│  ─────────────────                                                          │
-│  - 正常: 轮询                                                                │
-│  - 空闲一段时间: 切换到中断                                                  │
-│  - 中断唤醒: 切回轮询                                                        │
-│                                                                             │
-│  性能对比:                                                                 │
-│  ──────────                                                                │
-│                                                                             │
-│  模式           CPU 利用率    延迟      吞吐                              │
-│  ──────────────────────────────────────────────────────────────────────── │
-│  纯轮询          100%         < 1us    100% (最高)                       │
-│  混合轮询        50-80%       1-10us   95-99%                            │
-│  传统中断        5-20%        10-100us  70-85%                            │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
+while (1) {
+    nb_rx = rte_eth_rx_burst(...);
+    if (nb_rx)
+        process(nb_rx);
+}
 ```
 
-### 6.2 中断配置
+高吞吐时轮询是正确选择，因为避免了中断、唤醒、调度、cache 冷启动。
+
+### 7.2 低流量可以用 RX interrupt
+
+RX interrupt 适合低流量、省电、控制面队列，不适合极限数据面。
+
+现代 ethdev 的常见用法是把 RX queue fd 接入 epoll：
 
 ```c
-// DPDK 中断配置
-
+#include <sys/epoll.h>
 #include <rte_ethdev.h>
-#include <rte_interrupts.h>
 
-// 启用中断模式
-int
-configure_interrupt_mode(uint16_t port_id)
-{
-    // EAL 中启用
-    // ./app --interrupt-mode
-
-    // 或者代码中请求
-    rte_eth_errata_rte_eth_interrupt();
-
-    return 0;
-}
-
-// 设置 RX 中断
-int
-enable_rx_interrupt(uint16_t port_id, uint16_t queue_id)
-{
-    // 启用队列中断
-    int ret = rte_eth_dev_rx_intr_enable(port_id, queue_id);
-    if (ret != 0) {
-        printf("Failed to enable RX interrupt\n");
-        return ret;
-    }
-
-    return 0;
-}
-
-// 禁用 RX 中断
-int
-disable_rx_interrupt(uint16_t port_id, uint16_t queue_id)
-{
-    return rte_eth_dev_rx_intr_disable(port_id, queue_id);
-}
-
-// 设置中断回调
-int
-setup_interrupt_callback(uint16_t port_id)
-{
-    // 获取 interrupt handle
-    struct rte_intr_handle *intr_handle =
-        rte_eth_dev_get_intr_handle(port_id);
-
-    // 注册中断事件回调
-    rte_intr_callback_register(intr_handle,
-                                 RTE_ETH_EVENT_INTR_LSC,
-                                 lsc_event_callback,
-                                 (void *)(uintptr_t)port_id);
-
-    // 注册队列中断回调
-    rte_intr_rx_manageability(intr_handle);
-
-    return 0;
-}
-
-// LSC (Link Status Change) 回调
 static int
-lsc_event_callback(void *arg)
+wait_rx_queue(uint16_t port_id, uint16_t queue_id, int epfd)
 {
-    uint16_t port_id = (uint16_t)(uintptr_t)arg;
-    struct rte_eth_link link;
+    int fd = rte_eth_dev_rx_intr_ctl_q_get_fd(port_id, queue_id);
+    if (fd < 0)
+        return fd;
 
-    rte_eth_link_get_nowait(port_id, &link);
-
-    if (link.link_status) {
-        printf("Port %d: Link Up\n", port_id);
-    } else {
-        printf("Port %d: Link Down\n", port_id);
-    }
-
-    return 0;
-}
-
-// 混合模式实现
-void
-hybrid_polling_loop(uint16_t port_id)
-{
-    struct rte_mbuf *mbufs[32];
-    uint64_t last_rx_time = rte_rdtsc();
-    int interrupt_mode = 0;
-
-    while (!quit) {
-        // 轮询接收
-        uint16_t nb_rx = rte_eth_rx_burst(port_id, 0, mbufs, 32);
-
-        if (nb_rx > 0) {
-            // 有包处理
-            for (int i = 0; i < nb_rx; i++)
-                process_packet(mbufs[i]);
-
-            last_rx_time = rte_rdtsc();
-
-            // 如果之前是中断模式，切换回轮询
-            if (interrupt_mode) {
-                disable_rx_interrupt(port_id, 0);
-                interrupt_mode = 0;
-            }
-        } else {
-            // 无包
-            uint64_t idle_time = rte_rdtsc() - last_rx_time;
-
-            // 空闲超过 1 秒，切换到中断模式
-            if (!interrupt_mode && idle_time > rte_get_timer_hz()) {
-                enable_rx_interrupt(port_id, 0);
-                interrupt_mode = 1;
-            }
-
-            // 中断模式下让出 CPU
-            if (interrupt_mode) {
-                rte_delay_us(100);  // 睡一会
-            }
-        }
-    }
-}
-```
-
----
-
-## 7. 完整调优清单
-
-### 7.1 系统级调优
-
-```bash
-#!/bin/bash
-# system_tuning.sh - 系统级性能调优
-
-# 1. BIOS 设置
-# ─────────────
-# - 禁用 SpeedStep / Cool'n'Quiet
-# - 启用 C-State (但 C1E 建议关闭)
-# - 启用 Virtualization (VT-d)
-# - 关闭无关的 CPU 核心
-
-# 2. GRUB 参数
-# ─────────────
-cat >> /etc/default/grub << 'EOF'
-GRUB_CMDLINE_LINUX="default_hugepagesz=1G hugepagesz=1G hugepages=64 intel_iommu=on iommu=pt isolcpus=1-15 nohz_full=1-15 rcu_nocbs=1-15 irqaffinity=1-15"
-EOF
-
-update-grub2
-reboot
-
-# 3. 透明大页 (慎用)
-# ─────────────
-# echo never > /sys/kernel/mm/transparent_hugepage/enabled
-# echo never > /sys/kernel/mm/transparent_hugepage/defrag
-
-# 4. CPU 隔离
-# ─────────────
-for cpu in 1 2 3 4 5 6 7; do
-    echo 0 > /sys/devices/system/cpu/cpu$cpu/online
-done
-
-# 5. 中断亲和性
-# ─────────────
-for irq in $(cat /proc/interrupts | grep eth | awk '{print $1}' | tr -d :); do
-    echo "3" > /proc/irq/$irq/smp_affinity
-done
-
-# 6. 关闭 ASLR
-# ─────────────
-echo 0 > /proc/sys/kernel/randomize_va_space
-
-# 7. 调整网络 buffer
-# ─────────────
-sysctl -w net.core.rmem_max=16777216
-sysctl -w net.core.wmem_max=16777216
-sysctl -w net.core.netdev_max_backlog=8192
-```
-
-### 7.2 NIC 调优
-
-```bash
-#!/bin/bash
-# nic_tuning.sh - NIC 级调优
-
-ETHDEV=eth0
-
-# 1. 关闭 GRO (Generic Receive Offload)
-ethtool -K $ETHDEV gro off
-
-# 2. 关闭 LRO (Large Receive Offload)
-ethtool -K $ETHDEV lro off
-
-# 3. 关闭 TSO (TCP Segmentation Offload)
-ethtool -K $ETHDEV tso off
-
-# 4. 关闭 GSO (Generic Segmentation Offload)
-ethtool -K $ETHDEV gso off
-
-# 5. 关闭 UFO (UDP Fragmentation Offload)
-ethtool -K $ETHDEV ufo off
-
-# 6. 启用 Flow Control (根据场景)
-ethtool -A $ETHDEV rx on tx on
-
-# 7. 设置 ring buffer
-ethtool -G $ETHDEV rx 4096 tx 4096
-
-# 8. 设置中断合并
-ethtool -C $ETHDEV rx-usecs 0 tx-usecs 0  # 最小延迟
-
-# 9. 查看设置
-ethtool -i $ETHDEV
-ethtool -S $ETHDEV
-ethtool -k $ETHDEV  # offload 状态
-ethtool -c $ETHDEV   # coalesce 状态
-```
-
-### 7.3 DPDK 应用调优
-
-```c
-// DPDK 应用调优清单
-
-// 1. EAL 参数
-// ─────────────
-/*
-  --lcores 0-3              : lcore 分配
-  --master-lcore 0          : 主 lcore
-  -m 1024                   : 内存 (MB)
-  --socket-mem 1024,1024    : 每 socket 内存
-  --huge-dir /mnt/huge      : hugepage 目录
-  --file-prefix dpdk        : 共享内存前缀
-  --proc-type auto          : 多进程模式
-  -n 4                      : 内存通道数
-  --rxd 512 --txd 512       : 描述符数
-  --burst 32                : burst 大小
-  --txq 4 --rxq 4           : 队列数
-*/
-
-// 2. 内存池配置
-#define MBUF_CACHE_SIZE 256
-#define MBUF_POOL_SIZE (nb_ports * nb_queues * 1024 + 8192)
-
-struct rte_mempool *
-create_mbuf_pool(unsigned socket_id)
-{
-    char name[64];
-    snprintf(name, sizeof(name), "mbuf_pool_socket%d", socket_id);
-
-    return rte_pktmbuf_pool_create(
-        name,
-        MBUF_POOL_SIZE,
-        MBUF_CACHE_SIZE,
-        0,
-        RTE_MBUF_DEFAULT_BUF_SIZE,
-        socket_id);
-}
-
-// 3. 队列配置优化
-struct rte_eth_rxq_conf rxq_conf = {
-    .rx_thresh = {
-        .pthresh = 8,
-        .hthresh = 8,
-        .wthresh = 0,  // 每包写回，最小延迟
-    },
-    .rx_free_thresh = 32,   // 批量释放
-    .rx_drop_en = 0,
-};
-
-struct rte_eth_txq_conf txq_conf = {
-    .tx_thresh = {
-        .pthresh = 32,
-        .hthresh = 32,
-        .wthresh = 16,      // 批量写回
-    },
-    .tx_free_thresh = 32,
-    .tx_rs_thresh = 32,
-};
-
-// 4. RSS + Flow Director 组合
-void
-optimize_rss_fdir(uint16_t port_id)
-{
-    // 启用 RSS
-    struct rte_eth_rss_conf rss_conf = {
-        .rss_key = NULL,
-        .rss_hf = RTE_ETH_RSS_IP | RTE_ETH_RSS_TCP | RTE_ETH_RSS_UDP,
+    struct epoll_event ev = {
+        .events = EPOLLIN,
+        .data.u32 = queue_id,
     };
 
-    // Flow Director 优先规则
-    // 队列 0: 管理流量 (SSH)
-    add_fdir_rule(port_id, "10.0.0.1", "10.0.0.100", 0, 22, 0);
+    if (epoll_ctl(epfd, EPOLL_CTL_ADD, fd, &ev) < 0)
+        return -errno;
 
-    // 队列 1: HTTP
-    add_fdir_rule(port_id, 0, 0, 0, 80, 1);
-    add_fdir_rule(port_id, 0, 0, 0, 443, 1);
+    int ret = rte_eth_dev_rx_intr_enable(port_id, queue_id);
+    if (ret != 0)
+        return ret;
 
-    // 其他: RSS
-    uint16_t queues[] = {2, 3, 4, 5};
-    create_rss_flow(port_id, queues, 4);
-}
+    struct epoll_event events[16];
+    ret = epoll_wait(epfd, events, RTE_DIM(events), 1000);
 
-// 5. 延迟优化
-void
-optimize_latency(uint16_t port_id)
-{
-    // 关闭 tx_checksum
-    // 让硬件计算 checksum
-
-    // 使用局部数据
-    __thread struct thread_local_ctx ctx;
-
-    // 避免跨 NUMA 访问
-    if (rte_lcore_to_socket_id(rte_lcore_id()) !=
-        rte_eth_dev_socket_id(port_id)) {
-        printf("Warning: NUMA mismatch\n");
-    }
-}
-
-// 6. 吞吐优化
-void
-optimize_throughput(uint16_t port_id)
-{
-    // 增大 burst size
-    #define BURST_SIZE 64
-
-    // 增大 descriptor
-    #define DESC_SIZE 1024
-
-    // 批量处理
-    struct rte_mbuf *batch[BURST_SIZE];
-
-    // 异步发送 (启用 TX offload)
-    uint16_t nb_tx = rte_eth_tx_burst(port_id, 0, batch, BURST_SIZE);
+    rte_eth_dev_rx_intr_disable(port_id, queue_id);
+    return ret;
 }
 ```
 
-### 7.4 调优验证
+不要使用不存在的 `rte_eth_dev_get_intr_handle()`。ethdev 提供的是 RX queue interrupt 控制接口和事件 callback 接口。
+
+### 7.3 link 状态事件
+
+link 变化不是 RX 数据包中断，应该用 ethdev callback：
+
+```c
+static int
+link_event_cb(uint16_t port_id, enum rte_eth_event_type type,
+              void *param, void *ret_param)
+{
+    struct rte_eth_link link;
+
+    RTE_SET_USED(param);
+    RTE_SET_USED(ret_param);
+
+    if (type != RTE_ETH_EVENT_INTR_LSC)
+        return 0;
+
+    rte_eth_link_get_nowait(port_id, &link);
+    printf("port %u link %s speed %u\n",
+           port_id, link.link_status ? "up" : "down", link.link_speed);
+    return 0;
+}
+
+static int
+register_link_callback(uint16_t port_id)
+{
+    return rte_eth_dev_callback_register(port_id, RTE_ETH_EVENT_INTR_LSC,
+                                         link_event_cb, NULL);
+}
+```
+
+---
+
+## 8. 调优验证路线
+
+### 8.1 先用 testpmd 定基线
 
 ```bash
-# 验证脚本
-
-#!/bin/bash
-# verify_tuning.sh
-
-echo "=== System Info ==="
-uname -a
-cat /proc/cpuinfo | grep "model name" | head -1
-cat /proc/meminfo | grep Huge
-
-echo "=== Hugepages ==="
-cat /sys/kernel/mm/hugepages/hugepages-1048576kB/nr_hugepages
-grep -r . /sys/kernel/mm/hugepages/hugepages-*/nr_hugepages
-
-echo "=== CPU Isolation ==="
-cat /sys/devices/system/cpu/cpu*/online | head -20
-
-echo "=== NIC Info ==="
-ethtool -i eth0 2>/dev/null || echo "No eth0"
-
-echo "=== IRQ Affinity ==="
-for irq in $(cat /proc/interrupts | grep -i eth | awk '{print $1}' | tr -d :); do
-    echo "IRQ $irq: $(cat /proc/irq/$irq/smp_affinity 2>/dev/null)"
-done
-
-echo "=== Network Offloads ==="
-ethtool -k eth0 2>/dev/null
-
-echo "=== Ring Buffers ==="
-ethtool -g eth0 2>/dev/null
-
-echo "=== Interrupt Coalescing ==="
-ethtool -c eth0 2>/dev/null
-
-echo "=== Running DPDK App ==="
-pgrep -a dpdk || echo "No DPDK app running"
+sudo dpdk-testpmd -l 0-7 -n 4 \
+  --socket-mem=4096,4096 \
+  -- \
+  --portmask=0x3 \
+  --rxq=4 --txq=4 \
+  --rxd=1024 --txd=1024 \
+  --burst=32 \
+  --forward-mode=io \
+  --auto-start
 ```
 
+验证顺序：
+
+1. 单端口 RX drop 是否为 0。
+2. 双端口 forwarding 是否达到线速。
+3. 调整 `--burst`、`--rxd`、`--txd` 看吞吐和延迟变化。
+4. 再引入自己的业务逻辑，否则无法判断瓶颈是在 PMD 还是业务代码。
+
+### 8.2 看端口统计和 xstats
+
+```c
+static void
+print_basic_stats(uint16_t port_id)
+{
+    struct rte_eth_stats s;
+
+    if (rte_eth_stats_get(port_id, &s) != 0)
+        return;
+
+    printf("port %u ipackets=%" PRIu64 " opackets=%" PRIu64
+           " imissed=%" PRIu64 " ierrors=%" PRIu64 " oerrors=%" PRIu64 "\n",
+           port_id, s.ipackets, s.opackets, s.imissed,
+           s.ierrors, s.oerrors);
+}
+```
+
+`imissed` 上升通常说明 RX ring 来不及收，可能是：
+
+- RX queue 太少。
+- lcore 不够或处理逻辑太慢。
+- NUMA 不匹配。
+- burst 太小。
+- mempool 缓冲不足。
+
+### 8.3 perf 观察热点
+
+```bash
+sudo perf top -p $(pidof your_dpdk_app)
+
+sudo perf record -F 999 -g -p $(pidof your_dpdk_app) -- sleep 30
+sudo perf report
+```
+
+热点判断：
+
+| 热点                     | 常见含义                     |
+| ------------------------ | ---------------------------- |
+| PMD rx/tx 函数           | 包量很高，可能是正常热点     |
+| hash lookup              | flow table 太大或 cache miss |
+| memcpy                   | 发生了不必要复制             |
+| rte_pktmbuf_alloc/free   | mempool 压力或每包分配过多   |
+| spinlock / atomic        | 跨核共享状态                 |
+| rte_ring enqueue/dequeue | lcore 间传递太多             |
+
+### 8.4 系统设置检查
+
+```bash
+# CPU 隔离、nohz_full、rcu_nocbs 是否生效
+cat /proc/cmdline
+
+# hugepage
+grep Huge /proc/meminfo
+find /dev/hugepages -maxdepth 1 -type f | wc -l
+
+# NUMA
+lscpu | grep -E 'NUMA|Socket|CPU\\(s\\)'
+cat /sys/class/net/$IFACE/device/numa_node
+
+# IRQ affinity，数据面核心不应承载无关中断
+cat /proc/interrupts | grep -i "$IFACE"
+
+# 网卡 offload 能力
+ethtool -k $IFACE
+```
+
+生产部署时，DPDK 数据面核心通常配合：
+
+```text
+isolcpus=2-15 nohz_full=2-15 rcu_nocbs=2-15 irqaffinity=0,1
+```
+
+这些不是默认开启，需要作为内核启动参数配置。
+
 ---
 
-## 8. 小结
+## 9. 常见调优决策表
 
-本章核心要点：
-
-1. **性能调优金字塔**：L5 算法/架构 → L4 核亲和性 → L3 内存 → L2 同步 → L1 基本配置，层层递进。
-
-2. **Batching 原理**：批量处理减少函数调用开销，目标是用相同 overhead 处理更多包。
-
-3. **DPDK Burst API**：`rte_eth_rx_burst()` 和 `rte_eth_tx_burst()`，一次调用处理多个包。
-
-4. **批量优化策略**：动态批量大小 (自适应)、Pipeline Batching (分阶段)、Zero-Copy Batching (避免复制)。
-
-5. **Burst 调优参数**：burst size (16-64)、descriptor 数量 (512-1024)、mbuf 大小。
-
-6. **RSS 原理**：Toeplitz Hash + Indirection Table，将流散列到不同队列，保持同流保序。
-
-7. **RSS 配置**：`RTE_ETH_MQ_RX_RSS` 模式、hash fields (IP/TCP/UDP)、自定义 key。
-
-8. **Flow Director**：精确 5-tuple 匹配，将特定流导向特定队列，支持丢弃动作。
-
-9. **rte_flow API**：现代 DPDK Flow API，支持 Pattern + Action，更灵活强大。
-
-10. **队列数量选择**：CPU 核心数、NIC 能力、流量特征、内存占用的权衡。
-
-11. **描述符阈值调优**：pthresh/hthresh/wthresh，小包低延迟 vs 大包高吞吐。
-
-12. **轮询 vs 中断**：纯轮询低延迟但 CPU 100%，中断空闲省 CPU 但延迟高，混合模式取平衡。
-
-13. **自适应混合模式**：正常轮询，空闲超时切换中断，中断唤醒切回轮询。
-
-14. **系统级调优**：BIOS 设置、GRUB hugepage、CPU 隔离、中断亲和、ASLR。
-
-15. **NIC 调优**：关闭 GRO/LRO/TSO/GSO、Flow Control、Ring buffer、中断合并。
-
-16. **调优验证**：Hugepage 配置、CPU 隔离、IRQ affinity、offload 状态检查。
-
-**篇后语**：
-
-DPDK 深度探索系列 (1-30) 至此完成。系列涵盖了 DPDK 核心知识点：EAL 抽象、mbuf 内存管理、Poll Mode Driver、队列与描述符、Flow Classification、虚拟化 (Virtio/vhost)、加速库 (ACL/Hash/LCore)、CPU 优化 (Cache/NUMA)、内存模型、同步原语、Profiling 与调优。后续章节将继续深入高级主题，包括：安全加密 (IPSec)、性能基准测试、高级队列管理、云原生部署等。
+| 现象              | 优先检查                               | 常见修复                                                 |
+| ----------------- | -------------------------------------- | -------------------------------------------------------- |
+| 小包 PPS 不够     | batch、队列数、NUMA、cache miss        | `BURST_SIZE=32/64`，每核独占队列                         |
+| `imissed` 增长    | RX ring、处理耗时、mempool             | 增加队列/lcore，增大 `rxd`，优化业务路径                 |
+| TX 发不满         | `tx_burst` partial、TX desc、mbuf 回收 | 处理未发送 mbuf，调 `txd/tx_free_thresh`                 |
+| 多核不均衡        | RSS key、RETA、流量 hash 字段          | 查 `hash.rss`，重配 RETA，必要时用 `rte_flow`            |
+| 低延迟抖动        | 中断、调度、跨 NUMA、频率变化          | CPU 隔离、固定频率、NUMA 本地化                          |
+| CPU 高但吞吐低    | memcpy、锁、跨核 ring                  | 零拷贝、per-lcore 状态、减少跨核传递                     |
+| rte_flow 下发失败 | PMD 能力不支持                         | `rte_flow_validate()` 打印 `error.message`，降级软件路径 |
 
 ---
 
-> [!tip] 参考文献
+## 10. 小结
+
+1. DPDK 性能调优先从 batch、队列、NUMA 和 cache miss 开始，不要一上来调复杂参数。
+2. RSS 负责通用分流，`rte_flow` 负责精确分类，两者可以组合使用。
+3. 现代 DPDK 应使用 `rte_flow`，不要再写旧 Flow Director 私有 API。
+4. RETA 的正确 API 是 `rte_eth_dev_rss_reta_update()`，数据结构是 `struct rte_eth_rss_reta_entry64`。
+5. RX interrupt 是低流量/控制面工具，不是高 PPS 数据面的默认选择。
+6. offload 需要硬件能力、端口配置、mbuf `ol_flags` 和 header length 同时正确，缺一不可。
+7. 所有调优都要先用 testpmd 建基线，再用 stats/xstats/perf 定位瓶颈。
+
+实战练习见 [[2026-05-29-dpdk-performance-tuning-practice|DPDK 性能调优实战]]，包含 bad/good 对照代码和完整的瓶颈定位流程。
+
+---
+
+> 参考：
 >
-> - Intel, "Data Plane Development Kit Performance Tuning Guide"
-> - Intel, "Intel 82599 10GbE Controller Datasheet" (RSS/Flow Director)
-> - DPDK Flow API, https://doc.dpdk.org/guides/prog_guide/rte_flow.html
-> - DPDK RSS, https://doc.dpdk.org/guides/prog_guide/rss.html
-> - DPDK Flow Director, https://doc.dpdk.org/guides/prog_guide/flow_agent.html
-> - "DPDK Performance Optimization", https://doc.dpdk.org/guides-16.04/proGuide/13_perf_opt.html
-> - "DPDK Optimization Techniques", Intel
+> - [[2026-05-29-dpdk-performance-tuning-practice|DPDK 性能调优实战]]
+> - DPDK Programmer's Guide: Poll Mode Driver
+> - DPDK Programmer's Guide: RSS
+> - DPDK Programmer's Guide: Generic flow API (`rte_flow`)
+> - DPDK API: `rte_ethdev.h`, `rte_flow.h`, `rte_mbuf_core.h`
+> - Intel DPDK Performance Reports and testpmd user guide

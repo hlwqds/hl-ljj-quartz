@@ -333,11 +333,11 @@ vDPA:
 
 ## 6. 三条路径对比
 
-| 路径 | 数据面主角 | 是否需要 Host 软件解析 virtqueue | 是否需要 Host/Guest copy | 典型硬件 |
-| --- | --- | --- | --- | --- |
-| 软件 vhost-user | Host CPU | 需要 | 常见需要 | CPU |
-| vhost async + dmadev | Host CPU + DMA copy engine | 需要 | 需要，但 copy offload | Intel DSA、I/OAT、其他 dmadev |
-| vDPA | vDPA 设备 / SmartNIC / DPU | 尽量由硬件处理 | 尽量避免 Host 软件 copy | IFCVF、mlx5 vDPA、NFP、Xilinx 等 |
+| 路径                 | 数据面主角                 | 是否需要 Host 软件解析 virtqueue | 是否需要 Host/Guest copy | 典型硬件                         |
+| -------------------- | -------------------------- | -------------------------------- | ------------------------ | -------------------------------- |
+| 软件 vhost-user      | Host CPU                   | 需要                             | 常见需要                 | CPU                              |
+| vhost async + dmadev | Host CPU + DMA copy engine | 需要                             | 需要，但 copy offload    | Intel DSA、I/OAT、其他 dmadev    |
+| vDPA                 | vDPA 设备 / SmartNIC / DPU | 尽量由硬件处理                   | 尽量避免 Host 软件 copy  | IFCVF、mlx5 vDPA、NFP、Xilinx 等 |
 
 从“卸载程度”看：
 

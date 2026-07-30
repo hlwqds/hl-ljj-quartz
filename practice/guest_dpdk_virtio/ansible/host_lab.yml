@@ -1,0 +1,208 @@
+---
+- name: Prepare host for Guest DPDK virtio/vhost-user lab
+  hosts: host
+  become: true
+  gather_facts: true
+
+  vars:
+    lab_root: "{{ playbook_dir }}/.."
+    generated_dir: "{{ lab_root }}/generated"
+
+    guest_image: ""
+    guest_image_format: "qcow2"
+    cloud_init_iso: "{{ generated_dir }}/images/seed.iso"
+
+    hugepages_2m: 1024
+    hugepage_mount: "/dev/hugepages"
+
+    bridge: "br-dpdk"
+    vhost_port: "vhost-user0"
+    vhost_socket: "/var/run/openvswitch/vhost-user0.sock"
+    socket_mem: "512"
+
+    qemu_bin: "qemu-system-x86_64"
+    qemu_mem: "1024M"
+    qemu_smp: 2
+    qemu_name: "dpdk-guest"
+    qemu_mac: "52:54:00:12:34:56"
+    queues: 1
+
+  tasks:
+    - name: Show requested lab configuration
+      ansible.builtin.debug:
+        msg:
+          - "guest_image={{ guest_image }}"
+          - "guest_image_format={{ guest_image_format }}"
+          - "hugepages_2m={{ hugepages_2m }}"
+          - "hugepage_mount={{ hugepage_mount }}"
+          - "bridge={{ bridge }}"
+          - "vhost_port={{ vhost_port }}"
+          - "vhost_socket={{ vhost_socket }}"
+          - "socket_mem={{ socket_mem }}"
+          - "qemu_mem={{ qemu_mem }}"
+          - "qemu_smp={{ qemu_smp }}"
+          - "queues={{ queues }}"
+
+    - name: Require guest_image
+      ansible.builtin.assert:
+        that:
+          - guest_image | length > 0
+        fail_msg: "Pass -e guest_image=/path/to/dpdk-guest.qcow2"
+
+    - name: Check guest image exists
+      ansible.builtin.stat:
+        path: "{{ guest_image }}"
+      register: guest_image_stat
+
+    - name: Fail if guest image does not exist
+      ansible.builtin.assert:
+        that:
+          - guest_image_stat.stat.exists
+        fail_msg: "guest_image does not exist: {{ guest_image }}"
+
+    - name: Check ovs-vsctl exists
+      ansible.builtin.shell: command -v ovs-vsctl
+      changed_when: false
+
+    - name: Check QEMU exists
+      ansible.builtin.shell: "command -v {{ qemu_bin }}"
+      changed_when: false
+
+    - name: Create hugepage mount directory
+      ansible.builtin.file:
+        path: "{{ hugepage_mount }}"
+        state: directory
+        mode: "0755"
+
+    - name: Mount hugetlbfs
+      ansible.posix.mount:
+        path: "{{ hugepage_mount }}"
+        src: nodev
+        fstype: hugetlbfs
+        opts: pagesize=2M,mode=1770
+        state: mounted
+
+    - name: Configure 2MiB hugepages
+      ansible.posix.sysctl:
+        name: vm.nr_hugepages
+        value: "{{ hugepages_2m }}"
+        sysctl_set: true
+        state: present
+        reload: true
+
+    - name: Configure OVS to initialize DPDK
+      ansible.builtin.command:
+        argv:
+          - ovs-vsctl
+          - --no-wait
+          - set
+          - Open_vSwitch
+          - .
+          - other_config:dpdk-init=true
+      changed_when: true
+
+    - name: Configure OVS-DPDK socket memory
+      ansible.builtin.command:
+        argv:
+          - ovs-vsctl
+          - --no-wait
+          - set
+          - Open_vSwitch
+          - .
+          - "other_config:dpdk-socket-mem={{ socket_mem }}"
+      changed_when: true
+
+    - name: Configure OVS-DPDK hugepage directory
+      ansible.builtin.command:
+        argv:
+          - ovs-vsctl
+          - --no-wait
+          - set
+          - Open_vSwitch
+          - .
+          - "other_config:dpdk-hugepage-dir={{ hugepage_mount }}"
+      changed_when: true
+
+    - name: Restart openvswitch-switch if present
+      ansible.builtin.service:
+        name: openvswitch-switch
+        state: restarted
+      failed_when: false
+
+    - name: Restart openvswitch if present
+      ansible.builtin.service:
+        name: openvswitch
+        state: restarted
+      failed_when: false
+
+    - name: Create OVS-DPDK bridge
+      ansible.builtin.command:
+        argv:
+          - ovs-vsctl
+          - --may-exist
+          - add-br
+          - "{{ bridge }}"
+          - --
+          - set
+          - Bridge
+          - "{{ bridge }}"
+          - datapath_type=netdev
+      changed_when: true
+
+    - name: Create vhost-user client port
+      ansible.builtin.command:
+        argv:
+          - ovs-vsctl
+          - --may-exist
+          - add-port
+          - "{{ bridge }}"
+          - "{{ vhost_port }}"
+          - --
+          - set
+          - Interface
+          - "{{ vhost_port }}"
+          - type=dpdkvhostuserclient
+          - "options:vhost-server-path={{ vhost_socket }}"
+          - "options:vhost-client-reconnect-interval=1000"
+      changed_when: true
+
+    - name: Ensure generated directory exists
+      ansible.builtin.file:
+        path: "{{ generated_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Check optional cloud-init ISO
+      ansible.builtin.stat:
+        path: "{{ cloud_init_iso }}"
+      register: cloud_init_iso_stat
+
+    - name: Write QEMU environment file
+      ansible.builtin.copy:
+        dest: "{{ generated_dir }}/qemu-env.sh"
+        mode: "0644"
+        content: |
+          GUEST_IMAGE={{ guest_image | quote }}
+          GUEST_IMAGE_FORMAT={{ guest_image_format | quote }}
+          {% if cloud_init_iso_stat.stat.exists %}
+          CLOUD_INIT_ISO={{ cloud_init_iso | quote }}
+          {% endif %}
+          VM_NAME={{ qemu_name | quote }}
+          MEM_SIZE={{ qemu_mem | quote }}
+          SMP={{ qemu_smp | quote }}
+          VHOST_SOCKET={{ vhost_socket | quote }}
+          MAC={{ qemu_mac | quote }}
+          QUEUES={{ queues | quote }}
+          HUGEPAGE_MOUNT={{ hugepage_mount | quote }}
+          QEMU_BIN={{ qemu_bin | quote }}
+
+    - name: Show next command
+      ansible.builtin.debug:
+        msg:
+          - "Host setup complete."
+          - "Next:"
+          - "  cd {{ lab_root }}"
+          - "  set -a"
+          - "  . generated/qemu-env.sh"
+          - "  set +a"
+          - "  sudo -E ./qemu/start_guest_vhost_user.sh"

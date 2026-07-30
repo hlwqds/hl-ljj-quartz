@@ -1,0 +1,270 @@
+---
+- name: Build a cloud-init guest image for the Guest DPDK virtio/vhost-user lab
+  hosts: host
+  become: false
+  gather_facts: false
+
+  vars:
+    lab_root: "{{ playbook_dir }}/.."
+    generated_dir: "{{ lab_root }}/generated"
+    image_dir: "{{ generated_dir }}/images"
+
+    base_image_url: "https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img"
+    base_image: "{{ image_dir }}/ubuntu-jammy-cloudimg-amd64.qcow2"
+    guest_image: "{{ image_dir }}/dpdk-guest.qcow2"
+    guest_image_size: "20G"
+    guest_image_format: "qcow2"
+    recreate_guest_image: false
+
+    cloud_init_iso: "{{ image_dir }}/seed.iso"
+    guest_hostname: "dpdk-guest"
+    guest_user: "dpdk"
+    guest_ssh_authorized_key: "{{ lookup('file', lookup('env', 'HOME') + '/.ssh/id_rsa.pub', errors='ignore') | default('', true) }}"
+
+    qemu_mem: "1024M"
+    qemu_smp: 2
+    qemu_name: "dpdk-guest"
+    qemu_mac: "52:54:00:12:34:56"
+    qemu_mgmt_mac: "52:54:00:12:34:57"
+    queues: 1
+    vhost_socket: "/var/run/openvswitch/vhost-user0.sock"
+    hugepage_mount: "/dev/hugepages"
+    qemu_bin: "qemu-system-x86_64"
+
+  tasks:
+    - name: Show requested image configuration
+      ansible.builtin.debug:
+        msg:
+          - "base_image_url={{ base_image_url }}"
+          - "base_image={{ base_image }}"
+          - "guest_image={{ guest_image }}"
+          - "guest_image_size={{ guest_image_size }}"
+          - "cloud_init_iso={{ cloud_init_iso }}"
+          - "guest_user={{ guest_user }}"
+          - "ssh key present={{ guest_ssh_authorized_key | length > 0 }}"
+
+    - name: Check required local tools
+      ansible.builtin.shell: "command -v {{ item }}"
+      changed_when: false
+      loop:
+        - qemu-img
+
+    - name: Find a cloud-init seed image builder
+      ansible.builtin.shell: "command -v cloud-localds || command -v genisoimage || command -v mkisofs || command -v xorriso"
+      changed_when: false
+      register: seed_builder_cmd
+
+    - name: Remember seed image builder
+      ansible.builtin.set_fact:
+        seed_builder_path: "{{ seed_builder_cmd.stdout }}"
+        seed_builder_name: "{{ seed_builder_cmd.stdout | basename }}"
+
+    - name: Show seed image builder
+      ansible.builtin.debug:
+        msg: "seed image builder={{ seed_builder_path }}"
+
+    - name: Create generated image directory
+      ansible.builtin.file:
+        path: "{{ image_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Download base cloud image
+      ansible.builtin.get_url:
+        url: "{{ base_image_url }}"
+        dest: "{{ base_image }}"
+        mode: "0644"
+
+    - name: Recreate guest qcow2 overlay when requested
+      ansible.builtin.file:
+        path: "{{ guest_image }}"
+        state: absent
+      when: recreate_guest_image | bool
+
+    - name: Create guest qcow2 overlay
+      ansible.builtin.command:
+        argv:
+          - qemu-img
+          - create
+          - -f
+          - qcow2
+          - -F
+          - qcow2
+          - -b
+          - "{{ base_image }}"
+          - "{{ guest_image }}"
+      args:
+        creates: "{{ guest_image }}"
+      register: guest_overlay
+
+    - name: Resize guest image
+      ansible.builtin.command:
+        argv:
+          - qemu-img
+          - resize
+          - "{{ guest_image }}"
+          - "{{ guest_image_size }}"
+      when: guest_overlay.changed
+
+    - name: Write cloud-init user-data
+      ansible.builtin.copy:
+        dest: "{{ generated_dir }}/user-data"
+        mode: "0644"
+        content: |
+          #cloud-config
+          hostname: {{ guest_hostname }}
+          manage_etc_hosts: true
+
+          users:
+            - default
+            - name: {{ guest_user }}
+              groups: [adm, sudo]
+              shell: /bin/bash
+              sudo: ["ALL=(ALL) NOPASSWD:ALL"]
+              lock_passwd: true
+          {% if guest_ssh_authorized_key | length > 0 %}
+              ssh_authorized_keys:
+                - {{ guest_ssh_authorized_key }}
+          {% endif %}
+
+          package_update: true
+          packages:
+            - dpdk
+            - dpdk-dev
+            - pciutils
+            - python3
+            - build-essential
+
+          write_files:
+            - path: /etc/sysctl.d/90-dpdk-lab.conf
+              permissions: "0644"
+              content: |
+                vm.nr_hugepages=256
+
+            - path: /usr/local/bin/dpdk-guest-ready.sh
+              permissions: "0755"
+              content: |
+                #!/usr/bin/env bash
+                set -euo pipefail
+                export DEBIAN_FRONTEND=noninteractive
+                apt-get update
+                apt-get install -y "linux-modules-extra-$(uname -r)"
+                mkdir -p /mnt/huge
+                mountpoint -q /mnt/huge || mount -t hugetlbfs nodev /mnt/huge
+                modprobe uio || true
+                modprobe uio_pci_generic || true
+                sysctl -w vm.nr_hugepages=256
+                echo "DPDK guest is ready"
+                command -v dpdk-testpmd || true
+                command -v dpdk-devbind.py || true
+
+          runcmd:
+            - sysctl --system
+            - /usr/local/bin/dpdk-guest-ready.sh
+
+          final_message: "Guest DPDK lab image initialized."
+
+    - name: Write cloud-init network-config
+      ansible.builtin.copy:
+        dest: "{{ generated_dir }}/network-config"
+        mode: "0644"
+        content: |
+          version: 2
+          ethernets:
+            data0:
+              match:
+                macaddress: "{{ qemu_mac }}"
+              set-name: data0
+              dhcp4: false
+              dhcp6: false
+              optional: true
+            mgmt0:
+              match:
+                macaddress: "{{ qemu_mgmt_mac }}"
+              set-name: mgmt0
+              dhcp4: true
+              dhcp6: false
+              optional: true
+
+    - name: Write cloud-init meta-data
+      ansible.builtin.copy:
+        dest: "{{ generated_dir }}/meta-data"
+        mode: "0644"
+        content: |
+          instance-id: {{ guest_hostname }}-001
+          local-hostname: {{ guest_hostname }}
+
+    - name: Build cloud-init seed ISO with cloud-localds
+      ansible.builtin.command:
+        argv:
+          - cloud-localds
+          - --network-config
+          - "{{ generated_dir }}/network-config"
+          - "{{ cloud_init_iso }}"
+          - "{{ generated_dir }}/user-data"
+          - "{{ generated_dir }}/meta-data"
+      when: seed_builder_name == "cloud-localds"
+      changed_when: true
+
+    - name: Build cloud-init seed ISO with genisoimage or mkisofs
+      ansible.builtin.command:
+        argv:
+          - "{{ seed_builder_path }}"
+          - -output
+          - "{{ cloud_init_iso }}"
+          - -volid
+          - cidata
+          - -joliet
+          - -rock
+          - "{{ generated_dir }}/user-data"
+          - "{{ generated_dir }}/meta-data"
+          - "{{ generated_dir }}/network-config"
+      when: seed_builder_name in ["genisoimage", "mkisofs"]
+      changed_when: true
+
+    - name: Build cloud-init seed ISO with xorriso
+      ansible.builtin.command:
+        argv:
+          - "{{ seed_builder_path }}"
+          - -as
+          - mkisofs
+          - -output
+          - "{{ cloud_init_iso }}"
+          - -volid
+          - cidata
+          - -joliet
+          - -rock
+          - "{{ generated_dir }}/user-data"
+          - "{{ generated_dir }}/meta-data"
+          - "{{ generated_dir }}/network-config"
+      when: seed_builder_name == "xorriso"
+      changed_when: true
+
+    - name: Write QEMU environment file
+      ansible.builtin.copy:
+        dest: "{{ generated_dir }}/qemu-env.sh"
+        mode: "0644"
+        content: |
+          GUEST_IMAGE={{ guest_image | quote }}
+          GUEST_IMAGE_FORMAT={{ guest_image_format | quote }}
+          CLOUD_INIT_ISO={{ cloud_init_iso | quote }}
+          VM_NAME={{ qemu_name | quote }}
+          MEM_SIZE={{ qemu_mem | quote }}
+          SMP={{ qemu_smp | quote }}
+          VHOST_SOCKET={{ vhost_socket | quote }}
+          MAC={{ qemu_mac | quote }}
+          MGMT_MAC={{ qemu_mgmt_mac | quote }}
+          QUEUES={{ queues | quote }}
+          HUGEPAGE_MOUNT={{ hugepage_mount | quote }}
+          QEMU_BIN={{ qemu_bin | quote }}
+
+    - name: Show next commands
+      ansible.builtin.debug:
+        msg:
+          - "Guest image prepared: {{ guest_image }}"
+          - "Cloud-init ISO prepared: {{ cloud_init_iso }}"
+          - "Next run host setup:"
+          - "  ansible-playbook -i ansible/inventory.ini ansible/host_lab.yml -e guest_image={{ guest_image }}"
+          - "Then start QEMU:"
+          - "  set -a && . generated/qemu-env.sh && set +a"
+          - "  sudo -E ./qemu/start_guest_vhost_user.sh"

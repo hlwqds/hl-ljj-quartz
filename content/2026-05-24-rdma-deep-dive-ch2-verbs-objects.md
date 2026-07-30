@@ -5,8 +5,8 @@ description: "系统拆解 libibverbs 编程中的 PD、MR、CQ、QP、WR、WC�
 tags: [rdma, series, libibverbs, linux, networking]
 ---
 
-> [!info] RDMA 深度探索系列
-> 0. [[2026-05-24-rdma-deep-dive-series-index|系列索引]]
+> [!info] RDMA 深度探索系列 0. [[2026-05-24-rdma-deep-dive-series-index|系列索引]]
+>
 > 1. [[2026-05-24-rdma-deep-dive-ch1-overview|第一章：RDMA 是什么]]
 > 2. **第二章：verbs 对象模型**
 > 3. [[2026-05-24-rdma-deep-dive-ch3-rxe-lab|第三章：Soft-RoCE/RXE 实验环境]]
@@ -90,23 +90,23 @@ struct ibv_mr *mr = ibv_reg_mr(
 
 注册之后，MR 里最重要的是：
 
-| 字段 | 作用 |
-| --- | --- |
-| `addr` | 注册内存起始地址 |
-| `length` | 注册长度 |
-| `lkey` | 本地访问 key |
-| `rkey` | 远端访问 key |
+| 字段     | 作用             |
+| -------- | ---------------- |
+| `addr`   | 注册内存起始地址 |
+| `length` | 注册长度         |
+| `lkey`   | 本地访问 key     |
+| `rkey`   | 远端访问 key     |
 
 `lkey` 用于本地 WR 的 SGE。`rkey` 给远端使用，用于 RDMA Read/Write。
 
 常见权限：
 
-| 权限 | 作用 |
-| --- | --- |
-| `IBV_ACCESS_LOCAL_WRITE` | 允许本地网卡写这段内存 |
-| `IBV_ACCESS_REMOTE_WRITE` | 允许远端 RDMA Write |
-| `IBV_ACCESS_REMOTE_READ` | 允许远端 RDMA Read |
-| `IBV_ACCESS_REMOTE_ATOMIC` | 允许远端原子操作 |
+| 权限                       | 作用                   |
+| -------------------------- | ---------------------- |
+| `IBV_ACCESS_LOCAL_WRITE`   | 允许本地网卡写这段内存 |
+| `IBV_ACCESS_REMOTE_WRITE`  | 允许远端 RDMA Write    |
+| `IBV_ACCESS_REMOTE_READ`   | 允许远端 RDMA Read     |
+| `IBV_ACCESS_REMOTE_ATOMIC` | 允许远端原子操作       |
 
 接收 buffer 通常需要 `IBV_ACCESS_LOCAL_WRITE`。RDMA Write 的远端 buffer 需要 `IBV_ACCESS_REMOTE_WRITE`。
 
@@ -215,13 +215,13 @@ WC 是完成结果。
 
 常用字段：
 
-| 字段 | 作用 |
-| --- | --- |
-| `wr_id` | 对应提交时的 WR ID |
-| `status` | 成功或失败原因 |
-| `opcode` | 完成的操作类型 |
+| 字段       | 作用                               |
+| ---------- | ---------------------------------- |
+| `wr_id`    | 对应提交时的 WR ID                 |
+| `status`   | 成功或失败原因                     |
+| `opcode`   | 完成的操作类型                     |
 | `byte_len` | 接收到的数据长度，主要用于 receive |
-| `qp_num` | 相关 QP 编号 |
+| `qp_num`   | 相关 QP 编号                       |
 
 注意：`ibv_post_send()` 返回 0 只表示 WR 成功提交到 QP，不表示网络操作完成。最终结果要看 WC。
 

@@ -368,12 +368,12 @@ Guest DPDK App
 
 因此可以把职责边界理解为：
 
-| 组件             | 作用                                                         |
-| ---------------- | ------------------------------------------------------------ |
-| Guest virtio PMD | 驱动 Guest 内 virtio-net 设备，读写 virtqueue                |
+| 组件             | 作用                                                                 |
+| ---------------- | -------------------------------------------------------------------- |
+| Guest virtio PMD | 驱动 Guest 内 virtio-net 设备，读写 virtqueue                        |
 | vhost-user 后端  | Host 侧访问 Guest virtqueue，在 Guest buffer 与 Host mbuf 间搬运数据 |
-| Host NIC PMD     | 驱动物理网卡，从物理 RX/TX queue 收发包                      |
-| OVS-DPDK / VPP   | Host 侧虚拟交换或转发平面，决定包进入哪个 VM 或物理端口      |
+| Host NIC PMD     | 驱动物理网卡，从物理 RX/TX queue 收发包                              |
+| OVS-DPDK / VPP   | Host 侧虚拟交换或转发平面，决定包进入哪个 VM 或物理端口              |
 
 这最后一行已经属于云网络设计：Host 上通常不只有一个 VM，也不只有一个出口。
 同一台物理机上可能同时存在多个 VM vhost-user port、物理 NIC port、overlay tunnel port
@@ -1017,12 +1017,12 @@ descriptor 数量 = 1 个 virtio_net_hdr + mbuf->nb_segs
 
 上图中的对应关系是：
 
-| mbuf 内容          | virtio descriptor | descriptor addr 指向什么              | flags                  |
-| ------------------ | ----------------- | ------------------------------------- | ---------------------- |
-| virtio net header  | Desc H            | `struct virtio_net_hdr`               | `VRING_DESC_F_NEXT`    |
-| `seg0`             | Desc 0            | `rte_pktmbuf_mtod(seg0)`              | `VRING_DESC_F_NEXT`    |
-| `seg1`             | Desc 1            | `rte_pktmbuf_mtod(seg1)`              | `VRING_DESC_F_NEXT`    |
-| `seg2`             | Desc 2            | `rte_pktmbuf_mtod(seg2)`              | 0，表示 chain 结束     |
+| mbuf 内容         | virtio descriptor | descriptor addr 指向什么 | flags               |
+| ----------------- | ----------------- | ------------------------ | ------------------- |
+| virtio net header | Desc H            | `struct virtio_net_hdr`  | `VRING_DESC_F_NEXT` |
+| `seg0`            | Desc 0            | `rte_pktmbuf_mtod(seg0)` | `VRING_DESC_F_NEXT` |
+| `seg1`            | Desc 1            | `rte_pktmbuf_mtod(seg1)` | `VRING_DESC_F_NEXT` |
+| `seg2`            | Desc 2            | `rte_pktmbuf_mtod(seg2)` | 0，表示 chain 结束  |
 
 TX 方向没有 `VRING_DESC_F_WRITE`，因为数据方向是 Guest -> Host。Host 只需要读取
 这些 descriptor 指向的数据，然后发送出去。
@@ -1090,12 +1090,12 @@ Guest 把 descriptor 放进 available ring 后，通过一次设备通知告诉 
 
 不同后端的通知路径不同：
 
-| 场景              | Guest -> Host kick 的形式                                      |
-| ----------------- | -------------------------------------------------------------- |
-| virtio PCI        | Guest 写 PCI notify BAR / queue notify 寄存器                  |
-| virtio MMIO       | Guest 写 MMIO QueueNotify 寄存器                               |
-| vhost-net         | notify 写入经 QEMU/ioeventfd 转成 Host kernel vhost 事件       |
-| vhost-user        | Guest 写 notify 地址先被 KVM 捕获；KVM 匹配 ioeventfd 后 signal kickfd，用户态后端 poll 到事件 |
+| 场景        | Guest -> Host kick 的形式                                                                      |
+| ----------- | ---------------------------------------------------------------------------------------------- |
+| virtio PCI  | Guest 写 PCI notify BAR / queue notify 寄存器                                                  |
+| virtio MMIO | Guest 写 MMIO QueueNotify 寄存器                                                               |
+| vhost-net   | notify 写入经 QEMU/ioeventfd 转成 Host kernel vhost 事件                                       |
+| vhost-user  | Guest 写 notify 地址先被 KVM 捕获；KVM 匹配 ioeventfd 后 signal kickfd，用户态后端 poll 到事件 |
 
 在 vhost-user 场景里，常见的是：
 
@@ -1185,12 +1185,12 @@ Guest 写 notify
 
 它解决的问题是：
 
-| 问题                       | kick eventfd 的作用                                      |
-| -------------------------- | -------------------------------------------------------- |
-| 每次 kick 都进入 QEMU 主循环 | KVM 直接 signal eventfd，绕过 QEMU 设备模型热路径         |
-| QEMU 成为数据面瓶颈         | vhost-user 后端直接处理 virtqueue                         |
-| 多一次用户态调度和锁竞争     | 减少 KVM -> QEMU -> backend 的中转                         |
-| 后端阻塞等待新 descriptor   | backend 可以 epoll kickfd，被 Guest notify 精准唤醒        |
+| 问题                         | kick eventfd 的作用                                 |
+| ---------------------------- | --------------------------------------------------- |
+| 每次 kick 都进入 QEMU 主循环 | KVM 直接 signal eventfd，绕过 QEMU 设备模型热路径   |
+| QEMU 成为数据面瓶颈          | vhost-user 后端直接处理 virtqueue                   |
+| 多一次用户态调度和锁竞争     | 减少 KVM -> QEMU -> backend 的中转                  |
+| 后端阻塞等待新 descriptor    | backend 可以 epoll kickfd，被 Guest notify 精准唤醒 |
 
 注意：kick eventfd **没有消除 VM-Exit 本身**。Guest 写 notify 地址仍然会被 KVM
 捕获。它优化的是 VM-Exit 之后的处理路径：让 KVM 在内核里完成事件转发，而不是把

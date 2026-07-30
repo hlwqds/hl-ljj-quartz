@@ -2,747 +2,1182 @@
 title: "Kernel Protocol Stack 深度探索 (一)：sk_buff 与数据包生命周期"
 date: 2026-04-13
 tags: [linux, kernel, networking, series, sk_buff, netdevice, memory]
-description: "深入解析 Linux 内核网络数据包的完整生命周期——sk_buff 结构设计哲学、分配释放机制、克隆分片流程、DMA 与 Ring Buffer 的交互、以及内存布局与 Cache 优化"
+description: "从真实 Linux 6.x 数据模型理解 sk_buff：线性区与页片段、headroom/tailroom、引用计数、clone/COW、GRO/GSO、checksum、page_pool、RX/TX 生命周期和可观测方法"
 ---
 
-> [!info] Kernel Protocol Stack 深度探索系列 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|全栈学习路径总览]]
+> [!info] Kernel Protocol Stack 深度探索系列
 >
+> 0. [[2026-04-13-kernel-protocol-stack-deep-dive-series-index|Linux 内核网络栈自顶向下总图]]
 > 1. **第一章：sk_buff 与数据包生命周期**
 > 2. [[2026-04-13-kernel-protocol-stack-deep-dive-ch2-netdevice|第二章：Netdevice 与网卡抽象]]
-
----
-
-## 1. 概述：为什么 sk_buff 是内核网络栈的核心？
-
-在 Linux 内核网络协议栈中，**sk_buff**（socket buffer）是贯穿始终的核心数据结构。从网卡驱动接收数据包的第一刻起，到传递给应用程序的 socket 缓冲区，每一个字节的网络数据都封装在一个 sk_buff 中流转于各协议层之间。
-
-**理解 sk_buff 之所以重要，有三个原因：**
-
-1. **性能关键路径**：sk_buff 的分配、释放、克隆操作是网络数据路径上最频繁的内存操作。优化 sk_buff 开销是提升网络吞吐量的核心手段。
-2. **零拷贝基础**：从内核到用户态的数据传递效率，直接取决于 sk_buff 的引用计数和内存共享机制。
-3. **协议无关设计**：同一套 sk_buff 操作接口服务于从 Ethernet 到 TCP 的所有协议，理解其设计有助于理解整个网络栈的抽象。
-
-```mermaid
-graph LR
-    A["NIC DMA<br/>↓"] --> B["sk_buff<br/>RX"]
-    B --> C["Netfilter<br/>钩子"]
-    C --> D["协议栈<br/>IP/TCP"]
-    D --> E["Socket<br/>缓冲区"]
-    E --> F["用户态<br/>recv()"]
-
-    G["用户态<br/>send()"] --> H["Socket<br/>缓冲区"]
-    H --> I["sk_buff<br/>TX"]
-    I --> J["NIC DMA<br/>↑"]
-
-    style B fill:#f59f00,stroke:#333
-    style I fill:#f59f00,stroke:#333
-```
-
----
-
-## 2. sk_buff 结构设计：Head-Body 分离
-
-### 2.1 核心数据结构
-
-sk_buff 的设计遵循 **Head-Body 分离** 哲学——将元数据（metadata）和实际数据分开存储，通过指针偏移访问各层协议头部：
-
-```c
-// include/linux/skbuff.h
-struct sk_buff {
-    /* --- 重要成员，按访问频率排列 --- */
-
-    /* 1. 热路径成员（Cache 行对齐） */
-    unsigned short      len;           /* 数据长度 */
-    unsigned int        data_len;      /* non-linear 区域长度 */
-    __u32               hash;          /* flow hash，用于 RSS/rps */
-    enum skb_free_reason free_reason;  /* 释放原因（调试） */
-
-    /* 2. 指针家族（指向数据区域） */
-    unsigned char       *head;         /* 分配起始 */
-    unsigned char       *data;         /* 有效数据起始 */
-    unsigned char       *tail;         /* 有效数据结束 */
-    unsigned char       *end;          /* 分配结束 */
-
-    /* 3. 各层协议头指针（懒计算，按需设置） */
-    struct ethhdr       *ethernet;
-    struct iphdr        *ip_hdr;
-    struct ipv6hdr      *ipv6_hdr;
-    struct tcphdr       *tcp_hdr;
-    struct udphdr       *udp_hdr;
-
-    /* 4. 网络层信息 */
-    struct sock         *sk;            /* 关联的 sock（TX 时设置） */
-    struct net_device   *dev;          /* 关联的 net_device */
-    __be16              protocol;      /* Ethernet 协议类型 */
-    u8                  ip_summed;     /* checksum 状态 */
-
-    /* 5. 时间戳与标记 */
-    ktime_t             tstamp;         /* 接收/发送时间 */
-    u64                 skb_mstamp_ns; /* 微秒时间戳（jiffies 替代） */
-
-    /* 6. 分片信息 */
-    struct sk_buff      *next;         /* frag_list 链表 */
-    struct sk_buff      *prev;
-    struct skb_shared_hwtstamps *hwtstamps;
-
-    /* 7. 引用计数与克隆 */
-    atomic_t            users;          /* 引用计数，析构依据 */
-
-    /* 8. GRO 相关 */
-    unsigned int        gro_max_size;
-    unsigned int        gro_count;
-
-    /* ... 200+ 行其他字段 ... */
-};
-```
-
-### 2.2 Head-Body 内存布局
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    sk_buff 内存布局                         │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  head              data            tail           end       │
-│    │                 │               │              │       │
-│    ▼                 ▼               ▼              ▼       │
-│ ┌──────┬────────────────────────────────────────────────┐    │
-│ │      │  L2 Header │ L3 Header | L4 Header | Payload  │    │
-│ │ 线性区域      │          │          │                   │    │
-│ └──────┴────────────────────────────────────────────────┘    │
-│                    ▲                                          │
-│                    │                                         │
-│            mac_header / network_header / transport_header    │
-│                                                             │
-├─────────────────────────────────────────────────────────────┤
-│  frag_list: 非线性区域（分片包）                              │
-│  ┌────────┐  ┌────────┐  ┌────────┐                        │
-│  │ frag 0 │->│ frag 1 │->│ frag 2 │-> NULL                  │
-│  └────────┘  └────────┘  └────────┘                        │
-└─────────────────────────────────────────────────────────────┘
-```
-
-**关键设计决策：**
-
-| 特性              | 说明           | 优势                              |
-| ----------------- | -------------- | --------------------------------- |
-| `head/end`        | 缓冲区边界指针 | 预分配整个区域，避免动态扩展      |
-| `data/tail`       | 有效数据边界   | 支持在头部/尾部增长数据           |
-| `skb_shared_info` | 紧跟 end 之后  | 存储 frags[]、gso_size 等分片信息 |
-| `users` 原子计数  | 引用计数       | 支持克隆、零拷贝共享              |
-
-### 2.3 各层头指针懒计算
-
-```c
-// 网络层头指针设置（按需计算，避免不必要的解析）
-static inline void iph = ip_hdr(skb);     // skb->data 偏移 L2 头
-static inline void tcph = tcp_hdr(skb);   // skb->data 偏移 L2+L3 头
-static inline void udph = udp_hdr(skb);   // skb->data 偏移 L2+L3 头
-
-// 这些宏实际是内联函数，包含边界检查
-#define ip_hdr(skb)   ((struct iphdr *)(skb->data + (skb)->mac_header))
-```
-
----
-
-## 3. sk_buff 分配与释放
-
-### 3.1 分配路径
-
-内核提供多种 sk_buff 分配方式，针对不同场景：
-
-```c
-// 1. 标准分配（推荐用于 RX 路径）
-struct sk_buff *alloc_skb(unsigned int size, gfp_t priority);
-struct sk_buff *netdev_alloc_skb(struct net_device *dev, unsigned int length);
-
-// 2. NAPI 友好分配（带 GRO 预留空间）
-struct sk_buff *napi_alloc_skb(struct napi_struct *napi, unsigned int len);
-
-// 3. page_pool 返还（RX 路径优化）
-void skb_add_rx_frag(struct sk_buff *skb, int i, struct page *page,
-                     int off, int size);
-```
-
-**alloc_skb 内部流程：**
-
-```c
-struct sk_buff *alloc_skb(unsigned int size, gfp_t priority)
-{
-    struct sk_buff *skb;
-
-    // 1. 分配 sk_buff 结构体本身（SLAB 可回收）
-    skb = kmem_cache_alloc(skbuff_head_cache, priority);
-    if (!skb)
-        return NULL;
-
-    // 2. 分配 data 缓冲区（size 包括 headroom）
-    unsigned int overhead = SKB_DATA_ALIGN(size);
-    skb->data = __netdev_alloc_skb(dev, overhead, priority);
-
-    // 3. 初始化指针
-    skb->head = skb->data;
-    skb->data = skb->head + NET_SKB_PAD;  // 预留 headroom
-    skb->tail = skb->data;
-    skb->end  = skb->head + overhead;
-
-    // 4. 初始化引用计数 = 1
-    atomic_set(&skb->users, 1);
-
-    // 5. 初始化 list 指针
-    skb->next = skb->prev = NULL;
-
-    return skb;
-}
-```
-
-**关键参数：**
-
-```c
-#define NET_SKB_PAD     16   // L2 头对齐，通常足够承载 Ethernet + VLAN + L2 tunnel
-#define SKB_DATA_ALIGN(x)  (((x) + (SMP_CACHE_BYTES - 1)) & ~(SMP_CACHE_BYTES - 1))
-#define SMP_CACHE_BYTES    64  // L1 cache line 对齐
-```
-
-### 3.2 释放路径与 free_reason
-
-```c
-void kfree_skb(struct sk_buff *skb);
-void consume_skb(struct sk_buff *skb);   // 统计计入 "Consumed" 而非 "Dropped"
-
-enum skb_free_reason {
-    SKB_REASON_DROPPED,       // 被 netif_rx 丢弃
-    SKB_REASON_CONSUMED,      // 被应用正确消费
-    SKB_REASON_PKT_PROCESSED, // 处理完成
-    SKB_REASON_OWNER,         // 引用归零被 owner 释放
-    // ... 更多原因
-};
-```
-
-**释放流程：**
-
-```c
-void kfree_skb(struct sk_buff *skb)
-{
-    if (atomic_dec_and_test(&skb->users)) {
-        // 引用计数归零，执行实际释放
-        __kfree_skb(skb);
-    }
-}
-
-void __kfree_skb(struct sk_buff *skb)
-{
-    // 1. 调用析构钩子（如有，如 frag 回收）
-    if (skb->destructor)
-        skb->destructor(skb);
-
-    // 2. 释放 data 缓冲区（回 page_pool 或 kfree）
-    skb_release_data(skb);
-
-    // 3. 释放 sk_buff 结构体（SLAB 回收）
-    kmem_cache_free(skbuff_head_cache, skb);
-}
-```
-
-### 3.3 page_pool 优化：RX 路径零分配
-
-现代内核网卡的 RX 路径通过 **page_pool** 实现零分配：
-
-```mermaid
-sequenceDiagram
-    participant NIC as 网卡 DMA
-    participant PP as page_pool
-    participant SKB as sk_buff
-    participant APP as 应用
-
-    NIC->>PP: DMA 直接映射到 page
-    PP->>SKB: skb_add_rx_frag() 仅组装 skb
-    SKB->>APP: recvfrom() 直接引用 page
-    APP->>SKB: 释放 skb（仅释放元数据）
-    Note over PP: page 返还 page_pool<br/>供下次 DMA 复用
-```
-
-**page_pool 核心参数：**
-
-```c
-struct page_pool_params {
-    unsigned int    flags;          // PP_FLAG_PAGE_FRAG, PP_FLAG_DMA_MAP
-    unsigned int    order;          // 页面阶（0=4KB, 1=64KB HugePage）
-    unsigned int    pool_size;      // 池大小（1024-4096）
-    int             nid;            // NUMA 节点
-    struct device   *dev;           // DMA 映射设备
-    enum dma_data_direction dma_dir; // DMA direction
-};
-```
-
----
-
-## 4. sk_buff 克隆与分片
-
-### 4.1 克隆（skb_clone）
-
-克隆用于**需要修改 sk_buff 但不修改数据**的场景，例如：QoS 队列复制、多播复制、Conntrack 预连接。
-
-```c
-// 克隆：共享 data，复制 sk_buff 头部
-struct sk_buff *skb_clone(struct sk_buff *skb, gfp_t priority);
-
-// 内部实现
-struct sk_buff *skb_clone(struct sk_buff *skb, gfp_t priority)
-{
-    struct sk_buff *n;
-
-    // 1. 从 SLAB 分配新的 sk_buff 头
-    n = kmem_cache_alloc(skbuff_head_cache, priority);
-    if (!n)
-        return NULL;
-
-    // 2. 浅拷贝所有字段
-    memcpy(n, skb, sizeof(*skb));
-
-    // 3. 关键：data 指针共享，仅 users++
-    atomic_inc(&skb_shinfo(skb)->dataref);  // data 引用++
-    atomic_set(&n->users, 1);               // 新 skb 引用 = 1
-
-    // 4. 清除可能指向全局状态的指针
-    n->sk = NULL;        // 克隆不继承 sock 引用！
-    n->destructor = NULL;
-
-    return n;
-}
-```
-
-```
-原始 skb                  克隆 skb
-┌─────────────────┐       ┌─────────────────┐
-│ skb->head ──────┼──────►│ skb->head ──────┼──┐
-│ skb->data       │       │ skb->data       │  │
-│ skb->tail       │       │ skb->tail       │  ▼
-│ skb->len = 100  │       │ skb->len = 100  │  [共享 data 区域]
-│ users = 2       │       │ users = 1       │
-└─────────────────┘       └─────────────────┘
-        ▲                                 │
-        │ data 引用计数 = 2                │
-        └─────────────────────────────────┘
-```
-
-### 4.2 分片（skb_fragment）
-
-分片用于**需要修改数据**的场景，例如：TCP 分片、隧道封装、Tunnel decapsulation。
-
-```c
-// 复制一份完整的数据副本
-struct sk_buff *skb_copy(const struct sk_buff *skb, gfp_t priority);
-
-// 带 headroom 扩展的复制（用于在头部添加协议头）
-struct sk_buff *skb_copy_expand(const struct sk_buff *skb,
-                                 int newheadroom, int newtailroom,
-                                 gfp_t priority);
-```
-
-**skb_copy_expand 典型用途：**
-
-```c
-// 在 L3 头前添加 GRE 头
-struct sk_buff *encap_skb(struct sk_buff *skb)
-{
-    struct sk_buff *new_skb;
-
-    // 需要在头部预留 GRE 头空间（8-16 字节）
-    new_skb = skb_copy_expand(skb,
-                               LL_RESERVED_SPACE(dev) + GRE_HEADER_SIZE,
-                               0,  // tailroom 足够
-                               GFP_ATOMIC);
-    if (!new_skb)
-        return NULL;
-
-    // 移动 data 指针，准备写入 GRE 头
-    skb_push(new_skb, GRE_HEADER_SIZE);
-
-    return new_skb;
-}
-```
-
-### 4.3 分片链表（skb_frag / frag_list）
-
-对于**GSO/TSO 超大包**，内核使用分片链表而非连续内存：
-
-```c
-struct skb_shared_info {
-    unsigned short  gso_size;        // 分片大小（TSO 时为 MSS）
-    unsigned short  gso_segs;        // 分段数量
-    unsigned short  gso_type;        // GSO_TYPE_TCPV4 / GSO_TYPE_UDP
-    struct sk_buff  *frag_list;      // 分片链表头
-    skb_frag_t      frags[MAX_SKB_FRAGS];  // 线性分片（最多 17 个）
-};
-
-typedef struct {
-    struct page     *page;
-    unsigned int    page_offset;
-    unsigned int    size;
-} skb_frag_t;
-```
-
-```
-skb (线性部分)          frag_list (非线性部分)
-┌──────────────┐        ┌──────────────┐
-│ TCP Header   │        │ Fragment 1   │
-│ + Init Data  │  next  │ Fragment 2   │
-└──────────────┘   →    │ Fragment 3   │
-                        └──────────────┘
-
-GSO 包 (64KB) = skb (16KB 线性) + frags (3 × 16KB)
-```
-
----
-
-## 5. 数据包接收路径：Ring → sk_buff
-
-### 5.1 NAPI 轮询与 Ring Buffer
-
-现代网卡使用 **Ring Buffer** 存储 DMA 描述符，sk_buff 在 RX 路径的典型流程：
-
-```mermaid
-sequenceDiagram
-    participant NIC as 网卡
-    participant DMA as DMA Ring
-    participant DRV as 网卡驱动
-    participant NAPI as NAPI (softirq)
-    participant STACK as 协议栈
-
-    NIC->>DMA: DMA 写入数据到物理内存
-    NIC->>DMA: 更新 produce index
-
-    Note over DRV: 硬中断触发<br/>netif_napi_add() 注册
-    DRV->>NAPI: 触发 NAPI softirq (NET_RX)
-
-    loop NAPI poll (轮询直到 budget 用尽)
-        NAPI->>DMA: 获取 next descriptor
-        DMA->>STACK: napi_gro_receive(skb)
-    end
-
-    NAPI->>NIC: 重新开启硬中断
-```
-
-### 5.2 驱动层示例：Intel i40e
-
-```c
-static int i40e_clean_rx_irq(struct i40e_ring *rx_ring, int budget)
-{
-    struct sk_buff *skb;
-    unsigned int total_bytes = 0, total_packets = 0;
-
-    while (total_packets < budget) {
-        union i40e_rx_desc *desc;
-        struct page *page;
-
-        // 1. 获取下一个 descriptor
-        desc = &rx_ring->desc[rx_ring->next_to_clean];
-
-        // 2. 检查 DD (Descriptor Done) 标志
-        if (!(desc->wb.status_error & cpu_to_le16(I40E_RXD_STAT_DD)))
-            break;
-
-        // 3. 构建 sk_buff（page_pool 模式）
-        skb = napi_alloc_skb(&rx_ring->q_vector->napi,
-                               rx_ring->netdev->mtu + ETH_HLEN);
-        if (!skb) {
-            rx_ring->rx_stats.alloc_fail++;
-            break;
-        }
-
-        // 4. 映射 DMA 地址到 skb
-        dma_sync_single_for_cpu(rx_ring->dev,
-                                  le64_to_cpu(desc->read.pkt_addr),
-                                  rx_ring->rx_buf_len,
-                                  DMA_FROM_DEVICE);
-
-        skb_put(skb, le16_to_cpu(desc->wb.qword1.pkt_len) & 0x7FFF);
-
-        // 5. 设置协议类型
-        skb->protocol = eth_type_trans(skb, rx_ring->netdev);
-
-        // 6. 送入协议栈
-        netif_receive_skb(skb);
-
-        total_packets++;
-        total_bytes += skb->len;
-    }
-
-    return total_packets;
-}
-```
-
-### 5.3 GRO (Generic Receive Offload)
-
-GRO 是 **软件层面的 packet coalescing**，在协议栈入口（netif_receive_skb）之前将多个同流小包合并为大包，减少协议栈处理开销：
-
-```c
-// gro_receive 入口
-enum gro_result {
-    GRO_MERGED,          // 合并到已有 gro_skb
-    GRO_MERGED_FREE,    // 合并后释放
-    GRO_HELD,           // 暂存等待更多分片
-    GRO_NORMAL,         // 不符合 GRO，直接转发
-    GRO_DROP,           // 丢弃
-};
-
-gro_result napi_gro_receive(struct napi_struct *napi, struct sk_buff *skb)
-{
-    skb_gro_reset_offset(skb);
-
-    for (protocol = rcu_dereference(OFFLOAD_GRO_CB(skb)->prot_hook);
-         protocol;
-         protocol = next_hook) {
-        // 调用注册的 gro_receive 回调
-        pp = ptype->gro_receive(head, skb);
-    }
-
-    // GRO 合并结果处理
-    return dev_gro_receive(napi, skb);
-}
-```
-
-**GRO vs 非 GRO 性能对比（单连接 iperf）：**
-
-| 场景     | 64B 小包 | 1400B MTU | 提升       |
-| -------- | -------- | --------- | ---------- |
-| 禁用 GRO | 380 Kpps | 320 Kpps  | 基准       |
-| 启用 GRO | 520 Kpps | 335 Kpps  | +37% / +5% |
-
----
-
-## 6. 数据包发送路径：sk_buff → Ring
-
-### 6.1 send() 系统调用路径
-
-```mermaid
-sequenceDiagram
-    participant APP as 用户态
-    participant SOCK as Socket 层
-    participant TCP as TCP 协议
-    participant SKB as sk_buff 队列
-    participant QDISC as qdisc
-    participant DEV as netdev TX
-    participant NIC as 网卡 DMA
-
-    APP->>SOCK: send(fd, buf, len, 0)
-    SOCK->>TCP: tcp_sendmsg()
-    loop 直到数据发送完毕
-        TCP->>TCP: 复制用户数据到 skb
-        TCP->>SKB: skb_queue_tail(&sk->sk_write_queue, skb)
-    end
-    TCP->>QDISC: dev_queue_xmit()
-    QDISC->>DEV: netdev_start_xmit()
-    DEV->>NIC: 遍历 TX ring，DMA 映射
-    NIC->>NIC: 发送完成触发硬中断
-```
-
-### 6.2 tcp_sendmsg 关键代码
-
-```c
-int tcp_sendmsg(struct sock *sk, struct msghdr *msg, size_t size)
-{
-    struct tcp_sock *tp = tcp_sk(sk);
-    int ret, copied = 0;
-
-    while (copied < size) {
-        struct sk_buff *skb;
-        int copy, err;
-
-        // 1. 检查是否可以 attach 到现有 skb（减少分片）
-        skb = skb_peek_tail(&sk->sk_write_queue);
-        if (skb && can_coalesce(skb, msg->msg_iov)) {
-            copy = min_t(int, seglen, tp->snd_wnd);
-            // 追加到 skb->tail
-        } else {
-            // 2. 需要分配新的 skb
-            skb = alloc_skb_fclone(tp->mss_cache + MAX_TCP_HEADER,
-                                    sk->sk_allocation);
-            // 设置 IP/TCP 头
-            skb_set_owner_w(skb, sk);
-            skb_queue_tail(&sk->sk_write_queue, skb);
-        }
-
-        // 3. 从用户态复制数据
-        copy = min_t(int, copy, size - copied);
-        if (memcpy_from_msg(skb_put(skb, copy), msg, copy))
-            goto out;
-
-        copied += copy;
-    }
-
-out:
-    // 4. 触发发送（如果没有 pending TX）
-    if (copied && !tp->pending_data)
-        tcp_push_pending_frames(sk);
-
-    return copied;
-}
-```
-
-### 6.3 qdisc 与 netdev 队列
-
-```c
-int dev_queue_xmit(struct sk_buff *skb)
-{
-    struct net_device *dev = skb->dev;
-    struct Qdisc *q;
-    int rc;
-
-    // 1. 处理虚拟设备（veth、bridge）
-    if (netif_is_bridge(skb->dev)) {
-        return br_dev_queue_push_xmit(skb);
-    }
-
-    // 2. 获取 qdisc
-    q = rcu_dereference_bh(dev->qdisc);
-
-    // 3. 如果 qdisc 无锁，直接发送
-    if (q->enqueue == dev_qdisc_put_ops &&
-        spin_trylock(&q->busylock)) {
-        rc = dev_qdisc_xmit(skb, q);
-        spin_unlock(&q->busylock);
-        return rc;
-    }
-
-    // 4. 入队（可能触发 backlog）
-    return q->enqueue(skb, q, &to_free) & NET_XMIT_MASK;
-}
-```
-
----
-
-## 7. sk_buff 内存布局与 Cache 优化
-
-### 7.1 内存布局参数
-
-```c
-// include/linux/skbuff.h
-enum {
-    NET_SKB_PAD     = 16,           // headroom 最小值（Cache 对齐）
-    NET_IP_ALIGN    = 0,            // L2 头对齐（2.6.14 后多为 0）
-    HL柔阵楚        = 16,           // headroom 典型值
-    SKB_DATA_ALIGN(x) = (((x) + SMP_CACHE_BYTES - 1) & ~(SMP_CACHE_BYTES - 1)),
-};
-```
-
-**典型 RX sk_buff 布局：**
-
-```
-Offset 0:  struct sk_buff           (576 bytes on 64-bit)
-Offset 576: struct skb_shared_info   (取决于 frags/max 17)
-           ─────────────────────────  ← 64-byte aligned
-           struct ethhdr + skb->data
-           ─────────────────────────
-Offset 576+size: skb_shared_info 末尾
-
-实际 data 区域:
-Offset 592 (NET_SKB_PAD=16): skb->head
-Offset 608: skb->data (mac_header = 14)
-Offset 622: skb->network_header (ip_hdr)
-Offset 642: skb->transport_header (tcp_hdr)
-```
-
-### 7.2 Cache 行优化技巧
-
-**避免 false sharing：**
-
-```c
-// 错误：多个 skb 的 users 在同一 cache line
-struct sk_buff *skb1, *skb2;
-// skb1->users 和 skb2->users 可能在同一 cache line
-// 修改 skb1->users 会 invalidate skb2 所在 cache line
-
-// 正确：kmem_cache 分配时自动对齐
-skb = kmem_cache_alloc(skbuff_head_cache, GFP_ATOMIC);
-// skbuff_head_cache 的对象已经按 cache line 对齐
-```
-
-**热数据分离：**
-
-```c
-// sk_buff 热路径成员（频繁访问）
-unsigned short      len;           // 每次访问
-unsigned char       *data;         // 每次访问
-
-// 冷数据成员（不热路径）
-struct dst_entry    *dst;          // 仅路由查找时
-struct sec_path     *sp;           // 仅 IPSec 时
-
-// 内核通过重组结构体，将热字段放在结构体开头（cache line 友好）
-```
-
----
-
-## 8. 调试与诊断
-
-### 8.1 sk_buff 调试选项
-
-```bash
-# 启用 sk_buff 调试（会显著降低性能）
-echo 1 > /proc/sys/net/core/netdev_debug
-echo 1 > /proc/sys/net/core/skbuff_debug
-
-# 查看分配失败统计
-cat /proc/net/sockstat
-cat /proc/net/rt_acct  # 路由缓存统计
-```
-
-### 8.2 使用 bpftrace 追踪
-
-```bash
-# 追踪 sk_buff 分配
-bpftrace -e '
-tracepoint:skb:skb_kfree_kmalloc {
-    @["kfree"] = count();
-    @by_reason[args->reason] = count();
-}
-tracepoint:skb:skb_kfree_skb {
-    @["kfree_skb"] = count();
-}
-'
-
-# 追踪分配延迟
-bpftrace -e '
-profile:hz:99 /pid == $1/ {
-    @[ksym(stack)] = count();
-}
-' $(pgrep -f your_network_app)
-```
-
-### 8.3 ss 命令查看 socket 缓冲区
-
-```bash
-# 查看 TCP socket 的 skb 队列
-ss -ti src 192.168.1.100
-
-# 查看 receive buffer 积压
-ss -antp | grep Recv-Q
-
-# 查看 skb memory pressure
-cat /proc/net/sockmem
-```
-
----
-
-## 9. 总结
-
-sk_buff 是 Linux 内核网络栈最核心的数据结构，其设计体现了几个关键权衡：
-
-| 设计决策       | 权衡           | 实际效果                               |
-| -------------- | -------------- | -------------------------------------- |
-| Head-Body 分离 | 灵活 vs 简单   | 支持各层协议头指针，修改数据需完整复制 |
-| 引用计数       | 共享 vs 独立   | 克隆开销低，但析构需原子操作           |
-| page_pool      | 零分配 vs 复杂 | RX 路径零分配，TX 仍需分配             |
-| GRO            | 吞吐 vs 延迟   | 合并小包提升吞吐，增加单包延迟         |
-
-**下一章预告：** [[2026-04-13-kernel-protocol-stack-deep-dive-ch2-netdevice|第二章：Netdevice 与网卡抽象]] — 理解 net_device 结构、驱动注册流程、NAPI 机制与发送队列管理。
-
----
-
-> [!quote] 参考文献
 >
-> - [[2026-04-09-dpdk-deep-dive-ch5-mbuf-mechanism|DPDK Mbuf 机制对比]] — 用户态数据包缓冲设计
-> - [[2026-04-08-ebpf-deep-dive-ch6-tc-traffic-control|eBPF TC 钩子]] — sk_buff 的 BPF 视角
-> - [[2026-04-09-dpdk-deep-dive-ch4-hugepage-mempool|DPDK Mempool]] — 大页内存池对比
+> 本文以 Linux 6.x 为主线。`struct sk_buff` 会随内核版本、架构和配置变化，
+> 不应依赖网上抄来的固定字段顺序或结构体大小。
+
+---
+
+## 1. sk_buff 到底是什么
+
+`struct sk_buff`，简称 `skb`，是 Linux 网络栈描述一个数据包或一批聚合数据的核心对象。
+它不是“装着整个包的结构体”，而是一个**数据描述符**：
+
+```text
+sk_buff descriptor
+  ├─ packet length and protocol metadata
+  ├─ queue/list linkage
+  ├─ socket, device and route ownership
+  ├─ header offsets
+  ├─ checksum/GSO/VLAN/hash metadata
+  └─ pointers to packet storage
+       ├─ linear head buffer
+       ├─ page frags[]
+       └─ optional frag_list
+```
+
+协议栈处理数据包时，大部分操作是在修改 `skb` 的元数据、偏移和引用关系，
+并不意味着每经过一层协议都复制一次完整报文。
+
+### 1.1 skb 在网络栈中的位置
+
+```text
+RX:
+NIC DMA
+  → driver/XDP
+  → build skb
+  → GRO
+  → L2/IP/TCP/UDP
+  → socket receive queue
+  → recvmsg()
+
+TX:
+sendmsg()
+  → socket/TCP/UDP
+  → build or append skb
+  → IP/neighbor
+  → qdisc
+  → driver DMA mapping
+  → TX completion
+  → free/recycle skb
+```
+
+需要注意：
+
+- native XDP 通常运行在创建 `skb` 之前；
+- AF_XDP zero-copy 可以绕过普通 `skb` 主路径；
+- 硬件 flow offload 也可能让某些包不进入 host `skb` 路径；
+- 普通 socket `recvmsg()` 最终通常仍要把数据复制到用户缓冲区。
+
+所以 `skb` 是 Linux 内核协议栈的核心对象，但不是所有 Linux 网络 I/O 的唯一表示。
+
+---
+
+## 2. 三层内存模型
+
+理解 `skb` 最重要的是区分三个对象：
+
+```text
+1. struct sk_buff
+   元数据描述符，由 slab cache 分配
+
+2. linear head buffer
+   headroom + linear data + tailroom
+
+3. skb_shared_info
+   位于 head buffer 末端，保存 dataref、GSO 和 frags[]
+```
+
+概念布局如下：
+
+```text
+struct sk_buff
+┌────────────────────────────────────────────────────────────┐
+│ len / data_len / truesize / protocol / ip_summed           │
+│ dev / sk / dst / hash / mark / priority                    │
+│ mac_header / network_header / transport_header             │
+│ head / data / tail / end                                   │
+└───────────────┬────────────────────────────────────────────┘
+                │
+                ▼
+linear head buffer
+┌───────────────┬────────────────────────┬────────────────────┐
+│   headroom    │      linear data       │      tailroom      │
+└───────────────┴────────────────────────┴────────────────────┘
+^               ^                        ^                    ^
+head            data                     tail                 end
+                                                             │
+                                                             ▼
+                                                   skb_shared_info
+                                             ┌────────────────────┐
+                                             │ dataref            │
+                                             │ gso_size/type/segs │
+                                             │ nr_frags           │
+                                             │ frags[]            │
+                                             │ frag_list          │
+                                             └────────────────────┘
+```
+
+在部分内核配置中，`tail` 和 `end` 存储为相对 `head` 的 offset，而不是裸指针。
+应用内核 helper 即可，不应直接假设它们的底层表示。
+
+### 2.1 四个边界
+
+| 边界   | 含义                                     |
+| ------ | ---------------------------------------- |
+| `head` | 线性缓冲区起点                           |
+| `data` | 当前协议层可见数据起点                   |
+| `tail` | 线性有效数据结束位置                     |
+| `end`  | 线性缓冲区末端，后面是 `skb_shared_info` |
+
+由此得到：
+
+```text
+headroom = data - head
+linear length = tail - data
+tailroom = end - tail
+```
+
+内核中应使用 helper：
+
+```c
+skb_headroom(skb);
+skb_headlen(skb);
+skb_tailroom(skb);
+```
+
+### 2.2 `len`、`data_len` 和 `truesize`
+
+这三个字段经常被混淆：
+
+```text
+skb->len
+  整个 skb 的逻辑数据长度
+
+skb->data_len
+  非线性数据长度，即 page frags 和 frag_list 中的数据
+
+skb_headlen(skb)
+  线性数据长度，通常等于 len - data_len
+
+skb->truesize
+  用于 socket/协议栈内存记账的成本，不等于 len，也不保证等于精确物理占用
+```
+
+例如：
+
+```text
+linear headers + payload: 256 B
+page frags:              4096 B
+
+len       = 4352
+data_len  = 4096
+headlen   = 256
+truesize  = allocation/accounting dependent
+```
+
+判断是否非线性：
+
+```c
+if (skb_is_nonlinear(skb))
+    /* 不能假定所有数据都位于 skb->data 后的连续空间 */
+```
+
+---
+
+## 3. 头部不是指针，而是相对偏移
+
+现代 `skb` 通常保存：
+
+```c
+mac_header;
+network_header;
+transport_header;
+
+inner_mac_header;
+inner_network_header;
+inner_transport_header;
+```
+
+这些字段表示相对 `head` 的 offset。访问时使用：
+
+```c
+struct ethhdr *eth = eth_hdr(skb);
+struct iphdr *iph = ip_hdr(skb);
+struct tcphdr *th = tcp_hdr(skb);
+```
+
+其核心语义类似：
+
+```c
+skb_network_header(skb) == skb->head + skb->network_header;
+```
+
+不是：
+
+```c
+/* 错误心智模型 */
+skb->data + skb->mac_header;
+```
+
+### 3.1 为什么使用 offset
+
+- `skb_push()`、`skb_pull()` 会移动 `data`；
+- clone 可能共享同一个 head buffer；
+- tunnel 同时需要 outer 和 inner header；
+- 某些架构希望压缩指针大小；
+- head buffer 扩展后可以统一重定位。
+
+### 3.2 解析前必须确认数据可访问
+
+以下代码并不总是安全：
+
+```c
+struct tcphdr *th = tcp_hdr(skb);
+```
+
+因为传输层头部可能不在线性区域内，或者当前层尚未设置 offset。处理不可信包时应先确保：
+
+```c
+if (!pskb_may_pull(skb, required_len))
+    goto drop;
+```
+
+需要读取跨越多个 fragment 的数据时，可使用：
+
+```c
+skb_copy_bits(skb, offset, dst, len);
+```
+
+只有确实要求连续数据的模块才应考虑：
+
+```c
+if (skb_linearize(skb))
+    goto drop;
+```
+
+`skb_linearize()` 可能分配并复制大量数据，不应成为热路径上的默认操作。
+
+---
+
+## 4. headroom、tailroom 与四个基础操作
+
+Linux 通过移动 `data` 和 `tail` 高效添加或删除协议头。
+
+### 4.1 `skb_reserve()`
+
+在空 skb 上预留头部空间：
+
+```c
+struct sk_buff *skb = alloc_skb(payload_len + headroom, GFP_ATOMIC);
+if (!skb)
+    return -ENOMEM;
+
+skb_reserve(skb, headroom);
+```
+
+结果：
+
+```text
+before:
+head=data=tail
+
+after skb_reserve(64):
+head ── 64-byte headroom ── data=tail
+```
+
+它只移动 `data` 和 `tail`，不增加 `len`。通常只应在空 skb 初始化阶段使用。
+
+### 4.2 `skb_put()`
+
+向尾部追加数据：
+
+```c
+void *payload = skb_put(skb, len);
+memcpy(payload, src, len);
+```
+
+它移动 `tail` 并增加 `len`。调用者必须保证 tailroom 足够。
+
+### 4.3 `skb_push()`
+
+在当前数据前添加协议头：
+
+```c
+struct ethhdr *eth = skb_push(skb, ETH_HLEN);
+```
+
+它向 `head` 方向移动 `data` 并增加 `len`。调用者必须保证 headroom 足够且头部可写。
+
+### 4.4 `skb_pull()`
+
+消费当前协议头：
+
+```c
+if (!pskb_may_pull(skb, sizeof(struct iphdr)))
+    goto drop;
+
+skb_pull(skb, ip_hdr_len);
+```
+
+它向 `tail` 方向移动 `data` 并减少 `len`，不释放底层内存。
+
+### 4.5 操作速查
+
+```text
+                 data                         tail
+                  │                            │
+head ─ headroom ──┼──── visible data ──────────┼─ tailroom ─ end
+
+skb_push(n):       data 向左，len 增加
+skb_pull(n):       data 向右，len 减少
+skb_put(n):        tail 向右，len 增加
+skb_trim(n):       缩短到指定长度
+skb_reserve(n):    空 skb 的 data/tail 同时向右
+```
+
+这些 helper 在启用调试配置时可能检查越界，但生产代码不能依赖调试检查代替长度验证。
+
+---
+
+## 5. 两套引用计数
+
+`skb` 有两种不同的共享关系。
+
+### 5.1 `users`：共享同一个描述符
+
+`skb_get()` 增加 `skb->users`：
+
+```text
+caller A ─┐
+          ├─ same struct sk_buff
+caller B ─┘
+```
+
+这表示多个持有者引用**同一个 skb 描述符**。最后一个引用释放后，描述符才销毁。
+
+现代内核中 `users` 是 `refcount_t`，不应描述成普通 `atomic_t`。
+
+### 5.2 `dataref`：多个描述符共享数据区
+
+`skb_clone()` 创建新的 `struct sk_buff`，但共享原来的 head buffer：
+
+```text
+skb A descriptor ─┐
+                  ├─ shared head/data/frags
+skb B descriptor ─┘
+
+A.users = 1
+B.users = 1
+shared_info.dataref = 2
+```
+
+因此：
+
+- 修改 `skb->mark`、`skb->dev` 等描述符元数据通常不会改变另一个 clone；
+- 修改共享 packet bytes 前必须确认数据区可写；
+- clone 不是“`users` 变成 2”，而是新描述符加共享数据引用。
+
+### 5.3 TCP 的 payload-only clone
+
+`skb_shared_info.dataref` 被分成两部分：
+
+- 低位统计总数据引用；
+- 高位统计 payload-only 引用。
+
+TCP 可以保留 payload skb 用于重传，同时把 clone 交给下层添加 L3/L2 头。
+`nohdr`、`hdr_len` 和 `skb_header_cloned()` 用于判断头部是否仍可修改。
+
+这是传输层内部优化，不应被普通模块当作通用共享协议。
+
+---
+
+## 6. clone、copy 和 Copy-on-Write
+
+### 6.1 常用 API 的区别
+
+| API                 | 新 skb 描述符 | 共享线性数据 | 共享 page frags | 典型用途                     |
+| ------------------- | ------------- | ------------ | --------------- | ---------------------------- |
+| `skb_get()`         | 否            | 是           | 是              | 增加同一 skb 的持有引用      |
+| `skb_clone()`       | 是            | 是           | 是              | 多播、镜像、重传发送 clone   |
+| `skb_copy()`        | 是            | 否           | 否              | 需要完整独立副本             |
+| `pskb_copy()`       | 是            | 复制线性区   | 通常共享 frags  | 只需独立线性头部             |
+| `skb_copy_expand()` | 是            | 否           | 否              | 完整复制并调整 head/tailroom |
+
+不要把“分片”当成 `skb_copy()` 的同义词。复制、scatter-gather、IP fragmentation
+和 GSO segmentation 是四个不同概念。
+
+### 6.2 为什么 clone 后不能直接改包
+
+```c
+struct sk_buff *clone = skb_clone(skb, GFP_ATOMIC);
+if (!clone)
+    return -ENOMEM;
+
+/* 直接修改 clone->data 可能同时影响原 skb */
+```
+
+如果只需要添加或修改头部，常用：
+
+```c
+if (skb_cow_head(skb, required_headroom))
+    goto drop;
+
+/* 此时 head 可写，并具有足够 headroom */
+```
+
+如果需要确保整个数据区独占，可根据调用语义使用 `skb_unshare()`、`skb_copy()`
+或其他合适 helper。
+
+### 6.3 `pskb_expand_head()`
+
+它可以：
+
+- 增加 headroom；
+- 增加 tailroom；
+- 在数据被 clone 时建立私有 head；
+- 更新相关引用和 offset。
+
+但它可能分配和复制，失败时返回错误。因此任何封装代码都必须处理失败：
+
+```c
+if (skb_cow_head(skb, LL_RESERVED_SPACE(dev) + tunnel_hlen))
+    goto drop;
+
+hdr = skb_push(skb, tunnel_hlen);
+```
+
+不能只检查 headroom，而忽略“是否共享、是否可写”。
+
+---
+
+## 7. 线性区、frags 与 frag_list
+
+### 7.1 `frags[]`
+
+`skb_shared_info.frags[]` 是 page-backed scatter-gather 数组：
+
+```text
+linear area:
+  Ethernet/IP/TCP headers + small payload
+
+frags[0]:
+  page + offset + size
+
+frags[1]:
+  page + offset + size
+```
+
+常见来源：
+
+- RX driver 将 page_pool page 挂到 skb；
+- sendfile/splice 等路径引用 page cache；
+- TCP 发送路径把用户页或内核页组织成 SG；
+- GRO 合并数据时保留 page fragments。
+
+`nr_frags` 表示有效数组元素数量。最大数量由内核配置和架构决定，不应写死为 17。
+
+### 7.2 `frag_list`
+
+`frag_list` 是额外的 skb 链：
+
+```text
+parent skb
+  └─ frag_list → child skb → child skb → ...
+```
+
+它和 `frags[]` 不同：
+
+- `frags[]` 的元素是 page fragment；
+- `frag_list` 的元素是完整 `struct sk_buff`。
+
+某些 GRO、fragmentation 和协议路径会使用 `frag_list`。驱动是否能直接发送这种 skb，
+取决于 feature capability；否则需要软件分段或线性化。
+
+### 7.3 SG、IP 分片和 GSO 不同
+
+| 概念               | 解决的问题                | 结果                         |
+| ------------------ | ------------------------- | ---------------------------- |
+| scatter-gather     | 一个逻辑包分散在多块内存  | 仍是一个网络包               |
+| IPv4 fragmentation | 网络 MTU 小于 IP datagram | 多个 IP fragment             |
+| GSO                | 延迟软件分段              | 一个大 skb，稍后成为多个包   |
+| TSO                | NIC 执行 TCP segmentation | 大 skb 交给硬件切包          |
+| GRO                | RX 软件合并同流报文       | 多个输入包形成较大 skb       |
+| LRO                | NIC/驱动硬件式接收合并    | 合并发生得更早，语义限制更强 |
+
+---
+
+## 8. GSO/GRO 元数据
+
+大 skb 并不一定对应线上一个巨型报文。
+
+### 8.1 TX GSO
+
+`skb_shared_info` 保存：
+
+```text
+gso_size:
+  每个输出 segment 的 payload 大小，例如 TCP MSS
+
+gso_segs:
+  预计 segment 数，某些路径可能未预先填充
+
+gso_type:
+  TCPv4/TCPv6/UDP tunnel 等分段类型
+```
+
+发送路径：
+
+```text
+TCP produces large skb
+  → qdisc sees one skb
+  → device supports matching TSO/GSO feature?
+       ├─ yes: driver maps SG, NIC segments
+       └─ no: skb_gso_segment() software segmentation
+```
+
+因此：
+
+- qdisc 的 packet 视角不一定等于线上 packet 数；
+- BQL、字节记账和硬件 completion 需要正确处理 GSO；
+- 抓包点不同，看到的大包/小包形态也可能不同。
+
+### 8.2 RX GRO
+
+GRO 在 NAPI 上下文中尝试合并兼容报文：
+
+```text
+driver NAPI poll
+  → napi_gro_receive()
+  → protocol GRO callbacks
+  → merge / hold / flush / normal
+  → protocol stack
+```
+
+GRO 的收益主要来自减少：
+
+- 每包协议栈函数调用；
+- route/Netfilter/TCP 处理次数；
+- skb 元数据和队列操作；
+- cache 与 softirq 压力。
+
+它不是无条件“减少延迟”。聚合、flush 时机和大 skb 后续处理可能改变延迟分布，
+应以业务 p99/p99.9 测量。
+
+---
+
+## 9. Checksum 状态
+
+`skb->ip_summed` 描述 checksum 已完成到什么程度，而不是一个简单的真假值。
+
+| 状态                   | 常见方向 | 含义                                                   |
+| ---------------------- | -------- | ------------------------------------------------------ |
+| `CHECKSUM_NONE`        | RX/TX    | 没有可用的硬件校验结果，需要软件处理                   |
+| `CHECKSUM_UNNECESSARY` | RX       | 已由硬件或更早层验证，无需再次验证                     |
+| `CHECKSUM_COMPLETE`    | RX       | `skb->csum` 带有可供协议栈继续验证的完整 checksum 信息 |
+| `CHECKSUM_PARTIAL`     | TX       | 从 `csum_start` 开始，由硬件或后续层补完 checksum      |
+
+TX partial checksum 常见布局：
+
+```text
+skb->csum_start
+  指向需要计算 checksum 的 L4 数据起点
+
+skb->csum_offset
+  checksum 字段相对 csum_start 的位置
+```
+
+驱动必须根据 `skb` 元数据设置正确的 descriptor offload 位。如果设备不支持，
+网络核心会在合适位置执行软件 checksum。
+
+隧道会进一步引入 inner/outer checksum 和 `csum_level`。不能仅凭
+“网卡开启 rx-checksumming”就断言所有协议和隧道都已校验。
+
+---
+
+## 10. 分配、构建和内存记账
+
+### 10.1 常见创建方式
+
+| API/模式                           | 典型场景                     |
+| ---------------------------------- | ---------------------------- |
+| `alloc_skb()`                      | 通用分配                     |
+| `netdev_alloc_skb*()`              | netdevice RX 辅助分配        |
+| `napi_alloc_skb()`                 | NAPI RX 路径的小型线性 skb   |
+| `build_skb()` / `napi_build_skb()` | 用已有数据缓冲区构建 skb     |
+| `napi_get_frags()`                 | NAPI fragment-based GRO 路径 |
+
+不要根据 API 名字推断固定布局。驱动可能：
+
+- copybreak：小包复制到紧凑线性 skb；
+- 大包保留在 page fragment；
+- 使用 `build_skb()` 让 head 本身来自 page；
+- 使用 multi-buffer RX/XDP fragments。
+
+### 10.2 `GFP_KERNEL` 与 `GFP_ATOMIC`
+
+- 可以睡眠的进程上下文通常可使用 `GFP_KERNEL`；
+- hardirq、softirq、NAPI 或持有不可睡眠锁时通常需要原子分配语义；
+- 驱动应优先使用为其上下文设计的 NAPI/page_pool helper，而不是到处手写
+  `alloc_skb(..., GFP_ATOMIC)`。
+
+分配 flag 错误可能导致 sleeping-in-atomic 警告；过度使用 `GFP_ATOMIC`
+则会增加保留内存压力和失败概率。
+
+### 10.3 `truesize` 与 socket memory
+
+socket 记账不能只看 payload：
+
+```text
+payload bytes
+  + skb descriptor
+  + head allocation
+  + page fragment accounting
+  + allocator alignment/overhead
+  ≈ skb->truesize based accounting
+```
+
+因此接收 1 MB 应用数据可能消耗超过 1 MB socket memory。GRO、分片大小和 page sharing
+都会影响记账。
+
+常见 owner helper：
+
+```c
+skb_set_owner_w(skb, sk); /* write memory accounting */
+skb_set_owner_r(skb, sk); /* receive memory accounting */
+```
+
+它们还会设置 destructor，使 skb 销毁时归还 socket 内存。不能随意复制
+`skb->sk` 和 `destructor`。
+
+---
+
+## 11. page_pool：回收 DMA page，不是用户态零拷贝
+
+page_pool 为高速 RX 驱动提供每队列/每 NAPI 的 page 或 netmem 分配与回收机制。
+
+```text
+page_pool allocation
+  → DMA-mapped RX buffer
+  → NIC writes packet
+  → driver/XDP
+  → skb references page
+  → protocol stack consumes skb
+  → final page reference released
+  → recycle to page_pool
+  → reuse for another RX descriptor
+```
+
+它主要减少：
+
+- page allocator 开销；
+- DMA map/unmap；
+- 跨 CPU 回收成本；
+- cache 和 IOMMU 压力。
+
+### 11.1 常见参数
+
+Linux 6.x 的 `page_pool_params` 包括：
+
+- `order`：分配页阶；
+- `pool_size`：ring 容量；
+- `nid`：NUMA 节点；
+- `dev`：DMA device；
+- `napi`：单一消费 NAPI，若不适用则为空；
+- `dma_dir`；
+- `max_len` / `offset`；
+- `netdev` / `queue_idx`；
+- `PP_FLAG_DMA_MAP`、`PP_FLAG_DMA_SYNC_DEV` 等 flag。
+
+具体字段会演进，驱动应按目标内核 API 编写。
+
+### 11.2 `pp_recycle`
+
+`skb->pp_recycle` 表示其数据适合在释放时回收到 page_pool，而不是走普通 page free。
+回收成立还依赖：
+
+- page 的引用关系；
+- DMA 同步状态；
+- NUMA 和执行上下文；
+- page 是否仍被其他 skb、XDP frame 或用户引用。
+
+page_pool 不等于“`recv()` 不复制”。普通 socket 收包时，page_pool page 仍位于内核，
+应用读取通常会发生 copy-to-user。
+
+---
+
+## 12. RX 生命周期
+
+现代驱动的典型接收路径：
+
+```text
+1. refill
+   driver gets page/netmem from page_pool
+   → puts DMA address into RX descriptor
+
+2. DMA
+   NIC writes frame into RX buffer
+   → marks descriptor complete
+
+3. interrupt moderation
+   MSI-X handler acknowledges/masks queue interrupt
+   → schedules NAPI
+
+4. NAPI poll
+   driver reads completed descriptors
+   → DMA sync if required
+   → runs XDP
+
+5. build skb
+   copybreak / build_skb / attach frags
+   → set protocol, hash, VLAN, checksum metadata
+
+6. GRO
+   napi_gro_receive()
+   → merge or pass normally
+
+7. protocol stack
+   netif_receive_skb path
+   → L2 / IP / TCP / UDP
+   → socket receive queue
+
+8. consume
+   recvmsg copies data or a special API references pages
+   → skb freed
+   → page returned to page_pool when safe
+```
+
+### 12.1 驱动必须正确填写的元数据
+
+至少可能包括：
+
+- `skb->dev`；
+- `skb->protocol`，常由 `eth_type_trans()` 设置；
+- RX queue / `napi_id`；
+- RSS hash 与 L4 hash 类型；
+- VLAN tag；
+- checksum state；
+- hardware timestamp；
+- packet type；
+- page_pool recycle 信息。
+
+元数据填错不会总是立刻崩溃，常表现为：
+
+- RSS/RPS 分布异常；
+- checksum error；
+- VLAN 丢失；
+- GRO 无法合并；
+- 抓包内容与实际转发不一致；
+- page 泄漏或错误回收。
+
+---
+
+## 13. TX 生命周期与软中断
+
+典型发送路径：
+
+```text
+1. process context
+   sendmsg()
+   → TCP/UDP builds or appends skb
+
+2. protocol output
+   route / Netfilter / neighbor
+   → skb gets device, headers and offload metadata
+
+3. qdisc
+   dev_queue_xmit()
+   → TC egress
+   → enqueue
+   → usually tries to dequeue immediately
+
+4. driver
+   ndo_start_xmit()
+   → map linear area and frags for DMA
+   → fill TX descriptors
+   → ring doorbell
+
+5. hardware
+   NIC reads descriptors and packet data
+   → transmits frames
+   → writes TX completion
+
+6. completion
+   IRQ schedules NAPI or another driver mechanism
+   → clean TX descriptors
+   → DMA unmap
+   → consume/free skb
+   → wake stopped TX queue if space recovered
+```
+
+### 13.1 `dev_queue_xmit()` 不会固定等待一批包
+
+每个待发送 skb 通常都会进入 `dev_queue_xmit()`。qdisc 在条件允许时可在当前发送进程
+上下文立即 dequeue 并调用驱动。
+
+以下情况可能延迟到后续调度：
+
+- qdisc pacing/整形时间未到；
+- qdisc 正被其他 CPU 运行；
+- 本轮 quota 用尽；
+- netdev TX queue stopped；
+- 驱动暂时无法接收更多 descriptor。
+
+后续 qdisc 运行可以由 `NET_TX_SOFTIRQ` 推进。因此它是延迟调度机制，
+不是每个 TX skb 的必经批处理阶段。
+
+### 13.2 TX completion 为什么常在 `NET_RX_SOFTIRQ`
+
+很多驱动让同一个 NAPI poll 同时执行：
+
+```c
+static int driver_poll(struct napi_struct *napi, int budget)
+{
+    bool tx_complete = clean_tx_ring(...);
+    int rx_done = clean_rx_ring(..., budget);
+
+    /* 根据 TX 是否清完、RX budget 是否耗尽决定是否 complete NAPI */
+    ...
+}
+```
+
+NAPI 由 `NET_RX_SOFTIRQ` 驱动，所以清理 TX completion 也可能运行在
+`NET_RX_SOFTIRQ` 上下文。
+
+这里不是软中断“发现 RX 后顺便清 TX”，而是：
+
+```text
+TX or RX queue event
+  → driver schedules NAPI
+  → NET_RX_SOFTIRQ executes registered poll()
+  → driver poll decides which TX/RX rings need work
+```
+
+这不是所有驱动的强制规定。TX 可以拥有独立 NAPI/vector，也可由 threaded NAPI、
+专用 IRQ 或其他轮询机制处理。
+
+---
+
+## 14. 队列、所有权和 `skb->cb`
+
+`skb` 可以挂在：
+
+- `sk_buff_head` 双向队列；
+- TCP write/retransmit/out-of-order queue；
+- qdisc；
+- device backlog；
+- fragment reassembly tree；
+- GRO list；
+- socket receive/error queue。
+
+### 14.1 队列通常拥有 skb
+
+把 skb 交给某个消费型 API 后，调用者通常不能再访问它：
+
+```c
+dev_queue_xmit(skb);
+/* 无论返回值如何，都不能继续解引用 skb，除非 API 明确说明所有权未转移 */
+```
+
+内核网络代码中最危险的错误之一是 use-after-free，其根源通常是没有确认 API 的
+consume/borrow/clone 语义。
+
+### 14.2 `cb[48]` 是逐层复用的控制区
+
+`skb->cb` 是一个小型 control buffer，当前拥有 skb 的协议层可以存放私有状态。
+不同层会把它解释为不同结构：
+
+```c
+struct my_skb_cb {
+    u32 flow_id;
+    u16 flags;
+};
+
+#define MY_SKB_CB(skb) ((struct my_skb_cb *)((skb)->cb))
+```
+
+约束：
+
+- 大小不能超过 `skb->cb`；
+- 注意对齐；
+- 不能假设跨协议层后内容仍保留；
+- clone/copy 行为必须结合具体 API 检查；
+- 不要把长期对象指针塞进去而不管理生命周期。
+
+---
+
+## 15. 释放语义与 drop reason
+
+### 15.1 `consume_skb()` 与 drop
+
+正常消费和丢包应区分：
+
+```c
+consume_skb(skb);       /* 正常完成生命周期 */
+kfree_skb_reason(skb, reason); /* 带原因的丢弃 */
+```
+
+实际内核还有批量释放、NAPI consume、defer-free 等 helper。应使用当前上下文对应的 API，
+而不是所有地方都机械调用 `kfree_skb()`。
+
+最终释放通常包括：
+
+```text
+decrement skb users
+  → run destructor / release socket accounting
+  → release dst, extensions and ancillary state
+  → release linear data and page frags
+  → recycle page_pool pages when eligible
+  → free skb descriptor to slab cache
+```
+
+### 15.2 Drop reason
+
+现代内核用 `enum skb_drop_reason` 提供更具体的丢包原因，例如：
+
+- `NO_SOCKET`；
+- `SOCKET_RCVBUFF`；
+- `TCP_CSUM` / `UDP_CSUM`；
+- `NETFILTER_DROP`；
+- `IP_RPFILTER`；
+- `QDISC_DROP`；
+- `CPU_BACKLOG`；
+- `XDP`；
+- `TC_INGRESS` / `TC_EGRESS`；
+- `FULL_RING`；
+- `NOMEM`。
+
+原因集合随内核演进。观测程序应读取目标内核 BTF/tracepoint 定义，不要固化数字枚举。
+
+---
+
+## 16. 性能问题应该看什么
+
+### 16.1 分配与回收
+
+关注：
+
+- `skbuff_head_cache` 分配热点；
+- page_pool fast/slow allocation；
+- 跨 NUMA page；
+- DMA map/unmap；
+- clone/COW 频率；
+- linearize 和 expand 次数；
+- socket memory pressure。
+
+### 16.2 数据移动
+
+真正昂贵的往往不是 `struct sk_buff` 本身，而是：
+
+- copy-from-user / copy-to-user；
+- header rewrite 导致 COW；
+- 非线性 skb 被迫 linearize；
+- cache line 在 CPU 间迁移；
+- page fragment 跨 NUMA；
+- IOMMU/DMA 同步；
+- GRO/GSO 形态与设备 capability 不匹配。
+
+### 16.3 批处理边界
+
+```text
+RX:
+interrupt moderation
+  → NAPI budget
+  → GRO aggregation
+  → socket dequeue
+
+TX:
+TCP write coalescing
+  → GSO
+  → qdisc dequeue quota/pacing
+  → driver descriptor batching
+  → TX completion cleanup
+```
+
+“一个 skb”在各阶段代表的工作量不同，所以只统计 skb/s 往往不足以解释 PPS、吞吐和 CPU。
+
+---
+
+## 17. 可执行的诊断方法
+
+### 17.1 查看 socket 和协议内存
+
+```bash
+ss -mti
+cat /proc/net/sockstat
+cat /proc/net/sockstat6
+nstat -az
+```
+
+重点观察：
+
+- `Recv-Q` / `Send-Q`；
+- `skmem` 中的接收、发送、backlog 和 limit；
+- TCP retransmit、listen overflow；
+- IP/UDP/TCP checksum 和 buffer error。
+
+### 17.2 查看 slab 和 softirq
+
+```bash
+slabtop -o
+grep -E 'skbuff|sock_inode' /proc/slabinfo
+cat /proc/softirqs
+cat /proc/net/softnet_stat
+```
+
+`skbuff_head_cache` 增长不必然是泄漏，slab 会缓存已释放对象。需要结合持续趋势、
+socket 数量和流量判断。
+
+### 17.3 查看 netdev、ring 和 offload
+
+```bash
+ip -s -s link show dev eth0
+ethtool -S eth0
+ethtool -g eth0
+ethtool -k eth0
+tc -s qdisc show dev eth0
+tc -s filter show dev eth0 ingress
+```
+
+常见关联：
+
+| 现象                         | 优先检查                                          |
+| ---------------------------- | ------------------------------------------------- |
+| RX drop 且 softnet drop 增长 | NAPI budget、CPU backlog、RPS、CPU 饱和           |
+| driver `rx_no_buffer` 增长   | RX refill、page_pool、内存压力、ring 大小         |
+| TX queue stopped 时间长      | TX completion、BQL、descriptor 回收、中断亲和     |
+| qdisc drop                   | 队列上限、整形速率、拥塞和 pacing                 |
+| checksum error               | `ip_summed`、隧道层级、驱动 descriptor 配置       |
+| GRO 后 CPU 仍高              | flow 数、GRO flush、包不可合并、Netfilter/TC 成本 |
+
+### 17.4 使用 tracepoint 观察释放
+
+先查看目标内核提供的事件和字段：
+
+```bash
+sudo bpftrace -l 'tracepoint:skb:*'
+sudo cat /sys/kernel/tracing/events/skb/kfree_skb/format
+```
+
+再按实际字段追踪：
+
+```bash
+sudo bpftrace -e '
+tracepoint:skb:kfree_skb
+{
+    @[args->reason] = count();
+}'
+```
+
+也可以使用：
+
+```bash
+sudo perf list 'skb:*'
+sudo trace-cmd list -e skb
+sudo dropwatch -l kas
+```
+
+tracepoint ABI 和工具语法会随发行版变化，应以本机列出的事件为准。
+
+### 17.5 追踪时必须问清楚观察点
+
+```text
+NIC hardware counter
+  ≠ driver descriptor
+  ≠ XDP frame
+  ≠ pre-GRO packet
+  ≠ post-GRO skb
+  ≠ socket message
+  ≠ application read()
+```
+
+如果两个工具统计不一致，先确认它们观察的是哪一种对象，而不是直接判断某个工具错误。
+
+---
+
+## 18. 常见误区
+
+### 误区一：一个 skb 永远等于一个线上的包
+
+GRO 后一个 skb 可包含多个接收 segment；GSO/TSO 前一个大 skb 会产生多个发送 segment。
+
+### 误区二：skb 数据一定连续
+
+大量 RX/TX skb 是 non-linear 的。读取任意 offset 前需要考虑 page frags。
+
+### 误区三：clone 只是增加 `users`
+
+`skb_clone()` 创建新描述符，共享数据区并增加 `dataref`。`skb_get()` 才是增加同一描述符
+的 `users`。
+
+### 误区四：有 headroom 就可以写头
+
+clone 后 headroom 可能仍是共享的。修改前应使用 `skb_cow_head()` 等 helper。
+
+### 误区五：page_pool 等于用户态零拷贝
+
+page_pool 优化的是驱动 RX page 和 DMA 生命周期。普通 socket `recv()` 通常仍复制。
+
+### 误区六：TX completion 一定由 `NET_TX_SOFTIRQ` 处理
+
+许多驱动通过 NAPI 清理 TX completion，因此执行上下文可能是 `NET_RX_SOFTIRQ`。
+`NET_TX_SOFTIRQ` 主要处理 qdisc 调度和部分延迟释放工作。
+
+### 误区七：`dev_queue_xmit()` 会先积累固定数量
+
+qdisc 通常会尝试立即运行；只有 pacing、quota、锁竞争或设备队列状态等条件阻止时，
+才留到后续调度。
+
+---
+
+## 19. 总结
+
+理解 `sk_buff` 可以浓缩为五个问题：
+
+```text
+1. 数据在哪里？
+   linear head、frags[] 还是 frag_list
+
+2. 当前层看哪里？
+   data 和 mac/network/transport header offsets
+
+3. 谁拥有它？
+   queue、socket、driver、clone holder
+
+4. 哪部分被共享？
+   skb users 还是 shared dataref
+
+5. 释放后去哪里？
+   slab、page allocator、page_pool 或 socket accounting
+```
+
+核心关系：
+
+```text
+len = linear data + non-linear data
+data_len = non-linear data
+headlen = len - data_len
+
+skb_get()   → share one descriptor
+skb_clone() → new descriptor, shared packet storage
+skb_copy()  → independent packet storage
+
+RX: DMA/page_pool → XDP → skb/GRO → protocol/socket
+TX: socket → skb/GSO → qdisc/driver → completion/free
+```
+
+掌握这些语义后，再阅读 Netdevice、NAPI、TCP、Netfilter、GRO/GSO 和驱动代码时，
+就能判断每一步究竟是在移动字节、修改元数据、共享内存，还是转移所有权。
+
+**下一章：**
+[[2026-04-13-kernel-protocol-stack-deep-dive-ch2-netdevice|第二章：Netdevice 与网卡抽象]]
+
+---
+
+## 参考资料
+
+- [Linux kernel sk_buff documentation](https://docs.kernel.org/networking/skbuff.html)
+- [Linux kernel page_pool documentation](https://docs.kernel.org/networking/page_pool.html)
+- [Linux kernel segmentation offloads](https://docs.kernel.org/networking/segmentation-offloads.html)
+- [Linux kernel checksum offloads](https://docs.kernel.org/networking/checksum-offloads.html)
+- [Linux kernel NAPI documentation](https://docs.kernel.org/networking/napi.html)
+- [[2026-04-09-dpdk-deep-dive-ch5-mbuf-mechanism|DPDK Mbuf 机制对比]]
+- [[2026-04-08-ebpf-deep-dive-ch6-tc-traffic-control|eBPF TC 钩子]]

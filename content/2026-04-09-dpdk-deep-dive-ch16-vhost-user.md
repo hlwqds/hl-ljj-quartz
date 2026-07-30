@@ -9,6 +9,7 @@ description: "深入理解 vhost-user 与 virtio 加速机制——VM 与 DPDK �
 > 1-15. 前十五章已完成
 > 15b. [[2026-04-09-dpdk-deep-dive-ch15b-af-xdp|第十五章补充：AF_XDP —— KNI 的现代替代]] 16. **第十六章：vhost-user 与 virtio 加速**
 > 16a. [[2026-04-09-dpdk-deep-dive-ch16a-ovs-dpdk-vhost-user-lab|第十六章补充：OVS-DPDK 与 vhost-user 最小实战]]
+> 16b. [[2026-04-09-dpdk-deep-dive-ch33-cloud-hypervisor|第十六章补充：Cloud Hypervisor 与 DPDK 虚拟化路径]]
 
 ---
 

@@ -5,10 +5,8 @@ tags: [dpdk, series, hyperscan, pattern-matching, regexp, dpi, intel, simd, vect
 description: "深入解析 Hyperscan 正则匹配引擎：NFA/DFA 混合引擎、SIMD 向量化、三种扫描模式、DPDK DPI 集成与性能优化"
 ---
 
-> [!info] DPDK 深度探索系列
-> 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
-> 1-28. 前二十八章已完成
-> 29. **第二十九章：Hyperscan 高性能正则匹配**
+> [!info] DPDK 深度探索系列 0. [[2026-04-09-dpdk-deep-dive-series-index|全栈学习路径总览]]
+> 1-28. 前二十八章已完成 29. **第二十九章：Hyperscan 高性能正则匹配**
 
 ---
 
@@ -514,11 +512,11 @@ scan_vectored_mode(hs_database_t *db, struct rte_mbuf *m)
 
 ### 4.4 三种模式对比
 
-| 模式 | 跨数据状态 | 适用场景 | 性能 | 状态管理 |
-|------|-----------|---------|------|---------|
-| **Block** | 无 | 独立包、日志行 | 最高 | 无 |
-| **Streaming** | 有 | TCP 流、协议解析 | 中 | open/close stream |
-| **Vectored** | 无 | 多 segment mbuf | 高 | 无 |
+| 模式          | 跨数据状态 | 适用场景         | 性能 | 状态管理          |
+| ------------- | ---------- | ---------------- | ---- | ----------------- |
+| **Block**     | 无         | 独立包、日志行   | 最高 | 无                |
+| **Streaming** | 有         | TCP 流、协议解析 | 中   | open/close stream |
+| **Vectored**  | 无         | 多 segment mbuf  | 高   | 无                |
 
 ---
 

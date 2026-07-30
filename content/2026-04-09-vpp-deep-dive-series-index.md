@@ -64,14 +64,14 @@ pin: true
 
 ## Part IV：虚拟化与容器集成
 
-| #   | 章节                                           | 主题                                 | 状态                     |
-| --- | ---------------------------------------------- | ------------------------------------ | ------------------------ | --- |
-| 16  | [[2026-04-09-vpp-deep-dive-ch16-vpp-kvm        | VPP 深入探讨：VPP + KVM/vhost-user]] | VM 连接、shared memory   | ✅  |
-| 17  | [[2026-04-09-vpp-deep-dive-ch17-vpp-docker     | VPP 深入探讨：VPP + Docker/CNI]]     | CNI 插件、容器网络       | ✅  |
-| 18  | [[2026-04-09-vpp-deep-dive-ch18-vpp-kubernetes | VPP 深入探讨：VPP + Kubernetes]]     | CNI、service mesh        | ✅  |
-| 19  | [[2026-04-09-vpp-deep-dive-ch19-vpp-dpdk       | VPP 深入探讨：VPP + DPDK]]           | PMD、buffer 映射、零拷贝 | ✅  |
-| 19.5 | [[2026-05-26-vpp-deep-dive-ch19a-memif|VPP 深入探讨：memif 内存接口]] | 共享内存、VPP-to-VPP、VPP-to-DPDK | ✅ |
-| 20  | [[2026-04-09-vpp-deep-dive-ch20-vpp-openstack  | VPP 深入探讨：VPP + OpenStack]]      | ML2 驱动、Neutron 集成   | ✅  |
+| #    | 章节                                           | 主题                                 | 状态                              |
+| ---- | ---------------------------------------------- | ------------------------------------ | --------------------------------- | --- |
+| 16   | [[2026-04-09-vpp-deep-dive-ch16-vpp-kvm        | VPP 深入探讨：VPP + KVM/vhost-user]] | VM 连接、shared memory            | ✅  |
+| 17   | [[2026-04-09-vpp-deep-dive-ch17-vpp-docker     | VPP 深入探讨：VPP + Docker/CNI]]     | CNI 插件、容器网络                | ✅  |
+| 18   | [[2026-04-09-vpp-deep-dive-ch18-vpp-kubernetes | VPP 深入探讨：VPP + Kubernetes]]     | CNI、service mesh                 | ✅  |
+| 19   | [[2026-04-09-vpp-deep-dive-ch19-vpp-dpdk       | VPP 深入探讨：VPP + DPDK]]           | PMD、buffer 映射、零拷贝          | ✅  |
+| 19.5 | [[2026-05-26-vpp-deep-dive-ch19a-memif         | VPP 深入探讨：memif 内存接口]]       | 共享内存、VPP-to-VPP、VPP-to-DPDK | ✅  |
+| 20   | [[2026-04-09-vpp-deep-dive-ch20-vpp-openstack  | VPP 深入探讨：VPP + OpenStack]]      | ML2 驱动、Neutron 集成            | ✅  |
 
 ---
 

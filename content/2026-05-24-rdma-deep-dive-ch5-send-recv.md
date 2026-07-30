@@ -5,11 +5,7 @@ description: "通过 Send/Recv 理解 RDMA 的消息通信语义、post_recv 先
 tags: [rdma, series, libibverbs, send-recv, linux]
 ---
 
-> [!info] RDMA 深度探索系列
-> 0. [[2026-05-24-rdma-deep-dive-series-index|系列索引]]
-> 4. [[2026-05-24-rdma-deep-dive-ch4-rc-qp-lifecycle|第四章：RC QP 生命周期]]
-> 5. **第五章：Send/Recv 消息通信**
-> 6. [[2026-05-24-rdma-deep-dive-ch6-read-write|第六章：RDMA Read/Write]]
+> [!info] RDMA 深度探索系列 0. [[2026-05-24-rdma-deep-dive-series-index|系列索引]] 4. [[2026-05-24-rdma-deep-dive-ch4-rc-qp-lifecycle|第四章：RC QP 生命周期]] 5. **第五章：Send/Recv 消息通信** 6. [[2026-05-24-rdma-deep-dive-ch6-read-write|第六章：RDMA Read/Write]]
 
 # RDMA 深度探索（五）：Send/Recv 消息通信
 

@@ -133,13 +133,13 @@ DMA copy offload:
 
 工程上可以按这个顺序选：
 
-| 场景 | 优先方案 | 原因 |
-| --- | --- | --- |
-| L2/L3 转发 | 复用同一个 mbuf | 真零拷贝，只转移 ownership |
-| 少量 header 修改 | CPU 直接改 cache line | 避免 DMA 提交/完成开销 |
-| packet clone / multicast | indirect mbuf 或 refcnt | 共享 payload，不复制数据 |
-| 大块 buffer 复制 | dmadev / DSA / DMA engine | 异步批量搬运，释放 CPU |
-| vhost async copy | dmadev + vhost async path | Host/Guest 内存搬运可卸载 |
+| 场景                     | 优先方案                  | 原因                       |
+| ------------------------ | ------------------------- | -------------------------- |
+| L2/L3 转发               | 复用同一个 mbuf           | 真零拷贝，只转移 ownership |
+| 少量 header 修改         | CPU 直接改 cache line     | 避免 DMA 提交/完成开销     |
+| packet clone / multicast | indirect mbuf 或 refcnt   | 共享 payload，不复制数据   |
+| 大块 buffer 复制         | dmadev / DSA / DMA engine | 异步批量搬运，释放 CPU     |
+| vhost async copy         | dmadev + vhost async path | Host/Guest 内存搬运可卸载  |
 
 ---
 
@@ -1149,7 +1149,6 @@ prepend_header(struct rte_mbuf *m, const void *hdr, uint16_t hdr_len)
 IP 分片、VLAN 插入、封装/解封装都可能涉及协议校验和、offload 标志、多段 mbuf 和
 headroom/tailroom。真实工程里不要只靠手工移动指针，应该结合 DPDK 提供的 mbuf API、
 ethdev offload 能力和协议栈库来做。
-
 
 ---
 

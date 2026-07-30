@@ -439,11 +439,11 @@ virtio 解决了设备模型复杂的问题，但如果所有 virtqueue 处理�
 
 vhost 的目标是把 virtio 数据面移出去：
 
-| 后端       | 数据面位置           | 典型场景                         |
-| ---------- | -------------------- | -------------------------------- |
-| vhost-net  | Host kernel          | Linux 内核加速 virtio-net         |
-| vhost-user | Host 用户态进程      | OVS-DPDK、VPP、SPDK、DPDK backend |
-| vDPA       | NIC / SmartNIC 硬件  | 硬件卸载 virtio 数据面            |
+| 后端       | 数据面位置          | 典型场景                          |
+| ---------- | ------------------- | --------------------------------- |
+| vhost-net  | Host kernel         | Linux 内核加速 virtio-net         |
+| vhost-user | Host 用户态进程     | OVS-DPDK、VPP、SPDK、DPDK backend |
+| vDPA       | NIC / SmartNIC 硬件 | 硬件卸载 virtio 数据面            |
 
 vhost-user 经典路径：
 
@@ -510,11 +510,11 @@ Host vhost 后端处理时，会根据 QEMU 提供的 memory table 把 GPA 转�
 
 不同 vhost 后端的内存共享方式：
 
-| 后端       | 如何访问 Guest memory                                           |
-| ---------- | ---------------------------------------------------------------- |
-| QEMU virtio | QEMU 本来就拥有 Guest RAM 的 HVA，直接访问                       |
-| vhost-net  | QEMU 通过 ioctl 把 memory table 交给内核 vhost，内核侧访问 Guest memory |
-| vhost-user | QEMU 通过 Unix socket 把 memory fd、vring 地址、eventfd 传给用户态后端 |
+| 后端        | 如何访问 Guest memory                                                   |
+| ----------- | ----------------------------------------------------------------------- |
+| QEMU virtio | QEMU 本来就拥有 Guest RAM 的 HVA，直接访问                              |
+| vhost-net   | QEMU 通过 ioctl 把 memory table 交给内核 vhost，内核侧访问 Guest memory |
+| vhost-user  | QEMU 通过 Unix socket 把 memory fd、vring 地址、eventfd 传给用户态后端  |
 
 所以问题可以拆开理解：
 
@@ -576,12 +576,12 @@ DPDK vhost-user 后端内部就维护了这样的 memory table，并在访问 vi
 
 原因：
 
-| 手段        | 作用                                               |
-| ----------- | -------------------------------------------------- |
-| hugepage    | hugetlb 页不可 swap，TLB 压力更小                  |
-| share=on    | 允许 vhost-user 后端 mmap 同一块 Guest memory      |
-| prealloc=on | 启动时提前分配并 fault-in，避免运行时首次缺页抖动  |
-| mlock       | 对普通内存可防止被 swap，但需要权限和内存限制配置  |
+| 手段        | 作用                                              |
+| ----------- | ------------------------------------------------- |
+| hugepage    | hugetlb 页不可 swap，TLB 压力更小                 |
+| share=on    | 允许 vhost-user 后端 mmap 同一块 Guest memory     |
+| prealloc=on | 启动时提前分配并 fault-in，避免运行时首次缺页抖动 |
+| mlock       | 对普通内存可防止被 swap，但需要权限和内存限制配置 |
 
 所以结论是：
 
@@ -639,11 +639,11 @@ mlx5 / i40e / ixgbe PMD:
 
 ## 十二、 三种 I/O 虚拟化路径对比
 
-| 路径              | Guest 看到的设备 | Host 数据面       | 性能 | 灵活性 | 典型用途 |
-| ----------------- | ---------------- | ----------------- | ---- | ------ | -------- |
-| 传统设备模拟      | e1000 / AHCI 等  | QEMU 设备模型     | 低   | 高     | 兼容老系统 |
-| virtio + vhost    | virtio-net/blk   | kernel/user vhost | 高   | 高     | 云主机、NFV、DPDK/vSwitch |
-| VFIO / SR-IOV     | 真实 PCI/VF      | 硬件直通          | 最高 | 低     | 高性能网络、低延迟业务 |
+| 路径           | Guest 看到的设备 | Host 数据面       | 性能 | 灵活性 | 典型用途                  |
+| -------------- | ---------------- | ----------------- | ---- | ------ | ------------------------- |
+| 传统设备模拟   | e1000 / AHCI 等  | QEMU 设备模型     | 低   | 高     | 兼容老系统                |
+| virtio + vhost | virtio-net/blk   | kernel/user vhost | 高   | 高     | 云主机、NFV、DPDK/vSwitch |
+| VFIO / SR-IOV  | 真实 PCI/VF      | 硬件直通          | 最高 | 低     | 高性能网络、低延迟业务    |
 
 选择逻辑：
 

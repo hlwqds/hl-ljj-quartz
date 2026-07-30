@@ -27,6 +27,7 @@
 ### Task 1: Capture The Upstream Evidence Baseline
 
 **Files:**
+
 - Create: `/tmp/pi-agent-doc-source/` as an untracked temporary clone
 - Reference: `docs/superpowers/specs/2026-06-12-pi-agent-deep-dive-series-design.md`
 
@@ -90,6 +91,7 @@ Expected: package names and supported Node versions are taken from current upstr
 ### Task 2: Add A Failing First-Batch Validator
 
 **Files:**
+
 - Create: `practice/pi-agent/validate-first-batch.mjs`
 
 - [ ] **Step 1: Add the validator**
@@ -127,6 +129,7 @@ git commit -m "test: add Pi Agent first batch validator"
 ### Task 3: Write The Series Index
 
 **Files:**
+
 - Create: `content/2026-06-12-pi-agent-deep-dive-series-index.md`
 
 - [ ] **Step 1: Write valid Quartz frontmatter**
@@ -179,6 +182,7 @@ Expected: index-related checks pass; chapter and lab missing-file errors remain.
 ### Task 4: Write Chapters 1 And 2
 
 **Files:**
+
 - Create: `content/2026-06-12-pi-agent-deep-dive-ch01-overview.md`
 - Create: `content/2026-06-12-pi-agent-deep-dive-ch02-installation-providers.md`
 
@@ -238,6 +242,7 @@ git commit -m "docs: add Pi Agent introduction and setup guides"
 ### Task 5: Write Chapters 3 And 4
 
 **Files:**
+
 - Create: `content/2026-06-12-pi-agent-deep-dive-ch03-tui-modes-queue.md`
 - Create: `content/2026-06-12-pi-agent-deep-dive-ch04-sessions-branching-compaction.md`
 
@@ -292,6 +297,7 @@ git commit -m "docs: explain Pi modes sessions and compaction"
 ### Task 6: Write Chapter 5
 
 **Files:**
+
 - Create: `content/2026-06-12-pi-agent-deep-dive-ch05-monorepo-architecture.md`
 
 - [ ] **Step 1: Verify upstream package boundaries**
@@ -340,6 +346,7 @@ git commit -m "docs: map Pi Agent monorepo architecture"
 ### Task 7: Add The Read-Only Environment Lab
 
 **Files:**
+
 - Create: `practice/pi-agent/README.md`
 - Create: `practice/pi-agent/phase-1-environment/README.md`
 - Create: `practice/pi-agent/phase-1-environment/check-environment.sh`
@@ -406,6 +413,7 @@ git commit -m "docs: add Pi Agent environment lab"
 ### Task 8: Wire Navigation And Verify The Published Surface
 
 **Files:**
+
 - Modify: `content/index.md`
 
 - [ ] **Step 1: Add the homepage entry**
