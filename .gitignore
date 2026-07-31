@@ -34,4 +34,31 @@ practice/simd_vectorization/simd_demo
 # personal resume artifacts (not published)
 docs/黄琳*
 docs/assets/huanglin-resume-photo.jpg
-scripts/
+scripts/*
+!scripts/*.sh
+
+# lab 生成物（内核/busybox/dropbear 编译产物、initramfs 镜像、诊断产物）
+lab/linux-6.19/
+lab/busybox-1.36.1/
+lab/dropbear-2024.85/
+lab/*.tar.*
+lab/*.cpio.gz
+lab/*-arm*
+lab/*-static
+lab/applets.list
+lab/initramfs/
+lab/diag-state/
+lab/armhf-libs/
+
+# 示例项目构建产物
+lab/baremetal-led/*.o
+lab/baremetal-led/*.elf
+lab/baremetal-led/*.bin
+lab/kernel-led/*.o
+lab/kernel-led/*.ko
+lab/kernel-led/*.mod
+lab/kernel-led/*.mod.c
+lab/kernel-led/.*.cmd
+lab/kernel-led/Module.symvers
+lab/kernel-led/modules.order
+lab/kernel-led/.tmp_versions/
