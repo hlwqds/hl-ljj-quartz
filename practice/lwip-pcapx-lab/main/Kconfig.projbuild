@@ -1,0 +1,21 @@
+menu "pcapx lab experiments"
+
+    config LAB_PCAPX_EXP_DROP
+        bool "DROP experiment: ring=2048, snaplen=64, N=500 UDP, no pacing"
+        default n
+        help
+            Replaces the default capture session with a ring-overflow run:
+            500 back-to-back UDP frames into a 2048-byte ring with snaplen=64
+            must produce the contract log line "W pcapx: DROP cnt=N" and the
+            packet accounting identity rx+tx == filtered+dropped+written
+            (after the writer has drained the ring).
+
+    config LAB_PCAPX_EXP_CHURN
+        bool "CHURN experiment: attach/detach x100 under UDP traffic"
+        default n
+        help
+            Runs a UDP traffic generator task and cycles pcapx attach/detach
+            100 times while it is running. Success criteria: no crash, no
+            heap leak (heap_caps_get_free_size before/after within noise).
+
+endmenu

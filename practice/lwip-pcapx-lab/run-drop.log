@@ -1,0 +1,121 @@
+Adding SPI flash device
+ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x12 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0040,len:6272
+load:0x40078000,len:15820
+load:0x40080400,len:3920
+entry 0x40080644
+I (667) boot: ESP-IDF v6.0.2 2nd stage bootloader
+I (668) boot: compile time Aug 28 2026 00:33:38
+I (668) boot: Multicore bootloader
+I (702) boot: chip revision: v3.0
+I (704) boot.esp32: SPI Speed      : 40MHz
+I (704) boot.esp32: SPI Mode       : DIO
+I (704) boot.esp32: SPI Flash Size : 2MB
+I (709) boot: Enabling RNG early entropy source...
+I (715) boot: Partition Table:
+I (715) boot: ## Label            Usage          Type ST Offset   Length
+I (716) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (716) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (716) boot:  2 factory          factory app      00 00 00010000 00100000
+I (720) boot: End of partition table
+I (752) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=0f62ch ( 63020) map
+I (774) esp_image: segment 1: paddr=0001f654 vaddr=3ffb0000 size=009c4h (  2500) load
+I (792) esp_image: segment 2: paddr=00020020 vaddr=400d0020 size=2ac3ch (175164) map
+I (818) esp_image: segment 3: paddr=0004ac64 vaddr=3ffb09c4 size=02128h (  8488) load
+I (836) esp_image: segment 4: paddr=0004cd94 vaddr=40080000 size=0b2d8h ( 45784) load
+I (858) esp_image: segment 5: paddr=00058074 vaddr=50000000 size=00028h (    40) load
+I (917) boot: Loaded app from partition at offset 0x10000
+I (917) boot: Disabling RNG early entropy source...
+I (933) cpu_start: Multicore app
+I (1563) cpu_start: GPIO 3 and 1 are used as console UART I/O pins
+I (1566) cpu_start: Pro cpu start user code
+I (1566) cpu_start: cpu freq: 160000000 Hz
+I (1566) app_init: Application information:
+I (1566) app_init: Project name:     lwip_pcapx_lab
+I (1566) app_init: App version:      924d871-dirty
+I (1566) app_init: Compile time:     Aug 28 2026 00:33:36
+I (1566) app_init: ELF file SHA256:  128bf2ab2...
+I (1567) app_init: ESP-IDF:          v6.0.2
+I (1567) efuse_init: Min chip rev:     v0.0
+I (1567) efuse_init: Max chip rev:     v3.99 
+I (1567) efuse_init: Chip rev:         v3.0
+I (1567) heap_init: Initializing. RAM available for dynamic allocation:
+I (1568) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM
+I (1568) heap_init: At 3FFB3FC0 len 0002C040 (176 KiB): DRAM
+I (1568) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM
+I (1568) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM
+I (1568) heap_init: At 4008B2D8 len 00014D28 (83 KiB): IRAM
+I (1603) spi_flash: detected chip: winbond
+I (1606) spi_flash: flash io: dio
+I (1620) main_task: Started on CPU0
+I (1620) main_task: Calling app_main()
+I (1620) pcapxlab: == pcapx S3 lab start (built Aug 28 2026 00:33:36) ==
+I (1640) esp_eth.netif.netif_glue: 52:54:00:12:34:56
+I (1640) esp_eth.netif.netif_glue: ethernet attached to netif
+I (1740) pcapxlab: ETH_EVENT: START
+I (1740) pcapxlab: waiting for DHCP lease ...
+E (1740) esp_eth: esp_eth_ioctl(533): add mac address to filter not supported
+E (1740) esp_eth.netif.netif_glue: eth_set_mac_filter(56): failed to add mac filter
+E (1740) esp_netif_lwip: Failed to add multicast filter for IPv4
+I (1740) pcapxlab: ETH_EVENT: CONNECTED (link up)
+I (2740) pcapxlab: GOT_IP: 10.0.2.15/255.255.255.0 gw 10.0.2.2
+I (2740) esp_netif_handlers: eth ip: 10.0.2.15, mask: 255.255.255.0, gw: 10.0.2.2
+I (2740) pcapxlab: DNS server from DHCP: 10.0.2.3
+I (2740) pcapxlab: lwip netif name=en up=1
+I (2740) pcapxlab: console ready (pcapx_stats / pcapx_ram_dump registered)
+I (2740) pcapxlab: PHASE fail-demos: begin
+E (2740) pcapx: ATTACH_FAIL netif=?? reason=arg
+I (2740) pcapxlab: demo arg: attach(netif=NULL,sink=NULL) -> ESP_ERR_INVALID_ARG (expect INVALID_ARG)
+E (2740) esp_semihost: OpenOCD is not connected!
+E (2740) pcapx: SINK_OPEN_FAIL path=/tmp/. hint='qemu 需追加 -semihosting'
+E (2740) pcapx: SINK_OPEN_FAIL path=/tmp/. reason=simcall_open errno=21
+E (2740) pcapx: ATTACH_FAIL netif=en reason=sink_open
+I (2740) pcapxlab: demo sink_open: attach(sink=/tmp/.) -> ESP_FAIL (expect INVALID_ARG after SINK_OPEN_FAIL)
+I (2740) pcapxlab: PHASE fail-demos: done
+I (2740) pcapxlab: PHASE session-drop: ring=2048 snaplen=64 n=500 gap=0 (back-to-back)
+I (2740) pcapxlab: SINK_OPEN sink=slow (2ms/frame)
+I (2740) pcapx: ATTACH netif=en mode=rx+tx snap=64 sink=slow:2ms
+W (2840) pcapx: DROP cnt=32
+W (2850) pcapx: DROP cnt=64
+W (2850) pcapx: DROP cnt=96
+W (2860) pcapx: DROP cnt=128
+W (2860) pcapx: DROP cnt=160
+W (2870) pcapx: DROP cnt=192
+W (2870) pcapx: DROP cnt=224
+W (2880) pcapx: DROP cnt=256
+W (2880) pcapx: DROP cnt=288
+W (2890) pcapx: DROP cnt=320
+W (2890) pcapx: DROP cnt=352
+W (2900) pcapx: DROP cnt=384
+W (2900) pcapx: DROP cnt=416
+W (2910) pcapx: DROP cnt=448
+W (2910) pcapx: DROP cnt=480
+W (2920) pcapx: DROP cnt=512
+W (2920) pcapx: DROP cnt=544
+W (2930) pcapx: DROP cnt=576
+W (2930) pcapx: DROP cnt=608
+W (2940) pcapx: DROP cnt=640
+W (2940) pcapx: DROP cnt=672
+W (2950) pcapx: DROP cnt=704
+W (2950) pcapx: DROP cnt=736
+W (2960) pcapx: DROP cnt=768
+W (2960) pcapx: DROP cnt=800
+W (2970) pcapx: DROP cnt=832
+W (2970) pcapx: DROP cnt=864
+W (2980) pcapx: DROP cnt=896
+I (2980) pcapxlab: STEP udp sent=500/500 (no pacing)
+I (2980) pcapxlab: STEP drain 1000ms (writer 排空 + 等待 ICMP 回弹尾巴)
+pcapx_stats rx=501 tx=502 filtered=0 dropped=918 truncated=83 written=85 ring_high_wm=1976
+I (3980) pcapxlab: STATS phase=drop-before-detach rx=501 tx=502 filtered=0 dropped=918 truncated=83 written=85 ring_high_wm=1976
+I (3980) pcapxlab: IDENTITY rx+tx=1003 filtered=0 dropped=918 written=85 -> OK
+I (3980) pcapxlab: SINK_CLOSE sink=slow writes=171 bytes=6780
+I (3980) pcapx: DETACH netif=en rx=501 tx=502 drop=918 trunc=83
+I (3980) pcapxlab: PHASE session-drop: done
+I (3980) pcapxlab: == LAB DONE ==
+I (3980) main_task: Returned from app_main()
+qemu-system-xtensa: terminating on signal 15 from pid 195339 (timeout)

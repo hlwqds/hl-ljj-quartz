@@ -1,0 +1,619 @@
+Adding SPI flash device
+ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x12 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0040,len:6272
+load:0x40078000,len:15820
+load:0x40080400,len:3920
+entry 0x40080644
+I (663) boot: ESP-IDF v6.0.2 2nd stage bootloader
+I (663) boot: compile time Aug 28 2026 00:35:12
+I (663) boot: Multicore bootloader
+I (692) boot: chip revision: v3.0
+I (694) boot.esp32: SPI Speed      : 40MHz
+I (694) boot.esp32: SPI Mode       : DIO
+I (694) boot.esp32: SPI Flash Size : 2MB
+I (702) boot: Enabling RNG early entropy source...
+I (707) boot: Partition Table:
+I (707) boot: ## Label            Usage          Type ST Offset   Length
+I (707) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (708) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (708) boot:  2 factory          factory app      00 00 00010000 00100000
+I (710) boot: End of partition table
+I (746) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=0fb14h ( 64276) map
+I (764) esp_image: segment 1: paddr=0001fb3c vaddr=3ffb0000 size=004dch (  1244) load
+I (775) esp_image: segment 2: paddr=00020020 vaddr=400d0020 size=2cf1ch (184092) map
+I (797) esp_image: segment 3: paddr=0004cf44 vaddr=3ffb04dc size=02610h (  9744) load
+I (810) esp_image: segment 4: paddr=0004f55c vaddr=40080000 size=0b2d8h ( 45784) load
+I (828) esp_image: segment 5: paddr=0005a83c vaddr=50000000 size=00028h (    40) load
+I (875) boot: Loaded app from partition at offset 0x10000
+I (875) boot: Disabling RNG early entropy source...
+I (889) cpu_start: Multicore app
+I (1476) cpu_start: GPIO 3 and 1 are used as console UART I/O pins
+I (1478) cpu_start: Pro cpu start user code
+I (1478) cpu_start: cpu freq: 160000000 Hz
+I (1478) app_init: Application information:
+I (1478) app_init: Project name:     lwip_pcapx_lab
+I (1478) app_init: App version:      924d871-dirty
+I (1478) app_init: Compile time:     Aug 28 2026 00:35:10
+I (1478) app_init: ELF file SHA256:  9f827c782...
+I (1478) app_init: ESP-IDF:          v6.0.2
+I (1478) efuse_init: Min chip rev:     v0.0
+I (1478) efuse_init: Max chip rev:     v3.99 
+I (1478) efuse_init: Chip rev:         v3.0
+I (1479) heap_init: Initializing. RAM available for dynamic allocation:
+I (1479) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM
+I (1479) heap_init: At 3FFB44B8 len 0002BB48 (174 KiB): DRAM
+I (1479) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM
+I (1480) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM
+I (1480) heap_init: At 4008B2D8 len 00014D28 (83 KiB): IRAM
+I (1508) spi_flash: detected chip: winbond
+I (1514) spi_flash: flash io: dio
+I (1524) main_task: Started on CPU0
+I (1524) main_task: Calling app_main()
+I (1524) pcapxlab: == pcapx S3 lab start (built Aug 28 2026 00:35:10) ==
+I (1544) esp_eth.netif.netif_glue: 52:54:00:12:34:56
+I (1544) esp_eth.netif.netif_glue: ethernet attached to netif
+I (1644) pcapxlab: ETH_EVENT: START
+E (1644) esp_eth: esp_eth_ioctl(533): add mac address to filter not supported
+E (1644) esp_eth.netif.netif_glue: eth_set_mac_filter(56): failed to add mac filter
+E (1644) esp_netif_lwip: Failed to add multicast filter for IPv4
+I (1644) pcapxlab: ETH_EVENT: CONNECTED (link up)
+I (1644) pcapxlab: waiting for DHCP lease ...
+I (2644) pcapxlab: GOT_IP: 10.0.2.15/255.255.255.0 gw 10.0.2.2
+I (2644) esp_netif_handlers: eth ip: 10.0.2.15, mask: 255.255.255.0, gw: 10.0.2.2
+I (2644) pcapxlab: DNS server from DHCP: 10.0.2.3
+I (2644) pcapxlab: lwip netif name=en up=1
+I (2644) pcapxlab: console ready (pcapx_stats / pcapx_ram_dump registered)
+I (2644) pcapxlab: PHASE fail-demos: begin
+E (2644) pcapx: ATTACH_FAIL netif=?? reason=arg
+I (2644) pcapxlab: demo arg: attach(netif=NULL,sink=NULL) -> ESP_ERR_INVALID_ARG (expect INVALID_ARG)
+E (2644) esp_semihost: OpenOCD is not connected!
+E (2644) pcapx: SINK_OPEN_FAIL path=/tmp/. hint='qemu 需追加 -semihosting'
+E (2644) pcapx: SINK_OPEN_FAIL path=/tmp/. reason=simcall_open errno=21
+E (2644) pcapx: ATTACH_FAIL netif=en reason=sink_open
+I (2644) pcapxlab: demo sink_open: attach(sink=/tmp/.) -> ESP_FAIL (expect INVALID_ARG after SINK_OPEN_FAIL)
+I (2644) pcapxlab: PHASE fail-demos: done
+I (2644) pcapxlab: PHASE session-default: begin
+I (2644) pcapxlab: STEP attach (host file: QEMU cwd/cap.pcap via -semihosting)
+E (2644) esp_semihost: OpenOCD is not connected!
+I (2644) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=9 host_cwd_rel=1
+I (2644) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+E (2644) pcapx: ATTACH_FAIL netif=en reason=busy
+I (2644) pcapxlab: demo busy: attach#2 while attached -> ESP_ERR_INVALID_STATE (sink2 object intentionally orphaned, ~4.3KB)
+I (2644) pcapxlab: STEP udp burst n=50 gap=20ms dst=10.0.2.2:9999 (closed port; first frame triggers ARP to gateway)
+I (3644) pcapxlab: STEP udp sent=50/50
+I (3644) pcapxlab: STEP dns probe baidu.com (covers DNS query/response over UDP/53)
+I (3644) pcapxlab: DNS probe "baidu.com" -> 198.18.1.95
+I (3644) pcapxlab: STEP drain 500ms
+pcapx_stats rx=53 tx=54 filtered=0 dropped=0 truncated=0 written=107 ring_high_wm=236
+I (4144) pcapxlab: STATS phase=default-before-detach rx=53 tx=54 filtered=0 dropped=0 truncated=0 written=107 ring_high_wm=236
+I (4144) pcapxlab: STEP detach
+I (4144) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=12756 writes=215
+I (4144) pcapx: DETACH netif=en rx=53 tx=54 drop=0 trunc=0
+pcapx_stats rx=0 tx=0 filtered=0 dropped=0 truncated=0 written=0 ring_high_wm=0
+I (4144) pcapxlab: STATS phase=default-after-detach rx=0 tx=0 filtered=0 dropped=0 truncated=0 written=0 ring_high_wm=0
+I (4144) pcapxlab: PHASE session-default: done
+I (4144) pcapxlab: PHASE session-churn: 100 attach/detach rounds under UDP traffic (8ms pacing), heap_before=344204
+W (4144) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+E (4344) esp_semihost: OpenOCD is not connected!
+I (4344) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4344) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4344) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=1626 writes=27
+I (4344) pcapx: DETACH netif=en rx=7 tx=6 drop=0 trunc=0
+E (4344) esp_semihost: OpenOCD is not connected!
+W (4344) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+I (4354) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4354) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4354) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=512 writes=9
+I (4354) pcapx: DETACH netif=en rx=2 tx=2 drop=0 trunc=0
+E (4354) esp_semihost: OpenOCD is not connected!
+I (4354) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4364) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4364) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=268 writes=5
+I (4364) pcapx: DETACH netif=en rx=1 tx=1 drop=0 trunc=0
+E (4364) esp_semihost: OpenOCD is not connected!
+I (4364) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4364) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4364) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=374 writes=7
+I (4364) pcapx: DETACH netif=en rx=1 tx=2 drop=0 trunc=0
+E (4364) esp_semihost: OpenOCD is not connected!
+I (4364) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4364) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4364) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=2326 writes=39
+I (4364) pcapx: DETACH netif=en rx=9 tx=10 drop=0 trunc=0
+E (4364) esp_semihost: OpenOCD is not connected!
+I (4364) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4374) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4374) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=1594 writes=27
+I (4374) pcapx: DETACH netif=en rx=6 tx=7 drop=0 trunc=0
+E (4374) esp_semihost: OpenOCD is not connected!
+I (4374) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4374) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4374) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=2464 writes=41
+I (4374) pcapx: DETACH netif=en rx=10 tx=10 drop=0 trunc=0
+E (4384) esp_semihost: OpenOCD is not connected!
+I (4384) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4384) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4384) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=4066 writes=67
+I (4384) pcapx: DETACH netif=en rx=17 tx=16 drop=0 trunc=0
+E (4384) esp_semihost: OpenOCD is not connected!
+I (4384) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4384) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4384) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=130 writes=3
+I (4384) pcapx: DETACH netif=en rx=0 tx=1 drop=0 trunc=0
+E (4384) esp_semihost: OpenOCD is not connected!
+I (4384) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4394) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4394) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=1594 writes=27
+I (4394) pcapx: DETACH netif=en rx=6 tx=7 drop=0 trunc=0
+E (4394) esp_semihost: OpenOCD is not connected!
+I (4394) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4394) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4394) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=1976 writes=33
+I (4394) pcapx: DETACH netif=en rx=8 tx=8 drop=0 trunc=0
+E (4394) esp_semihost: OpenOCD is not connected!
+I (4394) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4394) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4394) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=756 writes=13
+I (4394) pcapx: DETACH netif=en rx=3 tx=3 drop=0 trunc=0
+E (4394) esp_semihost: OpenOCD is not connected!
+I (4404) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4404) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4404) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=1732 writes=29
+I (4404) pcapx: DETACH netif=en rx=7 tx=7 drop=0 trunc=0
+E (4404) esp_semihost: OpenOCD is not connected!
+I (4404) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4404) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4404) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=3058 writes=51
+I (4404) pcapx: DETACH netif=en rx=12 tx=13 drop=0 trunc=0
+E (4404) esp_semihost: OpenOCD is not connected!
+I (4404) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4414) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4414) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=1244 writes=21
+I (4414) pcapx: DETACH netif=en rx=5 tx=5 drop=0 trunc=0
+E (4414) esp_semihost: OpenOCD is not connected!
+I (4414) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4414) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4414) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=3058 writes=51
+I (4414) pcapx: DETACH netif=en rx=12 tx=13 drop=0 trunc=0
+E (4414) esp_semihost: OpenOCD is not connected!
+I (4414) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4424) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4424) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=2464 writes=41
+I (4424) pcapx: DETACH netif=en rx=10 tx=10 drop=0 trunc=0
+E (4424) esp_semihost: OpenOCD is not connected!
+I (4424) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4424) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4424) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=1838 writes=31
+I (4424) pcapx: DETACH netif=en rx=7 tx=8 drop=0 trunc=0
+E (4424) esp_semihost: OpenOCD is not connected!
+I (4424) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4424) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4424) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=1732 writes=29
+I (4434) pcapx: DETACH netif=en rx=7 tx=7 drop=0 trunc=0
+E (4434) esp_semihost: OpenOCD is not connected!
+I (4434) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4434) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4434) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=512 writes=9
+I (4434) pcapx: DETACH netif=en rx=2 tx=2 drop=0 trunc=0
+E (4434) esp_semihost: OpenOCD is not connected!
+I (4434) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4434) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4434) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=1244 writes=21
+I (4434) pcapx: DETACH netif=en rx=5 tx=5 drop=0 trunc=0
+E (4434) esp_semihost: OpenOCD is not connected!
+I (4434) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4444) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4444) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=2708 writes=45
+I (4444) pcapx: DETACH netif=en rx=11 tx=11 drop=0 trunc=0
+E (4444) esp_semihost: OpenOCD is not connected!
+I (4444) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4444) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4444) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=3058 writes=51
+I (4444) pcapx: DETACH netif=en rx=12 tx=13 drop=0 trunc=0
+E (4444) esp_semihost: OpenOCD is not connected!
+I (4454) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4454) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4454) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=756 writes=13
+I (4454) pcapx: DETACH netif=en rx=3 tx=3 drop=0 trunc=0
+E (4454) esp_semihost: OpenOCD is not connected!
+I (4454) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4454) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4454) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=4522 writes=75
+I (4454) pcapx: DETACH netif=en rx=18 tx=19 drop=0 trunc=0
+I (4454) pcapxlab: churn progress 25/100 heap=339568
+E (4454) esp_semihost: OpenOCD is not connected!
+I (4454) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4464) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4464) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=268 writes=5
+I (4464) pcapx: DETACH netif=en rx=1 tx=1 drop=0 trunc=0
+E (4464) esp_semihost: OpenOCD is not connected!
+I (4464) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4464) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4464) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=268 writes=5
+I (4464) pcapx: DETACH netif=en rx=1 tx=1 drop=0 trunc=0
+E (4464) esp_semihost: OpenOCD is not connected!
+I (4464) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4464) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4464) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=374 writes=7
+I (4464) pcapx: DETACH netif=en rx=1 tx=2 drop=0 trunc=0
+E (4464) esp_semihost: OpenOCD is not connected!
+I (4464) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4474) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4474) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=1350 writes=23
+I (4474) pcapx: DETACH netif=en rx=5 tx=6 drop=0 trunc=0
+E (4474) esp_semihost: OpenOCD is not connected!
+I (4474) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4474) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4474) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=130 writes=3
+I (4474) pcapx: DETACH netif=en rx=0 tx=1 drop=0 trunc=0
+E (4474) esp_semihost: OpenOCD is not connected!
+I (4474) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4474) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4474) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=1000 writes=17
+I (4474) pcapx: DETACH netif=en rx=4 tx=4 drop=0 trunc=0
+E (4474) esp_semihost: OpenOCD is not connected!
+I (4474) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4474) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4474) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=1732 writes=29
+I (4484) pcapx: DETACH netif=en rx=7 tx=7 drop=0 trunc=0
+E (4484) esp_semihost: OpenOCD is not connected!
+I (4484) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4484) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4484) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=130 writes=3
+I (4484) pcapx: DETACH netif=en rx=0 tx=1 drop=0 trunc=0
+E (4484) esp_semihost: OpenOCD is not connected!
+I (4484) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4484) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+W (4484) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+I (4484) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=1594 writes=27
+I (4484) pcapx: DETACH netif=en rx=6 tx=7 drop=0 trunc=0
+E (4484) esp_semihost: OpenOCD is not connected!
+I (4494) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4494) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4494) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=1382 writes=23
+I (4494) pcapx: DETACH netif=en rx=6 tx=5 drop=0 trunc=0
+E (4494) esp_semihost: OpenOCD is not connected!
+I (4494) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4494) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4494) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=2082 writes=35
+I (4494) pcapx: DETACH netif=en rx=8 tx=9 drop=0 trunc=0
+E (4494) esp_semihost: OpenOCD is not connected!
+I (4494) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4494) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4494) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=1976 writes=33
+I (4494) pcapx: DETACH netif=en rx=8 tx=8 drop=0 trunc=0
+E (4494) esp_semihost: OpenOCD is not connected!
+I (4504) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4504) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4504) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=1350 writes=23
+I (4504) pcapx: DETACH netif=en rx=5 tx=6 drop=0 trunc=0
+E (4504) esp_semihost: OpenOCD is not connected!
+I (4504) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4504) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4504) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=3790 writes=63
+I (4504) pcapx: DETACH netif=en rx=15 tx=16 drop=0 trunc=0
+E (4504) esp_semihost: OpenOCD is not connected!
+I (4504) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4504) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4504) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=1732 writes=29
+I (4504) pcapx: DETACH netif=en rx=7 tx=7 drop=0 trunc=0
+E (4504) esp_semihost: OpenOCD is not connected!
+I (4514) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4514) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4514) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=4278 writes=71
+I (4514) pcapx: DETACH netif=en rx=17 tx=18 drop=0 trunc=0
+E (4514) esp_semihost: OpenOCD is not connected!
+I (4514) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4514) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4514) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=374 writes=7
+I (4514) pcapx: DETACH netif=en rx=1 tx=2 drop=0 trunc=0
+E (4514) esp_semihost: OpenOCD is not connected!
+I (4514) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4514) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4524) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=676 writes=13
+I (4524) pcapx: DETACH netif=en rx=2 tx=4 drop=0 trunc=0
+E (4524) esp_semihost: OpenOCD is not connected!
+I (4524) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4524) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4524) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=1000 writes=17
+I (4524) pcapx: DETACH netif=en rx=4 tx=4 drop=0 trunc=0
+E (4524) esp_semihost: OpenOCD is not connected!
+I (4524) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4524) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4524) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=374 writes=7
+I (4524) pcapx: DETACH netif=en rx=1 tx=2 drop=0 trunc=0
+E (4524) esp_semihost: OpenOCD is not connected!
+I (4524) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4524) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4524) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=374 writes=7
+I (4524) pcapx: DETACH netif=en rx=1 tx=2 drop=0 trunc=0
+W (4524) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+E (4524) esp_semihost: OpenOCD is not connected!
+I (4524) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4534) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4534) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=1838 writes=31
+I (4534) pcapx: DETACH netif=en rx=7 tx=8 drop=0 trunc=0
+E (4534) esp_semihost: OpenOCD is not connected!
+I (4534) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4534) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4534) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=2220 writes=37
+I (4534) pcapx: DETACH netif=en rx=9 tx=9 drop=0 trunc=0
+E (4534) esp_semihost: OpenOCD is not connected!
+I (4534) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4534) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4544) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=2220 writes=37
+I (4544) pcapx: DETACH netif=en rx=9 tx=9 drop=0 trunc=0
+E (4544) esp_semihost: OpenOCD is not connected!
+I (4544) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4544) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4544) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=1244 writes=21
+I (4544) pcapx: DETACH netif=en rx=5 tx=5 drop=0 trunc=0
+I (4544) pcapxlab: churn progress 50/100 heap=343676
+E (4544) esp_semihost: OpenOCD is not connected!
+I (4544) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4544) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4544) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=3196 writes=53
+I (4544) pcapx: DETACH netif=en rx=13 tx=13 drop=0 trunc=0
+E (4554) esp_semihost: OpenOCD is not connected!
+I (4554) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4554) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4554) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=130 writes=3
+I (4554) pcapx: DETACH netif=en rx=0 tx=1 drop=0 trunc=0
+E (4554) esp_semihost: OpenOCD is not connected!
+I (4554) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4554) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4554) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=1244 writes=21
+I (4554) pcapx: DETACH netif=en rx=5 tx=5 drop=0 trunc=0
+E (4554) esp_semihost: OpenOCD is not connected!
+I (4554) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4554) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4554) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=1000 writes=17
+I (4554) pcapx: DETACH netif=en rx=4 tx=4 drop=0 trunc=0
+E (4554) esp_semihost: OpenOCD is not connected!
+I (4554) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4554) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4554) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=862 writes=15
+I (4564) pcapx: DETACH netif=en rx=3 tx=4 drop=0 trunc=0
+E (4564) esp_semihost: OpenOCD is not connected!
+I (4564) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4564) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4564) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=24 writes=1
+I (4564) pcapx: DETACH netif=en rx=0 tx=0 drop=0 trunc=0
+E (4564) esp_semihost: OpenOCD is not connected!
+I (4564) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4564) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4564) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=1732 writes=29
+I (4564) pcapx: DETACH netif=en rx=7 tx=7 drop=0 trunc=0
+E (4564) esp_semihost: OpenOCD is not connected!
+I (4564) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4564) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4564) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=1244 writes=21
+I (4564) pcapx: DETACH netif=en rx=5 tx=5 drop=0 trunc=0
+E (4564) esp_semihost: OpenOCD is not connected!
+I (4564) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4564) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4574) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=1106 writes=19
+I (4574) pcapx: DETACH netif=en rx=4 tx=5 drop=0 trunc=0
+E (4574) esp_semihost: OpenOCD is not connected!
+I (4574) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4574) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4574) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=512 writes=9
+I (4574) pcapx: DETACH netif=en rx=2 tx=2 drop=0 trunc=0
+E (4574) esp_semihost: OpenOCD is not connected!
+I (4574) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4574) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4574) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=1106 writes=19
+I (4574) pcapx: DETACH netif=en rx=4 tx=5 drop=0 trunc=0
+E (4574) esp_semihost: OpenOCD is not connected!
+I (4574) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4574) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4574) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=24 writes=1
+I (4574) pcapx: DETACH netif=en rx=0 tx=0 drop=0 trunc=0
+E (4574) esp_semihost: OpenOCD is not connected!
+I (4574) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4574) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4574) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=618 writes=11
+I (4574) pcapx: DETACH netif=en rx=2 tx=3 drop=0 trunc=0
+E (4574) esp_semihost: OpenOCD is not connected!
+I (4584) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4584) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4584) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=2220 writes=37
+I (4584) pcapx: DETACH netif=en rx=9 tx=9 drop=0 trunc=0
+E (4584) esp_semihost: OpenOCD is not connected!
+I (4584) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4584) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4584) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=1106 writes=19
+I (4584) pcapx: DETACH netif=en rx=4 tx=5 drop=0 trunc=0
+E (4584) esp_semihost: OpenOCD is not connected!
+I (4584) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4584) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4584) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=512 writes=9
+I (4584) pcapx: DETACH netif=en rx=2 tx=2 drop=0 trunc=0
+E (4584) esp_semihost: OpenOCD is not connected!
+I (4584) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4594) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+W (4594) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+I (4594) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=24 writes=1
+I (4594) pcapx: DETACH netif=en rx=0 tx=0 drop=0 trunc=0
+E (4594) esp_semihost: OpenOCD is not connected!
+I (4594) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4594) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4594) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=130 writes=3
+I (4594) pcapx: DETACH netif=en rx=0 tx=1 drop=0 trunc=0
+E (4594) esp_semihost: OpenOCD is not connected!
+I (4594) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4604) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+W (4604) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+I (4604) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=3652 writes=61
+I (4604) pcapx: DETACH netif=en rx=14 tx=16 drop=0 trunc=0
+E (4604) esp_semihost: OpenOCD is not connected!
+I (4604) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4614) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4614) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=1594 writes=27
+I (4614) pcapx: DETACH netif=en rx=6 tx=7 drop=0 trunc=0
+E (4614) esp_semihost: OpenOCD is not connected!
+I (4614) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4614) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4614) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=130 writes=3
+I (4614) pcapx: DETACH netif=en rx=0 tx=1 drop=0 trunc=0
+E (4614) esp_semihost: OpenOCD is not connected!
+I (4624) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4624) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4624) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=1838 writes=31
+I (4624) pcapx: DETACH netif=en rx=7 tx=8 drop=0 trunc=0
+E (4624) esp_semihost: OpenOCD is not connected!
+I (4624) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4624) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4634) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=2220 writes=37
+I (4634) pcapx: DETACH netif=en rx=9 tx=9 drop=0 trunc=0
+E (4634) esp_semihost: OpenOCD is not connected!
+I (4634) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4644) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4644) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=3440 writes=57
+I (4644) pcapx: DETACH netif=en rx=14 tx=14 drop=0 trunc=0
+E (4644) esp_semihost: OpenOCD is not connected!
+I (4654) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4654) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4654) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=2602 writes=43
+I (4654) pcapx: DETACH netif=en rx=11 tx=10 drop=0 trunc=0
+I (4654) pcapxlab: churn progress 75/100 heap=339492
+E (4654) esp_semihost: OpenOCD is not connected!
+I (4654) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4654) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4664) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=6262 writes=103
+I (4664) pcapx: DETACH netif=en rx=26 tx=25 drop=0 trunc=0
+E (4664) esp_semihost: OpenOCD is not connected!
+I (4664) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4664) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4664) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=2082 writes=35
+I (4664) pcapx: DETACH netif=en rx=8 tx=9 drop=0 trunc=0
+E (4674) esp_semihost: OpenOCD is not connected!
+I (4674) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4674) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4674) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=2846 writes=47
+I (4674) pcapx: DETACH netif=en rx=12 tx=11 drop=0 trunc=0
+E (4674) esp_semihost: OpenOCD is not connected!
+I (4674) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4684) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4684) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=2570 writes=43
+I (4684) pcapx: DETACH netif=en rx=10 tx=11 drop=0 trunc=0
+E (4684) esp_semihost: OpenOCD is not connected!
+I (4684) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4684) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4684) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=618 writes=11
+I (4694) pcapx: DETACH netif=en rx=2 tx=3 drop=0 trunc=0
+E (4694) esp_semihost: OpenOCD is not connected!
+I (4694) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4694) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4694) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=1732 writes=29
+I (4694) pcapx: DETACH netif=en rx=7 tx=7 drop=0 trunc=0
+E (4694) esp_semihost: OpenOCD is not connected!
+I (4704) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4704) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4704) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=1350 writes=23
+I (4704) pcapx: DETACH netif=en rx=5 tx=6 drop=0 trunc=0
+E (4704) esp_semihost: OpenOCD is not connected!
+I (4704) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4704) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4714) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=3440 writes=57
+I (4714) pcapx: DETACH netif=en rx=14 tx=14 drop=0 trunc=0
+E (4714) esp_semihost: OpenOCD is not connected!
+I (4714) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4714) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcapW (4714) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+
+I (4714) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=3652 writes=61
+I (4714) pcapx: DETACH netif=en rx=14 tx=16 drop=0 trunc=0
+E (4714) esp_semihost: OpenOCD is not connected!
+I (4714) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4724) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4724) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=1350 writes=23
+I (4724) pcapx: DETACH netif=en rx=5 tx=6 drop=0 trunc=0
+E (4724) esp_semihost: OpenOCD is not connected!
+I (4724) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4724) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4724) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=1594 writes=27
+I (4724) pcapx: DETACH netif=en rx=6 tx=7 drop=0 trunc=0
+E (4724) esp_semihost: OpenOCD is not connected!
+I (4734) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4734) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4734) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=1382 writes=23
+I (4734) pcapx: DETACH netif=en rx=6 tx=5 drop=0 trunc=0
+E (4744) esp_semihost: OpenOCD is not connected!
+I (4744) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4744) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4744) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=1382 writes=23
+I (4744) pcapx: DETACH netif=en rx=6 tx=5 drop=0 trunc=0
+W (4744) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+E (4744) esp_semihost: OpenOCD is not connected!
+I (4744) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4744) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4744) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=650 writes=11
+I (4744) pcapx: DETACH netif=en rx=3 tx=2 drop=0 trunc=0
+E (4744) esp_semihost: OpenOCD is not connected!
+I (4744) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4754) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4754) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=5424 writes=89
+I (4754) pcapx: DETACH netif=en rx=23 tx=21 drop=0 trunc=0
+E (4754) esp_semihost: OpenOCD is not connected!
+I (4754) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4754) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4754) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=1000 writes=17
+I (4754) pcapx: DETACH netif=en rx=4 tx=4 drop=0 trunc=0
+E (4764) esp_semihost: OpenOCD is not connected!
+I (4764) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4764) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4764) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=130 writes=3
+I (4764) pcapx: DETACH netif=en rx=0 tx=1 drop=0 trunc=0
+E (4764) esp_semihost: OpenOCD is not connected!
+I (4764) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4764) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4764) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=374 writes=7
+I (4764) pcapx: DETACH netif=en rx=1 tx=2 drop=0 trunc=0
+E (4764) esp_semihost: OpenOCD is not connected!
+I (4764) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4764) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4764) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=1976 writes=33
+I (4764) pcapx: DETACH netif=en rx=8 tx=8 drop=0 trunc=0
+E (4764) esp_semihost: OpenOCD is not connected!
+I (4764) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4764) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4774) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=862 writes=15
+I (4774) pcapx: DETACH netif=en rx=3 tx=4 drop=0 trunc=0
+E (4774) esp_semihost: OpenOCD is not connected!
+I (4774) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4774) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4774) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=1244 writes=21
+I (4774) pcapx: DETACH netif=en rx=5 tx=5 drop=0 trunc=0
+E (4774) esp_semihost: OpenOCD is not connected!
+I (4774) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4774) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4774) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=1488 writes=25
+I (4774) pcapx: DETACH netif=en rx=6 tx=6 drop=0 trunc=0
+E (4774) esp_semihost: OpenOCD is not connected!
+I (4774) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4774) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+W (4784) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+I (4784) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=3058 writes=51
+I (4784) pcapx: DETACH netif=en rx=12 tx=13 drop=0 trunc=0
+E (4784) esp_semihost: OpenOCD is not connected!
+I (4784) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4784) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4784) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=756 writes=13
+I (4794) pcapx: DETACH netif=en rx=3 tx=3 drop=0 trunc=0
+E (4794) esp_semihost: OpenOCD is not connected!
+I (4794) pcapx: SINK_OPEN sink=semihost-qemu-simcall path=/tmp/cap.pcap fd=16 host_cwd_rel=1
+I (4794) pcapx: ATTACH netif=en mode=rx+tx snap=128 sink=semihost:/tmp/cap.pcap
+I (4794) pcapx: SINK_CLOSE sink=semihost-qemu-simcall path=/tmp/cap.pcap bytes=24 writes=1
+I (4794) pcapx: DETACH netif=en rx=0 tx=0 drop=0 trunc=0
+I (4794) pcapxlab: churn progress 100/100 heap=343696
+I (4794) pcapxlab: traffic gen stopped, total sent=3905
+I (4894) pcapxlab: CHURN RESULT rounds_ok=100/100 heap_before=344204 heap_after=348428 delta=-4224
+I (4894) pcapxlab: PHASE session-churn: done
+I (4894) pcapxlab: == LAB DONE ==
+I (4894) main_task: Returned from app_main()
+qemu-system-xtensa: terminating on signal 15 from pid 199200 (timeout)

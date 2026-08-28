@@ -1,0 +1,54 @@
+menu "pcapx"
+
+    config PCAPX_WRITER_PRIO
+        int "pcapx writer task priority"
+        range 1 24
+        default 17
+        help
+            Priority of the "pcapx" writer task that drains the SPSC ring
+            and writes pcap records to the configured sink (sink->write may
+            block). Default 17 sits between the openeth emac_rx task (15)
+            and tcpip_thread (18): fast enough to keep the ring drained
+            under load, never preempting the stack itself.
+
+    config PCAPX_WRITER_STACK
+        int "pcapx writer task stack size (bytes)"
+        range 2048 32768
+        default 4096
+        help
+            Stack for the writer task. It runs sink->write() implementations
+            (semihosting calls, UART drivers, esp_console exports), so keep
+            headroom for the sink's stack usage.
+
+    config PCAPX_RING_BYTES
+        int "pcapx capture ring size (bytes)"
+        range 1024 65536
+        default 8192
+        help
+            Default SPSC ring capacity in bytes, used when
+            pcapx_config_t.ring_bytes == 0. Each captured frame occupies
+            12 bytes of metadata (8B timestamp + 2B orig_len + 2B caplen)
+            plus min(frame_len, snaplen) bytes. A full ring drops NEW
+            frames (keeps order, counts them in pcapx_stats_t.dropped).
+
+    config PCAPX_SEMIHOST_SIMCALL_FALLBACK
+        bool "Semihost sink: fall back to raw SIMCALL syscalls under QEMU"
+        default y
+        help
+            ESP-IDF's esp_vfs_semihost driver requires an OpenOCD-style
+            debugger attach (esp_cpu_dbgr_is_attached reads DSRSET bit0).
+            Espressif QEMU's -semihosting does NOT set that bit: it traps
+            the SIMCALL instruction with Xtensa ISS syscall numbers instead
+            (write=4/open=5/close=6, qemu target/xtensa/xtensa-semi.c),
+            which the IDF driver never uses. With this option enabled the
+            semihost sink first tries the IDF VFS path (real hardware with
+            OpenOCD attached) and, if registration returns
+            ESP_ERR_NOT_SUPPORTED, falls back to raw SIMCALL syscalls that
+            write straight to a host file relative to the QEMU process CWD.
+            WARNING: SIMCALL is an ISS-only instruction; on a real ESP32
+            (LX6) without OpenOCD attached executing it raises an illegal
+            instruction. Real hardware must attach OpenOCD (VFS path) or
+            use the UART/RAM sink. Xtensa only - RISC-V builds compile
+            the fallback out.
+
+endmenu

@@ -1,0 +1,11 @@
+# OpenCores Ethernet MAC 驱动（仅用于 QEMU 仿真，真机不可用）
+CONFIG_ETH_USE_OPENETH=y
+
+# pcapx S3 验收实验开关（默认全关 = 默认抓包会话；三选一，改完重新构建）：
+#   CONFIG_LAB_PCAPX_EXP_DROP=y   丢包实验：lab 私有慢 sink(2ms/帧 busy-wait)
+#                                 + ring=2048 + snaplen=64 + N=500 背靠背 UDP
+#                                 → DROP 契约行 + 恒等式 rx+tx==filtered+dropped+written
+#   CONFIG_LAB_PCAPX_EXP_CHURN=y  竞态冒烟：UDP 流量(8ms/包)进行中 attach/detach
+#                                 ×100 → 无 crash + heap 前后对账
+# 注意 build shim 每次重跑 idf.py set-target（sdkconfig 从本文件重新生成），
+# 实验切换只需编辑本文件后重新 source build-pcapx-lab.sh。
