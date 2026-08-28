@@ -1,0 +1,33 @@
+GYMSINK-LISTEN port=8311 conns=2
+GYMSINK-PROG conn#1 t=2.097s bytes=141120 mbit=0.538
+GYMSINK-PROG conn#1 t=4.097s bytes=272160 mbit=0.531
+GYMSINK-PROG conn#1 t=6.097s bytes=393120 mbit=0.516
+GYMSINK-PROG conn#1 t=8.197s bytes=518400 mbit=0.506
+GYMSINK-PROG conn#1 t=10.197s bytes=637920 mbit=0.500
+GYMSINK-PROG conn#1 t=12.197s bytes=758880 mbit=0.498
+GYMSINK-PROG conn#1 t=14.297s bytes=885600 mbit=0.496
+GYMSINK-PROG conn#1 t=16.298s bytes=1012320 mbit=0.497
+GYMSINK-PROG conn#1 t=18.398s bytes=1147680 mbit=0.499
+GYMSINK-PROG conn#1 t=20.398s bytes=1271520 mbit=0.499
+GYMSINK-PROG conn#1 t=22.398s bytes=1392480 mbit=0.497
+GYMSINK-PROG conn#1 t=24.497s bytes=1514880 mbit=0.495
+GYMSINK-PROG conn#1 t=26.497s bytes=1643040 mbit=0.496
+GYMSINK-PROG conn#1 t=28.498s bytes=1758240 mbit=0.494
+GYMSINK-DONE conn#1 peer=127.0.0.1:34068 bytes=1850400 dur=30.099s mbit=0.492 digest=b60e ack=K
+GYMSINK-PROG conn#2 t=2.099s bytes=149760 mbit=0.571
+GYMSINK-PROG conn#2 t=4.198s bytes=293760 mbit=0.560
+GYMSINK-PROG conn#2 t=6.198s bytes=432000 mbit=0.558
+GYMSINK-PROG conn#2 t=8.199s bytes=570240 mbit=0.556
+GYMSINK-PROG conn#2 t=10.199s bytes=708480 mbit=0.556
+GYMSINK-PROG conn#2 t=12.288s bytes=851040 mbit=0.554
+GYMSINK-PROG conn#2 t=14.288s bytes=990720 mbit=0.555
+GYMSINK-PROG conn#2 t=16.288s bytes=1128960 mbit=0.554
+GYMSINK-PROG conn#2 t=18.298s bytes=1272960 mbit=0.557
+GYMSINK-PROG conn#2 t=20.299s bytes=1408320 mbit=0.555
+GYMSINK-PROG conn#2 t=22.398s bytes=1555200 mbit=0.555
+GYMSINK-PROG conn#2 t=24.498s bytes=1696320 mbit=0.554
+GYMSINK-PROG conn#2 t=26.599s bytes=1838880 mbit=0.553
+GYMSINK-PROG conn#2 t=28.599s bytes=1981440 mbit=0.554
+GYMSINK-DONE conn#2 peer=127.0.0.1:46308 bytes=2000000 dur=28.898s mbit=0.554 digest=c546 ack=K
+GYMSINK-SUMMARY conns=2 with_data=2 avg_mbit=0.523
+GYMSINK-SUMMARY2 digests=b60e,c546 unique=2

@@ -1,0 +1,120 @@
+Adding SPI flash device
+ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x12 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0040,len:6272
+load:0x40078000,len:15820
+load:0x40080400,len:3920
+entry 0x40080644
+I (662) boot: ESP-IDF v6.0.2 2nd stage bootloader
+I (663) boot: compile time Aug 27 2026 00:40:06
+I (663) boot: Multicore bootloader
+I (709) boot: chip revision: v3.0
+I (710) boot.esp32: SPI Speed      : 40MHz
+I (710) boot.esp32: SPI Mode       : DIO
+I (710) boot.esp32: SPI Flash Size : 2MB
+I (718) boot: Enabling RNG early entropy source...
+I (725) boot: Partition Table:
+I (725) boot: ## Label            Usage          Type ST Offset   Length
+I (725) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (725) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (725) boot:  2 factory          factory app      00 00 00010000 00100000
+I (730) boot: End of partition table
+I (768) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=0f144h ( 61764) map
+I (793) esp_image: segment 1: paddr=0001f16c vaddr=3ffb0000 size=00each (  3756) load
+I (804) esp_image: segment 2: paddr=00020020 vaddr=400d0020 size=29700h (169728) map
+I (824) esp_image: segment 3: paddr=00049728 vaddr=3ffb0eac size=01c30h (  7216) load
+I (833) esp_image: segment 4: paddr=0004b360 vaddr=40080000 size=0b23ch ( 45628) load
+I (847) esp_image: segment 5: paddr=000565a4 vaddr=50000000 size=00028h (    40) load
+I (880) boot: Loaded app from partition at offset 0x10000
+I (880) boot: Disabling RNG early entropy source...
+I (890) cpu_start: Multicore app
+I (1496) cpu_start: GPIO 3 and 1 are used as console UART I/O pins
+I (1505) cpu_start: Pro cpu start user code
+I (1506) cpu_start: cpu freq: 160000000 Hz
+I (1508) app_init: Application information:
+I (1509) app_init: Project name:     lwip_ch04_pbuf_anatomy
+I (1511) app_init: App version:      924d871
+I (1512) app_init: Compile time:     Aug 27 2026 00:39:33
+I (1514) app_init: ELF file SHA256:  7eac82a59...
+I (1516) app_init: ESP-IDF:          v6.0.2
+I (1517) efuse_init: Min chip rev:     v0.0
+I (1519) efuse_init: Max chip rev:     v3.99 
+I (1520) efuse_init: Chip rev:         v3.0
+I (1524) heap_init: Initializing. RAM available for dynamic allocation:
+I (1527) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM
+I (1530) heap_init: At 3FFB4568 len 0002BA98 (174 KiB): DRAM
+I (1530) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM
+I (1530) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM
+I (1530) heap_init: At 4008B23C len 00014DC4 (83 KiB): IRAM
+I (1556) spi_flash: detected chip: winbond
+I (1559) spi_flash: flash io: dio
+I (1568) main_task: Started on CPU0
+I (1568) main_task: Calling app_main()
+I (1568) ch4lab: == ch4 lab: pbuf anatomy ==
+I (1588) esp_eth.netif.netif_glue: 52:54:00:12:34:56
+I (1588) esp_eth.netif.netif_glue: ethernet attached to netif
+I (1688) ch4lab: ETH_EVENT: START
+E (1688) esp_eth: esp_eth_ioctl(533): add mac address to filter not supported
+E (1688) esp_eth.netif.netif_glue: eth_set_mac_filter(56): failed to add mac filter
+E (1688) esp_netif_lwip: Failed to add multicast filter for IPv4
+I (1688) ch4lab: ETH_EVENT: CONNECTED (link up)
+I (1688) ch4lab: waiting for DHCP lease ...
+I (2688) ch4lab: GOT_IP: 10.0.2.15/255.255.255.0 gw 10.0.2.2
+I (2688) esp_netif_handlers: eth ip: 10.0.2.15, mask: 255.255.255.0, gw: 10.0.2.2
+[BOOT] network ready: heap_free=273024
+I (2688) ch4lab: --- E1: alloc one payload of each of the four types ---
+[E1] sizeof(struct pbuf)=16  SIZEOF_STRUCT_PBUF(align)=16  PBUF_POOL_BUFSIZE(align)=1516
+[E1] layer enum values: RAW=0 LINK=14 IP=54 TRANSPORT=74
+[E1] RAM  pbuf@0x3ffba7c4 ti=80h ref=1 len=200 tot_len=200 payload@0x3ffba820(int-DRAM) payload-pbuf=92 struct_region=int-DRAM
+[E1] POOL pbuf@0x3ffba8f8 ti=82h ref=1 len=200 tot_len=200 payload@0x3ffba954(int-DRAM) payload-pbuf=92 struct_region=int-DRAM
+[E1] ROM  pbuf@0x3ffafddc ti=01h ref=1 len=65 tot_len=65 payload@0x3f40caec(flash(DROM)) payload-pbuf=-12202736 struct_region=int-DRAM
+[E1] REF  pbuf@0x3ffba79c ti=41h ref=1 len=200 tot_len=200 payload@0x3ffb6670(int-DRAM) payload-pbuf=-16684 struct_region=int-DRAM
+[E1] heap free delta after 4 allocs=1888 B (before=273024)
+I (2688) ch4lab: --- E1b: PBUF_RAM headroom grows with layer ---
+[E1b] layer_enum=0 payload_offset_from_data_start=0 len=64 tot_len=64 heap_alloc=~80 B
+[E1b] layer_enum=14 payload_offset_from_data_start=16 len=64 tot_len=64 heap_alloc=~96 B
+[E1b] layer_enum=54 payload_offset_from_data_start=56 len=64 tot_len=64 heap_alloc=~136 B
+[E1b] layer_enum=74 payload_offset_from_data_start=76 len=64 tot_len=64 heap_alloc=~156 B
+[E1] after free-all heap free=273024 delta_vs_start=0
+I (2688) ch4lab: --- E2: build a chain and watch tot_len / ref ---
+[E2.separate] ==> p#0 @0x3ffba7c4 next=0 | RAM ti=80h len=20 tot_len=20 ref=1 | payload=0x3ffba80c off=72
+[E2.separate] ==> p#0 @0x3ffafddc next=0 | ROM ti=01h len=60 tot_len=60 ref=1 | payload=0x3f40caec off=-12202736
+[E2.after-cat] ==> p#0 @0x3ffba7c4 next=0x3ffafddc | RAM ti=80h len=20 tot_len=80 ref=1 | payload=0x3ffba80c off=72
+[E2.after-cat]    -> p#1 @0x3ffafddc next=0 | ROM ti=01h len=60 tot_len=60 ref=1 | payload=0x3f40caec off=-12202736
+[E2] shared tail: expect dat ref=2, chain1 intact
+[E2.chain2] ==> p#0 @0x3ffba824 next=0x3ffafddc | RAM ti=80h len=8 tot_len=68 ref=1 | payload=0x3ffba86c off=72
+[E2.chain2]    -> p#1 @0x3ffafddc next=0 | ROM ti=01h len=60 tot_len=60 ref=2 | payload=0x3f40caec off=-12202736
+[E2.chain1] ==> p#0 @0x3ffba7c4 next=0x3ffafddc | RAM ti=80h len=20 tot_len=80 ref=1 | payload=0x3ffba80c off=72
+[E2.chain1]    -> p#1 @0x3ffafddc next=0 | ROM ti=01h len=60 tot_len=60 ref=2 | payload=0x3f40caec off=-12202736
+[E2] pbuf_free(chain2 head) freed 1 pbuf(s); dat survives:
+[E2.after-free2] ==> p#0 @0x3ffba7c4 next=0x3ffafddc | RAM ti=80h len=20 tot_len=80 ref=1 | payload=0x3ffba80c off=72
+[E2.after-free2]    -> p#1 @0x3ffafddc next=0 | ROM ti=01h len=60 tot_len=60 ref=1 | payload=0x3f40caec off=-12202736
+[E2.rx-frame] ==> p#0 @0x3ffba824 next=0 | RAM ti=80h len=74 tot_len=74 ref=1 | payload=0x3ffba834 off=16
+[E2] strip ETH(14): rc=0 payload@0x3ffba842 len=60 tot_len=60
+[E2] strip IP(20): rc=0 payload@0x3ffba856 len=40 tot_len=40
+[E2] strip UDP(8): rc=0 payload@0x3ffba85e len=32 tot_len=32 <- app data starts here
+I (2688) ch4lab: --- E3.C0: baseline ping gw ---
+[C0] baseline ping: ok=10 fail=0 heap_free=269488 largest=147456
+I (6388) ch4lab: --- E3.C1: pool-cap probe: 48 consecutive PBUF_POOL allocs ---
+[C1] held[15]=0x3ffc0fdc alive past nominal cap #16
+[C1] held[31]=0x3ffc701c alive past nominal cap #32
+[C1] held[47]=0x3ffcd05c alive past nominal cap #48
+[C1] result: 48 consecutive non-NULL PBUF_POOL allocs (nominal PBUF_POOL_SIZE=16)
+I (6388) ch4lab: --- E3.C2: keep holding until pbuf_alloc returns NULL ---
+[C2] added 126 more pool pbufs consuming 194040 B (1540 B each avg)
+[C2] FIRST NULL at total_held=175; now heap_free=1528 largest_blk=704
+[C2] confirm starvation, re-alloc -> NULL
+[C2] network still functional under max hold? baseline check below
+I (6388) ch4lab: --- E3.C3: ping at high watermark (174 held), then step-release ---
+E (6388) ping_sock: esp_ping_new_session(228): create ping task failed
+[C3] attempt#0: held=174 heap_free=1528 ok=0 fail=10 create_fail=1
+[C3] attempt#1: freed=20 held=154 heap_free=32332 ok=10 fail=0 create_fail=0
+[C3] ALL RELEASED: heap_free back to 269492
+[C3] recovery ping: ok=10 fail=0 heap_free=269472
+I (13788) ch4lab: == ch4 lab done ==
+[DONE] all experiments finished
+I (13788) main_task: Returned from app_main()

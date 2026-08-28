@@ -1,0 +1,241 @@
+Adding SPI flash device
+ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x12 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0040,len:6272
+load:0x40078000,len:15820
+load:0x40080400,len:3920
+entry 0x40080644
+I (650) boot: ESP-IDF v6.0.2 2nd stage bootloader
+I (650) boot: compile time Aug 27 2026 19:04:19
+I (650) boot: Multicore bootloader
+I (682) boot: chip revision: v0.0
+I (683) boot.esp32: SPI Speed      : 40MHz
+I (683) boot.esp32: SPI Mode       : DIO
+I (683) boot.esp32: SPI Flash Size : 2MB
+I (687) boot: Enabling RNG early entropy source...
+I (692) boot: Partition Table:
+I (693) boot: ## Label            Usage          Type ST Offset   Length
+I (693) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (694) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (694) boot:  2 factory          factory app      00 00 00010000 00100000
+I (696) boot: End of partition table
+I (726) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=114e0h ( 70880) map
+I (746) esp_image: segment 1: paddr=00021508 vaddr=3ffb0000 size=02acch ( 10956) load
+I (759) esp_image: segment 2: paddr=00023fdc vaddr=40080000 size=0b23ch ( 45628) load
+I (776) esp_image: segment 3: paddr=0002f220 vaddr=50000000 size=00028h (    40) load
+I (788) esp_image: segment 4: paddr=0002f250 vaddr=00000000 size=00dc8h (  3528) 
+I (805) esp_image: segment 5: paddr=00030020 vaddr=400d0020 size=2ca30h (182832) map
+I (872) boot: Loaded app from partition at offset 0x10000
+I (872) boot: Disabling RNG early entropy source...
+I (884) cpu_start: Multicore app
+I (1472) cpu_start: GPIO 3 and 1 are used as console UART I/O pins
+I (1475) cpu_start: Pro cpu start user code
+I (1475) cpu_start: cpu freq: 160000000 Hz
+I (1475) app_init: Application information:
+I (1475) app_init: Project name:     ex14_perf_gym_tcp
+I (1475) app_init: App version:      924d871-dirty
+I (1475) app_init: Compile time:     Aug 27 2026 19:50:07
+I (1475) app_init: ELF file SHA256:  719997fb5...
+I (1476) app_init: ESP-IDF:          v6.0.2
+I (1476) efuse_init: Min chip rev:     v0.0
+I (1476) efuse_init: Max chip rev:     v3.99 
+I (1476) efuse_init: Chip rev:         v0.0
+I (1477) heap_init: Initializing. RAM available for dynamic allocation:
+I (1477) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM
+I (1478) heap_init: At 3FFC8108 len 00017EF8 (95 KiB): DRAM
+I (1478) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM
+I (1478) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM
+I (1478) heap_init: At 4008B23C len 00014DC4 (83 KiB): IRAM
+I (1501) spi_flash: detected chip: winbond
+I (1507) spi_flash: flash io: dio
+I (1515) main_task: Started on CPU0
+I (1515) main_task: Calling app_main()
+I (1515) ex14: == ex14 perf-gym-tcp: TCP misconfiguration gym ==
+I (1515) ex14: $$$ EX14BOOT board=esp32-qemu-openeth
+I (1535) esp_eth.netif.netif_glue: 52:54:00:12:34:56
+I (1535) esp_eth.netif.netif_glue: ethernet attached to netif
+I (1635) ex14: [EX14] ETH START
+E (1635) esp_eth: esp_eth_ioctl(533): add mac address to filter not supported
+E (1635) esp_eth.netif.netif_glue: eth_set_mac_filter(56): failed to add mac filter
+E (1635) esp_netif_lwip: Failed to add multicast filter for IPv4
+I (1635) ex14: [EX14] ETH CONNECTED (link up)
+I (2635) ex14: [EX14] GOT_IP 10.0.2.15 gw 10.0.2.2
+I (2635) esp_netif_handlers: eth ip: 10.0.2.15, mask: 255.255.255.0, gw: 10.0.2.2
+$$$ EX14NETUP ip=10.0.2.15 gw=10.0.2.2
+$$$ EX14FACT build="Aug 27 2026 19:50:08" scenario=2 name=wide-window-small-ring mss=1440 snd_buf=28800 wnd=28800 openeth_ring=4 max_active_tcp=16 lwip_stats=1
+$$$ EX14PROFILE legs=lb+tx+rx probe=off rounds=2 mb_per_leg=2000000 tx_target=10.0.2.2:8311 rx_listen=:8310 lb_mirror=10.0.2.2:8312
+$$$ EX14VERDICT key=window_small ok snd_buf=28800 wnd=28800 mss=1440 detail=external-path-rate~window/RTT(ch24)
+$$$ EX14VERDICT key=wnd_ring predicted_blackhole wnd=28800 ring=4 need_ring=32 detail=WND>=28800-requires-ring>=32(ch24/Batch5)
+$$$ EX14VERDICT key=pcb_gate ok max_active_tcp=16
+$$$ EX14VERDICT key=sent_hook present detail=ack-driven-refill-on
+$$$ EX14STATS phase=rounds_pre link.recv=1 tcp.memerr=0 tcp.drop=0 tcp.chkerr=0 (absolute)
+$$$ EX14HEAP phase=rounds_pre free=183888 largest=110592 min_ever=183868
+$$$ EX14ROUND r=1 leg=LB begin
+I (2665) main_task: Returned from app_main()
+W (2715) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (2725) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (2725) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (2735) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (2745) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (2755) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (2755) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (2755) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (2765) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (2765) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (2765) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (2765) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (2765) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (2765) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (2765) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (2765) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (3895) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+$$$ EX14WD t_ms=6186 d_tcp.xmit=0 d_tcp.recv=0 d_link.recv=0 
+$$$ EX14WD t_ms=11186 d_tcp.xmit=43 d_tcp.recv=65 d_link.recv=1 
+$$$ EX14WD t_ms=16186 d_tcp.xmit=49 d_tcp.recv=77 d_link.recv=0 
+$$$ EX14WD t_ms=21186 d_tcp.xmit=42 d_tcp.recv=68 d_link.recv=0 
+$$$ EX14LB r=1 RESULT status=OK conn_ms=18 up_mbit=21.62 dn_mbit=0.09 up_ms=97 dn_ms=22216 up_digest=3281 dn_digest=3281 match=1
+$$$ EX14ROUND r=1 leg=TX begin (needs tools/gym_sink.py on host:8311)
+$$$ EX14TX r=1 BEGIN target=10.0.2.2:8311 bytes=2000000
+W (25215) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (25215) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (25215) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (25215) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (25215) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (25215) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (25215) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (25215) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (25215) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (25215) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (25215) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (25215) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (25215) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (25215) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (25215) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (25215) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (25215) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (25215) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (25215) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (25215) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (25215) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (25215) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (25215) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (25225) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (25225) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (25225) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (25225) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (25225) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (25225) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (25225) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (25225) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (25305) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+$$$ EX14TX r=1 RESULT status=COMPLETE bytes=2000000/2000000 xfer_ms=192 mbit=83.333 sent_hits=1280 poll_hits=0 acked_app=1971360 min_sndbuf=0 k=0 digest=c546 err=0 stage=done_ok
+$$$ EX14ROUND r=1 leg=RX begin (needs tools/gym_flood.py -> hostfwd 8310)
+$$$ EX14RX_LISTEN port=8310 backlog=4 hint=needs-QEMU-hostfwd-tcp::8310-:8310
+$$$ EX14WD t_ms=26186 d_tcp.xmit=1417 d_tcp.recv=1342 d_link.recv=0 
+$$$ EX14WD t_ms=31186 d_tcp.xmit=0 d_tcp.recv=0 d_link.recv=0 
+$$$ EX14WD t_ms=36186 d_tcp.xmit=0 d_tcp.recv=0 d_link.recv=0 
+$$$ EX14WD t_ms=41186 d_tcp.xmit=0 d_tcp.recv=0 d_link.recv=0 
+$$$ EX14WD t_ms=46186 d_tcp.xmit=0 d_tcp.recv=0 d_link.recv=0 
+$$$ EX14RX r=1 RESULT status=PEER_DOWN waited_s=25
+$$$ EX14STATS phase=after_round1 d_link.recv=2 d_tcp.xmit=1763 d_tcp.recv=1759 d_tcp.drop=107 d_tcp.memerr=0
+$$$ EX14ROUND r=2 leg=LB begin
+W (51585) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (51585) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (51585) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (51585) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (51585) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (51585) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (51585) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (51595) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (51595) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (51595) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (51595) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (51595) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (51595) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (51605) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (51605) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (51605) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (51605) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (51605) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (51605) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (51605) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (51605) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (51605) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (51605) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (51605) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (51615) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+$$$ EX14WD t_ms=51186 d_tcp.xmit=188 d_tcp.recv=151 d_link.recv=0 
+W (52895) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+$$$ EX14WD t_ms=56186 d_tcp.xmit=27 d_tcp.recv=51 d_link.recv=0 
+$$$ EX14WD t_ms=61186 d_tcp.xmit=22 d_tcp.recv=44 d_link.recv=0 
+$$$ EX14WD t_ms=66186 d_tcp.xmit=21 d_tcp.recv=37 d_link.recv=0 
+$$$ EX14WD t_ms=71186 d_tcp.xmit=35 d_tcp.recv=66 d_link.recv=0 
+$$$ EX14LB r=2 RESULT status=OK conn_ms=2 up_mbit=77.67 dn_mbit=0.09 up_ms=27 dn_ms=23820 up_digest=3281 dn_digest=3281 match=1
+$$$ EX14ROUND r=2 leg=TX begin (needs tools/gym_sink.py on host:8311)
+$$$ EX14TX r=2 BEGIN target=10.0.2.2:8311 bytes=2000000
+W (75715) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (75715) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (75715) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (75715) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (75715) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (75715) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (75715) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (75715) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (75715) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (75715) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (75715) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (75715) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (75715) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (75715) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (75715) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (75715) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (75715) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (75715) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (75715) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (75715) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (75715) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (75715) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (75715) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (75715) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (75725) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (75725) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (75725) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (75725) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (75725) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (75725) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (75725) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (75725) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (75765) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (75765) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (75775) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (75775) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (75775) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (75775) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (75775) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (75775) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (75805) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (75805) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (75815) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (75815) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (75815) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (75815) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (75815) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (75815) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (75815) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+$$$ EX14TX r=2 RESULT status=COMPLETE bytes=2000000/2000000 xfer_ms=131 mbit=122.137 sent_hits=1145 poll_hits=0 acked_app=1971360 min_sndbuf=0 k=0 digest=c546 err=0 stage=done_ok
+$$$ EX14ROUND r=2 leg=RX begin (needs tools/gym_flood.py -> hostfwd 8310)
+$$$ EX14RX_LISTEN port=8310 backlog=4 hint=needs-QEMU-hostfwd-tcp::8310-:8310
+$$$ EX14WD t_ms=76186 d_tcp.xmit=1407 d_tcp.recv=1193 d_link.recv=0 
+$$$ EX14WD t_ms=81186 d_tcp.xmit=0 d_tcp.recv=0 d_link.recv=0 
+$$$ EX14WD t_ms=86186 d_tcp.xmit=0 d_tcp.recv=0 d_link.recv=0 
+$$$ EX14WD t_ms=91186 d_tcp.xmit=0 d_tcp.recv=0 d_link.recv=0 
+$$$ EX14WD t_ms=96186 d_tcp.xmit=0 d_tcp.recv=0 d_link.recv=0 
+$$$ EX14RX r=2 RESULT status=PEER_DOWN waited_s=25
+$$$ EX14STATS phase=rounds_post d_link.recv=2 d_tcp.xmit=3463 d_tcp.recv=3301 d_tcp.drop=153 d_tcp.memerr=0
+$$$ EX14HEAP phase=rounds_post free=183324 largest=110592 min_ever=116884
+$$$ EX14SUMMARY scenario=2 rounds=2 lb_ok=2/2 avg_lb_up=49.65 avg_lb_dn=0.09 | tx_complete=2 trickle_or_partial=0 avg_tx_mbit=102.74 | rx_ok=0/2 avg_rx_mbit=0.00 | conc=skipped hints=README-sc2
+$$$ EX14DONE scenario=2 name=wide-window-small-ring -- restarting to exit QEMU cleanly

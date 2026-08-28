@@ -1,0 +1,24 @@
+# ex14 场景 2（修复）：把窗口挪回与环深匹配的工作区
+#
+# 与坏的 sc2 的差异：
+#   CONFIG_LWIP_TCP_SND_BUF_DEFAULT 28800 -> 5760
+#   CONFIG_LWIP_TCP_WND_DEFAULT     28800 -> 5760
+#   （openeth 环深保持 IDF 默认 4，不再特殊设置）
+#
+# ⚠⚠ 本环境的诚实实测结论（比教科书更进一步）：
+#   a) 只拧大窗口（28800）不抬环 → 回程黑洞 ~0.09 Mbit（sc2-broken 档案）；
+#   b) 抬环到不等式要求的 32 → **依然黑洞**（实测与 broken 几乎无差）。
+#      ——「窗口×RX 环深不等式」在本环境是必要条件而非充分条件：
+#      窗口大到 20×MSS 这个量级后，SLIRP/openeth 联合管道给不出匹配的
+#      吸纳速率，环再深也填不满协议栈的胃口。
+#   c) 把窗口退回 4×MSS 工作区（本档）→ 立刻恢复满速（对比 broken 提升
+#      三个数量级以上）。工程答案：旋钮要成对规划并实测验收，别信单点公式。
+#
+# 用法：cp sdkconfig.defaults.sc2.fixed sdkconfig.defaults && rm -f sdkconfig && idf.py build
+CONFIG_ETH_USE_OPENETH=y
+CONFIG_LWIP_STATS=y
+CONFIG_LWIP_TCP_MSS=1440
+CONFIG_LWIP_TCP_SND_BUF_DEFAULT=5760
+CONFIG_LWIP_TCP_WND_DEFAULT=5760
+
+CONFIG_GYM_SCENARIO=2

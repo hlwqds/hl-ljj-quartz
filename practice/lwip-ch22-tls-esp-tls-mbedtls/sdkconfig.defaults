@@ -1,0 +1,20 @@
+# ch22 TLS 实验：QEMU 无硬件加密外设仿真，用纯软件密码实现（确定性口径）
+CONFIG_ETH_USE_OPENETH=y
+CONFIG_MBEDTLS_HARDWARE_AES=n
+CONFIG_MBEDTLS_HARDWARE_SHA=n
+CONFIG_MBEDTLS_HARDWARE_MPI=n
+
+# 握手全记录：打开 mbedTLS 调试日志（esp-tls 内部自动调 mbedtls_esp_enable_debug_log）
+CONFIG_MBEDTLS_DEBUG=y
+# choice 默认即 VERBOSE(4)
+CONFIG_MBEDTLS_DEBUG_LEVEL_VERBOSE=y
+
+# 日志级别开到 Debug，mbedTLS 逐行握手日志才能透出
+CONFIG_LOG_DEFAULT_LEVEL_DEBUG=y
+
+# 故障注入/教学姿势：允许默认跳过服务器证书验证（仅在实验工程开启！）
+CONFIG_ESP_TLS_INSECURE=y
+CONFIG_ESP_TLS_SKIP_SERVER_CERT_VERIFY=y
+
+# 内存观察与任务清单
+CONFIG_FREERTOS_USE_TRACE_FACILITY=y

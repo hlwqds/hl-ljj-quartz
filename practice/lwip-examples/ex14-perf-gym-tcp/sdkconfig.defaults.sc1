@@ -1,0 +1,16 @@
+# ex14 场景 1（坏）：窗口过小 —— SND_BUF/WND 压到 2×MSS
+#
+# 病理预期：发送侧在途字节被 SND_BUF=2880 钉死、接收侧通告窗被 WND=2880 钉死，
+# 外环吞吐按「窗口/RTT」坍缩到个位数 Mbit；自环腿(LB)影响轻微（回环 RTT 微秒级）。
+#
+# 用法（不删 sdkconfig 直接改配置 = 白改，Batch 1 教训）：
+#   cp sdkconfig.defaults.sc1 sdkconfig.defaults && rm -f sdkconfig && idf.py build
+CONFIG_ETH_USE_OPENETH=y
+CONFIG_LWIP_STATS=y
+CONFIG_LWIP_TCP_MSS=1440
+
+# ↓↓↓ 毒药在这两行：恰好 2×MSS，Kconfig 允许的下限区间内（range>=2440）
+CONFIG_LWIP_TCP_SND_BUF_DEFAULT=2880
+CONFIG_LWIP_TCP_WND_DEFAULT=2880
+
+CONFIG_GYM_SCENARIO=1

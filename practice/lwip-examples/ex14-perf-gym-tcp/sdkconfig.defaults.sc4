@@ -1,0 +1,25 @@
+# ex14 场景 4（坏）：PCB 计数闸压到 2 —— 新连接静默无响应
+#
+# 病理预期：CONFIG_LWIP_MAX_ACTIVE_TCP 即 MEMP_NUM_TCP_PCB（IDF 唯一真正生效的
+# TCP PCB 计数闸，Batch 2）。自环回声服务器的 listen PCB 先占 1 格，探针 socket 再占
+# 1 格 → 连接请求 SYN 到达时 tcp_alloc() 失败，tcp_listen_input 静默丢弃（不发 RST）
+# 且 tcp.memerr 爬升（源码出处 lwip/src/core/tcp_in.c）。EX14CONC 行记录每次尝试的
+# 结果与 memerr 增量。
+#
+# 注意算术：即使"只有一条连接"，listen(1)+client(1)+child(1) 也要 3 格，
+# 所以 =2 是绝对饿死位。这正是 ch5/ch10 记录的现象复刻。
+#
+# 用法：cp sdkconfig.defaults.sc4 sdkconfig.defaults && rm -f sdkconfig && idf.py build
+CONFIG_ETH_USE_OPENETH=y
+CONFIG_LWIP_STATS=y
+CONFIG_LWIP_TCP_MSS=1440
+CONFIG_LWIP_TCP_SND_BUF_DEFAULT=5760
+CONFIG_LWIP_TCP_WND_DEFAULT=5760
+
+# ↓↓↓ 毒药在这一行：默认 16 -> 2
+CONFIG_LWIP_MAX_ACTIVE_TCP=2
+
+# 场景 4 固件侧自动切换为"并发探针"profile：LB/TX/RX 三腿数据轮关闭，
+# 但 :8310 监听口保持开启——它就是 PCB 池的第 1 格占用者与入向 SYN
+# 静默丢弃的受害者（配合宿主 nc 触发，见 README 场景4 运行步骤）。
+CONFIG_GYM_SCENARIO=4

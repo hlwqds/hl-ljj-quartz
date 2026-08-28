@@ -1,0 +1,19 @@
+GYMFLOOD-LISTEN host=127.0.0.1:8310 rounds=2 mb=2 pattern=xorshift32/64K
+GYMFLOOD-WAIT conn-not-ready ([Errno 111] Connection refused) attempts=1
+GYMFLOOD-WAIT conn-not-ready ([Errno 111] Connection refused) attempts=2
+GYMFLOOD-WAIT conn-not-ready ([Errno 111] Connection refused) attempts=3
+GYMFLOOD-WAIT conn-not-ready ([Errno 111] Connection refused) attempts=4
+GYMFLOOD-DONE round=1 bytes=2000000/2000000 send_s=0.063 full_s=0.225 mbit_e2e=71.016 digest=c546 ack=K attempts=5
+GYMFLOOD-WAIT phantom-conn byte=b'' attempts=1
+GYMFLOOD-WAIT phantom-conn byte=b'' attempts=2
+GYMFLOOD-WAIT phantom-conn byte=b'' attempts=3
+GYMFLOOD-WAIT phantom-conn byte=b'' attempts=4
+GYMFLOOD-WAIT phantom-conn byte=b'' attempts=5
+GYMFLOOD-WAIT phantom-conn byte=b'' attempts=6
+GYMFLOOD-WAIT phantom-conn byte=b'' attempts=7
+GYMFLOOD-WAIT phantom-conn byte=b'' attempts=8
+GYMFLOOD-WAIT phantom-conn byte=b'' attempts=9
+GYMFLOOD-WAIT phantom-conn byte=b'' attempts=10
+GYMFLOOD-DONE round=2 bytes=2000000/2000000 send_s=0.069 full_s=0.190 mbit_e2e=84.231 digest=c546 ack=K attempts=11
+GYMFLOOD-SUMMARY rounds=2 ok=2 avg_mbit=77.623
+GYMFLOOD-SUMMARY2 digests=c546,c546

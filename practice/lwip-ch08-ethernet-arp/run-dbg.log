@@ -1,0 +1,582 @@
+ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x12 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0040,len:6272
+load:0x40078000,len:15820
+load:0x40080400,len:3920
+entry 0x40080644
+I (661) boot: ESP-IDF v6.0.2 2nd stage bootloader
+I (661) boot: compile time Aug 27 2026 01:24:14
+I (661) boot: Multicore bootloader
+I (694) boot: chip revision: v3.0
+I (695) boot.esp32: SPI Speed      : 40MHz
+I (695) boot.esp32: SPI Mode       : DIO
+I (695) boot.esp32: SPI Flash Size : 2MB
+I (700) boot: Enabling RNG early entropy source...
+I (705) boot: Partition Table:
+I (706) boot: ## Label            Usage          Type ST Offset   Length
+I (706) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (706) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (706) boot:  2 factory          factory app      00 00 00010000 00100000
+I (709) boot: End of partition table
+I (759) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=10e84h ( 69252) map
+I (802) esp_image: segment 1: paddr=00020eac vaddr=3ffb0000 size=02acch ( 10956) load
+I (815) esp_image: segment 2: paddr=00023980 vaddr=40080000 size=0b23ch ( 45628) load
+I (830) esp_image: segment 3: paddr=0002ebc4 vaddr=50000000 size=00028h (    40) load
+I (841) esp_image: segment 4: paddr=0002ebf4 vaddr=00000000 size=01424h (  5156) 
+I (854) esp_image: segment 5: paddr=00030020 vaddr=400d0020 size=2ab44h (174916) map
+I (918) boot: Loaded app from partition at offset 0x10000
+I (919) boot: Disabling RNG early entropy source...
+I (928) cpu_start: Multicore app
+I (1557) cpu_start: GPIO 3 and 1 are used as console UART I/O pins
+I (1559) cpu_start: Pro cpu start user code
+I (1559) cpu_start: cpu freq: 160000000 Hz
+I (1559) app_init: Application information:
+I (1559) app_init: Project name:     lwip_ch08_ethernet_arp
+I (1559) app_init: App version:      924d871
+I (1559) app_init: Compile time:     Aug 27 2026 01:24:12
+I (1560) app_init: ELF file SHA256:  61299d00e...
+I (1560) app_init: ESP-IDF:          v6.0.2
+I (1560) efuse_init: Min chip rev:     v0.0
+I (1560) efuse_init: Max chip rev:     v3.99 
+I (1560) efuse_init: Chip rev:         v3.0
+I (1560) heap_init: Initializing. RAM available for dynamic allocation:
+I (1561) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM
+I (1561) heap_init: At 3FFB3FC0 len 0002C040 (176 KiB): DRAM
+I (1561) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM
+I (1561) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM
+I (1561) heap_init: At 4008B23C len 00014DC4 (83 KiB): IRAM
+I (1586) spi_flash: detected chip: winbond
+I (1594) spi_flash: flash io: dio
+I (1602) main_task: Started on CPU0
+I (1602) main_task: Calling app_main()
+I (1602) ch8lab: == ch8 lab: ethernet RX path + ARP cache ==
+I (1602) ch8lab: [CFG] build: ARP_TABLE_SIZE=2, ARP_QUEUEING=1, LWIP_STATS=1
+I (1632) esp_eth.netif.netif_glue: 52:54:00:12:34:56
+I (1632) esp_eth.netif.netif_glue: ethernet attached to netif
+I (1732) ch8lab: waiting for DHCP lease ...
+E (1732) esp_eth: esp_eth_ioctl(533): add mac address to filter not supported
+E (1732) esp_eth.netif.netif_glue: eth_set_mac_filter(56): failed to add mac filter
+E (1732) esp_netif_lwip: Failed to add multicast filter for IPv4
+I (1732) ch8lab: ETH_EVENT: CONNECTED (link up)
+ethernet_output: sending packet 0x3ffba214
+ethernet_input: dest:ff:ff:ff:ff:ff:ff, src:52:55:0a:00:02:02, type:800
+ethernet_output: sending packet 0x3ffba840
+ethernet_input: dest:ff:ff:ff:ff:ff:ff, src:52:55:0a:00:02:02, type:800
+etharp_find_entry: found empty entry 0
+etharp_find_entry: selecting empty entry 0
+etharp_request: sending ARP request.
+etharp_raw: sending raw ARP packet.
+ethernet_output: sending packet 0x3ffba840
+etharp_find_entry: found matching entry 0
+etharp_request: sending ARP request.
+etharp_raw: sending raw ARP packet.
+ethernet_output: sending packet 0x3ffba214
+etharp_query: reset ctime for entry 0
+etharp_timer
+etharp_request: sending ARP request.
+etharp_raw: sending raw ARP packet.
+ethernet_output: sending packet 0x3ffba214
+I (2742) ch8lab: GOT_IP: 10.0.2.15/255.255.255.0 gw 10.0.2.2
+I (2742) esp_netif_handlers: eth ip: 10.0.2.15, mask: 255.255.255.0, gw: 10.0.2.2
+etharp_timer
+etharp_request: sending ARP request.
+etharp_raw: sending raw ARP packet.
+ethernet_output: sending packet 0x3ffba228
+[ARPTAB] --- dump @W boot ground truth ---
+[ARPTAB] stable entries (ARP_TABLE_SIZE=2):
+[ARPTAB]   (no stable entry)
+[BENCH] === cold-warm: 12x connect 10.0.2.2:8108 ===
+etharp_find_entry: found empty entry 1
+etharp_find_entry: selecting empty entry 1
+etharp_request: sending ARP request.
+etharp_raw: sending raw ARP packet.
+ethernet_output: sending packet 0x3ffba478
+etharp_query: queued packet 0x3ffba3e8 on ARP entry 1
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:806
+etharp_update_arp_entry: 10.0.2.2 - 52:55:0a:00:02:02
+etharp_find_entry: found matching entry 1
+etharp_update_arp_entry: updating stable entry 1
+ethernet_output: sending packet 0x3ffba3e8
+etharp_input: incoming ARP reply
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ethernet_output: sending packet 0x3ffba3e8
+ethernet_output: sending packet 0x3ffba3e8
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+[BENCH] cold-warm  conn#00 took 13326 us : ESTABLISHED
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ethernet_output: sending packet 0x3ffba3e8
+ethernet_output: sending packet 0x3ffba54c
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ethernet_output: sending packet 0x3ffba54c
+ethernet_output: sending packet 0x3ffba54c
+[BENCH] cold-warm  conn#01 took 2923 us : ESTABLISHED
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ethernet_output: sending packet 0x3ffba214
+ethernet_output: sending packet 0x3ffba620
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ethernet_output: sending packet 0x3ffba620
+ethernet_output: sending packet 0x3ffba620
+[BENCH] cold-warm  conn#02 took 3222 us : ESTABLISHED
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ethernet_output: sending packet 0x3ffba214
+ethernet_output: sending packet 0x3ffba6f4
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ethernet_output: sending packet 0x3ffba6f4
+ethernet_output: sending packet 0x3ffba6f4
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+[BENCH] cold-warm  conn#03 took 5090 us : ESTABLISHED
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ethernet_output: sending packet 0x3ffba214
+ethernet_output: sending packet 0x3ffba7c8
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ethernet_output: sending packet 0x3ffba7c8
+ethernet_output: sending packet 0x3ffba7c8
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+[BENCH] cold-warm  conn#04 took 4353 us : ESTABLISHED
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ethernet_output: sending packet 0x3ffba214
+ethernet_output: sending packet 0x3ffba89c
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ethernet_output: sending packet 0x3ffba89c
+ethernet_output: sending packet 0x3ffba89c
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+[BENCH] cold-warm  conn#05 took 3278 us : ESTABLISHED
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ethernet_output: sending packet 0x3ffba214
+etharp_timer
+etharp_request: sending ARP request.
+etharp_raw: sending raw ARP packet.
+ethernet_output: sending packet 0x3ffba3fc
+ethernet_output: sending packet 0x3ffba970
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ethernet_output: sending packet 0x3ffba970
+ethernet_output: sending packet 0x3ffba970
+[BENCH] cold-warm  conn#06 took 3202 us : ESTABLISHED
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ethernet_output: sending packet 0x3ffba214
+ethernet_output: sending packet 0x3ffbaa44
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ethernet_output: sending packet 0x3ffbaa44
+ethernet_output: sending packet 0x3ffbaa44
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+[BENCH] cold-warm  conn#07 took 2892 us : ESTABLISHED
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ethernet_output: sending packet 0x3ffba214
+ethernet_output: sending packet 0x3ffbab18
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ethernet_output: sending packet 0x3ffbab18
+ethernet_output: sending packet 0x3ffbab18
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+[BENCH] cold-warm  conn#08 took 3243 us : ESTABLISHED
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ethernet_output: sending packet 0x3ffba214
+ethernet_output: sending packet 0x3ffbabec
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ethernet_output: sending packet 0x3ffbabec
+ethernet_output: sending packet 0x3ffbabec
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+[BENCH] cold-warm  conn#09 took 3160 us : ESTABLISHED
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ethernet_output: sending packet 0x3ffba214
+ethernet_output: sending packet 0x3ffbacc0
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ethernet_output: sending packet 0x3ffbacc0
+ethernet_output: sending packet 0x3ffbacc0
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+[BENCH] cold-warm  conn#10 took 4360 us : ESTABLISHED
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ethernet_output: sending packet 0x3ffba214
+ethernet_output: sending packet 0x3ffbad94
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ethernet_output: sending packet 0x3ffbad94
+ethernet_output: sending packet 0x3ffbad94
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+[BENCH] cold-warm  conn#11 took 3152 us : ESTABLISHED
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ethernet_output: sending packet 0x3ffba214
+etharp_find_entry: selecting oldest stable entry 1
+etharp_request: sending ARP request.
+etharp_raw: sending raw ARP packet.
+ethernet_output: sending packet 0x3ffba434
+etharp_query: queued packet 0x3ffbade8 on ARP entry 1
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:03, type:806
+etharp_update_arp_entry: 10.0.2.3 - 52:55:0a:00:02:03
+etharp_find_entry: found matching entry 1
+etharp_update_arp_entry: updating stable entry 1
+ethernet_output: sending packet 0x3ffbade8
+etharp_input: incoming ARP reply
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+[UDP] probe gw-dns -> 10.0.2.3 : rc=4
+etharp_timer
+etharp_request: sending ARP request.
+etharp_raw: sending raw ARP packet.
+ethernet_output: sending packet 0x3ffba3fc
+[ARPTAB] --- dump @B after resolved 10.0.2.3 ---
+[ARPTAB] stable entries (ARP_TABLE_SIZE=2):
+[ARPTAB]   slot  1: 10.0.2.3 @ 52:55:0a:00:02:03 netif=en2
+[PEND] sent probe to unresolved 10.0.2.77, watch pending lifecycle ...
+etharp_find_entry: selecting oldest stable entry 1
+etharp_request: sending ARP request.
+etharp_raw: sending raw ARP packet.
+ethernet_output: sending packet 0x3ffba434
+etharp_query: queued packet 0x3ffbade8 on ARP entry 1
+[UDP] probe dead-ip -> 10.0.2.77 : rc=4
+[ARPTAB] --- dump @B right after pending created (public API sees nothing) ---
+[ARPTAB] stable entries (ARP_TABLE_SIZE=2):
+[ARPTAB]   (no stable entry)
+[TICK] +1s
+etharp_timer
+etharp_timer: expired pending entry 0.
+etharp_request: sending ARP request.
+etharp_raw: sending raw ARP packet.
+ethernet_output: sending packet 0x3ffbad94
+[TICK] +2s
+etharp_timer
+etharp_request: sending ARP request.
+etharp_raw: sending raw ARP packet.
+ethernet_output: sending packet 0x3ffbad94
+[TICK] +3s
+etharp_timer
+etharp_request: sending ARP request.
+etharp_raw: sending raw ARP packet.
+ethernet_output: sending packet 0x3ffbad94
+[TICK] +4s
+etharp_timer
+etharp_request: sending ARP request.
+etharp_raw: sending raw ARP packet.
+ethernet_output: sending packet 0x3ffbad94
+[TICK] +5s
+etharp_timer
+etharp_timer: expired pending entry 1.
+etharp_free_entry: freeing entry 1, packet queue 0x3ffba284.
+[TICK] +6s
+etharp_timer
+[TICK] +7s
+etharp_timer
+[ARPTAB] --- dump @C before fault sequence ---
+[ARPTAB] stable entries (ARP_TABLE_SIZE=2):
+[ARPTAB]   (no stable entry)
+[BURST] queue-fill: 5 rapid datagrams -> 10.0.2.101 (resolve pending)
+etharp_find_entry: found empty entry 0
+etharp_find_entry: selecting empty entry 0
+etharp_request: sending ARP request.
+etharp_raw: sending raw ARP packet.
+ethernet_output: sending packet 0x3ffba434
+etharp_query: queued packet 0x3ffbade8 on ARP entry 0
+[BURST]   #0 rc=4
+etharp_find_entry: found matching entry 0
+etharp_query: queued packet 0x3ffbae4c on ARP entry 0
+[BURST]   #1 rc=4
+etharp_find_entry: found matching entry 0
+etharp_query: queued packet 0x3ffbaeb0 on ARP entry 0
+[BURST]   #2 rc=4
+etharp_find_entry: found matching entry 0
+etharp_query: could not queue the packet 0x3ffbaf14 (queue is full)
+[BURST]   #3 rc=-1Not enough space
+etharp_find_entry: found matching entry 0
+etharp_query: could not queue the packet 0x3ffbaf14 (queue is full)
+[BURST]   #4 rc=-1Not enough space
+etharp_find_entry: found empty entry 1
+etharp_find_entry: selecting empty entry 1
+etharp_request: sending ARP request.
+etharp_raw: sending raw ARP packet.
+ethernet_output: sending packet 0x3ffbaf78
+etharp_query: queued packet 0x3ffbaf14 on ARP entry 1
+[UDP] probe evictor -> 10.0.2.201 : rc=4
+[BENCH] === post-evict: 3x connect 10.0.2.2:8108 ===
+etharp_find_entry: selecting oldest pending entry 1, freeing packet queue 0x3ffbadcc
+etharp_free_entry: freeing entry 1, packet queue 0x3ffbadcc.
+etharp_request: sending ARP request.
+etharp_raw: sending raw ARP packet.
+ethernet_output: sending packet 0x3ffbaf14
+etharp_query: queued packet 0x3ffba3fc on ARP entry 1
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:806
+etharp_update_arp_entry: 10.0.2.2 - 52:55:0a:00:02:02
+etharp_find_entry: found matching entry 1
+etharp_update_arp_entry: updating stable entry 1
+ethernet_output: sending packet 0x3ffba3fc
+etharp_input: incoming ARP reply
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ethernet_output: sending packet 0x3ffba3fc
+ethernet_output: sending packet 0x3ffbaf14
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+[BENCH] post-evict conn#00 took 11225 us : ESTABLISHED
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ethernet_output: sending packet 0x3ffbaf14
+etharp_timer
+etharp_request: sending ARP request.
+etharp_raw: sending raw ARP packet.
+ethernet_output: sending packet 0x3ffbad94
+ethernet_output: sending packet 0x3ffbaf14
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ethernet_output: sending packet 0x3ffbaf14
+ethernet_output: sending packet 0x3ffbaf14
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+[BENCH] post-evict conn#01 took 3235 us : ESTABLISHED
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ethernet_output: sending packet 0x3ffbaf14
+ethernet_output: sending packet 0x3ffbaf14
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ethernet_output: sending packet 0x3ffbaf14
+ethernet_output: sending packet 0x3ffbaf14
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+[BENCH] post-evict conn#02 took 3438 us : ESTABLISHED
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ethernet_output: sending packet 0x3ffbaf14
+[ARPTAB] --- dump @C after fault sequence ---
+[ARPTAB] stable entries (ARP_TABLE_SIZE=2):
+[ARPTAB]   slot  1: 10.0.2.2 @ 52:55:0a:00:02:02 netif=en2
+[STATS] final lwIP stats (ETHARP row: xmit/recv/fw/drop/err/memerr/cachehit)
+
+LINK
+	xmit: 3
+	recv: 3
+	fw: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 0
+	opterr: 0
+	err: 0
+	cachehit: 0
+
+ETHARP
+	xmit: 17
+	recv: 3
+	fw: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 0
+	opterr: 0
+	err: 0
+	cachehit: 57
+
+IP_FRAG
+	xmit: 0
+	recv: 0
+	fw: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 0
+	opterr: 0
+	err: 0
+	cachehit: 0
+
+IPv6 FRAG
+	xmit: 0
+	recv: 0
+	fw: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 0
+	opterr: 0
+	err: 0
+	cachehit: 0
+
+IP
+	xmit: 70
+	recv: 48
+	fw: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 0
+	opterr: 0
+	err: 0
+	cachehit: 0
+
+ND
+	xmit: 3
+	recv: 0
+	fw: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 0
+	opterr: 0
+	err: 0
+	cachehit: 0
+
+IPv6
+	xmit: 3
+	recv: 3
+	fw: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 0
+	opterr: 0
+	err: 0
+	cachehit: 0
+
+IGMP
+	xmit: 0
+	recv: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	proterr: 0
+	rx_v1: 0
+	rx_group: 0
+	rx_general: 0
+	rx_report: 0
+	tx_join: 0
+	tx_leave: 0
+	tx_report: 0
+
+MLDv1
+	xmit: 0
+	recv: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	proterr: 0
+	rx_v1: 0
+	rx_group: 0
+	rx_general: 0
+	rx_report: 0
+	tx_join: 0
+	tx_leave: 0
+	tx_report: 0
+
+ICMP
+	xmit: 0
+	recv: 1
+	fw: 0
+	drop: 1
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 1
+	opterr: 0
+	err: 0
+	cachehit: 0
+
+ICMPv6
+	xmit: 0
+	recv: 0
+	fw: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 0
+	opterr: 0
+	err: 0
+	cachehit: 0
+
+UDP
+	xmit: 10
+	recv: 2
+	fw: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 0
+	opterr: 0
+	err: 0
+	cachehit: 2
+
+TCP
+	xmit: 60
+	recv: 45
+	fw: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 0
+	opterr: 0
+	err: 0
+	cachehit: 45
+
+SYS
+	sem.used:  0
+	sem.max:   0
+	sem.err:   0
+	mutex.used: 0
+	mutex.max:  0
+	mutex.err:  0
+	mbox.used:  0
+	mbox.max:   0
+	mbox.err:   0
+I (13912) ch8lab: == ch8 lab done, idle ==
+etharp_timer
+etharp_request: sending ARP request.
+etharp_raw: sending raw ARP packet.
+ethernet_output: sending packet 0x3ffbada8
+etharp_timer
+etharp_request: sending ARP request.
+etharp_raw: sending raw ARP packet.
+ethernet_output: sending packet 0x3ffbada8
+etharp_timer
+etharp_request: sending ARP request.
+etharp_raw: sending raw ARP packet.
+ethernet_output: sending packet 0x3ffbada8
+etharp_timer
+etharp_timer: expired pending entry 0.
+etharp_free_entry: freeing entry 0, packet queue 0x3ffba284.
+etharp_timer
+etharp_timer
+etharp_timer
+etharp_timer
+etharp_timer
+etharp_timer
+etharp_timer
+etharp_timer
+etharp_timer
+etharp_timer
+etharp_timer
+etharp_timer
+etharp_timer
+etharp_timer
+etharp_timer
+etharp_timer
+etharp_timer
+etharp_timer
+etharp_timer
+etharp_timer
+etharp_timer
+etharp_timer
+etharp_timer
+etharp_timer
+etharp_timer
+etharp_timer
+etharp_timer
+etharp_timer
+etharp_timer
+etharp_timer
+etharp_timer
+etharp_timer
+etharp_timer

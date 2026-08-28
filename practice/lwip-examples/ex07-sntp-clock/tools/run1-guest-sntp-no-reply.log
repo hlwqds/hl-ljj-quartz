@@ -1,0 +1,117 @@
+Adding SPI flash device
+ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x12 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0040,len:6272
+load:0x40078000,len:15820
+load:0x40080400,len:3920
+entry 0x40080644
+I (664) boot: ESP-IDF v6.0.2 2nd stage bootloader
+I (664) boot: compile time Aug 27 2026 13:27:13
+I (664) boot: Multicore bootloader
+I (698) boot: chip revision: v0.0
+I (699) boot.esp32: SPI Speed      : 40MHz
+I (699) boot.esp32: SPI Mode       : DIO
+I (699) boot.esp32: SPI Flash Size : 2MB
+I (704) boot: Enabling RNG early entropy source...
+I (709) boot: Partition Table:
+I (710) boot: ## Label            Usage          Type ST Offset   Length
+I (710) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (710) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (710) boot:  2 factory          factory app      00 00 00010000 00100000
+I (713) boot: End of partition table
+I (744) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=12f58h ( 77656) map
+I (759) esp_image: segment 1: paddr=00022f80 vaddr=3ffb0000 size=02adch ( 10972) load
+I (773) esp_image: segment 2: paddr=00025a64 vaddr=40080000 size=0a5b4h ( 42420) load
+I (790) esp_image: segment 3: paddr=00030020 vaddr=400d0020 size=2e668h (190056) map
+I (812) esp_image: segment 4: paddr=0005e690 vaddr=4008a5b4 size=00d14h (  3348) load
+I (828) esp_image: segment 5: paddr=0005f3ac vaddr=50000000 size=00028h (    40) load
+I (877) boot: Loaded app from partition at offset 0x10000
+I (877) boot: Disabling RNG early entropy source...
+I (889) cpu_start: Multicore app
+I (1472) cpu_start: GPIO 3 and 1 are used as console UART I/O pins
+I (1474) cpu_start: Pro cpu start user code
+I (1474) cpu_start: cpu freq: 160000000 Hz
+I (1475) app_init: Application information:
+I (1475) app_init: Project name:     ex07_sntp_clock
+I (1475) app_init: App version:      924d871-dirty
+I (1475) app_init: Compile time:     Aug 27 2026 13:27:11
+I (1475) app_init: ELF file SHA256:  224d92c6a...
+I (1475) app_init: ESP-IDF:          v6.0.2
+I (1475) efuse_init: Min chip rev:     v0.0
+I (1475) efuse_init: Max chip rev:     v3.99 
+I (1475) efuse_init: Chip rev:         v0.0
+I (1476) heap_init: Initializing. RAM available for dynamic allocation:
+I (1476) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM
+I (1476) heap_init: At 3FFB4FF8 len 0002B008 (172 KiB): DRAM
+I (1477) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM
+I (1477) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM
+I (1477) heap_init: At 4008B2C8 len 00014D38 (83 KiB): IRAM
+I (1508) spi_flash: detected chip: winbond
+I (1513) spi_flash: flash io: dio
+I (1522) main_task: Started on CPU0
+I (1522) main_task: Calling app_main()
+I (1522) ex07: == ex07 sntp-clock (SNTP over SLIRP adjudication lab) ==
+I (1522) ex07: [EX07] FACT built="Aug 27 2026 13:27:13" idf=v6.0.2
+I (1522) ex07: [EX07] FACT ports: sntp=8260(compiled override) reflector=8262 closed-probe=8261
+I (1542) esp_eth.netif.netif_glue: 52:54:00:12:34:56
+I (1542) esp_eth.netif.netif_glue: ethernet attached to netif
+I (1642) ex07: [EX07] ETH START
+E (1642) esp_eth: esp_eth_ioctl(533): add mac address to filter not supported
+E (1642) esp_eth.netif.netif_glue: eth_set_mac_filter(56): failed to add mac filter
+E (1642) esp_netif_lwip: Failed to add multicast filter for IPv4
+I (1642) ex07: [EX07] ETH CONNECTED (link up)
+I (2642) ex07: [EX07] GOT_IP 10.0.2.15 gw 10.0.2.2
+I (2642) esp_netif_handlers: eth ip: 10.0.2.15, mask: 255.255.255.0, gw: 10.0.2.2
+I (2642) ex07: $$$ EX07READY ip=10.0.2.15 gw=10.0.2.2 dns=10.0.2.3 t_ms=1120
+I (2642) ex07: [EX07] PHASE=CLOCK-BEFORE epoch_sec=1.171598 utc="1970-01-01 00:00:01" cst8="1970-01-01 08:00:01" et_us=1166884 tick_ms=1120
+I (2642) ex07: [EX07] wall_before_epoch=1 （默认上电态：距 1970 基准仅数秒）
+I (2642) ex07: [EX07] CLOCK-GRID samples=220 span_ms=0.4 unique_sysnow=1 unique_esptimer=220
+I (2652) ex07: [EX07] GRID-STEP 1 sysnow_flip_ms=10 esptimer_span_us=4666
+I (2662) ex07: [EX07] GRID-STEP 2 sysnow_flip_ms=10 esptimer_span_us=9839
+I (2672) ex07: [EX07] GRID-STEP 3 sysnow_flip_ms=10 esptimer_span_us=9947
+I (2672) ex07: $$$ EX07-RESULT SYSNOW-GRID grid_ms=10 verdict="sys_now 只有 10ms 网格精度，亚毫秒计时必须用 esp_timer_get_time"
+I (2672) ex07: [EX07] PROBE dst=10.0.2.2:8262 attempt=1/3 len=48
+I (2682) ex07: [EX07] PROBE reply 48 bytes from 10.0.2.2:8262 rtt_us=8567 payload_match=yes head="EX07PROBE se"
+I (2682) ex07: $$$ EX07-RESULT UDP-FORWARD dst=10.0.2.2:8262 status=REACHABLE rtt_us=8567 payload_match=yes attempts=1 verdict="guest 出站 UDP 经 SLIRP 可达宿主 loopback 同端口"
+I (2682) ex07: [EX07] PROBE dst=10.0.2.2:8261 attempt=1/3 len=48
+W (5682) ex07: [EX07] PROBE no reply within 3s errno=11 (No more processes)
+I (5682) ex07: [EX07] PROBE dst=10.0.2.2:8261 attempt=2/3 len=48
+W (8682) ex07: [EX07] PROBE no reply within 3s errno=11 (No more processes)
+I (8682) ex07: [EX07] PROBE dst=10.0.2.2:8261 attempt=3/3 len=48
+W (11682) ex07: [EX07] PROBE no reply within 3s errno=11 (No more processes)
+I (11682) ex07: $$$ EX07-RESULT UDP-CLOSED dst=10.0.2.2:8261 observed=NO_REPLY last_errno=11
+I (11682) ex07: [EX07] SNTP init server=10.0.2.2 (compiled SNTP_PORT=8260)
+sntp_init: SNTP initialised
+I (14682) ex07: [EX07] waiting for system time (1/14) err=ESP_ERR_TIMEOUT
+sntp_request: current server address is 10.0.2.2
+sntp_send_request: Sending request to server
+I (17682) ex07: [EX07] waiting for system time (2/14) err=ESP_ERR_TIMEOUT
+I (20682) ex07: [EX07] waiting for system time (3/14) err=ESP_ERR_TIMEOUT
+I (23682) ex07: [EX07] waiting for system time (4/14) err=ESP_ERR_TIMEOUT
+I (26682) ex07: [EX07] waiting for system time (5/14) err=ESP_ERR_TIMEOUT
+I (29682) ex07: [EX07] waiting for system time (6/14) err=ESP_ERR_TIMEOUT
+sntp_retry: Next request will be sent in 15000 ms
+I (32682) ex07: [EX07] waiting for system time (7/14) err=ESP_ERR_TIMEOUT
+I (35682) ex07: [EX07] waiting for system time (8/14) err=ESP_ERR_TIMEOUT
+I (38682) ex07: [EX07] waiting for system time (9/14) err=ESP_ERR_TIMEOUT
+I (41682) ex07: [EX07] waiting for system time (10/14) err=ESP_ERR_TIMEOUT
+I (44682) ex07: [EX07] waiting for system time (11/14) err=ESP_ERR_TIMEOUT
+sntp_request: current server address is 10.0.2.2
+sntp_send_request: Sending request to server
+I (47682) ex07: [EX07] waiting for system time (12/14) err=ESP_ERR_TIMEOUT
+I (50682) ex07: [EX07] waiting for system time (13/14) err=ESP_ERR_TIMEOUT
+I (53682) ex07: [EX07] waiting for system time (14/14) err=ESP_ERR_TIMEOUT
+W (53682) ex07: $$$ EX07-RESULT SNTP-PRIMARY status=FAIL server=10.0.2.2:8260 rounds=14 note="主线不通，按备选预案注入回退时钟"
+W (53682) ex07: [EX07] FALLBACK manual settimeofday to epoch=1769904000 (sync mechanism demo, NOT a real NTP result)
+I (53682) ex07: $$$ EX07-RESULT SYNC-FALLBACK applied=yes mode=manual-settimeofday base=1769904000
+I (53682) ex07: $$$ EX07-RESULT CLOCK-DELTA delta_s=1769903999 origin=fallback-injection
+I (53682) ex07: [EX07] PHASE=CLOCK-AFTER epoch_sec=1769904000.000537 utc="2026-02-01 00:00:00" cst8="2026-02-01 08:00:00" et_us=52204776 tick_ms=52160
+I (53682) ex07: [EX07] ESPTIMER continuity: et_at_apply_us=52203995 et_now_us=52204978 elapsed=0.983ms
+I (53682) ex07: $$$ EX07-RESULT ESPTIMER-AFTER-SETTIMEOFDAY monotonic=yes et_at_apply_us=52203995 et_final_us=52204978
+I (53682) ex07: $$$ EX07-RESULT SYNC-TOTAL events=1 interval_ms=20000 mode=fallback reachability=0x00
+I (53682) ex07: [EX07] SUMMARY server=10.0.2.2:8260 sync_events=1 state=2
+I (53682) ex07: $$$ EX07DONE

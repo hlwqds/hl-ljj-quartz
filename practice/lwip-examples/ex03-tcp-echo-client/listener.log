@@ -1,0 +1,10 @@
+$$$ LSTREADY mode=echo port=8220
+$$$ LSTREADY mode=silent port=8221
+LST-ALL modes=echo:8220,silent:8221,reset:8222 waiting ...
+$$$ LSTREADY mode=reset port=8222
+LST-SILENT conn#1 accepted from 127.0.0.1:52678
+LST-SILENT-DONE conn#1 addr=127.0.0.1:52678 swallowed_bytes=0 (never replied)
+LST-RESET conn#1 accepted from 127.0.0.1:32896
+LST-RESET-DONE conn#1 addr=127.0.0.1:32896 read_bytes=256 digest_rx=3f1f drop_reason=first-message-consumed drop_mode=RST
+LST-ECHO conn#1 accepted from 127.0.0.1:34096
+LST-ECHO-DONE conn#1 addr=127.0.0.1:34096 rx_bytes=2048 tx_bytes=2048 digest_rx=7755 digest_tx=7755 match=YES

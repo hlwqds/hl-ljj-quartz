@@ -1,0 +1,257 @@
+Adding SPI flash device
+ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x12 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0040,len:6272
+load:0x40078000,len:15820
+load:0x40080400,len:3920
+entry 0x40080644
+I (667) boot: ESP-IDF v6.0.2 2nd stage bootloader
+I (668) boot: compile time Aug 27 2026 02:21:32
+I (668) boot: Multicore bootloader
+I (708) boot: chip revision: v0.0
+I (710) boot.esp32: SPI Speed      : 40MHz
+I (710) boot.esp32: SPI Mode       : DIO
+I (710) boot.esp32: SPI Flash Size : 2MB
+I (715) boot: Enabling RNG early entropy source...
+I (724) boot: Partition Table:
+I (724) boot: ## Label            Usage          Type ST Offset   Length
+I (724) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (724) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (725) boot:  2 factory          factory app      00 00 00010000 00100000
+I (728) boot: End of partition table
+I (768) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=0f46ch ( 62572) map
+I (787) esp_image: segment 1: paddr=0001f494 vaddr=3ffb0000 size=00b84h (  2948) load
+I (801) esp_image: segment 2: paddr=00020020 vaddr=400d0020 size=2ba70h (178800) map
+I (826) esp_image: segment 3: paddr=0004ba98 vaddr=3ffb0b84 size=01f68h (  8040) load
+I (848) esp_image: segment 4: paddr=0004da08 vaddr=40080000 size=0b23ch ( 45628) load
+I (868) esp_image: segment 5: paddr=00058c4c vaddr=50000000 size=00028h (    40) load
+I (919) boot: Loaded app from partition at offset 0x10000
+I (919) boot: Disabling RNG early entropy source...
+I (935) cpu_start: Multicore app
+I (1572) cpu_start: GPIO 3 and 1 are used as console UART I/O pins
+I (1574) cpu_start: Pro cpu start user code
+I (1575) cpu_start: cpu freq: 160000000 Hz
+I (1575) app_init: Application information:
+I (1575) app_init: Project name:     lwip_ch13_tcpip_thread_mailbox
+I (1575) app_init: App version:      924d871
+I (1575) app_init: Compile time:     Aug 27 2026 02:21:20
+I (1575) app_init: ELF file SHA256:  0159a12dc...
+I (1575) app_init: ESP-IDF:          v6.0.2
+I (1575) efuse_init: Min chip rev:     v0.0
+I (1575) efuse_init: Max chip rev:     v3.99 
+I (1576) efuse_init: Chip rev:         v0.0
+I (1576) heap_init: Initializing. RAM available for dynamic allocation:
+I (1577) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM
+I (1577) heap_init: At 3FFB40D8 len 0002BF28 (175 KiB): DRAM
+I (1577) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM
+I (1577) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM
+I (1578) heap_init: At 4008B23C len 00014DC4 (83 KiB): IRAM
+I (1614) spi_flash: detected chip: winbond
+I (1619) spi_flash: flash io: dio
+I (1634) main_task: Started on CPU0
+I (1634) main_task: Calling app_main()
+I (1634) ch13lab: == ch13 lab: tcpip_thread & mailbox model ==
+I (1634) ch13lab: build facts: TCPIP_MBOX_SIZE=32 CORE_LOCKING=0
+I (1664) esp_eth.netif.netif_glue: 52:54:00:12:34:56
+I (1664) esp_eth.netif.netif_glue: ethernet attached to netif
+I (1764) ch13lab: waiting for DHCP lease ...
+E (1764) esp_eth: esp_eth_ioctl(533): add mac address to filter not supported
+E (1764) esp_eth.netif.netif_glue: eth_set_mac_filter(56): failed to add mac filter
+E (1764) esp_netif_lwip: Failed to add multicast filter for IPv4
+I (1764) ch13lab: ETH_EVENT: CONNECTED (link up)
+I (2774) ch13lab: GOT_IP: 10.0.2.15
+I (2774) esp_netif_handlers: eth ip: 10.0.2.15, mask: 255.255.255.0, gw: 10.0.2.2
+I (2774) ch13lab: echo server listening on 0.0.0.0:8888
+I (3074) ch13lab: [tasks] after bring-up: 10 tasks
+[tasks]   main             prio= 1 hwm= 2884
+[tasks]   IDLE1            prio= 0 hwm= 1100
+[tasks]   IDLE0            prio= 0 hwm= 1088
+[tasks]   tcpip            prio=18 hwm= 2328
+[tasks]   esp_timer        prio=22 hwm= 3640
+[tasks]   ipc1             prio=24 hwm=  572
+[tasks]   emac_rx          prio=15 hwm= 3336
+[tasks]   sys_evt          prio=20 hwm= 1664
+[tasks]   echo_srv         prio= 5 hwm= 2568
+[tasks]   ipc0             prio=24 hwm=  564
+I (3074) ch13lab: --- experiment A: who runs my code? ---
+I (3074) ch13lab: [ctx] app_main (direct)        task='main' prio=1 core=0
+I (3074) ch13lab: [ctx] via tcpip_callback       task='tcpip' prio=18 core=0
+I (3074) ch13lab: [ctx] tcpip_callback(setup)    task='tcpip' prio=18 core=0
+I (3774) ch13lab: [ctx] sys_timeout cb           task='tcpip' prio=18 core=0
+I (4174) ch13lab: [ctx] udp_raw recv cb          task='tcpip' prio=18 core=0
+I (4324) ch13lab: [ctx] udp_raw recv cb          task='tcpip' prio=18 core=0
+I (4974) ch13lab: --- experiment B: mailbox latency (n=1000 each) ---
+[bench] idle sync RTT(wait)          n=1000 min=19 med=25 p95=31 p99=80 max=473 avg=27.9 us
+[bench] idle async 1-way             n=1000 min=18 med=20 p95=23 p99=26 max=68 avg=20.8 us
+I (5044) ch13lab: [bench] starting hammer task (saturating tcpip thread)...
+[bench] loaded sync RTT(wait)        n=1000 min=22 med=1118 p95=29845 p99=59933 max=220142 avg=7241.3 us
+[bench] loaded async 1-way           n=1000 min=17 med=810 p95=25086 p99=47215 max=80046 avg=5450.4 us
+I (25724) ch13lab: [bench] hammer posted=909628 messages total
+I (26224) ch13lab: --- experiment C: stall tcpip thread 3000 ms ---
+I (26224) ch13lab: [C-ping] reply seq=1 time=1 us
+I (26474) ch13lab: [C-ping] reply seq=2 time=0 us
+I (26724) ch13lab: [C-ping] reply seq=3 time=0 us
+I (26924) ch13lab: [C] baseline done, about to post stall callback
+I (26924) ch13lab: [C] stall BEGIN inside 'tcpip' (sleeping 3000 ms) -- whole stack frozen
+I (26924) ch13lab: [C] post took 423 us (fire-and-forget)
+I (29924) ch13lab: [C] stall END -- heart beating again
+I (29924) ch13lab: [C-ping] reply seq=4 time=3 us
+I (29924) ch13lab: [C-ping] reply seq=5 time=0 us
+I (29924) ch13lab: [ctx] socket accept            task='echo_srv' prio=5 core=0
+I (29924) ch13lab: echo: client 10.0.2.2:35414 connected
+I (29924) ch13lab: [C-ping] reply seq=6 time=0 us
+I (29924) ch13lab: [C-ping] reply seq=7 time=0 us
+I (29924) ch13lab: [C-ping] reply seq=8 time=0 us
+I (29924) ch13lab: [C-ping] reply seq=9 time=0 us
+I (29924) ch13lab: [C-ping] reply seq=10 time=0 us
+I (29934) ch13lab: [C-ping] reply seq=11 time=1 us
+I (29934) ch13lab: [C-ping] reply seq=12 time=0 us
+I (29934) ch13lab: [C-ping] reply seq=13 time=0 us
+I (29934) ch13lab: [C-ping] reply seq=14 time=0 us
+I (29934) ch13lab: echo: client disconnected
+I (29934) ch13lab: [C-ping] reply seq=15 time=0 us
+I (29974) ch13lab: [C-ping] reply seq=16 time=0 us
+I (30224) ch13lab: [C-ping] reply seq=17 time=0 us
+I (30234) ch13lab: [ctx] socket accept            task='echo_srv' prio=5 core=1
+I (30234) ch13lab: echo: client 10.0.2.2:48440 connected
+I (30244) ch13lab: echo: client disconnected
+I (30474) ch13lab: [C-ping] reply seq=18 time=0 us
+I (30544) ch13lab: [ctx] socket accept            task='echo_srv' prio=5 core=0
+I (30544) ch13lab: echo: client 10.0.2.2:48446 connected
+I (30544) ch13lab: echo: client disconnected
+I (30724) ch13lab: [C-ping] reply seq=19 time=0 us
+I (30844) ch13lab: [ctx] socket accept            task='echo_srv' prio=5 core=0
+I (30844) ch13lab: echo: client 10.0.2.2:48460 connected
+I (30854) ch13lab: echo: client disconnected
+I (30974) ch13lab: [C-ping] reply seq=20 time=1 us
+I (31154) ch13lab: [ctx] socket accept            task='echo_srv' prio=5 core=1
+I (31154) ch13lab: echo: client 10.0.2.2:48476 connected
+I (31154) ch13lab: echo: client disconnected
+I (31224) ch13lab: [C-ping] reply seq=21 time=0 us
+I (31454) ch13lab: [ctx] socket accept            task='echo_srv' prio=5 core=1
+I (31454) ch13lab: echo: client 10.0.2.2:48480 connected
+I (31464) ch13lab: echo: client disconnected
+I (31474) ch13lab: [C-ping] reply seq=22 time=0 us
+I (31724) ch13lab: [C-ping] reply seq=23 time=0 us
+I (31764) ch13lab: [ctx] socket accept            task='echo_srv' prio=5 core=1
+I (31764) ch13lab: echo: client 10.0.2.2:48488 connected
+I (31764) ch13lab: echo: client disconnected
+I (31974) ch13lab: [C-ping] reply seq=24 time=0 us
+I (32064) ch13lab: [ctx] socket accept            task='echo_srv' prio=5 core=1
+I (32064) ch13lab: echo: client 10.0.2.2:48494 connected
+I (32074) ch13lab: echo: client disconnected
+I (32224) ch13lab: [C-ping] reply seq=25 time=0 us
+I (32374) ch13lab: [ctx] socket accept            task='echo_srv' prio=5 core=0
+I (32374) ch13lab: echo: client 10.0.2.2:48502 connected
+I (32374) ch13lab: echo: client disconnected
+I (32474) ch13lab: [C-ping] reply seq=26 time=0 us
+I (32524) ch13lab: [C] observation window over
+I (32674) ch13lab: [ctx] socket accept            task='echo_srv' prio=5 core=1
+I (32674) ch13lab: echo: client 10.0.2.2:48514 connected
+I (32684) ch13lab: echo: client disconnected
+I (32984) ch13lab: [ctx] socket accept            task='echo_srv' prio=5 core=1
+I (32984) ch13lab: echo: client 10.0.2.2:48528 connected
+I (32984) ch13lab: echo: client disconnected
+I (33024) ch13lab: --- experiment D: mailbox overflow (depth=32) ---
+I (33024) ch13lab: [D] blocker running in 'tcpip', hogging tcpip thread 1500 ms
+I (33104) ch13lab: [D] flood[00] instant (59 us)
+I (33104) ch13lab: [D] flood[01] instant (21 us)
+I (33104) ch13lab: [D] flood[02] instant (16 us)
+I (33104) ch13lab: [D] flood[03] instant (15 us)
+I (33104) ch13lab: [D] flood[04] instant (15 us)
+I (33104) ch13lab: [D] flood[05] instant (19 us)
+I (33104) ch13lab: [D] flood[06] instant (16 us)
+I (33104) ch13lab: [D] flood[07] instant (15 us)
+I (33104) ch13lab: [D] flood[08] instant (16 us)
+I (33104) ch13lab: [D] flood[09] instant (15 us)
+I (33104) ch13lab: [D] flood[10] instant (15 us)
+I (33104) ch13lab: [D] flood[11] instant (16 us)
+I (33104) ch13lab: [D] flood[12] instant (15 us)
+I (33104) ch13lab: [D] flood[13] instant (15 us)
+I (33104) ch13lab: [D] flood[14] instant (15 us)
+I (33104) ch13lab: [D] flood[15] instant (15 us)
+I (33104) ch13lab: [D] flood[16] instant (15 us)
+I (33104) ch13lab: [D] flood[17] instant (15 us)
+I (33104) ch13lab: [D] flood[18] instant (24 us)
+I (33104) ch13lab: [D] flood[19] instant (17 us)
+I (33104) ch13lab: [D] flood[20] instant (15 us)
+I (33104) ch13lab: [D] flood[21] instant (16 us)
+I (33104) ch13lab: [D] flood[22] instant (15 us)
+I (33104) ch13lab: [D] flood[23] instant (15 us)
+I (33104) ch13lab: [D] flood[24] instant (15 us)
+I (33104) ch13lab: [D] flood[25] instant (15 us)
+I (33104) ch13lab: [D] flood[26] instant (15 us)
+I (33104) ch13lab: [D] flood[27] instant (15 us)
+I (33104) ch13lab: [D] flood[28] instant (15 us)
+I (33104) ch13lab: [D] flood[29] instant (15 us)
+I (33104) ch13lab: [D] flood[30] instant (16 us)
+I (33104) ch13lab: [D] flood[31] instant (16 us)
+I (33174) ch13lab: [D] try_callback while saturated: OK=0 ERR_MEM(full)=4000 (source returns ERR_MEM immediately, never blocks)
+I (34524) ch13lab: [D] blocker done
+W (34524) ch13lab: [D] flood[32] BLOCKED 1415539 us waiting for mbox slot
+I (34524) ch13lab: [D] flood[33] instant (43 us)
+I (34524) ch13lab: [D] flood[34] instant (87 us)
+I (34524) ch13lab: [D] flood[35] instant (67 us)
+I (34524) ch13lab: [D] flood[36] instant (58 us)
+I (34524) ch13lab: [D] flood[37] instant (52 us)
+I (34524) ch13lab: [D] flood[38] instant (53 us)
+I (34524) ch13lab: [D] flood[39] instant (48 us)
+I (34524) ch13lab: [D] flood[40] instant (47 us)
+I (34524) ch13lab: [D] flood[41] instant (47 us)
+I (34524) ch13lab: [D] flood[42] instant (54 us)
+I (34524) ch13lab: [D] flood[43] instant (66 us)
+I (34524) ch13lab: [D] flood[44] instant (51 us)
+I (34524) ch13lab: [D] flood[45] instant (48 us)
+I (34524) ch13lab: [D] flood[46] instant (48 us)
+I (34524) ch13lab: [D] flood[47] instant (48 us)
+I (34524) ch13lab: [D] flood[48] instant (47 us)
+I (34524) ch13lab: [D] flood[49] instant (47 us)
+I (34524) ch13lab: [D] flood[50] instant (47 us)
+I (34524) ch13lab: [D] flood[51] instant (48 us)
+I (34524) ch13lab: [D] flood[52] instant (47 us)
+I (34524) ch13lab: [D] flood[53] instant (51 us)
+I (34524) ch13lab: [D] flood[54] instant (47 us)
+I (34524) ch13lab: [D] flood[55] instant (47 us)
+I (34524) ch13lab: [D] flood[56] instant (46 us)
+I (34524) ch13lab: [D] flood[57] instant (48 us)
+I (34524) ch13lab: [D] flood[58] instant (47 us)
+I (34524) ch13lab: [D] flood[59] instant (48 us)
+I (34524) ch13lab: [D] flood[60] instant (47 us)
+I (34524) ch13lab: [D] flood[61] instant (47 us)
+I (34524) ch13lab: [D] flood[62] instant (47 us)
+I (34524) ch13lab: [D] flood[63] instant (47 us)
+I (34524) ch13lab: [D] flood[64] instant (47 us)
+I (34524) ch13lab: [D] flood[65] instant (48 us)
+I (34524) ch13lab: [D] flood[66] instant (49 us)
+I (34524) ch13lab: [D] flood[67] instant (47 us)
+I (34524) ch13lab: [D] flood[68] instant (47 us)
+I (34524) ch13lab: [D] flood[69] instant (47 us)
+I (34524) ch13lab: [D] flood[70] instant (50 us)
+I (34524) ch13lab: [D] flood[71] instant (48 us)
+I (34524) ch13lab: [D] flood[72] instant (48 us)
+I (34524) ch13lab: [D] flood[73] instant (47 us)
+I (34524) ch13lab: [D] flood[74] instant (47 us)
+I (34524) ch13lab: [D] flood[75] instant (47 us)
+I (34524) ch13lab: [D] flood[76] instant (47 us)
+I (34524) ch13lab: [D] flood[77] instant (47 us)
+I (34524) ch13lab: [D] flood[78] instant (48 us)
+I (34524) ch13lab: [D] flood[79] instant (47 us)
+I (34524) ch13lab: [D] flood summary: instant=79 blocked=1 worst=1415539 us
+I (35534) ch13lab: [D] backlog drained, system back to normal
+I (36534) ch13lab: [tasks] at end: 10 tasks
+[tasks]   main             prio= 1 hwm= 2772
+[tasks]   IDLE1            prio= 0 hwm=  988
+[tasks]   IDLE0            prio= 0 hwm=  976
+[tasks]   tcpip            prio=18 hwm= 2328
+[tasks]   sys_evt          prio=20 hwm= 1664
+[tasks]   echo_srv         prio= 5 hwm= 2328
+[tasks]   emac_rx          prio=15 hwm= 3256
+[tasks]   esp_timer        prio=22 hwm= 3640
+[tasks]   ipc0             prio=24 hwm=  564
+[tasks]   ipc1             prio=24 hwm=  572
+I (36534) ch13lab: == ch13 lab all phases done, echo stays on :8888 ==
+qemu-system-xtensa: terminating on signal 15 from pid 3382269 (timeout)

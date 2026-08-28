@@ -1,0 +1,65 @@
+Adding SPI flash device
+ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x12 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0040,len:6272
+load:0x40078000,len:15820
+load:0x40080400,len:3920
+entry 0x40080644
+I (672) boot: ESP-IDF v6.0.2 2nd stage bootloader
+I (672) boot: compile time Aug 27 2026 00:17:04
+I (672) boot: Multicore bootloader
+I (700) boot: chip revision: v3.0
+I (702) boot.esp32: SPI Speed      : 40MHz
+I (702) boot.esp32: SPI Mode       : DIO
+I (702) boot.esp32: SPI Flash Size : 2MB
+I (707) boot: Enabling RNG early entropy source...
+I (713) boot: Partition Table:
+I (714) boot: ## Label            Usage          Type ST Offset   Length
+I (714) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (714) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (714) boot:  2 factory          factory app      00 00 00010000 00100000
+I (718) boot: End of partition table
+I (748) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=0b37ch ( 45948) map
+I (764) esp_image: segment 1: paddr=0001b3a4 vaddr=3ffb0000 size=029fch ( 10748) load
+I (780) esp_image: segment 2: paddr=0001dda8 vaddr=40080000 size=02270h (  8816) load
+I (799) esp_image: segment 3: paddr=00020020 vaddr=400d0020 size=1aa5ch (109148) map
+I (816) esp_image: segment 4: paddr=0003aa84 vaddr=40082270 size=08a28h ( 35368) load
+I (841) esp_image: segment 5: paddr=000434b4 vaddr=50000000 size=00028h (    40) load
+I (912) boot: Loaded app from partition at offset 0x10000
+I (912) boot: Disabling RNG early entropy source...
+I (928) cpu_start: Multicore app
+I (1551) cpu_start: GPIO 3 and 1 are used as console UART I/O pins
+I (1554) cpu_start: Pro cpu start user code
+I (1554) cpu_start: cpu freq: 160000000 Hz
+I (1554) app_init: Application information:
+I (1554) app_init: Project name:     hello_world
+I (1554) app_init: App version:      924d871
+I (1554) app_init: Compile time:     Aug 27 2026 00:17:29
+I (1554) app_init: ELF file SHA256:  d62e4f57e...
+I (1555) app_init: ESP-IDF:          v6.0.2
+I (1555) efuse_init: Min chip rev:     v0.0
+I (1555) efuse_init: Max chip rev:     v3.99 
+I (1555) efuse_init: Chip rev:         v3.0
+I (1556) heap_init: Initializing. RAM available for dynamic allocation:
+I (1556) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM
+I (1556) heap_init: At 3FFB3C28 len 0002C3D8 (176 KiB): DRAM
+I (1557) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM
+I (1557) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM
+I (1557) heap_init: At 4008AC98 len 00015368 (84 KiB): IRAM
+I (1592) spi_flash: detected chip: winbond
+I (1595) spi_flash: flash io: dio
+I (1611) main_task: Started on CPU0
+I (1611) main_task: Calling app_main()
+== ch01 probe: bare protocol-stack core, no netif ==
+sizeof: pbuf=16 tcp_pcb=168 udp_pcb=40 netconn=52
+DRAM free before tcpip_init: 301684
+DRAM free after  tcpip_init: 298644
+concurrency: udp_fd=63 tcp_fd=-1
+             tcp errno=23 (Too many open files in system)
+heap: udp hold=332B, +tcp hold=0B
+dns localhost -> 0x3ffb32dc
+probe done, restarting

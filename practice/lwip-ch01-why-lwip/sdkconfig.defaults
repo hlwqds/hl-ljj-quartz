@@ -1,0 +1,26 @@
+# lwIP 深度解析（一）实验：最小化 lwIP 配置
+# 生效方式：删除 sdkconfig 后重新 idf.py build（或 idf.py fullclean）
+
+# ---- 连接数上限：全部压到 1 ----
+CONFIG_LWIP_MAX_SOCKETS=1
+CONFIG_LWIP_MAX_ACTIVE_TCP=1
+CONFIG_LWIP_MAX_LISTENING_TCP=1
+CONFIG_LWIP_MAX_UDP_PCBS=1
+CONFIG_LWIP_MAX_RAW_PCBS=1
+
+# ---- TCP 尺寸参数：压到 Kconfig 允许的最小值 ----
+CONFIG_LWIP_TCP_MSS=536
+CONFIG_LWIP_TCP_WND_DEFAULT=2440
+CONFIG_LWIP_TCP_SND_BUF_DEFAULT=2440
+
+# ---- 邮箱与任务：tcpip 收件箱降到下限 6，栈降到下限 2048 ----
+CONFIG_LWIP_TCPIP_RECVMBOX_SIZE=6
+CONFIG_LWIP_TCPIP_TASK_STACK_SIZE=2048
+
+# ---- 关闭用不到的协议族与校验 ----
+# CONFIG_LWIP_IPV6 is not set
+# CONFIG_LWIP_CHECKSUM_CHECK_ICMP is not set
+
+# ---- 第三组配置追加：观察统计账本与任务清单 ----
+CONFIG_LWIP_STATS=y
+CONFIG_FREERTOS_USE_TRACE_FACILITY=y

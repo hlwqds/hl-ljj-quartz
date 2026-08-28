@@ -1,0 +1,7 @@
+# OpenCores Ethernet MAC 驱动（仅用于 QEMU 仿真，真机不可用）
+CONFIG_ETH_USE_OPENETH=y
+# 打开 lwIP 协议栈统计：stats_display() 与 snap-diff 的物质基础
+CONFIG_LWIP_STATS=y
+# 病灶复现节奏：SYN 重传上限拉低，让"静默丢弃"的 connect 在数秒内判死
+# （Kconfig 名：LWIP_TCP_SYNMAXRTX，默认 12（HIGH_SPEED_RETRANSMISSION 开））
+CONFIG_LWIP_TCP_SYNMAXRTX=4

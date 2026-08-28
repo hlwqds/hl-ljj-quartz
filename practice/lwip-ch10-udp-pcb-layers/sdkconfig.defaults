@@ -1,0 +1,12 @@
+# lwIP 深度解析（十）默认构建：三层 API 基准 + 邮箱观察 + 注入实验。
+# PHASE C 对照变体见 sdkconfig.defaults.pcblow（仅 MAX_UDP_PCBS 一行不同）。
+
+# OpenCores Ethernet MAC 驱动（仅用于 QEMU 仿真，真机不可用）
+CONFIG_ETH_USE_OPENETH=y
+
+# 观察用计数器与上限
+CONFIG_LWIP_STATS=y
+CONFIG_LWIP_MAX_SOCKETS=16
+CONFIG_LWIP_MAX_UDP_PCBS=16
+CONFIG_LWIP_UDP_RECVMBOX_SIZE=6
+CONFIG_LWIP_CHECKSUM_CHECK_UDP=y

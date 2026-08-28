@@ -1,0 +1,11 @@
+$$$ NTPREADY kind=ntp port=8260 host_utc=2026-08-27T05:32:07.433Z
+NTP-ALL slots=all waiting ...（Ctrl-C 结束；8261 保持无监听——那是固件空端口探针的对象）
+$$$ NTPREADY kind=reflector port=8262 host_utc=2026-08-27T05:32:07.433Z
+NTP-REQ ts=2026-08-27T05:32:23.603243Z peer=127.0.0.1:43748 li=0 vn=4 mode=3 len=48 OK
+NTP-RSP peer=127.0.0.1:43748 bytes=48 xmit_epoch=1787808743.603326 srv_processing_us=83
+NTP-ECHO peer=127.0.0.1:58319 len=12 head=4558303753454c4654455354 magic="?" rx_bytes=12 tx_bytes=12 allzero=False
+NTP-ECHO peer=127.0.0.1:43974 len=48 head=234200004558303750524f4245207365713d6131 magic="EX07PROBE " rx_bytes=60 tx_bytes=60 allzero=False
+NTP-REQ ts=2026-08-27T05:32:42.214543Z peer=127.0.0.1:35592 li=0 vn=4 mode=3 len=48 OK
+NTP-RSP peer=127.0.0.1:35592 bytes=48 xmit_epoch=1787808762.214642 srv_processing_us=99
+NTP-REQ ts=2026-08-27T05:33:02.214515Z peer=127.0.0.1:35592 li=0 vn=4 mode=3 len=48 OK
+NTP-RSP peer=127.0.0.1:35592 bytes=48 xmit_epoch=1787808782.214640 srv_processing_us=124

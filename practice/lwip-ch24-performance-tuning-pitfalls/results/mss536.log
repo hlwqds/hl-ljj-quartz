@@ -1,0 +1,9 @@
+== point mss536 rounds=2 06:54:11 ==
+--- round 1 ---
+--- round 2 ---
+[fw] $$$ LBRTT ok=200/200 size=512 avg_rtt_us=537 min=435 max=2189
+[fw] $$$ LBTH ack_r=0 bytes=4000000 elapsed_us=825952 mbit=38.74
+[fw] $$$ LBRTT ok=200/200 size=512 avg_rtt_us=770 min=429 max=2794
+[fw] $$$ LBTH ack_r=0 bytes=4000000 elapsed_us=844463 mbit=37.89
+[fw] $$$ MEM on-cmd free=196688 largest=110592 min_ever=144636
+$$$ BUILD 06:54:02 sndbuf=5760 wnd=5760 mss=536 tcpip_mbox=32 pbuf_pool=16

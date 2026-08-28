@@ -1,0 +1,8 @@
+listening on :8006 conns=6 usleep_us=0
+HOST-DONE conn#1 addr=127.0.0.1:42292 bytes=10485760 dur=0.734s mbit=114.22 digest=3c32
+HOST-DONE conn#2 addr=127.0.0.1:42306 bytes=10485760 dur=0.709s mbit=118.27 digest=3c32
+HOST-DONE conn#3 addr=127.0.0.1:42308 bytes=10485760 dur=0.721s mbit=116.30 digest=3c32
+HOST-DONE conn#4 addr=127.0.0.1:42314 bytes=10485760 dur=0.820s mbit=102.31 digest=3c32
+HOST-DONE conn#5 addr=127.0.0.1:42316 bytes=10485760 dur=0.712s mbit=117.83 digest=3c32
+HOST-DONE conn#6 addr=127.0.0.1:42322 bytes=10485760 dur=0.709s mbit=118.38 digest=3c32
+receiver exiting

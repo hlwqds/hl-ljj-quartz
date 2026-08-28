@@ -1,0 +1,11 @@
+== point wnd28k_dma32 rounds=2 07:01:20 ==
+--- round 1 ---
+RESULT kind=thrx mb=4 ack=b'K' secs=0.586 mbit=54.56
+--- round 2 ---
+RESULT kind=thrx mb=4 ack=b'K' secs=0.443 mbit=72.20
+[fw] $$$ LBRTT ok=200/200 size=512 avg_rtt_us=533 min=443 max=1060
+[fw] $$$ LBTH ack_r=0 bytes=4000000 elapsed_us=403253 mbit=79.35
+[fw] $$$ LBRTT ok=200/200 size=512 avg_rtt_us=531 min=421 max=1183
+[fw] $$$ LBTH ack_r=0 bytes=4000000 elapsed_us=314281 mbit=101.82
+[fw] $$$ MEM on-cmd free=161252 largest=86016 min_ever=112048
+$$$ BUILD 07:01:11 sndbuf=5760 wnd=28800 mss=1440 tcpip_mbox=32 pbuf_pool=16

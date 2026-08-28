@@ -1,0 +1,15 @@
+# 必填：OpenCores Ethernet MAC 驱动（仅用于 QEMU openeth 虚拟网卡，真机不可用）
+CONFIG_ETH_USE_OPENETH=y
+
+# 可观测性叠加 1：lwip_stats 全局计数（诊断帧的 LINK/IP/ICMP/TCP 段增量打印依赖）。
+# 关闭后统计段降级为 disabled 提示，场景本体不受影响。
+CONFIG_LWIP_STATS=y
+
+# 可观测性叠加 2：FreeRTOS 任务表 + 栈高水位 + core 归属（ex12 同款三件套）。
+# GENERATE_RUN_TIME_STATS 自动 select TRACE_FACILITY 与 STATS_FORMATTING_FUNCTIONS；
+# run-time 统计时钟默认选 esp_timer（1MHz，µs 计量，约 4290s 才回卷，本示例窗口足够）。
+CONFIG_FREERTOS_USE_TRACE_FACILITY=y
+CONFIG_FREERTOS_VTASKLIST_INCLUDE_COREID=y
+CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS=y
+
+# 注意：修改本文件后必须删除生成的 sdkconfig 重新构建才生效（曾踩坑项）。

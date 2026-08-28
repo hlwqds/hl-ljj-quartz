@@ -1,0 +1,3 @@
+# 案例变体：case4 = 案例 D 流式校验零落地（边收边算 Fletcher32 vs 落地整包再算）
+# 构建方式：SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.case4" idf.py build -B build-case4
+CONFIG_ZC_CASE=4

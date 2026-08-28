@@ -1,0 +1,6 @@
+# OpenCores Ethernet MAC 驱动（仅用于 QEMU 仿真，真机不可用）
+CONFIG_ETH_USE_OPENETH=y
+# 任务清单/任务状态查询需要（IDF v6 默认关）：uxTaskGetSystemState / pcTaskGetName 路径
+CONFIG_FREERTOS_USE_TRACE_FACILITY=y
+# 邮箱时延统计使用 lwIP 计数与 socket 观测
+CONFIG_LWIP_STATS=y

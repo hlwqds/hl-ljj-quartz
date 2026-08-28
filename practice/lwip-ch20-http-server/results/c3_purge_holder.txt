@@ -1,0 +1,5 @@
+[  0.00s] headers sent (POST /small Content-Length: 104857600, real rate 64B/s)
+[  2.00s] send fail: [Errno 32] Broken pipe
+[  2.00s] stopped sending (total body sent=128B); waiting for server reaction ...
+[  2.00s] server says: b'HTTP/1.1 405 Method Not Allowed\r\nContent-Type: text/html\r\nContent-Length: 45\r\n\r\n'
+[  2.00s] FIN from server (session closed)

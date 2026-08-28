@@ -1,0 +1,198 @@
+Adding SPI flash device
+ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x12 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0040,len:6272
+load:0x40078000,len:15820
+load:0x40080400,len:3920
+entry 0x40080644
+I (661) boot: ESP-IDF v6.0.2 2nd stage bootloader
+I (661) boot: compile time Aug 27 2026 00:17:50
+I (661) boot: Multicore bootloader
+I (698) boot: chip revision: v3.0
+I (700) boot.esp32: SPI Speed      : 40MHz
+I (700) boot.esp32: SPI Mode       : DIO
+I (700) boot.esp32: SPI Flash Size : 2MB
+I (705) boot: Enabling RNG early entropy source...
+I (713) boot: Partition Table:
+I (714) boot: ## Label            Usage          Type ST Offset   Length
+I (714) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (714) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (714) boot:  2 factory          factory app      00 00 00010000 00100000
+I (717) boot: End of partition table
+I (745) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=0b70ch ( 46860) map
+I (761) esp_image: segment 1: paddr=0001b734 vaddr=3ffb0000 size=02a1ch ( 10780) load
+I (778) esp_image: segment 2: paddr=0001e158 vaddr=40080000 size=01ec0h (  7872) load
+I (798) esp_image: segment 3: paddr=00020020 vaddr=400d0020 size=1b4a0h (111776) map
+I (826) esp_image: segment 4: paddr=0003b4c8 vaddr=40081ec0 size=08dd8h ( 36312) load
+I (845) esp_image: segment 5: paddr=000442a8 vaddr=50000000 size=00028h (    40) load
+I (889) boot: Loaded app from partition at offset 0x10000
+I (889) boot: Disabling RNG early entropy source...
+I (899) cpu_start: Multicore app
+I (1509) cpu_start: GPIO 3 and 1 are used as console UART I/O pins
+I (1516) cpu_start: Pro cpu start user code
+I (1518) cpu_start: cpu freq: 160000000 Hz
+I (1520) app_init: Application information:
+I (1523) app_init: Project name:     hello_world
+I (1525) app_init: App version:      924d871
+I (1526) app_init: Compile time:     Aug 27 2026 00:17:50
+I (1529) app_init: ELF file SHA256:  168cd9a3c...
+I (1530) app_init: ESP-IDF:          v6.0.2
+I (1532) efuse_init: Min chip rev:     v0.0
+I (1533) efuse_init: Max chip rev:     v3.99 
+I (1536) efuse_init: Chip rev:         v3.0
+I (1540) heap_init: Initializing. RAM available for dynamic allocation:
+I (1541) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM
+I (1541) heap_init: At 3FFB3D38 len 0002C2C8 (176 KiB): DRAM
+I (1542) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM
+I (1542) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM
+I (1542) heap_init: At 4008AC98 len 00015368 (84 KiB): IRAM
+I (1569) spi_flash: detected chip: winbond
+I (1574) spi_flash: flash io: dio
+I (1583) main_task: Started on CPU0
+I (1583) main_task: Calling app_main()
+== ch01 probe: bare protocol-stack core, no netif ==
+sizeof: pbuf=16 tcp_pcb=168 udp_pcb=40 netconn=52
+DRAM free before tcpip_init: 301316
+DRAM free after  tcpip_init: 298228
+-- task inventory (6 tasks) --
+task main           prio  1 stack-hwm   3016
+task IDLE1          prio  0 stack-hwm   1088
+task IDLE0          prio  0 stack-hwm   1092
+task tcpip          prio 18 stack-hwm   1980
+task ipc1           prio 24 stack-hwm    572
+task ipc0           prio 24 stack-hwm    564
+tcpip thread 'tcpip' stack high-water mark: 1980 bytes
+concurrency: udp_fd=63 tcp_fd=-1
+             tcp errno=23 (Too many open files in system)
+heap: udp hold=356B, +tcp hold=0B
+dns localhost -> 0x3ffb3314
+
+LINK
+	xmit: 0
+	recv: 0
+	fw: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 0
+	opterr: 0
+	err: 0
+	cachehit: 0
+
+ETHARP
+	xmit: 0
+	recv: 0
+	fw: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 0
+	opterr: 0
+	err: 0
+	cachehit: 0
+
+IP_FRAG
+	xmit: 0
+	recv: 0
+	fw: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 0
+	opterr: 0
+	err: 0
+	cachehit: 0
+
+IP
+	xmit: 0
+	recv: 0
+	fw: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 0
+	opterr: 0
+	err: 0
+	cachehit: 0
+
+IGMP
+	xmit: 0
+	recv: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	proterr: 0
+	rx_v1: 0
+	rx_group: 0
+	rx_general: 0
+	rx_report: 0
+	tx_join: 0
+	tx_leave: 0
+	tx_report: 0
+
+ICMP
+	xmit: 0
+	recv: 0
+	fw: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 0
+	opterr: 0
+	err: 0
+	cachehit: 0
+
+UDP
+	xmit: 0
+	recv: 0
+	fw: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 0
+	opterr: 0
+	err: 0
+	cachehit: 0
+
+TCP
+	xmit: 0
+	recv: 0
+	fw: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 0
+	opterr: 0
+	err: 0
+	cachehit: 0
+
+SYS
+	sem.used:  0
+	sem.max:   0
+	sem.err:   0
+	mutex.used: 0
+	mutex.max:  0
+	mutex.err:  0
+	mbox.used:  0
+	mbox.max:   0
+	mbox.err:   0
+probe done, restarting

@@ -1,0 +1,2 @@
+# ch02 experiment: enable lwIP statistics for the baseline dump
+CONFIG_LWIP_STATS=y

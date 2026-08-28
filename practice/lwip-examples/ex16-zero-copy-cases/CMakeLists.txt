@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 3.22)
+
+include($ENV{IDF_PATH}/tools/cmake/project.cmake)
+# Trim 构建：只编最小组件集 + main + 其依赖（套件标准形态，ex14/ex15 同款）
+idf_build_set_property(MINIMAL_BUILD ON)
+project(ex16_zero_copy_cases)

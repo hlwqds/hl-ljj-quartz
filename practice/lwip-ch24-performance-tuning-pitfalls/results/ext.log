@@ -1,0 +1,5 @@
+== point ext rounds=2 07:02:18 ==
+--- round 1 ---
+--- round 2 ---
+[fw] $$$ LBRTT ok=200/200 size=512 avg_rtt_us=594 min=476 max=2298
+$$$ BUILD 07:02:08 sndbuf=65535 wnd=65535 mss=1460 tcpip_mbox=32 pbuf_pool=16

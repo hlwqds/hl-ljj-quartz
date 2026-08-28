@@ -1,0 +1,4 @@
+# ex04 udp-echo-bidir —— 最小配置集（SPEC §3：只放必需项）
+# OpenCores Ethernet MAC 驱动（仅 QEMU open_eth 可用，真机不可用）
+CONFIG_ETH_USE_OPENETH=y
+# SO_RCVTIMEO 无需任何开关：IDF 在 port/include/lwipopts.h:1008 硬编码 LWIP_SO_RCVTIMEO=1

@@ -1,0 +1,31 @@
+listening on :8007 conns=1 rate_mbps=2.0
+HOST-RX conn#1 t=  1.028s got=256992 mbit=2.00
+HOST-RX conn#1 t=  2.052s got=512992 mbit=2.00
+HOST-RX conn#1 t=  3.076s got=768992 mbit=2.00
+HOST-RX conn#1 t=  4.100s got=1024992 mbit=2.00
+HOST-RX conn#1 t=  5.124s got=1280992 mbit=2.00
+HOST-RX conn#1 t=  6.148s got=1536992 mbit=2.00
+HOST-RX conn#1 t=  7.172s got=1792992 mbit=2.00
+HOST-RX conn#1 t=  8.196s got=2048992 mbit=2.00
+HOST-RX conn#1 t=  9.220s got=2304992 mbit=2.00
+HOST-RX conn#1 t= 10.244s got=2560992 mbit=2.00
+HOST-RX conn#1 t= 11.268s got=2816992 mbit=2.00
+HOST-RX conn#1 t= 12.292s got=3072992 mbit=2.00
+HOST-RX conn#1 t= 13.316s got=3328992 mbit=2.00
+HOST-RX conn#1 t= 14.340s got=3584992 mbit=2.00
+HOST-RX conn#1 t= 15.364s got=3840992 mbit=2.00
+HOST-RX conn#1 t= 16.388s got=4096992 mbit=2.00
+HOST-RX conn#1 t= 17.412s got=4352992 mbit=2.00
+HOST-RX conn#1 t= 18.436s got=4608992 mbit=2.00
+HOST-RX conn#1 t= 19.460s got=4864992 mbit=2.00
+HOST-RX conn#1 t= 20.484s got=5120992 mbit=2.00
+HOST-RX conn#1 t= 21.508s got=5376992 mbit=2.00
+HOST-RX conn#1 t= 22.532s got=5632992 mbit=2.00
+HOST-RX conn#1 t= 23.556s got=5888992 mbit=2.00
+HOST-RX conn#1 t= 24.580s got=6144992 mbit=2.00
+HOST-RX conn#1 t= 25.604s got=6400992 mbit=2.00
+HOST-RX conn#1 t= 26.628s got=6656992 mbit=2.00
+HOST-RX conn#1 t= 27.652s got=6912992 mbit=2.00
+HOST-RX conn#1 t= 28.676s got=7168992 mbit=2.00
+HOST-DONE conn#1 addr=127.0.0.1:43680 bytes=7213352 dur=28.852s mbit=2.00 digest=21b0
+receiver exiting

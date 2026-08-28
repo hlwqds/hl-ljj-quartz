@@ -1,0 +1,16 @@
+menu "lwIP ch12 lab"
+
+config CH12_SWEEP_ONLY
+    bool "Run only the window-sweep transfer (experiment c)"
+    default n
+    help
+        Skip the loss-injection and Nagle phases and run a single
+        bulk transfer against port 8012 with fixed random frame drops,
+        for the SND_BUF/WND sweep builds.
+
+config CH12_SWEEP_LOSS_PCT
+    int "Frame drop percentage during the window-sweep transfer"
+    range 0 90
+    default 3
+
+endmenu

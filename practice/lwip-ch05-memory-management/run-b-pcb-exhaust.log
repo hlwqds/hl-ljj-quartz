@@ -1,0 +1,411 @@
+Adding SPI flash device
+ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x12 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0040,len:6272
+load:0x40078000,len:15820
+load:0x40080400,len:3920
+entry 0x40080644
+I (671) boot: ESP-IDF v6.0.2 2nd stage bootloader
+I (672) boot: compile time Aug 27 2026 00:52:57
+I (672) boot: Multicore bootloader
+I (712) boot: chip revision: v3.0
+I (714) boot.esp32: SPI Speed      : 40MHz
+I (714) boot.esp32: SPI Mode       : DIO
+I (714) boot.esp32: SPI Flash Size : 2MB
+I (724) boot: Enabling RNG early entropy source...
+I (730) boot: Partition Table:
+I (731) boot: ## Label            Usage          Type ST Offset   Length
+I (731) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (731) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (731) boot:  2 factory          factory app      00 00 00010000 00100000
+I (736) boot: End of partition table
+I (779) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=108a4h ( 67748) map
+I (804) esp_image: segment 1: paddr=000208cc vaddr=3ffb0000 size=02acch ( 10956) load
+I (818) esp_image: segment 2: paddr=000233a0 vaddr=40080000 size=0b23ch ( 45628) load
+I (845) esp_image: segment 3: paddr=0002e5e4 vaddr=50000000 size=00028h (    40) load
+I (860) esp_image: segment 4: paddr=0002e614 vaddr=00000000 size=01a04h (  6660) 
+I (878) esp_image: segment 5: paddr=00030020 vaddr=400d0020 size=2ace0h (175328) map
+I (951) boot: Loaded app from partition at offset 0x10000
+I (951) boot: Disabling RNG early entropy source...
+I (963) cpu_start: Multicore app
+I (1621) cpu_start: GPIO 3 and 1 are used as console UART I/O pins
+I (1623) cpu_start: Pro cpu start user code
+I (1623) cpu_start: cpu freq: 160000000 Hz
+I (1624) app_init: Application information:
+I (1624) app_init: Project name:     lwip_ch05_memory_management
+I (1624) app_init: App version:      924d871
+I (1624) app_init: Compile time:     Aug 27 2026 00:52:55
+I (1624) app_init: ELF file SHA256:  78a50c55d...
+I (1624) app_init: ESP-IDF:          v6.0.2
+I (1624) efuse_init: Min chip rev:     v0.0
+I (1624) efuse_init: Max chip rev:     v3.99 
+I (1625) efuse_init: Chip rev:         v3.0
+I (1625) heap_init: Initializing. RAM available for dynamic allocation:
+I (1626) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM
+I (1626) heap_init: At 3FFB4080 len 0002BF80 (175 KiB): DRAM
+I (1626) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM
+I (1626) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM
+I (1627) heap_init: At 4008B23C len 00014DC4 (83 KiB): IRAM
+I (1660) spi_flash: detected chip: winbond
+I (1664) spi_flash: flash io: dio
+I (1678) main_task: Started on CPU0
+I (1678) main_task: Calling app_main()
+I (1678) ch5lab: == ch5 lab: memory pools / heap / exhaustion injections ==
+tcp_bind: bind to port 8888
+I (1688) ch5lab: echo server listening on 0.0.0.0:8888
+[MARKER] ECHO_READY_PORT_8888
+I (1708) esp_eth.netif.netif_glue: 52:54:00:12:34:56
+I (1708) esp_eth.netif.netif_glue: ethernet attached to netif
+E (1808) esp_eth: esp_eth_ioctl(533): add mac address to filter not supported
+E (1808) esp_eth.netif.netif_glue: eth_set_mac_filter(56): failed to add mac filter
+E (1808) esp_netif_lwip: Failed to add multicast filter for IPv4
+I (1808) ch5lab: ETH_EVENT: CONNECTED (link up)
+I (1808) ch5lab: waiting for DHCP lease ...
+I (2808) ch5lab: GOT_IP: 10.0.2.15/255.255.255.0 gw 10.0.2.2
+I (2808) esp_netif_handlers: eth ip: 10.0.2.15, mask: 255.255.255.0, gw: 10.0.2.2
+[MARKER] ===== PHASE-A idle memory census =====
+[heap] idle-after-dhcp  free=269712 largest=147456 min-ever=267680
+[heap-total] idle-after-dhcp free=269712
+[MARKER] ===== census: per-caps memory ledger =====
+[caps] INTERNAL  total= 400884 free= 354260 largest= 147456 min-ever= 352228
+[caps] INT|8BIT  total= 315440 free= 269712 largest= 147456 min-ever= 267680
+[caps] DMA       total= 315440 free= 269712 largest= 147456 min-ever= 267680
+[caps] DEFAULT   total= 315440 free= 269712 largest= 147456 min-ever= 267680
+[cfg] MEM_LIBC_MALLOC=1 MEMP_MEM_MALLOC=1 MEM_ALIGNMENT=4 (MEM_USE_POOLS=0)
+[cfg] CONFIG_LWIP_MAX_ACTIVE_TCP=2 CONFIG_LWIP_MAX_SOCKETS=10 TCP_MSS=1440 TCP_SND_BUF=5760 TCP_WND=5760 TCPIP_MBOX_SIZE=32 PBUF_POOL_SIZE=16
+[MARKER] ----- stats_display(): expect NO MEM/MEMP section -----
+
+LINK
+	xmit: 1
+	recv: 1
+	fw: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 0
+	opterr: 0
+	err: 0
+	cachehit: 0
+
+ETHARP
+	xmit: 3
+	recv: 0
+	fw: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 0
+	opterr: 0
+	err: 0
+	cachehit: 0
+
+IP_FRAG
+	xmit: 0
+	recv: 0
+	fw: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 0
+	opterr: 0
+	err: 0
+	cachehit: 0
+
+IPv6 FRAG
+	xmit: 0
+	recv: 0
+	fw: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 0
+	opterr: 0
+	err: 0
+	cachehit: 0
+
+IP
+	xmit: 2
+	recv: 2
+	fw: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 0
+	opterr: 0
+	err: 0
+	cachehit: 0
+
+ND
+	xmit: 1
+	recv: 0
+	fw: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 0
+	opterr: 0
+	err: 0
+	cachehit: 0
+
+IPv6
+	xmit: 1
+	recv: 1
+	fw: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 0
+	opterr: 0
+	err: 0
+	cachehit: 0
+
+IGMP
+	xmit: 0
+	recv: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	proterr: 0
+	rx_v1: 0
+	rx_group: 0
+	rx_general: 0
+	rx_report: 0
+	tx_join: 0
+	tx_leave: 0
+	tx_report: 0
+
+MLDv1
+	xmit: 0
+	recv: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	proterr: 0
+	rx_v1: 0
+	rx_group: 0
+	rx_general: 0
+	rx_report: 0
+	tx_join: 0
+	tx_leave: 0
+	tx_report: 0
+
+ICMP
+	xmit: 0
+	recv: 0
+	fw: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 0
+	opterr: 0
+	err: 0
+	cachehit: 0
+
+ICMPv6
+	xmit: 0
+	recv: 0
+	fw: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 0
+	opterr: 0
+	err: 0
+	cachehit: 0
+
+UDP
+	xmit: 2
+	recv: 2
+	fw: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 0
+	opterr: 0
+	err: 0
+	cachehit: 2
+
+TCP
+	xmit: 0
+	recv: 0
+	fw: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 0
+	opterr: 0
+	err: 0
+	cachehit: 0
+
+SYS
+	sem.used:  0
+	sem.max:   0
+	sem.err:   0
+	mutex.used: 0
+	mutex.max:  0
+	mutex.err:  0
+	mbox.used:  0
+	mbox.max:   0
+	mbox.err:   0
+[MARKER] ----------------------------------------------
+Heap summary for capabilities 0x00000800:
+  At 0x3ffae6e0 len 6432 free 24 allocated 5848 min_free 4
+    largest_free_block 16 alloc_blocks 45 free_blocks 1 total_blocks 46
+  At 0x3ffe0440 len 15072 free 6316 allocated 8320 min_free 6316
+    largest_free_block 6144 alloc_blocks 5 free_blocks 1 total_blocks 6
+  At 0x4008b23c len 85444 free 84548 allocated 20 min_free 84548
+    largest_free_block 81920 alloc_blocks 1 free_blocks 1 total_blocks 2
+  At 0x3ffe4350 len 113840 free 112968 allocated 0 min_free 112968
+    largest_free_block 110592 alloc_blocks 0 free_blocks 1 total_blocks 1
+  At 0x3ffb4080 len 180096 free 150404 allocated 28516 min_free 148392
+    largest_free_block 147456 alloc_blocks 59 free_blocks 4 total_blocks 63
+  Totals:
+    free 354260 allocated 42704 min_free 352228 largest_free_block 147456
+[MARKER] ===== PHASE-B window open: fire >=5 concurrent connections at port 8888 =====
+[MARKER] SLIM_MODE: max_active_tcp=2, watch where SYN #3.. gets rejected
+TCP connection request 32772 -> 8888.
+W (9488) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+TCP connection request 32776 -> 8888.
+TCP connection request 32792 -> 8888.
+tcp_alloc: killing off oldest TIME-WAIT connection
+tcp_alloc: killing off oldest LAST-ACK connection
+tcp_alloc: killing off oldest CLOSING connection
+tcp_alloc: killing off oldest FIN_WAIT_2 connection
+tcp_alloc: killing off oldest FIN_WAIT_1 connection
+tcp_alloc: killing oldest connection with prio lower than 64
+tcp_listen_input: could not allocate PCB
+TCP connection request 32794 -> 8888.
+tcp_alloc: killing off oldest TIME-WAIT connection
+tcp_alloc: killing off oldest LAST-ACK connection
+tcp_alloc: killing off oldest CLOSING connection
+tcp_alloc: killing off oldest FIN_WAIT_2 connection
+tcp_alloc: killing off oldest FIN_WAIT_1 connection
+tcp_alloc: killing oldest connection with prio lower than 64
+tcp_listen_input: could not allocate PCB
+E (9488) ch5lab: accept failed errno=113
+TCP connection established 32772 -> 8888.
+TCP connection established 32776 -> 8888.
+E (9588) ch5lab: accept failed errno=113
+[echo] #1 ACCEPT from 10.0.2.2:32772
+[heap] on-accept        free=265788 largest=139264 min-ever=257928
+tcp_recved: received 7 bytes, wnd 5760 (0).
+tcp_close: closing in State: CLOSE_WAIT
+TCP connection closed: LAST_ACK 32772 -> 8888.
+tcp_pcb_purge
+[echo] #1 CLOSE served_rounds=1 bytes=7
+[heap] on-close         free=265924 largest=139264 min-ever=257928
+[netstat] post-close   link.recv=2 link.drop=0 ip.recv=14 ip.drop=0 tcp.recv=12 tcp.xmit=6 tcp.memerr=2 udp.recv=2 sys.sem.used=0 sys.mutex.used=0 sys.mbox.used=0
+[echo] #2 ACCEPT from 10.0.2.2:32776
+[heap] on-accept        free=267740 largest=139264 min-ever=257928
+tcp_recved: received 7 bytes, wnd 5760 (0).
+tcp_close: closing in State: CLOSE_WAIT
+[echo] #2 CLOSE served_rounds=1 bytes=7
+TCP connection closed: LAST_ACK 32776 -> 8888.
+tcp_pcb_purge
+[heap] on-close         free=269692 largest=147456 min-ever=257928
+[netstat] post-close   link.recv=2 link.drop=0 ip.recv=16 ip.drop=0 tcp.recv=14 tcp.xmit=8 tcp.memerr=2 udp.recv=2 sys.sem.used=0 sys.mutex.used=0 sys.mbox.used=0
+tcp_slowtmr: no active pcbs
+TCP connection request 32810 -> 8888.
+TCP connection request 32804 -> 8888.
+TCP connection request 32794 -> 8888.
+tcp_alloc: killing off oldest TIME-WAIT connection
+tcp_alloc: killing off oldest LAST-ACK connection
+tcp_alloc: killing off oldest CLOSING connection
+tcp_alloc: killing off oldest FIN_WAIT_2 connection
+tcp_alloc: killing off oldest FIN_WAIT_1 connection
+tcp_alloc: killing oldest connection with prio lower than 64
+tcp_listen_input: could not allocate PCB
+TCP connection request 32792 -> 8888.
+tcp_alloc: killing off oldest TIME-WAIT connection
+tcp_alloc: killing off oldest LAST-ACK connectiW (15488) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+on
+tcp_alloc: killing off oldest CLOSING connection
+tcp_alloc: killing off oldest FIN_WAIT_2 connection
+tcp_alloc: killing off oldest FIN_WAIT_1 connection
+tcp_alloc: killing oldest connection with prio lower than 64
+tcp_listen_input: could not allocate PCB
+TCP connection established 32810 -> 8888.
+E (15488) ch5lab: accept failed errno=113
+TCP connection established 32804 -> 8888.
+E (15588) ch5lab: accept failed errno=113
+[echo] #3 ACCEPT from 10.0.2.2:32810
+[heap] on-accept        free=265788 largest=139264 min-ever=257928
+tcp_recved: received 7 bytes, wnd 5760 (0).
+tcp_close: closing in State: CLOSE_WAIT
+[echo] #3 CLOSE served_rounds=1 bytes=7
+TCP connection closed: LAST_ACK 32810 -> 8888.
+[heap] on-close         free=265924 largest=139264 min-ever=257928
+tcp_pcb_purge
+[netstat] post-close   link.recv=3 link.drop=0 ip.recv=27 ip.drop=0 tcp.recv=25 tcp.xmit=13 tcp.memerr=4 udp.recv=2 sys.sem.used=0 sys.mutex.used=0 sys.mbox.used=0
+[echo] #4 ACCEPT from 10.0.2.2:32804
+[heap] on-accept        free=267740 largest=139264 min-ever=257928
+tcp_recved: received 7 bytes, wnd 5760 (0).
+tcp_close: closing in State: CLOSE_WAIT
+TCP connection closed: LAST_ACK 32804 -> 8888.
+tcp_pcb_purge
+[echo] #4 CLOSE served_rounds=1 bytes=7
+[heap] on-close         free=269692 largest=147456 min-ever=257928
+[netstat] post-close   link.recv=3 link.drop=0 ip.recv=29 ip.drop=0 tcp.recv=27 tcp.xmit=16 tcp.memerr=4 udp.recv=2 sys.sem.used=0 sys.mutex.used=0 sys.mbox.used=0
+TCP connection request 46924 -> 8888.
+TCP connection established 46924 -> 8888.
+[echo] #5 ACCEPT from 10.0.2.2:46924
+[heap] on-accept        free=269312 largest=147456 min-ever=257928
+tcp_recved: received 14 bytes, wnd 5760 (0).
+tcp_close: closing in State: CLOSE_WAIT
+TCP connection closed: LAST_ACK 46924 -> 8888.
+[echo] #5 CLOSE served_rounds=1 bytes=14
+tcp_pcb_purge
+[heap] on-close         free=269692 largest=147456 min-ever=257928
+[netstat] post-close   link.recv=3 link.drop=0 ip.recv=35 ip.drop=0 tcp.recv=33 tcp.xmit=20 tcp.memerr=4 udp.recv=2 sys.sem.used=0 sys.mutex.used=0 sys.mbox.used=0
+tcp_slowtmr: no active pcbs
+TCP connection request 32794 -> 8888.
+TCP connection request 32792 -> 8888.
+TCP connection established 32794 -> 8888.
+TCP connection established 32792 -> 8888.
+[echo] #6 ACCEPT from 10.0.2.2:32794
+[heap] on-accept        free=268932 largest=147456 min-ever=257928
+tcp_recved: received 7 bytes, wnd 5760 (0).
+tcp_close: closing in State: CLOSE_WAIT
+[echo] #6 CLOSE served_rounds=1 bytes=7
+TCP connection closed: LAST_ACK 32794 -> 8888.
+tcp_pcb_purge
+[heap] on-close         free=267740 largest=139264 min-ever=257928
+[netstat] post-close   link.recv=3 link.drop=0 ip.recv=45 ip.drop=0 tcp.recv=43 tcp.xmit=26 tcp.memerr=4 udp.recv=2 sys.sem.used=0 sys.mutex.used=0 sys.mbox.used=0
+[echo] #7 ACCEPT from 10.0.2.2:32792
+[heap] on-accept        free=267740 largest=139264 min-ever=257928
+tcp_recved: received 7 bytes, wnd 5760 (0).
+tcp_close: closing in State: CLOSE_WAIT
+[echo] #7 CLOSE served_rounds=1 bytes=7
+TCP connection closed: LAST_ACK 32792 -> 8888.
+tcp_pcb_purge
+[heap] on-close         free=269692 largest=147456 min-ever=257928
+[netstat] post-close   link.recv=3 link.drop=0 ip.recv=47 ip.drop=0 tcp.recv=45 tcp.xmit=28 tcp.memerr=4 udp.recv=2 sys.sem.used=0 sys.mutex.used=0 sys.mbox.used=0
+I (62818) main_task: Returned from app_main()

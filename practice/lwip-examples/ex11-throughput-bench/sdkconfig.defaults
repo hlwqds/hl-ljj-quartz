@@ -1,0 +1,10 @@
+# ex11 默认档（base）：SND_BUF/WND 保持小窗基线，与 ch24 base 口径对齐便于横向比较。
+# ⚠ 若你改过 sdkconfig（或切过 wide 档），换档时必须 `rm sdkconfig` 后重新构建——
+#   sdkconfig.defaults 只在 sdkconfig 不存在时生效，残留旧值会静默吃掉新配置。
+CONFIG_ETH_USE_OPENETH=y
+# 观测开关（SPEC §3 允许按需叠加并注明）：吞吐基准要能报 tcp.memerr / link 计数。
+CONFIG_LWIP_STATS=y
+# 与 ch24 base 相同的三件旋钮：5760/5760 + MSS 1440（基线口径）。
+CONFIG_LWIP_TCP_SND_BUF_DEFAULT=5760
+CONFIG_LWIP_TCP_WND_DEFAULT=5760
+CONFIG_LWIP_TCP_MSS=1440

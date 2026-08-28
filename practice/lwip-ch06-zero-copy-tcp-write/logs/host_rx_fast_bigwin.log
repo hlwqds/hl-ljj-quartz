@@ -1,0 +1,9 @@
+listening on :8006 conns=6 rate_mbps=0
+HOST-DONE conn#1 addr=127.0.0.1:32912 bytes=10485760 dur=0.741s mbit=113.26 digest=3c32
+HOST-DONE conn#2 addr=127.0.0.1:32924 bytes=10485760 dur=0.687s mbit=122.08 digest=3c32
+HOST-DONE conn#3 addr=127.0.0.1:32938 bytes=10485760 dur=0.659s mbit=127.35 digest=3c32
+HOST-RX conn#4 t=  1.751s got=10485760 mbit=47.92
+HOST-DONE conn#4 addr=127.0.0.1:52066 bytes=10485760 dur=1.749s mbit=47.96 digest=3c32
+HOST-DONE conn#5 addr=127.0.0.1:52076 bytes=10485760 dur=0.693s mbit=121.09 digest=3c32
+HOST-DONE conn#6 addr=127.0.0.1:52080 bytes=10485760 dur=0.639s mbit=131.25 digest=3c32
+receiver exiting

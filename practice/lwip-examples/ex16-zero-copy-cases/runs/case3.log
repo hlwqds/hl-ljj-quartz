@@ -1,0 +1,101 @@
+Adding SPI flash device
+ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x12 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0040,len:6272
+load:0x40078000,len:15820
+load:0x40080400,len:3920
+entry 0x40080644
+I (664) boot: ESP-IDF v6.0.2 2nd stage bootloader
+I (665) boot: compile time Aug 27 2026 22:24:31
+I (665) boot: Multicore bootloader
+I (706) boot: chip revision: v0.0
+I (707) boot.esp32: SPI Speed      : 40MHz
+I (707) boot.esp32: SPI Mode       : DIO
+I (707) boot.esp32: SPI Flash Size : 2MB
+I (715) boot: Enabling RNG early entropy source...
+I (722) boot: Partition Table:
+I (722) boot: ## Label            Usage          Type ST Offset   Length
+I (722) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (722) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (722) boot:  2 factory          factory app      00 00 00010000 00100000
+I (727) boot: End of partition table
+I (786) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=1026ch ( 66156) map
+I (813) esp_image: segment 1: paddr=00020294 vaddr=3ffb0000 size=0382ch ( 14380) load
+I (836) esp_image: segment 2: paddr=00023ac8 vaddr=40080000 size=0b23ch ( 45628) load
+I (868) esp_image: segment 3: paddr=0002ed0c vaddr=50000000 size=00028h (    40) load
+I (904) esp_image: segment 4: paddr=0002ed3c vaddr=00000000 size=012dch (  4828) 
+I (922) esp_image: segment 5: paddr=00030020 vaddr=400d0020 size=2d2c0h (185024) map
+I (996) boot: Loaded app from partition at offset 0x10000
+I (997) boot: Disabling RNG early entropy source...
+I (1010) cpu_start: Multicore app
+I (1727) cpu_start: GPIO 3 and 1 are used as console UART I/O pins
+I (1729) cpu_start: Pro cpu start user code
+I (1729) cpu_start: cpu freq: 160000000 Hz
+I (1729) app_init: Application information:
+I (1729) app_init: Project name:     ex16_zero_copy_cases
+I (1729) app_init: App version:      924d871-dirty
+I (1729) app_init: Compile time:     Aug 27 2026 23:09:41
+I (1730) app_init: ELF file SHA256:  03bb40bf3...
+I (1730) app_init: ESP-IDF:          v6.0.2
+I (1730) efuse_init: Min chip rev:     v0.0
+I (1730) efuse_init: Max chip rev:     v3.99 
+I (1730) efuse_init: Chip rev:         v0.0
+I (1730) heap_init: Initializing. RAM available for dynamic allocation:
+I (1731) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM
+I (1731) heap_init: At 3FFC12B8 len 0001ED48 (123 KiB): DRAM
+I (1731) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM
+I (1731) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM
+I (1731) heap_init: At 4008B23C len 00014DC4 (83 KiB): IRAM
+I (1762) spi_flash: detected chip: winbond
+I (1765) spi_flash: flash io: dio
+I (1775) main_task: Started on CPU0
+I (1775) main_task: Calling app_main()
+
+=== ex16 zero-copy-cases | build Aug 27 2026 23:09:42 ===
+$$$ EX16-FACT build="Aug 27 2026 23:09:42" case=3 idf_lwip_port='TX_SINGLE_PBUF hardcoded=1' target='esp32' reflector=0 rounds_per_stage=1200 block=300 rec_body=1024 b_hdr=16 b_body=512 c_msg=256 c_msgs=400 c_passes=5 d_arena=114688 trace_facility=1 lwip_stats=0
+I (1795) esp_eth.netif.netif_glue: 52:54:00:12:34:56
+I (1795) esp_eth.netif.netif_glue: ethernet attached to netif
+E (1895) esp_eth: esp_eth_ioctl(533): add mac address to filter not supported
+E (1895) esp_eth.netif.netif_glue: eth_set_mac_filter(56): failed to add mac filter
+E (1895) esp_netif_lwip: Failed to add multicast filter for IPv4
+I (1895) ex16: [t=163 ms] ETH_EVENT CONNECTED
+I (1895) ex16: waiting for DHCP lease ...
+I (2895) ex16: [t=1162 ms] IP_EVENT GOT_IP: ip 10.0.2.15 gw 10.0.2.2
+I (2895) esp_netif_handlers: eth ip: 10.0.2.15, mask: 255.255.255.0, gw: 10.0.2.2
+$$$ EXREADY case=3 ip=10.0.2.15 gw=10.0.2.2 dst=127.0.0.1:8330 self_target_forbidden=10.0.2.15 note='Batch8: own-IP as dst wedges tcpip'
+$$$ EX16-CFG case=C msg_len=256 msgs_per_pass=400 passes=5 layers='raw,netconn,socket' interleave='layer round-robin'
+EX16-SRVUP layer=netconn port=8333
+EX16-SRVUP layer=socket port=8334
+EX16-CLICONN who=C-raw dst=127.0.0.1:8332
+EX16-HEAP at=case-C begin free=204372 largest=110592 min_ever=204104
+EX16-STAGE name=C-pass pass=1/5 order=raw,netconn,socket
+EX16-HEAP at=after-raw free=202180 largest=110592 min_ever=200200
+EX16-HEAP at=after-netconn free=202456 largest=110592 min_ever=198956
+EX16-HEAP at=after-socket free=202812 largest=110592 min_ever=198956
+EX16-STAGE name=C-pass pass=2/5 order=raw,netconn,socket
+EX16-HEAP at=after-raw free=200576 largest=110592 min_ever=198640
+EX16-HEAP at=after-netconn free=202452 largest=110592 min_ever=197392
+EX16-HEAP at=after-socket free=202808 largest=110592 min_ever=197392
+EX16-STAGE name=C-pass pass=3/5 order=raw,netconn,socket
+EX16-HEAP at=after-raw free=200576 largest=110592 min_ever=197392
+EX16-HEAP at=after-netconn free=202352 largest=110592 min_ever=197392
+EX16-HEAP at=after-socket free=202712 largest=110592 min_ever=197392
+EX16-STAGE name=C-pass pass=4/5 order=raw,netconn,socket
+EX16-HEAP at=after-raw free=202136 largest=110592 min_ever=197392
+EX16-HEAP at=after-netconn free=202452 largest=110592 min_ever=197392
+EX16-HEAP at=after-socket free=202808 largest=110592 min_ever=197392
+EX16-STAGE name=C-pass pass=5/5 order=raw,netconn,socket
+EX16-HEAP at=after-raw free=200220 largest=110592 min_ever=197392
+EX16-HEAP at=after-netconn free=202456 largest=110592 min_ever=197392
+EX16-HEAP at=after-socket free=202812 largest=110592 min_ever=197392
+$$$ EX16-SAMPLE who=C-raw-loopback med_us=301 p95_us=390 min=154 max=7253 n=1200
+$$$ EX16-SAMPLE who=C-netconn-loopback med_us=333 p95_us=578 min=268 max=2516 n=1200
+$$$ EX16-SAMPLE who=C-socket-loopback med_us=442 p95_us=782 min=372 max=2368 n=1200
+$$$ EX16-RESULT case=C kind=triad raw_med_us=301 netconn_med_us=333 socket_med_us=442 nc_over_raw_x=1.11 sock_over_raw_x=1.47 sock_over_nc_x=1.33 n_raw=1200 n_nc=1200 n_sk=1200
+EX16-HEAP at=case-C end free=205500 largest=110592 min_ever=197392
+$$$ EXDONE case=3(layer-tax) result=ok dur_ms=2564 fail=0
+qemu-system-xtensa: terminating on signal 15 from pid 74091 (timeout)

@@ -1,0 +1,4 @@
+listening on :8012 mode=bulk conns=2
+HOST-DONE conn#1 addr=127.0.0.1:51182 bytes=1286944 dur=99.998s mbit=0.10
+HOST-DONE conn#2 addr=127.0.0.1:43686 bytes=0 dur=0.000s mbit=0.00
+receiver exiting

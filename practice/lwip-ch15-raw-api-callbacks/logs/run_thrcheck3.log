@@ -1,0 +1,79 @@
+Adding SPI flash device
+ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x12 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0040,len:6272
+load:0x40078000,len:15820
+load:0x40080400,len:3920
+entry 0x40080644
+I (675) boot: ESP-IDF v6.0.2 2nd stage bootloader
+I (676) boot: compile time Aug 27 2026 02:30:13
+I (676) boot: Multicore bootloader
+I (722) boot: chip revision: v3.0
+I (723) boot.esp32: SPI Speed      : 40MHz
+I (723) boot.esp32: SPI Mode       : DIO
+I (723) boot.esp32: SPI Flash Size : 2MB
+I (732) boot: Enabling RNG early entropy source...
+I (739) boot: Partition Table:
+I (740) boot: ## Label            Usage          Type ST Offset   Length
+I (740) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (740) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (740) boot:  2 factory          factory app      00 00 00010000 00100000
+I (745) boot: End of partition table
+I (794) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=0f54ch ( 62796) map
+I (826) esp_image: segment 1: paddr=0001f574 vaddr=3ffb0000 size=00aa4h (  2724) load
+I (850) esp_image: segment 2: paddr=00020020 vaddr=400d0020 size=2ae60h (175712) map
+I (887) esp_image: segment 3: paddr=0004ae88 vaddr=3ffb0aa4 size=02028h (  8232) load
+I (914) esp_image: segment 4: paddr=0004ceb8 vaddr=40080000 size=0b23ch ( 45628) load
+I (951) esp_image: segment 5: paddr=000580fc vaddr=50000000 size=00028h (    40) load
+I (1029) boot: Loaded app from partition at offset 0x10000
+I (1029) boot: Disabling RNG early entropy source...
+I (1049) cpu_start: Multicore app
+I (1791) cpu_start: GPIO 3 and 1 are used as console UART I/O pins
+I (1793) cpu_start: Pro cpu start user code
+I (1793) cpu_start: cpu freq: 160000000 Hz
+I (1793) app_init: Application information:
+I (1793) app_init: Project name:     lwip_ch15_raw_api_callbacks
+I (1794) app_init: App version:      924d871
+I (1794) app_init: Compile time:     Aug 27 2026 02:54:44
+I (1794) app_init: ELF file SHA256:  b6e011703...
+I (1794) app_init: ESP-IDF:          v6.0.2
+I (1794) efuse_init: Min chip rev:     v0.0
+I (1794) efuse_init: Max chip rev:     v3.99 
+I (1794) efuse_init: Chip rev:         v3.0
+I (1795) heap_init: Initializing. RAM available for dynamic allocation:
+I (1795) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM
+I (1795) heap_init: At 3FFB49F0 len 0002B610 (173 KiB): DRAM
+I (1796) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM
+I (1796) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM
+I (1796) heap_init: At 4008B23C len 00014DC4 (83 KiB): IRAM
+I (1828) spi_flash: detected chip: winbond
+I (1833) spi_flash: flash io: dio
+I (1843) main_task: Started on CPU0
+I (1843) main_task: Calling app_main()
+I (1843) ch15lab: == ch15 lab: raw tcp callbacks / retval protocol / faults ==
+I (1863) esp_eth.netif.netif_glue: 52:54:00:12:34:56
+I (1863) esp_eth.netif.netif_glue: ethernet attached to netif
+I (1963) ch15lab: ETH_EVENT id=0
+E (1963) esp_eth: esp_eth_ioctl(533): add mac address to filter not supported
+E (1963) esp_eth.netif.netif_glue: eth_set_mac_filter(56): failed to add mac filter
+E (1963) esp_netif_lwip: Failed to add multicast filter for IPv4
+I (1963) ch15lab: ETH_EVENT id=2
+I (2963) ch15lab: GOT_IP: 10.0.2.15
+I (2963) esp_netif_handlers: eth ip: 10.0.2.15, mask: 255.255.255.0, gw: 10.0.2.2
+CH15-FACT sizeof(struct tcp_pcb)=208 MSS=1440 WND=5760 SND_BUF=5760 TCPIP_RECVMBOX=32 MAX_ACTIVE_TCP=16 SLOW_TMR=250 FAST_TMR=250 CHECK_THREAD_SAFETY=1 CORE_LOCKING=0
+
+assert failed: udp_new /IDF/components/lwip/lwip/src/core/udp.c:1239 (Required to run in TCPIP context!)
+
+
+Backtrace: 0x40086319:0x3ffb6ab0 0x400862e1:0x3ffb6ad0 0x400860b1:0x3ffb6af0 0x400e79d6:0x3ffb6c10 0x400d7be7:0x3ffb6c30 0x400d862b:0x3ffb6c50 0x400d5819:0x3ffb6ce0 0x400f8952:0x3ffb6d10
+
+
+
+
+ELF file SHA256: b6e011703
+
+Rebooting...

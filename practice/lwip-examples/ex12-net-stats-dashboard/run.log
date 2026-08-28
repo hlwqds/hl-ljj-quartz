@@ -1,0 +1,111 @@
+Adding SPI flash device
+ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x12 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0040,len:6272
+load:0x40078000,len:15820
+load:0x40080400,len:3920
+entry 0x40080644
+I (659) boot: ESP-IDF v6.0.2 2nd stage bootloader
+I (659) boot: compile time Aug 27 2026 13:25:11
+I (659) boot: Multicore bootloader
+I (692) boot: chip revision: v0.0
+I (693) boot.esp32: SPI Speed      : 40MHz
+I (693) boot.esp32: SPI Mode       : DIO
+I (693) boot.esp32: SPI Flash Size : 2MB
+I (698) boot: Enabling RNG early entropy source...
+I (703) boot: Partition Table:
+I (704) boot: ## Label            Usage          Type ST Offset   Length
+I (704) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (705) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (705) boot:  2 factory          factory app      00 00 00010000 00100000
+I (708) boot: End of partition table
+I (737) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=0ecd4h ( 60628) map
+I (754) esp_image: segment 1: paddr=0001ecfc vaddr=3ffb0000 size=0131ch (  4892) load
+I (765) esp_image: segment 2: paddr=00020020 vaddr=400d0020 size=2a03ch (172092) map
+I (788) esp_image: segment 3: paddr=0004a064 vaddr=3ffb131c size=017d0h (  6096) load
+I (803) esp_image: segment 4: paddr=0004b83c vaddr=40080000 size=0b23ch ( 45628) load
+I (820) esp_image: segment 5: paddr=00056a80 vaddr=50000000 size=00028h (    40) load
+I (880) boot: Loaded app from partition at offset 0x10000
+I (880) boot: Disabling RNG early entropy source...
+I (895) cpu_start: Multicore app
+I (1491) cpu_start: GPIO 3 and 1 are used as console UART I/O pins
+I (1494) cpu_start: Pro cpu start user code
+I (1494) cpu_start: cpu freq: 160000000 Hz
+I (1494) app_init: Application information:
+I (1494) app_init: Project name:     ex12_net_stats_dashboard
+I (1494) app_init: App version:      924d871-dirty
+I (1494) app_init: Compile time:     Aug 27 2026 13:25:11
+I (1494) app_init: ELF file SHA256:  1d6611da9...
+I (1494) app_init: ESP-IDF:          v6.0.2
+I (1494) efuse_init: Min chip rev:     v0.0
+I (1494) efuse_init: Max chip rev:     v3.99 
+I (1494) efuse_init: Chip rev:         v0.0
+I (1495) heap_init: Initializing. RAM available for dynamic allocation:
+I (1496) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM
+I (1496) heap_init: At 3FFB40A8 len 0002BF58 (175 KiB): DRAM
+I (1496) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM
+I (1496) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM
+I (1496) heap_init: At 4008B23C len 00014DC4 (83 KiB): IRAM
+I (1530) spi_flash: detected chip: winbond
+I (1534) spi_flash: flash io: dio
+I (1544) main_task: Started on CPU0
+I (1544) main_task: Calling app_main()
+I (1544) ex12: == ex12 net-stats-dashboard: observation console ==
+I (1544) ex12: $$$ EX12-FACT build="Aug 27 2026 13:25:11" lwip_stats=1 trace_facility=1
+I (1564) esp_eth.netif.netif_glue: 52:54:00:12:34:56
+I (1564) esp_eth.netif.netif_glue: ethernet attached to netif
+E (1664) esp_eth: esp_eth_ioctl(533): add mac address to filter not supported
+E (1664) esp_eth.netif.netif_glue: eth_set_mac_filter(56): failed to add mac filter
+E (1664) esp_netif_lwip: Failed to add multicast filter for IPv4
+I (1664) ex12: [t=167 ms] ETH_EVENT CONNECTED (link up)
+I (1664) ex12: waiting for DHCP lease ...
+I (2664) ex12: [t=1166 ms] IP_EVENT GOT_IP: ip 10.0.2.15 nm 255.255.255.0 gw 10.0.2.2
+I (2664) esp_netif_handlers: eth ip: 10.0.2.15, mask: 255.255.255.0, gw: 10.0.2.2
+I (2664) ex12: $$$ EXREADY ip=10.0.2.15 nm=255.255.255.0 gw=10.0.2.2 t_ms=1166
+I (2664) ex12: $$$ EXTRAFFIC target=10.0.2.2 interval_ms=1000 count=infinite
+I (2664) ex12: dashboard baseline taken, period=30000 ms
+$$$ EX12-FRAME id=1 up_ms=31166 period_ms=30000 src=self-ping iv_ms=1000
+EX12-ST link  recv=3(+2) xmit=3(+2) drop=0(+0) chkerr=0(+0) memerr=0(+0)
+EX12-ST ip    recv=33(+30) xmit=33(+30) drop=0(+0) chkerr=0(+0) memerr=0(+0)
+EX12-ST icmp  recv=31(+30) xmit=0(+0) drop=0(+0) chkerr=0(+0) memerr=0(+0)
+EX12-ST tcp   recv=0(+0) xmit=0(+0) drop=0(+0) chkerr=0(+0) memerr=0(+0)
+EX12-ST udp   recv=2(+0) xmit=2(+0) drop=0(+0) chkerr=0(+0) memerr=0(+0)
+EX12-HEAP free=270504 largest=147456 min_ever=265972 unit=bytes cap=MALLOC_CAP_8BIT
+EX12-TASK n=10 order=prio_desc,name_asc hwm_unit=bytes
+EX12-T ipc0             prio=24 core=0  hwm=564
+EX12-T ipc1             prio=24 core=1  hwm=572
+EX12-T esp_timer        prio=22 core=0  hwm=3640
+EX12-T sys_evt          prio=20 core=0  hwm=1664
+EX12-T tcpip            prio=18 core=NA hwm=2328
+EX12-T emac_rx          prio=15 core=NA hwm=3256
+EX12-T ping             prio= 2 core=NA hwm=1400
+EX12-T main             prio= 1 core=0  hwm=2468
+EX12-T IDLE0            prio= 0 core=0  hwm=976
+EX12-T IDLE1            prio= 0 core=1  hwm=1100
+EX12-SYS uptime_s=31 ntp=disabled(ntp-line-placeholder) clock_src=esp_timer
+$$$ EX12-FRAME-END id=1
+$$$ EX12-FRAME id=2 up_ms=61166 period_ms=30000 src=self-ping iv_ms=1000
+EX12-ST link  recv=3(+0) xmit=3(+0) drop=0(+0) chkerr=0(+0) memerr=0(+0)
+EX12-ST ip    recv=63(+30) xmit=63(+30) drop=0(+0) chkerr=0(+0) memerr=0(+0)
+EX12-ST icmp  recv=61(+30) xmit=0(+0) drop=0(+0) chkerr=0(+0) memerr=0(+0)
+EX12-ST tcp   recv=0(+0) xmit=0(+0) drop=0(+0) chkerr=0(+0) memerr=0(+0)
+EX12-ST udp   recv=2(+0) xmit=2(+0) drop=0(+0) chkerr=0(+0) memerr=0(+0)
+EX12-HEAP free=270504 largest=147456 min_ever=265972 unit=bytes cap=MALLOC_CAP_8BIT
+EX12-TASK n=10 order=prio_desc,name_asc hwm_unit=bytes
+EX12-T ipc0             prio=24 core=0  hwm=564
+EX12-T ipc1             prio=24 core=1  hwm=572
+EX12-T esp_timer        prio=22 core=0  hwm=3640
+EX12-T sys_evt          prio=20 core=0  hwm=1664
+EX12-T tcpip            prio=18 core=NA hwm=2328
+EX12-T emac_rx          prio=15 core=NA hwm=3256
+EX12-T ping             prio= 2 core=NA hwm=1400
+EX12-T main             prio= 1 core=0  hwm=2468
+EX12-T IDLE0            prio= 0 core=0  hwm=976
+EX12-T IDLE1            prio= 0 core=1  hwm=988
+EX12-SYS uptime_s=61 ntp=disabled(ntp-line-placeholder) clock_src=esp_timer
+$$$ EX12-FRAME-END id=2
+qemu-system-xtensa: terminating on signal 15 from pid 3864031 (timeout)

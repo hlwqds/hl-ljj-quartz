@@ -1,0 +1,7 @@
+# 必填：OpenCores Ethernet MAC 驱动（仅用于 QEMU openeth 虚拟网卡，真机不可用）
+CONFIG_ETH_USE_OPENETH=y
+
+# 可观测性叠加：STATS 命令要回的 lwip_stats 单行 JSON（TCP 段计数）依赖它。
+# 关闭后 STATS 里的 "tcp" 段降级为 null，服务本体不受影响。
+# 注意：修改本文件后必须删除生成的 sdkconfig 重新构建才生效（曾踩坑项）。
+CONFIG_LWIP_STATS=y

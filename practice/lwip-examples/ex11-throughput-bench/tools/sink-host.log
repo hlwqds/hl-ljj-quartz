@@ -1,0 +1,6 @@
+SINK-LISTEN port=8290 conns=3
+SINK-DONE conn#1 peer=127.0.0.1:34224 bytes=4000000 dur=0.333s mbit=96.08 digest=5b5c ack=K
+SINK-DONE conn#2 peer=127.0.0.1:34230 bytes=4000000 dur=0.341s mbit=93.81 digest=5b5c ack=K
+SINK-DONE conn#3 peer=127.0.0.1:34236 bytes=4000000 dur=0.338s mbit=94.73 digest=5b5c ack=K
+SINK-SUMMARY conns=3 with_data=3 avg_mbit=94.87
+SINK-SUMMARY2 digests=5b5c,5b5c,5b5c unique=1

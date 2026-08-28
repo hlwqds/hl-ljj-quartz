@@ -1,0 +1,32 @@
+== point extreme rounds=3 06:29:21 ==
+--- round 1 06:29:21 ---
+[fw] mem snapshot below
+[fw] $$$ MEM on-cmd free=224688 largest=110592 min_ever=221568
+RESULT kind=thtx want=4000000 got=0 secs=6.006 mbit=0.00 clean_eof=n
+[fw] lb-th:
+[fw] $$$ MEM boot free=225096 largest=110592 min_ever=223692
+[fw] $$$ MEM on-cmd free=224688 largest=110592 min_ever=221568
+[fw] lb-rtt:
+[fw] $$$ MEM boot free=225096 largest=110592 min_ever=223692
+[fw] $$$ MEM on-cmd free=224688 largest=110592 min_ever=221568
+--- round 2 06:29:46 ---
+[fw] mem snapshot below
+[fw] $$$ MEM on-cmd free=224688 largest=110592 min_ever=221568
+RESULT kind=thtx want=4000000 got=0 secs=6.007 mbit=0.00 clean_eof=n
+[fw] lb-th:
+[fw] $$$ MEM boot free=225096 largest=110592 min_ever=223692
+[fw] $$$ MEM on-cmd free=224688 largest=110592 min_ever=221568
+[fw] lb-rtt:
+[fw] $$$ MEM boot free=225096 largest=110592 min_ever=223692
+[fw] $$$ MEM on-cmd free=224688 largest=110592 min_ever=221568
+--- round 3 06:30:12 ---
+[fw] mem snapshot below
+[fw] $$$ MEM on-cmd free=224688 largest=110592 min_ever=221568
+RESULT kind=thtx want=4000000 got=0 secs=6.007 mbit=0.00 clean_eof=n
+[fw] lb-th:
+[fw] $$$ MEM boot free=225096 largest=110592 min_ever=223692
+[fw] $$$ MEM on-cmd free=224688 largest=110592 min_ever=221568
+[fw] lb-rtt:
+[fw] $$$ MEM boot free=225096 largest=110592 min_ever=223692
+[fw] $$$ MEM on-cmd free=224688 largest=110592 min_ever=221568
+== end extreme 06:30:38 ==

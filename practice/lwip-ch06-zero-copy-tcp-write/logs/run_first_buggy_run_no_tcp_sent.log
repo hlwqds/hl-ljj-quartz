@@ -1,0 +1,88 @@
+Adding SPI flash device
+ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x12 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0040,len:6272
+load:0x40078000,len:15820
+load:0x40080400,len:3920
+entry 0x40080644
+I (665) boot: ESP-IDF v6.0.2 2nd stage bootloader
+I (665) boot: compile time Aug 27 2026 00:38:48
+I (665) boot: Multicore bootloader
+I (706) boot: chip revision: v3.0
+I (708) boot.esp32: SPI Speed      : 40MHz
+I (708) boot.esp32: SPI Mode       : DIO
+I (708) boot.esp32: SPI Flash Size : 2MB
+I (714) boot: Enabling RNG early entropy source...
+I (720) boot: Partition Table:
+I (720) boot: ## Label            Usage          Type ST Offset   Length
+I (720) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (720) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (720) boot:  2 factory          factory app      00 00 00010000 00100000
+I (724) boot: End of partition table
+I (749) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=0e5b4h ( 58804) map
+I (768) esp_image: segment 1: paddr=0001e5dc vaddr=3ffb0000 size=01a3ch (  6716) load
+I (777) esp_image: segment 2: paddr=00020020 vaddr=400d0020 size=270b8h (159928) map
+I (796) esp_image: segment 3: paddr=000470e0 vaddr=3ffb1a3c size=01090h (  4240) load
+I (810) esp_image: segment 4: paddr=00048178 vaddr=40080000 size=0b0f4h ( 45300) load
+I (824) esp_image: segment 5: paddr=00053274 vaddr=50000000 size=00028h (    40) load
+I (866) boot: Loaded app from partition at offset 0x10000
+I (867) boot: Disabling RNG early entropy source...
+I (880) cpu_start: Multicore app
+I (1459) cpu_start: GPIO 3 and 1 are used as console UART I/O pins
+I (1461) cpu_start: Pro cpu start user code
+I (1461) cpu_start: cpu freq: 160000000 Hz
+I (1461) app_init: Application information:
+I (1461) app_init: Project name:     lwip_ch06_zero_copy_tcp_write
+I (1461) app_init: App version:      924d871
+I (1462) app_init: Compile time:     Aug 27 2026 00:38:32
+I (1462) app_init: ELF file SHA256:  314624ed0...
+I (1462) app_init: ESP-IDF:          v6.0.2
+I (1462) efuse_init: Min chip rev:     v0.0
+I (1462) efuse_init: Max chip rev:     v3.99 
+I (1462) efuse_init: Chip rev:         v3.0
+I (1463) heap_init: Initializing. RAM available for dynamic allocation:
+I (1463) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM
+I (1463) heap_init: At 3FFC3F50 len 0001C0B0 (112 KiB): DRAM
+I (1463) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM
+I (1463) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM
+I (1464) heap_init: At 4008B0F4 len 00014F0C (83 KiB): IRAM
+I (1493) spi_flash: detected chip: winbond
+I (1496) spi_flash: flash io: dio
+I (1504) main_task: Started on CPU0
+I (1504) main_task: Calling app_main()
+I (1504) ch6lab: == ch6 lab: openeth bring-up then tcp_write bench ==
+I (1524) esp_eth.netif.netif_glue: 52:54:00:12:34:56
+I (1524) esp_eth.netif.netif_glue: ethernet attached to netif
+E (1624) esp_eth: esp_eth_ioctl(533): add mac address to filter not supported
+E (1624) esp_eth.netif.netif_glue: eth_set_mac_filter(56): failed to add mac filter
+E (1624) esp_netif_lwip: Failed to add multicast filter for IPv4
+I (1624) ch6lab: ETH_EVENT: CONNECTED (link up)
+I (1624) ch6lab: waiting for DHCP lease ...
+I (2624) ch6lab: GOT_IP: 10.0.2.15
+I (2624) esp_netif_handlers: eth ip: 10.0.2.15, mask: 255.255.255.0, gw: 10.0.2.2
+== ch6 lab: zero-copy throughput / backpressure ==
+CH06-FACT LWIP_NETIF_TX_SINGLE_PBUF=1
+CH06-FACT CONFIG_LWIP_TCP_SND_BUF_DEFAULT=5760
+CH06-FACT CONFIG_LWIP_TCP_WND_DEFAULT=5760
+CH06-FACT CONFIG_LWIP_TCP_MSS=1440
+CH06-FACT TCP_SND_QUEUELEN=16 CHUNK=2880 PATLEN=65536 TOTAL=10485760
+I (2624) main_task: Returned from app_main()
+I (2684) ch6lab: connected to 10.0.2.2:8006 (mode=COPY run=1)
+CH06-BENCH mode=COPY run=1 sent=10485760 us=693983 mbit=120.88 err_mem=7355 digest=3c32
+I (3674) ch6lab: connected to 10.0.2.2:8006 (mode=NOCOPY run=1)
+CH06-BENCH mode=NOCOPY run=1 sent=10485760 us=691782 mbit=121.26 err_mem=7355 digest=3c32
+I (4664) ch6lab: connected to 10.0.2.2:8006 (mode=COPY run=2)
+CH06-BENCH mode=COPY run=2 sent=10485760 us=713010 mbit=117.65 err_mem=7355 digest=3c32
+I (5674) ch6lab: connected to 10.0.2.2:8006 (mode=NOCOPY run=2)
+CH06-BENCH mode=NOCOPY run=2 sent=10485760 us=680794 mbit=123.22 err_mem=7355 digest=3c32
+I (6654) ch6lab: connected to 10.0.2.2:8006 (mode=COPY run=3)
+CH06-BENCH mode=COPY run=3 sent=10485760 us=672280 mbit=124.78 err_mem=7355 digest=3c32
+I (7624) ch6lab: connected to 10.0.2.2:8006 (mode=NOCOPY run=3)
+CH06-BENCH mode=NOCOPY run=3 sent=10485760 us=686741 mbit=122.15 err_mem=7355 digest=3c32
+CH06-SUMMARY benches done (COPY x3, NOCOPY x3), starting backpressure phase
+E (8604) ch6lab: bench pcb error: 
+qemu-system-xtensa: terminating on signal 15 from pid 3059450 (zcode-cli)

@@ -1,0 +1,9 @@
+== point ext_dma16 rounds=3 07:03:26 ==
+--- round 1 ---
+--- round 2 ---
+--- round 3 ---
+[fw] $$$ LBRTT ok=200/200 size=512 avg_rtt_us=604 min=421 max=4451
+[fw] $$$ LBTH ack_r=0 bytes=4000000 elapsed_us=103782935 mbit=0.31
+[fw] $$$ LBRTT ok=200/200 size=512 avg_rtt_us=723 min=424 max=3183
+### HEART t=161 s free=95736
+$$$ BUILD 07:03:16 sndbuf=65535 wnd=65535 mss=1460 tcpip_mbox=32 pbuf_pool=16

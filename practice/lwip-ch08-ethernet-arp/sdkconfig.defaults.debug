@@ -1,0 +1,6 @@
+# 在 sdkconfig.defaults 基础上追加：仅打开 etharp 模块的 lwIP 调试输出
+# 用法：idf.py -D SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.debug" build
+CONFIG_ETH_USE_OPENETH=y
+CONFIG_LWIP_STATS=y
+CONFIG_LWIP_DEBUG=y
+CONFIG_LWIP_ETHARP_DEBUG=y

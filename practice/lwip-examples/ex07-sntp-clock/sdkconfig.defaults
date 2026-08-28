@@ -1,0 +1,16 @@
+# ex07 最小配置：只有 openeth 是必填项（SPEC §3）。
+CONFIG_ETH_USE_OPENETH=y
+
+# --- 观测类开关（本示例需要，注明理由）---
+# SNTP 协议状态机内部日志（STARTUP_DELAY 倒计时、发请求、收响应、加卸服务器），
+# 是「请求确实发出去了/回包到了哪一层」的路径级证据，裁决实验必备。
+CONFIG_LWIP_DEBUG=y
+CONFIG_LWIP_SNTP_DEBUG=y
+
+# RFC 4330 规定对时周期不得小于 15s，默认 1h 单次运行看不到第二次对时；
+# 取 20s 让一次 ~60s 的 QEMU 会话能观测到两次 SYNC 事件（教学点：周期重对时）。
+CONFIG_LWIP_SNTP_UPDATE_DELAY=20000
+
+# 初次对时的随机启动延迟保持默认开启（上限 5000ms）：
+# 这本身就是教学点——为什么上电后第一笔 SNTP 查询可能迟到最多 5 秒，
+# 固件的同步等待预算必须把它算进去（main.c 同步等待 40s 的依据）。

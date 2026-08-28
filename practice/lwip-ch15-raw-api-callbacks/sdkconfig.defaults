@@ -1,0 +1,12 @@
+# lwIP 深度解析（十五）默认构建：raw TCP echo 基准 + 返回值协议 + busy-wait 注入。
+# 跨线程误用断言变体见 sdkconfig.defaults.thrcheck（仅 CHECK_THREAD_SAFETY 一行不同）。
+
+# OpenCores Ethernet MAC 驱动（仅用于 QEMU 仿真，真机不可用）
+CONFIG_ETH_USE_OPENETH=y
+
+# 观察用计数器
+CONFIG_LWIP_STATS=y
+CONFIG_LWIP_MAX_SOCKETS=16
+
+# TCP 窗口与缓冲保持 IDF 默认（5760/5760），让 ERR_MEM/背压路径真实可见
+# CONFIG_LWIP_TCP_SND_BUF_DEFAULT 不改、CONFIG_LWIP_TCP_WND_DEFAULT 不改

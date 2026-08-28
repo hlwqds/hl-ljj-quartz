@@ -1,0 +1,10 @@
+TPT label=raw port=8010 size=1200 k=1500 rx=1500 missing=0 attempts=1513 resends=13 ms=533 mbit=27.00
+TPT label=netconn port=8011 size=1200 k=1500 rx=1500 missing=0 attempts=1512 resends=12 ms=529 mbit=27.21
+TPT label=socket port=8012 size=1200 k=1500 rx=1500 missing=0 attempts=1512 resends=12 ms=556 mbit=25.91
+TPT label=raw port=8010 size=1200 k=1500 rx=1500 missing=0 attempts=1512 resends=12 ms=531 mbit=27.12
+TPT label=netconn port=8011 size=1200 k=1500 rx=1500 missing=0 attempts=1512 resends=12 ms=511 mbit=28.19
+TPT label=socket port=8012 size=1200 k=1500 rx=1500 missing=0 attempts=1512 resends=12 ms=516 mbit=27.90
+TPT label=raw port=8010 size=1200 k=1500 rx=1500 missing=0 attempts=1512 resends=12 ms=531 mbit=27.11
+TPT label=netconn port=8011 size=1200 k=1500 rx=1500 missing=0 attempts=1512 resends=12 ms=512 mbit=28.12
+TPT label=socket port=8012 size=1200 k=1500 rx=1500 missing=0 attempts=1512 resends=12 ms=550 mbit=26.18
+CH10-UDPSTATS recv=13506 xmit=13504 drop=1 chkerr=1 lenerr=0 memerr=0 rterr=0 proterr=0 | app rx raw=4501 nc=4500 sock=4500 inj=1 slow_ms=0

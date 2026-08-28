@@ -1,0 +1,7 @@
+CH06-BENCH mode=COPY run=1 sent=10485760 us=733726 mbit=114.33 err_mem=7355 digest=3c32
+CH06-BENCH mode=NOCOPY run=1 sent=10485760 us=708047 mbit=118.48 err_mem=7355 digest=3c32
+CH06-BENCH mode=COPY run=2 sent=10485760 us=721155 mbit=116.32 err_mem=7355 digest=3c32
+CH06-BENCH mode=NOCOPY run=2 sent=10485760 us=819911 mbit=102.31 err_mem=7355 digest=3c32
+CH06-BENCH mode=COPY run=3 sent=10485760 us=711883 mbit=117.84 err_mem=7355 digest=3c32
+CH06-BENCH mode=NOCOPY run=3 sent=10485760 us=708612 mbit=118.38 err_mem=7355 digest=3c32
+CH06-DONE all phases complete, idling

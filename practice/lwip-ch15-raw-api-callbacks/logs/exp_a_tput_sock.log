@@ -1,0 +1,3 @@
+TPUT label=socket_r1 port=8517 size=1200 window=16 blocks=1200 echoed=1200 missing_tail=0 secs=0.352 mbit=32.74
+TPUT label=socket_r2 port=8517 size=1200 window=16 blocks=1200 echoed=1200 missing_tail=0 secs=0.294 mbit=39.20
+TPUT label=socket_r3 port=8517 size=1200 window=16 blocks=1200 echoed=1200 missing_tail=0 secs=0.258 mbit=44.68

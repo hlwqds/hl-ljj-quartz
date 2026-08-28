@@ -1,0 +1,115 @@
+Adding SPI flash device
+ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x12 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0040,len:6272
+load:0x40078000,len:15820
+load:0x40080400,len:3920
+entry 0x40080644
+I (672) boot: ESP-IDF v6.0.2 2nd stage bootloader
+I (673) boot: compile time Aug 27 2026 13:33:07
+I (673) boot: Multicore bootloader
+I (712) boot: chip revision: v0.0
+I (713) boot.esp32: SPI Speed      : 40MHz
+I (713) boot.esp32: SPI Mode       : DIO
+I (713) boot.esp32: SPI Flash Size : 2MB
+I (718) boot: Enabling RNG early entropy source...
+I (724) boot: Partition Table:
+I (725) boot: ## Label            Usage          Type ST Offset   Length
+I (725) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (725) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (725) boot:  2 factory          factory app      00 00 00010000 00100000
+I (729) boot: End of partition table
+I (760) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=10db8h ( 69048) map
+I (778) esp_image: segment 1: paddr=00020de0 vaddr=3ffb0000 size=02acch ( 10956) load
+I (792) esp_image: segment 2: paddr=000238b4 vaddr=40080000 size=0b23ch ( 45628) load
+I (807) esp_image: segment 3: paddr=0002eaf8 vaddr=50000000 size=00028h (    40) load
+I (819) esp_image: segment 4: paddr=0002eb28 vaddr=00000000 size=014f0h (  5360) 
+I (840) esp_image: segment 5: paddr=00030020 vaddr=400d0020 size=2bfd8h (180184) map
+I (900) boot: Loaded app from partition at offset 0x10000
+I (900) boot: Disabling RNG early entropy source...
+I (911) cpu_start: Multicore app
+I (1519) cpu_start: GPIO 3 and 1 are used as console UART I/O pins
+I (1522) cpu_start: Pro cpu start user code
+I (1522) cpu_start: cpu freq: 160000000 Hz
+I (1522) app_init: Application information:
+I (1522) app_init: Project name:     ex11_throughput_bench
+I (1522) app_init: App version:      924d871-dirty
+I (1522) app_init: Compile time:     Aug 27 2026 13:33:05
+I (1522) app_init: ELF file SHA256:  13cc3f223...
+I (1522) app_init: ESP-IDF:          v6.0.2
+I (1523) efuse_init: Min chip rev:     v0.0
+I (1523) efuse_init: Max chip rev:     v3.99 
+I (1523) efuse_init: Chip rev:         v0.0
+I (1523) heap_init: Initializing. RAM available for dynamic allocation:
+I (1524) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM
+I (1524) heap_init: At 3FFC8070 len 00017F90 (95 KiB): DRAM
+I (1524) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM
+I (1524) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM
+I (1525) heap_init: At 4008B23C len 00014DC4 (83 KiB): IRAM
+I (1550) spi_flash: detected chip: gd
+I (1555) spi_flash: flash io: dio
+W (1564) spi_flash: Detected size(4096k) larger than the size in the binary image header(2048k). Using the size in the binary image header.
+I (1569) main_task: Started on CPU0
+I (1569) main_task: Calling app_main()
+I (1569) ex11: == ex11 throughput-bench (iperf-lite, TX pump + RX flood) ==
+I (1589) esp_eth.netif.netif_glue: 52:54:00:12:34:56
+I (1589) esp_eth.netif.netif_glue: ethernet attached to netif
+I (1689) ex11: [EX11] ETH START
+E (1689) esp_eth: esp_eth_ioctl(533): add mac address to filter not supported
+E (1689) esp_eth.netif.netif_glue: eth_set_mac_filter(56): failed to add mac filter
+E (1689) esp_netif_lwip: Failed to add multicast filter for IPv4
+I (1689) ex11: [EX11] ETH CONNECTED (link up)
+I (2699) ex11: [EX11] GOT_IP 10.0.2.15 gw 10.0.2.2
+I (2699) esp_netif_handlers: eth ip: 10.0.2.15, mask: 255.255.255.0, gw: 10.0.2.2
+[EX11] PHASE=READY mode=both rounds=3 mb=4 tile_kb=64 tx=10.0.2.2:8290 rx=:8291 want_bytes_per_round=4000000
+[EX11] BUILD Aug 27 2026 13:41:36 snd_buf=5760 wnd=5760 mss=1440 openeth_ring=4
+[EX11] CFGOK wnd-ring inequality satisfied (or unknown)
+[EX11] -- T1 BEGIN target=10.0.2.2:8290 bytes=4000000
+I (2699) main_task: Returned from app_main()
+I (2709) ex11: [EX11] TX R=1 connected 10.0.2.2:8290 (wait 7 ms)
+W (2849) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (2849) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (2849) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (2869) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (2869) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+[EX11] TX R=1 RESULT status=OK bytes=4000000/4000000 conn_ms=7 xfer_ms=334 full_ms=336 mbit=95.84 stall=0 refusals=0 ack=1 digest=5b5c err=0
+[EX11] -- R1 BEGIN listening=:8291 bytes=4000000
+[EX11] RX_LISTEN port=8291 backlog=4
+I (6929) ex11: [EX11] RX R=1 CONN from=10.0.2.2:47860 (wait 3880 ms)
+[EX11] RX R=1 RESULT status=OK got=4000000/4000000 wait_ms=3880 xfer_ms=365 mbit=87.68 digest=5b5c stall=0 err=0
+[EX11] -- T2 BEGIN target=10.0.2.2:8290 bytes=4000000
+I (7599) ex11: [EX11] TX R=2 connected 10.0.2.2:8290 (wait 3 ms)
+W (7609) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (7609) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (7679) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (7679) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (7699) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (7739) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (7779) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (7789) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+[EX11] TX R=2 RESULT status=OK bytes=4000000/4000000 conn_ms=3 xfer_ms=341 full_ms=342 mbit=93.85 stall=0 refusals=0 ack=1 digest=5b5c err=0
+[EX11] -- R2 BEGIN listening=:8291 bytes=4000000
+[EX11] RX_LISTEN port=8291 backlog=4
+I (8199) ex11: [EX11] RX R=2 CONN from=10.0.2.2:45756 (wait 257 ms)
+[EX11] RX R=2 RESULT status=OK got=4000000/4000000 wait_ms=257 xfer_ms=335 mbit=95.60 digest=5b5c stall=0 err=0
+[EX11] -- T3 BEGIN target=10.0.2.2:8290 bytes=4000000
+I (8839) ex11: [EX11] TX R=3 connected 10.0.2.2:8290 (wait 2 ms)
+W (8839) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (8989) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (9009) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (9069) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (9099) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (9109) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (9119) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (9149) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+[EX11] TX R=3 RESULT status=OK bytes=4000000/4000000 conn_ms=2 xfer_ms=338 full_ms=338 mbit=94.73 stall=0 refusals=0 ack=1 digest=5b5c err=0
+[EX11] -- R3 BEGIN listening=:8291 bytes=4000000
+[EX11] RX_LISTEN port=8291 backlog=4
+I (9439) ex11: [EX11] RX R=3 CONN from=10.0.2.2:45790 (wait 264 ms)
+[EX11] RX R=3 RESULT status=OK got=4000000/4000000 wait_ms=264 xfer_ms=371 mbit=86.35 digest=5b5c stall=0 err=0
+[EX11] SUMMARY mode=both rounds=3 tx_ok=3/3 avg_tx_mbit=94.8 rx_ok=3/3 avg_rx_mbit=89.9
+[EX11] PHASE=DONE -- rounds finished, restarting to exit QEMU cleanly

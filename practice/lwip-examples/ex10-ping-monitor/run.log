@@ -1,0 +1,159 @@
+Adding SPI flash device
+ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x12 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0040,len:6272
+load:0x40078000,len:15820
+load:0x40080400,len:3920
+entry 0x40080644
+I (659) boot: ESP-IDF v6.0.2 2nd stage bootloader
+I (660) boot: compile time Aug 27 2026 13:24:22
+I (660) boot: Multicore bootloader
+I (693) boot: chip revision: v0.0
+I (695) boot.esp32: SPI Speed      : 40MHz
+I (695) boot.esp32: SPI Mode       : DIO
+I (695) boot.esp32: SPI Flash Size : 2MB
+I (701) boot: Enabling RNG early entropy source...
+I (706) boot: Partition Table:
+I (706) boot: ## Label            Usage          Type ST Offset   Length
+I (706) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (706) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (706) boot:  2 factory          factory app      00 00 00010000 00100000
+I (710) boot: End of partition table
+I (737) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=0f14ch ( 61772) map
+I (754) esp_image: segment 1: paddr=0001f174 vaddr=3ffb0000 size=00ea4h (  3748) load
+I (768) esp_image: segment 2: paddr=00020020 vaddr=400d0020 size=299f0h (170480) map
+I (788) esp_image: segment 3: paddr=00049a18 vaddr=3ffb0ea4 size=01c28h (  7208) load
+I (808) esp_image: segment 4: paddr=0004b648 vaddr=40080000 size=0b23ch ( 45628) load
+I (834) esp_image: segment 5: paddr=0005688c vaddr=50000000 size=00028h (    40) load
+I (903) boot: Loaded app from partition at offset 0x10000
+I (904) boot: Disabling RNG early entropy source...
+I (921) cpu_start: Multicore app
+I (1544) cpu_start: GPIO 3 and 1 are used as console UART I/O pins
+I (1546) cpu_start: Pro cpu start user code
+I (1546) cpu_start: cpu freq: 160000000 Hz
+I (1546) app_init: Application information:
+I (1546) app_init: Project name:     ex10_ping_monitor
+I (1546) app_init: App version:      924d871-dirty
+I (1546) app_init: Compile time:     Aug 27 2026 13:23:26
+I (1546) app_init: ELF file SHA256:  49fce0f05...
+I (1546) app_init: ESP-IDF:          v6.0.2
+I (1547) efuse_init: Min chip rev:     v0.0
+I (1547) efuse_init: Max chip rev:     v3.99 
+I (1547) efuse_init: Chip rev:         v0.0
+I (1547) heap_init: Initializing. RAM available for dynamic allocation:
+I (1548) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM
+I (1548) heap_init: At 3FFB3F68 len 0002C098 (176 KiB): DRAM
+I (1548) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM
+I (1548) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM
+I (1548) heap_init: At 4008B23C len 00014DC4 (83 KiB): IRAM
+I (1573) spi_flash: detected chip: winbond
+I (1578) spi_flash: flash io: dio
+I (1587) main_task: Started on CPU0
+I (1587) main_task: Calling app_main()
+I (1587) ex10: == ex10 ping-monitor: single-session ICMP watchdog ==
+I (1587) ex10: EX10-FACT build="Aug 27 2026 13:28:53" target=10.0.2.2 interval_ms=1000 timeout_ms=1000 alarm_th=5 summary_every=10 window_s=55 autoinject=1
+I (1607) esp_eth.netif.netif_glue: 52:54:00:12:34:56
+I (1607) esp_eth.netif.netif_glue: ethernet attached to netif
+E (1707) esp_eth: esp_eth_ioctl(533): add mac address to filter not supported
+E (1707) esp_eth.netif.netif_glue: eth_set_mac_filter(56): failed to add mac filter
+E (1707) esp_netif_lwip: Failed to add multicast filter for IPv4
+I (1707) ex10: waiting for DHCP lease ...
+I (2707) ex10: [t=1157 ms] IP_EVENT GOT_IP: ip 10.0.2.15 nm 255.255.255.0 gw 10.0.2.2
+I (2707) esp_netif_handlers: eth ip: 10.0.2.15, mask: 255.255.255.0, gw: 10.0.2.2
+I (2707) ex10: $$$ EXREADY target=10.0.2.2 interval_ms=1000 timeout_ms=1000 alarm_th=5 netif=en1 t_ms=1158
+I (2707) ex10: EX10-RTT seq=1 rtt_ms=2 ttl=255 size=64 ok=1
+I (3707) ex10: EX10-RTT seq=2 rtt_ms=1 ttl=255 size=64 ok=2
+I (4707) ex10: EX10-RTT seq=3 rtt_ms=0 ttl=255 size=64 ok=3
+I (5707) ex10: EX10-RTT seq=4 rtt_ms=0 ttl=255 size=64 ok=4
+I (6707) ex10: EX10-RTT seq=5 rtt_ms=0 ttl=255 size=64 ok=5
+I (7707) ex10: EX10-RTT seq=6 rtt_ms=0 ttl=255 size=64 ok=6
+I (8707) ex10: EX10-RTT seq=7 rtt_ms=0 ttl=255 size=64 ok=7
+I (9707) ex10: EX10-RTT seq=8 rtt_ms=0 ttl=255 size=64 ok=8
+I (10707) ex10: EX10-RTT seq=9 rtt_ms=0 ttl=255 size=64 ok=9
+I (11707) ex10: EX10-RTT seq=10 rtt_ms=0 ttl=255 size=64 ok=10
+I (11707) ex10: EX10-SUMMARY window_n=10 ok=10 lost=0 loss=0.0% rtt_min=0ms rtt_avg=0.3ms rtt_max=2ms
+I (12707) ex10: EX10-RTT seq=11 rtt_ms=0 ttl=255 size=64 ok=11
+I (13707) ex10: EX10-RTT seq=12 rtt_ms=0 ttl=255 size=64 ok=12
+I (14707) ex10: EX10-RTT seq=13 rtt_ms=0 ttl=255 size=64 ok=13
+I (15707) ex10: EX10-RTT seq=14 rtt_ms=0 ttl=255 size=64 ok=14
+I (16707) ex10: EX10-RTT seq=15 rtt_ms=0 ttl=255 size=64 ok=15
+W (17707) ex10: == fault-inject phase=cut-link at monitor t=15.0s ==
+W (17707) ex10: >>> EX10-INJECT event=link_down call=netif_set_link_down(en1) before flags=0x7f link_up=1 up=1
+W (17707) ex10: <<< EX10-INJECT done=link_down after flags=0x7b link_up=0 up=1 (UP bit still set: admin up untouched, only LINK_UP cleared)
+E (17707) ping_sock: send error=0
+W (18707) ex10: EX10-TIMEOUT seq=16 consec=1/5 rel_s=16.0
+E (18707) ping_sock: send error=0
+W (19707) ex10: EX10-TIMEOUT seq=17 consec=2/5 rel_s=17.0
+E (19707) ping_sock: send error=0
+W (20707) ex10: EX10-TIMEOUT seq=18 consec=3/5 rel_s=18.0
+E (20707) ping_sock: send error=0
+W (21707) ex10: EX10-TIMEOUT seq=19 consec=4/5 rel_s=19.0
+E (21707) ping_sock: send error=0
+W (22707) ex10: EX10-TIMEOUT seq=20 consec=5/5 rel_s=20.0
+E (22707) ex10: $$$ EX10-ALARM consec_lost=5 threshold=5 target=10.0.2.2 lost=5/20 rel_s=20.0
+I (22707) ex10: EX10-SUMMARY window_n=10 ok=5 lost=5 loss=50.0% rtt_min=0ms rtt_avg=0.0ms rtt_max=0ms
+E (22707) ping_sock: send error=0
+W (23707) ex10: EX10-TIMEOUT seq=21 consec=6/5 rel_s=21.0
+E (23707) ping_sock: send error=0
+W (24707) ex10: EX10-TIMEOUT seq=22 consec=7/5 rel_s=22.0
+E (24707) ping_sock: send error=0
+W (25707) ex10: EX10-TIMEOUT seq=23 consec=8/5 rel_s=23.0
+E (25707) ping_sock: send error=0
+W (26707) ex10: EX10-TIMEOUT seq=24 consec=9/5 rel_s=24.0
+E (26707) ping_sock: send error=0
+W (27707) ex10: EX10-TIMEOUT seq=25 consec=10/5 rel_s=25.0
+E (27707) ping_sock: send error=0
+W (28707) ex10: EX10-TIMEOUT seq=26 consec=11/5 rel_s=26.0
+E (28707) ping_sock: send error=0
+W (29707) ex10: EX10-TIMEOUT seq=27 consec=12/5 rel_s=27.0
+E (29707) ping_sock: send error=0
+W (30707) ex10: EX10-TIMEOUT seq=28 consec=13/5 rel_s=28.0
+E (30707) ping_sock: send error=0
+W (31707) ex10: EX10-TIMEOUT seq=29 consec=14/5 rel_s=29.0
+E (31707) ping_sock: send error=0
+W (32707) ex10: EX10-TIMEOUT seq=30 consec=15/5 rel_s=30.0
+I (32707) ex10: EX10-SUMMARY window_n=10 ok=0 lost=10 loss=100.0% rtt_min=-ms rtt_avg=-ms rtt_max=-ms
+E (32707) ping_sock: send error=0
+W (33707) ex10: EX10-TIMEOUT seq=31 consec=16/5 rel_s=31.0
+E (33707) ping_sock: send error=0
+W (34707) ex10: EX10-TIMEOUT seq=32 consec=17/5 rel_s=32.0
+E (34707) ping_sock: send error=0
+W (35707) ex10: == fault-inject phase=restore-link at monitor t=33.0s ==
+W (35707) ex10: >>> EX10-INJECT event=link_up call=netif_set_link_up(en1)
+I (35707) ex10: <<< EX10-INJECT done=link_up after flags=0x7f link_up=1 (healed; recovery confirmation left to the probe loop)
+I (35707) ex10: fault injector exits; recovery confirmation left to probe loop
+W (35707) ex10: EX10-TIMEOUT seq=33 consec=18/5 rel_s=33.0
+I (35707) ex10: $$$ EX10-RECOVER rel_s=33.0 downtime_ms=13003 alarms_total=1 (consecutive-fail cleared, path is serving again)
+I (35707) ex10: EX10-RTT seq=34 rtt_ms=0 ttl=255 size=64 ok=16
+I (36707) ex10: EX10-RTT seq=35 rtt_ms=0 ttl=255 size=64 ok=17
+I (37707) ex10: EX10-RTT seq=36 rtt_ms=0 ttl=255 size=64 ok=18
+I (38707) ex10: EX10-RTT seq=37 rtt_ms=0 ttl=255 size=64 ok=19
+I (39707) ex10: EX10-RTT seq=38 rtt_ms=0 ttl=255 size=64 ok=20
+I (40707) ex10: EX10-RTT seq=39 rtt_ms=0 ttl=255 size=64 ok=21
+I (41707) ex10: EX10-RTT seq=40 rtt_ms=0 ttl=255 size=64 ok=22
+I (41707) ex10: EX10-SUMMARY window_n=10 ok=7 lost=3 loss=30.0% rtt_min=0ms rtt_avg=0.0ms rtt_max=0ms
+I (42707) ex10: EX10-RTT seq=41 rtt_ms=0 ttl=255 size=64 ok=23
+I (43707) ex10: EX10-RTT seq=42 rtt_ms=0 ttl=255 size=64 ok=24
+I (44707) ex10: EX10-RTT seq=43 rtt_ms=0 ttl=255 size=64 ok=25
+I (45707) ex10: EX10-RTT seq=44 rtt_ms=0 ttl=255 size=64 ok=26
+I (46707) ex10: EX10-RTT seq=45 rtt_ms=0 ttl=255 size=64 ok=27
+I (47707) ex10: EX10-RTT seq=46 rtt_ms=0 ttl=255 size=64 ok=28
+I (48707) ex10: EX10-RTT seq=47 rtt_ms=0 ttl=255 size=64 ok=29
+I (49707) ex10: EX10-RTT seq=48 rtt_ms=0 ttl=255 size=64 ok=30
+I (50707) ex10: EX10-RTT seq=49 rtt_ms=0 ttl=255 size=64 ok=31
+I (51707) ex10: EX10-RTT seq=50 rtt_ms=0 ttl=255 size=64 ok=32
+I (51707) ex10: EX10-SUMMARY window_n=10 ok=10 lost=0 loss=0.0% rtt_min=0ms rtt_avg=0.0ms rtt_max=0ms
+I (52707) ex10: EX10-RTT seq=51 rtt_ms=0 ttl=255 size=64 ok=33
+I (53707) ex10: EX10-RTT seq=52 rtt_ms=0 ttl=255 size=64 ok=34
+I (54707) ex10: EX10-RTT seq=53 rtt_ms=0 ttl=255 size=64 ok=35
+I (55707) ex10: EX10-RTT seq=54 rtt_ms=0 ttl=255 size=64 ok=36
+I (56707) ex10: EX10-RTT seq=55 rtt_ms=0 ttl=255 size=64 ok=37
+I (57707) ex10: EX10-RTT seq=56 rtt_ms=0 ttl=255 size=64 ok=38
+I (58707) ex10: ping session ended (stop called)
+I (60507) ex10: EX10-FINAL samples=56 ok=38 lost=18 loss=32.1% rtt_min=0ms rtt_avg=0ms rtt_max=2ms alarms=1 window_ms=55000
+I (60507) ex10: $$$ EXDONE monitor_window_ms=55000 t_ms=58957
+qemu-system-xtensa: terminating on signal 15 from pid 3871769 (timeout)

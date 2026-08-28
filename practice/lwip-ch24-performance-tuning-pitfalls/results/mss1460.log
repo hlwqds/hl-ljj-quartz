@@ -1,0 +1,11 @@
+== point mss1460 rounds=2 06:55:13 ==
+--- round 1 ---
+RESULT kind=thrx mb=4 ack=b'K' secs=0.477 mbit=67.03
+--- round 2 ---
+RESULT kind=thrx mb=4 ack=b'K' secs=0.431 mbit=74.28
+[fw] $$$ LBRTT ok=200/200 size=512 avg_rtt_us=681 min=489 max=2146
+[fw] $$$ LBTH ack_r=0 bytes=4000000 elapsed_us=372398 mbit=85.93
+[fw] $$$ LBRTT ok=200/200 size=512 avg_rtt_us=566 min=444 max=1242
+[fw] $$$ LBTH ack_r=0 bytes=4000000 elapsed_us=380146 mbit=84.18
+[fw] $$$ MEM on-cmd free=206456 largest=110592 min_ever=182368
+$$$ BUILD 06:55:03 sndbuf=5760 wnd=5760 mss=1460 tcpip_mbox=32 pbuf_pool=16

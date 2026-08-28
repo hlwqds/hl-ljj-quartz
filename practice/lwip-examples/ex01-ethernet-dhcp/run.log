@@ -1,0 +1,77 @@
+Adding SPI flash device
+ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x12 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0040,len:6272
+load:0x40078000,len:15820
+load:0x40080400,len:3920
+entry 0x40080644
+I (662) boot: ESP-IDF v6.0.2 2nd stage bootloader
+I (663) boot: compile time Aug 27 2026 12:43:17
+I (663) boot: Multicore bootloader
+I (694) boot: chip revision: v0.0
+I (696) boot.esp32: SPI Speed      : 40MHz
+I (696) boot.esp32: SPI Mode       : DIO
+I (696) boot.esp32: SPI Flash Size : 2MB
+I (704) boot: Enabling RNG early entropy source...
+I (711) boot: Partition Table:
+I (712) boot: ## Label            Usage          Type ST Offset   Length
+I (712) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (712) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (712) boot:  2 factory          factory app      00 00 00010000 00100000
+I (716) boot: End of partition table
+I (756) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=0e674h ( 58996) map
+I (776) esp_image: segment 1: paddr=0001e69c vaddr=3ffb0000 size=0197ch (  6524) load
+I (791) esp_image: segment 2: paddr=00020020 vaddr=400d0020 size=27630h (161328) map
+I (813) esp_image: segment 3: paddr=00047658 vaddr=3ffb197c size=01150h (  4432) load
+I (830) esp_image: segment 4: paddr=000487b0 vaddr=40080000 size=0b0f4h ( 45300) load
+I (850) esp_image: segment 5: paddr=000538ac vaddr=50000000 size=00028h (    40) load
+I (898) boot: Loaded app from partition at offset 0x10000
+I (898) boot: Disabling RNG early entropy source...
+I (910) cpu_start: Multicore app
+I (1519) cpu_start: GPIO 3 and 1 are used as console UART I/O pins
+I (1521) cpu_start: Pro cpu start user code
+I (1521) cpu_start: cpu freq: 160000000 Hz
+I (1521) app_init: Application information:
+I (1521) app_init: Project name:     ex01_ethernet_dhcp
+I (1521) app_init: App version:      924d871-dirty
+I (1522) app_init: Compile time:     Aug 27 2026 12:43:15
+I (1522) app_init: ELF file SHA256:  bbb3a1145...
+I (1522) app_init: ESP-IDF:          v6.0.2
+I (1522) efuse_init: Min chip rev:     v0.0
+I (1522) efuse_init: Max chip rev:     v3.99 
+I (1522) efuse_init: Chip rev:         v0.0
+I (1523) heap_init: Initializing. RAM available for dynamic allocation:
+I (1523) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM
+I (1524) heap_init: At 3FFB4070 len 0002BF90 (175 KiB): DRAM
+I (1524) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM
+I (1524) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM
+I (1524) heap_init: At 4008B0F4 len 00014F0C (83 KiB): IRAM
+I (1551) spi_flash: detected chip: winbond
+I (1554) spi_flash: flash io: dio
+I (1568) main_task: Started on CPU0
+I (1568) main_task: Calling app_main()
+I (1568) ex01: == ex01 ethernet-dhcp: openeth bring-up baseline ==
+I (1568) ex01: EX01-FACT build="Aug 27 2026 12:43:16" lwip_stats=1
+I (1588) esp_eth.netif.netif_glue: 52:54:00:12:34:56
+I (1588) esp_eth.netif.netif_glue: ethernet attached to netif
+I (1688) ex01: [t=163 ms] ETH_EVENT START
+I (1688) ex01: waiting for DHCP lease ...
+E (1688) esp_eth: esp_eth_ioctl(533): add mac address to filter not supported
+E (1688) esp_eth.netif.netif_glue: eth_set_mac_filter(56): failed to add mac filter
+E (1688) esp_netif_lwip: Failed to add multicast filter for IPv4
+I (1688) ex01: [t=167 ms] ETH_EVENT CONNECTED (link up)
+I (2698) ex01: [t=1173 ms] IP_EVENT GOT_IP: ip 10.0.2.15 nm 255.255.255.0 gw 10.0.2.2
+I (2698) esp_netif_handlers: eth ip: 10.0.2.15, mask: 255.255.255.0, gw: 10.0.2.2
+I (2698) ex01: $$$ EXREADY ip=10.0.2.15 nm=255.255.255.0 gw=10.0.2.2 dns=10.0.2.3 mac=52:54:00:12:34:56 t_ms=1173
+I (7698) ex01: EX01-ST tick=1/6 up_s=6 ip=10.0.2.15 rx=2(+1) tx=2(+1) drop=+0 err=+0
+I (12698) ex01: EX01-ST tick=2/6 up_s=11 ip=10.0.2.15 rx=3(+1) tx=3(+1) drop=+0 err=+0
+I (17698) ex01: EX01-ST tick=3/6 up_s=16 ip=10.0.2.15 rx=3(+0) tx=3(+0) drop=+0 err=+0
+I (22698) ex01: EX01-ST tick=4/6 up_s=21 ip=10.0.2.15 rx=3(+0) tx=3(+0) drop=+0 err=+0
+I (27698) ex01: EX01-ST tick=5/6 up_s=26 ip=10.0.2.15 rx=3(+0) tx=3(+0) drop=+0 err=+0
+I (32698) ex01: EX01-ST tick=6/6 up_s=31 ip=10.0.2.15 rx=3(+0) tx=3(+0) drop=+0 err=+0
+I (32698) ex01: $$$ EXDONE stats_window_ms=30000 t_ms=31173
+qemu-system-xtensa: terminating on signal 15 from pid 3811474 (timeout)

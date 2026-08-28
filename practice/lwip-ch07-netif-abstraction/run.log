@@ -1,0 +1,162 @@
+Adding SPI flash device
+ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x12 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0040,len:6272
+load:0x40078000,len:15820
+load:0x40080400,len:3920
+entry 0x40080644
+I (660) boot: ESP-IDF v6.0.2 2nd stage bootloader
+I (661) boot: compile time Aug 27 2026 01:19:00
+I (661) boot: Multicore bootloader
+I (692) boot: chip revision: v3.0
+I (693) boot.esp32: SPI Speed      : 40MHz
+I (693) boot.esp32: SPI Mode       : DIO
+I (693) boot.esp32: SPI Flash Size : 2MB
+I (697) boot: Enabling RNG early entropy source...
+I (704) boot: Partition Table:
+I (704) boot: ## Label            Usage          Type ST Offset   Length
+I (704) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (705) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (705) boot:  2 factory          factory app      00 00 00010000 00100000
+I (707) boot: End of partition table
+I (736) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=0f714h ( 63252) map
+I (752) esp_image: segment 1: paddr=0001f73c vaddr=3ffb0000 size=008dch (  2268) load
+I (764) esp_image: segment 2: paddr=00020020 vaddr=400d0020 size=2aaa8h (174760) map
+I (785) esp_image: segment 3: paddr=0004aad0 vaddr=3ffb08dc size=021f0h (  8688) load
+I (797) esp_image: segment 4: paddr=0004ccc8 vaddr=40080000 size=0b23ch ( 45628) load
+I (811) esp_image: segment 5: paddr=00057f0c vaddr=50000000 size=00028h (    40) load
+I (855) boot: Loaded app from partition at offset 0x10000
+I (855) boot: Disabling RNG early entropy source...
+I (866) cpu_start: Multicore app
+I (1428) cpu_start: GPIO 3 and 1 are used as console UART I/O pins
+I (1430) cpu_start: Pro cpu start user code
+I (1430) cpu_start: cpu freq: 160000000 Hz
+I (1430) app_init: Application information:
+I (1430) app_init: Project name:     lwip_ch07_netif_abstraction
+I (1431) app_init: App version:      924d871
+I (1431) app_init: Compile time:     Aug 27 2026 01:23:57
+I (1431) app_init: ELF file SHA256:  53ab21b87...
+I (1431) app_init: ESP-IDF:          v6.0.2
+I (1431) efuse_init: Min chip rev:     v0.0
+I (1431) efuse_init: Max chip rev:     v3.99 
+I (1431) efuse_init: Chip rev:         v3.0
+I (1432) heap_init: Initializing. RAM available for dynamic allocation:
+I (1432) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM
+I (1432) heap_init: At 3FFB40B0 len 0002BF50 (175 KiB): DRAM
+I (1432) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM
+I (1432) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM
+I (1432) heap_init: At 4008B23C len 00014DC4 (83 KiB): IRAM
+I (1457) spi_flash: detected chip: winbond
+I (1461) spi_flash: flash io: dio
+I (1475) main_task: Started on CPU0
+I (1475) main_task: Calling app_main()
+I (1475) ch7lab: == ch7 lab: netif contract anatomy / routing dispatch / link fault injection ==
+I (1495) esp_eth.netif.netif_glue: 52:54:00:12:34:56
+I (1495) esp_eth.netif.netif_glue: ethernet attached to netif
+I (1595) ch7lab: [extcb] netif en1 reason=0x0001
+I (1595) ch7lab: [extcb]   NETIF_ADDED
+E (1595) esp_eth: esp_eth_ioctl(533): add mac address to filter not supported
+E (1595) esp_eth.netif.netif_glue: eth_set_mac_filter(56): failed to add mac filter
+E (1595) esp_netif_lwip: Failed to add multicast filter for IPv4
+I (1595) ch7lab: [extcb] netif en1 reason=0x0008
+I (1595) ch7lab: [extcb]   STATUS_CHANGED state=1
+I (1595) ch7lab: [extcb] netif en1 reason=0x0004
+I (1595) ch7lab: [extcb]   LINK_CHANGED state=1
+I (1595) ch7lab: waiting for DHCP lease ...
+I (2595) ch7lab: GOT_IP: 10.0.2.15/255.255.255.0 gw 10.0.2.2
+I (2595) esp_netif_handlers: eth ip: 10.0.2.15, mask: 255.255.255.0, gw: 10.0.2.2
+I (2595) ch7lab: [extcb] netif en1 reason=0x04f0
+I (2595) ch7lab: [extcb]   IPv4 settings event (old addr 为空/未变)
+I (2595) ch7lab: en lwip netif handle = 0x3ffb8d0c
+I (2595) ch7lab: === E1: netif_list 解剖（sizeof(struct netif)=260）===
+I (2595) ch7lab: --- netif en1 (index=2) ---
+I (2595) ch7lab:   struct@0x3ffb8d0c size=260 state(背指针)=0x3ffb8c9c
+I (2595) ch7lab:   ip/mask/gw: 10.0.2.15/255.255.255.0 gw 10.0.2.2
+I (2595) ch7lab:   mtu=1500 hwaddr_len=6 hwaddr=52:54:00:12:34:56 flags=0x7f[UP BCAST LINK_UP ETHARP ETH IGMP MLD6 ]
+I (2595) ch7lab:   input=0x400df748 output=0x400e8e20 linkoutput=0x400f31e8
+I (2595) ch7lab:   hostname="espressif"
+I (2595) ch7lab:   client_data[DHCP]=0x3ffba1fc
+I (2595) ch7lab:   loopback 队列 first=0 last=0
+I (2595) ch7lab: --- netif lo0 (index=1) ---
+I (2595) ch7lab:   struct@0x3ffb368c size=260 state(背指针)=0
+I (2595) ch7lab:   ip/mask/gw: 127.0.0.1/255.0.0.0 gw 127.0.0.1
+I (2595) ch7lab:   mtu=0 hwaddr_len=0 hwaddr=00:00:00:00:00:00 flags=0x05[UP LINK_UP ]
+I (2595) ch7lab:   input=0x400df748 output=0x400dff8c linkoutput=0
+I (2595) ch7lab:   hostname="(null)"
+I (2595) ch7lab:   client_data[DHCP]=0 (无 DHCP 实例)
+I (2595) ch7lab:   loopback 队列 first=0 last=0
+I (2595) ch7lab: === E1 done: 共 2 个 netif, 默认网卡(netif_default)=0x3ffb8d0c ===
+I (2895) ch7lab: --- experiment B: routing dispatch ---
+I (2895) ch7lab: === E2a: ip4_route() 分派表（ctx=tcpip_thread）===
+I (2895) ch7lab:   lo-self    127.0.0.1        -> netif lo0 (ip=127.0.0.1)
+I (2895) ch7lab:   in-subnet  10.0.2.2         -> netif en1 (ip=10.0.2.15)
+I (2895) ch7lab:   dns        10.0.2.3         -> netif en1 (ip=10.0.2.15)
+I (2895) ch7lab:   off-subnet 192.168.199.99   -> netif en1 (ip=10.0.2.15)
+I (2895) ch7lab: === E2a done ===
+I (2895) ch7lab: [stats before-pings] icmp.xmit=0 icmp.recv=0 icmp.err=0 | ip.xmit=2 ip.rterr=0 | link.xmit=1 link.recv=1 link.drop=0
+I (2895) ch7lab: --- experiment B2: ping 交叉验证（link 正常）---
+I (2895) ch7lab: [ping 10.0.2.2] seq=1 reply time=0 us
+I (3095) ch7lab: [ping 10.0.2.2] seq=2 reply time=0 us
+I (3295) ch7lab: [ping 10.0.2.2] 统计: sent=2 recv=2 loss=0%
+I (7795) ch7lab: [stats after-eth-ping] icmp.xmit=0 icmp.recv=2 icmp.err=0 | ip.xmit=4 ip.rterr=0 | link.xmit=2 link.recv=2 link.drop=0
+I (7795) ch7lab: [ping 127.0.0.1] seq=1 reply time=0 us
+I (7995) ch7lab: [ping 127.0.0.1] seq=2 reply time=0 us
+I (8195) ch7lab: [ping 127.0.0.1] 统计: sent=2 recv=2 loss=0%
+I (12695) ch7lab: [stats after-lo-ping] icmp.xmit=2 icmp.recv=6 icmp.err=0 | ip.xmit=8 ip.rterr=0 | link.xmit=7 link.recv=7 link.drop=0
+I (12695) ch7lab: --- experiment C: link-down fault injection ---
+I (12695) ch7lab: >>> 注入: netif_set_link_down(en1)，注入前 flags=0x7f link_up=1 up=1
+I (12695) ch7lab: [extcb] netif en1 reason=0x0004
+I (12695) ch7lab: [extcb]   LINK_CHANGED state=0
+I (12695) ch7lab: <<< 注入完成: flags=0x7b link_up=0 up=1（注意 UP 位仍置位）
+W (12895) ch7lab: [udp-probe link-down] sendto 失败 rc=-1 errno=118
+I (12895) ch7lab: 走 eth 的 ping（预期全超时）：
+E (12895) ping_sock: send error=0
+W (13795) ch7lab: [ping 10.0.2.2-DOWN] seq=1 TIMEOUT
+E (13795) ping_sock: send error=0
+W (14695) ch7lab: [ping 10.0.2.2-DOWN] seq=2 TIMEOUT
+I (14695) ch7lab: [ping 10.0.2.2-DOWN] 统计: sent=0 recv=0 loss=100%
+I (17795) ch7lab: [stats after-down-pings] icmp.xmit=2 icmp.recv=6 icmp.err=0 | ip.xmit=8 ip.rterr=3 | link.xmit=7 link.recv=7 link.drop=0
+I (17795) ch7lab: 走 lo 的 ping（预期照常成功——此路不经过物理网卡）：
+I (17795) ch7lab: [ping 127.0.0.1-DOWN] seq=1 reply time=0 us
+I (17995) ch7lab: [ping 127.0.0.1-DOWN] seq=2 reply time=0 us
+I (18195) ch7lab: [ping 127.0.0.1-DOWN] 统计: sent=2 recv=2 loss=0%
+I (22695) ch7lab: down 态路由复测：
+I (22695) ch7lab: === E2a: ip4_route() 分派表（ctx=tcpip_thread）===
+I (22695) ch7lab:   lo-self    127.0.0.1        -> netif lo0 (ip=127.0.0.1)
+I (22695) ch7lab:   in-subnet  10.0.2.2         -> NO ROUTE (ip.rterr+1)
+I (22695) ch7lab:   dns        10.0.2.3         -> NO ROUTE (ip.rterr+1)
+I (22695) ch7lab:   off-subnet 192.168.199.99   -> NO ROUTE (ip.rterr+1)
+I (22695) ch7lab: === E2a done ===
+I (22695) ch7lab: --- experiment C2: link-up recovery ---
+I (22695) ch7lab: >>> 注入: netif_set_link_up(en1)
+I (22695) ch7lab: [extcb] netif en1 reason=0x0004
+I (22695) ch7lab: [extcb]   LINK_CHANGED state=1
+I (22695) ch7lab: <<< 注入完成: flags=0x7f link_up=1 up=1
+I (23695) ch7lab: [extcb] netif en1 reason=0x0400
+I (23695) ch7lab: [extcb]   IPv4 settings event (old addr 为空/未变)
+I (23895) ch7lab: [udp-probe recovered] sendto OK (3 bytes)
+I (23895) ch7lab: 恢复后 netif 终态：
+I (23895) ch7lab: === E1: netif_list 解剖（sizeof(struct netif)=260）===
+I (23895) ch7lab: --- netif en1 (index=2) ---
+I (23895) ch7lab:   struct@0x3ffb8d0c size=260 state(背指针)=0x3ffb8c9c
+I (23895) ch7lab:   ip/mask/gw: 10.0.2.15/255.255.255.0 gw 10.0.2.2
+I (23895) ch7lab:   mtu=1500 hwaddr_len=6 hwaddr=52:54:00:12:34:56 flags=0x7f[UP BCAST LINK_UP ETHARP ETH IGMP MLD6 ]
+I (23895) ch7lab:   input=0x400df748 output=0x400e8e20 linkoutput=0x400f31e8
+I (23895) ch7lab:   hostname="espressif"
+I (23895) ch7lab:   client_data[DHCP]=0x3ffba1fc
+I (23895) ch7lab:   loopback 队列 first=0 last=0
+I (23895) ch7lab: --- netif lo0 (index=1) ---
+I (23895) ch7lab:   struct@0x3ffb368c size=260 state(背指针)=0
+I (23895) ch7lab:   ip/mask/gw: 127.0.0.1/255.0.0.0 gw 127.0.0.1
+I (23895) ch7lab:   mtu=0 hwaddr_len=0 hwaddr=00:00:00:00:00:00 flags=0x05[UP LINK_UP ]
+I (23895) ch7lab:   input=0x400df748 output=0x400dff8c linkoutput=0
+I (23895) ch7lab:   hostname="(null)"
+I (23895) ch7lab:   client_data[DHCP]=0 (无 DHCP 实例)
+I (23895) ch7lab:   loopback 队列 first=0 last=0
+I (23895) ch7lab: === E1 done: 共 2 个 netif, 默认网卡(netif_default)=0x3ffb8d0c ===
+I (23895) ch7lab: == all ch7 experiments done ==
+I (27895) main_task: Returned from app_main()

@@ -1,0 +1,9 @@
+TPT label=raw port=8010 size=1200 k=1500 rx=1488 missing=12 attempts=1500 resends=0 ms=190 mbit=75.97
+TPT label=netconn port=8011 size=1200 k=1500 rx=1488 missing=12 attempts=1500 resends=0 ms=246 mbit=58.64
+TPT label=socket port=8012 size=1200 k=1500 rx=1488 missing=12 attempts=1500 resends=0 ms=354 mbit=40.69
+TPT label=raw port=8010 size=1200 k=1500 rx=1488 missing=12 attempts=1500 resends=0 ms=187 mbit=77.15
+TPT label=netconn port=8011 size=1200 k=1500 rx=1488 missing=12 attempts=1500 resends=0 ms=262 mbit=55.06
+TPT label=socket port=8012 size=1200 k=1500 rx=1488 missing=12 attempts=1500 resends=0 ms=337 mbit=42.76
+TPT label=raw port=8010 size=1200 k=1500 rx=1488 missing=12 attempts=1500 resends=0 ms=277 mbit=52.04
+TPT label=netconn port=8011 size=1200 k=1500 rx=1488 missing=12 attempts=1500 resends=0 ms=267 mbit=53.94
+TPT label=socket port=8012 size=1200 k=1500 rx=1488 missing=12 attempts=1500 resends=0 ms=311 mbit=46.32

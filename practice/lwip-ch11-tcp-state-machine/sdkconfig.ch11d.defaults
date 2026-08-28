@@ -1,0 +1,5 @@
+# 实验 d 专用叠加层：把 MEMP_TCP_PCB 池压到最小，复现 tcp_listen_input()
+# 在 tcp_alloc() 失败时静默丢弃 SYN（tcp.memerr 爬升、不回 RST）的现象。
+# 构建：idf.py -B build_d -D SDKCONFIG=sdkconfig.d11 \
+#       -D SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.ch11d.defaults" build
+CONFIG_LWIP_MAX_ACTIVE_TCP=2

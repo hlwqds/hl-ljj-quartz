@@ -1,0 +1,2 @@
+# 实验 d 主机侧洪峰发生器实际输出（2026-08-27 运行）
+flood done sent=16451 dur=22.0s pps=800   # python3 tools/udp_flood.py 22 800

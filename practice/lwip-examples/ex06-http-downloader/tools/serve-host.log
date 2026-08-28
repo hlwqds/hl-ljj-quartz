@@ -1,0 +1,46 @@
+# tools/serve-host.log —— ex06 宿主端 serve.py 的原始 stderr 归档（未改动逐字留档）。
+# 服务端于 2026-08-27 12:51 启动、进程全程未重启，共四段（锚点：curl 走 HTTP/1.1，
+# guest 固件走 HTTP/1.0；每段以 GET /good.bin 开头、GET /blackhole.bin 结尾）：
+#   [段1 行8-13]   README §3.1 冒烟：curl 验证 /good.bin /short.bin /nolen.bin
+#   [段2 行14-23]  第一版固件 QEMU 会话：fletcher 哨兵 bug 导致 CHECKSUM MISMATCH
+#                  （对应缺陷复盘见 README §7.2，其 guest 日志未入库）
+#   [段3 行24-33]  正式验收会话，与仓库根 run.log 一一对应（同窗五请求；R6 探针打
+#                  空槽 8257 不产生服务端日志行）
+#   [段4 行34-43]  附录 A iptables 黑洞注入会话，对应 tools/fault-connect-timeout.log
+ex06-serve listening on 127.0.0.1:8250 size=5242880 seed=20260826 fletcher32=1e82586d
+[srv] 127.0.0.1 "GET /good.bin HTTP/1.1" 200 -
+[srv] 127.0.0.1 /good.bin: sent full fletch=1e82586d 1ms
+[srv] 127.0.0.1 "GET /short.bin HTTP/1.1" 200 -
+[srv] 127.0.0.1 /short.bin: promised 5242880 sent 1310720 then ABORT(linger=0) fletch=af82563f 38ms
+[srv] 127.0.0.1 "GET /nolen.bin HTTP/1.1" 200 -
+[srv] 127.0.0.1 /nolen.bin: sent full WITHOUT Content-Length fletch=1e82586d 1ms
+[srv] 127.0.0.1 "GET /good.bin HTTP/1.0" 200 -
+[srv] 127.0.0.1 /good.bin: sent full fletch=1e82586d 240ms
+[srv] 127.0.0.1 "GET /short.bin HTTP/1.0" 200 -
+[srv] 127.0.0.1 /short.bin: promised 5242880 sent 1310720 then ABORT(linger=0) fletch=af82563f 33ms
+[srv] 127.0.0.1 "GET /good.bin HTTP/1.0" 200 -
+[srv] 127.0.0.1 /good.bin: sent full fletch=1e82586d 286ms
+[srv] 127.0.0.1 "GET /nolen.bin HTTP/1.0" 200 -
+[srv] 127.0.0.1 /nolen.bin: sent full WITHOUT Content-Length fletch=1e82586d 213ms
+[srv] 127.0.0.1 "GET /blackhole.bin HTTP/1.0" 200 -
+[srv] 127.0.0.1 /blackhole.bin head=65536B -> SILENT forever
+[srv] 127.0.0.1 "GET /good.bin HTTP/1.0" 200 -
+[srv] 127.0.0.1 /good.bin: sent full fletch=1e82586d 255ms
+[srv] 127.0.0.1 "GET /short.bin HTTP/1.0" 200 -
+[srv] 127.0.0.1 /short.bin: promised 5242880 sent 1310720 then ABORT(linger=0) fletch=af82563f 31ms
+[srv] 127.0.0.1 "GET /good.bin HTTP/1.0" 200 -
+[srv] 127.0.0.1 /good.bin: sent full fletch=1e82586d 207ms
+[srv] 127.0.0.1 "GET /nolen.bin HTTP/1.0" 200 -
+[srv] 127.0.0.1 /nolen.bin: sent full WITHOUT Content-Length fletch=1e82586d 252ms
+[srv] 127.0.0.1 "GET /blackhole.bin HTTP/1.0" 200 -
+[srv] 127.0.0.1 /blackhole.bin head=65536B -> SILENT forever
+[srv] 127.0.0.1 "GET /good.bin HTTP/1.0" 200 -
+[srv] 127.0.0.1 /good.bin: sent full fletch=1e82586d 274ms
+[srv] 127.0.0.1 "GET /short.bin HTTP/1.0" 200 -
+[srv] 127.0.0.1 /short.bin: promised 5242880 sent 1310720 then ABORT(linger=0) fletch=af82563f 30ms
+[srv] 127.0.0.1 "GET /good.bin HTTP/1.0" 200 -
+[srv] 127.0.0.1 /good.bin: sent full fletch=1e82586d 238ms
+[srv] 127.0.0.1 "GET /nolen.bin HTTP/1.0" 200 -
+[srv] 127.0.0.1 /nolen.bin: sent full WITHOUT Content-Length fletch=1e82586d 250ms
+[srv] 127.0.0.1 "GET /blackhole.bin HTTP/1.0" 200 -
+[srv] 127.0.0.1 /blackhole.bin head=65536B -> SILENT forever

@@ -1,0 +1,9 @@
+# lwIP 深度解析（十五）跨线程误用断言变体：
+# 打开 CONFIG_LWIP_CHECK_THREAD_SAFETY 后，所有 LWIP_ASSERT_CORE_LOCKED()
+# 的调用点（tcp_new/tcp_write/tcp_poll...）都会在非 tcpip 上下文触发断言复位。
+# 构建方法：idf.py -D SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.thrcheck" build
+
+CONFIG_ETH_USE_OPENETH=y
+CONFIG_LWIP_STATS=y
+CONFIG_LWIP_MAX_SOCKETS=16
+CONFIG_LWIP_CHECK_THREAD_SAFETY=y

@@ -1,0 +1,94 @@
+Adding SPI flash device
+ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x12 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0040,len:6272
+load:0x40078000,len:15820
+load:0x40080400,len:3920
+entry 0x40080644
+I (666) boot: ESP-IDF v6.0.2 2nd stage bootloader
+I (666) boot: compile time Aug 27 2026 13:33:07
+I (666) boot: Multicore bootloader
+I (703) boot: chip revision: v0.0
+I (705) boot.esp32: SPI Speed      : 40MHz
+I (705) boot.esp32: SPI Mode       : DIO
+I (705) boot.esp32: SPI Flash Size : 2MB
+I (711) boot: Enabling RNG early entropy source...
+I (716) boot: Partition Table:
+I (716) boot: ## Label            Usage          Type ST Offset   Length
+I (717) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (717) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (717) boot:  2 factory          factory app      00 00 00010000 00100000
+I (720) boot: End of partition table
+I (751) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=10db8h ( 69048) map
+I (768) esp_image: segment 1: paddr=00020de0 vaddr=3ffb0000 size=02acch ( 10956) load
+I (782) esp_image: segment 2: paddr=000238b4 vaddr=40080000 size=0b23ch ( 45628) load
+I (797) esp_image: segment 3: paddr=0002eaf8 vaddr=50000000 size=00028h (    40) load
+I (809) esp_image: segment 4: paddr=0002eb28 vaddr=00000000 size=014f0h (  5360) 
+I (823) esp_image: segment 5: paddr=00030020 vaddr=400d0020 size=2bff4h (180212) map
+I (886) boot: Loaded app from partition at offset 0x10000
+I (886) boot: Disabling RNG early entropy source...
+I (900) cpu_start: Multicore app
+I (1498) cpu_start: GPIO 3 and 1 are used as console UART I/O pins
+I (1500) cpu_start: Pro cpu start user code
+I (1500) cpu_start: cpu freq: 160000000 Hz
+I (1500) app_init: Application information:
+I (1500) app_init: Project name:     ex11_throughput_bench
+I (1500) app_init: App version:      924d871-dirty
+I (1500) app_init: Compile time:     Aug 27 2026 13:45:20
+I (1500) app_init: ELF file SHA256:  39f2cbad6...
+I (1501) app_init: ESP-IDF:          v6.0.2
+I (1501) efuse_init: Min chip rev:     v0.0
+I (1501) efuse_init: Max chip rev:     v3.99 
+I (1501) efuse_init: Chip rev:         v0.0
+I (1501) heap_init: Initializing. RAM available for dynamic allocation:
+I (1502) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM
+I (1502) heap_init: At 3FFC8070 len 00017F90 (95 KiB): DRAM
+I (1502) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM
+I (1502) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM
+I (1502) heap_init: At 4008B23C len 00014DC4 (83 KiB): IRAM
+I (1522) spi_flash: detected chip: gd
+I (1527) spi_flash: flash io: dio
+W (1530) spi_flash: Detected size(4096k) larger than the size in the binary image header(2048k). Using the size in the binary image header.
+I (1537) main_task: Started on CPU0
+I (1537) main_task: Calling app_main()
+I (1537) ex11: == ex11 throughput-bench (iperf-lite, TX pump + RX flood) ==
+I (1557) esp_eth.netif.netif_glue: 52:54:00:12:34:56
+I (1557) esp_eth.netif.netif_glue: ethernet attached to netif
+I (1657) ex11: [EX11] ETH START
+E (1657) esp_eth: esp_eth_ioctl(533): add mac address to filter not supported
+E (1657) esp_eth.netif.netif_glue: eth_set_mac_filter(56): failed to add mac filter
+E (1657) esp_netif_lwip: Failed to add multicast filter for IPv4
+I (1657) ex11: [EX11] ETH CONNECTED (link up)
+I (2657) ex11: [EX11] GOT_IP 10.0.2.15 gw 10.0.2.2
+I (2657) esp_netif_handlers: eth ip: 10.0.2.15, mask: 255.255.255.0, gw: 10.0.2.2
+[EX11] PHASE=READY mode=both rounds=3 mb=4 tile_kb=64 tx=10.0.2.2:8290 rx=:8291 want_bytes_per_round=4000000
+[EX11] BUILD Aug 27 2026 13:45:21 snd_buf=28800 wnd=28800 mss=1440 openeth_ring=32
+[EX11] CFGOK wnd-ring inequality satisfied (or unknown)
+[EX11] -- T1 BEGIN target=10.0.2.2:8290 bytes=4000000
+I (2657) main_task: Returned from app_main()
+I (2667) ex11: [EX11] TX R=1 connected 10.0.2.2:8290 (wait 8 ms)
+[EX11] TX R=1 RESULT status=OK bytes=4000000/4000000 conn_ms=8 xfer_ms=283 full_ms=285 mbit=113.10 stall=0 refusals=0 ack=1 digest=5b5c err=0
+[EX11] -- R1 BEGIN listening=:8291 bytes=4000000
+[EX11] RX_LISTEN port=8291 backlog=4
+I (6927) ex11: [EX11] RX R=1 CONN from=10.0.2.2:43536 (wait 3969 ms)
+[EX11] RX R=1 RESULT status=OK got=4000000/4000000 wait_ms=3969 xfer_ms=504 mbit=63.46 digest=5b5c stall=0 err=0
+[EX11] -- T2 BEGIN target=10.0.2.2:8290 bytes=4000000
+I (7737) ex11: [EX11] TX R=2 connected 10.0.2.2:8290 (wait 2 ms)
+[EX11] TX R=2 RESULT status=OK bytes=4000000/4000000 conn_ms=2 xfer_ms=285 full_ms=286 mbit=112.21 stall=0 refusals=0 ack=1 digest=5b5c err=0
+[EX11] -- R2 BEGIN listening=:8291 bytes=4000000
+[EX11] RX_LISTEN port=8291 backlog=4
+I (8037) ex11: [EX11] RX R=2 CONN from=10.0.2.2:36900 (wait 13 ms)
+[EX11] RX R=2 RESULT status=OK got=4000000/4000000 wait_ms=13 xfer_ms=380 mbit=84.23 digest=5b5c stall=0 err=0
+[EX11] -- T3 BEGIN target=10.0.2.2:8290 bytes=4000000
+I (8717) ex11: [EX11] TX R=3 connected 10.0.2.2:8290 (wait 2 ms)
+[EX11] TX R=3 RESULT status=OK bytes=4000000/4000000 conn_ms=2 xfer_ms=278 full_ms=278 mbit=115.22 stall=0 refusals=0 ack=1 digest=5b5c err=0
+[EX11] -- R3 BEGIN listening=:8291 bytes=4000000
+[EX11] RX_LISTEN port=8291 backlog=4
+I (9017) ex11: [EX11] RX R=3 CONN from=10.0.2.2:36918 (wait 25 ms)
+[EX11] RX R=3 RESULT status=OK got=4000000/4000000 wait_ms=25 xfer_ms=396 mbit=80.79 digest=5b5c stall=0 err=0
+[EX11] SUMMARY mode=both rounds=3 tx_ok=3/3 avg_tx_mbit=113.5 rx_ok=3/3 avg_rx_mbit=76.2
+[EX11] PHASE=DONE -- rounds finished, restarting to exit QEMU cleanly

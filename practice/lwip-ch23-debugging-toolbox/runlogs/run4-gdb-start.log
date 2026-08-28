@@ -1,0 +1,1036 @@
+Adding SPI flash device
+ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x12 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0040,len:6272
+load:0x40078000,len:15820
+load:0x40080400,len:3920
+entry 0x40080644
+I (661) boot: ESP-IDF v6.0.2 2nd stage bootloader
+I (662) boot: compile time Aug 27 2026 06:03:48
+I (662) boot: Multicore bootloader
+I (702) boot: chip revision: v3.0
+I (704) boot.esp32: SPI Speed      : 40MHz
+I (704) boot.esp32: SPI Mode       : DIO
+I (704) boot.esp32: SPI Flash Size : 2MB
+I (708) boot: Enabling RNG early entropy source...
+I (718) boot: Partition Table:
+I (718) boot: ## Label            Usage          Type ST Offset   Length
+I (718) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (719) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (719) boot:  2 factory          factory app      00 00 00010000 00100000
+I (721) boot: End of partition table
+I (754) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=10ee4h ( 69348) map
+I (781) esp_image: segment 1: paddr=00020f0c vaddr=3ffb0000 size=02acch ( 10956) load
+I (804) esp_image: segment 2: paddr=000239e0 vaddr=40080000 size=0b23ch ( 45628) load
+I (829) esp_image: segment 3: paddr=0002ec24 vaddr=50000000 size=00028h (    40) load
+I (841) esp_image: segment 4: paddr=0002ec54 vaddr=00000000 size=013c4h (  5060) 
+I (873) esp_image: segment 5: paddr=00030020 vaddr=400d0020 size=2ce30h (183856) map
+I (945) boot: Loaded app from partition at offset 0x10000
+I (945) boot: Disabling RNG early entropy source...
+I (962) cpu_start: Multicore app
+I (1626) cpu_start: GPIO 3 and 1 are used as console UART I/O pins
+I (1628) cpu_start: Pro cpu start user code
+I (1628) cpu_start: cpu freq: 160000000 Hz
+I (1628) app_init: Application information:
+I (1628) app_init: Project name:     lwip_ch23_debugging_toolbox
+I (1628) app_init: App version:      924d871
+I (1628) app_init: Compile time:     Aug 27 2026 06:17:52
+I (1628) app_init: ELF file SHA256:  33b1ff538...
+I (1628) app_init: ESP-IDF:          v6.0.2
+I (1629) efuse_init: Min chip rev:     v0.0
+I (1629) efuse_init: Max chip rev:     v3.99 
+I (1629) efuse_init: Chip rev:         v3.0
+I (1629) heap_init: Initializing. RAM available for dynamic allocation:
+I (1630) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM
+I (1630) heap_init: At 3FFB4080 len 0002BF80 (175 KiB): DRAM
+I (1630) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM
+I (1630) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM
+I (1630) heap_init: At 4008B23C len 00014DC4 (83 KiB): IRAM
+I (1653) spi_flash: detected chip: gd
+I (1656) spi_flash: flash io: dio
+W (1669) spi_flash: Detected size(4096k) larger than the size in the binary image header(2048k). Using the size in the binary image header.
+I (1674) main_task: Started on CPU0
+I (1674) main_task: Calling app_main()
+I (1674) ch23lab: == ch23: debugging toolbox over openeth ==
+
+== ch23 lab start ==
+[mem] boot-baseline  free=279824 largest=147456 min-ever=279824
+I (1684) main_task: Returned from app_main()
+I (1704) esp_eth.netif.netif_glue: 52:54:00:12:34:56
+I (1704) esp_eth.netif.netif_glue: ethernet attached to netif
+E (1804) esp_eth: esp_eth_ioctl(533): add mac address to filter not supported
+E (1804) esp_eth.netif.netif_glue: eth_set_mac_filter(56): failed to add mac filter
+E (1804) esp_netif_lwip: Failed to add multicast filter for IPv4
+I (1804) ch23lab: ETH link up
+I (1804) ch23lab: waiting for DHCP lease ...
+I (2804) ch23lab: GOT_IP: 10.0.2.15
+I (2804) esp_netif_handlers: eth ip: 10.0.2.15, mask: 255.255.255.0, gw: 10.0.2.2
+tcp_bind: bind to port 23210
+tcp_bind: bind to port 23211
+tcp_bind: bind to port 8888
+[srv-lo] listening on 127.0.0.1:23210 backlog=2
+[srv-fix] listening on 127.0.0.1:23211 backlog=2 (per-conn worker)
+[srv-ext] listening on 0.0.0.0:8888 (hostfwd tcp::8031-:8888)
+[srv-ready] lo=1 fix=1 ext=1
+==== PHASE-P: ping gateway baseline ====
+[tx ] len=42 pkts=1 bytes=42
+[tx ] len=106 pkts=2 bytes=148
+I (2904) ch23lab: 32 bytes from 10.0.2.2 icmp_seq=1 time=2 ms
+[tx ] len=106 pkts=3 bytes=254
+I (3204) ch23lab: 32 bytes from 10.0.2.2 icmp_seq=2 time=0 ms
+[tx ] len=106 pkts=4 bytes=360
+I (3504) ch23lab: 32 bytes from 10.0.2.2 icmp_seq=3 time=0 ms
+[tx ] len=42 pkts=5 bytes=402
+[tx ] len=42 pkts=6 bytes=444
+[tx ] len=42 pkts=7 bytes=486
+[mem] post-ping      free=247796 largest=122880 min-ever=244492
+==== PHASE-L1: sequential connect/echo/close x5 ====
+tcp_connect to port 23210
+[ip4in] 127.0.0.1:55323 > 127.0.0.1:23210 S    len=0
+TCP connection request 55323 -> 23210.
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:55323 SA   len=0
+[ip4in] 127.0.0.1:55323 > 127.0.0.1:23210 A    len=0
+TCP connection established 55323 -> 23210.
+[ip4in] 127.0.0.1:55323 > 127.0.0.1:23210 AP   len=13
+tcp_recved: received 13 bytes, wnd 5760 (0).
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:55323 AP   len=13
+tcp_recved: received 13 bytes, wnd 5760 (0).
+tcp_close: closing in State: ESTABLISHED
+[ip4in] 127.0.0.1:55323 > 127.0.0.1:23210 AF   len=0
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:55323 A    len=0
+tcp_close: closing in State: CLOSE_WAIT
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:55323 AF   len=0
+TCP connection closed: FIN_WAIT_2 23210 -> 55323.
+tcp_pcb_purge
+[ip4in] 127.0.0.1:55323 > 127.0.0.1:23210 A    len=0
+TCP connection closed: LAST_ACK 55323 -> 23210.
+tcp_pcb_purge
+[srv 23210] client closed
+[seq ] round0 connect+echo -> OK
+[tcpdiff] L1-round: xmit=9 recv=9 cachehit=3
+tcp_connect to port 23210
+[ip4in] 127.0.0.1:55324 > 127.0.0.1:23210 S    len=0
+TCP connection request 55324 -> 23210.
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:55324 SA   len=0
+[ip4in] 127.0.0.1:55324 > 127.0.0.1:23210 A    len=0
+TCP connection established 55324 -> 23210.
+[ip4in] 127.0.0.1:55324 > 127.0.0.1:23210 AP   len=13
+tcp_recved: received 13 bytes, wnd 5760 (0).
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:55324 AP   len=13
+tcp_recved: received 13 bytes, wnd 5760 (0).
+tcp_close: closing in State: ESTABLISHED
+[ip4in] 127.0.0.1:55324 > 127.0.0.1:23210 AF   len=0
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:55324 A    len=0
+tcp_close: closing in State: CLOSE_WAIT
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:55324 AF   len=0
+[srv 23210] client closed
+TCP connection closed: FIN_WAIT_2 23210 -> 55324.
+tcp_pcb_purge
+[ip4in] 127.0.0.1:55324 > 127.0.0.1:23210 A    len=0
+TCP connection closed: LAST_ACK 55324 -> 23210.
+tcp_pcb_purge
+[seq ] round1 connect+echo -> OK
+[tcpdiff] L1-round: xmit=9 recv=9 cachehit=4
+tcp_connect to port 23210
+[ip4in] 127.0.0.1:55325 > 127.0.0.1:23210 S    len=0
+TCP connection request 55325 -> 23210.
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:55325 SA   len=0
+[ip4in] 127.0.0.1:55325 > 127.0.0.1:23210 A    len=0
+TCP connection established 55325 -> 23210.
+[ip4in] 127.0.0.1:55325 > 127.0.0.1:23210 AP   len=13
+tcp_recved: received 13 bytes, wnd 5760 (0).
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:55325 AP   len=13
+tcp_recved: received 13 bytes, wnd 5760 (0).
+tcp_close: closing in State: ESTABLISHED
+[ip4in] 127.0.0.1:55325 > 127.0.0.1:23210 AF   len=0
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:55325 A    len=0
+tcp_close: closing in State: CLOSE_WAIT
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:55325 AF   len=0
+TCP connection closed: FIN_WAIT_2 23210 -> 55325.
+tcp_pcb_purge
+[ip4in] 127.0.0.1:55325 > 127.0.0.1:23210 A    len=0
+TCP connection closed: LAST_ACK 55325 -> 23210.
+tcp_pcb_purge
+[srv 23210] client closed
+[seq ] round2 connect+echo -> OK
+[tcpdiff] L1-round: xmit=9 recv=9 cachehit=4
+tcp_connect to port 23210
+[ip4in] 127.0.0.1:55326 > 127.0.0.1:23210 S    len=0
+TCP connection request 55326 -> 23210.
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:55326 SA   len=0
+[ip4in] 127.0.0.1:55326 > 127.0.0.1:23210 A    len=0
+TCP connection established 55326 -> 23210.
+[ip4in] 127.0.0.1:55326 > 127.0.0.1:23210 AP   len=13
+tcp_recved: received 13 bytes, wnd 5760 (0).
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:55326 AP   len=13
+tcp_recved: received 13 bytes, wnd 5760 (0).
+tcp_close: closing in State: ESTABLISHED
+[ip4in] 127.0.0.1:55326 > 127.0.0.1:23210 AF   len=0
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:55326 A    len=0
+tcp_close: closing in State: CLOSE_WAIT
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:55326 AF   len=0
+TCP connection closed: FIN_WAIT_2 23210 -> 55326.
+tcp_pcb_purge
+[ip4in] 127.0.0.1:55326 > 127.0.0.1:23210 A    len=0
+TCP connection closed: LAST_ACK 55326 -> 23210.
+tcp_pcb_purge
+[srv 23210] client closed
+[seq ] round3 connect+echo -> OK
+[tcpdiff] L1-round: xmit=9 recv=9 cachehit=4
+tcp_connect to port 23210
+[ip4in] 127.0.0.1:55327 > 127.0.0.1:23210 S    len=0
+TCP connection request 55327 -> 23210.
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:55327 SA   len=0
+[ip4in] 127.0.0.1:55327 > 127.0.0.1:23210 A    len=0
+TCP connection established 55327 -> 23210.
+[ip4in] 127.0.0.1:55327 > 127.0.0.1:23210 AP   len=13
+tcp_recved: received 13 bytes, wnd 5760 (0).
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:55327 AP   len=13
+tcp_recved: received 13 bytes, wnd 5760 (0).
+tcp_close: closing in State: ESTABLISHED
+[ip4in] 127.0.0.1:55327 > 127.0.0.1:23210 AF   len=0
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:55327 A    len=0
+tcp_close: closing in State: CLOSE_WAIT
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:55327 AF   len=0
+TCP connection closed: FIN_WAIT_2 23210 -> 55327.
+tcp_pcb_purge
+[srv 23210] client closed
+[ip4in] 127.0.0.1:55327 > 127.0.0.1:23210 A    len=0
+TCP connection closed: LAST_ACK 55327 -> 23210.
+tcp_pcb_purge
+[seq ] round4 connect+echo -> OK
+[tcpdiff] L1-round: xmit=9 recv=9 cachehit=4
+==== PHASE-L2: conn A alive, then 4 fresh connects to :23210 ====
+tcp_connect to port 23210
+[ip4in] 127.0.0.1:55328 > 127.0.0.1:23210 S    len=0
+TCP connection request 55328 -> 23210.
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:55328 SA   len=0
+[ip4in] 127.0.0.1:55328 > 127.0.0.1:23210 A    len=0
+TCP connection established 55328 -> 23210.
+[L2] A: connect OK fd=58 (kept open)
+[ip4in] 127.0.0.1:55328 > 127.0.0.1:23210 AP   len=14
+tcp_recved: received 14 bytes, wnd 5760 (0).
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:55328 AP   len=14
+tcp_recved: received 14 bytes, wnd 5760 (0).
+[L2] A: echo -> OK
+tcp_connect to port 23210
+[ip4in] 127.0.0.1:55329 > 127.0.0.1:23210 S    len=0
+TCP connection request 55329 -> 23210.
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:55329 SA   len=0
+[ip4in] 127.0.0.1:55329 > 127.0.0.1:23210 A    len=0
+TCP connection established 55329 -> 23210.
+[ip4in] 127.0.0.1:55329 > 127.0.0.1:23210 AP   len=14
+tcp_fasttmr: delayed ACK
+tcp_fasttmr: delayed ACK
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:55329 A    len=0
+[ip4in] 127.0.0.1:55328 > 127.0.0.1:23210 A    len=0
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+[cli ] recv r=-1 errno=11 (want 14)
+[L2] #0 FAILED
+tcp_close: closing in State: ESTABLISHED
+[ip4in] 127.0.0.1:55329 > 127.0.0.1:23210 AF   len=0
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:55329 A    len=0
+[tcpdiff] first-extra-conn: xmit=8 recv=8 cachehit=2
+tcp_connect to port 23210
+[ip4in] 127.0.0.1:55330 > 127.0.0.1:23210 S    len=0
+TCP connection request 55330 -> 23210.
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:55330 SA   len=0
+[ip4in] 127.0.0.1:55330 > 127.0.0.1:23210 A    len=0
+TCP connection established 55330 -> 23210.
+[ip4in] 127.0.0.1:55330 > 127.0.0.1:23210 AP   len=14
+tcp_fasttmr: delayed ACK
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:55330 A    len=0
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+[cli ] recv r=-1 errno=11 (want 14)
+[L2] #1 FAILED
+tcp_close: closing in State: ESTABLISHED
+[ip4in] 127.0.0.1:55330 > 127.0.0.1:23210 AF   len=0
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:55330 A    len=0
+[tcpdiff] next-extra-conns: xmit=7 recv=7 cachehit=2
+tcp_connect to port 23210
+[ip4in] 127.0.0.1:55331 > 127.0.0.1:23210 S    len=0
+TCP connection request 55331 -> 23210.
+tcp_listen_input: listen backlog exceeded for port 23210
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+[ip4in] 127.0.0.1:55331 > 127.0.0.1:23210 S    len=0
+TCP connection request 55331 -> 23210.
+tcp_listen_input: listen backlog exceeded for port 23210
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+[ip4in] 127.0.0.1:55331 > 127.0.0.1:23210 S    len=0
+TCP connection request 55331 -> 23210.
+tcp_listen_input: listen backlog exceeded for port 23210
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+[ip4in] 127.0.0.1:55331 > 127.0.0.1:23210 S    len=0
+TCP connection request 55331 -> 23210.
+tcp_listen_input: listen backlog exceeded for port 23210
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+[ip4in] 127.0.0.1:55331 > 127.0.0.1:23210 S    len=0
+TCP connection request 55331 -> 23210.
+tcp_listen_input: listen backlog exceeded for port 23210
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: max SYN retries reached
+tcp_pcb_purge
+tcp_pcb_purge: data left on ->unacked
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+[cli ] connect 127.0.0.1:23210 FAILED errno=113 (6350601 us)
+[L2] #2 FAILED
+[tcpdiff] next-extra-conns: xmit=5 recv=5 cachehit=5
+tcp_connect to port 23210
+[ip4in] 127.0.0.1:55332 > 127.0.0.1:23210 S    len=0
+TCP connection request 55332 -> 23210.
+tcp_listen_input: listen backlog exceeded for port 23210
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+[ip4in] 127.0.0.1:55332 > 127.0.0.1:23210 S    len=0
+TCP connection request 55332 -> 23210.
+tcp_listen_input: listen backlog exceeded for port 23210
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+[ip4in] 127.0.0.1:55332 > 127.0.0.1:23210 S    len=0
+TCP connection request 55332 -> 23210.
+tcp_listen_input: listen backlog exceeded for port 23210
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+[ip4in] 127.0.0.1:55332 > 127.0.0.1:23210 S    len=0
+TCP connection request 55332 -> 23210.
+tcp_listen_input: listen backlog exceeded for port 23210
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: processing active pcb
+[ip4in] 127.0.0.1:55332 > 127.0.0.1:23210 S    len=0
+TCP connection request 55332 -> 23210.
+tcp_listen_input: listen backlog exceeded for port 23210
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: max SYN retries reached
+tcp_pcb_purge
+tcp_pcb_purge: data left on ->unacked
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+[cli ] connect 127.0.0.1:23210 FAILED errno=113 (6450153 us)
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+tcp_slowtmr: processing active pcb
+tcp_slowtmr: polling application
+[L2] #3 FAILED
+[tcpdiff] next-extra-conns: xmit=5 recv=5 cachehit=5
+[ip4in] 127.0.0.1:55328 > 127.0.0.1:23210 AP   len=14
+tcp_recved: received 14 bytes, wnd 5760 (0).
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:55328 AP   len=14
+tcp_recved: received 14 bytes, wnd 5760 (0).
+[L2] A still alive: echo -> OK
+tcp_close: closing in State: ESTABLISHED
+[ip4in] 127.0.0.1:55328 > 127.0.0.1:23210 AF   len=0
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:55328 A    len=0
+==== PHASE-L2b-FIXED: conn A alive, then 4 fresh connects to :23211 ====
+tcp_close: closing in State: CLOSE_WAIT
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:55328 AF   len=0
+TCP connection closed: FIN_WAIT_2 23210 -> 55328.
+tcp_pcb_purge
+[ip4in] 127.0.0.1:55328 > 127.0.0.1:23210 A    len=0
+TCP connection closed: LAST_ACK 55328 -> 23210.
+tcp_pcb_purge
+[srv 23210] client closed
+tcp_connect to port 23211
+[ip4in] 127.0.0.1:55333 > 127.0.0.1:23211 S    len=0
+TCP connection request 55333 -> 23211.
+[ip4in] 127.0.0.1:23211 > 127.0.0.1:55333 SA   len=0
+[L2b-FIXED] A: connect OK fd=57 (kept open)
+[ip4in] 127.0.0.1:55333 > 127.0.0.1:23211 A    len=0
+TCP connection established 55333 -> 23211.
+[ip4in] 127.0.0.1:55333 > 127.0.0.1:23211 AP   len=14
+tcp_recved: received 14 bytes, wnd 5760 (0).
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:55329 AP   len=14
+tcp_pcb_purge
+[ip4in] 127.0.0.1:55329 > 127.0.0.1:23210 AR   len=0
+tcp_pcb_purge
+tcp_pcb_purge: data left on ->unacked
+tcp_recved: received 14 bytes, wnd 5760 (0).
+[ip4in] 127.0.0.1:23211 > 127.0.0.1:55333 AP   len=14
+[srv 23210] client closed
+tcp_recved: received 14 bytes, wnd 5760 (0).
+[L2b-FIXED] A: echo -> OK
+tcp_recved: received 14 bytes, wnd 5760 (0).
+tcp_connect to port 23211
+[ip4in] 127.0.0.1:55334 > 127.0.0.1:23211 S    len=0
+TCP connection request 55334 -> 23211.
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:55330 AP   len=14
+tcp_pcb_purge
+[ip4in] 127.0.0.1:23211 > 127.0.0.1:55334 SA   len=0
+[ip4in] 127.0.0.1:55330 > 127.0.0.1:23210 AR   len=0
+tcp_pcb_purge
+tcp_pcb_purge: data left on ->unacked
+[ip4in] 127.0.0.1:55334 > 127.0.0.1:23211 A    len=0
+TCP connection established 55334 -> 23211.
+[ip4in] 127.0.0.1:55334 > 127.0.0.1:23211 AP   len=14
+[srv 23210] client closed
+tcp_recved: received 14 bytes, wnd 5760 (0).
+[ip4in] 127.0.0.1:23211 > 127.0.0.1:55334 AP   len=14
+tcp_recved: received 14 bytes, wnd 5760 (0).
+[L2b-FIXED] #0 connect+echo OK (1454 us), now closing it
+tcp_close: closing in State: ESTABLISHED
+[ip4in] 127.0.0.1:55334 > 127.0.0.1:23211 AF   len=0
+[ip4in] 127.0.0.1:23211 > 127.0.0.1:55334 A    len=0
+tcp_close: closing in State: CLOSE_WAIT
+[ip4in] 127.0.0.1:23211 > 127.0.0.1:55334 AF   len=0
+TCP connection closed: FIN_WAIT_2 23211 -> 55334.
+tcp_pcb_purge
+[ip4in] 127.0.0.1:55334 > 127.0.0.1:23211 A    len=0
+TCP connection closed: LAST_ACK 55334 -> 23211.
+tcp_pcb_purge
+[tcpdiff] first-extra-conn: xmit=11 recv=11 cachehit=4
+tcp_connect to port 23211
+[ip4in] 127.0.0.1:55335 > 127.0.0.1:23211 S    len=0
+TCP connection request 55335 -> 23211.
+[ip4in] 127.0.0.1:23211 > 127.0.0.1:55335 SA   len=0
+[ip4in] 127.0.0.1:55335 > 127.0.0.1:23211 A    len=0
+TCP connection established 55335 -> 23211.
+[ip4in] 127.0.0.1:55335 > 127.0.0.1:23211 AP   len=14
+tcp_recved: received 14 bytes, wnd 5760 (0).
+[ip4in] 127.0.0.1:23211 > 127.0.0.1:55335 AP   len=14
+tcp_recved: received 14 bytes, wnd 5760 (0).
+[L2b-FIXED] #1 connect+echo OK (1113 us), now closing it
+tcp_close: closing in State: ESTABLISHED
+[ip4in] 127.0.0.1:55335 > 127.0.0.1:23211 AF   len=0
+[ip4in] 127.0.0.1:23211 > 127.0.0.1:55335 A    len=0
+tcp_close: closing in State: CLOSE_WAIT
+[ip4in] 127.0.0.1:23211 > 127.0.0.1:55335 AF   len=0
+TCP connection closed: FIN_WAIT_2 23211 -> 55335.
+tcp_pcb_purge
+[ip4in] 127.0.0.1:55335 > 127.0.0.1:23211 A    len=0
+TCP connection closed: LAST_ACK 55335 -> 23211.
+tcp_pcb_purge
+[tcpdiff] next-extra-conns: xmit=9 recv=9 cachehit=4
+tcp_connect to port 23211
+[ip4in] 127.0.0.1:55336 > 127.0.0.1:23211 S    len=0
+TCP connection request 55336 -> 23211.
+[ip4in] 127.0.0.1:23211 > 127.0.0.1:55336 SA   len=0
+[ip4in] 127.0.0.1:55336 > 127.0.0.1:23211 A    len=0
+TCP connection established 55336 -> 23211.
+[ip4in] 127.0.0.1:55336 > 127.0.0.1:23211 AP   len=14
+tcp_recved: received 14 bytes, wnd 5760 (0).
+[ip4in] 127.0.0.1:23211 > 127.0.0.1:55336 AP   len=14
+tcp_recved: received 14 bytes, wnd 5760 (0).
+[L2b-FIXED] #2 connect+echo OK (1128 us), now closing it
+tcp_close: closing in State: ESTABLISHED
+[ip4in] 127.0.0.1:55336 > 127.0.0.1:23211 AF   len=0
+[ip4in] 127.0.0.1:23211 > 127.0.0.1:55336 A    len=0
+tcp_close: closing in State: CLOSE_WAIT
+[ip4in] 127.0.0.1:23211 > 127.0.0.1:55336 AF   len=0
+TCP connection closed: FIN_WAIT_2 23211 -> 55336.
+tcp_pcb_purge
+[ip4in] 127.0.0.1:55336 > 127.0.0.1:23211 A    len=0
+TCP connection closed: LAST_ACK 55336 -> 23211.
+tcp_pcb_purge
+[tcpdiff] next-extra-conns: xmit=9 recv=9 cachehit=4
+tcp_connect to port 23211
+[ip4in] 127.0.0.1:55337 > 127.0.0.1:23211 S    len=0
+TCP connection request 55337 -> 23211.
+[ip4in] 127.0.0.1:23211 > 127.0.0.1:55337 SA   len=0
+[ip4in] 127.0.0.1:55337 > 127.0.0.1:23211 A    len=0
+TCP connection established 55337 -> 23211.
+[ip4in] 127.0.0.1:55337 > 127.0.0.1:23211 AP   len=14
+tcp_recved: received 14 bytes, wnd 5760 (0).
+[ip4in] 127.0.0.1:23211 > 127.0.0.1:55337 AP   len=14
+tcp_recved: received 14 bytes, wnd 5760 (0).
+[L2b-FIXED] #3 connect+echo OK (1095 us), now closing it
+tcp_close: closing in State: ESTABLISHED
+[ip4in] 127.0.0.1:55337 > 127.0.0.1:23211 AF   len=0
+[ip4in] 127.0.0.1:23211 > 127.0.0.1:55337 A    len=0
+tcp_close: closing in State: CLOSE_WAIT
+[ip4in] 127.0.0.1:23211 > 127.0.0.1:55337 AF   len=0
+TCP connection closed: FIN_WAIT_2 23211 -> 55337.
+tcp_pcb_purge
+[ip4in] 127.0.0.1:55337 > 127.0.0.1:23211 A    len=0
+TCP connection closed: LAST_ACK 55337 -> 23211.
+tcp_pcb_purge
+tcp_fasttmr: delayed ACK
+[ip4in] 127.0.0.1:55333 > 127.0.0.1:23211 A    len=0
+[tcpdiff] next-extra-conns: xmit=10 recv=10 cachehit=4
+[ip4in] 127.0.0.1:55333 > 127.0.0.1:23211 AP   len=14
+tcp_recved: received 14 bytes, wnd 5760 (0).
+[ip4in] 127.0.0.1:23211 > 127.0.0.1:55333 AP   len=14
+tcp_recved: received 14 bytes, wnd 5760 (0).
+[L2b-FIXED] A still alive: echo -> OK
+tcp_close: closing in State: ESTABLISHED
+[ip4in] 127.0.0.1:55333 > 127.0.0.1:23211 AF   len=0
+[ip4in] 127.0.0.1:23211 > 127.0.0.1:55333 A    len=0
+[mem] post-case      free=244732 largest=118784 min-ever=236108
+==== FULL STATS TABLE ====
+
+LINK
+	tcp_close: closing in State: CLOSE_WAIT
+xmit: 134
+	recv: 134
+	fw: 0
+	drop: 0
+	chkerr: 0
+	[ip4in] 127.0.0.1:23211 > 127.0.0.1:55333 AF   len=0
+TCP connection closed: FIN_WAIT_2 23211 -> 55333.
+lenerr: 0
+	tcp_pcb_purge
+[ip4in] 127.0.0.1:55333 > 127.0.0.1:23211 A    len=0
+TCP connection closed: LAST_ACK 55333 -> 23211.
+tcp_pcb_purge
+memerr: 0
+	rterr: 0
+	proterr: 0
+	opterr: 0
+	err: 0
+	cachehit: 0
+
+ETHARP
+	xmit: 7
+	recv: 1
+	fw: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 0
+	opterr: 0
+	err: 0
+	cachehit: 1
+
+IP_FRAG
+	xmit: 0
+	recv: 0
+	fw: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 0
+	opterr: 0
+	err: 0
+	cachehit: 0
+
+IPv6 FRAG
+	xmit: 0
+	recv: 0
+	fw: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 0
+	opterr: 0
+	err: 0
+	cachehit: 0
+
+IP
+	xmit: 138
+	recv: 138
+	fw: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 0
+	opterr: 0
+	err: 0
+	cachehit: 0
+
+ND
+	xmit: 3
+	recv: 0
+	fw: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 0
+	opterr: 0
+	err: 0
+	cachehit: 0
+
+IPv6
+	xmit: 3
+	recv: 3
+	fw: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 0
+	opterr: 0
+	err: 0
+	cachehit: 0
+
+IGMP
+	xmit: 0
+	recv: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	proterr: 0
+	rx_v1: 0
+	rx_group: 0
+	rx_general: 0
+	rx_report: 0
+	tx_join: 0
+	tx_leave: 0
+	tx_report: 0
+
+MLDv1
+	xmit: 0
+	recv: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	proterr: 0
+	rx_v1: 0
+	rx_group: 0
+	rx_general: 0
+	rx_report: 0
+	tx_join: 0
+	tx_leave: 0
+	tx_report: 0
+
+ICMP
+	xmit: 0
+	recv: 3
+	fw: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 0
+	opterr: 0
+	err: 0
+	cachehit: 0
+
+ICMPv6
+	xmit: 0
+	recv: 0
+	fw: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 0
+	opterr: 0
+	err: 0
+	cachehit: 0
+
+UDP
+	xmit: 2
+	recv: 2
+	fw: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 0
+	opterr: 0
+	err: 0
+	cachehit: 2
+
+TCP
+	xmit: 133
+	recv: 133
+	fw: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 0
+	opterr: 0
+	err: 0
+	cachehit: 57
+
+SYS
+	sem.used:  0
+	sem.max:   0
+	sem.err:   0
+	mutex.used: 0
+	mutex.max:  0
+	mutex.err:  0
+	mbox.used:  0
+	mbox.max:   0
+	mbox.err:   0
+==== KEEPALIVE WINDOW (40s): host tools now; heartbeat probes ====
+tcp_slowtmr: no active pcbs
+tcp_slowtmr: no active pcbs
+tcp_slowtmr: no active pcbs
+tcp_slowtmr: no active pcbs
+tcp_slowtmr: no active pcbs
+tcp_slowtmr: no active pcbs
+tcp_slowtmr: no active pcbs
+tcp_slowtmr: no active pcbs
+[beat 00] free=248680
+tcp_connect to port 23210
+[ip4in] 127.0.0.1:55338 > 127.0.0.1:23210 S    len=0
+TCP connection request 55338 -> 23210.
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:55338 SA   len=0
+[ip4in] 127.0.0.1:55338 > 127.0.0.1:23210 A    len=0
+TCP connection established 55338 -> 23210.
+tcp_close: closing in State: ESTABLISHED
+[ip4in] 127.0.0.1:55338 > 127.0.0.1:23210 AF   len=0
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:55338 A    len=0
+tcp_close: closing in State: CLOSE_WAIT
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:55338 AF   len=0
+TCP connection closed: FIN_WAIT_2 23210 -> 55338.
+tcp_pcb_purge
+[ip4in] 127.0.0.1:55338 > 127.0.0.1:23210 A    len=0
+TCP connection closed: LAST_ACK 55338 -> 23210.
+tcp_pcb_purge
+[srv 23210] client closed
+tcp_slowtmr: no active pcbs
+tcp_slowtmr: no active pcbs
+qemu-system-xtensa: terminating on signal 15 from pid 3617984 (timeout)

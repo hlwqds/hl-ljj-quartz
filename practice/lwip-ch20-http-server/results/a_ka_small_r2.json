@@ -1,0 +1,15 @@
+{
+  "mode": "ka",
+  "path": "/small",
+  "workers": 4,
+  "ok": 300,
+  "fail": 0,
+  "elapsed_s": 2.08,
+  "qps": 144.2,
+  "avg_ms": 18.562,
+  "p50_ms": 9.967,
+  "p90_ms": 10.229,
+  "p99_ms": 11.726,
+  "max_ms": 1411.976,
+  "conn_avg_ms": null
+}

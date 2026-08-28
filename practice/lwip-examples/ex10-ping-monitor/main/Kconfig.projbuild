@@ -1,0 +1,74 @@
+menu "EX10 ping-monitor configuration"
+
+    config EX10_TARGET_IP
+        string "Ping target IP address"
+        default "10.0.2.2"
+        help
+            被监控目标 IPv4 地址。QEMU SLIRP 下默认填网关 10.0.2.2
+            （即宿主机方向的代答者）；也可改为 10.0.2.3（SLIRP DNS 代理）等。
+
+    config EX10_INTERVAL_MS
+        int "Ping send interval in milliseconds"
+        range 100 60000
+        default 1000
+        help
+            探测周期（两次 ICMP echo request 的间隔），监控节奏旋钮。
+            注意 esp_ping 内部用 vTaskDelayUntil 按该周期对齐发包。
+
+    config EX10_TIMEOUT_MS
+        int "Per-probe reply timeout in milliseconds"
+        range 100 30000
+        default 1000
+        help
+            单次探测等待 echo reply 的超时（raw socket SO_RCVTIMEO 实现）。
+            建议不超过 EX10_INTERVAL_MS 的两倍，避免样本节拍被打乱。
+
+    config EX10_ALARM_THRESHOLD
+        int "Consecutive-loss alarm threshold (probes)"
+        range 1 100
+        default 5
+        help
+            连续失败达到该次数即触发一次告警（$$$ EX10-ALARM 行）。
+            告警为锁存语义：触发后直到下一次成功才解除（$$$ EX10-RECOVER），
+            中途不会重复刷告警行。
+
+    config EX10_SUMMARY_EVERY
+        int "Samples per rolling summary line"
+        range 5 100
+        default 10
+        help
+            每 N 个样本打印一条滚动汇总（min/avg/max RTT 与窗口内丢包率，
+            窗口口径：自上一条汇总以来的样本；全程累计见 EX10-FINAL）。
+
+    config EX10_MONITOR_WINDOW_S
+        int "Total monitor window in seconds"
+        range 15 600
+        default 55
+        help
+            监控总时长。到点后停止会话、打印全程汇总（EX10-FINAL + $$$ EXDONE），
+            然后空转保活由外部 timeout 收尸。
+
+    config EX10_FAULT_AUTOINJECT
+        bool "Timed auto fault injection: cut link then heal"
+        default y
+        help
+            固件内定时自动注入：运行到 EX10_INJECT_AT_S 秒时在 tcpip_thread 内
+            netif_set_link_down()「拔网线」，持续到 EX10_RECOVER_AT_S 秒再
+            netif_set_link_up() 自愈——用于在无人操作下演示告警触发与恢复全链路。
+
+    config EX10_INJECT_AT_S
+        int "Auto-inject: link-down moment (monitor seconds)"
+        range 5 590
+        default 15
+        depends on EX10_FAULT_AUTOINJECT
+        help
+            自监控起点计时的第几秒执行 netif_set_link_down()。
+
+    config EX10_RECOVER_AT_S
+        int "Auto-inject: link-up moment (monitor seconds)"
+        range 6 600
+        default 33
+        depends on EX10_FAULT_AUTOINJECT
+        help
+            第几秒执行 netif_set_link_up() 自愈，必须大于 EX10_INJECT_AT_S。
+endmenu

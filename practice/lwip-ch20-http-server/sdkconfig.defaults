@@ -1,0 +1,7 @@
+# ch20：HTTP server 实验
+# openeth 网卡（QEMU 专用，见 ch3 模板）
+CONFIG_ETH_USE_OPENETH=y
+
+# 压日志噪声到 WARN：压测热路径零输出；
+# 但 httpd 的 408/431/accept 失败等告警（ESP_LOGW）保留——它们正是故障注入实验的证据
+CONFIG_LOG_DEFAULT_LEVEL_WARN=y

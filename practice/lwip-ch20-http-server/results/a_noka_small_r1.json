@@ -1,0 +1,15 @@
+{
+  "mode": "noka",
+  "path": "/small",
+  "workers": 4,
+  "ok": 300,
+  "fail": 0,
+  "elapsed_s": 30.69,
+  "qps": 9.8,
+  "avg_ms": 249.077,
+  "p50_ms": 9.9,
+  "p90_ms": 10.161,
+  "p99_ms": 5999.882,
+  "max_ms": 6000.87,
+  "conn_avg_ms": 3.155
+}

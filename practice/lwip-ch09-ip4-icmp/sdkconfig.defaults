@@ -1,0 +1,19 @@
+# OpenCores Ethernet MAC 驱动（仅用于 QEMU 仿真，真机不可用）
+CONFIG_ETH_USE_OPENETH=y
+
+# ---- ch9 实验：IP 分片与重组 ----
+# 打开入向 IP 重组（IDF 默认 n！vanilla lwIP 默认 y）。没有它，收到的分片直接丢弃。
+CONFIG_LWIP_IP4_REASSEMBLY=y
+# 重组缓冲 pbuf 上限：Kconfig 范围 10~100，取最小值 10，方便压出 Overflow
+CONFIG_LWIP_IP_REASS_MAX_PBUFS=10
+# 出向分片保持默认开（CONFIG_LWIP_IP4_FRAG=y）
+
+# ---- ch9 实验：可观测性 ----
+# lwIP 统计计数器（默认 n）：ip_frag/mib2 的 ipreasm* 计数要用它看
+CONFIG_LWIP_STATS=y
+# lwIP 模块级调试日志：打开 IP 层"packet is a fragment ... calling ip4_reass()"、
+# ICMP 层与 etharp 解析轨迹等真实内部痕迹
+CONFIG_LWIP_DEBUG=y
+CONFIG_LWIP_IP_DEBUG=y
+CONFIG_LWIP_ETHARP_DEBUG=y
+CONFIG_LWIP_ICMP_DEBUG=y

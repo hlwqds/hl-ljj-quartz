@@ -1,0 +1,1013 @@
+Adding SPI flash device
+ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x12 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0040,len:6272
+load:0x40078000,len:15820
+load:0x40080400,len:3920
+entry 0x40080644
+I (663) boot: ESP-IDF v6.0.2 2nd stage bootloader
+I (664) boot: compile time Aug 27 2026 01:20:49
+I (664) boot: Multicore bootloader
+I (697) boot: chip revision: v3.0
+I (699) boot.esp32: SPI Speed      : 40MHz
+I (699) boot.esp32: SPI Mode       : DIO
+I (699) boot.esp32: SPI Flash Size : 2MB
+I (703) boot: Enabling RNG early entropy source...
+I (709) boot: Partition Table:
+I (710) boot: ## Label            Usage          Type ST Offset   Length
+I (710) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (711) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (711) boot:  2 factory          factory app      00 00 00010000 00100000
+I (714) boot: End of partition table
+I (754) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=1103ch ( 69692) map
+I (777) esp_image: segment 1: paddr=00021064 vaddr=3ffb0000 size=02acch ( 10956) load
+I (797) esp_image: segment 2: paddr=00023b38 vaddr=40080000 size=0b23ch ( 45628) load
+I (820) esp_image: segment 3: paddr=0002ed7c vaddr=50000000 size=00028h (    40) load
+I (838) esp_image: segment 4: paddr=0002edac vaddr=00000000 size=0126ch (  4716) 
+I (855) esp_image: segment 5: paddr=00030020 vaddr=400d0020 size=2c134h (180532) map
+I (918) boot: Loaded app from partition at offset 0x10000
+I (918) boot: Disabling RNG early entropy source...
+I (929) cpu_start: Multicore app
+I (1556) cpu_start: GPIO 3 and 1 are used as console UART I/O pins
+I (1558) cpu_start: Pro cpu start user code
+I (1558) cpu_start: cpu freq: 160000000 Hz
+I (1559) app_init: Application information:
+I (1559) app_init: Project name:     lwip_ch09_ip4_icmp
+I (1559) app_init: App version:      924d871
+I (1559) app_init: Compile time:     Aug 27 2026 01:20:47
+I (1559) app_init: ELF file SHA256:  988d58358...
+I (1559) app_init: ESP-IDF:          v6.0.2
+I (1559) efuse_init: Min chip rev:     v0.0
+I (1559) efuse_init: Max chip rev:     v3.99 
+I (1559) efuse_init: Chip rev:         v3.0
+I (1560) heap_init: Initializing. RAM available for dynamic allocation:
+I (1560) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM
+I (1561) heap_init: At 3FFB41F0 len 0002BE10 (175 KiB): DRAM
+I (1561) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM
+I (1561) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM
+I (1561) heap_init: At 4008B23C len 00014DC4 (83 KiB): IRAM
+I (1592) spi_flash: detected chip: winbond
+I (1597) spi_flash: flash io: dio
+I (1608) main_task: Started on CPU0
+I (1608) main_task: Calling app_main()
+I (1608) ch9lab: == ch9 lab: ip4 routing / frag&reass / icmp round trip ==
+I (1628) esp_eth.netif.netif_glue: 52:54:00:12:34:56
+I (1628) esp_eth.netif.netif_glue: ethernet attached to netif
+E (1728) esp_eth: esp_eth_ioctl(533): add mac address to filter not supported
+E (1728) esp_eth.netif.netif_glue: eth_set_mac_filter(56): failed to add mac filter
+E (1728) esp_netif_lwip: Failed to add multicast filter for IPv4
+I (1728) ch9lab: ETH_EVENT: CONNECTED (link up)
+I (1728) ch9lab: waiting for DHCP lease ...
+ip4_output_if: en1
+IP header:
++-------------------------------+
+| 4 | 5 |  0x00 |       336     | (v, hl, tos, len)
++-------------------------------+
+|        0      |000|       0   | (id, flags, offset)
++-------------------------------+
+|   64  |   17  |    0x799e     | (ttl, proto, chksum)
++-------------------------------+
+|    0  |    0  |    0  |    0  | (src)
++-------------------------------+
+|  255  |  255  |  255  |  255  | (dest)
++-------------------------------+
+ip4_output_if: call netif->output()
+ethernet_output: sending packet 0x3ffba454
+ethernet_input: dest:ff:ff:ff:ff:ff:ff, src:52:55:0a:00:02:02, type:800
+ip_input: iphdr->dest 0xffffffff netif->ip_addr 0x0 (0x0, 0x0, 0xffffffff)
+ip_input: iphdr->dest 0xffffffff netif->ip_addr 0x100007f (0xff, 0x7f, 0xffffff00)
+ip4_input: packet accepted on interface lo
+ip4_input: 
+IP header:
++-------------------------------+
+| 4 | 5 |  0x10 |       576     | (v, hl, tos, len)
++-------------------------------+
+|        0      |000|       0   | (id, flags, offset)
++-------------------------------+
+|   64  |   17  |    0x6c9c     | (ttl, proto, chksum)
++-------------------------------+
+|   10  |    0  |    2  |    2  | (src)
++-------------------------------+
+|  255  |  255  |  255  |  255  | (dest)
++-------------------------------+
+ip4_input: p->len 576 p->tot_len 576
+ip4_output_if: en1
+IP header:
++-------------------------------+
+| 4 | 5 |  0x00 |       336     | (v, hl, tos, len)
++-------------------------------+
+|        1      |000|       0   | (id, flags, offset)
++-------------------------------+
+|   64  |   17  |    0x799d     | (ttl, proto, chksum)
++-------------------------------+
+|    0  |    0  |    0  |    0  | (src)
++-------------------------------+
+|  255  |  255  |  255  |  255  | (dest)
++-------------------------------+
+ip4_output_if: call netif->output()
+ethernet_output: sending packet 0x3ffbaaa0
+ethernet_input: dest:ff:ff:ff:ff:ff:ff, src:52:55:0a:00:02:02, type:800
+ip_input: iphdr->dest 0xffffffff netif->ip_addr 0x0 (0x0, 0x0, 0xffffffff)
+ip_input: iphdr->dest 0xffffffff netif->ip_addr 0x100007f (0xff, 0x7f, 0xffffff00)
+ip4_input: packet accepted on interface lo
+ip4_input: 
+IP header:
++-------------------------------+
+| 4 | 5 |  0x10 |       576     | (v, hl, tos, len)
++-------------------------------+
+|        1      |000|       0   | (id, flags, offset)
++-------------------------------+
+|   64  |   17  |    0x6c9b     | (ttl, proto, chksum)
++-------------------------------+
+|   10  |    0  |    2  |    2  | (src)
++-------------------------------+
+|  255  |  255  |  255  |  255  | (dest)
++-------------------------------+
+ip4_input: p->len 576 p->tot_len 576
+etharp_find_entry: found empty entry 0
+etharp_find_entry: selecting empty entry 0
+etharp_request: sending ARP request.
+etharp_raw: sending raw ARP packet.
+ethernet_output: sending packet 0x3ffba454
+etharp_find_entry: found matching entry 0
+etharp_request: sending ARP request.
+etharp_raw: sending raw ARP packet.
+ethernet_output: sending packet 0x3ffba454
+etharp_query: reset ctime for entry 0
+etharp_timer
+etharp_request: sending ARP request.
+etharp_raw: sending raw ARP packet.
+ethernet_output: sending packet 0x3ffba468
+I (2738) ch9lab: GOT_IP: 10.0.2.15/255.255.255.0 gw 10.0.2.2
+I (2738) esp_netif_handlers: eth ip: 10.0.2.15, mask: 255.255.255.0, gw: 10.0.2.2
+I (2738) ch9lab: == ping 10.0.2.2 data=64 count=2 timeout=1000ms ==
+ip4_output_if: en1
+IP header:
++-------------------------------+
+| 4 | 5 |  0x00 |        92     | (v, hl, tos, len)
++-------------------------------+
+|        2      |000|       0   | (id, flags, offset)
++-------------------------------+
+|   64  |    1  |    0x628f     | (ttl, proto, chksum)
++-------------------------------+
+|   10  |    0  |    2  |   15  | (src)
++-------------------------------+
+|   10  |    0  |    2  |    2  | (dest)
++-------------------------------+
+ip4_output_if: call netif->output()
+etharp_find_entry: found empty entry 1
+etharp_find_entry: selecting empty entry 1
+etharp_request: sending ARP request.
+etharp_raw: sending raw ARP packet.
+ethernet_output: sending packet 0x3ffbb200
+etharp_query: queued packet 0x3ffbb0fc on ARP entry 1
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:806
+etharp_update_arp_entry: 10.0.2.2 - 52:55:0a:00:02:02
+etharp_find_entry: found matching entry 1
+etharp_update_arp_entry: updating stable entry 1
+ethernet_output: sending packet 0x3ffbb0fc
+etharp_input: incoming ARP reply
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ip_input: iphdr->dest 0xf02000a netif->ip_addr 0xf02000a (0x2000a, 0x2000a, 0xf000000)
+ip4_input: packet accepted on interface en
+ip4_input: 
+IP header:
++-------------------------------+
+| 4 | 5 |  0x00 |        92     | (v, hl, tos, len)
++-------------------------------+
+|        2      |000|       0   | (id, flags, offset)
++-------------------------------+
+|  255  |    1  |    0xa38e     | (ttl, proto, chksum)
++-------------------------------+
+|   10  |    0  |    2  |    2  | (src)
++-------------------------------+
+|   10  |    0  |    2  |   15  | (dest)
++-------------------------------+
+ip4_input: p->len 92 p->tot_len 92
+I (2738) ch9lab: 64 bytes from 10.0.2.2 icmp_seq=1 ttl=255 time=3 ms
+ip4_output_if: en1
+IP header:
++-------------------------------+
+| 4 | 5 |  0x00 |        92     | (v, hl, tos, len)
++-------------------------------+
+|        3      |000|       0   | (id, flags, offset)
++-------------------------------+
+|   64  |    1  |    0x628e     | (ttl, proto, chksum)
++-------------------------------+
+|   10  |    0  |    2  |   15  | (src)
++-------------------------------+
+|   10  |    0  |    2  |    2  | (dest)
++-------------------------------+
+ip4_output_if: call netif->output()
+ethernet_output: sending packet 0x3ffbb0fc
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ip_input: iphdr->dest 0xf02000a netif->ip_addr 0xf02000a (0x2000a, 0x2000a, 0xf000000)
+ip4_input: packet accepted on interface en
+ip4_input: 
+IP header:
++-------------------------------+
+| 4 | 5 |  0x00 |        92     | (v, hl, tos, len)
++-------------------------------+
+|        3      |000|       0   | (id, flags, offset)
++-------------------------------+
+|  255  |    1  |    0xa38d     | (ttl, proto, chksum)
++-------------------------------+
+|   10  |    0  |    2  |    2  | (src)
++-------------------------------+
+|   10  |    0  |    2  |   15  | (dest)
++-------------------------------+
+ip4_input: p->len 92 p->tot_len 92
+I (2938) ch9lab: 64 bytes from 10.0.2.2 icmp_seq=2 ttl=255 time=1 ms
+I (3138) ch9lab: --- B-small-gw ping statistics: 2 transmitted, 2 received ---
+etharp_timer
+etharp_request: sending ARP request.
+etharp_raw: sending raw ARP packet.
+ethernet_output: sending packet 0x3ffbb0fc
+etharp_timer
+etharp_request: sending ARP request.
+etharp_raw: sending raw ARP packet.
+ethernet_output: sending packet 0x3ffbb0fc
+etharp_timer
+etharp_request: sending ARP request.
+etharp_raw: sending raw ARP packet.
+ethernet_output: sending packet 0x3ffbb0fc
+I (6538) ch9lab: [B-small-gw] dSTAT ip(recv=2 xmit=2 drop=0 chkerr=0 lenerr=0)
+I (6538) ch9lab: [B-small-gw] dSTAT ip_frag(frag_out=0 reass_in=0 cachehit=0 DROP=0 MEMERR=0)
+I (6538) ch9lab: [B-small-gw] dSTAT icmp(rx=2 tx=0 lenerr=0 err=0)
+I (6538) ch9lab: [B-small-gw] dSTAT etharp(req=4 drop=0) mib2(reasmreqds=0 reasmOK=0 reasmFAIL=0)
+I (6538) ch9lab: == ping 10.0.2.2 data=4000 count=3 timeout=1500ms ==
+ip4_output_if: en1
+IP header:
++-------------------------------+
+| 4 | 5 |  0x00 |      4028     | (v, hl, tos, len)
++-------------------------------+
+|        4      |000|       0   | (id, flags, offset)
++-------------------------------+
+|   64  |    1  |    0x532d     | (ttl, proto, chksum)
++-------------------------------+
+|   10  |    0  |    2  |   15  | (src)
++-------------------------------+
+|   10  |    0  |    2  |    2  | (dest)
++-------------------------------+
+ethernet_output: sending packet 0x3ffbe3d0
+ethernet_output: sending packet 0x3ffbe3d0
+ethernet_output: sending packet 0x3ffbe3d0
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ip_input: iphdr->dest 0xf02000a netif->ip_addr 0xf02000a (0x2000a, 0x2000a, 0xf000000)
+ip4_input: packet accepted on interface en
+IP packet is a fragment (id=0x0004 tot_len=1500 len=1500 MF=1 offset=0), calling ip4_reass()
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ip_input: iphdr->dest 0xf02000a netif->ip_addr 0xf02000a (0x2000a, 0x2000a, 0xf000000)
+ip4_input: packet accepted on interface en
+IP packet is a fragment (id=0x0004 tot_len=1500 len=1500 MF=1 offset=1480), calling ip4_reass()
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ip_input: iphdr->dest 0xf02000a netif->ip_addr 0xf02000a (0x2000a, 0x2000a, 0xf000000)
+ip4_input: packet accepted on interface en
+IP packet is a fragment (id=0x0004 tot_len=1068 len=1068 MF=0 offset=2960), calling ip4_reass()
+ip4_input: 
+IP header:
++-------------------------------+
+| 4 | 5 |  0x00 |      4028     | (v, hl, tos, len)
++-------------------------------+
+|        4      |000|       0   | (id, flags, offset)
++-------------------------------+
+|  255  |    1  |    0x942c     | (ttl, proto, chksum)
++-------------------------------+
+|   10  |    0  |    2  |    2  | (src)
++-------------------------------+
+|   10  |    0  |    2  |   15  | (dest)
++-------------------------------+
+ip4_input: p->len 1500 p->tot_len 4028
+I (6548) ch9lab: 4000 bytes from 10.0.2.2 icmp_seq=1 ttl=255 time=5 ms
+etharp_timer
+etharp_timer: expired pending entry 0.
+ip4_output_if: en1
+IP header:
++-------------------------------+
+| 4 | 5 |  0x00 |      4028     | (v, hl, tos, len)
++-------------------------------+
+|        5      |000|       0   | (id, flags, offset)
++-------------------------------+
+|   64  |    1  |    0x532c     | (ttl, proto, chksum)
++-------------------------------+
+|   10  |    0  |    2  |   15  | (src)
++-------------------------------+
+|   10  |    0  |    2  |    2  | (dest)
++-------------------------------+
+ethernet_output: sending packet 0x3ffbe3d0
+ethernet_output: sending packet 0x3ffbe3d0
+ethernet_output: sending packet 0x3ffbe3d0
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ip_input: iphdr->dest 0xf02000a netif->ip_addr 0xf02000a (0x2000a, 0x2000a, 0xf000000)
+ip4_input: packet accepted on interface en
+IP packet is a fragment (id=0x0005 tot_len=1500 len=1500 MF=1 offset=0), calling ip4_reass()
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ip_input: iphdr->dest 0xf02000a netif->ip_addr 0xf02000a (0x2000a, 0x2000a, 0xf000000)
+ip4_input: packet accepted on interface en
+IP packet is a fragment (id=0x0005 tot_len=1500 len=1500 MF=1 offset=1480), calling ip4_reass()
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ip_input: iphdr->dest 0xf02000a netif->ip_addr 0xf02000a (0x2000a, 0x2000a, 0xf000000)
+ip4_input: packet accepted on interface en
+IP packet is a fragment (id=0x0005 tot_len=1068 len=1068 MF=0 offset=2960), calling ip4_reass()
+ip4_input: 
+IP header:
++-------------------------------+
+| 4 | 5 |  0x00 |      4028     | (v, hl, tos, len)
++-------------------------------+
+|        5      |000|       0   | (id, flags, offset)
++-------------------------------+
+|  255  |    1  |    0x942b     | (ttl, proto, chksum)
++-------------------------------+
+|   10  |    0  |    2  |    2  | (src)
++-------------------------------+
+|   10  |    0  |    2  |   15  | (dest)
++-------------------------------+
+ip4_input: p->len 1500 p->tot_len 4028
+I (6838) ch9lab: 4000 bytes from 10.0.2.2 icmp_seq=2 ttl=255 time=3 ms
+ip4_output_if: en1
+IP header:
++-------------------------------+
+| 4 | 5 |  0x00 |      4028     | (v, hl, tos, len)
++-------------------------------+
+|        6      |000|       0   | (id, flags, offset)
++-------------------------------+
+|   64  |    1  |    0x532b     | (ttl, proto, chksum)
++-------------------------------+
+|   10  |    0  |    2  |   15  | (src)
++-------------------------------+
+|   10  |    0  |    2  |    2  | (dest)
++-------------------------------+
+ethernet_output: sending packet 0x3ffbd2cc
+ethernet_output: sending packet 0x3ffbd2cc
+ethernet_output: sending packet 0x3ffbf424
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ip_input: iphdr->dest 0xf02000a netif->ip_addr 0xf02000a (0x2000a, 0x2000a, 0xf000000)
+ip4_input: packet accepted on interface en
+IP packet is a fragment (id=0x0006 tot_len=1500 len=1500 MF=1 offset=0), calling ip4_reass()
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ip_input: iphdr->dest 0xf02000a netif->ip_addr 0xf02000a (0x2000a, 0x2000a, 0xf000000)
+ip4_input: packet accepted on interface en
+IP packet is a fragment (id=0x0006 tot_len=1500 len=1500 MF=1 offset=1480), calling ip4_reass()
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ip_input: iphdr->dest 0xf02000a netif->ip_addr 0xf02000a (0x2000a, 0x2000a, 0xf000000)
+ip4_input: packet accepted on interface en
+IP packet is a fragment (id=0x0006 tot_len=1068 len=1068 MF=0 offset=2960), calling ip4_reass()
+ip4_input: 
+IP header:
++-------------------------------+
+| 4 | 5 |  0x00 |      4028     | (v, hl, tos, len)
++-------------------------------+
+|        6      |000|       0   | (id, flags, offset)
++-------------------------------+
+|  255  |    1  |    0x942a     | (ttl, proto, chksum)
++-------------------------------+
+|   10  |    0  |    2  |    2  | (src)
++-------------------------------+
+|   10  |    0  |    2  |   15  | (dest)
++-------------------------------+
+ip4_input: p->len 1500 p->tot_len 4028
+I (7138) ch9lab: 4000 bytes from 10.0.2.2 icmp_seq=3 ttl=255 time=3 ms
+I (7438) ch9lab: --- A-big4000 ping statistics: 3 transmitted, 3 received ---
+etharp_timer
+etharp_timer
+etharp_timer
+etharp_timer
+etharp_timer
+etharp_timer
+I (13348) ch9lab: [A-big4000] dSTAT ip(recv=9 xmit=3 drop=0 chkerr=0 lenerr=0)
+I (13348) ch9lab: [A-big4000] dSTAT ip_frag(frag_out=9 reass_in=9 cachehit=6 DROP=0 MEMERR=0)
+I (13348) ch9lab: [A-big4000] dSTAT icmp(rx=3 tx=0 lenerr=0 err=0)
+I (13348) ch9lab: [A-big4000] dSTAT etharp(req=0 drop=0) mib2(reasmreqds=9 reasmOK=3 reasmFAIL=0)
+I (13348) ch9lab: == ping 10.0.2.3 data=64 count=2 timeout=1000ms ==
+ip4_output_if: en1
+IP header:
++-------------------------------+
+| 4 | 5 |  0x00 |        92     | (v, hl, tos, len)
++-------------------------------+
+|        7      |000|       0   | (id, flags, offset)
++-------------------------------+
+|   64  |    1  |    0x6289     | (ttl, proto, chksum)
++-------------------------------+
+|   10  |    0  |    2  |   15  | (src)
++-------------------------------+
+|   10  |    0  |    2  |    3  | (dest)
++-------------------------------+
+ip4_output_if: call netif->output()
+etharp_find_entry: found empty entry 0
+etharp_find_entry: selecting empty entry 0
+etharp_request: sending ARP request.
+etharp_raw: sending raw ARP packet.
+ethernet_output: sending packet 0x3ffbb488
+etharp_query: queued packet 0x3ffbaf60 on ARP entry 0
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:03, type:806
+etharp_update_arp_entry: 10.0.2.3 - 52:55:0a:00:02:03
+etharp_find_entry: found matching entry 0
+etharp_update_arp_entry: updating stable entry 0
+ethernet_output: sending packet 0x3ffbaf60
+etharp_input: incoming ARP reply
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ip_input: iphdr->dest 0xf02000a netif->ip_addr 0xf02000a (0x2000a, 0x2000a, 0xf000000)
+ip4_input: packet accepted on interface en
+ip4_input: 
+IP header:
++-------------------------------+
+| 4 | 5 |  0x00 |        92     | (v, hl, tos, len)
++-------------------------------+
+|        7      |000|       0   | (id, flags, offset)
++-------------------------------+
+|  255  |    1  |    0xa388     | (ttl, proto, chksum)
++-------------------------------+
+|   10  |    0  |    2  |    3  | (src)
++-------------------------------+
+|   10  |    0  |    2  |   15  | (dest)
++-------------------------------+
+ip4_input: p->len 92 p->tot_len 92
+I (13348) ch9lab: 64 bytes from 10.0.2.3 icmp_seq=1 ttl=255 time=3 ms
+ip4_output_if: en1
+IP header:
++-------------------------------+
+| 4 | 5 |  0x00 |        92     | (v, hl, tos, len)
++-------------------------------+
+|        8      |000|       0   | (id, flags, offset)
++-------------------------------+
+|   64  |    1  |    0x6288     | (ttl, proto, chksum)
++-------------------------------+
+|   10  |    0  |    2  |   15  | (src)
++-------------------------------+
+|   10  |    0  |    2  |    3  | (dest)
++-------------------------------+
+ip4_output_if: call netif->output()
+ethernet_output: sending packet 0x3ffbaf60
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ip_input: iphdr->dest 0xf02000a netif->ip_addr 0xf02000a (0x2000a, 0x2000a, 0xf000000)
+ip4_input: packet accepted on interface en
+ip4_input: 
+IP header:
++-------------------------------+
+| 4 | 5 |  0x00 |        92     | (v, hl, tos, len)
++-------------------------------+
+|        8      |000|       0   | (id, flags, offset)
++-------------------------------+
+|  255  |    1  |    0xa387     | (ttl, proto, chksum)
++-------------------------------+
+|   10  |    0  |    2  |    3  | (src)
++-------------------------------+
+|   10  |    0  |    2  |   15  | (dest)
++-------------------------------+
+ip4_input: p->len 92 p->tot_len 92
+I (13548) ch9lab: 64 bytes from 10.0.2.3 icmp_seq=2 ttl=255 time=1 ms
+etharp_timer
+I (13748) ch9lab: --- B-ttl-dnsproxy ping statistics: 2 transmitted, 2 received ---
+etharp_timer
+etharp_timer
+etharp_timer
+I (17148) ch9lab: [B-ttl-dnsproxy] dSTAT ip(recv=2 xmit=2 drop=0 chkerr=0 lenerr=0)
+I (17148) ch9lab: [B-ttl-dnsproxy] dSTAT ip_frag(frag_out=0 reass_in=0 cachehit=0 DROP=0 MEMERR=0)
+I (17148) ch9lab: [B-ttl-dnsproxy] dSTAT icmp(rx=2 tx=0 lenerr=0 err=0)
+I (17148) ch9lab: [B-ttl-dnsproxy] dSTAT etharp(req=1 drop=0) mib2(reasmreqds=0 reasmOK=0 reasmFAIL=0)
+I (17148) ch9lab: == ping 223.5.5.5 data=64 count=2 timeout=2000ms ==
+ip4_output_if: en1
+IP header:
++-------------------------------+
+| 4 | 5 |  0x00 |        92     | (v, hl, tos, len)
++-------------------------------+
+|        9      |000|       0   | (id, flags, offset)
++-------------------------------+
+|   64  |    1  |    0x8a7f     | (ttl, proto, chksum)
++-------------------------------+
+|   10  |    0  |    2  |   15  | (src)
++-------------------------------+
+|  223  |    5  |    5  |    5  | (dest)
++-------------------------------+
+ip4_output_if: call netif->output()
+ethernet_output: sending packet 0x3ffbb308
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ip_input: iphdr->dest 0xf02000a netif->ip_addr 0xf02000a (0x2000a, 0x2000a, 0xf000000)
+ip4_input: packet accepted on interface en
+ip4_input: 
+IP header:
++-------------------------------+
+| 4 | 5 |  0x00 |        92     | (v, hl, tos, len)
++-------------------------------+
+|        9      |000|       0   | (id, flags, offset)
++-------------------------------+
+|  255  |    1  |    0xcb7e     | (ttl, proto, chksum)
++-------------------------------+
+|  223  |    5  |    5  |    5  | (src)
++-------------------------------+
+|   10  |    0  |    2  |   15  | (dest)
++-------------------------------+
+ip4_input: p->len 92 p->tot_len 92
+I (17158) ch9lab: 64 bytes from 223.5.5.5 icmp_seq=1 ttl=255 time=8 ms
+ip4_output_if: en1
+IP header:
++-------------------------------+
+| 4 | 5 |  0x00 |        92     | (v, hl, tos, len)
++-------------------------------+
+|       10      |000|       0   | (id, flags, offset)
++-------------------------------+
+|   64  |    1  |    0x8a7e     | (ttl, proto, chksum)
++-------------------------------+
+|   10  |    0  |    2  |   15  | (src)
++-------------------------------+
+|  223  |    5  |    5  |    5  | (dest)
++-------------------------------+
+ip4_output_if: call netif->output()
+ethernet_output: sending packet 0x3ffbb308
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ip_input: iphdr->dest 0xf02000a netif->ip_addr 0xf02000a (0x2000a, 0x2000a, 0xf000000)
+ip4_input: packet accepted on interface en
+ip4_input: 
+IP header:
++-------------------------------+
+| 4 | 5 |  0x00 |        92     | (v, hl, tos, len)
++-------------------------------+
+|       10      |000|       0   | (id, flags, offset)
++-------------------------------+
+|  255  |    1  |    0xcb7d     | (ttl, proto, chksum)
++-------------------------------+
+|  223  |    5  |    5  |    5  | (src)
++-------------------------------+
+|   10  |    0  |    2  |   15  | (dest)
++-------------------------------+
+ip4_input: p->len 92 p->tot_len 92
+I (17458) ch9lab: 64 bytes from 223.5.5.5 icmp_seq=2 ttl=255 time=9 ms
+etharp_timer
+I (17748) ch9lab: --- B-ttl-public ping statistics: 2 transmitted, 2 received ---
+etharp_timer
+etharp_timer
+etharp_timer
+etharp_timer
+etharp_timer
+etharp_timer
+I (23948) ch9lab: [B-ttl-public] dSTAT ip(recv=2 xmit=2 drop=0 chkerr=0 lenerr=0)
+I (23948) ch9lab: [B-ttl-public] dSTAT ip_frag(frag_out=0 reass_in=0 cachehit=0 DROP=0 MEMERR=0)
+I (23948) ch9lab: [B-ttl-public] dSTAT icmp(rx=2 tx=0 lenerr=0 err=0)
+I (23948) ch9lab: [B-ttl-public] dSTAT etharp(req=0 drop=0) mib2(reasmreqds=0 reasmOK=0 reasmFAIL=0)
+I (23948) ch9lab: == ping 10.0.2.2 data=15000 count=1 timeout=3000ms ==
+ip4_output_if: en1
+IP header:
++-------------------------------+
+| 4 | 5 |  0x00 |     15028     | (v, hl, tos, len)
++-------------------------------+
+|       11      |000|       0   | (id, flags, offset)
++-------------------------------+
+|   64  |    1  |    0x282e     | (ttl, proto, chksum)
++-------------------------------+
+|   10  |    0  |    2  |   15  | (src)
++-------------------------------+
+|   10  |    0  |    2  |    2  | (dest)
++-------------------------------+
+ethernet_output: sending packet 0x3ffc3ad0
+ethernet_output: sending packet 0x3ffc3ad0
+ethernet_output: sending packet 0x3ffc3ad0
+ethernet_output: sending packet 0x3ffc3ad0
+ethernet_output: sending packet 0x3ffc3ad0
+ethernet_output: sending packet 0x3ffc3ad0
+ethernet_output: sending packet 0x3ffc3ad0
+ethernet_output: sending packet 0x3ffc3ad0
+ethernet_output: sending packet 0x3ffc3ad0
+ethernet_output: sending packet 0x3ffc3ad0
+ethernet_output: sending packet 0x3ffbb4e0
+W (23948) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ip_input: iphdr->dest 0xf02000a netif->ip_addr 0xf02000a (0x2000a, 0x2000a, 0xf000000)
+ip4_input: packet accepted on interface en
+IP packet is a fragment (id=0x000b tot_len=1500 len=1500 MF=1 offset=0), calling ip4_reass()
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ip_input: iphdr->dest 0xf02000a netif->ip_addr 0xf02000a (0x2000a, 0x2000a, 0xf000000)
+ip4_input: packet accepted on interface en
+IP packet is a fragment (id=0x000b tot_len=1500 len=1500 MF=1 offset=1480), calling ip4_reass()
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ip_input: iphdr->dest 0xf02000a netif->ip_addr 0xf02000a (0x2000a, 0x2000a, 0xf000000)
+ip4_input: packet accepted on interface en
+IP packet is a fragment (id=0x000b tot_len=1500 len=1500 MF=1 offset=2960), calling ip4_reass()
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ip_input: iphdr->dest 0xf02000a netif->ip_addr 0xf02000a (0x2000a, 0x2000a, 0xf000000)
+ip4_input: packet accepted on interface en
+IP packet is a fragment (id=0x000b tot_len=1500 len=1500 MF=1 offset=4440), calling ip4_reass()
+etharp_timer
+etharp_timer
+etharp_timer
+W (26948) ch9lab: From 10.0.2.2 icmp_seq=1 TIMEOUT
+I (26948) ch9lab: --- C-flood15000-1 ping statistics: 1 transmitted, 0 received ---
+etharp_timer
+icmp_send_response: Sending ICMP type 0B for packet from 10.0.2.2 to 10.0.2.15
+ip4_output_if: en1
+IP header:
++-------------------------------+
+| 4 | 5 |  0x00 |        56     | (v, hl, tos, len)
++-------------------------------+
+|       12      |000|       0   | (id, flags, offset)
++-------------------------------+
+|   64  |    1  |    0x62a9     | (ttl, proto, chksum)
++-------------------------------+
+|   10  |    0  |    2  |   15  | (src)
++-------------------------------+
+|   10  |    0  |    2  |    2  | (dest)
++-------------------------------+
+ip4_output_if: call netif->output()
+ethernet_output: sending packet 0x3ffbaf50
+etharp_timer
+etharp_timer
+etharp_timer
+I (30748) ch9lab: [C-flood15000-1] dSTAT ip(recv=4 xmit=2 drop=0 chkerr=0 lenerr=0)
+I (30748) ch9lab: [C-flood15000-1] dSTAT ip_frag(frag_out=11 reass_in=4 cachehit=3 DROP=0 MEMERR=0)
+I (30748) ch9lab: [C-flood15000-1] dSTAT icmp(rx=0 tx=1 lenerr=0 err=0)
+I (30748) ch9lab: [C-flood15000-1] dSTAT etharp(req=0 drop=0) mib2(reasmreqds=4 reasmOK=0 reasmFAIL=1)
+I (30748) ch9lab: == ping 10.0.2.2 data=64 count=1 timeout=1000ms ==
+ip4_output_if: en1
+IP header:
++-------------------------------+
+| 4 | 5 |  0x00 |        92     | (v, hl, tos, len)
++-------------------------------+
+|       13      |000|       0   | (id, flags, offset)
++-------------------------------+
+|   64  |    1  |    0x6284     | (ttl, proto, chksum)
++-------------------------------+
+|   10  |    0  |    2  |   15  | (src)
++-------------------------------+
+|   10  |    0  |    2  |    2  | (dest)
++-------------------------------+
+ip4_output_if: call netif->output()
+ethernet_output: sending packet 0x3ffbb384
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ip_input: iphdr->dest 0xf02000a netif->ip_addr 0xf02000a (0x2000a, 0x2000a, 0xf000000)
+ip4_input: packet accepted on interface en
+ip4_input: 
+IP header:
++-------------------------------+
+| 4 | 5 |  0x00 |        92     | (v, hl, tos, len)
++-------------------------------+
+|       12      |000|       0   | (id, flags, offset)
++-------------------------------+
+|  255  |    1  |    0xa384     | (ttl, proto, chksum)
++-------------------------------+
+|   10  |    0  |    2  |    2  | (src)
++-------------------------------+
+|   10  |    0  |    2  |   15  | (dest)
++-------------------------------+
+ip4_input: p->len 92 p->tot_len 92
+I (30748) ch9lab: 64 bytes from 10.0.2.2 icmp_seq=1 ttl=255 time=1 ms
+I (30948) ch9lab: --- C-during-exhaustion-small ping statistics: 1 transmitted, 1 received ---
+etharp_timer
+etharp_timer
+I (33548) ch9lab: sleep 6s waiting for ip_reass MAXAGE(=3s in IDF) expiry ...
+etharp_timer
+etharp_timer
+etharp_timer
+etharp_timer
+etharp_timer
+etharp_timer
+I (39548) ch9lab: == 3 parallel big pings (12000 bytes each) ==
+ip4_output_if: en1
+IP header:
++-------------------------------+
+| 4 | 5 |  0x00 |     12028     | (v, hl, tos, len)
++-------------------------------+
+|       14      |000|       0   | (id, flags, offset)
++-------------------------------+
+|   64  |    1  |    0x33e3     | (ttl, proto, chksum)
++-------------------------------+
+|   10  |    0  |    2  |   15  | (src)
++-------------------------------+
+|   10  |    0  |    2  |    2  | (dest)
++-------------------------------+
+ethernet_output: sending packet 0x3ffc8cdc
+ethernet_output: sending packet 0x3ffc8cdc
+ethernet_output: sending packet 0x3ffc8cdc
+ethernet_output: sending packet 0x3ffc8cdc
+ethernet_output: sending packet 0x3ffc8cdc
+ethernet_output: sending packet 0x3ffc8cdc
+ethernet_output: sending packet 0x3ffc8cdc
+ethernet_output: sending packet 0x3ffc8cdc
+ethernet_output: sending packet 0x3ffbb4cc
+W (39548) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ip_input: iphdr->dest 0xf02000a netif->ip_addr 0xf02000a (0x2000a, 0x2000a, 0xf000000)
+ip4_input: packet accepted on interface en
+IP packet is a fragment (id=0x000d tot_len=1500 len=1500 MF=1 offset=0), calling ip4_reass()
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ip_input: iphdr->dest 0xf02000a netif->ip_addr 0xf02000a (0x2000a, 0x2000a, 0xf000000)
+ip4_input: packet accepted on interface en
+IP packet is a fragment (id=0x000d tot_len=1500 len=1500 MF=1 offset=1480), calling ip4_reass()
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ip_input: iphdr->dest 0xf02000a netif->ip_addr 0xf02000a (0x2000a, 0x2000a, 0xf000000)
+ip4_input: packet accepted on interface en
+IP packet is a fragment (id=0x000d tot_len=1500 len=1500 MF=1 offset=2960), calling ip4_reass()
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ip_input: iphdr->dest 0xf02000a netif->ip_addr 0xf02000a (0x2000a, 0x2000a, 0xf000000)
+ip4_input: packet accepted on interface en
+IP packet is a fragment (id=0x000d tot_len=1500 len=1500 MF=1 offset=4440), calling ip4_reass()
+ip4_output_if: en1
+IP header:
++-------------------------------+
+| 4 | 5 |  0x00 |     12028     | (v, hl, tos, len)
++-------------------------------+
+|       15      |000|       0   | (id, flags, offset)
++-------------------------------+
+|   64  |    1  |    0x33e2     | (ttl, proto, chksum)
++-------------------------------+
+|   10  |    0  |    2  |   15  | (src)
++-------------------------------+
+|   10  |    0  |    2  |    2  | (dest)
++-------------------------------+
+ethernet_output: sending packet 0x3ffca4ec
+ethernet_output: sending packet 0x3ffca4ec
+ethernet_output: sending packet 0x3ffca4ec
+ethernet_output: sending packet 0x3ffca4ec
+ethernet_output: sending packet 0x3ffca4ec
+ethernet_output: sending packet 0x3ffca4ec
+ethernet_output: sending packet 0x3ffca4ec
+ethernet_output: sending packet 0x3ffca4ec
+ethernet_output: sending packet 0x3ffbb668
+W (39568) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ip_input: iphdr->dest 0xf02000a netif->ip_addr 0xf02000a (0x2000a, 0x2000a, 0xf000000)
+ip4_input: packet accepted on interface en
+IP packet is a fragment (id=0x000e tot_len=1500 len=1500 MF=1 offset=0), calling ip4_reass()
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ip_input: iphdr->dest 0xf02000a netif->ip_addr 0xf02000a (0x2000a, 0x2000a, 0xf000000)
+ip4_input: packet accepted on interface en
+IP packet is a fragment (id=0x000e tot_len=1500 len=1500 MF=1 offset=1480), calling ip4_reass()
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ip_input: iphdr->dest 0xf02000a netif->ip_addr 0xf02000a (0x2000a, 0x2000a, 0xf000000)
+ip4_input: packet accepted on interface en
+IP packet is a fragment (id=0x000e tot_len=1500 len=1500 MF=1 offset=2960), calling ip4_reass()
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ip_input: iphdr->dest 0xf02000a netif->ip_addr 0xf02000a (0x2000a, 0x2000a, 0xf000000)
+ip4_input: packet accepted on interface en
+IP packet is a fragment (id=0x000e tot_len=1500 len=1500 MF=1 offset=4440), calling ip4_reass()
+ip4_output_if: en1
+IP header:
++-------------------------------+
+| 4 | 5 |  0x00 |     12028     | (v, hl, tos, len)
++-------------------------------+
+|       16      |000|       0   | (id, flags, offset)
++-------------------------------+
+|   64  |    1  |    0x33e0     | (ttl, proto, chksum)
++-------------------------------+
+|   10  |    0  |    2  |   15  | (src)
++-------------------------------+
+|   10  |    0  |    2  |    3  | (dest)
++-------------------------------+
+ethernet_output: sending packet 0x3ffc6ee4
+ethernet_output: sending packet 0x3ffc6ee4
+ethernet_output: sending packet 0x3ffc6ee4
+ethernet_output: sending packet 0x3ffc6ee4
+ethernet_output: sending packet 0x3ffc6ee4
+ethernet_output: sending packet 0x3ffc6ee4
+ethernet_output: sending packet 0x3ffc6ee4
+ethernet_output: sending packet 0x3ffc6ee4
+ethernet_output: sending packet 0x3ffc6ee4
+W (39578) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ip_input: iphdr->dest 0xf02000a netif->ip_addr 0xf02000a (0x2000a, 0x2000a, 0xf000000)
+ip4_input: packet accepted on interface en
+IP packet is a fragment (id=0x000f tot_len=1500 len=1500 MF=1 offset=0), calling ip4_reass()
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ip_input: iphdr->dest 0xf02000a netif->ip_addr 0xf02000a (0x2000a, 0x2000a, 0xf000000)
+ip4_input: packet accepted on interface en
+IP packet is a fragment (id=0x000f tot_len=1500 len=1500 MF=1 offset=1480), calling ip4_reass()
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ip_input: iphdr->dest 0xf02000a netif->ip_addr 0xf02000a (0x2000a, 0x2000a, 0xf000000)
+ip4_input: packet accepted on interface en
+IP packet is a fragment (id=0x000f tot_len=1500 len=1500 MF=1 offset=2960), calling ip4_reass()
+icmp_send_response: Sending ICMP type 0B for packet from 10.0.2.2 to 10.0.2.15
+ip4_output_if: en1
+IP header:
++-------------------------------+
+| 4 | 5 |  0x00 |        56     | (v, hl, tos, len)
++-------------------------------+
+|       17      |000|       0   | (id, flags, offset)
++-------------------------------+
+|   64  |    1  |    0x62a4     | (ttl, proto, chksum)
++-------------------------------+
+|   10  |    0  |    2  |   15  | (src)
++-------------------------------+
+|   10  |    0  |    2  |    2  | (dest)
++-------------------------------+
+ip4_output_if: call netif->output()
+ethernet_output: sending packet 0x3ffc80f0
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ip_input: iphdr->dest 0xf02000a netif->ip_addr 0xf02000a (0x2000a, 0x2000a, 0xf000000)
+ip4_input: packet accepted on interface en
+IP packet is a fragment (id=0x000f tot_len=1500 len=1500 MF=1 offset=4440), calling ip4_reass()
+etharp_timer
+etharp_timer
+etharp_timer
+etharp_timer
+icmp_send_response: Sending ICMP type 0B for packet from 10.0.2.3 to 10.0.2.15
+ip4_output_if: en1
+IP header:
++-------------------------------+
+| 4 | 5 |  0x00 |        56     | (v, hl, tos, len)
++-------------------------------+
+|       18      |000|       0   | (id, flags, offset)
++-------------------------------+
+|   64  |    1  |    0x62a2     | (ttl, proto, chksum)
++-------------------------------+
+|   10  |    0  |    2  |   15  | (src)
++-------------------------------+
+|   10  |    0  |    2  |    3  | (dest)
++-------------------------------+
+ip4_output_if: call netif->output()
+ethernet_output: sending packet 0x3ffc80f0
+icmp_send_response: Sending ICMP type 0B for packet from 10.0.2.2 to 10.0.2.15
+ip4_output_if: en1
+IP header:
++-------------------------------+
+| 4 | 5 |  0x00 |        56     | (v, hl, tos, len)
++-------------------------------+
+|       19      |000|       0   | (id, flags, offset)
++-------------------------------+
+|   64  |    1  |    0x62a2     | (ttl, proto, chksum)
++-------------------------------+
+|   10  |    0  |    2  |   15  | (src)
++-------------------------------+
+|   10  |    0  |    2  |    2  | (dest)
++-------------------------------+
+ip4_output_if: call netif->output()
+ethernet_output: sending packet 0x3ffbb75c
+W (43558) ch9lab: From 10.0.2.2 icmp_seq=1 TIMEOUT
+I (43558) ch9lab: --- C-tri-flood12000#0 ping statistics: 1 transmitted, 0 received ---
+W (43568) ch9lab: From 10.0.2.2 icmp_seq=1 TIMEOUT
+I (43568) ch9lab: --- C-tri-flood12000#1 ping statistics: 1 transmitted, 0 received ---
+W (43578) ch9lab: From 10.0.2.3 icmp_seq=1 TIMEOUT
+I (43578) ch9lab: --- C-tri-flood12000#2 ping statistics: 1 transmitted, 0 received ---
+etharp_timer
+I (44368) ch9lab: [C-tri-flood12000] dSTAT ip(recv=12 xmit=6 drop=0 chkerr=0 lenerr=0)
+I (44368) ch9lab: [C-tri-flood12000] dSTAT ip_frag(frag_out=27 reass_in=12 cachehit=9 DROP=0 MEMERR=0)
+I (44368) ch9lab: [C-tri-flood12000] dSTAT icmp(rx=0 tx=3 lenerr=0 err=0)
+I (44368) ch9lab: [C-tri-flood12000] dSTAT etharp(req=0 drop=0) mib2(reasmreqds=12 reasmOK=0 reasmFAIL=3)
+I (44368) ch9lab: == ping 10.0.2.2 data=15000 count=1 timeout=3000ms ==
+ip4_output_if: en1
+IP header:
++-------------------------------+
+| 4 | 5 |  0x00 |     15028     | (v, hl, tos, len)
++-------------------------------+
+|       20      |000|       0   | (id, flags, offset)
++-------------------------------+
+|   64  |    1  |    0x2825     | (ttl, proto, chksum)
++-------------------------------+
+|   10  |    0  |    2  |   15  | (src)
++-------------------------------+
+|   10  |    0  |    2  |    2  | (dest)
++-------------------------------+
+ethernet_output: sending packet 0x3ffcdf3c
+ethernet_output: sending packet 0x3ffcdf3c
+ethernet_output: sending packet 0x3ffcdf3c
+ethernet_output: sending packet 0x3ffcdf3c
+ethernet_output: sending packet 0x3ffcdf3c
+ethernet_output: sending packet 0x3ffcdf3c
+ethernet_output: sending packet 0x3ffcdf3c
+ethernet_output: sending packet 0x3ffcdf3c
+ethernet_output: sending packet 0x3ffcdf3c
+ethernet_output: sending packet 0x3ffcdf3c
+ethernet_output: sending packet 0x3ffcdf3c
+W (44368) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ip_input: iphdr->dest 0xf02000a netif->ip_addr 0xf02000a (0x2000a, 0x2000a, 0xf000000)
+ip4_input: packet accepted on interface en
+IP packet is a fragment (id=0x0010 tot_len=1500 len=1500 MF=1 offset=0), calling ip4_reass()
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ip_input: iphdr->dest 0xf02000a netif->ip_addr 0xf02000a (0x2000a, 0x2000a, 0xf000000)
+ip4_input: packet accepted on interface en
+IP packet is a fragment (id=0x0010 tot_len=1500 len=1500 MF=1 offset=1480), calling ip4_reass()
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ip_input: iphdr->dest 0xf02000a netif->ip_addr 0xf02000a (0x2000a, 0x2000a, 0xf000000)
+ip4_input: packet accepted on interface en
+IP packet is a fragment (id=0x0010 tot_len=1500 len=1500 MF=1 offset=2960), calling ip4_reass()
+ethernet_input: dest:52:54:00:12:34:56, src:52:55:0a:00:02:02, type:800
+ip_input: iphdr->dest 0xf02000a netif->ip_addr 0xf02000a (0x2000a, 0x2000a, 0xf000000)
+ip4_input: packet accepted on interface en
+IP packet is a fragment (id=0x0010 tot_len=1500 len=1500 MF=1 offset=4440), calling ip4_reass()
+etharp_timer
+etharp_timer
+etharp_timer
+W (47368) ch9lab: From 10.0.2.2 icmp_seq=1 TIMEOUT
+I (47368) ch9lab: --- C-flood15000-2-recovered ping statistics: 1 transmitted, 0 received ---
+etharp_timer
+icmp_send_response: Sending ICMP type 0B for packet from 10.0.2.2 to 10.0.2.15
+ip4_output_if: en1
+IP header:
++-------------------------------+
+| 4 | 5 |  0x00 |        56     | (v, hl, tos, len)
++-------------------------------+
+|       21      |000|       0   | (id, flags, offset)
++-------------------------------+
+|   64  |    1  |    0x62a0     | (ttl, proto, chksum)
++-------------------------------+
+|   10  |    0  |    2  |   15  | (src)
++-------------------------------+
+|   10  |    0  |    2  |    2  | (dest)
++-------------------------------+
+ip4_output_if: call netif->output()
+ethernet_output: sending packet 0x3ffbb0b0
+etharp_timer
+etharp_timer
+etharp_timer
+I (51168) ch9lab: [C-flood15000-2-recovered] dSTAT ip(recv=4 xmit=2 drop=0 chkerr=0 lenerr=0)
+I (51168) ch9lab: [C-flood15000-2-recovered] dSTAT ip_frag(frag_out=11 reass_in=4 cachehit=3 DROP=0 MEMERR=0)
+I (51168) ch9lab: [C-flood15000-2-recovered] dSTAT icmp(rx=0 tx=1 lenerr=0 err=0)
+I (51168) ch9lab: [C-flood15000-2-recovered] dSTAT etharp(req=0 drop=0) mib2(reasmreqds=4 reasmOK=0 reasmFAIL=1)
+I (51168) ch9lab: == ping 10.0.2.250 data=64 count=2 timeout=1000ms ==
+ip4_output_if: en1
+IP header:
++-------------------------------+
+| 4 | 5 |  0x00 |        92     | (v, hl, tos, len)
++-------------------------------+
+|       22      |000|       0   | (id, flags, offset)
++-------------------------------+
+|   64  |    1  |    0x6183     | (ttl, proto, chksum)
++-------------------------------+
+|   10  |    0  |    2  |   15  | (src)
++-------------------------------+
+|   10  |    0  |    2  |  250  | (dest)
++-------------------------------+
+ip4_output_if: call netif->output()
+etharp_find_entry: found empty entry 2
+etharp_find_entry: selecting empty entry 2
+etharp_request: sending ARP request.
+etharp_raw: sending raw ARP packet.
+ethernet_output: sending packet 0x3ffbb12c
+etharp_query: queued packet 0x3ffbaf14 on ARP entry 2
+etharp_timer
+etharp_request: sending ARP request.
+etharp_raw: sending raw ARP packet.
+ethernet_output: sending packet 0x3ffbb55c
+W (52168) ch9lab: From 10.0.2.250 icmp_seq=1 TIMEOUT
+ip4_output_if: en1
+IP header:
++-------------------------------+
+| 4 | 5 |  0x00 |        92     | (v, hl, tos, len)
++-------------------------------+
+|       23      |000|       0   | (id, flags, offset)
++-------------------------------+
+|   64  |    1  |    0x6182     | (ttl, proto, chksum)
++-------------------------------+
+|   10  |    0  |    2  |   15  | (src)
++-------------------------------+
+|   10  |    0  |    2  |  250  | (dest)
++-------------------------------+
+ip4_output_if: call netif->output()
+etharp_find_entry: found matching entry 2
+etharp_query: queued packet 0x3ffbb738 on ARP entry 2
+etharp_timer
+etharp_request: sending ARP request.
+etharp_raw: sending raw ARP packet.
+ethernet_output: sending packet 0x3ffbb5e8
+W (53168) ch9lab: From 10.0.2.250 icmp_seq=2 TIMEOUT
+I (53168) ch9lab: --- D-unreachable ping statistics: 2 transmitted, 0 received ---
+etharp_timer
+etharp_request: sending ARP request.
+etharp_raw: sending raw ARP packet.
+ethernet_output: sending packet 0x3ffbb5e8
+etharp_timer
+etharp_request: sending ARP request.
+etharp_raw: sending raw ARP packet.
+ethernet_output: sending packet 0x3ffbb5e8
+I (54968) ch9lab: [D-unreachable] dSTAT ip(recv=0 xmit=2 drop=0 chkerr=0 lenerr=0)
+I (54968) ch9lab: [D-unreachable] dSTAT ip_frag(frag_out=0 reass_in=0 cachehit=0 DROP=0 MEMERR=0)
+I (54968) ch9lab: [D-unreachable] dSTAT icmp(rx=0 tx=0 lenerr=0 err=0)
+I (54968) ch9lab: [D-unreachable] dSTAT etharp(req=5 drop=0) mib2(reasmreqds=0 reasmOK=0 reasmFAIL=0)
+I (54968) ch9lab: == all experiments done, cumulative stats ==
+I (54968) ch9lab: FINAL ip(recv=38 xmit=24 fw=0 rterr=0) ip_frag(xmit=58 recv=29 drop=0 memerr=0)
+I (54968) ch9lab: FINAL mib2 ipreasmreqds=29 ipreasmoks=3 ipreasmfails=5
+etharp_timer
+etharp_timer: expired pending entry 2.
+etharp_free_entry: freeing entry 2, packet queue 0x3ffbb018.
+etharp_timer
+etharp_timer
+I (57968) main_task: Returned from app_main()
+etharp_timer
+etharp_timer
+etharp_timer
+etharp_timer
+etharp_request: sending ARP request.
+etharp_raw: sending raw ARP packet.
+ethernet_output: sending packet 0x3ffafa14
+etharp_timer
+etharp_timer
+etharp_timer
+etharp_timer
+etharp_timer
+etharp_timer
+etharp_timer
+etharp_timer
+etharp_timer
+etharp_timer
+etharp_timer
+etharp_timer
+etharp_timer
+etharp_timer
+etharp_timer
+etharp_timer
+etharp_timer
+etharp_timer
+etharp_timer
+qemu-system-xtensa: terminating on signal 15 from pid 3298283 (timeout)

@@ -1,0 +1,8 @@
+# ex16 必填：OpenCores Ethernet MAC 驱动（仅用于 QEMU openeth 虚拟网卡，真机不可用）
+CONFIG_ETH_USE_OPENETH=y
+
+# 可观测性叠加：FreeRTOS 任务表（案例 A 量 tcpip 线程栈高水位需要按任务名找句柄，
+# 走 uxTaskGetSystemState）。关闭后案例 A 的栈对比降级为 disabled 提示，其余不受影响。
+CONFIG_FREERTOS_USE_TRACE_FACILITY=y
+
+# 注意：修改本文件后必须删除生成的 sdkconfig 重新构建才生效（CONVENTIONS Batch 1 教训）。

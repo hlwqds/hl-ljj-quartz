@@ -1,0 +1,118 @@
+Adding SPI flash device
+ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x12 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0040,len:6272
+load:0x40078000,len:15820
+load:0x40080400,len:3920
+entry 0x40080644
+I (675) boot: ESP-IDF v6.0.2 2nd stage bootloader
+I (676) boot: compile time Aug 27 2026 13:20:58
+I (676) boot: Multicore bootloader
+I (712) boot: chip revision: v0.0
+I (713) boot.esp32: SPI Speed      : 40MHz
+I (713) boot.esp32: SPI Mode       : DIO
+I (713) boot.esp32: SPI Flash Size : 2MB
+I (718) boot: Enabling RNG early entropy source...
+I (723) boot: Partition Table:
+I (724) boot: ## Label            Usage          Type ST Offset   Length
+I (724) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (724) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (724) boot:  2 factory          factory app      00 00 00010000 00100000
+I (727) boot: End of partition table
+I (757) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=16e3ch ( 93756) map
+I (773) esp_image: segment 1: paddr=00026e64 vaddr=3ffb0000 size=02adch ( 10972) load
+I (785) esp_image: segment 2: paddr=00029948 vaddr=40080000 size=066d0h ( 26320) load
+I (798) esp_image: segment 3: paddr=00030020 vaddr=400d0020 size=4c480h (312448) map
+I (823) esp_image: segment 4: paddr=0007c4a8 vaddr=400866d0 size=04b7ch ( 19324) load
+I (836) esp_image: segment 5: paddr=0008102c vaddr=50000000 size=00028h (    40) load
+I (879) boot: Loaded app from partition at offset 0x10000
+I (879) boot: Disabling RNG early entropy source...
+I (889) cpu_start: Multicore app
+I (1469) cpu_start: GPIO 3 and 1 are used as console UART I/O pins
+I (1471) cpu_start: Pro cpu start user code
+I (1471) cpu_start: cpu freq: 160000000 Hz
+I (1472) app_init: Application information:
+I (1472) app_init: Project name:     ex09_tls_client
+I (1472) app_init: App version:      924d871-dirty
+I (1472) app_init: Compile time:     Aug 27 2026 13:20:33
+I (1472) app_init: ELF file SHA256:  581df6340...
+I (1472) app_init: ESP-IDF:          v6.0.2
+I (1472) efuse_init: Min chip rev:     v0.0
+I (1472) efuse_init: Max chip rev:     v3.99 
+I (1472) efuse_init: Chip rev:         v0.0
+I (1473) heap_init: Initializing. RAM available for dynamic allocation:
+I (1473) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM
+I (1473) heap_init: At 3FFB4610 len 0002B9F0 (174 KiB): DRAM
+I (1473) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM
+I (1473) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM
+I (1473) heap_init: At 4008B24C len 00014DB4 (83 KiB): IRAM
+I (1503) spi_flash: detected chip: winbond
+I (1506) spi_flash: flash io: dio
+I (1517) main_task: Started on CPU0
+I (1517) main_task: Calling app_main()
+I (1517) ex09: == ex09: openeth bring-up then esp-tls client template ==
+EX09-FACT built="Aug 27 2026 13:31:36" idf_version=v6.0.2
+I (1537) esp_eth.netif.netif_glue: 52:54:00:12:34:56
+I (1537) esp_eth.netif.netif_glue: ethernet attached to netif
+E (1637) esp_eth: esp_eth_ioctl(533): add mac address to filter not supported
+E (1637) esp_eth.netif.netif_glue: eth_set_mac_filter(56): failed to add mac filter
+E (1637) esp_netif_lwip: Failed to add multicast filter for IPv4
+I (1637) ex09: ETH_EVENT: CONNECTED (link up)
+I (1637) ex09: waiting for DHCP lease ...
+I (2637) ex09: GOT_IP: 10.0.2.15
+I (2637) esp_netif_handlers: eth ip: 10.0.2.15, mask: 255.255.255.0, gw: 10.0.2.2
+$$$ EXREADY outer=10.0.2.2:8280 local=127.0.0.1:8281 attempts=3+2 probe_len=41 escape_budget_ms=8000
+EX09-MEM tag=boot-baseline  free=252268 largest=131072 min-ever=252248
+EX09-PHASE name=TLS-OUTER target=10.0.2.2:8280 seq=1 expect=app-roundtrip
+EX09-MEM tag=pre-hs-1       free=252268 largest=131072 min-ever=252248
+I (2637) main_task: Returned from app_main()
+EX09-TCPPLUSHS seq=1 elapsed_ms=218 (tcp_connect+tls_handshake)
+EX09-HS-OK version=TLSv1.2 suite=TLS-ECDHE-RSA-WITH-AES-256-GCM-SHA384 peer_cert_bytes=0
+EX09-MEM tag=post-hs-1      free=229416 largest=110592 min-ever=219700
+EX09-LEDGER seq=1 handshake_peak_delta=32548 (min-ever 252248 -> 219700)
+EX09-WROTE seq=1 len=41 ms=1 -> waiting app record (budget 8000 ms)
+EX09-APP-TIMEOUT seq=1 budget_ms=8000 got=0 -> KNOWN-ISSUE-HIT (SLIRP outer-loop TLS, see ch22 case#1); closing by escape hatch
+EX09-MEM tag=post-close-1   free=255344 largest=110592 min-ever=219700
+EX09-PHASE name=TLS-OUTER target=10.0.2.2:8280 seq=2 expect=app-roundtrip
+EX09-MEM tag=pre-hs-2       free=255364 largest=110592 min-ever=219700
+EX09-TCPPLUSHS seq=2 elapsed_ms=194 (tcp_connect+tls_handshake)
+EX09-HS-OK version=TLSv1.2 suite=TLS-ECDHE-RSA-WITH-AES-256-GCM-SHA384 peer_cert_bytes=0
+EX09-MEM tag=post-hs-2      free=229404 largest=110592 min-ever=219688
+EX09-LEDGER seq=2 handshake_peak_delta=12 (min-ever 219700 -> 219688)
+EX09-WROTE seq=2 len=41 ms=0 -> waiting app record (budget 8000 ms)
+EX09-APP-TIMEOUT seq=2 budget_ms=8000 got=0 -> KNOWN-ISSUE-HIT (SLIRP outer-loop TLS, see ch22 case#1); closing by escape hatch
+EX09-MEM tag=post-close-2   free=253508 largest=110592 min-ever=219688
+EX09-PHASE name=TLS-OUTER target=10.0.2.2:8280 seq=3 expect=app-roundtrip
+EX09-MEM tag=pre-hs-3       free=255364 largest=110592 min-ever=219688
+EX09-TCPPLUSHS seq=3 elapsed_ms=185 (tcp_connect+tls_handshake)
+EX09-HS-OK version=TLSv1.2 suite=TLS-ECDHE-RSA-WITH-AES-256-GCM-SHA384 peer_cert_bytes=0
+EX09-MEM tag=post-hs-3      free=229404 largest=110592 min-ever=219688
+EX09-LEDGER seq=3 handshake_peak_delta=0 (min-ever 219688 -> 219688)
+EX09-WROTE seq=3 len=41 ms=0 -> waiting app record (budget 8000 ms)
+EX09-APP-TIMEOUT seq=3 budget_ms=8000 got=0 -> KNOWN-ISSUE-HIT (SLIRP outer-loop TLS, see ch22 case#1); closing by escape hatch
+EX09-MEM tag=post-close-3   free=255132 largest=110592 min-ever=219688
+EX09-PHASEOVER name=OUTER attempts=3 pass=0 hang_escaped=3 hs_fail=0 short_echo=0
+EX09-PHASE name=TLS-LOCAL target=127.0.0.1:8281 seq=4 expect=app-roundtrip
+EX09-SRV session established fd=56
+EX09-TCPPLUSHS seq=4 elapsed_ms=999 (tcp_connect+tls_handshake, loopback)
+EX09-HS-OK version=TLSv1.2 suite=TLS-ECDHE-RSA-WITH-AES-256-GCM-SHA384 peer_cert_bytes=0
+EX09-WROTE seq=4 len=41 ms=0 -> waiting app record (budget 8000 ms)
+EX09-REPLY seq=4 len=41 xor_match=YES (xor order-independent: outer replies byte-reversed via s_server -rev, local echo returns as-is)
+EX09-SRV session closed
+EX09-PHASE name=TLS-LOCAL target=127.0.0.1:8281 seq=5 expect=app-roundtrip
+EX09-SRV session established fd=56
+EX09-TCPPLUSHS seq=5 elapsed_ms=950 (tcp_connect+tls_handshake, loopback)
+EX09-HS-OK version=TLSv1.2 suite=TLS-ECDHE-RSA-WITH-AES-256-GCM-SHA384 peer_cert_bytes=0
+EX09-WROTE seq=5 len=41 ms=0 -> waiting app record (budget 8000 ms)
+EX09-REPLY seq=5 len=41 xor_match=YES (xor order-independent: outer replies byte-reversed via s_server -rev, local echo returns as-is)
+EX09-SRV session closed
+EX09-PHASEOVER name=LOCAL attempts=2 pass=2 other=0
+EX09-SUMMARY outer=pass:0/hang:3/hsfail:0/short:0 local=pass:2/other:0
+EX09-MEM tag=final          free=242060 largest=110592 min-ever=173836
+$$$ EXDONE all-phases-run idling
+EX09-IDLE uptime_ms=61732
+qemu-system-xtensa: terminating on signal 15 from pid 3873988 (timeout)

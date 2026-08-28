@@ -1,0 +1,12 @@
+[bridge] session up (connect+subscribe ok)
+[bridge] connection lost: timed out -> reconnect
+[bridge] session up (connect+subscribe ok)
+[bridge] connection lost: peer closed -> reconnect
+[bridge] connect failed ([Errno 111] Connection refused), retry in 0.3s
+[bridge] connect failed ([Errno 111] Connection refused), retry in 0.3s
+[bridge] connect failed ([Errno 111] Connection refused), retry in 0.3s
+[bridge] connect failed ([Errno 111] Connection refused), retry in 0.3s
+[bridge] connect failed ([Errno 111] Connection refused), retry in 0.3s
+[bridge] connect failed ([Errno 111] Connection refused), retry in 0.3s
+[bridge] connect failed ([Errno 111] Connection refused), retry in 0.3s
+[bridge] session up (connect+subscribe ok)

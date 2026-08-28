@@ -1,0 +1,5 @@
+# OpenCores Ethernet MAC 驱动（仅用于 QEMU 仿真，真机不可用）
+CONFIG_ETH_USE_OPENETH=y
+
+# 实验 d：uxTaskGetSystemState 观察任务名/优先级（IDF v6 默认关）
+CONFIG_FREERTOS_USE_TRACE_FACILITY=y

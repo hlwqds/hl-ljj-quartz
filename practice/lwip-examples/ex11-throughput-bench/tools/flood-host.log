@@ -1,0 +1,14 @@
+FLOOD-LISTEN host=127.0.0.1:8291 rounds=3 mb=4 pattern=xorshift32/64K
+FLOOD-WAIT conn-not-ready ([Errno 111] Connection refused) attempts=1
+FLOOD-WAIT conn-not-ready ([Errno 111] Connection refused) attempts=2
+FLOOD-DONE round=1 bytes=4000000/4000000 send_s=0.124 full_s=0.365 mbit_e2e=87.57 digest=5b5c ack=K attempts=3
+FLOOD-WAIT phantom-conn byte=b'' attempts=1
+FLOOD-WAIT phantom-conn byte=b'' attempts=2
+FLOOD-WAIT phantom-conn byte=b'' attempts=3
+FLOOD-DONE round=2 bytes=4000000/4000000 send_s=0.127 full_s=0.336 mbit_e2e=95.34 digest=5b5c ack=K attempts=4
+FLOOD-WAIT phantom-conn byte=b'' attempts=1
+FLOOD-WAIT phantom-conn byte=b'' attempts=2
+FLOOD-WAIT phantom-conn byte=b'' attempts=3
+FLOOD-DONE round=3 bytes=4000000/4000000 send_s=0.125 full_s=0.371 mbit_e2e=86.29 digest=5b5c ack=K attempts=4
+FLOOD-SUMMARY rounds=3 ok=3 avg_mbit=89.74
+FLOOD-SUMMARY2 digests=5b5c,5b5c,5b5c

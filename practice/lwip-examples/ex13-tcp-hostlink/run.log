@@ -1,0 +1,183 @@
+Adding SPI flash device
+ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x12 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0040,len:6272
+load:0x40078000,len:15820
+load:0x40080400,len:3920
+entry 0x40080644
+I (662) boot: ESP-IDF v6.0.2 2nd stage bootloader
+I (663) boot: compile time Aug 27 2026 14:59:46
+I (663) boot: Multicore bootloader
+I (695) boot: chip revision: v0.0
+I (696) boot.esp32: SPI Speed      : 40MHz
+I (696) boot.esp32: SPI Mode       : DIO
+I (696) boot.esp32: SPI Flash Size : 2MB
+I (701) boot: Enabling RNG early entropy source...
+I (707) boot: Partition Table:
+I (707) boot: ## Label            Usage          Type ST Offset   Length
+I (708) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (708) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (708) boot:  2 factory          factory app      00 00 00010000 00100000
+I (712) boot: End of partition table
+I (741) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=0f1a4h ( 61860) map
+I (757) esp_image: segment 1: paddr=0001f1cc vaddr=3ffb0000 size=00e4ch (  3660) load
+I (770) esp_image: segment 2: paddr=00020020 vaddr=400d0020 size=2ae94h (175764) map
+I (790) esp_image: segment 3: paddr=0004aebc vaddr=3ffb0e4c size=01c80h (  7296) load
+I (805) esp_image: segment 4: paddr=0004cb44 vaddr=40080000 size=0b23ch ( 45628) load
+I (821) esp_image: segment 5: paddr=00057d88 vaddr=50000000 size=00028h (    40) load
+I (881) boot: Loaded app from partition at offset 0x10000
+I (881) boot: Disabling RNG early entropy source...
+I (890) cpu_start: Multicore app
+I (1481) cpu_start: GPIO 3 and 1 are used as console UART I/O pins
+I (1482) cpu_start: Pro cpu start user code
+I (1482) cpu_start: cpu freq: 160000000 Hz
+I (1483) app_init: Application information:
+I (1483) app_init: Project name:     ex13_tcp_hostlink
+I (1483) app_init: App version:      924d871-dirty
+I (1483) app_init: Compile time:     Aug 27 2026 14:59:44
+I (1483) app_init: ELF file SHA256:  48cd38522...
+I (1483) app_init: ESP-IDF:          v6.0.2
+I (1483) efuse_init: Min chip rev:     v0.0
+I (1483) efuse_init: Max chip rev:     v3.99 
+I (1483) efuse_init: Chip rev:         v0.0
+I (1484) heap_init: Initializing. RAM available for dynamic allocation:
+I (1484) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM
+I (1484) heap_init: At 3FFB4418 len 0002BBE8 (174 KiB): DRAM
+I (1484) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM
+I (1485) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM
+I (1485) heap_init: At 4008B23C len 00014DC4 (83 KiB): IRAM
+I (1514) spi_flash: detected chip: winbond
+I (1517) spi_flash: flash io: dio
+I (1537) main_task: Started on CPU0
+I (1537) main_task: Calling app_main()
+I (1537) ex13: == ex13 tcp-hostlink build@Aug 27 2026 14:59:44 ==
+$$$ EX13BUILD "Aug 27 2026 14:59:44"
+I (1557) esp_eth.netif.netif_glue: 52:54:00:12:34:56
+I (1557) esp_eth.netif.netif_glue: ethernet attached to netif
+I (1657) ex13: ETH_EVENT: START
+E (1657) esp_eth: esp_eth_ioctl(533): add mac address to filter not supported
+E (1657) esp_eth.netif.netif_glue: eth_set_mac_filter(56): failed to add mac filter
+E (1657) esp_netif_lwip: Failed to add multicast filter for IPv4
+I (1657) ex13: ETH_EVENT: CONNECTED (link up)
+I (1657) ex13: waiting for DHCP lease ...
+I (2657) ex13: GOT_IP: 10.0.2.15/255.255.255.0 gw 10.0.2.2
+I (2657) esp_netif_handlers: eth ip: 10.0.2.15, mask: 255.255.255.0, gw: 10.0.2.2
+I (2657) ex13: net ready: 10.0.2.15/24 gw 10.0.2.2
+$$$ EX13NETUP ip=10.0.2.15 gw=10.0.2.2
+I (2657) ex13: cmd server listening on 0.0.0.0:8300 backlog=8
+$$$ EX13READY port=8300 backlog=8 hb_target=10.0.2.2:8301 hb_period_ms=5000 cmd_max=255 idle_rcvtimeo_s=30
+W (7657) ex13: HB #1 target 10.0.2.2:8301 CONNECT-FAIL errno=104(ECONNRESET) streak=1 -- service plane unaffected
+$$$ EX13HBDROP seq=1 result=CONNECT_FAIL errno=104 name=ECONNRESET elapsed_ms=6 streak=1 conn_total=0
+W (12657) ex13: HB #2 target 10.0.2.2:8301 CONNECT-FAIL errno=104(ECONNRESET) streak=2 -- service plane unaffected
+$$$ EX13HBDROP seq=2 result=CONNECT_FAIL errno=104 name=ECONNRESET elapsed_ms=1 streak=2 conn_total=0
+$$$ EX13STATS conn_total=0 active=0 replies=0 hb_ok=0 hb_fail=2 bytes_in=0 uptime_s=15
+W (17657) ex13: HB #3 target 10.0.2.2:8301 CONNECT-FAIL errno=104(ECONNRESET) streak=3 -- service plane unaffected
+$$$ EX13HBDROP seq=3 result=CONNECT_FAIL errno=104 name=ECONNRESET elapsed_ms=2 streak=3 conn_total=0
+W (22657) ex13: HB #4 target 10.0.2.2:8301 CONNECT-FAIL errno=104(ECONNRESET) streak=4 -- service plane unaffected
+$$$ EX13HBDROP seq=4 result=CONNECT_FAIL errno=104 name=ECONNRESET elapsed_ms=1 streak=4 conn_total=0
+I (27657) ex13: HB #5 ACKED rtt=6ms heap=257192 conn_total=0 (up_s=26)
+$$$ EX13HB seq=5 result=ACK rtt_ms=6 json="{"type":"hb","seq":5,"ip":"10.0.2.15","up_s":26,"heap_free":257604,"conn_total":0}"
+$$$ EX13STATS conn_total=0 active=0 replies=0 hb_ok=1 hb_fail=4 bytes_in=0 uptime_s=30
+I (32667) ex13: HB #6 ACKED rtt=10ms heap=257192 conn_total=0 (up_s=31)
+$$$ EX13HB seq=6 result=ACK rtt_ms=10 json="{"type":"hb","seq":6,"ip":"10.0.2.15","up_s":31,"heap_free":257604,"conn_total":0}"
+I (37657) ex13: HB #7 ACKED rtt=4ms heap=257192 conn_total=0 (up_s=36)
+$$$ EX13HB seq=7 result=ACK rtt_ms=4 json="{"type":"hb","seq":7,"ip":"10.0.2.15","up_s":36,"heap_free":257604,"conn_total":0}"
+I (42667) ex13: HB #8 ACKED rtt=10ms heap=257192 conn_total=0 (up_s=41)
+$$$ EX13HB seq=8 result=ACK rtt_ms=10 json="{"type":"hb","seq":8,"ip":"10.0.2.15","up_s":41,"heap_free":257604,"conn_total":0}"
+$$$ EX13STATS conn_total=0 active=0 replies=0 hb_ok=4 hb_fail=4 bytes_in=0 uptime_s=45
+I (47657) ex13: HB #9 ACKED rtt=4ms heap=257192 conn_total=0 (up_s=46)
+$$$ EX13HB seq=9 result=ACK rtt_ms=4 json="{"type":"hb","seq":9,"ip":"10.0.2.15","up_s":46,"heap_free":257604,"conn_total":0}"
+I (49877) ex13: conn #1 ACCEPT from 10.0.2.2:34680 (active=1 total=1)
+$$$ EX13CONN idx=1 from=10.0.2.2:34680
+I (49887) ex13: conn #1 cmd[1] PING req=4 resp=5 proc=644us
+$$$ EX13REPLY idx=1 n=1 cmd=PING req_len=4 resp_len=5 us=1120
+I (49887) ex13: conn #1 cmd[2] ECHO req=20 resp=16 proc=413us
+$$$ EX13REPLY idx=1 n=2 cmd=ECHO req_len=20 resp_len=16 us=745
+I (49887) ex13: conn #1 cmd[3] STATS req=5 resp=109 proc=2275us
+$$$ EX13REPLY idx=1 n=3 cmd=STATS req_len=5 resp_len=109 us=2748
+I (49887) ex13: conn #1 cmd[4] TIME req=4 resp=20 proc=531us
+$$$ EX13REPLY idx=1 n=4 cmd=TIME req_len=4 resp_len=20 us=1152
+I (49897) ex13: conn #1 cmd[5] ? req=17 resp=12 proc=677us
+$$$ EX13REPLY idx=1 n=5 cmd=? req_len=17 resp_len=12 us=1151
+I (49897) ex13: conn #1 from 10.0.2.2:34680 CLOSED why=FIN srv=0ms msgs=5 (55 B in)
+$$$ EX13CLOSE idx=1 reason=FIN msgs=5 bytes=55 ms=17
+I (52667) ex13: HB #10 ACKED rtt=10ms heap=257192 conn_total=1 (up_s=51)
+$$$ EX13HB seq=10 result=ACK rtt_ms=10 json="{"type":"hb","seq":10,"ip":"10.0.2.15","up_s":51,"heap_free":257604,"conn_total":1}"
+I (57657) ex13: HB #11 ACKED rtt=4ms heap=257192 conn_total=1 (up_s=56)
+$$$ EX13HB seq=11 result=ACK rtt_ms=4 json="{"type":"hb","seq":11,"ip":"10.0.2.15","up_s":56,"heap_free":257604,"conn_total":1}"
+$$$ EX13STATS conn_total=1 active=0 replies=5 hb_ok=7 hb_fail=4 bytes_in=55 uptime_s=60
+I (61957) ex13: conn #2 ACCEPT from 10.0.2.2:36002 (active=1 total=2)
+$$$ EX13CONN idx=2 from=10.0.2.2:36002
+W (61967) ex13: conn #2 line too long (>=256 B), truncating until LF
+$$$ EX13TRUNC idx=2 n=1 kept=255 limit=255
+I (61967) ex13: conn #2 cmd[1] ECHO req=255 resp=251 proc=223us
+$$$ EX13REPLY idx=2 n=1 cmd=ECHO req_len=255 resp_len=251 us=504
+I (61967) ex13: conn #2 from 10.0.2.2:36002 CLOSED why=FIN srv=0ms msgs=1 (506 B in)
+$$$ EX13CLOSE idx=2 reason=FIN msgs=1 bytes=506 ms=3
+I (61987) ex13: conn #3 ACCEPT from 10.0.2.2:36006 (active=1 total=3)
+$$$ EX13CONN idx=3 from=10.0.2.2:36006
+I (61987) ex13: conn #3 cmd[1] PING req=4 resp=5 proc=137us
+$$$ EX13REPLY idx=3 n=1 cmd=PING req_len=4 resp_len=5 us=200
+W (62587) ex13: conn #3 recv failed errno=104(ECONNRESET)
+I (62587) ex13: conn #3 from 10.0.2.2:36006 CLOSED why=ERR srv=0ms msgs=1 (5 B in)
+$$$ EX13CLOSE idx=3 reason=ERR msgs=1 bytes=5 ms=600
+I (62667) ex13: HB #12 ACKED rtt=9ms heap=257204 conn_total=3 (up_s=61)
+$$$ EX13HB seq=12 result=ACK rtt_ms=9 json="{"type":"hb","seq":12,"ip":"10.0.2.15","up_s":61,"heap_free":257584,"conn_total":3}"
+I (67657) ex13: HB #13 ACKED rtt=5ms heap=257192 conn_total=3 (up_s=66)
+$$$ EX13HB seq=13 result=ACK rtt_ms=5 json="{"type":"hb","seq":13,"ip":"10.0.2.15","up_s":66,"heap_free":257604,"conn_total":3}"
+I (72667) ex13: HB #14 ACKED rtt=10ms heap=257192 conn_total=3 (up_s=71)
+$$$ EX13HB seq=14 result=ACK rtt_ms=10 json="{"type":"hb","seq":14,"ip":"10.0.2.15","up_s":71,"heap_free":257604,"conn_total":3}"
+$$$ EX13STATS conn_total=3 active=0 replies=7 hb_ok=10 hb_fail=4 bytes_in=566 uptime_s=75
+I (77657) ex13: HB #15 ACKED rtt=5ms heap=257192 conn_total=3 (up_s=76)
+$$$ EX13HB seq=15 result=ACK rtt_ms=5 json="{"type":"hb","seq":15,"ip":"10.0.2.15","up_s":76,"heap_free":257604,"conn_total":3}"
+I (78537) ex13: conn #4 ACCEPT from 10.0.2.2:43184 (active=1 total=4)
+$$$ EX13CONN idx=4 from=10.0.2.2:43184
+I (78547) ex13: conn #4 cmd[1] PING req=4 resp=5 proc=263us
+$$$ EX13REPLY idx=4 n=1 cmd=PING req_len=4 resp_len=5 us=360
+W (78547) ex13: conn #4 recv failed errno=104(ECONNRESET)
+I (78547) ex13: conn #4 from 10.0.2.2:43184 CLOSED why=ERR srv=0ms msgs=1 (5 B in)
+$$$ EX13CLOSE idx=4 reason=ERR msgs=1 bytes=5 ms=3
+W (82657) ex13: HB #16 target 10.0.2.2:8301 CONNECT-FAIL errno=104(ECONNRESET) streak=1 -- service plane unaffected
+$$$ EX13HBDROP seq=16 result=CONNECT_FAIL errno=104 name=ECONNRESET elapsed_ms=2 streak=1 conn_total=4
+W (87657) ex13: HB #17 target 10.0.2.2:8301 CONNECT-FAIL errno=104(ECONNRESET) streak=2 -- service plane unaffected
+$$$ EX13HBDROP seq=17 result=CONNECT_FAIL errno=104 name=ECONNRESET elapsed_ms=1 streak=2 conn_total=4
+$$$ EX13STATS conn_total=4 active=0 replies=8 hb_ok=11 hb_fail=6 bytes_in=571 uptime_s=90
+I (92557) ex13: conn #5 ACCEPT from 10.0.2.2:40572 (active=1 total=5)
+$$$ EX13CONN idx=5 from=10.0.2.2:40572
+I (92567) ex13: conn #5 cmd[1] PING req=24 resp=5 proc=141us
+$$$ EX13REPLY idx=5 n=1 cmd=PING req_len=24 resp_len=5 us=266
+I (92567) ex13: conn #5 cmd[2] STATS req=5 resp=109 proc=790us
+$$$ EX13REPLY idx=5 n=2 cmd=STATS req_len=5 resp_len=109 us=892
+I (92567) ex13: conn #5 from 10.0.2.2:40572 CLOSED why=FIN srv=0ms msgs=2 (31 B in)
+$$$ EX13CLOSE idx=5 reason=FIN msgs=2 bytes=31 ms=5
+W (92657) ex13: HB #18 target 10.0.2.2:8301 CONNECT-FAIL errno=104(ECONNRESET) streak=3 -- service plane unaffected
+$$$ EX13HBDROP seq=18 result=CONNECT_FAIL errno=104 name=ECONNRESET elapsed_ms=1 streak=3 conn_total=5
+W (97657) ex13: HB #19 target 10.0.2.2:8301 CONNECT-FAIL errno=104(ECONNRESET) streak=4 -- service plane unaffected
+$$$ EX13HBDROP seq=19 result=CONNECT_FAIL errno=104 name=ECONNRESET elapsed_ms=1 streak=4 conn_total=5
+I (98607) ex13: conn #6 ACCEPT from 10.0.2.2:59902 (active=1 total=6)
+$$$ EX13CONN idx=6 from=10.0.2.2:59902
+I (98617) ex13: conn #6 cmd[1] PING req=4 resp=5 proc=130us
+$$$ EX13REPLY idx=6 n=1 cmd=PING req_len=4 resp_len=5 us=226
+I (98617) ex13: conn #6 from 10.0.2.2:59902 CLOSED why=FIN srv=0ms msgs=1 (5 B in)
+$$$ EX13CLOSE idx=6 reason=FIN msgs=1 bytes=5 ms=8
+W (102657) ex13: HB #20 target 10.0.2.2:8301 CONNECT-FAIL errno=104(ECONNRESET) streak=5 -- service plane unaffected
+$$$ EX13HBDROP seq=20 result=CONNECT_FAIL errno=104 name=ECONNRESET elapsed_ms=1 streak=5 conn_total=6
+$$$ EX13STATS conn_total=6 active=0 replies=11 hb_ok=11 hb_fail=9 bytes_in=607 uptime_s=105
+W (107657) ex13: HB #21 target 10.0.2.2:8301 CONNECT-FAIL errno=104(ECONNRESET) streak=6 -- service plane unaffected
+$$$ EX13HBDROP seq=21 result=CONNECT_FAIL errno=104 name=ECONNRESET elapsed_ms=1 streak=6 conn_total=6
+I (112667) ex13: HB #22 ACKED rtt=10ms heap=257192 conn_total=6 (up_s=111)
+$$$ EX13HB seq=22 result=ACK rtt_ms=10 json="{"type":"hb","seq":22,"ip":"10.0.2.15","up_s":111,"heap_free":257604,"conn_total":6}"
+I (117657) ex13: HB #23 ACKED rtt=6ms heap=257192 conn_total=6 (up_s=116)
+$$$ EX13HB seq=23 result=ACK rtt_ms=6 json="{"type":"hb","seq":23,"ip":"10.0.2.15","up_s":116,"heap_free":257604,"conn_total":6}"
+$$$ EX13STATS conn_total=6 active=0 replies=11 hb_ok=13 hb_fail=10 bytes_in=607 uptime_s=120
+I (122667) ex13: HB #24 ACKED rtt=10ms heap=257224 conn_total=6 (up_s=121)
+$$$ EX13HB seq=24 result=ACK rtt_ms=10 json="{"type":"hb","seq":24,"ip":"10.0.2.15","up_s":121,"heap_free":257624,"conn_total":6}"
+I (127657) ex13: HB #25 ACKED rtt=5ms heap=257224 conn_total=6 (up_s=126)
+$$$ EX13HB seq=25 result=ACK rtt_ms=5 json="{"type":"hb","seq":25,"ip":"10.0.2.15","up_s":126,"heap_free":257624,"conn_total":6}"
+I (132667) ex13: HB #26 ACKED rtt=10ms heap=257224 conn_total=6 (up_s=131)
+$$$ EX13HB seq=26 result=ACK rtt_ms=10 json="{"type":"hb","seq":26,"ip":"10.0.2.15","up_s":131,"heap_free":257624,"conn_total":6}"
+qemu-system-xtensa: terminating on signal 15 from pid 3927038 (/usr/sbin/bash)

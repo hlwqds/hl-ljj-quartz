@@ -1,0 +1,68 @@
+Adding SPI flash device
+ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x12 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0040,len:6272
+load:0x40078000,len:15820
+load:0x40080400,len:3920
+entry 0x40080644
+I (661) boot: ESP-IDF v6.0.2 2nd stage bootloader
+I (661) boot: compile time Aug 27 2026 06:00:20
+I (661) boot: Multicore bootloader
+I (697) boot: chip revision: v0.0
+I (699) boot.esp32: SPI Speed      : 40MHz
+I (699) boot.esp32: SPI Mode       : DIO
+I (699) boot.esp32: SPI Flash Size : 2MB
+I (703) boot: Enabling RNG early entropy source...
+I (709) boot: Partition Table:
+I (710) boot: ## Label            Usage          Type ST Offset   Length
+I (710) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (710) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (710) boot:  2 factory          factory app      00 00 00010000 00100000
+I (714) boot: End of partition table
+I (744) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=0e344h ( 58180) map
+I (761) esp_image: segment 1: paddr=0001e36c vaddr=3ffb0000 size=01cach (  7340) load
+I (770) esp_image: segment 2: paddr=00020020 vaddr=400d0020 size=2bd44h (179524) map
+I (798) esp_image: segment 3: paddr=0004bd6c vaddr=3ffb1cac size=00e50h (  3664) load
+I (812) esp_image: segment 4: paddr=0004cbc4 vaddr=40080000 size=0b140h ( 45376) load
+I (831) esp_image: segment 5: paddr=00057d0c vaddr=50000000 size=00028h (    40) load
+I (878) boot: Loaded app from partition at offset 0x10000
+I (878) boot: Disabling RNG early entropy source...
+$$$ DATAREADY port=8888 mode=rx
+$$$ HTTPREADY port=80
+$$$ CTRLREADY port=9999
+E (1654) esp_eth: esp_eth_ioctl(533): add mac address to filter not supported
+E (1654) esp_eth.netif.netif_glue: eth_set_mac_filter(56): failed to add mac filter
+E (1654) esp_netif_lwip: Failed to add multicast filter for IPv4
+### TASKTABLE boot n=12
+### T main           prio= 1 core=0  rt=8813 hwm=3008
+### T IDLE1          prio= 0 core=1  rt=1113974 hwm=1096
+### T IDLE0          prio= 0 core=0  rt=1108905 hwm=1100
+### T tcpip          prio=18 core=NA rt=10052 hwm=2340
+### T esp_timer      prio=22 core=0  rt=43 hwm=3636
+### T ipc1           prio=24 core=1  rt=46816 hwm=572
+### T data_srv       prio= 5 core=0  rt=2125 hwm=3048
+### T http_srv       prio= 5 core=0  rt=236 hwm=3100
+### T ctrl_srv       prio=22 core=1  rt=4195 hwm=3024
+### T emac_rx        prio=15 core=NA rt=748 hwm=3328
+### T sys_evt        prio=20 core=0  rt=611 hwm=1772
+### T ipc0           prio=24 core=0  rt=45379 hwm=564
+### ENDTASKTABLE
+$$$ MEM boot free=210980 largest=110592 min_ever=207808
+$$$ BUILD sndbuf=5760 wnd=5760 mss=1440 tcpip_mbox=32 pbuf_pool=16
+$$$ LBRTT count=100 size=512 avg_rtt_us=499384 min=438789 max=500699
+
+assert failed: lb_server_task lab_main.c:306 (listen(lsock, 1) == 0)
+
+
+Backtrace: 0x4008624d:0x3ffcb5f0 0x40086215:0x3ffcb610 0x40085fe5:0x3ffcb630 0x400d7638:0x3ffcb750 0x400f956a:0x3ffcb790
+
+
+
+
+ELF file SHA256: 3f71952f9
+
+Rebooting...

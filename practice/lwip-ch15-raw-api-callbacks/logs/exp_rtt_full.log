@@ -1,0 +1,2 @@
+LAT label=full_r1 port=8017 size=64 n=400 ok=168 avg_us=206.1 med_us=115 min_us=104 max_us=12035 p95_us=272
+LAT label=full_r2 port=8017 size=64 n=400 ok=0 avg_us=0.0 med_us=0 min_us=0 max_us=0 p95_us=0

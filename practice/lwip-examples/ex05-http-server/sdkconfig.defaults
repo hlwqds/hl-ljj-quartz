@@ -1,0 +1,8 @@
+# 必填：OpenCores Ethernet MAC 驱动（仅 QEMU 可用，真机不可用）
+CONFIG_ETH_USE_OPENETH=y
+
+# 其余保持 IDF 默认即可满足本示例：
+#   - 默认日志级别 INFO，保留每次请求一行日志作为真实交互证据；
+#   - esp_http_server 默认口径（recv_wait_timeout=5s、max_open_sockets=7、
+#     lru_purge_enable=false）正是 README keep-alive 行为说明的分析对象，
+#     刻意不在这里覆盖。

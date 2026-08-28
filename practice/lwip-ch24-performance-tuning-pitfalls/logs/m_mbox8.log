@@ -1,0 +1,70 @@
+Adding SPI flash device
+ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x12 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0040,len:6272
+load:0x40078000,len:15820
+load:0x40080400,len:3920
+entry 0x40080644
+I (677) boot: ESP-IDF v6.0.2 2nd stage bootloader
+I (677) boot: compile time Aug 27 2026 06:00:20
+I (677) boot: Multicore bootloader
+I (711) boot: chip revision: v0.0
+I (712) boot.esp32: SPI Speed      : 40MHz
+I (712) boot.esp32: SPI Mode       : DIO
+I (712) boot.esp32: SPI Flash Size : 2MB
+I (718) boot: Enabling RNG early entropy source...
+I (723) boot: Partition Table:
+I (724) boot: ## Label            Usage          Type ST Offset   Length
+I (724) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (725) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (725) boot:  2 factory          factory app      00 00 00010000 00100000
+I (729) boot: End of partition table
+I (762) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=0e334h ( 58164) map
+I (782) esp_image: segment 1: paddr=0001e35c vaddr=3ffb0000 size=01cbch (  7356) load
+I (795) esp_image: segment 2: paddr=00020020 vaddr=400d0020 size=2bdbch (179644) map
+I (815) esp_image: segment 3: paddr=0004bde4 vaddr=3ffb1cbc size=00e40h (  3648) load
+I (830) esp_image: segment 4: paddr=0004cc2c vaddr=40080000 size=0b140h ( 45376) load
+I (854) esp_image: segment 5: paddr=00057d74 vaddr=50000000 size=00028h (    40) load
+I (907) boot: Loaded app from partition at offset 0x10000
+I (907) boot: Disabling RNG early entropy source...
+$$$ DATAREADY port=8888 mode=rx
+$$$ HTTPREADY port=80
+$$$ CTRLREADY port=9999
+E (1701) esp_eth: esp_eth_ioctl(533): add mac address to filter not supported
+E (1701) esp_eth.netif.netif_glue: eth_set_mac_filter(56): failed to add mac filter
+E (1701) esp_netif_lwip: Failed to add multicast filter for IPv4
+### TASKTABLE boot n=13
+### T main           prio= 1 core=0  rt=8271 hwm=3016
+### T IDLE1          prio= 0 core=1  rt=1109970 hwm=1088
+### T IDLE0          prio= 0 core=0  rt=1108405 hwm=1092
+### T heart          prio= 3 core=0  rt=16 hwm=1568
+### T tcpip          prio=18 core=NA rt=13836 hwm=2348
+### T esp_timer      prio=22 core=0  rt=46 hwm=3644
+### T ipc1           prio=24 core=1  rt=32921 hwm=572
+### T data_srv       prio= 5 core=0  rt=2135 hwm=3040
+### T http_srv       prio= 5 core=0  rt=249 hwm=3100
+### T ctrl_srv       prio=22 core=1  rt=5476 hwm=3036
+### T emac_rx        prio=15 core=NA rt=753 hwm=3328
+### T sys_evt        prio=20 core=0  rt=639 hwm=1764
+### T ipc0           prio=24 core=0  rt=31823 hwm=564
+### ENDTASKTABLE
+$$$ MEM boot free=208876 largest=110592 min_ever=208308
+$$$ BUILD 06:56:25 sndbuf=5760 wnd=5760 mss=1440 tcpip_mbox=8 pbuf_pool=16
+$$$ RXDONE bytes=4014080
+$$$ LBRTT ok=200/200 size=512 avg_rtt_us=590 min=431 max=1493
+$$$ LBTHR drained=4000000
+$$$ LBTH ack_r=0 bytes=4000000 elapsed_us=425215 mbit=75.26
+### HEART t=11 s free=208124
+$$$ RXDONE bytes=4014080
+$$$ LBRTT ok=200/200 size=512 avg_rtt_us=567 min=450 max=1040
+$$$ LBTHR drained=4000000
+$$$ LBTH ack_r=0 bytes=4000000 elapsed_us=417161 mbit=76.71
+### HEART t=21 s free=207276
+$$$ MEM on-cmd free=206780 largest=110592 min_ever=183536
+$$$ LWSTATS on-cmd link.recv=10832 link.xmit=10832 link.drop=0 tcp.memerr=0 tcp.err=0 tcp.drop=0
+### HEART t=31 s free=207064
+qemu-system-xtensa: terminating on signal 15 from pid 3673325 (bash)

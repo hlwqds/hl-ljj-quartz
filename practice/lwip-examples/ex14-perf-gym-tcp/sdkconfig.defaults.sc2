@@ -1,0 +1,18 @@
+# ex14 场景 2（坏）：大窗小环黑洞 —— WND=28800 但 openeth RX 环保持默认 4
+#
+# 病理预期（窗口×RX 环深不等式，ch24 头号调优发现）：
+#   WND>=28800 需要环深 >=32；环 4 的描述符供不上洪峰，hostfwd 入向(RX 腿)
+#   坍缩到个位数 Mbit 黑洞，而 TX/LB 两腿完全正常——症状选择性正是定位线索。
+#
+# 用法：cp sdkconfig.defaults.sc2 sdkconfig.defaults && rm -f sdkconfig && idf.py build
+CONFIG_ETH_USE_OPENETH=y
+CONFIG_LWIP_STATS=y
+CONFIG_LWIP_TCP_MSS=1440
+# 宽窗本身没错（ex11 wide 档同值，配环 32 可到 SLIRP ~120Mbit 天花板）
+CONFIG_LWIP_TCP_SND_BUF_DEFAULT=28800
+CONFIG_LWIP_TCP_WND_DEFAULT=28800
+
+# 毒药在"没有这一行"：故意不设 CONFIG_ETH_OPENETH_DMA_RX_BUFFER_NUM，
+# 让它落回 IDF 默认 4。EX14FACT 行会打印 openeth_ring=4 供核对。
+
+CONFIG_GYM_SCENARIO=2

@@ -1,0 +1,56 @@
+# ex11 throughput-bench —— menuconfig 可调旋钮
+#
+# 说明：TCP 发送缓冲与接收窗口是 lwIP 组件级符号，不在本菜单里重复定义：
+#   Component config ---> lwIP ---> TCP 之下：
+#     CONFIG_LWIP_TCP_SND_BUF_DEFAULT （即 lwIP 的 TCP_SND_BUF）
+#     CONFIG_LWIP_TCP_WND_DEFAULT     （即 lwIP 的 TCP_WND）
+#   本工程提供两档预设：sdkconfig.defaults（基线）与 sdkconfig.defaults.wide（宽窗）。
+#   ⚠ 切档必须 `rm sdkconfig` 后重新构建——defaults 只在 sdkconfig 不存在时生效。
+#   ⚠ 窗口×RX 环深不等式：WND>=11520 需 openeth RX 环深 >=16；WND>=28800 需 >=32
+#     （CONFIG_ETH_OPENETH_DMA_RX_BUFFER_NUM），只拧窗口不抬环是吞吐黑洞。
+
+menu "Example Throughput Bench Configuration"
+
+choice EXAMPLE_BENCH_MODE
+    prompt "基准模式"
+    default EXAMPLE_BENCH_MODE_BOTH
+    help
+        BOTH = TX 与 RX 轮次交错（默认，一次开机拿全双向数据）；
+        TX   = 仅 guest 泵流到宿主 sink（10.0.2.2:8290，配 tools/sink.py）；
+        RX   = 仅宿主 flood 灌入 guest（guest 监听 :8291，经 hostfwd，配 tools/flood.py）。
+
+    config EXAMPLE_BENCH_MODE_BOTH
+        bool "BOTH：TX/RX 轮次交错（默认）"
+    config EXAMPLE_BENCH_MODE_TX
+        bool "TX：guest 泵流到宿主 sink"
+    config EXAMPLE_BENCH_MODE_RX
+        bool "RX：宿主灌入 guest"
+endchoice
+
+config EXAMPLE_BENCH_ROUNDS
+    int "每方向轮数"
+    range 1 10
+    default 3
+    help
+        BOTH 模式下按 T1,R1,T2,R2,... 交错执行；单方向模式就是 N 轮同向。
+
+config EXAMPLE_BENCH_MB
+    int "单轮数据量（MB，十进制 MB=1000000B）"
+    range 1 64
+    default 4
+
+config EXAMPLE_BENCH_PEER_WAIT_SEC
+    int "TX 每轮等待宿主 sink 就绪的秒数（超时记 PEER_DOWN 跳过）"
+    range 3 120
+    default 20
+
+config EXAMPLE_BENCH_RX_WAIT_SEC
+    int "RX 每轮等待 flood 工具来连接的秒数（超时记 PEER_DOWN 跳过）"
+    range 3 300
+    default 30
+
+config EXAMPLE_BENCH_PROGRESS
+    bool "打印轮内每 MiB 进度行（默认关：UART 日志本身占带宽，对比测量建议关）"
+    default n
+
+endmenu

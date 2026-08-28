@@ -1,0 +1,12 @@
+02:31:48 connect OK rtt=2.955s data=b'hello-ch13'
+02:31:48 connect OK rtt=0.009s data=b'hello-ch13'
+02:31:48 connect OK rtt=0.002s data=b'hello-ch13'
+02:31:49 connect OK rtt=0.006s data=b'hello-ch13'
+02:31:49 connect OK rtt=0.003s data=b'hello-ch13'
+02:31:49 connect OK rtt=0.007s data=b'hello-ch13'
+02:31:50 connect OK rtt=0.002s data=b'hello-ch13'
+02:31:50 connect OK rtt=0.008s data=b'hello-ch13'
+02:31:50 connect OK rtt=0.003s data=b'hello-ch13'
+02:31:51 connect OK rtt=0.007s data=b'hello-ch13'
+02:31:51 connect OK rtt=0.003s data=b'hello-ch13'
+02:31:54 connect FAIL/STALL ConnectionResetError rtt=3.305s

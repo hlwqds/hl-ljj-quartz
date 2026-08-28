@@ -1,0 +1,9 @@
+# OpenCores Ethernet MAC 驱动（仅用于 QEMU 仿真，真机不可用）
+CONFIG_ETH_USE_OPENETH=y
+# 实验 a/c 读 lwip_stats.tcp.* 计数需要打开协议统计
+CONFIG_LWIP_STATS=y
+# 常规构建：实验 a/b 完整流程（丢包注入 + Nagle）
+CONFIG_LWIP_TCP_SND_BUF_DEFAULT=5760
+CONFIG_LWIP_TCP_WND_DEFAULT=5760
+CONFIG_CH12_SWEEP_ONLY=n
+CONFIG_CH12_SWEEP_LOSS_PCT=5

@@ -1,0 +1,317 @@
+Adding SPI flash device
+ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x12 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0040,len:6272
+load:0x40078000,len:15820
+load:0x40080400,len:3920
+entry 0x40080644
+I (663) boot: ESP-IDF v6.0.2 2nd stage bootloader
+I (663) boot: compile time Aug 27 2026 12:45:35
+I (664) boot: Multicore bootloader
+I (695) boot: chip revision: v0.0
+I (697) boot.esp32: SPI Speed      : 40MHz
+I (697) boot.esp32: SPI Mode       : DIO
+I (697) boot.esp32: SPI Flash Size : 2MB
+I (703) boot: Enabling RNG early entropy source...
+I (709) boot: Partition Table:
+I (709) boot: ## Label            Usage          Type ST Offset   Length
+I (709) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (709) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (709) boot:  2 factory          factory app      00 00 00010000 00100000
+I (712) boot: End of partition table
+I (741) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=0f654h ( 63060) map
+I (760) esp_image: segment 1: paddr=0001f67c vaddr=3ffb0000 size=0099ch (  2460) load
+I (771) esp_image: segment 2: paddr=00020020 vaddr=400d0020 size=29844h (170052) map
+I (795) esp_image: segment 3: paddr=0004986c vaddr=3ffb099c size=02130h (  8496) load
+I (815) esp_image: segment 4: paddr=0004b9a4 vaddr=40080000 size=0b23ch ( 45628) load
+I (836) esp_image: segment 5: paddr=00056be8 vaddr=50000000 size=00028h (    40) load
+I (914) boot: Loaded app from partition at offset 0x10000
+I (914) boot: Disabling RNG early entropy source...
+I (927) cpu_start: Multicore app
+I (1548) cpu_start: GPIO 3 and 1 are used as console UART I/O pins
+I (1550) cpu_start: Pro cpu start user code
+I (1550) cpu_start: cpu freq: 160000000 Hz
+I (1550) app_init: Application information:
+I (1550) app_init: Project name:     ex04_udp_echo_bidir
+I (1551) app_init: App version:      924d871-dirty
+I (1551) app_init: Compile time:     Aug 27 2026 12:45:10
+I (1551) app_init: ELF file SHA256:  61724905f...
+I (1551) app_init: ESP-IDF:          v6.0.2
+I (1551) efuse_init: Min chip rev:     v0.0
+I (1551) efuse_init: Max chip rev:     v3.99 
+I (1551) efuse_init: Chip rev:         v0.0
+I (1552) heap_init: Initializing. RAM available for dynamic allocation:
+I (1552) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM
+I (1552) heap_init: At 3FFB5230 len 0002ADD0 (171 KiB): DRAM
+I (1552) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM
+I (1553) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM
+I (1553) heap_init: At 4008B23C len 00014DC4 (83 KiB): IRAM
+I (1583) spi_flash: detected chip: winbond
+I (1587) spi_flash: flash io: dio
+I (1604) main_task: Started on CPU0
+I (1604) main_task: Calling app_main()
+I (1604) ex04: == ex04 udp-echo-bidir / 单一 socket 层 / 双向路径 ==
+I (1624) esp_eth.netif.netif_glue: 52:54:00:12:34:56
+I (1624) esp_eth.netif.netif_glue: ethernet attached to netif
+I (1724) ex04: ETH_EVENT id=0
+E (1724) esp_eth: esp_eth_ioctl(533): add mac address to filter not supported
+E (1724) esp_eth.netif.netif_glue: eth_set_mac_filter(56): failed to add mac filter
+E (1724) esp_netif_lwip: Failed to add multicast filter for IPv4
+I (1724) ex04: ETH_EVENT id=2
+I (2724) ex04: GOT_IP: 10.0.2.15
+I (2724) esp_netif_handlers: eth ip: 10.0.2.15, mask: 255.255.255.0, gw: 10.0.2.2
+EX04-FACT build_time=12:45:35 guest_ip=10.0.2.15 app_port=8230 ext_echo_port=8231 probe_n=10 recv_timeout_ms=2000 api=socket
+$$$ EX04READY port=8230 mode=udp-echo tag_h=ECHO tags_ab=INTERNAL
+EX04-PHASE mode=self-loop target=10.0.2.2:8230 n=10 interval_ms=100 timeout_ms=2000
+EX04-TX mode=self-loop seq=0 dst=10.0.2.2:8230 len=64
+EX04-RX mode=self-loop seq=0 from=10.0.2.2:8230 len=64 rtt_us=6072 digest=OK
+EX04-TX mode=self-loop seq=1 dst=10.0.2.2:8230 len=64
+EX04-RX mode=self-loop seq=1 from=10.0.2.2:8230 len=64 rtt_us=687 digest=OK
+EX04-TX mode=self-loop seq=2 dst=10.0.2.2:8230 len=64
+EX04-RX mode=self-loop seq=2 from=10.0.2.2:8230 len=64 rtt_us=811 digest=OK
+EX04-TX mode=self-loop seq=3 dst=10.0.2.2:8230 len=64
+EX04-RX mode=self-loop seq=3 from=10.0.2.2:8230 len=64 rtt_us=514 digest=OK
+EX04-TX mode=self-loop seq=4 dst=10.0.2.2:8230 len=64
+EX04-RX mode=self-loop seq=4 from=10.0.2.2:8230 len=64 rtt_us=524 digest=OK
+EX04-TX mode=self-loop seq=5 dst=10.0.2.2:8230 len=64
+EX04-RX mode=self-loop seq=5 from=10.0.2.2:8230 len=64 rtt_us=708 digest=OK
+EX04-TX mode=self-loop seq=6 dst=10.0.2.2:8230 len=64
+EX04-RX mode=self-loop seq=6 from=10.0.2.2:8230 len=64 rtt_us=563 digest=OK
+EX04-TX mode=self-loop seq=7 dst=10.0.2.2:8230 len=64
+EX04-RX mode=self-loop seq=7 from=10.0.2.2:8230 len=64 rtt_us=748 digest=OK
+EX04-TX mode=self-loop seq=8 dst=10.0.2.2:8230 len=64
+EX04-RX mode=self-loop seq=8 from=10.0.2.2:8230 len=64 rtt_us=897 digest=OK
+EX04-TX mode=self-loop seq=9 dst=10.0.2.2:8230 len=64
+EX04-RX mode=self-loop seq=9 from=10.0.2.2:8230 len=64 rtt_us=642 digest=OK
+EX04-LOOPSUM mode=self-loop target=10.0.2.2:8230 sent=10 ok=10 lost=0 corrupt=0 loss_pct=0.0 rtt_avg_us=1216 rtt_min_us=514 rtt_max_us=6072
+EX04-PHASE mode=ext-srv target=10.0.2.2:8231 n=10 interval_ms=100 timeout_ms=2000
+EX04-TX mode=ext-srv seq=0 dst=10.0.2.2:8231 len=64
+EX04-RX mode=ext-srv seq=0 from=10.0.2.2:8231 len=64 rtt_us=1227 digest=OK
+EX04-TX mode=ext-srv seq=1 dst=10.0.2.2:8231 len=64
+EX04-RX mode=ext-srv seq=1 from=10.0.2.2:8231 len=64 rtt_us=771 digest=OK
+EX04-TX mode=ext-srv seq=2 dst=10.0.2.2:8231 len=64
+EX04-RX mode=ext-srv seq=2 from=10.0.2.2:8231 len=64 rtt_us=526 digest=OK
+EX04-TX mode=ext-srv seq=3 dst=10.0.2.2:8231 len=64
+EX04-RX mode=ext-srv seq=3 from=10.0.2.2:8231 len=64 rtt_us=735 digest=OK
+EX04-TX mode=ext-srv seq=4 dst=10.0.2.2:8231 len=64
+EX04-RX mode=ext-srv seq=4 from=10.0.2.2:8231 len=64 rtt_us=784 digest=OK
+EX04-TX mode=ext-srv seq=5 dst=10.0.2.2:8231 len=64
+EX04-RX mode=ext-srv seq=5 from=10.0.2.2:8231 len=64 rtt_us=746 digest=OK
+EX04-TX mode=ext-srv seq=6 dst=10.0.2.2:8231 len=64
+EX04-RX mode=ext-srv seq=6 from=10.0.2.2:8231 len=64 rtt_us=900 digest=OK
+EX04-TX mode=ext-srv seq=7 dst=10.0.2.2:8231 len=64
+EX04-RX mode=ext-srv seq=7 from=10.0.2.2:8231 len=64 rtt_us=702 digest=OK
+EX04-TX mode=ext-srv seq=8 dst=10.0.2.2:8231 len=64
+EX04-RX mode=ext-srv seq=8 from=10.0.2.2:8231 len=64 rtt_us=845 digest=OK
+EX04-TX mode=ext-srv seq=9 dst=10.0.2.2:8231 len=64
+EX04-RX mode=ext-srv seq=9 from=10.0.2.2:8231 len=64 rtt_us=711 digest=OK
+EX04-LOOPSUM mode=ext-srv target=10.0.2.2:8231 sent=10 ok=10 lost=0 corrupt=0 loss_pct=0.0 rtt_avg_us=794 rtt_min_us=526 rtt_max_us=1227
+EX04-PHASE mode=inbound-service note="此后 :8230 进入常驻 echo，宿主 tools/send.py 可随时打入"
+EX04-ST rx_total=0 echoed_h=0 rx_short=0 self_ok=10 self_lost=0 ext_ok=10 ext_lost=0 uptime_s=13
+EX04-ECHO n=1 from=10.0.2.2:46870 len=64 seq=0 -> echoed
+EX04-ECHO n=2 from=10.0.2.2:46870 len=64 seq=1 -> echoed
+EX04-ECHO n=3 from=10.0.2.2:46870 len=64 seq=2 -> echoed
+EX04-ECHO n=4 from=10.0.2.2:46870 len=64 seq=3 -> echoed
+EX04-ECHO n=5 from=10.0.2.2:46870 len=64 seq=4 -> echoed
+EX04-ECHO n=6 from=10.0.2.2:46870 len=64 seq=5 -> echoed
+EX04-ECHO n=7 from=10.0.2.2:46870 len=64 seq=6 -> echoed
+EX04-ECHO n=8 from=10.0.2.2:46870 len=64 seq=7 -> echoed
+EX04-ECHO n=9 from=10.0.2.2:46870 len=64 seq=8 -> echoed
+EX04-ECHO n=10 from=10.0.2.2:46870 len=64 seq=9 -> echoed
+EX04-ECHO n=11 from=10.0.2.2:46870 len=64 seq=10 -> echoed
+EX04-ECHO n=12 from=10.0.2.2:46870 len=64 seq=11 -> echoed
+EX04-ECHO n=13 from=10.0.2.2:46870 len=64 seq=12 -> echoed
+EX04-ECHO n=14 from=10.0.2.2:46870 len=64 seq=13 -> echoed
+EX04-ECHO n=15 from=10.0.2.2:46870 len=64 seq=14 -> echoed
+EX04-ECHO n=16 from=10.0.2.2:46870 len=64 seq=15 -> echoed
+EX04-ECHO n=17 from=10.0.2.2:46870 len=64 seq=16 -> echoed
+EX04-ECHO n=18 from=10.0.2.2:46870 len=64 seq=17 -> echoed
+EX04-ECHO n=19 from=10.0.2.2:46870 len=64 seq=18 -> echoed
+EX04-ECHO n=20 from=10.0.2.2:46870 len=64 seq=19 -> echoed
+EX04-ST rx_total=20 echoed_h=20 rx_short=0 self_ok=10 self_lost=0 ext_ok=10 ext_lost=0 uptime_s=23
+EX04-ECHO n=21 from=10.0.2.2:43021 len=512 seq=0 -> echoed
+EX04-ECHO n=22 from=10.0.2.2:43021 len=512 seq=1 -> echoed
+EX04-ECHO n=23 from=10.0.2.2:43021 len=512 seq=2 -> echoed
+EX04-ECHO n=24 from=10.0.2.2:43021 len=512 seq=3 -> echoed
+EX04-ECHO n=25 from=10.0.2.2:43021 len=512 seq=4 -> echoed
+EX04-ECHO n=26 from=10.0.2.2:43021 len=512 seq=5 -> echoed
+EX04-ECHO n=27 from=10.0.2.2:43021 len=512 seq=6 -> echoed
+EX04-ECHO n=28 from=10.0.2.2:43021 len=512 seq=7 -> echoed
+EX04-ECHO n=29 from=10.0.2.2:43021 len=512 seq=8 -> echoed
+EX04-ECHO n=30 from=10.0.2.2:43021 len=512 seq=9 -> echoed
+EX04-ECHO n=31 from=10.0.2.2:43021 len=512 seq=10 -> echoed
+EX04-ECHO n=32 from=10.0.2.2:43021 len=512 seq=11 -> echoed
+EX04-ECHO n=33 from=10.0.2.2:43021 len=512 seq=12 -> echoed
+EX04-ECHO n=34 from=10.0.2.2:43021 len=512 seq=13 -> echoed
+EX04-ECHO n=35 from=10.0.2.2:43021 len=512 seq=14 -> echoed
+EX04-ECHO n=36 from=10.0.2.2:43021 len=512 seq=15 -> echoed
+EX04-ECHO n=37 from=10.0.2.2:43021 len=512 seq=16 -> echoed
+EX04-ECHO n=38 from=10.0.2.2:43021 len=512 seq=17 -> echoed
+EX04-ECHO n=39 from=10.0.2.2:43021 len=512 seq=18 -> echoed
+EX04-ECHO n=40 from=10.0.2.2:43021 len=512 seq=19 -> echoed
+EX04-ST rx_total=520 echoed_h=520 rx_short=0 self_ok=10 self_lost=0 ext_ok=10 ext_lost=0 uptime_s=35
+EX04-ST rx_total=520 echoed_h=520 rx_short=0 self_ok=10 self_lost=0 ext_ok=10 ext_lost=0 uptime_s=45
+EX04-ST rx_total=520 echoed_h=520 rx_short=0 self_ok=10 self_lost=0 ext_ok=10 ext_lost=0 uptime_s=55
+EX04-ST rx_total=520 echoed_h=520 rx_short=0 self_ok=10 self_lost=0 ext_ok=10 ext_lost=0 uptime_s=65
+W (68344) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68344) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68344) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68344) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68344) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68344) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68344) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68344) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68344) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68344) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68344) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68344) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68344) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68344) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68344) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68344) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68344) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68354) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68354) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68354) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68354) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68354) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68354) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68354) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68354) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68354) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68354) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68354) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68354) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68354) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68354) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68354) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68354) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68354) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68354) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68354) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68354) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68354) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68354) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68354) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68354) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68354) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68354) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68354) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68354) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68354) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68364) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68364) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68364) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68364) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68364) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68364) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68364) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68364) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68364) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68364) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68364) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68364) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68364) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68364) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68364) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68364) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68364) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68364) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68364) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68364) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68364) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68364) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68364) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68364) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68364) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68364) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68364) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68364) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68364) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68364) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68364) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68364) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68364) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68374) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68374) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68374) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68374) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68374) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68374) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68374) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68374) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68374) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68374) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68374) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68374) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68374) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68374) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68374) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68374) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68374) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68374) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68374) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68374) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68374) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68374) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68374) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68374) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68374) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68374) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68374) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68374) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68374) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68374) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68374) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68374) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68374) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68384) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68384) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68384) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68384) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68384) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68384) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68384) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68384) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68384) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68384) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68384) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68384) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68384) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68384) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68384) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68384) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68384) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68384) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68384) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68384) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68384) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68384) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68384) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68384) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68384) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68384) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68384) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68384) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68384) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68384) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68384) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68384) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68384) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68394) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68394) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68394) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68394) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68394) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68394) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (68394) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+EX04-ST rx_total=527 echoed_h=527 rx_short=0 self_ok=10 self_lost=0 ext_ok=10 ext_lost=0 uptime_s=76
+EX04-ST rx_total=527 echoed_h=527 rx_short=0 self_ok=10 self_lost=0 ext_ok=10 ext_lost=0 uptime_s=86
+EX04-ST rx_total=527 echoed_h=527 rx_short=0 self_ok=10 self_lost=0 ext_ok=10 ext_lost=0 uptime_s=96
+EX04-ST rx_total=527 echoed_h=527 rx_short=0 self_ok=10 self_lost=0 ext_ok=10 ext_lost=0 uptime_s=106
+EX04-ST rx_total=527 echoed_h=527 rx_short=0 self_ok=10 self_lost=0 ext_ok=10 ext_lost=0 uptime_s=116
+qemu-system-xtensa: terminating on signal 15 from pid 3816849 (timeout)

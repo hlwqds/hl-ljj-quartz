@@ -1,0 +1,4 @@
+# OpenCores Ethernet MAC 驱动（仅用于 QEMU 仿真，真机不可用）
+CONFIG_ETH_USE_OPENETH=y
+# 本章实验需要读 lwip_stats 协议计数器（icmp/ip/link），打开统计收集
+CONFIG_LWIP_STATS=y

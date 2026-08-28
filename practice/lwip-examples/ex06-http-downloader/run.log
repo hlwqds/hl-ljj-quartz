@@ -1,0 +1,144 @@
+Adding SPI flash device
+ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x12 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0040,len:6272
+load:0x40078000,len:15820
+load:0x40080400,len:3920
+entry 0x40080644
+I (665) boot: ESP-IDF v6.0.2 2nd stage bootloader
+I (665) boot: compile time Aug 27 2026 12:52:29
+I (665) boot: Multicore bootloader
+I (698) boot: chip revision: v0.0
+I (699) boot.esp32: SPI Speed      : 40MHz
+I (699) boot.esp32: SPI Mode       : DIO
+I (699) boot.esp32: SPI Flash Size : 2MB
+I (711) boot: Enabling RNG early entropy source...
+I (717) boot: Partition Table:
+I (717) boot: ## Label            Usage          Type ST Offset   Length
+I (717) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (717) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (717) boot:  2 factory          factory app      00 00 00010000 00100000
+I (722) boot: End of partition table
+I (756) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=11160h ( 69984) map
+I (775) esp_image: segment 1: paddr=00021188 vaddr=3ffb0000 size=02acch ( 10956) load
+I (787) esp_image: segment 2: paddr=00023c5c vaddr=40080000 size=0b23ch ( 45628) load
+I (810) esp_image: segment 3: paddr=0002eea0 vaddr=50000000 size=00028h (    40) load
+I (820) esp_image: segment 4: paddr=0002eed0 vaddr=00000000 size=01148h (  4424) 
+I (837) esp_image: segment 5: paddr=00030020 vaddr=400d0020 size=2c97ch (182652) map
+I (891) boot: Loaded app from partition at offset 0x10000
+I (891) boot: Disabling RNG early entropy source...
+I (904) cpu_start: Multicore app
+I (1509) cpu_start: GPIO 3 and 1 are used as console UART I/O pins
+I (1511) cpu_start: Pro cpu start user code
+I (1511) cpu_start: cpu freq: 160000000 Hz
+I (1512) app_init: Application information:
+I (1512) app_init: Project name:     ex06_http_downloader
+I (1512) app_init: App version:      924d871-dirty
+I (1512) app_init: Compile time:     Aug 27 2026 12:52:26
+I (1512) app_init: ELF file SHA256:  a03d439a3...
+I (1512) app_init: ESP-IDF:          v6.0.2
+I (1512) efuse_init: Min chip rev:     v0.0
+I (1512) efuse_init: Max chip rev:     v3.99 
+I (1512) efuse_init: Chip rev:         v0.0
+I (1513) heap_init: Initializing. RAM available for dynamic allocation:
+I (1514) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM
+I (1514) heap_init: At 3FFB5C00 len 0002A400 (169 KiB): DRAM
+I (1514) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM
+I (1514) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM
+I (1514) heap_init: At 4008B23C len 00014DC4 (83 KiB): IRAM
+I (1550) spi_flash: detected chip: winbond
+I (1564) spi_flash: flash io: dio
+I (1576) main_task: Started on CPU0
+I (1576) main_task: Calling app_main()
+I (1576) ex06: == ex06 http-downloader (bare socket HTTP client) ==
+I (1576) ex06: [EX06] build Aug 27 2026 12:58:02
+I (1606) esp_eth.netif.netif_glue: 52:54:00:12:34:56
+I (1606) esp_eth.netif.netif_glue: ethernet attached to netif
+I (1706) ex06: [EX06] ETH START
+E (1706) esp_eth: esp_eth_ioctl(533): add mac address to filter not supported
+E (1706) esp_eth.netif.netif_glue: eth_set_mac_filter(56): failed to add mac filter
+E (1706) esp_netif_lwip: Failed to add multicast filter for IPv4
+I (1706) ex06: [EX06] ETH CONNECTED (link up)
+I (2706) ex06: [EX06] GOT_IP 10.0.2.15 gw 10.0.2.2
+I (2706) esp_netif_handlers: eth ip: 10.0.2.15, mask: 255.255.255.0, gw: 10.0.2.2
+I (2706) ex06: [EX06] PHASE=READY target=10.0.2.2:8250
+I (2706) ex06: == download schedule: 6 rounds ==
+I (2706) ex06: -- round 1: /good.bin (基准)
+I (2706) ex06: [DL] R=1 BEGIN path=/good.bin host=10.0.2.2:8250
+I (2716) main_task: Returned from app_main()
+I (2726) ex06: [DL] R=1 connected 10.0.2.2:8250 in 22 ms
+I (2736) ex06: [DL] R=1 status=200 content_length=5242880 x_demo_fletcher32=1e82586d hdr_bytes=238
+I (2736) ex06: [DL] R=1 progress 1 KB / first-chunk carry 1810B
+I (2836) ex06: [DL] R=1 progress 514 KB
+I (2876) ex06: [DL] R=1 progress 1027 KB
+I (2916) ex06: [DL] R=1 progress 1537 KB
+I (2966) ex06: [DL] R=1 progress 2050 KB
+I (3016) ex06: [DL] R=1 progress 2563 KB
+I (3056) ex06: [DL] R=1 progress 3074 KB
+I (3106) ex06: [DL] R=1 progress 3585 KB
+I (3146) ex06: [DL] R=1 progress 4097 KB
+I (3196) ex06: [DL] R=1 progress 4608 KB
+I (3236) ex06: [DL] R=1 progress 5120 KB
+I (3236) ex06: [DL] R=1 checksum ok: 1e82586d
+I (3246) ex06: [DL] R=1 RESULT status=OK bytes=5242880/5242880 f32_local=1e82586d f32_peer=1e82586d connect_ms=22 hdr_ms=10 xfer_ms=503 mbit=83.4
+I (3246) ex06: [DL] R=1 heap free 263020 -> 267084 (delta=-4064)
+I (3246) ex06: -- round 2: /short.bin (错误分支TRUNCATED)
+I (3246) ex06: [DL] R=2 BEGIN path=/short.bin host=10.0.2.2:8250
+I (3256) ex06: [DL] R=2 connected 10.0.2.2:8250 in 9 ms
+I (3256) ex06: [DL] R=2 status=200 content_length=5242880 x_demo_fletcher32=1e82586d hdr_bytes=238
+I (3256) ex06: [DL] R=2 progress 1 KB / first-chunk carry 1810B
+W (3296) ex06: [DL] R=2 TRUNCATED: EOF at got=446464 but Content-Length=5242880 (少发 4796416 B 后断开)
+I (3296) ex06: [DL] R=2 RESULT status=TRUNCATED bytes=446464/5242880 f32_local=00000000 f32_peer=1e82586d connect_ms=9 hdr_ms=3 xfer_ms=0 mbit=0.0
+I (3296) ex06: [DL] R=2 heap free 267084 -> 267084 (delta=0)
+I (3296) ex06: -- round 3: /good.bin (交错回归)
+I (3296) ex06: [DL] R=3 BEGIN path=/good.bin host=10.0.2.2:8250
+I (3306) ex06: [DL] R=3 connected 10.0.2.2:8250 in 6 ms
+I (3306) ex06: [DL] R=3 status=200 content_length=5242880 x_demo_fletcher32=1e82586d hdr_bytes=238
+I (3306) ex06: [DL] R=3 progress 1 KB / first-chunk carry 1202B
+I (3346) ex06: [DL] R=3 progress 512 KB
+I (3396) ex06: [DL] R=3 progress 1024 KB
+I (3446) ex06: [DL] R=3 progress 1538 KB
+I (3496) ex06: [DL] R=3 progress 2051 KB
+I (3536) ex06: [DL] R=3 progress 2561 KB
+I (3586) ex06: [DL] R=3 progress 3075 KB
+I (3626) ex06: [DL] R=3 progress 3586 KB
+I (3676) ex06: [DL] R=3 progress 4098 KB
+I (3726) ex06: [DL] R=3 progress 4611 KB
+I (3766) ex06: [DL] R=3 progress 5120 KB
+I (3766) ex06: [DL] R=3 checksum ok: 1e82586d
+I (3766) ex06: [DL] R=3 RESULT status=OK bytes=5242880/5242880 f32_local=1e82586d f32_peer=1e82586d connect_ms=6 hdr_ms=2 xfer_ms=463 mbit=90.6
+I (3766) ex06: [DL] R=3 heap free 267084 -> 267084 (delta=0)
+I (3766) ex06: -- round 4: /nolen.bin (错误分支NO_LEN)
+I (3766) ex06: [DL] R=4 BEGIN path=/nolen.bin host=10.0.2.2:8250
+I (3776) ex06: [DL] R=4 connected 10.0.2.2:8250 in 2 ms
+I (3776) ex06: [DL] R=4 status=200 content_length=-1 x_demo_fletcher32=1e82586d hdr_bytes=232
+I (3776) ex06: [DL] R=4 progress 1 KB / first-chunk carry 1816B
+I (3816) ex06: [DL] R=4 progress 513 KB
+I (3866) ex06: [DL] R=4 progress 1024 KB
+I (3906) ex06: [DL] R=4 progress 1539 KB
+I (3956) ex06: [DL] R=4 progress 2050 KB
+I (4006) ex06: [DL] R=4 progress 2561 KB
+I (4046) ex06: [DL] R=4 progress 3075 KB
+I (4096) ex06: [DL] R=4 progress 3586 KB
+I (4146) ex06: [DL] R=4 progress 4097 KB
+I (4186) ex06: [DL] R=4 progress 4610 KB
+I (4236) ex06: [DL] R=4 progress 5120 KB
+I (4236) ex06: [DL] R=4 RESULT status=OK_NO_LEN bytes=5242880/-1 f32_local=1e82586d f32_peer=1e82586d connect_ms=2 hdr_ms=2 xfer_ms=458 mbit=91.6
+I (4236) ex06: [DL] R=4 heap free 267084 -> 267084 (delta=0)
+I (4236) ex06: -- round 5: /blackhole.bin (错误分支READ_TIMEOUT)
+I (4236) ex06: [DL] R=5 BEGIN path=/blackhole.bin host=10.0.2.2:8250
+I (4236) ex06: [DL] R=5 connected 10.0.2.2:8250 in 1 ms
+I (4246) ex06: [DL] R=5 status=200 content_length=5242880 x_demo_fletcher32=1e82586d hdr_bytes=238
+I (4246) ex06: [DL] R=5 progress 1 KB / first-chunk carry 1810B
+W (14246) ex06: [DL] R=5 recv timeout after 10s: got=65536 want=5242880（SO_RCVTIMEO 救场，连读静默服务端）
+I (14246) ex06: [DL] R=5 RESULT status=READ_TIMEOUT bytes=65536/5242880 f32_local=00000000 f32_peer=1e82586d connect_ms=1 hdr_ms=8 xfer_ms=0 mbit=0.0
+I (14246) ex06: [DL] R=5 heap free 267084 -> 266860 (delta=224)
+I (14246) ex06: -- round 6: /probe (CLOSED-PORT探针(经iptables可变TIMEOUT))
+I (14246) ex06: [DL] R=6 BEGIN path=/probe host=10.0.2.2:8257
+W (14246) ex06: [DL] R=6 RESULT status=CONNECT_ERR errno=104(Connection reset by peer) connect_ms=1 note="connect 阶段失败，deadline=5s"
+I (14246) ex06: [EX06] SUMMARY ok=3 fail=3 avg_mbit_good=88.5 avg_rounds=3 host=10.0.2.2:8250
+I (14246) ex06: [EX06] PHASE=DONE -- all branches exercised, restarting to exit QEMU

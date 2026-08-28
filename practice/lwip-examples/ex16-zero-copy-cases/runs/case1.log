@@ -1,0 +1,87 @@
+Adding SPI flash device
+ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x12 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0040,len:6272
+load:0x40078000,len:15820
+load:0x40080400,len:3920
+entry 0x40080644
+I (677) boot: ESP-IDF v6.0.2 2nd stage bootloader
+I (678) boot: compile time Aug 27 2026 21:59:34
+I (678) boot: Multicore bootloader
+I (712) boot: chip revision: v0.0
+I (713) boot.esp32: SPI Speed      : 40MHz
+I (713) boot.esp32: SPI Mode       : DIO
+I (713) boot.esp32: SPI Flash Size : 2MB
+I (719) boot: Enabling RNG early entropy source...
+I (725) boot: Partition Table:
+I (725) boot: ## Label            Usage          Type ST Offset   Length
+I (725) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (725) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (725) boot:  2 factory          factory app      00 00 00010000 00100000
+I (728) boot: End of partition table
+I (758) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=1032ch ( 66348) map
+I (777) esp_image: segment 1: paddr=00020354 vaddr=3ffb0000 size=0382ch ( 14380) load
+I (794) esp_image: segment 2: paddr=00023b88 vaddr=40080000 size=0b23ch ( 45628) load
+I (813) esp_image: segment 3: paddr=0002edcc vaddr=50000000 size=00028h (    40) load
+I (834) esp_image: segment 4: paddr=0002edfc vaddr=00000000 size=0121ch (  4636) 
+I (854) esp_image: segment 5: paddr=00030020 vaddr=400d0020 size=2d3d0h (185296) map
+I (924) boot: Loaded app from partition at offset 0x10000
+I (924) boot: Disabling RNG early entropy source...
+I (935) cpu_start: Multicore app
+I (1560) cpu_start: GPIO 3 and 1 are used as console UART I/O pins
+I (1562) cpu_start: Pro cpu start user code
+I (1562) cpu_start: cpu freq: 160000000 Hz
+I (1562) app_init: Application information:
+I (1562) app_init: Project name:     ex16_zero_copy_cases
+I (1563) app_init: App version:      924d871-dirty
+I (1563) app_init: Compile time:     Aug 27 2026 23:21:30
+I (1563) app_init: ELF file SHA256:  5a909b0ee...
+I (1563) app_init: ESP-IDF:          v6.0.2
+I (1563) efuse_init: Min chip rev:     v0.0
+I (1563) efuse_init: Max chip rev:     v3.99 
+I (1563) efuse_init: Chip rev:         v0.0
+I (1564) heap_init: Initializing. RAM available for dynamic allocation:
+I (1564) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM
+I (1564) heap_init: At 3FFC3240 len 0001CDC0 (115 KiB): DRAM
+I (1564) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM
+I (1565) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM
+I (1565) heap_init: At 4008B23C len 00014DC4 (83 KiB): IRAM
+I (1596) spi_flash: detected chip: winbond
+I (1600) spi_flash: flash io: dio
+I (1608) main_task: Started on CPU0
+I (1608) main_task: Calling app_main()
+
+=== ex16 zero-copy-cases | build Aug 27 2026 23:21:30 ===
+$$$ EX16-FACT build="Aug 27 2026 23:21:30" case=1 idf_lwip_port='TX_SINGLE_PBUF hardcoded=1' target='esp32' reflector=0 rounds_per_stage=1200 block=300 rec_body=512 b_hdr=16 b_body=1024 c_msg=256 c_msgs=400 c_passes=5 d_arena=114688 trace_facility=1 lwip_stats=0
+I (1628) esp_eth.netif.netif_glue: 52:54:00:12:34:56
+I (1628) esp_eth.netif.netif_glue: ethernet attached to netif
+I (1728) ex16: waiting for DHCP lease ...
+E (1728) esp_eth: esp_eth_ioctl(533): add mac address to filter not supported
+E (1728) esp_eth.netif.netif_glue: eth_set_mac_filter(56): failed to add mac filter
+E (1728) esp_netif_lwip: Failed to add multicast filter for IPv4
+I (1728) ex16: [t=166 ms] ETH_EVENT CONNECTED
+I (2738) ex16: [t=1172 ms] IP_EVENT GOT_IP: ip 10.0.2.15 gw 10.0.2.2
+I (2738) esp_netif_handlers: eth ip: 10.0.2.15, mask: 255.255.255.0, gw: 10.0.2.2
+$$$ EXREADY case=1 ip=10.0.2.15 gw=10.0.2.2 dst=127.0.0.1:8330 self_target_forbidden=10.0.2.15 note='Batch8: own-IP as dst wedges tcpip'
+$$$ EX16-CFG case=A rounds_per_variant=1200 block=300 rec_total=530 note='variant carried in record type bit; interleaved per 300-block'
+EX16-CLICONN who=A dst=127.0.0.1:8330
+EX16-HEAP at=case-A begin free=205080 largest=110592 min_ever=204880
+== EX16-PHASE name=A-timing-interleaved ==
+EX16-PROG case=A emitted=1200/2400
+EX16-PHASE name=A-timing-interleaved done emitted=2400
+$$$ EX16-SAMPLE who=A-copy-stage-parse med_us=2 p95_us=3 mean_us=2.54 min=2 max=109 n=768
+$$$ EX16-SAMPLE who=A-zc-inplace-parse med_us=2 p95_us=3 mean_us=2.08 min=1 max=14 n=766
+$$$ EX16-RESULT case=A metric=rx_parse_per_record copy_med_us=2 copy_p95_us=3 zc_med_us=2 zc_p95_us=3 n_copy=768 n_zc=766 saved_pct=0
+EX16-STAGE name=A-spans contig_copy=768 contig_zc=766 span_copy=432 span_zc=434 span_extra_us_total=2350 note='spans excluded from pair stats'
+== EX16-PHASE name=A-stack-probe-zc ==
+EX16-PHASE name=A-stack-probe-zc done emitted=200
+== EX16-PHASE name=A-stack-probe-copy ==
+EX16-PHASE name=A-stack-probe-copy done emitted=200
+$$$ EX16-RESULT case=A kind=stack hwm_after_zc=2324 hwm_after_copy=2308 frame_addr_delta_bytes=644 stage_buf_bytes=530 note='addr delta = real extra frame depth of copy-route local staging; HWM monotonic, order fixed zc-first'
+EX16-HEAP at=case-A end free=203760 largest=110592 min_ever=190688
+$$$ EXDONE case=1(rx-inplace-parse) result=ok dur_ms=750 fail=0
+qemu-system-xtensa: terminating on signal 15 from pid 87965 (timeout)

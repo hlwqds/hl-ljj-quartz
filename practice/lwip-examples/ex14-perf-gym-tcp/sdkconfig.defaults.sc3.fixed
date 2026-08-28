@@ -1,0 +1,19 @@
+# ex14 场景 3（修复）：恢复 tcp_sent 注册 = 条件编译退回场景号 0 的代码形态
+#
+# 修复动作不在配置文件里——本 preset 与 sc0 唯一差别是注释说明；真正的 diff 是
+# main.c 里那段条件编译：
+#
+#   /* [sc3 故意漏挂的回调] */                #if CONFIG_GYM_SCENARIO != 3
+#   - // (无)                                 +   tcp_sent(pcb, pump_sent_cb);
+#                                             #endif
+#
+# 对使用者等价的操作就是切回任意非 3 场景（常用 sc0）重编：
+#   cp sdkconfig.defaults.sc0 sdkconfig.defaults && rm -f sdkconfig && idf.py build
+# 本文件保留 GYM_SCENARIO=0 的形态交付，供"bad=3 / fixed=同工程改一行宏"对照。
+CONFIG_ETH_USE_OPENETH=y
+CONFIG_LWIP_STATS=y
+CONFIG_LWIP_TCP_MSS=1440
+CONFIG_LWIP_TCP_SND_BUF_DEFAULT=5760
+CONFIG_LWIP_TCP_WND_DEFAULT=5760
+
+CONFIG_GYM_SCENARIO=0

@@ -1,0 +1,87 @@
+Adding SPI flash device
+ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x12 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0040,len:6272
+load:0x40078000,len:15820
+load:0x40080400,len:3920
+entry 0x40080644
+I (662) boot: ESP-IDF v6.0.2 2nd stage bootloader
+I (662) boot: compile time Aug 27 2026 19:04:19
+I (662) boot: Multicore bootloader
+I (709) boot: chip revision: v0.0
+I (710) boot.esp32: SPI Speed      : 40MHz
+I (710) boot.esp32: SPI Mode       : DIO
+I (710) boot.esp32: SPI Flash Size : 2MB
+I (716) boot: Enabling RNG early entropy source...
+I (723) boot: Partition Table:
+I (724) boot: ## Label            Usage          Type ST Offset   Length
+I (724) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (724) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (724) boot:  2 factory          factory app      00 00 00010000 00100000
+I (728) boot: End of partition table
+I (767) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=110f0h ( 69872) map
+I (785) esp_image: segment 1: paddr=00021118 vaddr=3ffb0000 size=02acch ( 10956) load
+I (797) esp_image: segment 2: paddr=00023bec vaddr=40080000 size=0b23ch ( 45628) load
+I (810) esp_image: segment 3: paddr=0002ee30 vaddr=50000000 size=00028h (    40) load
+I (823) esp_image: segment 4: paddr=0002ee60 vaddr=00000000 size=011b8h (  4536) 
+I (834) esp_image: segment 5: paddr=00030020 vaddr=400d0020 size=2b9b8h (178616) map
+I (882) boot: Loaded app from partition at offset 0x10000
+I (883) boot: Disabling RNG early entropy source...
+I (894) cpu_start: Multicore app
+I (1484) cpu_start: GPIO 3 and 1 are used as console UART I/O pins
+I (1486) cpu_start: Pro cpu start user code
+I (1486) cpu_start: cpu freq: 160000000 Hz
+I (1486) app_init: Application information:
+I (1486) app_init: Project name:     ex14_perf_gym_tcp
+I (1486) app_init: App version:      924d871-dirty
+I (1486) app_init: Compile time:     Aug 27 2026 20:08:13
+I (1487) app_init: ELF file SHA256:  9b8ad49a2...
+I (1487) app_init: ESP-IDF:          v6.0.2
+I (1487) efuse_init: Min chip rev:     v0.0
+I (1487) efuse_init: Max chip rev:     v3.99 
+I (1487) efuse_init: Chip rev:         v0.0
+I (1488) heap_init: Initializing. RAM available for dynamic allocation:
+I (1488) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM
+I (1488) heap_init: At 3FFC4070 len 0001BF90 (111 KiB): DRAM
+I (1488) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM
+I (1488) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM
+I (1488) heap_init: At 4008B23C len 00014DC4 (83 KiB): IRAM
+I (1514) spi_flash: detected chip: winbond
+I (1518) spi_flash: flash io: dio
+I (1532) main_task: Started on CPU0
+I (1532) main_task: Calling app_main()
+I (1532) ex14: == ex14 perf-gym-tcp: TCP misconfiguration gym ==
+I (1532) ex14: $$$ EX14BOOT board=esp32-qemu-openeth
+I (1552) esp_eth.netif.netif_glue: 52:54:00:12:34:56
+I (1552) esp_eth.netif.netif_glue: ethernet attached to netif
+I (1652) ex14: [EX14] ETH START
+E (1652) esp_eth: esp_eth_ioctl(533): add mac address to filter not supported
+E (1652) esp_eth.netif.netif_glue: eth_set_mac_filter(56): failed to add mac filter
+E (1652) esp_netif_lwip: Failed to add multicast filter for IPv4
+I (1652) ex14: [EX14] ETH CONNECTED (link up)
+I (2652) ex14: [EX14] GOT_IP 10.0.2.15 gw 10.0.2.2
+I (2652) esp_netif_handlers: eth ip: 10.0.2.15, mask: 255.255.255.0, gw: 10.0.2.2
+$$$ EX14NETUP ip=10.0.2.15 gw=10.0.2.2
+$$$ EX14FACT build="Aug 27 2026 20:08:14" scenario=4 name=pcb-gate-2 mss=1440 snd_buf=5760 wnd=5760 openeth_ring=4 max_active_tcp=16 lwip_stats=1
+$$$ EX14PROFILE legs=none(concurrency-probe-profile) probe=on rounds=2 mb_per_leg=2000000 tx_target=10.0.2.2:8311 rx_listen=:8310 lb_mirror=10.0.2.2:8312
+$$$ EX14VERDICT key=window_small ok snd_buf=5760 wnd=5760 mss=1440 detail=external-path-rate~window/RTT(ch24)
+$$$ EX14VERDICT key=wnd_ring ok wnd=5760 ring=4
+$$$ EX14VERDICT key=pcb_gate ok max_active_tcp=16
+$$$ EX14VERDICT key=sent_hook present detail=ack-driven-refill-on
+$$$ EX14RX_LISTEN port=8310 backlog=4 hint=needs-QEMU-hostfwd-tcp::8310-:8310
+$$$ EX14CONC PHASE=BEGIN profile=concurrency-probe note=legs-disabled
+$$$ EX14HEAP phase=conc_pre free=200052 largest=110592 min_ever=199840
+I (2662) main_task: Returned from app_main()
+$$$ EX14CONC attempt=1 op=connect result=SUCCESS echo_check=PASS -- holding-socket
+$$$ EX14CONC attempt=2 op=connect result=SUCCESS echo_check=PASS -- holding-socket
+$$$ EX14CONC attempt=3 op=connect result=SUCCESS echo_check=PASS -- holding-socket
+$$$ EX14CONC PHASE=inbound-syn-drain window_s=6 expect=host-nc-to-8310
+$$$ EX14WD t_ms=6171 d_tcp.xmit=0 d_tcp.recv=0 d_link.recv=0 
+$$$ EX14STATS phase=conc_post_diff d_link.recv=1 d_tcp.xmit=16 d_tcp.recv=15 d_tcp.drop=0 d_tcp.memerr=0
+$$$ EX14HEAP phase=conc_post free=198628 largest=110592 min_ever=194584
+$$$ EX14CONC SUMMARY attempts=3 ok=3 silent_drop=0 alloc_fail=0 memerr_delta=0 verdict=healthy
+$$$ EX14DONE scenario=4 name=pcb-gate-2 -- restarting to exit QEMU cleanly

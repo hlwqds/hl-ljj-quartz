@@ -1,0 +1,9 @@
+== point wnd28k rounds=2 06:58:50 ==
+--- round 1 ---
+--- round 2 ---
+[fw] $$$ LBRTT ok=200/200 size=512 avg_rtt_us=597 min=457 max=4046
+[fw] $$$ LBTH ack_r=0 bytes=4000000 elapsed_us=348437 mbit=91.84
+[fw] $$$ LBRTT ok=200/200 size=512 avg_rtt_us=547 min=424 max=1113
+[fw] $$$ LBTH ack_r=0 bytes=4000000 elapsed_us=359297 mbit=89.06
+[fw] $$$ MEM on-cmd free=197848 largest=110592 min_ever=115496
+$$$ BUILD 06:58:40 sndbuf=5760 wnd=28800 mss=1440 tcpip_mbox=32 pbuf_pool=16

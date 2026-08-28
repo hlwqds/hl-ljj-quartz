@@ -1,0 +1,29 @@
+--- p1-before
+### PHASE: p1-baseline
+RESULT kind=http n=12 ok=12 timeout=0 other_fail=0
+RESULT kind=http lat_ms min=3.8 avg=6.8 p50=5.7 p90=10.7 p99=12.0 max=12.2
+### PHASE: p2-loss15
+RESULT kind=http n=12 ok=12 timeout=0 other_fail=0
+RESULT kind=http lat_ms min=3.8 avg=1093.4 p50=6.2 p90=4185.2 p99=4498.2 max=4500.0
+### PHASE: p2-recover
+RESULT kind=http n=6 ok=6 timeout=0 other_fail=0
+RESULT kind=http lat_ms min=2.5 avg=4.5 p50=4.4 p90=5.6 p99=5.8 max=5.8
+### PHASE: p3-heaptight
+RESULT kind=http n=8 ok=8 timeout=0 other_fail=0
+RESULT kind=http lat_ms min=3.9 avg=5.1 p50=4.9 p90=6.3 p99=6.7 max=6.7
+### PHASE: p3-recover
+RESULT kind=http n=5 ok=5 timeout=0 other_fail=0
+RESULT kind=http lat_ms min=4.2 avg=5.1 p50=5.6 p90=5.7 p99=5.7 max=5.7
+### PHASE: p4-combo
+RESULT kind=http n=15 ok=15 timeout=0 other_fail=0
+RESULT kind=http lat_ms min=4.2 avg=1301.4 p50=1494.1 p90=3303.0 p99=4500.1 max=4500.2
+### PHASE: p5-recovered
+RESULT kind=http n=10 ok=10 timeout=0 other_fail=0
+RESULT kind=http lat_ms min=4.7 avg=6.8 p50=6.8 p90=8.3 p99=8.6 max=8.6
+dropped_frames_total_serial_lines=25
+[fw] $$$ MEM boot free=208772 largest=110592 min_ever=206196
+[fw] $$$ MEM on-cmd free=208256 largest=110592 min_ever=203672
+[fw] $$$ MEM under-stress free=39896 largest=30720 min_ever=39896
+[fw] $$$ MEM after-off free=197776 largest=110592 min_ever=30448
+[fw] $$$ MEM under-stress free=40104 largest=30720 min_ever=30448
+[fw] $$$ MEM after-off free=193320 largest=110592 min_ever=25828

@@ -1,0 +1,18 @@
+# ex14 场景 3（坏）：发送泵漏挂 tcp_sent 回调 —— 代码级错误，复刻 ch6 真 bug
+#
+# 病理预期：连接正常建立、首批数据写进栈，但固件的 TX 腿用 raw API 写泵且**故意不注册
+# tcp_sent 回调**，应用层永远收不到"已被对端 ACK"的通知 → 只剩 tcp_poll(500ms 级节拍)
+# 驱动补发 → 吞吐涓流到 ~0.1 Mbit 量级。诊断特征：sent_cb_hits=0 且 written 以
+# SND_BUF 为步长缓慢爬升（EX14TX 行可读）。
+#
+# 场景号=3 时 main.c 的条件编译会跳过 tcp_sent(pcb, sent_cb) 注册行——
+# 这是四个场景里唯一"病在代码不在配置"的一个。
+#
+# 用法：cp sdkconfig.defaults.sc3 sdkconfig.defaults && rm -f sdkconfig && idf.py build
+CONFIG_ETH_USE_OPENETH=y
+CONFIG_LWIP_STATS=y
+CONFIG_LWIP_TCP_MSS=1440
+CONFIG_LWIP_TCP_SND_BUF_DEFAULT=5760
+CONFIG_LWIP_TCP_WND_DEFAULT=5760
+
+CONFIG_GYM_SCENARIO=3

@@ -1,0 +1,149 @@
+Adding SPI flash device
+ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x12 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0040,len:6272
+load:0x40078000,len:15820
+load:0x40080400,len:3920
+entry 0x40080644
+I (659) boot: ESP-IDF v6.0.2 2nd stage bootloader
+I (660) boot: compile time Aug 27 2026 00:38:48
+I (660) boot: Multicore bootloader
+I (690) boot: chip revision: v3.0
+I (692) boot.esp32: SPI Speed      : 40MHz
+I (692) boot.esp32: SPI Mode       : DIO
+I (692) boot.esp32: SPI Flash Size : 2MB
+I (700) boot: Enabling RNG early entropy source...
+I (707) boot: Partition Table:
+I (707) boot: ## Label            Usage          Type ST Offset   Length
+I (707) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (707) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (707) boot:  2 factory          factory app      00 00 00010000 00100000
+I (710) boot: End of partition table
+I (747) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=0e5b4h ( 58804) map
+I (777) esp_image: segment 1: paddr=0001e5dc vaddr=3ffb0000 size=01a3ch (  6716) load
+I (798) esp_image: segment 2: paddr=00020020 vaddr=400d0020 size=270c4h (159940) map
+I (822) esp_image: segment 3: paddr=000470ec vaddr=3ffb1a3c size=01090h (  4240) load
+I (846) esp_image: segment 4: paddr=00048184 vaddr=40080000 size=0b0f4h ( 45300) load
+I (875) esp_image: segment 5: paddr=00053280 vaddr=50000000 size=00028h (    40) load
+I (937) boot: Loaded app from partition at offset 0x10000
+I (937) boot: Disabling RNG early entropy source...
+I (951) cpu_start: Multicore app
+I (1605) cpu_start: GPIO 3 and 1 are used as console UART I/O pins
+I (1607) cpu_start: Pro cpu start user code
+I (1607) cpu_start: cpu freq: 160000000 Hz
+I (1607) app_init: Application information:
+I (1607) app_init: Project name:     lwip_ch06_zero_copy_tcp_write
+I (1607) app_init: App version:      924d871
+I (1608) app_init: Compile time:     Aug 27 2026 00:38:32
+I (1608) app_init: ELF file SHA256:  f3871486a...
+I (1608) app_init: ESP-IDF:          v6.0.2
+I (1608) efuse_init: Min chip rev:     v0.0
+I (1608) efuse_init: Max chip rev:     v3.99 
+I (1608) efuse_init: Chip rev:         v3.0
+I (1609) heap_init: Initializing. RAM available for dynamic allocation:
+I (1610) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM
+I (1610) heap_init: At 3FFC3F50 len 0001C0B0 (112 KiB): DRAM
+I (1610) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM
+I (1610) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM
+I (1610) heap_init: At 4008B0F4 len 00014F0C (83 KiB): IRAM
+I (1643) spi_flash: detected chip: winbond
+I (1647) spi_flash: flash io: dio
+I (1661) main_task: Started on CPU0
+I (1661) main_task: Calling app_main()
+I (1661) ch6lab: == ch6 lab: openeth bring-up then tcp_write bench ==
+I (1681) esp_eth.netif.netif_glue: 52:54:00:12:34:56
+I (1681) esp_eth.netif.netif_glue: ethernet attached to netif
+E (1781) esp_eth: esp_eth_ioctl(533): add mac address to filter not supported
+E (1781) esp_eth.netif.netif_glue: eth_set_mac_filter(56): failed to add mac filter
+E (1781) esp_netif_lwip: Failed to add multicast filter for IPv4
+I (1781) ch6lab: ETH_EVENT: CONNECTED (link up)
+I (1781) ch6lab: waiting for DHCP lease ...
+I (2791) ch6lab: GOT_IP: 10.0.2.15
+I (2791) esp_netif_handlers: eth ip: 10.0.2.15, mask: 255.255.255.0, gw: 10.0.2.2
+== ch6 lab: zero-copy throughput / backpressure ==
+CH06-FACT LWIP_NETIF_TX_SINGLE_PBUF=1
+CH06-FACT CONFIG_LWIP_TCP_SND_BUF_DEFAULT=5760
+CH06-FACT CONFIG_LWIP_TCP_WND_DEFAULT=5760
+CH06-FACT CONFIG_LWIP_TCP_MSS=1440
+CH06-FACT TCP_SND_QUEUELEN=16 CHUNK=2880 PATLEN=65536 TOTAL=10485760
+I (2791) main_task: Returned from app_main()
+I (2851) ch6lab: connected to 10.0.2.2:8006 (mode=COPY run=1)
+CH06-BENCH mode=COPY run=1 sent=10485760 us=733726 mbit=114.33 err_mem=7355 digest=3c32
+I (3881) ch6lab: connected to 10.0.2.2:8006 (mode=NOCOPY run=1)
+CH06-BENCH mode=NOCOPY run=1 sent=10485760 us=708047 mbit=118.48 err_mem=7355 digest=3c32
+I (4891) ch6lab: connected to 10.0.2.2:8006 (mode=COPY run=2)
+CH06-BENCH mode=COPY run=2 sent=10485760 us=721155 mbit=116.32 err_mem=7355 digest=3c32
+I (5911) ch6lab: connected to 10.0.2.2:8006 (mode=NOCOPY run=2)
+CH06-BENCH mode=NOCOPY run=2 sent=10485760 us=819911 mbit=102.31 err_mem=7355 digest=3c32
+I (7031) ch6lab: connected to 10.0.2.2:8006 (mode=COPY run=3)
+CH06-BENCH mode=COPY run=3 sent=10485760 us=711883 mbit=117.84 err_mem=7355 digest=3c32
+I (8041) ch6lab: connected to 10.0.2.2:8006 (mode=NOCOPY run=3)
+CH06-BENCH mode=NOCOPY run=3 sent=10485760 us=708612 mbit=118.38 err_mem=7355 digest=3c32
+CH06-SUMMARY benches done (COPY x3, NOCOPY x3), starting backpressure phase
+I (9051) ch6lab: connected to 10.0.2.2:8006 (mode=BP run=1)
+CH06-BP t=247ms sndbuf=0 qlen=4 written=3901184 acked=3895424 err_mem=2734
+CH06-BP t=497ms sndbuf=5760 qlen=0 written=4194304 acked=4194304 err_mem=2939
+CH06-BP t=748ms sndbuf=5760 qlen=0 written=4194304 acked=4194304 err_mem=2939
+CH06-BP t=998ms sndbuf=5760 qlen=0 written=4194304 acked=4194304 err_mem=2939
+CH06-BP t=1248ms sndbuf=5760 qlen=0 written=4194304 acked=4194304 err_mem=2939
+CH06-BP t=1498ms sndbuf=5760 qlen=0 written=4194304 acked=4194304 err_mem=2939
+CH06-BP t=1747ms sndbuf=5760 qlen=0 written=4194304 acked=4194304 err_mem=2939
+CH06-BP t=1998ms sndbuf=5760 qlen=0 written=4194304 acked=4194304 err_mem=2939
+CH06-BP t=2248ms sndbuf=5760 qlen=0 written=4194304 acked=4194304 err_mem=2939
+CH06-BP t=2498ms sndbuf=5760 qlen=0 written=4194304 acked=4194304 err_mem=2939
+CH06-BP t=2748ms sndbuf=5760 qlen=0 written=4194304 acked=4194304 err_mem=2939
+CH06-BP t=2998ms sndbuf=5760 qlen=0 written=4194304 acked=4194304 err_mem=2939
+CH06-BP t=3248ms sndbuf=5760 qlen=0 written=4194304 acked=4194304 err_mem=2939
+CH06-BP t=3497ms sndbuf=5760 qlen=0 written=4194304 acked=4194304 err_mem=2939
+CH06-BP t=3747ms sndbuf=5760 qlen=0 written=4194304 acked=4194304 err_mem=2939
+CH06-BP t=3998ms sndbuf=5760 qlen=0 written=4194304 acked=4194304 err_mem=2939
+CH06-BP t=4247ms sndbuf=5760 qlen=0 written=4194304 acked=4194304 err_mem=2939
+CH06-BP t=4497ms sndbuf=5760 qlen=0 written=4194304 acked=4194304 err_mem=2939
+CH06-BP t=4747ms sndbuf=5760 qlen=0 written=4194304 acked=4194304 err_mem=2939
+CH06-BP t=4998ms sndbuf=5760 qlen=0 written=4194304 acked=4194304 err_mem=2939
+CH06-BP t=5247ms sndbuf=5760 qlen=0 written=4194304 acked=4194304 err_mem=2939
+CH06-BP t=5498ms sndbuf=5760 qlen=0 written=4194304 acked=4194304 err_mem=2939
+CH06-BP t=5748ms sndbuf=5760 qlen=0 written=4194304 acked=4194304 err_mem=2939
+CH06-BP t=5997ms sndbuf=5760 qlen=0 written=4194304 acked=4194304 err_mem=2939
+CH06-BP t=6247ms sndbuf=5760 qlen=0 written=4194304 acked=4194304 err_mem=2939
+CH06-BP t=6498ms sndbuf=5760 qlen=0 written=4194304 acked=4194304 err_mem=2939
+CH06-BP t=6748ms sndbuf=5760 qlen=0 written=4194304 acked=4194304 err_mem=2939
+CH06-BP t=6998ms sndbuf=5760 qlen=0 written=4194304 acked=4194304 err_mem=2939
+CH06-BP t=7248ms sndbuf=5760 qlen=0 written=4194304 acked=4194304 err_mem=2939
+CH06-BP t=7498ms sndbuf=5760 qlen=0 written=4194304 acked=4194304 err_mem=2939
+CH06-BP t=7748ms sndbuf=5760 qlen=0 written=4194304 acked=4194304 err_mem=2939
+CH06-BP t=7998ms sndbuf=5760 qlen=0 written=4194304 acked=4194304 err_mem=2939
+CH06-BP t=8247ms sndbuf=5760 qlen=0 written=4194304 acked=4194304 err_mem=2939
+CH06-BP t=8498ms sndbuf=5760 qlen=0 written=4194304 acked=4194304 err_mem=2939
+CH06-BP t=8748ms sndbuf=5760 qlen=0 written=4194304 acked=4194304 err_mem=2939
+CH06-BP t=8997ms sndbuf=5760 qlen=0 written=4194304 acked=4194304 err_mem=2939
+CH06-BP t=9248ms sndbuf=5760 qlen=0 written=4194304 acked=4194304 err_mem=2939
+CH06-BP t=9498ms sndbuf=5760 qlen=0 written=4194304 acked=4194304 err_mem=2939
+CH06-BP t=9747ms sndbuf=5760 qlen=0 written=4194304 acked=4194304 err_mem=2939
+CH06-BP t=9998ms sndbuf=5760 qlen=0 written=4194304 acked=4194304 err_mem=2939
+CH06-BP t=10248ms sndbuf=5760 qlen=0 written=4194304 acked=4194304 err_mem=2939
+CH06-BP t=10498ms sndbuf=5760 qlen=0 written=4194304 acked=4194304 err_mem=2939
+CH06-BP t=10748ms sndbuf=5760 qlen=0 written=4194304 acked=4194304 err_mem=2939
+CH06-BP t=10998ms sndbuf=5760 qlen=0 written=4194304 acked=4194304 err_mem=2939
+CH06-BP t=11248ms sndbuf=5760 qlen=0 written=4194304 acked=4194304 err_mem=2939
+CH06-BP t=11497ms sndbuf=5760 qlen=0 written=4194304 acked=4194304 err_mem=2939
+CH06-BP t=11747ms sndbuf=5760 qlen=0 written=4194304 acked=4194304 err_mem=2939
+CH06-BP t=11998ms sndbuf=5760 qlen=0 written=4194304 acked=4194304 err_mem=2939
+CH06-BP t=12247ms sndbuf=5760 qlen=0 written=4194304 acked=4194304 err_mem=2939
+CH06-BP t=12498ms sndbuf=5760 qlen=0 written=4194304 acked=4194304 err_mem=2939
+CH06-BP t=12747ms sndbuf=5760 qlen=0 written=4194304 acked=4194304 err_mem=2939
+CH06-BP t=12998ms sndbuf=5760 qlen=0 written=4194304 acked=4194304 err_mem=2939
+CH06-BP t=13248ms sndbuf=5760 qlen=0 written=4194304 acked=4194304 err_mem=2939
+CH06-BP t=13498ms sndbuf=5760 qlen=0 written=4194304 acked=4194304 err_mem=2939
+CH06-BP t=13748ms sndbuf=5760 qlen=0 written=4194304 acked=4194304 err_mem=2939
+CH06-BP t=13998ms sndbuf=5760 qlen=0 written=4194304 acked=4194304 err_mem=2939
+CH06-BP t=14248ms sndbuf=5760 qlen=0 written=4194304 acked=4194304 err_mem=2939
+CH06-BP t=14498ms sndbuf=5760 qlen=0 written=4194304 acked=4194304 err_mem=2939
+CH06-BP t=14748ms sndbuf=5760 qlen=0 written=4194304 acked=4194304 err_mem=2939
+CH06-BPSTOP elapsed_ms=14998 written=4194304 acked=4194304 err_mem=2939 sndbuf_min=0 mbit=2.24
+E (24051) ch6lab: bench pcb error: 
+CH06-DONE all phases complete, idling

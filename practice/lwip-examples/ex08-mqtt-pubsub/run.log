@@ -1,0 +1,116 @@
+Adding SPI flash device
+ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x12 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0040,len:6272
+load:0x40078000,len:15820
+load:0x40080400,len:3920
+entry 0x40080644
+I (671) boot: ESP-IDF v6.0.2 2nd stage bootloader
+I (672) boot: compile time Aug 27 2026 13:21:15
+I (672) boot: Multicore bootloader
+I (708) boot: chip revision: v0.0
+I (709) boot.esp32: SPI Speed      : 40MHz
+I (709) boot.esp32: SPI Mode       : DIO
+I (709) boot.esp32: SPI Flash Size : 2MB
+I (715) boot: Enabling RNG early entropy source...
+I (721) boot: Partition Table:
+I (721) boot: ## Label            Usage          Type ST Offset   Length
+I (721) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (721) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (721) boot:  2 factory          factory app      00 00 00010000 00100000
+I (725) boot: End of partition table
+I (755) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=188a4h (100516) map
+I (770) esp_image: segment 1: paddr=000288cc vaddr=3ffb0000 size=02afch ( 11004) load
+I (782) esp_image: segment 2: paddr=0002b3d0 vaddr=40080000 size=04c48h ( 19528) load
+I (793) esp_image: segment 3: paddr=00030020 vaddr=400d0020 size=558f4h (350452) map
+I (826) esp_image: segment 4: paddr=0008591c vaddr=40084c48 size=067dch ( 26588) load
+I (839) esp_image: segment 5: paddr=0008c100 vaddr=50000000 size=00028h (    40) load
+I (880) boot: Loaded app from partition at offset 0x10000
+I (880) boot: Disabling RNG early entropy source...
+I (894) cpu_start: Multicore app
+I (1480) cpu_start: GPIO 3 and 1 are used as console UART I/O pins
+I (1482) cpu_start: Pro cpu start user code
+I (1482) cpu_start: cpu freq: 160000000 Hz
+I (1483) app_init: Application information:
+I (1483) app_init: Project name:     ex08_mqtt_pubsub
+I (1483) app_init: App version:      924d871-dirty
+I (1483) app_init: Compile time:     Aug 27 2026 13:20:41
+I (1483) app_init: ELF file SHA256:  26f96f620...
+I (1483) app_init: ESP-IDF:          v6.0.2
+I (1483) efuse_init: Min chip rev:     v0.0
+I (1483) efuse_init: Max chip rev:     v3.99 
+I (1483) efuse_init: Chip rev:         v0.0
+I (1484) heap_init: Initializing. RAM available for dynamic allocation:
+I (1484) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM
+I (1485) heap_init: At 3FFB4558 len 0002BAA8 (174 KiB): DRAM
+I (1485) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM
+I (1485) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM
+I (1485) heap_init: At 4008B424 len 00014BDC (82 KiB): IRAM
+I (1513) spi_flash: detected chip: winbond
+I (1518) spi_flash: flash io: dio
+I (1526) main_task: Started on CPU0
+I (1526) main_task: Calling app_main()
+I (1526) ex08: == ex08 mqtt-pubsub: esp-mqtt over QEMU openeth ==
+I (1546) esp_eth.netif.netif_glue: 52:54:00:12:34:56
+I (1546) esp_eth.netif.netif_glue: ethernet attached to netif
+E (1646) esp_eth: esp_eth_ioctl(533): add mac address to filter not supported
+E (1646) esp_eth.netif.netif_glue: eth_set_mac_filter(56): failed to add mac filter
+E (1646) esp_netif_lwip: Failed to add multicast filter for IPv4
+I (1646) ex08: ETH_EVENT: CONNECTED
+I (2646) ex08: GOT_IP: 10.0.2.15
+I (2646) esp_netif_handlers: eth ip: 10.0.2.15, mask: 255.255.255.0, gw: 10.0.2.2
+$$$ READY role=mqtt-client uri=mqtt://10.0.2.2:1883 clientId=ex08-000000-us1164126 sub=demo/topic lwt=demo/lwt ka=10s pub_period=3s fw=Aug 27 2026 13:25:54
+I (2656) ex08: [MQTT] BEFORE_CONNECT (uri=mqtt://10.0.2.2:1883)
+I (2686) ex08: [MQTT] CONNECTED #1 session_present=0
+$$$ EVT CONNECTED n=1
+I (2686) ex08: [APP] SUBSCRIBE sent topic=demo/topic qos=1 msg_id=63684
+I (2696) ex08: [MQTT] SUBSCRIBED msg_id=63684 (topic=demo/topic confirmed)
+$$$ EVT SUBSCRIBED msg_id=63684
+I (5686) ex08: [APP] PUBLISH seq=1 msg_id=57323 topic=demo/topic outbox=45B acked=0
+I (5686) ex08: [MQTT] DATA #1 (self-echo) topic=demo/topic qos=1 len=29 data=ex08-counter=1 uptime_ms=4200
+I (8686) ex08: [APP] PUBLISH seq=2 msg_id=32292 topic=demo/topic outbox=45B acked=1
+I (8686) ex08: [MQTT] DATA #2 (self-echo) topic=demo/topic qos=1 len=29 data=ex08-counter=2 uptime_ms=7200
+I (9726) ex08: [MQTT] DATA #3 (external)  topic=demo/topic qos=1 len=26 data=hello-from-host @ 13:28:26
+I (11686) ex08: [MQTT] DATA #4 (self-echo) topic=demo/topic qos=1 len=30 data=ex08-counter=3 uptime_ms=10200
+I (11686) ex08: [APP] PUBLISH seq=3 msg_id=3652 topic=demo/topic outbox=46B acked=3
+I (12736) ex08: [MQTT] DATA #5 (external)  topic=demo/topic qos=1 len=15 data=second downlink
+I (14686) ex08: [MQTT] DATA #6 (self-echo) topic=demo/topic qos=1 len=30 data=ex08-counter=4 uptime_ms=13200
+I (14686) ex08: [APP] PUBLISH seq=4 msg_id=63529 topic=demo/topic outbox=0B acked=4
+I (17686) ex08: [APP] PUBLISH seq=5 msg_id=21464 topic=demo/topic outbox=46B acked=4
+I (17686) ex08: [MQTT] DATA #7 (self-echo) topic=demo/topic qos=1 len=30 data=ex08-counter=5 uptime_ms=16200
+E (17786) mqtt_client: esp_mqtt_handle_transport_read_error: transport_read(): EOF
+E (17786) mqtt_client: esp_mqtt_handle_transport_read_error: transport_read() error: errno=128
+W (17786) ex08: [MQTT] ERROR type=1 sock_errno=0 connect_rc=0
+E (17786) mqtt_client: mqtt_process_receive: mqtt_message_receive() returned -2
+W (17786) ex08: [MQTT] DISCONNECTED #1 -> auto-reconnect in ~10s intervals
+$$$ EVT DISCONNECTED n=1 outbox_bytes=0
+I (20686) ex08: [APP] PUBLISH seq=6 msg_id=61918 topic=demo/topic outbox=46B acked=5
+I (23686) ex08: [APP] PUBLISH seq=7 msg_id=45046 topic=demo/topic outbox=92B acked=5
+I (26686) ex08: [APP] PUBLISH seq=8 msg_id=59960 topic=demo/topic outbox=138B acked=5
+I (29686) ex08: [APP] PUBLISH seq=9 msg_id=42655 topic=demo/topic outbox=184B acked=5
+I (32686) ex08: [APP] PUBLISH seq=10 msg_id=37194 topic=demo/topic outbox=231B acked=5
+I (32786) ex08: [MQTT] BEFORE_CONNECT (uri=mqtt://10.0.2.2:1883)
+I (32806) ex08: [MQTT] CONNECTED #2 session_present=0
+$$$ EVT CONNECTED n=2
+I (32806) ex08: [APP] SUBSCRIBE sent topic=demo/topic qos=1 msg_id=43884
+I (32806) ex08: [MQTT] SUBSCRIBED msg_id=43884 (topic=demo/topic confirmed)
+$$$ EVT SUBSCRIBED msg_id=43884
+I (32806) ex08: [MQTT] DATA #8 (self-echo) topic=demo/topic qos=1 len=30 data=ex08-counter=6 uptime_ms=19200
+I (32816) ex08: [MQTT] DATA #9 (self-echo) topic=demo/topic qos=1 len=30 data=ex08-counter=7 uptime_ms=22200
+I (32826) ex08: [MQTT] DATA #10 (self-echo) topic=demo/topic qos=1 len=30 data=ex08-counter=8 uptime_ms=25200
+I (32826) ex08: [MQTT] DATA #11 (self-echo) topic=demo/topic qos=1 len=30 data=ex08-counter=9 uptime_ms=28200
+I (32826) ex08: [MQTT] DATA #12 (self-echo) topic=demo/topic qos=1 len=31 data=ex08-counter=10 uptime_ms=31200
+I (35686) ex08: [MQTT] DATA #13 (self-echo) topic=demo/topic qos=1 len=31 data=ex08-counter=11 uptime_ms=34200
+I (35686) ex08: [APP] PUBLISH seq=11 msg_id=17005 topic=demo/topic outbox=47B acked=10
+I (38686) ex08: [APP] PUBLISH seq=12 msg_id=38157 topic=demo/topic outbox=47B acked=11
+I (38686) ex08: [MQTT] DATA #14 (self-echo) topic=demo/topic qos=1 len=31 data=ex08-counter=12 uptime_ms=37200
+I (41686) ex08: [APP] PUBLISH seq=13 msg_id=6877 topic=demo/topic outbox=47B acked=12
+I (41686) ex08: [MQTT] DATA #15 (self-echo) topic=demo/topic qos=1 len=31 data=ex08-counter=13 uptime_ms=40200
+I (44686) ex08: [APP] PUBLISH seq=14 msg_id=16661 topic=demo/topic outbox=47B acked=13
+I (44686) ex08: [MQTT] DATA #16 (self-echo) topic=demo/topic qos=1 len=31 data=ex08-counter=14 uptime_ms=43200
+I (47686) ex08: [MQTT] DATA #17 (self-echo) topic=demo/topic qos=1 len=31 data=ex08-counter=15 uptime_ms=46200
+I (47686) ex08: [APP] PUBLISH seq=15 msg_id=57445 topic=demo/topic outbox=47B acked=14

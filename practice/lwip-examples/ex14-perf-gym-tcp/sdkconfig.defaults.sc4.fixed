@@ -1,0 +1,16 @@
+# ex14 场景 4（修复）：PCB 计数闸回到默认 16
+#
+# 与坏的 sc4 的差异只有一行：
+#   CONFIG_LWIP_MAX_ACTIVE_TCP   2 -> 16   (IDF 默认值)
+#
+# EX14FACT 行打印 max_active_tcp=16 供核对；EX14CONC 探针此时应看到
+# SUCCESS + 回声校验通过，tcp.memerr 零增量。
+#
+# 用法：cp sdkconfig.defaults.sc4.fixed sdkconfig.defaults && rm -f sdkconfig && idf.py build
+CONFIG_ETH_USE_OPENETH=y
+CONFIG_LWIP_STATS=y
+CONFIG_LWIP_TCP_MSS=1440
+CONFIG_LWIP_TCP_SND_BUF_DEFAULT=5760
+CONFIG_LWIP_TCP_WND_DEFAULT=5760
+CONFIG_LWIP_MAX_ACTIVE_TCP=16
+CONFIG_GYM_SCENARIO=4

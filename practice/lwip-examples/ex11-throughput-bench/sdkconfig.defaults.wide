@@ -1,0 +1,24 @@
+# ex11 宽窗口档（wide）：放开协议栈两侧缓冲并加宽 openeth RX 描述符环。
+#
+# ┌─────────────────────────────────────────────────────────────────────────┐
+# │ ⚠⚠ 使用方法（Batch 1 教训，跳步必翻车）：                             │
+# │   cp sdkconfig.defaults.wide sdkconfig.defaults                        │
+# │   rm -f sdkconfig            # ← 必须删！defaults 只在无 sdkconfig 时生效 │
+# │   idf.py build               # 重新生成全量 sdkconfig                    │
+# └─────────────────────────────────────────────────────────────────────────┘
+#
+# 「窗口×RX 环深不等式」（ch24 头号调优发现）：
+#   WND >= 11520 时 openeth RX 环深必须 >= 16，环 4 是吞吐黑洞；
+#   WND >= 28800 时环深必须 >= 32。只拧窗口不抬环 = 白改。
+# 所以本文件把 CONFIG_ETH_OPENETH_DMA_RX_BUFFER_NUM 一并拧到 32，两者成对出现，
+# 请整体复制，不要单取 WND 行。
+CONFIG_ETH_USE_OPENETH=y
+CONFIG_LWIP_STATS=y
+CONFIG_LWIP_TCP_SND_BUF_DEFAULT=28800
+CONFIG_LWIP_TCP_WND_DEFAULT=28800
+CONFIG_LWIP_TCP_MSS=1440
+# openeth RX 描述符环深：配合 WND=28800 的不等式要求（>=32）
+CONFIG_ETH_OPENETH_DMA_RX_BUFFER_NUM=32
+# 消息邮箱加深，避免突发下 tcpip/api 邮箱满（ch24 实测 8→64 不敏感，属顺手加固）
+CONFIG_LWIP_TCPIP_RECVMBOX_SIZE=32
+CONFIG_LWIP_TCP_RECVMBOX_SIZE=32

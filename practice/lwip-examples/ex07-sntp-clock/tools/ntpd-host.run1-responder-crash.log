@@ -1,0 +1,17 @@
+$$$ NTPREADY kind=ntp port=8260 host_utc=2026-08-27T05:28:20.699Z
+NTP-ALL slots=all waiting ...（Ctrl-C 结束；8261 保持无监听——那是固件空端口探针的对象）
+$$$ NTPREADY kind=reflector port=8262 host_utc=2026-08-27T05:28:20.699Z
+NTP-ECHO peer=127.0.0.1:52194 len=48 head=234200004558303750524f4245207365713d6131 magic="EX07PROBE " rx_bytes=48 tx_bytes=48 allzero=False
+NTP-REQ ts=2026-08-27T05:28:48.674659Z peer=127.0.0.1:58482 li=0 vn=4 mode=3 len=48 OK
+Exception in thread Thread-1 (serve_ntp):
+Traceback (most recent call last):
+  File "/usr/lib64/python3.14/threading.py", line 1082, in _bootstrap_inner
+    self._context.run(self.run)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "/usr/lib64/python3.14/threading.py", line 1024, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/huanglin/code/quartz/practice/lwip-examples/ex07-sntp-clock/tools/ntpd.py", line 95, in serve_ntp
+    struct.pack_into("!QQ", resp, 16, *_pack_ts(t_recv_wall - 0.001))  # reference TS
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+struct.error: pack_into expected 2 items for packing (got 8)

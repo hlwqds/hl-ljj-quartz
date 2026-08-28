@@ -1,0 +1,7 @@
+# OpenCores Ethernet MAC 驱动（仅用于 QEMU openeth 虚拟网卡，真机不可用）
+CONFIG_ETH_USE_OPENETH=y
+
+# 可观测性叠加层：打开 lwip_stats 全局统计结构（含 LINK_STATS 链路收发/丢弃计数）。
+# 本示例 EXREADY 之后的链路计数增量打印（EX01-ST 行）依赖它；关闭后示例仍可运行，
+# 只是统计段恒为空。注意：修改本文件后必须删除生成的 sdkconfig 重新构建才生效。
+CONFIG_LWIP_STATS=y

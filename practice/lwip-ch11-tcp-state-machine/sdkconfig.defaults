@@ -1,0 +1,10 @@
+# OpenCores Ethernet MAC 驱动（仅用于 QEMU 仿真，真机不可用）
+CONFIG_ETH_USE_OPENETH=y
+# 打开 lwIP 协议栈统计（观测 tcp.memerr / drop 等计数器）
+CONFIG_LWIP_STATS=y
+# MEMP_TCP_PCB 池上限（= CONFIG_LWIP_MAX_ACTIVE_TCP，全堆化下仍是唯一计数闸门，见第五章）。
+# 主固件放大到 96：容纳实验 b 的 50+ 个 TIME_WAIT PCB 堆积。IDF 默认值 16。
+CONFIG_LWIP_MAX_ACTIVE_TCP=96
+# 其余 TCP 定时器全部使用 IDF 默认：TCP_TMR_INTERVAL=250ms、MSL=60000ms(TIME_WAIT=120s)、
+# TCP_MAXRTX/SYNMAXRTX=12、LWIP_TCP_RTO_TIME=1500ms(LWIP_TCP_HIGH_SPEED_RETRANSMISSION 默认 y)。
+# 实验 d 的“小池”变体由 sdkconfig.ch11d.defaults 覆盖（MAX_ACTIVE_TCP=2），构建命令见 README。

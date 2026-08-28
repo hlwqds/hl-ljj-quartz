@@ -1,0 +1,464 @@
+Adding SPI flash device
+ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x12 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0040,len:6272
+load:0x40078000,len:15820
+load:0x40080400,len:3920
+entry 0x40080644
+I (663) boot: ESP-IDF v6.0.2 2nd stage bootloader
+I (664) boot: compile time Aug 27 2026 01:28:42
+I (664) boot: Multicore bootloader
+I (705) boot: chip revision: v0.0
+I (707) boot.esp32: SPI Speed      : 40MHz
+I (707) boot.esp32: SPI Mode       : DIO
+I (707) boot.esp32: SPI Flash Size : 2MB
+I (713) boot: Enabling RNG early entropy source...
+I (719) boot: Partition Table:
+I (720) boot: ## Label            Usage          Type ST Offset   Length
+I (720) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (720) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (720) boot:  2 factory          factory app      00 00 00010000 00100000
+I (723) boot: End of partition table
+I (755) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=0e72ch ( 59180) map
+I (772) esp_image: segment 1: paddr=0001e754 vaddr=3ffb0000 size=018c4h (  6340) load
+I (784) esp_image: segment 2: paddr=00020020 vaddr=400d0020 size=27b08h (162568) map
+I (803) esp_image: segment 3: paddr=00047b30 vaddr=3ffb18c4 size=01208h (  4616) load
+I (814) esp_image: segment 4: paddr=00048d40 vaddr=40080000 size=0b0f4h ( 45300) load
+I (830) esp_image: segment 5: paddr=00053e3c vaddr=50000000 size=00028h (    40) load
+I (871) boot: Loaded app from partition at offset 0x10000
+I (871) boot: Disabling RNG early entropy source...
+I (882) cpu_start: Multicore app
+I (1464) cpu_start: GPIO 3 and 1 are used as console UART I/O pins
+I (1467) cpu_start: Pro cpu start user code
+I (1467) cpu_start: cpu freq: 160000000 Hz
+I (1467) app_init: Application information:
+I (1467) app_init: Project name:     lwip_ch12_tcp_reliability
+I (1467) app_init: App version:      924d871
+I (1467) app_init: Compile time:     Aug 27 2026 02:04:30
+I (1467) app_init: ELF file SHA256:  122d56b66...
+I (1467) app_init: ESP-IDF:          v6.0.2
+I (1468) efuse_init: Min chip rev:     v0.0
+I (1468) efuse_init: Max chip rev:     v3.99 
+I (1468) efuse_init: Chip rev:         v0.0
+I (1468) heap_init: Initializing. RAM available for dynamic allocation:
+I (1469) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM
+I (1469) heap_init: At 3FFC40B0 len 0001BF50 (111 KiB): DRAM
+I (1469) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM
+I (1469) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM
+I (1469) heap_init: At 4008B0F4 len 00014F0C (83 KiB): IRAM
+I (1500) spi_flash: detected chip: winbond
+I (1504) spi_flash: flash io: dio
+I (1518) main_task: Started on CPU0
+I (1518) main_task: Calling app_main()
+I (1518) ch12lab: == ch12 lab: openeth bring-up then reliability bench ==
+I (1538) esp_eth.netif.netif_glue: 52:54:00:12:34:56
+I (1538) esp_eth.netif.netif_glue: ethernet attached to netif
+E (1638) esp_eth: esp_eth_ioctl(533): add mac address to filter not supported
+E (1638) esp_eth.netif.netif_glue: eth_set_mac_filter(56): failed to add mac filter
+E (1638) esp_netif_lwip: Failed to add multicast filter for IPv4
+I (1638) ch12lab: waiting for DHCP lease ...
+I (2638) ch12lab: GOT_IP: 10.0.2.15
+I (2638) esp_netif_handlers: eth ip: 10.0.2.15, mask: 255.255.255.0, gw: 10.0.2.2
+== ch12 lab: retransmission / sliding window / nagle / delayed ack ==
+CH12-FACT TCP_MSS=1440 TCP_SND_BUF=23040 TCP_WND=23040 TCP_SND_QUEUELEN=64
+CH12-FACT LWIP_TCP_RTO_TIME=1500 TCP_FAST_INTERVAL=250 TCP_SLOW_INTERVAL=500 TCP_MAXRTX=12 TCP_SYNMAXRTX=12 TCP_OOSEQ_TIMEOUT=6
+CH12-TCPSTATS before tcpxmit=0 tcprecv=0 tcpdrop=0 lenerr=0
+I (2638) main_task: Returned from app_main()
+CH12-PHASE SWEEP start total=2097152
+CH12-DROP t_ms=1381 total=1 len=1494
+CH12-DROP t_ms=1383 total=2 len=1494
+CH12-T t_ms=499 sb=0 qlen=16 cwnd=11550 ssthresh=11550 rto=3 nrtx=0 dup=0 swnd=65535
+CH12-T t_ms=999 sb=0 qlen=16 cwnd=11550 ssthresh=11550 rto=3 nrtx=0 dup=0 swnd=65535
+CH12-DROP t_ms=2618 total=3 len=1494
+CH12-DROP t_ms=2620 total=4 len=1494
+CH12-DROP t_ms=2620 total=5 len=1494
+CH12-DROP t_ms=2621 total=6 len=790
+CH12-T t_ms=1499 sb=2144 qlen=15 cwnd=21960 ssthresh=3240 rto=3 nrtx=1 dup=13 swnd=65535
+CH12-RTOEV t_ms=1499 nrtx 0->1 rto_ticks=3 (~1500 ms)
+CH12-FREV t_ms=1499 dupacks=13 cwnd=21960 ssthresh=3240
+CH12-T t_ms=1999 sb=2144 qlen=15 cwnd=21960 ssthresh=3240 rto=3 nrtx=1 dup=13 swnd=65535
+CH12-T t_ms=2499 sb=2144 qlen=15 cwnd=21960 ssthresh=3240 rto=3 nrtx=1 dup=13 swnd=65535
+CH12-DROP t_ms=4117 total=7 len=1494
+W (5588) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+CH12-DROP t_ms=4118 total=8 len=1494
+CH12-DROP t_ms=4120 total=9 len=1494
+CH12-DROP t_ms=4121 total=10 len=1494
+CH12-DROP t_ms=4121 total=11 len=1494
+CH12-T t_ms=2999 sb=704 qlen=16 cwnd=5512 ssthresh=5512 rto=3 nrtx=0 dup=0 swnd=65535
+CH12-T t_ms=3499 sb=704 qlen=16 cwnd=5512 ssthresh=5512 rto=3 nrtx=0 dup=0 swnd=65535
+CH12-T t_ms=3999 sb=704 qlen=16 cwnd=5512 ssthresh=5512 rto=3 nrtx=0 dup=0 swnd=65535
+CH12-DROP t_ms=5618 total=12 len=1494
+CH12-DROP t_ms=5620 total=13 len=1494
+CH12-DROP t_ms=5621 total=14 len=1494
+CH12-T t_ms=4499 sb=1408 qlen=16 cwnd=26280 ssthresh=4680 rto=3 nrtx=1 dup=15 swnd=65535
+CH12-RTOEV t_ms=4499 nrtx 0->1 rto_ticks=3 (~1500 ms)
+CH12-FREV t_ms=4499 dupacks=15 cwnd=26280 ssthresh=4680
+CH12-T t_ms=4999 sb=1408 qlen=16 cwnd=26280 ssthresh=4680 rto=3 nrtx=1 dup=15 swnd=65535
+CH12-T t_ms=5499 sb=1408 qlen=16 cwnd=26280 ssthresh=4680 rto=3 nrtx=1 dup=15 swnd=65535
+CH12-DROP t_ms=7117 total=15 len=1494
+W (8588) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (8588) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+CH12-DROP t_ms=7119 total=16 len=1494
+CH12-DROP t_ms=7120 total=17 len=1494
+CH12-DROP t_ms=7121 total=18 len=1494
+CH12-DROP t_ms=7122 total=19 len=1494
+CH12-DROP t_ms=7122 total=20 len=1494
+CH12-DROP t_ms=7122 total=21 len=1494
+CH12-T t_ms=5999 sb=2144 qlen=15 cwnd=6041 ssthresh=3161 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-T t_ms=6499 sb=2144 qlen=15 cwnd=6041 ssthresh=3161 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-T t_ms=6999 sb=2144 qlen=15 cwnd=6041 ssthresh=3161 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-DROP t_ms=8617 total=22 len=1494
+W (10088) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+CH12-DROP t_ms=8619 total=23 len=1494
+CH12-DROP t_ms=8619 total=24 len=1494
+CH12-DROP t_ms=8620 total=25 len=1494
+CH12-T t_ms=7499 sb=2848 qlen=15 cwnd=4320 ssthresh=4320 rto=3 nrtx=0 dup=0 swnd=65535
+CH12-T t_ms=7999 sb=2848 qlen=15 cwnd=4320 ssthresh=4320 rto=3 nrtx=0 dup=0 swnd=65535
+CH12-T t_ms=8499 sb=2848 qlen=15 cwnd=4320 ssthresh=4320 rto=3 nrtx=0 dup=0 swnd=65535
+CH12-DROP t_ms=10117 total=26 len=1494
+CH12-T t_ms=8999 sb=1408 qlen=16 cwnd=2880 ssthresh=2880 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-T t_ms=9499 sb=1408 qlen=16 cwnd=2880 ssthresh=2880 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-T t_ms=9999 sb=1408 qlen=16 cwnd=2880 ssthresh=2880 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-DROP t_ms=11618 total=27 len=1494
+CH12-DROP t_ms=11619 total=28 len=1494
+CH12-DROP t_ms=11621 total=29 len=1494
+CH12-DROP t_ms=11623 total=30 len=1494
+CH12-DROP t_ms=11624 total=31 len=1494
+CH12-DROP t_ms=11625 total=32 len=1494
+CH12-DROP t_ms=11625 total=33 len=1494
+CH12-T t_ms=10499 sb=1376 qlen=16 cwnd=3915 ssthresh=3915 rto=3 nrtx=0 dup=0 swnd=65535
+CH12-T t_ms=10999 sb=1376 qlen=16 cwnd=3915 ssthresh=3915 rto=3 nrtx=0 dup=0 swnd=65535
+CH12-T t_ms=11499 sb=1376 qlen=16 cwnd=3915 ssthresh=3915 rto=3 nrtx=0 dup=0 swnd=65535
+CH12-DROP t_ms=13117 total=34 len=1494
+CH12-DROP t_ms=13119 total=35 len=1494
+CH12-DROP t_ms=13120 total=36 len=1494
+CH12-DROP t_ms=13121 total=37 len=1494
+CH12-DROP t_ms=13121 total=38 len=1494
+CH12-DROP t_ms=13121 total=39 len=1494
+CH12-T t_ms=11999 sb=2080 qlen=15 cwnd=6120 ssthresh=3240 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-T t_ms=12499 sb=2080 qlen=15 cwnd=6120 ssthresh=3240 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-T t_ms=12999 sb=2080 qlen=15 cwnd=6120 ssthresh=3240 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-DROP t_ms=14616 total=40 len=1494
+CH12-T t_ms=13499 sb=2080 qlen=15 cwnd=1440 ssthresh=3060 rto=6 nrtx=1 dup=1 swnd=65535
+CH12-RTOEV t_ms=13499 nrtx 0->1 rto_ticks=6 (~3000 ms)
+CH12-T t_ms=13999 sb=2080 qlen=15 cwnd=1440 ssthresh=3060 rto=6 nrtx=1 dup=1 swnd=65535
+CH12-T t_ms=14499 sb=2080 qlen=15 cwnd=1440 ssthresh=3060 rto=6 nrtx=1 dup=1 swnd=65535
+CH12-T t_ms=14999 sb=2080 qlen=15 cwnd=1440 ssthresh=3060 rto=6 nrtx=1 dup=1 swnd=65535
+CH12-T t_ms=15499 sb=2080 qlen=15 cwnd=1440 ssthresh=3060 rto=6 nrtx=1 dup=1 swnd=65535
+CH12-T t_ms=15999 sb=2080 qlen=15 cwnd=1440 ssthresh=3060 rto=6 nrtx=1 dup=1 swnd=65535
+CH12-DROP t_ms=17617 total=41 len=1494
+CH12-T t_ms=16499 sb=2080 qlen=15 cwnd=4320 ssthresh=2880 rto=3 nrtx=0 dup=2 swnd=65535
+CH12-T t_ms=16999 sb=2080 qlen=15 cwnd=4320 ssthresh=2880 rto=3 nrtx=0 dup=2 swnd=65535
+CH12-T t_ms=17499 sb=2080 qlen=15 cwnd=4320 ssthresh=2880 rto=3 nrtx=0 dup=2 swnd=65535
+CH12-DROP t_ms=19117 total=42 len=1494
+CH12-DROP t_ms=19120 total=43 len=1494
+W (20588) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (20588) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+CH12-DROP t_ms=19122 total=44 len=1494
+CH12-DROP t_ms=19122 total=45 len=1494
+CH12-DROP t_ms=19123 total=46 len=1494
+CH12-T t_ms=17999 sb=1344 qlen=16 cwnd=6120 ssthresh=4680 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-T t_ms=18499 sb=1344 qlen=16 cwnd=6120 ssthresh=4680 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-T t_ms=18999 sb=1344 qlen=16 cwnd=6120 ssthresh=4680 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-DROP t_ms=20618 total=47 len=1494
+CH12-DROP t_ms=20619 total=48 len=1494
+CH12-DROP t_ms=20620 total=49 len=1494
+CH12-DROP t_ms=20620 total=50 len=1494
+CH12-T t_ms=19499 sb=1344 qlen=16 cwnd=6840 ssthresh=3960 rto=3 nrtx=0 dup=2 swnd=65535
+CH12-T t_ms=19999 sb=1344 qlen=16 cwnd=6840 ssthresh=3960 rto=3 nrtx=0 dup=2 swnd=65535
+CH12-T t_ms=20499 sb=1344 qlen=16 cwnd=6840 ssthresh=3960 rto=3 nrtx=0 dup=2 swnd=65535
+CH12-DROP t_ms=22118 total=51 len=1494
+W (23588) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (23588) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (23588) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+CH12-DROP t_ms=22121 total=52 len=1494
+CH12-DROP t_ms=22122 total=53 len=1494
+CH12-DROP t_ms=22122 total=54 len=1494
+W (23588) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+CH12-T t_ms=20999 sb=2048 qlen=15 cwnd=7560 ssthresh=6120 rto=3 nrtx=0 dup=2 swnd=65535
+CH12-T t_ms=21499 sb=2048 qlen=15 cwnd=7560 ssthresh=6120 rto=3 nrtx=0 dup=2 swnd=65535
+CH12-T t_ms=21999 sb=2048 qlen=15 cwnd=7560 ssthresh=6120 rto=3 nrtx=0 dup=2 swnd=65535
+CH12-DROP t_ms=23617 total=55 len=1494
+CH12-T t_ms=22499 sb=1312 qlen=16 cwnd=4320 ssthresh=3780 rto=3 nrtx=0 dup=2 swnd=65535
+CH12-T t_ms=22999 sb=1312 qlen=16 cwnd=4320 ssthresh=3780 rto=3 nrtx=0 dup=2 swnd=65535
+CH12-T t_ms=23499 sb=1312 qlen=16 cwnd=4320 ssthresh=3780 rto=3 nrtx=0 dup=2 swnd=65535
+CH12-DROP t_ms=25117 total=56 len=1494
+CH12-T t_ms=23999 sb=1312 qlen=16 cwnd=2880 ssthresh=2880 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-T t_ms=24499 sb=1312 qlen=16 cwnd=2880 ssthresh=2880 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-T t_ms=24999 sb=1312 qlen=16 cwnd=2880 ssthresh=2880 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-DROP t_ms=26618 total=57 len=1494
+CH12-DROP t_ms=26619 total=58 len=1494
+CH12-T t_ms=25499 sb=2752 qlen=15 cwnd=4320 ssthresh=4320 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-T t_ms=25999 sb=2752 qlen=15 cwnd=4320 ssthresh=4320 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-T t_ms=26499 sb=2752 qlen=15 cwnd=4320 ssthresh=4320 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-DROP t_ms=28117 total=59 len=1494
+CH12-T t_ms=26999 sb=2752 qlen=15 cwnd=4320 ssthresh=2880 rto=3 nrtx=0 dup=2 swnd=65535
+CH12-T t_ms=27499 sb=2752 qlen=15 cwnd=4320 ssthresh=2880 rto=3 nrtx=0 dup=2 swnd=65535
+CH12-T t_ms=27999 sb=2752 qlen=15 cwnd=4320 ssthresh=2880 rto=3 nrtx=0 dup=2 swnd=65535
+CH12-DROP t_ms=29629 total=60 len=1494
+CH12-DROP t_ms=29631 total=61 len=1494
+CH12-T t_ms=28499 sb=576 qlen=16 cwnd=6480 ssthresh=5040 rto=3 nrtx=0 dup=2 swnd=65535
+CH12-T t_ms=28999 sb=576 qlen=16 cwnd=6480 ssthresh=5040 rto=3 nrtx=0 dup=2 swnd=65535
+CH12-T t_ms=29499 sb=576 qlen=16 cwnd=6480 ssthresh=5040 rto=3 nrtx=0 dup=2 swnd=65535
+CH12-DROP t_ms=31116 total=62 len=1494
+CH12-T t_ms=29999 sb=576 qlen=16 cwnd=1440 ssthresh=3240 rto=6 nrtx=1 dup=2 swnd=65535
+CH12-RTOEV t_ms=29999 nrtx 0->1 rto_ticks=6 (~3000 ms)
+CH12-T t_ms=30499 sb=576 qlen=16 cwnd=1440 ssthresh=3240 rto=6 nrtx=1 dup=2 swnd=65535
+CH12-T t_ms=30999 sb=576 qlen=16 cwnd=1440 ssthresh=3240 rto=6 nrtx=1 dup=2 swnd=65535
+CH12-T t_ms=31499 sb=576 qlen=16 cwnd=1440 ssthresh=3240 rto=6 nrtx=1 dup=2 swnd=65535
+CH12-T t_ms=31999 sb=576 qlen=16 cwnd=1440 ssthresh=3240 rto=6 nrtx=1 dup=2 swnd=65535
+CH12-T t_ms=32499 sb=576 qlen=16 cwnd=1440 ssthresh=3240 rto=6 nrtx=1 dup=2 swnd=65535
+W (35588) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (35588) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+CH12-DROP t_ms=34119 total=63 len=1494
+W (35588) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (35588) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+CH12-DROP t_ms=34121 total=64 len=1494
+W (35588) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+CH12-DROP t_ms=34121 total=65 len=1494
+CH12-DROP t_ms=34122 total=66 len=1494
+CH12-DROP t_ms=34122 total=67 len=1494
+CH12-T t_ms=32999 sb=1280 qlen=16 cwnd=12060 ssthresh=3420 rto=3 nrtx=1 dup=6 swnd=65535
+CH12-FREV t_ms=32999 dupacks=6 cwnd=12060 ssthresh=3420
+CH12-T t_ms=33499 sb=1280 qlen=16 cwnd=12060 ssthresh=3420 rto=3 nrtx=1 dup=6 swnd=65535
+CH12-T t_ms=33999 sb=1280 qlen=16 cwnd=12060 ssthresh=3420 rto=3 nrtx=1 dup=6 swnd=65535
+W (37088) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+CH12-DROP t_ms=35620 total=68 len=1494
+CH12-DROP t_ms=35620 total=69 len=1494
+CH12-T t_ms=34499 sb=1984 qlen=15 cwnd=4455 ssthresh=4455 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-T t_ms=34999 sb=1984 qlen=15 cwnd=4455 ssthresh=4455 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-T t_ms=35499 sb=1984 qlen=15 cwnd=4455 ssthresh=4455 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-DROP t_ms=37117 total=70 len=1494
+CH12-DROP t_ms=37117 total=71 len=1494
+CH12-T t_ms=35999 sb=544 qlen=16 cwnd=4320 ssthresh=2880 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-T t_ms=36499 sb=544 qlen=16 cwnd=4320 ssthresh=2880 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-T t_ms=36999 sb=544 qlen=16 cwnd=4320 ssthresh=2880 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-DROP t_ms=38617 total=72 len=1494
+CH12-DROP t_ms=38617 total=73 len=1494
+CH12-T t_ms=37499 sb=544 qlen=16 cwnd=5760 ssthresh=2880 rto=3 nrtx=0 dup=2 swnd=65535
+CH12-T t_ms=37999 sb=544 qlen=16 cwnd=5760 ssthresh=2880 rto=3 nrtx=0 dup=2 swnd=65535
+CH12-T t_ms=38499 sb=544 qlen=16 cwnd=5760 ssthresh=2880 rto=3 nrtx=0 dup=2 swnd=65535
+CH12-DROP t_ms=40118 total=74 len=1494
+CH12-DROP t_ms=40119 total=75 len=1494
+CH12-T t_ms=38999 sb=1248 qlen=16 cwnd=5040 ssthresh=5040 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-T t_ms=39499 sb=1248 qlen=16 cwnd=5040 ssthresh=5040 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-T t_ms=39999 sb=1248 qlen=16 cwnd=5040 ssthresh=5040 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-DROP t_ms=41620 total=76 len=1494
+CH12-DROP t_ms=41623 total=77 len=1494
+CH12-DROP t_ms=41625 total=78 len=1494
+CH12-DROP t_ms=41627 total=79 len=1494
+CH12-DROP t_ms=41632 total=80 len=1494
+CH12-DROP t_ms=41633 total=81 len=1494
+CH12-T t_ms=40499 sb=512 qlen=16 cwnd=4365 ssthresh=4365 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-T t_ms=40999 sb=512 qlen=16 cwnd=4365 ssthresh=4365 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-T t_ms=41499 sb=512 qlen=16 cwnd=4365 ssthresh=4365 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-DROP t_ms=43117 total=82 len=1494
+CH12-DROP t_ms=43118 total=83 len=1494
+W (44588) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+CH12-DROP t_ms=43122 total=84 len=1494
+W (44588) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+CH12-DROP t_ms=43123 total=85 len=1494
+CH12-DROP t_ms=43124 total=86 len=1494
+CH12-T t_ms=41999 sb=2656 qlen=15 cwnd=4680 ssthresh=3240 rto=3 nrtx=0 dup=2 swnd=65535
+CH12-T t_ms=42499 sb=2656 qlen=15 cwnd=4680 ssthresh=3240 rto=3 nrtx=0 dup=2 swnd=65535
+CH12-T t_ms=42999 sb=2656 qlen=15 cwnd=4680 ssthresh=3240 rto=3 nrtx=0 dup=2 swnd=65535
+W (46088) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (46088) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+CH12-DROP t_ms=44621 total=87 len=1494
+CH12-DROP t_ms=44624 total=88 len=1494
+CH12-DROP t_ms=44624 total=89 len=1494
+CH12-T t_ms=43499 sb=480 qlen=16 cwnd=6120 ssthresh=6120 rto=3 nrtx=0 dup=2 swnd=65535
+CH12-T t_ms=43999 sb=480 qlen=16 cwnd=6120 ssthresh=6120 rto=3 nrtx=0 dup=2 swnd=65535
+CH12-T t_ms=44499 sb=480 qlen=16 cwnd=6120 ssthresh=6120 rto=3 nrtx=0 dup=2 swnd=65535
+CH12-DROP t_ms=46116 total=90 len=1494
+CH12-T t_ms=44999 sb=480 qlen=16 cwnd=1440 ssthresh=3060 rto=6 nrtx=1 dup=2 swnd=65535
+CH12-RTOEV t_ms=44999 nrtx 0->1 rto_ticks=6 (~3000 ms)
+CH12-T t_ms=45499 sb=480 qlen=16 cwnd=1440 ssthresh=3060 rto=6 nrtx=1 dup=2 swnd=65535
+CH12-T t_ms=45999 sb=480 qlen=16 cwnd=1440 ssthresh=3060 rto=6 nrtx=1 dup=2 swnd=65535
+CH12-T t_ms=46499 sb=480 qlen=16 cwnd=1440 ssthresh=3060 rto=6 nrtx=1 dup=2 swnd=65535
+CH12-T t_ms=46999 sb=480 qlen=16 cwnd=1440 ssthresh=3060 rto=6 nrtx=1 dup=2 swnd=65535
+CH12-T t_ms=47499 sb=480 qlen=16 cwnd=1440 ssthresh=3060 rto=6 nrtx=1 dup=2 swnd=65535
+W (50588) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+CH12-DROP t_ms=49122 total=91 len=1494
+W (50588) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+CH12-DROP t_ms=49126 total=92 len=1494
+CH12-T t_ms=47999 sb=1184 qlen=16 cwnd=5040 ssthresh=5040 rto=3 nrtx=0 dup=0 swnd=65535
+CH12-T t_ms=48499 sb=1184 qlen=16 cwnd=5040 ssthresh=5040 rto=3 nrtx=0 dup=0 swnd=65535
+CH12-T t_ms=48999 sb=1184 qlen=16 cwnd=5040 ssthresh=5040 rto=3 nrtx=0 dup=0 swnd=65535
+CH12-DROP t_ms=50618 total=93 len=1494
+CH12-DROP t_ms=50619 total=94 len=1494
+CH12-DROP t_ms=50620 total=95 len=1494
+CH12-DROP t_ms=50620 total=96 len=1494
+CH12-T t_ms=49499 sb=448 qlen=16 cwnd=4680 ssthresh=3240 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-T t_ms=49999 sb=448 qlen=16 cwnd=4680 ssthresh=3240 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-T t_ms=50499 sb=448 qlen=16 cwnd=4680 ssthresh=3240 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-DROP t_ms=52117 total=97 len=1494
+CH12-T t_ms=50999 sb=448 qlen=16 cwnd=2880 ssthresh=2880 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-T t_ms=51499 sb=448 qlen=16 cwnd=2880 ssthresh=2880 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-T t_ms=51999 sb=448 qlen=16 cwnd=2880 ssthresh=2880 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-DROP t_ms=53618 total=98 len=1494
+CH12-DROP t_ms=53618 total=99 len=1494
+CH12-T t_ms=52499 sb=1888 qlen=15 cwnd=5760 ssthresh=2880 rto=3 nrtx=0 dup=2 swnd=65535
+CH12-T t_ms=52999 sb=1888 qlen=15 cwnd=5760 ssthresh=2880 rto=3 nrtx=0 dup=2 swnd=65535
+CH12-T t_ms=53499 sb=1888 qlen=15 cwnd=5760 ssthresh=2880 rto=3 nrtx=0 dup=2 swnd=65535
+CH12-DROP t_ms=55117 total=100 len=1494
+W (56588) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+CH12-DROP t_ms=55119 total=101 len=1494
+CH12-DROP t_ms=55119 total=102 len=1494
+W (56588) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+CH12-T t_ms=53999 sb=1888 qlen=15 cwnd=5040 ssthresh=5040 rto=3 nrtx=0 dup=0 swnd=65535
+CH12-T t_ms=54499 sb=1888 qlen=15 cwnd=5040 ssthresh=5040 rto=3 nrtx=0 dup=0 swnd=65535
+CH12-T t_ms=54999 sb=1888 qlen=15 cwnd=5040 ssthresh=5040 rto=3 nrtx=0 dup=0 swnd=65535
+W (58088) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (58088) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (58088) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (58098) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (58098) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (58098) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+CH12-DROP t_ms=56631 total=103 len=1494
+CH12-DROP t_ms=56633 total=104 len=1494
+CH12-DROP t_ms=56633 total=105 len=1494
+CH12-DROP t_ms=56634 total=106 len=1494
+CH12-T t_ms=55499 sb=416 qlen=16 cwnd=7200 ssthresh=7200 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-T t_ms=55999 sb=416 qlen=16 cwnd=7200 ssthresh=7200 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-T t_ms=56499 sb=416 qlen=16 cwnd=7200 ssthresh=7200 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-DROP t_ms=58117 total=107 len=1494
+CH12-T t_ms=56999 sb=1856 qlen=15 cwnd=2880 ssthresh=3600 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-T t_ms=57499 sb=1856 qlen=15 cwnd=2880 ssthresh=3600 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-T t_ms=57999 sb=1856 qlen=15 cwnd=2880 ssthresh=3600 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-DROP t_ms=59618 total=108 len=1494
+CH12-DROP t_ms=59619 total=109 len=1494
+CH12-DROP t_ms=59621 total=110 len=1494
+CH12-T t_ms=58499 sb=416 qlen=16 cwnd=4320 ssthresh=2880 rto=3 nrtx=0 dup=2 swnd=65535
+CH12-T t_ms=58999 sb=416 qlen=16 cwnd=4320 ssthresh=2880 rto=3 nrtx=0 dup=2 swnd=65535
+CH12-T t_ms=59499 sb=416 qlen=16 cwnd=4320 ssthresh=2880 rto=3 nrtx=0 dup=2 swnd=65535
+CH12-DROP t_ms=61116 total=111 len=1494
+CH12-T t_ms=59999 sb=416 qlen=16 cwnd=1440 ssthresh=2880 rto=6 nrtx=1 dup=2 swnd=65535
+CH12-RTOEV t_ms=59999 nrtx 0->1 rto_ticks=6 (~3000 ms)
+CH12-T t_ms=60499 sb=416 qlen=16 cwnd=1440 ssthresh=2880 rto=6 nrtx=1 dup=2 swnd=65535
+CH12-T t_ms=60999 sb=416 qlen=16 cwnd=1440 ssthresh=2880 rto=6 nrtx=1 dup=2 swnd=65535
+CH12-T t_ms=61499 sb=416 qlen=16 cwnd=1440 ssthresh=2880 rto=6 nrtx=1 dup=2 swnd=65535
+CH12-T t_ms=61999 sb=416 qlen=16 cwnd=1440 ssthresh=2880 rto=6 nrtx=1 dup=2 swnd=65535
+CH12-T t_ms=62499 sb=416 qlen=16 cwnd=1440 ssthresh=2880 rto=6 nrtx=1 dup=2 swnd=65535
+W (65588) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+CH12-DROP t_ms=64120 total=112 len=1494
+CH12-DROP t_ms=64121 total=113 len=1494
+CH12-DROP t_ms=64122 total=114 len=1494
+CH12-DROP t_ms=64124 total=115 len=1494
+CH12-DROP t_ms=64126 total=116 len=1494
+CH12-DROP t_ms=64127 total=117 len=1494
+W (65598) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+CH12-DROP t_ms=64129 total=118 len=1494
+W (65598) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (65598) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+CH12-DROP t_ms=64131 total=119 len=1494
+CH12-DROP t_ms=64132 total=120 len=1494
+CH12-DROP t_ms=64133 total=121 len=1494
+CH12-T t_ms=62999 sb=1088 qlen=16 cwnd=5602 ssthresh=4162 rto=3 nrtx=0 dup=2 swnd=65535
+CH12-T t_ms=63499 sb=1088 qlen=16 cwnd=5602 ssthresh=4162 rto=3 nrtx=0 dup=2 swnd=65535
+CH12-T t_ms=63999 sb=1088 qlen=16 cwnd=5602 ssthresh=4162 rto=3 nrtx=0 dup=2 swnd=65535
+CH12-DROP t_ms=65617 total=122 len=1494
+CH12-T t_ms=64499 sb=2528 qlen=15 cwnd=2880 ssthresh=2880 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-T t_ms=64999 sb=2528 qlen=15 cwnd=2880 ssthresh=2880 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-T t_ms=65499 sb=2528 qlen=15 cwnd=2880 ssthresh=2880 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-DROP t_ms=67116 total=123 len=1494
+CH12-T t_ms=65999 sb=2528 qlen=15 cwnd=1440 ssthresh=2880 rto=6 nrtx=1 dup=1 swnd=65535
+CH12-RTOEV t_ms=65999 nrtx 0->1 rto_ticks=6 (~3000 ms)
+CH12-T t_ms=66499 sb=2528 qlen=15 cwnd=1440 ssthresh=2880 rto=6 nrtx=1 dup=1 swnd=65535
+CH12-T t_ms=66999 sb=2528 qlen=15 cwnd=1440 ssthresh=2880 rto=6 nrtx=1 dup=1 swnd=65535
+CH12-T t_ms=67499 sb=2528 qlen=15 cwnd=1440 ssthresh=2880 rto=6 nrtx=1 dup=1 swnd=65535
+CH12-T t_ms=67999 sb=2528 qlen=15 cwnd=1440 ssthresh=2880 rto=6 nrtx=1 dup=1 swnd=65535
+CH12-T t_ms=68499 sb=2528 qlen=15 cwnd=1440 ssthresh=2880 rto=6 nrtx=1 dup=1 swnd=65535
+CH12-DROP t_ms=70117 total=124 len=1494
+CH12-T t_ms=68999 sb=352 qlen=16 cwnd=4320 ssthresh=2880 rto=3 nrtx=0 dup=2 swnd=65535
+CH12-T t_ms=69499 sb=352 qlen=16 cwnd=4320 ssthresh=2880 rto=3 nrtx=0 dup=2 swnd=65535
+CH12-T t_ms=69999 sb=352 qlen=16 cwnd=4320 ssthresh=2880 rto=3 nrtx=0 dup=2 swnd=65535
+W (73088) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+CH12-DROP t_ms=71619 total=125 len=1494
+W (73088) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (73088) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+CH12-DROP t_ms=71621 total=126 len=1494
+W (73088) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (73088) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (73088) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+CH12-DROP t_ms=71623 total=127 len=1494
+W (73088) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (73088) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (73088) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (73098) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+CH12-DROP t_ms=71627 total=128 len=1494
+CH12-DROP t_ms=71627 total=129 len=1494
+W (73098) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+CH12-T t_ms=70499 sb=1056 qlen=16 cwnd=5940 ssthresh=5940 rto=3 nrtx=0 dup=0 swnd=65535
+CH12-T t_ms=70999 sb=1056 qlen=16 cwnd=5940 ssthresh=5940 rto=3 nrtx=0 dup=0 swnd=65535
+CH12-T t_ms=71499 sb=1056 qlen=16 cwnd=5940 ssthresh=5940 rto=3 nrtx=0 dup=0 swnd=65535
+CH12-DROP t_ms=73117 total=130 len=1494
+CH12-T t_ms=71999 sb=1760 qlen=15 cwnd=2880 ssthresh=2970 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-T t_ms=72499 sb=1760 qlen=15 cwnd=2880 ssthresh=2970 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-T t_ms=72999 sb=1760 qlen=15 cwnd=2880 ssthresh=2970 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-DROP t_ms=74617 total=131 len=1494
+CH12-DROP t_ms=74618 total=132 len=1494
+CH12-T t_ms=73499 sb=1760 qlen=15 cwnd=5760 ssthresh=2880 rto=3 nrtx=0 dup=2 swnd=65535
+CH12-T t_ms=73999 sb=1760 qlen=15 cwnd=5760 ssthresh=2880 rto=3 nrtx=0 dup=2 swnd=65535
+CH12-T t_ms=74499 sb=1760 qlen=15 cwnd=5760 ssthresh=2880 rto=3 nrtx=0 dup=2 swnd=65535
+CH12-DROP t_ms=76118 total=133 len=1494
+CH12-DROP t_ms=76119 total=134 len=1494
+CH12-T t_ms=74999 sb=320 qlen=16 cwnd=4320 ssthresh=2880 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-T t_ms=75499 sb=320 qlen=16 cwnd=4320 ssthresh=2880 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-T t_ms=75999 sb=320 qlen=16 cwnd=4320 ssthresh=2880 rto=3 nrtx=0 dup=1 swnd=65535
+W (79088) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+CH12-DROP t_ms=77622 total=135 len=1494
+W (79088) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+CH12-DROP t_ms=77623 total=136 len=1494
+CH12-DROP t_ms=77624 total=137 len=1494
+CH12-T t_ms=76499 sb=1760 qlen=15 cwnd=5760 ssthresh=4320 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-T t_ms=76999 sb=1760 qlen=15 cwnd=5760 ssthresh=4320 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-T t_ms=77499 sb=1760 qlen=15 cwnd=5760 ssthresh=4320 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-DROP t_ms=79120 total=138 len=1494
+W (80588) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (80588) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (80598) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (80598) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+CH12-DROP t_ms=79131 total=139 len=1494
+W (80598) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (80598) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+CH12-DROP t_ms=79135 total=140 len=1494
+CH12-DROP t_ms=79135 total=141 len=1494
+CH12-T t_ms=77999 sb=1728 qlen=15 cwnd=4860 ssthresh=4860 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-T t_ms=78499 sb=1728 qlen=15 cwnd=4860 ssthresh=4860 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-T t_ms=78999 sb=1728 qlen=15 cwnd=4860 ssthresh=4860 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-DROP t_ms=80617 total=142 len=1494
+CH12-T t_ms=79499 sb=1728 qlen=15 cwnd=2880 ssthresh=2880 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-T t_ms=79999 sb=1728 qlen=15 cwnd=2880 ssthresh=2880 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-T t_ms=80499 sb=1728 qlen=15 cwnd=2880 ssthresh=2880 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-DROP t_ms=82118 total=143 len=1494
+W (83588) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+CH12-DROP t_ms=82119 total=144 len=1494
+CH12-T t_ms=80999 sb=1728 qlen=15 cwnd=5760 ssthresh=4320 rto=3 nrtx=0 dup=2 swnd=65535
+CH12-T t_ms=81499 sb=1728 qlen=15 cwnd=5760 ssthresh=4320 rto=3 nrtx=0 dup=2 swnd=65535
+CH12-T t_ms=81999 sb=1728 qlen=15 cwnd=5760 ssthresh=4320 rto=3 nrtx=0 dup=2 swnd=65535
+CH12-DROP t_ms=83617 total=145 len=1494
+CH12-T t_ms=82499 sb=992 qlen=16 cwnd=4320 ssthresh=2880 rto=3 nrtx=0 dup=2 swnd=65535
+CH12-T t_ms=82999 sb=992 qlen=16 cwnd=4320 ssthresh=2880 rto=3 nrtx=0 dup=2 swnd=65535
+CH12-T t_ms=83499 sb=992 qlen=16 cwnd=4320 ssthresh=2880 rto=3 nrtx=0 dup=2 swnd=65535
+CH12-DROP t_ms=85117 total=146 len=1494
+CH12-T t_ms=83999 sb=992 qlen=16 cwnd=2880 ssthresh=2880 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-T t_ms=84499 sb=992 qlen=16 cwnd=2880 ssthresh=2880 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-T t_ms=84999 sb=992 qlen=16 cwnd=2880 ssthresh=2880 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-DROP t_ms=86617 total=147 len=1494
+CH12-T t_ms=85499 sb=992 qlen=16 cwnd=2880 ssthresh=2880 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-T t_ms=85999 sb=992 qlen=16 cwnd=2880 ssthresh=2880 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-T t_ms=86499 sb=992 qlen=16 cwnd=2880 ssthresh=2880 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-DROP t_ms=88117 total=148 len=1494
+CH12-DROP t_ms=88117 total=149 len=1494
+CH12-T t_ms=86999 sb=992 qlen=16 cwnd=4320 ssthresh=2880 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-T t_ms=87499 sb=992 qlen=16 cwnd=4320 ssthresh=2880 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-T t_ms=87999 sb=992 qlen=16 cwnd=4320 ssthresh=2880 rto=3 nrtx=0 dup=1 swnd=65535
+CH12-SWEEPDONE acked=2097152/2097152 elapsed_ms=88243 mbit=0.19 rto_events=7 fastrexmit_events=3 dropped_frames=149 err_mem=982
+CH12-TCPSTATS after tcpxmit=1616 tcprecv=1378 tcpdrop=0 lenerr=0
+CH12-DONE sweep transfer finished, idling
+qemu-system-xtensa: terminating on signal 15 from pid 3337612 (timeout)

@@ -1,0 +1,9 @@
+SLOW ctrl ms=10 reply=b'ACK'
+FLOOD label=raw_slow port=8010 size=64 pps=2000 dur=3.0 sent=5286 echoed_unique=5286 lost_or_pending=0 loss_pct=0.00
+FLOOD label=netconn_slow port=8011 size=64 pps=2000 dur=3.0 sent=5210 echoed_unique=305 lost_or_pending=4905 loss_pct=94.15
+FLOOD label=socket_slow port=8012 size=64 pps=2000 dur=3.0 sent=5265 echoed_unique=302 lost_or_pending=4963 loss_pct=94.26
+CH10-UDPSTATS recv=15718 xmit=5896 drop=1 chkerr=1 lenerr=0 memerr=0 rterr=0 proterr=0 | app rx raw=5286 nc=305 sock=302 inj=1 slow_ms=10
+CH10-UDPSTATS recv=15719 xmit=5896 drop=1 chkerr=1 lenerr=0 memerr=0 rterr=0 proterr=0 | app rx raw=5286 nc=305 sock=302 inj=1 slow_ms=10
+SLOW ctrl ms=0 reply=b'ACK'
+FLOOD label=netconn_recovered port=8011 size=64 pps=2000 dur=2.0 sent=3490 echoed_unique=3490 lost_or_pending=0 loss_pct=0.00
+CH10-UDPSTATS recv=15719 xmit=5897 drop=1 chkerr=1 lenerr=0 memerr=0 rterr=0 proterr=0 | app rx raw=5286 nc=305 sock=302 inj=1 slow_ms=10

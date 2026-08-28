@@ -1,0 +1,23 @@
+# ex14 场景 1（修复）：回到经实测的基线口径
+#
+# 与坏的 sc1 的差异：
+#   CONFIG_LWIP_TCP_SND_BUF_DEFAULT 2880 -> 5760   (2×MSS -> 4×MSS)
+#   CONFIG_LWIP_TCP_WND_DEFAULT     2880 -> 5760
+#
+# ⚠ 本环境的诚实结论（重要，务必读完再动手）：
+#   QEMU+SLIRP 的宿主内路径 RTT 是亚毫秒级（Batch 4 实测空闲 RTT ~103µs），
+#   BDP 极小——「窗口过小」的吞吐病在本环境**不会发作**：sc1-broken 的实测
+#   数字与基线几乎一样快（~116 Mbit）。这不是运气，是路径属性。
+#   教学价值恰恰在这里：症状缺席 ≠ 配置健康；别背教条，测了才算数。
+#
+# ⚠⚠ 另一个顺手埋的雷（亲测翻车实录）：修复时若把窗口抬到 11520 并把环深
+#    设为"恰好够"的 16（不等式下限），RX 腿会掉进个位数 Mbit 的黑洞——
+#    边界值不稳，留余量要给足。这正是场景 2 主课题的边界版，详见 README。
+#
+# 用法：cp sdkconfig.defaults.sc1.fixed sdkconfig.defaults && rm -f sdkconfig && idf.py build
+CONFIG_ETH_USE_OPENETH=y
+CONFIG_LWIP_STATS=y
+CONFIG_LWIP_TCP_MSS=1440
+CONFIG_LWIP_TCP_SND_BUF_DEFAULT=5760
+CONFIG_LWIP_TCP_WND_DEFAULT=5760
+CONFIG_GYM_SCENARIO=1

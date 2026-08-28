@@ -1,0 +1,82 @@
+menu "EX16 zero-copy-cases Configuration"
+
+    config ZC_CASE
+        int "Zero-copy case (0=catalog 1=rx-parse 2=tx-segment 3=layer-tax 4=stream-checksum 5=honest-boundary)"
+        range 0 5
+        default 0
+        help
+            0 说明模式（打印五案例目录 + 8330 入向命令口）；
+            1 案例 A RX 就地解析：recv 回调直接在 pbuf payload 上解析协议头 vs 先 memcpy 再解析；
+            2 案例 B TX 分段提交：头/体分离 write+MORE vs 用户侧拼大缓冲整体 write；
+            3 案例 C 接收路径层级拷贝差：同一回声负载走 raw/netconn/socket 三层；
+            4 案例 D 流式校验零落地：边收边算 Fletcher32 vs 收完落地整包再算；
+            5 案例 E 诚实边界：IDF 硬编码 LWIP_NETIF_TX_SINGLE_PBUF=1 使 COPY 强制，
+              apiflags 证据 + 行为学验证（write 后改源缓冲，收端 digest 定案）。
+
+    # ---------------- 负载目的地 ----------------
+
+    config ZC_HOST_REFLECTOR
+        bool "Drive benchmarks against host reflector 10.0.2.2:8331 instead of loopback"
+        default n
+        help
+            n（默认）：全部负载走 guest 内 127.0.0.1 自环，零外部依赖。
+            y：负载出连宿主反射器 tools/reflector.py 监听的 10.0.2.2:8331（回显模式）。
+            严禁把目的地址设为自身网卡 IP（10.0.2.15）——Batch 8 实测持续 TCP 吞吐会咬死
+            tcpip 线程（gdb 卡在 pbuf_free / g_lwip_protect_mutex）。
+
+    config ZC_HOST_PORT
+        int "Host reflector port (used only when ZC_HOST_REFLECTOR=y)"
+        range 1024 65535
+        default 8331
+
+    # ---------------- 案例参数 ----------------
+
+    config ZC_ROUNDS_PER_STAGE
+        int "Rounds measured per stage (each case runs copy/zc stages interleaved)"
+        range 100 20000
+        default 1200
+
+    config ZC_BLOCK
+        int "Interleave block size (alternate variant every N rounds)"
+        range 25 5000
+        default 300
+        help
+            同开机配对纪律的实现方式：copy 版与 zc 版按块交错而非先后整段，
+            把"机器缓慢漂移"摊到两种变体上。
+
+    config ZC_REC_BODY
+        int "Case A record body size (bytes); record = 18B header + body"
+        range 32 1400
+        default 512
+
+    config ZC_B_HDR
+        int "Case B message header size (bytes)"
+        range 8 128
+        default 16
+
+    config ZC_B_BODY
+        int "Case B message body size (bytes)"
+        range 64 4096
+        default 1024
+
+    config ZC_C_MSG
+        int "Case C echo payload size (bytes)"
+        range 8 1400
+        default 256
+
+    config ZC_C_MSGS
+        int "Case C ping-pong messages per pass per layer"
+        range 50 5000
+        default 400
+
+    config ZC_C_PASSES
+        int "Case C interleave passes (raw->netconn->socket repeated)"
+        range 1 20
+        default 5
+
+    config ZC_D_ARENA_BYTES
+        int "Case D landing arena size (bytes, static buffer)"
+        range 16384 196608
+        default 114688
+
+endmenu

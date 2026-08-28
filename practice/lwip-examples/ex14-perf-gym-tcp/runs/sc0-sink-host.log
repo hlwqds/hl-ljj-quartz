@@ -1,0 +1,5 @@
+GYMSINK-LISTEN port=8311 conns=2
+GYMSINK-DONE conn#1 peer=127.0.0.1:34758 bytes=2000000 dur=0.149s mbit=107.338 digest=c546 ack=K
+GYMSINK-DONE conn#2 peer=127.0.0.1:33354 bytes=2000000 dur=0.141s mbit=113.619 digest=c546 ack=K
+GYMSINK-SUMMARY conns=2 with_data=2 avg_mbit=110.479
+GYMSINK-SUMMARY2 digests=c546,c546 unique=1

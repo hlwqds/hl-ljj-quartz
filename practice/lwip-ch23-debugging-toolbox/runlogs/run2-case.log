@@ -1,0 +1,552 @@
+Adding SPI flash device
+ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x12 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0040,len:6272
+load:0x40078000,len:15820
+load:0x40080400,len:3920
+entry 0x40080644
+I (688) boot: ESP-IDF v6.0.2 2nd stage bootloader
+I (688) boot: compile time Aug 27 2026 06:03:48
+I (688) boot: Multicore bootloader
+I (719) boot: chip revision: v3.0
+I (721) boot.esp32: SPI Speed      : 40MHz
+I (721) boot.esp32: SPI Mode       : DIO
+I (721) boot.esp32: SPI Flash Size : 2MB
+I (725) boot: Enabling RNG early entropy source...
+I (730) boot: Partition Table:
+I (730) boot: ## Label            Usage          Type ST Offset   Length
+I (730) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (730) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (730) boot:  2 factory          factory app      00 00 00010000 00100000
+I (734) boot: End of partition table
+I (763) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=0f4d4h ( 62676) map
+I (777) esp_image: segment 1: paddr=0001f4fc vaddr=3ffb0000 size=00b1ch (  2844) load
+I (788) esp_image: segment 2: paddr=00020020 vaddr=400d0020 size=2c064h (180324) map
+I (808) esp_image: segment 3: paddr=0004c08c vaddr=3ffb0b1c size=01fb0h (  8112) load
+I (820) esp_image: segment 4: paddr=0004e044 vaddr=40080000 size=0b23ch ( 45628) load
+I (835) esp_image: segment 5: paddr=00059288 vaddr=50000000 size=00028h (    40) load
+I (877) boot: Loaded app from partition at offset 0x10000
+I (878) boot: Disabling RNG early entropy source...
+I (889) cpu_start: Multicore app
+I (1462) cpu_start: GPIO 3 and 1 are used as console UART I/O pins
+I (1464) cpu_start: Pro cpu start user code
+I (1464) cpu_start: cpu freq: 160000000 Hz
+I (1465) app_init: Application information:
+I (1465) app_init: Project name:     lwip_ch23_debugging_toolbox
+I (1465) app_init: App version:      924d871
+I (1465) app_init: Compile time:     Aug 27 2026 06:10:23
+I (1465) app_init: ELF file SHA256:  27b77c829...
+I (1465) app_init: ESP-IDF:          v6.0.2
+I (1465) efuse_init: Min chip rev:     v0.0
+I (1465) efuse_init: Max chip rev:     v3.99 
+I (1465) efuse_init: Chip rev:         v3.0
+I (1466) heap_init: Initializing. RAM available for dynamic allocation:
+I (1466) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM
+I (1467) heap_init: At 3FFB4070 len 0002BF90 (175 KiB): DRAM
+I (1467) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM
+I (1467) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM
+I (1467) heap_init: At 4008B23C len 00014DC4 (83 KiB): IRAM
+I (1487) spi_flash: detected chip: gd
+I (1490) spi_flash: flash io: dio
+W (1493) spi_flash: Detected size(4096k) larger than the size in the binary image header(2048k). Using the size in the binary image header.
+I (1498) main_task: Started on CPU0
+I (1498) main_task: Calling app_main()
+I (1498) ch23lab: == ch23: debugging toolbox over openeth ==
+
+== ch23 lab start ==
+[mem] boot-baseline  free=279840 largest=147456 min-ever=279840
+I (1498) main_task: Returned from app_main()
+I (1518) esp_eth.netif.netif_glue: 52:54:00:12:34:56
+I (1518) esp_eth.netif.netif_glue: ethernet attached to netif
+E (1618) esp_eth: esp_eth_ioctl(533): add mac address to filter not supported
+E (1618) esp_eth.netif.netif_glue: eth_set_mac_filter(56): failed to add mac filter
+E (1618) esp_netif_lwip: Failed to add multicast filter for IPv4
+I (1618) ch23lab: ETH link up
+I (1618) ch23lab: waiting for DHCP lease ...
+I (2618) ch23lab: GOT_IP: 10.0.2.15
+I (2618) esp_netif_handlers: eth ip: 10.0.2.15, mask: 255.255.255.0, gw: 10.0.2.2
+[srv-ext] listening on 0.0.0.0:8888 (hostfwd tcp::8031-:8888)
+[srv-lo] listening on 127.0.0.1:23210 backlog=2
+[srv-fix] listening on 127.0.0.1:23211 backlog=2 (per-conn worker)
+[srv-ready] lo=1 fix=1 ext=1
+==== PHASE-P: ping gateway baseline ====
+I (2718) ch23lab: 32 bytes from 10.0.2.2 icmp_seq=1 time=0 ms
+I (3018) ch23lab: 32 bytes from 10.0.2.2 icmp_seq=2 time=0 ms
+I (3318) ch23lab: 32 bytes from 10.0.2.2 icmp_seq=3 time=0 ms
+[mem] post-ping      free=247812 largest=122880 min-ever=244528
+==== PHASE-L1: sequential connect/echo/close x5 ====
+[ip4in] 127.0.0.1:50758 > 127.0.0.1:23210 S    len=0
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50758 SA   len=0
+[ip4in] 127.0.0.1:50758 > 127.0.0.1:23210 A    len=0
+[ip4in] 127.0.0.1:50758 > 127.0.0.1:23210 AP   len=13
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50758 AP   len=13
+[ip4in] 127.0.0.1:50758 > 127.0.0.1:23210 AF   len=0
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50758 A    len=0
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50758 AF   len=0
+[ip4in] 127.0.0.1:50758 > 127.0.0.1:23210 A    len=0
+[srv 23210] client closed
+[seq ] round0 connect+echo -> OK
+[tcpdiff] L1-round: xmit=9 recv=9 cachehit=3
+[ip4in] 127.0.0.1:50759 > 127.0.0.1:23210 S    len=0
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50759 SA   len=0
+[ip4in] 127.0.0.1:50759 > 127.0.0.1:23210 A    len=0
+[ip4in] 127.0.0.1:50759 > 127.0.0.1:23210 AP   len=13
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50759 AP   len=13
+[ip4in] 127.0.0.1:50759 > 127.0.0.1:23210 AF   len=0
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50759 A    len=0
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50759 AF   len=0
+[ip4in] 127.0.0.1:50759 > 127.0.0.1:23210 A    len=0
+[srv 23210] client closed
+[seq ] round1 connect+echo -> OK
+[tcpdiff] L1-round: xmit=9 recv=9 cachehit=4
+[ip4in] 127.0.0.1:50760 > 127.0.0.1:23210 S    len=0
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50760 SA   len=0
+[ip4in] 127.0.0.1:50760 > 127.0.0.1:23210 A    len=0
+[ip4in] 127.0.0.1:50760 > 127.0.0.1:23210 AP   len=13
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50760 AP   len=13
+[ip4in] 127.0.0.1:50760 > 127.0.0.1:23210 AF   len=0
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50760 A    len=0
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50760 AF   len=0
+[ip4in] 127.0.0.1:50760 > 127.0.0.1:23210 A    len=0
+[srv 23210] client closed
+[seq ] round2 connect+echo -> OK
+[tcpdiff] L1-round: xmit=9 recv=9 cachehit=4
+[ip4in] 127.0.0.1:50761 > 127.0.0.1:23210 S    len=0
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50761 SA   len=0
+[ip4in] 127.0.0.1:50761 > 127.0.0.1:23210 A    len=0
+[ip4in] 127.0.0.1:50761 > 127.0.0.1:23210 AP   len=13
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50761 AP   len=13
+[ip4in] 127.0.0.1:50761 > 127.0.0.1:23210 AF   len=0
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50761 A    len=0
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50761 AF   len=0
+[ip4in] 127.0.0.1:50761 > 127.0.0.1:23210 A    len=0
+[srv 23210] client closed
+[seq ] round3 connect+echo -> OK
+[tcpdiff] L1-round: xmit=9 recv=9 cachehit=4
+[ip4in] 127.0.0.1:50762 > 127.0.0.1:23210 S    len=0
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50762 SA   len=0
+[ip4in] 127.0.0.1:50762 > 127.0.0.1:23210 A    len=0
+[ip4in] 127.0.0.1:50762 > 127.0.0.1:23210 AP   len=13
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50762 AP   len=13
+[ip4in] 127.0.0.1:50762 > 127.0.0.1:23210 AF   len=0
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50762 A    len=0
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50762 AF   len=0
+[ip4in] 127.0.0.1:50762 > 127.0.0.1:23210 A    len=0
+[srv 23210] client closed
+[seq ] round4 connect+echo -> OK
+[tcpdiff] L1-round: xmit=9 recv=9 cachehit=4
+==== PHASE-L2: conn A alive, then 4 fresh connects to :23210 ====
+[ip4in] 127.0.0.1:50763 > 127.0.0.1:23210 S    len=0
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50763 SA   len=0
+[ip4in] 127.0.0.1:50763 > 127.0.0.1:23210 A    len=0
+[L2] A: connect OK fd=58 (kept open)
+[ip4in] 127.0.0.1:50763 > 127.0.0.1:23210 AP   len=14
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50763 AP   len=14
+[L2] A: echo -> OK
+[ip4in] 127.0.0.1:50764 > 127.0.0.1:23210 S    len=0
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50764 SA   len=0
+[ip4in] 127.0.0.1:50764 > 127.0.0.1:23210 A    len=0
+[ip4in] 127.0.0.1:50764 > 127.0.0.1:23210 AP   len=14
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50764 A    len=0
+[ip4in] 127.0.0.1:50763 > 127.0.0.1:23210 A    len=0
+[cli ] recv r=-1 errno=11 (want 14)
+[L2] #0 FAILED
+[ip4in] 127.0.0.1:50764 > 127.0.0.1:23210 AF   len=0
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50764 A    len=0
+[tcpdiff] first-extra-conn: xmit=8 recv=8 cachehit=2
+[ip4in] 127.0.0.1:50765 > 127.0.0.1:23210 S    len=0
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50765 SA   len=0
+[ip4in] 127.0.0.1:50765 > 127.0.0.1:23210 A    len=0
+[ip4in] 127.0.0.1:50765 > 127.0.0.1:23210 AP   len=14
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50765 A    len=0
+[cli ] recv r=-1 errno=11 (want 14)
+[L2] #1 FAILED
+[ip4in] 127.0.0.1:50765 > 127.0.0.1:23210 AF   len=0
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50765 A    len=0
+[tcpdiff] next-extra-conns: xmit=7 recv=7 cachehit=2
+[ip4in] 127.0.0.1:50766 > 127.0.0.1:23210 S    len=0
+[ip4in] 127.0.0.1:50766 > 127.0.0.1:23210 S    len=0
+[ip4in] 127.0.0.1:50766 > 127.0.0.1:23210 S    len=0
+[ip4in] 127.0.0.1:50766 > 127.0.0.1:23210 S    len=0
+[ip4in] 127.0.0.1:50766 > 127.0.0.1:23210 S    len=0
+[cli ] connect 127.0.0.1:23210 FAILED errno=113 (6390014 us)
+[L2] #2 FAILED
+[tcpdiff] next-extra-conns: xmit=5 recv=5 cachehit=5
+[ip4in] 127.0.0.1:50767 > 127.0.0.1:23210 S    len=0
+[ip4in] 127.0.0.1:50767 > 127.0.0.1:23210 S    len=0
+[ip4in] 127.0.0.1:50767 > 127.0.0.1:23210 S    len=0
+[ip4in] 127.0.0.1:50767 > 127.0.0.1:23210 S    len=0
+[ip4in] 127.0.0.1:50767 > 127.0.0.1:23210 S    len=0
+[cli ] connect 127.0.0.1:23210 FAILED errno=113 (6449864 us)
+[L2] #3 FAILED
+[tcpdiff] next-extra-conns: xmit=5 recv=5 cachehit=5
+[ip4in] 127.0.0.1:50763 > 127.0.0.1:23210 AP   len=14
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50763 AP   len=14
+[L2] A still alive: echo -> OK
+[ip4in] 127.0.0.1:50763 > 127.0.0.1:23210 AF   len=0
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50763 A    len=0
+==== PHASE-L2b-FIXED: conn A alive, then 4 fresh connects to :23211 ====
+[srv 23210] client closed
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50763 AF   len=0
+[ip4in] 127.0.0.1:50768 > 127.0.0.1:23211 S    len=0
+[ip4in] 127.0.0.1:50763 > 127.0.0.1:23210 A    len=0
+[ip4in] 127.0.0.1:23211 > 127.0.0.1:50768 SA   len=0
+[ip4in] 127.0.0.1:50768 > 127.0.0.1:23211 A    len=0
+[L2b-FIXED] A: connect OK fd=57 (kept open)
+[ip4in] 127.0.0.1:50768 > 127.0.0.1:23211 AP   len=14
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50764 AP   len=14
+[ip4in] 127.0.0.1:50764 > 127.0.0.1:23210 AR   len=0
+[ip4in] 127.0.0.1:23211 > 127.0.0.1:50768 AP   len=14
+[srv 23210] client closed
+[L2b-FIXED] A: echo -> OK
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50765 AP   len=14
+[ip4in] 127.0.0.1:50769 > 127.0.0.1:23211 S    len=0
+[ip4in] 127.0.0.1:50765 > 127.0.0.1:23210 AR   len=0
+[ip4in] 127.0.0.1:23211 > 127.0.0.1:50769 SA   len=0
+[ip4in] 127.0.0.1:50769 > 127.0.0.1:23211 A    len=0
+[ip4in] 127.0.0.1:50769 > 127.0.0.1:23211 AP   len=14
+[srv 23210] client closed
+[ip4in] 127.0.0.1:23211 > 127.0.0.1:50769 AP   len=14
+[L2b-FIXED] #0 connect+echo OK (1014 us), now closing it
+[ip4in] 127.0.0.1:50769 > 127.0.0.1:23211 AF   len=0
+[ip4in] 127.0.0.1:23211 > 127.0.0.1:50769 A    len=0
+[ip4in] 127.0.0.1:23211 > 127.0.0.1:50769 AF   len=0
+[ip4in] 127.0.0.1:50769 > 127.0.0.1:23211 A    len=0
+[tcpdiff] first-extra-conn: xmit=11 recv=11 cachehit=4
+[ip4in] 127.0.0.1:50770 > 127.0.0.1:23211 S    len=0
+[ip4in] 127.0.0.1:23211 > 127.0.0.1:50770 SA   len=0
+[ip4in] 127.0.0.1:50770 > 127.0.0.1:23211 A    len=0
+[ip4in] 127.0.0.1:50770 > 127.0.0.1:23211 AP   len=14
+[ip4in] 127.0.0.1:23211 > 127.0.0.1:50770 AP   len=14
+[L2b-FIXED] #1 connect+echo OK (610 us), now closing it
+[ip4in] 127.0.0.1:50770 > 127.0.0.1:23211 AF   len=0
+[ip4in] 127.0.0.1:23211 > 127.0.0.1:50770 A    len=0
+[ip4in] 127.0.0.1:23211 > 127.0.0.1:50770 AF   len=0
+[ip4in] 127.0.0.1:50770 > 127.0.0.1:23211 A    len=0
+[tcpdiff] next-extra-conns: xmit=9 recv=9 cachehit=4
+[ip4in] 127.0.0.1:50771 > 127.0.0.1:23211 S    len=0
+[ip4in] 127.0.0.1:23211 > 127.0.0.1:50771 SA   len=0
+[ip4in] 127.0.0.1:50771 > 127.0.0.1:23211 A    len=0
+[ip4in] 127.0.0.1:50771 > 127.0.0.1:23211 AP   len=14
+[ip4in] 127.0.0.1:23211 > 127.0.0.1:50771 AP   len=14
+[L2b-FIXED] #2 connect+echo OK (607 us), now closing it
+[ip4in] 127.0.0.1:50771 > 127.0.0.1:23211 AF   len=0
+[ip4in] 127.0.0.1:23211 > 127.0.0.1:50771 A    len=0
+[ip4in] 127.0.0.1:23211 > 127.0.0.1:50771 AF   len=0
+[ip4in] 127.0.0.1:50771 > 127.0.0.1:23211 A    len=0
+[tcpdiff] next-extra-conns: xmit=9 recv=9 cachehit=4
+[ip4in] 127.0.0.1:50772 > 127.0.0.1:23211 S    len=0
+[ip4in] 127.0.0.1:23211 > 127.0.0.1:50772 SA   len=0
+[ip4in] 127.0.0.1:50772 > 127.0.0.1:23211 A    len=0
+[ip4in] 127.0.0.1:50772 > 127.0.0.1:23211 AP   len=14
+[ip4in] 127.0.0.1:23211 > 127.0.0.1:50772 AP   len=14
+[L2b-FIXED] #3 connect+echo OK (584 us), now closing it
+[ip4in] 127.0.0.1:50772 > 127.0.0.1:23211 AF   len=0
+[ip4in] 127.0.0.1:23211 > 127.0.0.1:50772 A    len=0
+[ip4in] 127.0.0.1:23211 > 127.0.0.1:50772 AF   len=0
+[ip4in] 127.0.0.1:50772 > 127.0.0.1:23211 A    len=0
+[ip4in] 127.0.0.1:50768 > 127.0.0.1:23211 A    len=0
+[tcpdiff] next-extra-conns: xmit=10 recv=10 cachehit=4
+[ip4in] 127.0.0.1:50768 > 127.0.0.1:23211 AP   len=14
+[ip4in] 127.0.0.1:23211 > 127.0.0.1:50768 AP   len=14
+[L2b-FIXED] A still alive: echo -> OK
+[ip4in] 127.0.0.1:50768 > 127.0.0.1:23211 AF   len=0
+[ip4in] 127.0.0.1:23211 > 127.0.0.1:50768 A    len=0
+[mem] post-case      free=244924 largest=118784 min-ever=236204
+==== FULL STATS TABLE ====
+[ip4in] 127.0.0.1:23211 > 127.0.0.1:50768 AF   len=0
+
+LINK
+	[ip4in] 127.0.0.1:50768 > 127.0.0.1:23211 A    len=0
+xmit: 136
+	recv: 136
+	fw: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 0
+	opterr: 0
+	err: 0
+	cachehit: 0
+
+ETHARP
+	xmit: 7
+	recv: 1
+	fw: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 0
+	opterr: 0
+	err: 0
+	cachehit: 1
+
+IP_FRAG
+	xmit: 0
+	recv: 0
+	fw: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 0
+	opterr: 0
+	err: 0
+	cachehit: 0
+
+IPv6 FRAG
+	xmit: 0
+	recv: 0
+	fw: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 0
+	opterr: 0
+	err: 0
+	cachehit: 0
+
+IP
+	xmit: 138
+	recv: 138
+	fw: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 0
+	opterr: 0
+	err: 0
+	cachehit: 0
+
+ND
+	xmit: 3
+	recv: 0
+	fw: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 0
+	opterr: 0
+	err: 0
+	cachehit: 0
+
+IPv6
+	xmit: 3
+	recv: 3
+	fw: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 0
+	opterr: 0
+	err: 0
+	cachehit: 0
+
+IGMP
+	xmit: 0
+	recv: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	proterr: 0
+	rx_v1: 0
+	rx_group: 0
+	rx_general: 0
+	rx_report: 0
+	tx_join: 0
+	tx_leave: 0
+	tx_report: 0
+
+MLDv1
+	xmit: 0
+	recv: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	proterr: 0
+	rx_v1: 0
+	rx_group: 0
+	rx_general: 0
+	rx_report: 0
+	tx_join: 0
+	tx_leave: 0
+	tx_report: 0
+
+ICMP
+	xmit: 0
+	recv: 3
+	fw: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 0
+	opterr: 0
+	err: 0
+	cachehit: 0
+
+ICMPv6
+	xmit: 0
+	recv: 0
+	fw: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 0
+	opterr: 0
+	err: 0
+	cachehit: 0
+
+UDP
+	xmit: 2
+	recv: 2
+	fw: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 0
+	opterr: 0
+	err: 0
+	cachehit: 2
+
+TCP
+	xmit: 133
+	recv: 133
+	fw: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 0
+	opterr: 0
+	err: 0
+	cachehit: 55
+
+SYS
+	sem.used:  0
+	sem.max:   0
+	sem.err:   0
+	mutex.used: 0
+	mutex.max:  0
+	mutex.err:  0
+	mbox.used:  0
+	mbox.max:   0
+	mbox.err:   0
+==== KEEPALIVE WINDOW (40s): host tools now; heartbeat probes ====
+[beat 00] free=248708
+[ip4in] 127.0.0.1:50773 > 127.0.0.1:23210 S    len=0
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50773 SA   len=0
+[ip4in] 127.0.0.1:50773 > 127.0.0.1:23210 A    len=0
+[ip4in] 127.0.0.1:50773 > 127.0.0.1:23210 AF   len=0
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50773 A    len=0
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50773 AF   len=0
+[ip4in] 127.0.0.1:50773 > 127.0.0.1:23210 A    len=0
+[srv 23210] client closed
+[beat 01] free=248496
+[ip4in] 127.0.0.1:50774 > 127.0.0.1:23210 S    len=0
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50774 SA   len=0
+[ip4in] 127.0.0.1:50774 > 127.0.0.1:23210 A    len=0
+[ip4in] 127.0.0.1:50774 > 127.0.0.1:23210 AF   len=0
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50774 A    len=0
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50774 AF   len=0
+[ip4in] 127.0.0.1:50774 > 127.0.0.1:23210 A    len=0
+[srv 23210] client closed
+[beat 02] free=248284
+[ip4in] 127.0.0.1:50775 > 127.0.0.1:23210 S    len=0
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50775 SA   len=0
+[ip4in] 127.0.0.1:50775 > 127.0.0.1:23210 A    len=0
+[ip4in] 127.0.0.1:50775 > 127.0.0.1:23210 AF   len=0
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50775 A    len=0
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50775 AF   len=0
+[ip4in] 127.0.0.1:50775 > 127.0.0.1:23210 A    len=0
+[srv 23210] client closed
+[beat 03] free=248072
+[ip4in] 127.0.0.1:50776 > 127.0.0.1:23210 S    len=0
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50776 SA   len=0
+[ip4in] 127.0.0.1:50776 > 127.0.0.1:23210 A    len=0
+[ip4in] 127.0.0.1:50776 > 127.0.0.1:23210 AF   len=0
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50776 A    len=0
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50776 AF   len=0
+[ip4in] 127.0.0.1:50776 > 127.0.0.1:23210 A    len=0
+[srv 23210] client closed
+[beat 04] free=247860
+[ip4in] 127.0.0.1:50777 > 127.0.0.1:23210 S    len=0
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50777 SA   len=0
+[ip4in] 127.0.0.1:50777 > 127.0.0.1:23210 A    len=0
+[ip4in] 127.0.0.1:50777 > 127.0.0.1:23210 AF   len=0
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50777 A    len=0
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50777 AF   len=0
+[ip4in] 127.0.0.1:50777 > 127.0.0.1:23210 A    len=0
+[srv 23210] client closed
+[beat 05] free=247860
+[ip4in] 127.0.0.1:50778 > 127.0.0.1:23210 S    len=0
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50778 SA   len=0
+[ip4in] 127.0.0.1:50778 > 127.0.0.1:23210 A    len=0
+[ip4in] 127.0.0.1:50778 > 127.0.0.1:23210 AF   len=0
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50778 A    len=0
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50778 AF   len=0
+[ip4in] 127.0.0.1:50778 > 127.0.0.1:23210 A    len=0
+[srv 23210] client closed
+[beat 06] free=247860
+[ip4in] 127.0.0.1:50779 > 127.0.0.1:23210 S    len=0
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50779 SA   len=0
+[ip4in] 127.0.0.1:50779 > 127.0.0.1:23210 A    len=0
+[ip4in] 127.0.0.1:50779 > 127.0.0.1:23210 AF   len=0
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50779 A    len=0
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50779 AF   len=0
+[ip4in] 127.0.0.1:50779 > 127.0.0.1:23210 A    len=0
+[srv 23210] client closed
+[beat 07] free=247860
+[ip4in] 127.0.0.1:50780 > 127.0.0.1:23210 S    len=0
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50780 SA   len=0
+[ip4in] 127.0.0.1:50780 > 127.0.0.1:23210 A    len=0
+[ip4in] 127.0.0.1:50780 > 127.0.0.1:23210 AF   len=0
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50780 A    len=0
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50780 AF   len=0
+[ip4in] 127.0.0.1:50780 > 127.0.0.1:23210 A    len=0
+[srv 23210] client closed
+[beat 08] free=247860
+[ip4in] 127.0.0.1:50781 > 127.0.0.1:23210 S    len=0
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50781 SA   len=0
+[ip4in] 127.0.0.1:50781 > 127.0.0.1:23210 A    len=0
+[ip4in] 127.0.0.1:50781 > 127.0.0.1:23210 AF   len=0
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50781 A    len=0
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50781 AF   len=0
+[srv 23210] client closed
+[ip4in] 127.0.0.1:50781 > 127.0.0.1:23210 A    len=0
+[beat 09] free=247860
+[ip4in] 127.0.0.1:50782 > 127.0.0.1:23210 S    len=0
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50782 SA   len=0
+[ip4in] 127.0.0.1:50782 > 127.0.0.1:23210 A    len=0
+[ip4in] 127.0.0.1:50782 > 127.0.0.1:23210 AF   len=0
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50782 A    len=0
+== ch23 lab done ==
+[ip4in] 127.0.0.1:23210 > 127.0.0.1:50782 AF   len=0
+[srv 23210] client closed
+[ip4in] 127.0.0.1:50782 > 127.0.0.1:23210 A    len=0
+qemu-system-xtensa: terminating on signal 15 from pid 3609692 (timeout)

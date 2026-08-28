@@ -1,0 +1,8 @@
+# 场景变体：sc3 = tcpip 邮箱打满传导（ch13 实验 D 的应用版）
+# 构建方式：SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.sc3" idf.py build -B build-sc3
+CONFIG_GYM_SCENARIO=3
+# 心跳探针提到 19（压过 tcpip=18）：本场景考察纯邮箱水位，按 Batch 4/7
+# "测量探针优先级要压过 tcpip"的纪律隔离调度维度的连带伤害——否则饱和的
+# tcpip 线程满负荷运转时，低于它的心跳会被连带饿出 kind=sched 假警报，
+# 故事就串台到场景 1 了。
+CONFIG_EX15_HB_PRIO=19

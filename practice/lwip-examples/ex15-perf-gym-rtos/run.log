@@ -1,0 +1,488 @@
+Adding SPI flash device
+ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x12 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0040,len:6272
+load:0x40078000,len:15820
+load:0x40080400,len:3920
+entry 0x40080644
+I (669) boot: ESP-IDF v6.0.2 2nd stage bootloader
+I (670) boot: compile time Aug 27 2026 18:37:28
+I (670) boot: Multicore bootloader
+I (706) boot: chip revision: v0.0
+I (707) boot.esp32: SPI Speed      : 40MHz
+I (707) boot.esp32: SPI Mode       : DIO
+I (707) boot.esp32: SPI Flash Size : 2MB
+I (711) boot: Enabling RNG early entropy source...
+I (717) boot: Partition Table:
+I (718) boot: ## Label            Usage          Type ST Offset   Length
+I (718) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (718) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (718) boot:  2 factory          factory app      00 00 00010000 00100000
+I (721) boot: End of partition table
+I (755) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=0f12ch ( 61740) map
+I (777) esp_image: segment 1: paddr=0001f154 vaddr=3ffb0000 size=00ec4h (  3780) load
+I (790) esp_image: segment 2: paddr=00020020 vaddr=400d0020 size=2aa98h (174744) map
+I (811) esp_image: segment 3: paddr=0004aac0 vaddr=3ffb0ec4 size=01c28h (  7208) load
+I (822) esp_image: segment 4: paddr=0004c6f0 vaddr=40080000 size=0b294h ( 45716) load
+I (845) esp_image: segment 5: paddr=0005798c vaddr=50000000 size=00028h (    40) load
+I (898) boot: Loaded app from partition at offset 0x10000
+I (898) boot: Disabling RNG early entropy source...
+I (909) cpu_start: Multicore app
+I (1511) cpu_start: GPIO 3 and 1 are used as console UART I/O pins
+I (1512) cpu_start: Pro cpu start user code
+I (1512) cpu_start: cpu freq: 160000000 Hz
+I (1513) app_init: Application information:
+I (1513) app_init: Project name:     ex15_perf_gym_rtos
+I (1513) app_init: App version:      924d871-dirty
+I (1513) app_init: Compile time:     Aug 27 2026 19:26:33
+I (1513) app_init: ELF file SHA256:  ba4ac9fb9...
+I (1513) app_init: ESP-IDF:          v6.0.2
+I (1513) efuse_init: Min chip rev:     v0.0
+I (1513) efuse_init: Max chip rev:     v3.99 
+I (1513) efuse_init: Chip rev:         v0.0
+I (1514) heap_init: Initializing. RAM available for dynamic allocation:
+I (1514) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM
+I (1514) heap_init: At 3FFB4598 len 0002BA68 (174 KiB): DRAM
+I (1514) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM
+I (1514) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM
+I (1515) heap_init: At 4008B294 len 00014D6C (83 KiB): IRAM
+I (1540) spi_flash: detected chip: winbond
+I (1543) spi_flash: flash io: dio
+I (1555) main_task: Started on CPU0
+I (1555) main_task: Calling app_main()
+I (1555) ex15: == ex15 perf-gym-rtos: RTOS scheduling error gym ==
+$$$ EX15-FACT build="Aug 27 2026 19:26:33" scenario=0 name=0-healthy-baseline hb_period_ms=500 sched_gap_alarm_ms=2500 ping_interval_ms=1000 ping_timeout_ms=800 net_alarm_after=2 inject_at_s=12 remove_at_s=42 window_s=75 trace=1 runtime_stats=1 lwip_stats=1
+I (1575) esp_eth.netif.netif_glue: 52:54:00:12:34:56
+I (1575) esp_eth.netif.netif_glue: ethernet attached to netif
+E (1675) esp_eth: esp_eth_ioctl(533): add mac address to filter not supported
+E (1675) esp_eth.netif.netif_glue: eth_set_mac_filter(56): failed to add mac filter
+E (1675) esp_netif_lwip: Failed to add multicast filter for IPv4
+I (1675) ex15: [t=160 ms] ETH_EVENT CONNECTED
+I (1675) ex15: waiting for DHCP lease ...
+I (2675) ex15: [t=1159 ms] IP_EVENT GOT_IP: ip 10.0.2.15 gw 10.0.2.2
+I (2675) esp_netif_handlers: eth ip: 10.0.2.15, mask: 255.255.255.0, gw: 10.0.2.2
+$$$ EXREADY sc=0(0-healthy-baseline) ip=10.0.2.15 gw=10.0.2.2 t_ms=1160
+EX15-NETSRC target=10.0.2.2 interval_ms=1000 timeout_ms=800 alarm_after=2
+EX15-NET seq=1 rtt_ms=1 ok=1 tout=0
+EX15-HB seq=1 planned_rel_ms=500 lag_ms=0 prio=5
+EX15-HB seq=2 planned_rel_ms=1000 lag_ms=0 prio=5
+EX15-NET seq=2 rtt_ms=0 ok=2 tout=0
+EX15-HB seq=3 planned_rel_ms=1500 lag_ms=0 prio=5
+$$$ EX15-FRAME id=1 phase=baseline rel_ms=1501 sc=0-healthy-baseline fault=0
+EX15-HBSUM beats=3 last_gap_ms=3 alarms_sched=0
+EX15-NETSUM ok=2 tout=0 consec=0 rtt_last=0 rtt_min=0 rtt_max=1 alarms_net=0
+EX15-ST basis=first-frame (deltas appear next frame)
+EX15-TASK n=13 order=name_asc clock=esp_timer-1MHz
+EX15-T IDLE0            st=ready    prio= 0 core=0  hwm= 1088 rt_us=2599787    win_ms=2599 share=48.8%
+EX15-T IDLE1            st=ready    prio= 0 core=1  hwm= 1100 rt_us=2613557    win_ms=2613 share=49.0%
+EX15-T emac_rx          st=suspend  prio=15 core=NA hwm= 3332 rt_us=1731       win_ms=1 share=0.0%
+EX15-T esp_timer        st=suspend  prio=22 core=0  hwm= 3640 rt_us=219        win_ms=0 share=0.0%
+EX15-T ex15_gym         st=running  prio=22 core=1  hwm= 1380 rt_us=1664       win_ms=1 share=0.0%
+EX15-T ex15_hb          st=blocked  prio= 5 core=NA hwm= 1676 rt_us=1057       win_ms=1 share=0.0%
+EX15-T ex15_watch       st=blocked  prio=21 core=1  hwm= 2080 rt_us=380        win_ms=0 share=0.0%
+EX15-T ipc0             st=suspend  prio=24 core=0  hwm=  564 rt_us=39849      win_ms=39 share=0.7%
+EX15-T ipc1             st=suspend  prio=24 core=1  hwm=  572 rt_us=41252      win_ms=41 share=0.7%
+EX15-T main             st=blocked  prio= 1 core=0  hwm= 2724 rt_us=10499      win_ms=10 share=0.1%
+EX15-T ping             st=blocked  prio= 2 core=NA hwm= 1480 rt_us=1741       win_ms=1 share=0.0%
+EX15-T sys_evt          st=blocked  prio=20 core=0  hwm= 1664 rt_us=1124       win_ms=1 share=0.0%
+EX15-T tcpip            st=ready    prio=18 core=NA hwm= 2328 rt_us=13346      win_ms=13 share=0.2%
+EX15-HEAP free=259460 largest=131072 min_ever=257544 cap=MALLOC_CAP_8BIT
+$$$ EX15-FRAME-END id=1
+EX15-HB seq=4 planned_rel_ms=2000 lag_ms=0 prio=5
+EX15-NET seq=3 rtt_ms=0 ok=3 tout=0
+EX15-HB seq=5 planned_rel_ms=2500 lag_ms=0 prio=5
+EX15-HB seq=6 planned_rel_ms=3000 lag_ms=0 prio=5
+EX15-NET seq=4 rtt_ms=0 ok=4 tout=0
+EX15-HB seq=7 planned_rel_ms=3500 lag_ms=0 prio=5
+EX15-HB seq=8 planned_rel_ms=4000 lag_ms=0 prio=5
+EX15-NET seq=5 rtt_ms=0 ok=5 tout=0
+EX15-HB seq=9 planned_rel_ms=4500 lag_ms=0 prio=5
+EX15-HB seq=10 planned_rel_ms=5000 lag_ms=0 prio=5
+EX15-NET seq=6 rtt_ms=0 ok=6 tout=0
+EX15-HB seq=11 planned_rel_ms=5500 lag_ms=0 prio=5
+EX15-HB seq=12 planned_rel_ms=6000 lag_ms=0 prio=5
+EX15-NET seq=7 rtt_ms=0 ok=7 tout=0
+EX15-HB seq=13 planned_rel_ms=6500 lag_ms=0 prio=5
+EX15-HB seq=14 planned_rel_ms=7000 lag_ms=0 prio=5
+EX15-NET seq=8 rtt_ms=0 ok=8 tout=0
+EX15-HB seq=15 planned_rel_ms=7500 lag_ms=0 prio=5
+EX15-HB seq=16 planned_rel_ms=8000 lag_ms=0 prio=5
+EX15-NET seq=9 rtt_ms=0 ok=9 tout=0
+EX15-HB seq=17 planned_rel_ms=8500 lag_ms=0 prio=5
+EX15-HB seq=18 planned_rel_ms=9000 lag_ms=0 prio=5
+EX15-NET seq=10 rtt_ms=0 ok=10 tout=0
+EX15-HB seq=19 planned_rel_ms=9500 lag_ms=0 prio=5
+EX15-HB seq=20 planned_rel_ms=10000 lag_ms=0 prio=5
+EX15-NET seq=11 rtt_ms=0 ok=11 tout=0
+EX15-HB seq=21 planned_rel_ms=10500 lag_ms=0 prio=5
+EX15-HB seq=22 planned_rel_ms=11000 lag_ms=0 prio=5
+EX15-NET seq=12 rtt_ms=0 ok=12 tout=0
+EX15-HB seq=23 planned_rel_ms=11500 lag_ms=0 prio=5
+EX15-HB seq=24 planned_rel_ms=12000 lag_ms=0 prio=5
+EX15-NET seq=13 rtt_ms=0 ok=13 tout=0
+EX15-HB seq=25 planned_rel_ms=12500 lag_ms=0 prio=5
+EX15-HB seq=26 planned_rel_ms=13000 lag_ms=0 prio=5
+EX15-NET seq=14 rtt_ms=0 ok=14 tout=0
+EX15-HB seq=27 planned_rel_ms=13500 lag_ms=0 prio=5
+EX15-HB seq=28 planned_rel_ms=14000 lag_ms=0 prio=5
+EX15-NET seq=15 rtt_ms=0 ok=15 tout=0
+EX15-HB seq=29 planned_rel_ms=14500 lag_ms=0 prio=5
+EX15-HB seq=30 planned_rel_ms=15000 lag_ms=0 prio=5
+EX15-NET seq=16 rtt_ms=0 ok=16 tout=0
+EX15-HB seq=31 planned_rel_ms=15500 lag_ms=0 prio=5
+EX15-HB seq=32 planned_rel_ms=16000 lag_ms=0 prio=5
+EX15-NET seq=17 rtt_ms=0 ok=17 tout=0
+EX15-HB seq=33 planned_rel_ms=16500 lag_ms=0 prio=5
+$$$ EX15-FRAME id=2 phase=baseline_obs_1 rel_ms=16501 sc=0-healthy-baseline fault=0
+EX15-HBSUM beats=33 last_gap_ms=2 alarms_sched=0
+EX15-NETSUM ok=17 tout=0 consec=0 rtt_last=0 rtt_min=0 rtt_max=1 alarms_net=0
+EX15-ST link  recv=3(+2) xmit=3(+2) drop=0(+0) memerr=0(+0)
+EX15-ST ip    recv=19(+15) xmit=19(+15) drop=0(+0) memerr=0(+0)
+EX15-ST icmp  recv=17(+15) xmit=0(+0) drop=0(+0) memerr=0(+0)
+EX15-ST tcp   recv=0(+0) xmit=0(+0) drop=0(+0) memerr=0(+0)
+EX15-ST udp   recv=2(+0) xmit=2(+0) drop=0(+0) memerr=0(+0)
+EX15-TASK n=13 order=name_asc clock=esp_timer-1MHz
+EX15-T IDLE0            st=ready    prio= 0 core=0  hwm= 1088 rt_us=17582400   win_ms=14982 share=49.9%
+EX15-T IDLE1            st=ready    prio= 0 core=1  hwm= 1100 rt_us=17600512   win_ms=14986 share=49.9%
+EX15-T emac_rx          st=suspend  prio=15 core=NA hwm= 3252 rt_us=3864       win_ms=2 share=0.0%
+EX15-T esp_timer        st=suspend  prio=22 core=0  hwm= 3640 rt_us=658        win_ms=0 share=0.0%
+EX15-T ex15_gym         st=running  prio=22 core=1  hwm= 1244 rt_us=5158       win_ms=3 share=0.0%
+EX15-T ex15_hb          st=blocked  prio= 5 core=NA hwm= 1676 rt_us=5828       win_ms=4 share=0.0%
+EX15-T ex15_watch       st=blocked  prio=21 core=1  hwm= 2080 rt_us=2752       win_ms=2 share=0.0%
+EX15-T ipc0             st=suspend  prio=24 core=0  hwm=  564 rt_us=39849      win_ms=0 share=0.0%
+EX15-T ipc1             st=suspend  prio=24 core=1  hwm=  572 rt_us=41252      win_ms=0 share=0.0%
+EX15-T main             st=blocked  prio= 1 core=0  hwm= 2724 rt_us=10499      win_ms=0 share=0.0%
+EX15-T ping             st=blocked  prio= 2 core=NA hwm= 1400 rt_us=8649       win_ms=6 share=0.0%
+EX15-T sys_evt          st=blocked  prio=20 core=0  hwm= 1664 rt_us=1124       win_ms=0 share=0.0%
+EX15-T tcpip            st=blocked  prio=18 core=NA hwm= 2328 rt_us=21002      win_ms=7 share=0.0%
+EX15-HEAP free=259460 largest=131072 min_ever=256004 cap=MALLOC_CAP_8BIT
+$$$ EX15-FRAME-END id=2
+EX15-HB seq=34 planned_rel_ms=17000 lag_ms=0 prio=5
+EX15-NET seq=18 rtt_ms=0 ok=18 tout=0
+EX15-HB seq=35 planned_rel_ms=17500 lag_ms=0 prio=5
+EX15-HB seq=36 planned_rel_ms=18000 lag_ms=0 prio=5
+EX15-NET seq=19 rtt_ms=0 ok=19 tout=0
+EX15-HB seq=37 planned_rel_ms=18500 lag_ms=0 prio=5
+EX15-HB seq=38 planned_rel_ms=19000 lag_ms=0 prio=5
+EX15-NET seq=20 rtt_ms=0 ok=20 tout=0
+EX15-HB seq=39 planned_rel_ms=19500 lag_ms=0 prio=5
+EX15-HB seq=40 planned_rel_ms=20000 lag_ms=0 prio=5
+EX15-NET seq=21 rtt_ms=0 ok=21 tout=0
+EX15-HB seq=41 planned_rel_ms=20500 lag_ms=0 prio=5
+EX15-HB seq=42 planned_rel_ms=21000 lag_ms=0 prio=5
+EX15-NET seq=22 rtt_ms=0 ok=22 tout=0
+EX15-HB seq=43 planned_rel_ms=21500 lag_ms=0 prio=5
+EX15-HB seq=44 planned_rel_ms=22000 lag_ms=0 prio=5
+EX15-NET seq=23 rtt_ms=0 ok=23 tout=0
+EX15-HB seq=45 planned_rel_ms=22500 lag_ms=0 prio=5
+EX15-HB seq=46 planned_rel_ms=23000 lag_ms=0 prio=5
+EX15-NET seq=24 rtt_ms=0 ok=24 tout=0
+EX15-HB seq=47 planned_rel_ms=23500 lag_ms=0 prio=5
+EX15-HB seq=48 planned_rel_ms=24000 lag_ms=0 prio=5
+EX15-NET seq=25 rtt_ms=0 ok=25 tout=0
+EX15-HB seq=49 planned_rel_ms=24500 lag_ms=0 prio=5
+EX15-HB seq=50 planned_rel_ms=25000 lag_ms=0 prio=5
+EX15-NET seq=26 rtt_ms=0 ok=26 tout=0
+EX15-HB seq=51 planned_rel_ms=25500 lag_ms=0 prio=5
+EX15-HB seq=52 planned_rel_ms=26000 lag_ms=0 prio=5
+EX15-NET seq=27 rtt_ms=0 ok=27 tout=0
+EX15-HB seq=53 planned_rel_ms=26500 lag_ms=0 prio=5
+EX15-HB seq=54 planned_rel_ms=27000 lag_ms=0 prio=5
+EX15-NET seq=28 rtt_ms=0 ok=28 tout=0
+EX15-HB seq=55 planned_rel_ms=27500 lag_ms=0 prio=5
+EX15-HB seq=56 planned_rel_ms=28000 lag_ms=0 prio=5
+EX15-NET seq=29 rtt_ms=0 ok=29 tout=0
+EX15-HB seq=57 planned_rel_ms=28500 lag_ms=0 prio=5
+EX15-HB seq=58 planned_rel_ms=29000 lag_ms=0 prio=5
+EX15-NET seq=30 rtt_ms=0 ok=30 tout=0
+EX15-HB seq=59 planned_rel_ms=29500 lag_ms=0 prio=5
+EX15-HB seq=60 planned_rel_ms=30000 lag_ms=0 prio=5
+EX15-NET seq=31 rtt_ms=0 ok=31 tout=0
+EX15-HB seq=61 planned_rel_ms=30500 lag_ms=0 prio=5
+EX15-HB seq=62 planned_rel_ms=31000 lag_ms=0 prio=5
+EX15-NET seq=32 rtt_ms=0 ok=32 tout=0
+EX15-HB seq=63 planned_rel_ms=31500 lag_ms=0 prio=5
+EX15-HB seq=64 planned_rel_ms=32000 lag_ms=0 prio=5
+EX15-NET seq=33 rtt_ms=0 ok=33 tout=0
+EX15-HB seq=65 planned_rel_ms=32500 lag_ms=0 prio=5
+EX15-HB seq=66 planned_rel_ms=33000 lag_ms=0 prio=5
+EX15-NET seq=34 rtt_ms=0 ok=34 tout=0
+EX15-HB seq=67 planned_rel_ms=33500 lag_ms=0 prio=5
+EX15-HB seq=68 planned_rel_ms=34000 lag_ms=0 prio=5
+EX15-NET seq=35 rtt_ms=0 ok=35 tout=0
+EX15-HB seq=69 planned_rel_ms=34500 lag_ms=0 prio=5
+EX15-HB seq=70 planned_rel_ms=35000 lag_ms=0 prio=5
+EX15-NET seq=36 rtt_ms=0 ok=36 tout=0
+EX15-HB seq=71 planned_rel_ms=35500 lag_ms=0 prio=5
+EX15-HB seq=72 planned_rel_ms=36000 lag_ms=0 prio=5
+EX15-NET seq=37 rtt_ms=0 ok=37 tout=0
+EX15-HB seq=73 planned_rel_ms=36500 lag_ms=0 prio=5
+$$$ EX15-FRAME id=3 phase=baseline_obs_2 rel_ms=36501 sc=0-healthy-baseline fault=0
+EX15-HBSUM beats=73 last_gap_ms=2 alarms_sched=0
+EX15-NETSUM ok=37 tout=0 consec=0 rtt_last=0 rtt_min=0 rtt_max=1 alarms_net=0
+EX15-ST link  recv=3(+0) xmit=3(+0) drop=0(+0) memerr=0(+0)
+EX15-ST ip    recv=39(+20) xmit=39(+20) drop=0(+0) memerr=0(+0)
+EX15-ST icmp  recv=37(+20) xmit=0(+0) drop=0(+0) memerr=0(+0)
+EX15-ST tcp   recv=0(+0) xmit=0(+0) drop=0(+0) memerr=0(+0)
+EX15-ST udp   recv=2(+0) xmit=2(+0) drop=0(+0) memerr=0(+0)
+EX15-TASK n=13 order=name_asc clock=esp_timer-1MHz
+EX15-T IDLE0            st=ready    prio= 0 core=0  hwm= 1088 rt_us=37560729   win_ms=19978 share=49.9%
+EX15-T IDLE1            st=ready    prio= 0 core=1  hwm= 1100 rt_us=37586911   win_ms=19986 share=49.9%
+EX15-T emac_rx          st=suspend  prio=15 core=NA hwm= 3252 rt_us=6848       win_ms=2 share=0.0%
+EX15-T esp_timer        st=suspend  prio=22 core=0  hwm= 3640 rt_us=1262       win_ms=0 share=0.0%
+EX15-T ex15_gym         st=running  prio=22 core=1  hwm= 1244 rt_us=8162       win_ms=3 share=0.0%
+EX15-T ex15_hb          st=blocked  prio= 5 core=NA hwm= 1676 rt_us=12833      win_ms=7 share=0.0%
+EX15-T ex15_watch       st=blocked  prio=21 core=1  hwm= 2080 rt_us=6204       win_ms=3 share=0.0%
+EX15-T ipc0             st=suspend  prio=24 core=0  hwm=  564 rt_us=39849      win_ms=0 share=0.0%
+EX15-T ipc1             st=suspend  prio=24 core=1  hwm=  572 rt_us=41252      win_ms=0 share=0.0%
+EX15-T main             st=blocked  prio= 1 core=0  hwm= 2724 rt_us=10499      win_ms=0 share=0.0%
+EX15-T ping             st=blocked  prio= 2 core=NA hwm= 1400 rt_us=17156      win_ms=8 share=0.0%
+EX15-T sys_evt          st=blocked  prio=20 core=0  hwm= 1664 rt_us=1124       win_ms=0 share=0.0%
+EX15-T tcpip            st=blocked  prio=18 core=NA hwm= 2328 rt_us=30832      win_ms=9 share=0.0%
+EX15-HEAP free=259460 largest=131072 min_ever=256004 cap=MALLOC_CAP_8BIT
+$$$ EX15-FRAME-END id=3
+EX15-HB seq=74 planned_rel_ms=37000 lag_ms=0 prio=5
+EX15-NET seq=38 rtt_ms=0 ok=38 tout=0
+EX15-HB seq=75 planned_rel_ms=37500 lag_ms=0 prio=5
+EX15-HB seq=76 planned_rel_ms=38000 lag_ms=0 prio=5
+EX15-NET seq=39 rtt_ms=0 ok=39 tout=0
+EX15-HB seq=77 planned_rel_ms=38500 lag_ms=0 prio=5
+EX15-HB seq=78 planned_rel_ms=39000 lag_ms=0 prio=5
+EX15-NET seq=40 rtt_ms=0 ok=40 tout=0
+EX15-HB seq=79 planned_rel_ms=39500 lag_ms=0 prio=5
+EX15-HB seq=80 planned_rel_ms=40000 lag_ms=0 prio=5
+EX15-NET seq=41 rtt_ms=0 ok=41 tout=0
+EX15-HB seq=81 planned_rel_ms=40500 lag_ms=0 prio=5
+EX15-HB seq=82 planned_rel_ms=41000 lag_ms=0 prio=5
+EX15-NET seq=42 rtt_ms=0 ok=42 tout=0
+EX15-HB seq=83 planned_rel_ms=41500 lag_ms=0 prio=5
+EX15-HB seq=84 planned_rel_ms=42000 lag_ms=0 prio=5
+EX15-NET seq=43 rtt_ms=0 ok=43 tout=0
+EX15-HB seq=85 planned_rel_ms=42500 lag_ms=0 prio=5
+EX15-HB seq=86 planned_rel_ms=43000 lag_ms=0 prio=5
+EX15-NET seq=44 rtt_ms=0 ok=44 tout=0
+EX15-HB seq=87 planned_rel_ms=43500 lag_ms=0 prio=5
+EX15-HB seq=88 planned_rel_ms=44000 lag_ms=0 prio=5
+EX15-NET seq=45 rtt_ms=0 ok=45 tout=0
+EX15-HB seq=89 planned_rel_ms=44500 lag_ms=0 prio=5
+EX15-HB seq=90 planned_rel_ms=45000 lag_ms=0 prio=5
+EX15-NET seq=46 rtt_ms=0 ok=46 tout=0
+EX15-HB seq=91 planned_rel_ms=45500 lag_ms=0 prio=5
+EX15-HB seq=92 planned_rel_ms=46000 lag_ms=0 prio=5
+EX15-NET seq=47 rtt_ms=0 ok=47 tout=0
+EX15-HB seq=93 planned_rel_ms=46500 lag_ms=0 prio=5
+EX15-HB seq=94 planned_rel_ms=47000 lag_ms=0 prio=5
+EX15-NET seq=48 rtt_ms=0 ok=48 tout=0
+EX15-HB seq=95 planned_rel_ms=47500 lag_ms=0 prio=5
+EX15-HB seq=96 planned_rel_ms=48000 lag_ms=0 prio=5
+EX15-NET seq=49 rtt_ms=0 ok=49 tout=0
+EX15-HB seq=97 planned_rel_ms=48500 lag_ms=0 prio=5
+EX15-HB seq=98 planned_rel_ms=49000 lag_ms=0 prio=5
+EX15-NET seq=50 rtt_ms=0 ok=50 tout=0
+EX15-HB seq=99 planned_rel_ms=49500 lag_ms=0 prio=5
+EX15-HB seq=100 planned_rel_ms=50000 lag_ms=0 prio=5
+EX15-NET seq=51 rtt_ms=0 ok=51 tout=0
+EX15-HB seq=101 planned_rel_ms=50500 lag_ms=0 prio=5
+EX15-HB seq=102 planned_rel_ms=51000 lag_ms=0 prio=5
+EX15-NET seq=52 rtt_ms=0 ok=52 tout=0
+EX15-HB seq=103 planned_rel_ms=51500 lag_ms=0 prio=5
+EX15-HB seq=104 planned_rel_ms=52000 lag_ms=0 prio=5
+EX15-NET seq=53 rtt_ms=0 ok=53 tout=0
+EX15-HB seq=105 planned_rel_ms=52500 lag_ms=0 prio=5
+EX15-HB seq=106 planned_rel_ms=53000 lag_ms=0 prio=5
+EX15-NET seq=54 rtt_ms=0 ok=54 tout=0
+EX15-HB seq=107 planned_rel_ms=53500 lag_ms=0 prio=5
+EX15-HB seq=108 planned_rel_ms=54000 lag_ms=0 prio=5
+EX15-NET seq=55 rtt_ms=0 ok=55 tout=0
+EX15-HB seq=109 planned_rel_ms=54500 lag_ms=0 prio=5
+EX15-HB seq=110 planned_rel_ms=55000 lag_ms=0 prio=5
+EX15-NET seq=56 rtt_ms=0 ok=56 tout=0
+EX15-HB seq=111 planned_rel_ms=55500 lag_ms=0 prio=5
+EX15-HB seq=112 planned_rel_ms=56000 lag_ms=0 prio=5
+EX15-NET seq=57 rtt_ms=0 ok=57 tout=0
+EX15-HB seq=113 planned_rel_ms=56500 lag_ms=0 prio=5
+$$$ EX15-FRAME id=4 phase=baseline_obs_3 rel_ms=56501 sc=0-healthy-baseline fault=0
+EX15-HBSUM beats=113 last_gap_ms=2 alarms_sched=0
+EX15-NETSUM ok=57 tout=0 consec=0 rtt_last=0 rtt_min=0 rtt_max=1 alarms_net=0
+EX15-ST link  recv=3(+0) xmit=3(+0) drop=0(+0) memerr=0(+0)
+EX15-ST ip    recv=59(+20) xmit=59(+20) drop=0(+0) memerr=0(+0)
+EX15-ST icmp  recv=57(+20) xmit=0(+0) drop=0(+0) memerr=0(+0)
+EX15-ST tcp   recv=0(+0) xmit=0(+0) drop=0(+0) memerr=0(+0)
+EX15-ST udp   recv=2(+0) xmit=2(+0) drop=0(+0) memerr=0(+0)
+EX15-TASK n=13 order=name_asc clock=esp_timer-1MHz
+EX15-T IDLE0            st=ready    prio= 0 core=0  hwm=  976 rt_us=57537678   win_ms=19976 share=49.9%
+EX15-T IDLE1            st=ready    prio= 0 core=1  hwm= 1100 rt_us=57573733   win_ms=19986 share=49.9%
+EX15-T emac_rx          st=suspend  prio=15 core=NA hwm= 3252 rt_us=10004      win_ms=3 share=0.0%
+EX15-T esp_timer        st=suspend  prio=22 core=0  hwm= 3640 rt_us=1885       win_ms=0 share=0.0%
+EX15-T ex15_gym         st=running  prio=22 core=1  hwm= 1244 rt_us=10935      win_ms=2 share=0.0%
+EX15-T ex15_hb          st=blocked  prio= 5 core=NA hwm= 1676 rt_us=19667      win_ms=6 share=0.0%
+EX15-T ex15_watch       st=blocked  prio=21 core=1  hwm= 2080 rt_us=9728       win_ms=3 share=0.0%
+EX15-T ipc0             st=suspend  prio=24 core=0  hwm=  564 rt_us=39849      win_ms=0 share=0.0%
+EX15-T ipc1             st=suspend  prio=24 core=1  hwm=  572 rt_us=41252      win_ms=0 share=0.0%
+EX15-T main             st=blocked  prio= 1 core=0  hwm= 2724 rt_us=10499      win_ms=0 share=0.0%
+EX15-T ping             st=blocked  prio= 2 core=NA hwm= 1400 rt_us=26146      win_ms=8 share=0.0%
+EX15-T sys_evt          st=blocked  prio=20 core=0  hwm= 1664 rt_us=1124       win_ms=0 share=0.0%
+EX15-T tcpip            st=blocked  prio=18 core=NA hwm= 2328 rt_us=41065      win_ms=10 share=0.0%
+EX15-HEAP free=259460 largest=131072 min_ever=256004 cap=MALLOC_CAP_8BIT
+$$$ EX15-FRAME-END id=4
+EX15-HB seq=114 planned_rel_ms=57000 lag_ms=0 prio=5
+EX15-NET seq=58 rtt_ms=0 ok=58 tout=0
+EX15-HB seq=115 planned_rel_ms=57500 lag_ms=0 prio=5
+EX15-HB seq=116 planned_rel_ms=58000 lag_ms=0 prio=5
+EX15-NET seq=59 rtt_ms=0 ok=59 tout=0
+EX15-HB seq=117 planned_rel_ms=58500 lag_ms=0 prio=5
+EX15-HB seq=118 planned_rel_ms=59000 lag_ms=0 prio=5
+EX15-NET seq=60 rtt_ms=0 ok=60 tout=0
+EX15-HB seq=119 planned_rel_ms=59500 lag_ms=0 prio=5
+EX15-HB seq=120 planned_rel_ms=60000 lag_ms=0 prio=5
+EX15-NET seq=61 rtt_ms=0 ok=61 tout=0
+EX15-HB seq=121 planned_rel_ms=60500 lag_ms=0 prio=5
+EX15-HB seq=122 planned_rel_ms=61000 lag_ms=0 prio=5
+EX15-NET seq=62 rtt_ms=0 ok=62 tout=0
+EX15-HB seq=123 planned_rel_ms=61500 lag_ms=0 prio=5
+EX15-HB seq=124 planned_rel_ms=62000 lag_ms=0 prio=5
+EX15-NET seq=63 rtt_ms=0 ok=63 tout=0
+EX15-HB seq=125 planned_rel_ms=62500 lag_ms=0 prio=5
+EX15-HB seq=126 planned_rel_ms=63000 lag_ms=0 prio=5
+EX15-NET seq=64 rtt_ms=0 ok=64 tout=0
+EX15-HB seq=127 planned_rel_ms=63500 lag_ms=0 prio=5
+EX15-HB seq=128 planned_rel_ms=64000 lag_ms=0 prio=5
+EX15-NET seq=65 rtt_ms=0 ok=65 tout=0
+EX15-HB seq=129 planned_rel_ms=64500 lag_ms=0 prio=5
+EX15-HB seq=130 planned_rel_ms=65000 lag_ms=0 prio=5
+EX15-NET seq=66 rtt_ms=0 ok=66 tout=0
+EX15-HB seq=131 planned_rel_ms=65500 lag_ms=0 prio=5
+EX15-HB seq=132 planned_rel_ms=66000 lag_ms=0 prio=5
+EX15-NET seq=67 rtt_ms=0 ok=67 tout=0
+EX15-HB seq=133 planned_rel_ms=66500 lag_ms=0 prio=5
+EX15-HB seq=134 planned_rel_ms=67000 lag_ms=0 prio=5
+EX15-NET seq=68 rtt_ms=0 ok=68 tout=0
+EX15-HB seq=135 planned_rel_ms=67500 lag_ms=0 prio=5
+EX15-HB seq=136 planned_rel_ms=68000 lag_ms=0 prio=5
+EX15-NET seq=69 rtt_ms=0 ok=69 tout=0
+EX15-HB seq=137 planned_rel_ms=68500 lag_ms=0 prio=5
+EX15-HB seq=138 planned_rel_ms=69000 lag_ms=0 prio=5
+EX15-NET seq=70 rtt_ms=0 ok=70 tout=0
+EX15-HB seq=139 planned_rel_ms=69500 lag_ms=0 prio=5
+EX15-HB seq=140 planned_rel_ms=70000 lag_ms=0 prio=5
+EX15-NET seq=71 rtt_ms=0 ok=71 tout=0
+EX15-HB seq=141 planned_rel_ms=70500 lag_ms=0 prio=5
+EX15-HB seq=142 planned_rel_ms=71000 lag_ms=0 prio=5
+EX15-NET seq=72 rtt_ms=0 ok=72 tout=0
+EX15-HB seq=143 planned_rel_ms=71500 lag_ms=0 prio=5
+EX15-HB seq=144 planned_rel_ms=72000 lag_ms=0 prio=5
+EX15-NET seq=73 rtt_ms=0 ok=73 tout=0
+EX15-HB seq=145 planned_rel_ms=72500 lag_ms=0 prio=5
+EX15-HB seq=146 planned_rel_ms=73000 lag_ms=0 prio=5
+EX15-NET seq=74 rtt_ms=0 ok=74 tout=0
+EX15-HB seq=147 planned_rel_ms=73500 lag_ms=0 prio=5
+EX15-HB seq=148 planned_rel_ms=74000 lag_ms=0 prio=5
+EX15-NET seq=75 rtt_ms=0 ok=75 tout=0
+EX15-HB seq=149 planned_rel_ms=74500 lag_ms=0 prio=5
+EX15-HB seq=150 planned_rel_ms=75000 lag_ms=0 prio=5
+EX15-NET seq=76 rtt_ms=0 ok=76 tout=0
+$$$ EXDONE sc=0(0-healthy-baseline) result=ok alarms[sched=0 net=0 mbx=0 stk=0] hb_beats=150 net_ok=76 net_tout=0 window_ms=75251
+EX15-HB seq=151 planned_rel_ms=75500 lag_ms=0 prio=5
+EX15-HB seq=152 planned_rel_ms=76000 lag_ms=0 prio=5
+EX15-NET seq=77 rtt_ms=0 ok=77 tout=0
+EX15-HB seq=153 planned_rel_ms=76500 lag_ms=0 prio=5
+EX15-HB seq=154 planned_rel_ms=77000 lag_ms=0 prio=5
+EX15-NET seq=78 rtt_ms=0 ok=78 tout=0
+EX15-HB seq=155 planned_rel_ms=77500 lag_ms=0 prio=5
+EX15-HB seq=156 planned_rel_ms=78000 lag_ms=0 prio=5
+EX15-NET seq=79 rtt_ms=0 ok=79 tout=0
+EX15-HB seq=157 planned_rel_ms=78500 lag_ms=0 prio=5
+EX15-HB seq=158 planned_rel_ms=79000 lag_ms=0 prio=5
+EX15-NET seq=80 rtt_ms=0 ok=80 tout=0
+EX15-HB seq=159 planned_rel_ms=79500 lag_ms=0 prio=5
+EX15-HB seq=160 planned_rel_ms=80000 lag_ms=0 prio=5
+EX15-NET seq=81 rtt_ms=0 ok=81 tout=0
+EX15-HB seq=161 planned_rel_ms=80500 lag_ms=0 prio=5
+EX15-HB seq=162 planned_rel_ms=81000 lag_ms=0 prio=5
+EX15-NET seq=82 rtt_ms=0 ok=82 tout=0
+EX15-HB seq=163 planned_rel_ms=81500 lag_ms=0 prio=5
+EX15-HB seq=164 planned_rel_ms=82000 lag_ms=0 prio=5
+EX15-NET seq=83 rtt_ms=0 ok=83 tout=0
+EX15-HB seq=165 planned_rel_ms=82500 lag_ms=0 prio=5
+EX15-HB seq=166 planned_rel_ms=83000 lag_ms=0 prio=5
+EX15-NET seq=84 rtt_ms=0 ok=84 tout=0
+EX15-HB seq=167 planned_rel_ms=83500 lag_ms=0 prio=5
+EX15-HB seq=168 planned_rel_ms=84000 lag_ms=0 prio=5
+EX15-NET seq=85 rtt_ms=0 ok=85 tout=0
+EX15-HB seq=169 planned_rel_ms=84500 lag_ms=0 prio=5
+EX15-HB seq=170 planned_rel_ms=85000 lag_ms=0 prio=5
+EX15-NET seq=86 rtt_ms=0 ok=86 tout=0
+EX15-HB seq=171 planned_rel_ms=85500 lag_ms=0 prio=5
+EX15-HB seq=172 planned_rel_ms=86000 lag_ms=0 prio=5
+EX15-NET seq=87 rtt_ms=0 ok=87 tout=0
+EX15-HB seq=173 planned_rel_ms=86500 lag_ms=0 prio=5
+EX15-HB seq=174 planned_rel_ms=87000 lag_ms=0 prio=5
+EX15-NET seq=88 rtt_ms=0 ok=88 tout=0
+EX15-HB seq=175 planned_rel_ms=87500 lag_ms=0 prio=5
+EX15-HB seq=176 planned_rel_ms=88000 lag_ms=0 prio=5
+EX15-NET seq=89 rtt_ms=0 ok=89 tout=0
+EX15-HB seq=177 planned_rel_ms=88500 lag_ms=0 prio=5
+EX15-HB seq=178 planned_rel_ms=89000 lag_ms=0 prio=5
+EX15-NET seq=90 rtt_ms=0 ok=90 tout=0
+EX15-HB seq=179 planned_rel_ms=89500 lag_ms=0 prio=5
+EX15-HB seq=180 planned_rel_ms=90000 lag_ms=0 prio=5
+EX15-NET seq=91 rtt_ms=0 ok=91 tout=0
+EX15-HB seq=181 planned_rel_ms=90500 lag_ms=0 prio=5
+EX15-HB seq=182 planned_rel_ms=91000 lag_ms=0 prio=5
+EX15-NET seq=92 rtt_ms=0 ok=92 tout=0
+EX15-HB seq=183 planned_rel_ms=91500 lag_ms=0 prio=5
+EX15-HB seq=184 planned_rel_ms=92000 lag_ms=0 prio=5
+EX15-NET seq=93 rtt_ms=0 ok=93 tout=0
+EX15-HB seq=185 planned_rel_ms=92500 lag_ms=0 prio=5
+EX15-HB seq=186 planned_rel_ms=93000 lag_ms=0 prio=5
+EX15-NET seq=94 rtt_ms=0 ok=94 tout=0
+EX15-HB seq=187 planned_rel_ms=93500 lag_ms=0 prio=5
+EX15-HB seq=188 planned_rel_ms=94000 lag_ms=0 prio=5
+EX15-NET seq=95 rtt_ms=0 ok=95 tout=0
+EX15-HB seq=189 planned_rel_ms=94500 lag_ms=0 prio=5
+EX15-HB seq=190 planned_rel_ms=95000 lag_ms=0 prio=5
+EX15-NET seq=96 rtt_ms=1 ok=96 tout=0
+EX15-HB seq=191 planned_rel_ms=95500 lag_ms=0 prio=5
+EX15-HB seq=192 planned_rel_ms=96000 lag_ms=0 prio=5
+EX15-NET seq=97 rtt_ms=0 ok=97 tout=0
+EX15-HB seq=193 planned_rel_ms=96500 lag_ms=0 prio=5
+EX15-HB seq=194 planned_rel_ms=97000 lag_ms=0 prio=5
+EX15-NET seq=98 rtt_ms=0 ok=98 tout=0
+EX15-HB seq=195 planned_rel_ms=97500 lag_ms=0 prio=5
+EX15-HB seq=196 planned_rel_ms=98000 lag_ms=0 prio=5
+EX15-NET seq=99 rtt_ms=0 ok=99 tout=0
+EX15-HB seq=197 planned_rel_ms=98500 lag_ms=0 prio=5
+EX15-HB seq=198 planned_rel_ms=99000 lag_ms=0 prio=5
+EX15-NET seq=100 rtt_ms=0 ok=100 tout=0
+EX15-HB seq=199 planned_rel_ms=99500 lag_ms=0 prio=5
+EX15-HB seq=200 planned_rel_ms=100000 lag_ms=0 prio=5
+EX15-NET seq=101 rtt_ms=0 ok=101 tout=0
+EX15-HB seq=201 planned_rel_ms=100500 lag_ms=0 prio=5
+EX15-HB seq=202 planned_rel_ms=101000 lag_ms=0 prio=5
+EX15-NET seq=102 rtt_ms=0 ok=102 tout=0
+EX15-HB seq=203 planned_rel_ms=101500 lag_ms=0 prio=5
+EX15-HB seq=204 planned_rel_ms=102000 lag_ms=0 prio=5
+EX15-NET seq=103 rtt_ms=0 ok=103 tout=0
+EX15-HB seq=205 planned_rel_ms=102500 lag_ms=0 prio=5
+EX15-HB seq=206 planned_rel_ms=103000 lag_ms=0 prio=5
+EX15-NET seq=104 rtt_ms=0 ok=104 tout=0
+EX15-HB seq=207 planned_rel_ms=103500 lag_ms=0 prio=5
+EX15-HB seq=208 planned_rel_ms=104000 lag_ms=0 prio=5
+EX15-NET seq=105 rtt_ms=0 ok=105 tout=0
+EX15-HB seq=209 planned_rel_ms=104500 lag_ms=0 prio=5
+EX15-HB seq=210 planned_rel_ms=105000 lag_ms=0 prio=5
+EX15-NET seq=106 rtt_ms=0 ok=106 tout=0
+EX15-HB seq=211 planned_rel_ms=105500 lag_ms=0 prio=5
+EX15-HB seq=212 planned_rel_ms=106000 lag_ms=0 prio=5
+EX15-NET seq=107 rtt_ms=0 ok=107 tout=0
+EX15-HB seq=213 planned_rel_ms=106500 lag_ms=0 prio=5
+EX15-HB seq=214 planned_rel_ms=107000 lag_ms=0 prio=5
+EX15-NET seq=108 rtt_ms=0 ok=108 tout=0
+EX15-HB seq=215 planned_rel_ms=107500 lag_ms=0 prio=5
+EX15-HB seq=216 planned_rel_ms=108000 lag_ms=0 prio=5
+EX15-NET seq=109 rtt_ms=0 ok=109 tout=0
+qemu-system-xtensa: terminating on signal 15 from pid 4080013 (timeout)

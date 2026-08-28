@@ -1,0 +1,2 @@
+LAT label=fast_r1 port=8017 size=64 n=400 ok=400 avg_us=320.2 med_us=269 min_us=92 max_us=12565 p95_us=665
+LAT label=fast_r2 port=8017 size=64 n=400 ok=400 avg_us=270.1 med_us=120 min_us=89 max_us=7425 p95_us=619

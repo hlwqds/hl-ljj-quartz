@@ -1,0 +1,16 @@
+# OpenCores Ethernet MAC 驱动（仅用于 QEMU 仿真，真机不可用）
+CONFIG_ETH_USE_OPENETH=y
+# 打开 lwIP 协议统计（CONFIG_LWIP_STATS -> LWIP_STATS=1, LWIP_STATS_DISPLAY=1）
+# 注意：IDF 全堆化下 MEM_STATS/MEMP_STATS 仍为 0，stats_display() 没有 MEM/MEMP 段
+CONFIG_LWIP_STATS=y
+
+# 实验构建变体（写入本文件后删除 sdkconfig 重新生成才生效）：
+#
+# 实验 A/C/D（默认基线）——以上两行即可。
+#
+# 实验 B（故障注入·TCP PCB 耗尽）：追加下面三行重新构建；
+#   MAX_ACTIVE_TCP 压到 2（Kconfig 范围 [1,1024]，默认 16），
+#   并打开 TCP 源码级调试以捕获 tcp_listen_input 的失败日志：
+# CONFIG_LWIP_MAX_ACTIVE_TCP=2
+# CONFIG_LWIP_DEBUG=y
+# CONFIG_LWIP_TCP_DEBUG=y

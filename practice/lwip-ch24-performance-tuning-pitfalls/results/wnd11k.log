@@ -1,0 +1,11 @@
+== point wnd11k rounds=2 06:52:09 ==
+--- round 1 ---
+RESULT kind=thrx mb=4 ack=b'K' secs=5.072 mbit=6.31
+--- round 2 ---
+RESULT kind=thrx mb=4 ack=b'K' secs=9.402 mbit=3.40
+[fw] $$$ LBRTT ok=200/200 size=512 avg_rtt_us=534 min=407 max=1520
+[fw] $$$ LBTH ack_r=0 bytes=4000000 elapsed_us=344599 mbit=92.86
+[fw] $$$ LBRTT ok=200/200 size=512 avg_rtt_us=520 min=420 max=807
+[fw] $$$ LBTH ack_r=0 bytes=4000000 elapsed_us=339614 mbit=94.22
+[fw] $$$ MEM on-cmd free=206448 largest=110592 min_ever=176404
+$$$ BUILD 06:50:22 sndbuf=5760 wnd=11520 mss=1440 tcpip_mbox=32 pbuf_pool=16

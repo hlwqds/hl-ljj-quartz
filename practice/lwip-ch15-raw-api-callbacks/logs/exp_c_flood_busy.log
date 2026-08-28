@@ -1,0 +1,9 @@
+FLOODTP t=1.0s rx_bytes=7200 rate_mbit=0.06
+FLOODTP t=2.0s rx_bytes=14400 rate_mbit=0.06
+FLOODTP t=3.0s rx_bytes=21600 rate_mbit=0.06
+FLOODTP t=4.0s rx_bytes=28800 rate_mbit=0.06
+FLOODTP t=5.0s rx_bytes=36000 rate_mbit=0.06
+FLOODTP t=6.0s rx_bytes=43200 rate_mbit=0.06
+FLOODTP t=7.0s rx_bytes=50400 rate_mbit=0.06
+FLOODTP t=8.0s rx_bytes=57600 rate_mbit=0.06
+FLOODTP-DONE dur=8.0 rx=57600 errs=['timed out']

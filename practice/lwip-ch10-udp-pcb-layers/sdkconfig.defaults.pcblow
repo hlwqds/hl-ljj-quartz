@@ -1,0 +1,10 @@
+# PHASE C 构建变体：把 MEMP_NUM_UDP_PCB（= CONFIG_LWIP_MAX_UDP_PCBS）压到 2。
+# 用法：cp 本文件覆盖 sdkconfig.defaults，删除 sdkconfig 后重新 idf.py set-target esp32 && idf.py build，
+# 测完再换回 sdkconfig.defaults 恢复。两个文件只有 MAX_UDP_PCBS 一行不同。
+# OpenCores Ethernet MAC 驱动（仅用于 QEMU 仿真，真机不可用）
+CONFIG_ETH_USE_OPENETH=y
+CONFIG_LWIP_STATS=y
+CONFIG_LWIP_MAX_SOCKETS=16
+CONFIG_LWIP_MAX_UDP_PCBS=2
+CONFIG_LWIP_UDP_RECVMBOX_SIZE=6
+CONFIG_LWIP_CHECKSUM_CHECK_UDP=y

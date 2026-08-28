@@ -1,0 +1,84 @@
+Adding SPI flash device
+ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x12 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0040,len:6272
+load:0x40078000,len:15820
+load:0x40080400,len:3920
+entry 0x40080644
+I (667) boot: ESP-IDF v6.0.2 2nd stage bootloader
+I (667) boot: compile time Aug 27 2026 22:55:00
+I (667) boot: Multicore bootloader
+I (716) boot: chip revision: v0.0
+I (717) boot.esp32: SPI Speed      : 40MHz
+I (717) boot.esp32: SPI Mode       : DIO
+I (717) boot.esp32: SPI Flash Size : 2MB
+I (726) boot: Enabling RNG early entropy source...
+I (734) boot: Partition Table:
+I (734) boot: ## Label            Usage          Type ST Offset   Length
+I (734) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (734) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (734) boot:  2 factory          factory app      00 00 00010000 00100000
+I (737) boot: End of partition table
+I (780) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=1026ch ( 66156) map
+I (798) esp_image: segment 1: paddr=00020294 vaddr=3ffb0000 size=0382ch ( 14380) load
+I (813) esp_image: segment 2: paddr=00023ac8 vaddr=40080000 size=0b23ch ( 45628) load
+I (840) esp_image: segment 3: paddr=0002ed0c vaddr=50000000 size=00028h (    40) load
+I (864) esp_image: segment 4: paddr=0002ed3c vaddr=00000000 size=012dch (  4828) 
+I (881) esp_image: segment 5: paddr=00030020 vaddr=400d0020 size=2d2c0h (185024) map
+I (950) boot: Loaded app from partition at offset 0x10000
+I (950) boot: Disabling RNG early entropy source...
+I (964) cpu_start: Multicore app
+I (1623) cpu_start: GPIO 3 and 1 are used as console UART I/O pins
+I (1625) cpu_start: Pro cpu start user code
+I (1625) cpu_start: cpu freq: 160000000 Hz
+I (1626) app_init: Application information:
+I (1626) app_init: Project name:     ex16_zero_copy_cases
+I (1626) app_init: App version:      924d871-dirty
+I (1626) app_init: Compile time:     Aug 27 2026 22:54:58
+I (1626) app_init: ELF file SHA256:  a5af64be4...
+I (1626) app_init: ESP-IDF:          v6.0.2
+I (1626) efuse_init: Min chip rev:     v0.0
+I (1626) efuse_init: Max chip rev:     v3.99 
+I (1626) efuse_init: Chip rev:         v0.0
+I (1627) heap_init: Initializing. RAM available for dynamic allocation:
+I (1628) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM
+I (1628) heap_init: At 3FFC12B8 len 0001ED48 (123 KiB): DRAM
+I (1628) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM
+I (1628) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM
+I (1628) heap_init: At 4008B23C len 00014DC4 (83 KiB): IRAM
+I (1663) spi_flash: detected chip: winbond
+I (1667) spi_flash: flash io: dio
+I (1678) main_task: Started on CPU0
+I (1678) main_task: Calling app_main()
+
+=== ex16 zero-copy-cases | build Aug 27 2026 22:54:58 ===
+$$$ EX16-FACT build="Aug 27 2026 22:54:58" case=5 idf_lwip_port='TX_SINGLE_PBUF hardcoded=1' target='esp32' reflector=0 rounds_per_stage=1200 block=300 rec_body=1024 b_hdr=16 b_body=512 c_msg=256 c_msgs=400 c_passes=5 d_arena=114688 trace_facility=1 lwip_stats=0
+I (1708) esp_eth.netif.netif_glue: 52:54:00:12:34:56
+I (1708) esp_eth.netif.netif_glue: ethernet attached to netif
+I (1808) ex16: waiting for DHCP lease ...
+E (1808) esp_eth: esp_eth_ioctl(533): add mac address to filter not supported
+E (1808) esp_eth.netif.netif_glue: eth_set_mac_filter(56): failed to add mac filter
+E (1808) esp_netif_lwip: Failed to add multicast filter for IPv4
+I (1808) ex16: [t=182 ms] ETH_EVENT CONNECTED
+I (2818) ex16: [t=1188 ms] IP_EVENT GOT_IP: ip 10.0.2.15 gw 10.0.2.2
+I (2818) esp_netif_handlers: eth ip: 10.0.2.15, mask: 255.255.255.0, gw: 10.0.2.2
+$$$ EXREADY case=5 ip=10.0.2.15 gw=10.0.2.2 dst=127.0.0.1:8330 self_target_forbidden=10.0.2.15 note='Batch8: own-IP as dst wedges tcpip'
+$$$ EX16-CFG case=E rounds=1200 window=4 msg_tot=1042 note='apiflags evidence + pipeline buffer-reuse behavior proof'
+$$$ EX16-CITE file=components/lwip/port/include/lwipopts.h line=765 macro=LWIP_NETIF_TX_SINGLE_PBUF value=1 comment='hard-coded, not a Kconfig knob'
+$$$ EX16-CITE file=components/lwip/lwip/src/core/tcp_out.c lines=425-428 stmt='apiflags |= TCP_WRITE_FLAG_COPY' condition=LWIP_NETIF_TX_SINGLE_PBUF comment='tcp_write entry forces COPY regardless of caller flags'
+$$$ EX16-CITE why='DMA MACs without scatter-gather expect one single TX pbuf; forcing copy also lets lwIP precompute checksum while copying' alternatives='make own netif + LWIP_NETIF_TX_SINGLE_PBUF=0 port build / PCP pbuf_reference style APIs unavailable here'
+EX16-CLICONN who=E dst=127.0.0.1:8330
+EX16-HEAP at=case-E begin free=213152 largest=110592 min_ever=212952
+== EX16-PHASE name=E-pipeline-run ==
+$$$ EX16-EFLAG form=copy-explicit req_apiflags=0x01 semantics='upstream=lwIP-private copy'
+$$$ EX16-EFLAG form=nocopy-requested req_apiflags=0x00 semantics='upstream=zero-copy reference; IDF=silently forced to COPY by port macro'
+$$$ EX16-DIGEST item=E-roundtrip status=PASS verified=2400 planned=2400
+$$$ EX16-RESULT case=E kind=evidence copy_form_sent=1200 nocopy_req_sent=1200 verdict=PASS conclusion='COPY was silently forced for BOTH forms; immediate buffer reuse is therefore SAFE on IDF (and would corrupt a true reference-semantics stack)'
+$$$ EX16-SAMPLE who=E-loopback-rtt med_us=429 p95_us=514 min=327 max=1707 n=1200
+EX16-HEAP at=case-E end free=211844 largest=110592 min_ever=199736
+$$$ EXDONE case=5(honest-boundary) result=ok dur_ms=413 fail=0
+qemu-system-xtensa: terminating on signal 15 from pid 76844 (timeout)

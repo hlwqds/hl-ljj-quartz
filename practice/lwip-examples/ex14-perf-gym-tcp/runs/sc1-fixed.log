@@ -1,0 +1,106 @@
+Adding SPI flash device
+ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x12 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0040,len:6272
+load:0x40078000,len:15820
+load:0x40080400,len:3920
+entry 0x40080644
+I (684) boot: ESP-IDF v6.0.2 2nd stage bootloader
+I (684) boot: compile time Aug 27 2026 19:04:19
+I (684) boot: Multicore bootloader
+I (718) boot: chip revision: v0.0
+I (720) boot.esp32: SPI Speed      : 40MHz
+I (720) boot.esp32: SPI Mode       : DIO
+I (720) boot.esp32: SPI Flash Size : 2MB
+I (727) boot: Enabling RNG early entropy source...
+I (732) boot: Partition Table:
+I (732) boot: ## Label            Usage          Type ST Offset   Length
+I (732) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (733) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (733) boot:  2 factory          factory app      00 00 00010000 00100000
+I (737) boot: End of partition table
+I (766) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=11490h ( 70800) map
+I (782) esp_image: segment 1: paddr=000214b8 vaddr=3ffb0000 size=02acch ( 10956) load
+I (795) esp_image: segment 2: paddr=00023f8c vaddr=40080000 size=0b23ch ( 45628) load
+I (812) esp_image: segment 3: paddr=0002f1d0 vaddr=50000000 size=00028h (    40) load
+I (831) esp_image: segment 4: paddr=0002f200 vaddr=00000000 size=00e18h (  3608) 
+I (851) esp_image: segment 5: paddr=00030020 vaddr=400d0020 size=2ca28h (182824) map
+I (923) boot: Loaded app from partition at offset 0x10000
+I (923) boot: Disabling RNG early entropy source...
+I (938) cpu_start: Multicore app
+I (1562) cpu_start: GPIO 3 and 1 are used as console UART I/O pins
+I (1564) cpu_start: Pro cpu start user code
+I (1564) cpu_start: cpu freq: 160000000 Hz
+I (1564) app_init: Application information:
+I (1564) app_init: Project name:     ex14_perf_gym_tcp
+I (1564) app_init: App version:      924d871-dirty
+I (1564) app_init: Compile time:     Aug 27 2026 19:48:22
+I (1565) app_init: ELF file SHA256:  fcd9fd0b8...
+I (1565) app_init: ESP-IDF:          v6.0.2
+I (1565) efuse_init: Min chip rev:     v0.0
+I (1565) efuse_init: Max chip rev:     v3.99 
+I (1565) efuse_init: Chip rev:         v0.0
+I (1565) heap_init: Initializing. RAM available for dynamic allocation:
+I (1566) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM
+I (1566) heap_init: At 3FFC8108 len 00017EF8 (95 KiB): DRAM
+I (1566) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM
+I (1566) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM
+I (1566) heap_init: At 4008B23C len 00014DC4 (83 KiB): IRAM
+I (1593) spi_flash: detected chip: winbond
+I (1598) spi_flash: flash io: dio
+I (1607) main_task: Started on CPU0
+I (1607) main_task: Calling app_main()
+I (1607) ex14: == ex14 perf-gym-tcp: TCP misconfiguration gym ==
+I (1607) ex14: $$$ EX14BOOT board=esp32-qemu-openeth
+I (1627) esp_eth.netif.netif_glue: 52:54:00:12:34:56
+I (1627) esp_eth.netif.netif_glue: ethernet attached to netif
+I (1727) ex14: [EX14] ETH START
+E (1727) esp_eth: esp_eth_ioctl(533): add mac address to filter not supported
+E (1727) esp_eth.netif.netif_glue: eth_set_mac_filter(56): failed to add mac filter
+E (1727) esp_netif_lwip: Failed to add multicast filter for IPv4
+I (1727) ex14: [EX14] ETH CONNECTED (link up)
+I (2737) ex14: [EX14] GOT_IP 10.0.2.15 gw 10.0.2.2
+I (2737) esp_netif_handlers: eth ip: 10.0.2.15, mask: 255.255.255.0, gw: 10.0.2.2
+$$$ EX14NETUP ip=10.0.2.15 gw=10.0.2.2
+$$$ EX14FACT build="Aug 27 2026 19:48:23" scenario=1 name=tiny-window mss=1440 snd_buf=5760 wnd=5760 openeth_ring=4 max_active_tcp=16 lwip_stats=1
+$$$ EX14PROFILE legs=lb+tx+rx probe=off rounds=2 mb_per_leg=2000000 tx_target=10.0.2.2:8311 rx_listen=:8310 lb_mirror=10.0.2.2:8312
+$$$ EX14VERDICT key=window_small ok snd_buf=5760 wnd=5760 mss=1440 detail=external-path-rate~window/RTT(ch24)
+$$$ EX14VERDICT key=wnd_ring ok wnd=5760 ring=4
+$$$ EX14VERDICT key=pcb_gate ok max_active_tcp=16
+$$$ EX14VERDICT key=sent_hook present detail=ack-driven-refill-on
+$$$ EX14STATS phase=rounds_pre link.recv=1 tcp.memerr=0 tcp.drop=0 tcp.chkerr=0 (absolute)
+$$$ EX14HEAP phase=rounds_pre free=183888 largest=110592 min_ever=183868
+$$$ EX14ROUND r=1 leg=LB begin
+I (2747) main_task: Returned from app_main()
+W (2757) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (2767) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (2777) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+$$$ EX14LB r=1 RESULT status=OK conn_ms=4 up_mbit=29.96 dn_mbit=33.29 up_ms=70 dn_ms=63 up_digest=3281 dn_digest=3281 match=1
+$$$ EX14ROUND r=1 leg=TX begin (needs tools/gym_sink.py on host:8311)
+$$$ EX14TX r=1 BEGIN target=10.0.2.2:8311 bytes=2000000
+$$$ EX14TX r=1 RESULT status=COMPLETE bytes=2000000/2000000 xfer_ms=351 mbit=45.584 sent_hits=1384 poll_hits=0 acked_app=1994400 min_sndbuf=0 k=0 digest=c546 err=0 stage=done_ok
+$$$ EX14ROUND r=1 leg=RX begin (needs tools/gym_flood.py -> hostfwd 8310)
+$$$ EX14RX_LISTEN port=8310 backlog=4 hint=needs-QEMU-hostfwd-tcp::8310-:8310
+I (6957) ex14: [EX14] RX r=1 CONN from=10.0.2.2:35260 (wait 2791 ms)
+$$$ EX14RX r=1 RESULT status=OK got=2000000/2000000 wait_ms=2791 xfer_ms=182 mbit=88.127 digest=c546 err=0
+$$$ EX14STATS phase=after_round1 d_link.recv=1 d_tcp.xmit=2827 d_tcp.recv=3138 d_tcp.drop=1 d_tcp.memerr=0
+$$$ EX14ROUND r=2 leg=LB begin
+W (7437) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+W (7457) opencores.emac: emac_opencores_isr_handler: RX frame dropped (0x14)
+$$$ EX14WD t_ms=6178 d_tcp.xmit=0 d_tcp.recv=0 d_link.recv=0 
+$$$ EX14LB r=2 RESULT status=OK conn_ms=2 up_mbit=51.15 dn_mbit=1.37 up_ms=41 dn_ms=1527 up_digest=3281 dn_digest=3281 match=1
+$$$ EX14ROUND r=2 leg=TX begin (needs tools/gym_sink.py on host:8311)
+$$$ EX14TX r=2 BEGIN target=10.0.2.2:8311 bytes=2000000
+$$$ EX14TX r=2 RESULT status=COMPLETE bytes=2000000/2000000 xfer_ms=134 mbit=119.403 sent_hits=1384 poll_hits=0 acked_app=1994400 min_sndbuf=0 k=0 digest=c546 err=0 stage=done_ok
+$$$ EX14ROUND r=2 leg=RX begin (needs tools/gym_flood.py -> hostfwd 8310)
+$$$ EX14RX_LISTEN port=8310 backlog=4 hint=needs-QEMU-hostfwd-tcp::8310-:8310
+I (10147) ex14: [EX14] RX r=2 CONN from=10.0.2.2:57326 (wait 87 ms)
+$$$ EX14RX r=2 RESULT status=OK got=2000000/2000000 wait_ms=87 xfer_ms=221 mbit=72.445 digest=c546 err=0
+$$$ EX14STATS phase=rounds_post d_link.recv=2 d_tcp.xmit=5610 d_tcp.recv=6293 d_tcp.drop=11 d_tcp.memerr=0
+$$$ EX14HEAP phase=rounds_post free=183324 largest=110592 min_ever=162792
+$$$ EX14SUMMARY scenario=1 rounds=2 lb_ok=2/2 avg_lb_up=40.55 avg_lb_dn=17.33 | tx_complete=2 trickle_or_partial=0 avg_tx_mbit=82.49 | rx_ok=2/2 avg_rx_mbit=80.29 | conc=skipped hints=README-sc1
+$$$ EX14DONE scenario=1 name=tiny-window -- restarting to exit QEMU cleanly

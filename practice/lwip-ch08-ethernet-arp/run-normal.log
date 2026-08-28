@@ -1,0 +1,319 @@
+Adding SPI flash device
+ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x12 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0040,len:6272
+load:0x40078000,len:15820
+load:0x40080400,len:3920
+entry 0x40080644
+I (669) boot: ESP-IDF v6.0.2 2nd stage bootloader
+I (669) boot: compile time Aug 27 2026 01:21:39
+I (669) boot: Multicore bootloader
+I (706) boot: chip revision: v3.0
+I (707) boot.esp32: SPI Speed      : 40MHz
+I (707) boot.esp32: SPI Mode       : DIO
+I (707) boot.esp32: SPI Flash Size : 2MB
+I (714) boot: Enabling RNG early entropy source...
+I (723) boot: Partition Table:
+I (723) boot: ## Label            Usage          Type ST Offset   Length
+I (723) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (723) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (723) boot:  2 factory          factory app      00 00 00010000 00100000
+I (729) boot: End of partition table
+I (770) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=0f924h ( 63780) map
+I (791) esp_image: segment 1: paddr=0001f94c vaddr=3ffb0000 size=006cch (  1740) load
+I (812) esp_image: segment 2: paddr=00020020 vaddr=400d0020 size=2a318h (172824) map
+I (842) esp_image: segment 3: paddr=0004a340 vaddr=3ffb06cc size=02400h (  9216) load
+I (865) esp_image: segment 4: paddr=0004c748 vaddr=40080000 size=0b23ch ( 45628) load
+I (882) esp_image: segment 5: paddr=0005798c vaddr=50000000 size=00028h (    40) load
+I (965) boot: Loaded app from partition at offset 0x10000
+I (965) boot: Disabling RNG early entropy source...
+I (979) cpu_start: Multicore app
+I (1654) cpu_start: GPIO 3 and 1 are used as console UART I/O pins
+I (1656) cpu_start: Pro cpu start user code
+I (1657) cpu_start: cpu freq: 160000000 Hz
+I (1657) app_init: Application information:
+I (1657) app_init: Project name:     lwip_ch08_ethernet_arp
+I (1657) app_init: App version:      924d871
+I (1657) app_init: Compile time:     Aug 27 2026 01:21:23
+I (1657) app_init: ELF file SHA256:  e16ba7874...
+I (1657) app_init: ESP-IDF:          v6.0.2
+I (1657) efuse_init: Min chip rev:     v0.0
+I (1657) efuse_init: Max chip rev:     v3.99 
+I (1657) efuse_init: Chip rev:         v3.0
+I (1658) heap_init: Initializing. RAM available for dynamic allocation:
+I (1659) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM
+I (1659) heap_init: At 3FFB4080 len 0002BF80 (175 KiB): DRAM
+I (1659) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM
+I (1659) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM
+I (1659) heap_init: At 4008B23C len 00014DC4 (83 KiB): IRAM
+I (1695) spi_flash: detected chip: winbond
+I (1699) spi_flash: flash io: dio
+I (1713) main_task: Started on CPU0
+I (1713) main_task: Calling app_main()
+I (1713) ch8lab: == ch8 lab: ethernet RX path + ARP cache ==
+I (1713) ch8lab: [CFG] build: ARP_TABLE_SIZE=10, ARP_QUEUEING=1, LWIP_STATS=1
+I (1733) esp_eth.netif.netif_glue: 52:54:00:12:34:56
+I (1733) esp_eth.netif.netif_glue: ethernet attached to netif
+E (1833) esp_eth: esp_eth_ioctl(533): add mac address to filter not supported
+E (1833) esp_eth.netif.netif_glue: eth_set_mac_filter(56): failed to add mac filter
+E (1833) esp_netif_lwip: Failed to add multicast filter for IPv4
+I (1833) ch8lab: ETH_EVENT: CONNECTED (link up)
+I (1833) ch8lab: waiting for DHCP lease ...
+I (2833) ch8lab: GOT_IP: 10.0.2.15/255.255.255.0 gw 10.0.2.2
+I (2833) esp_netif_handlers: eth ip: 10.0.2.15, mask: 255.255.255.0, gw: 10.0.2.2
+[ARPTAB] --- dump @W boot ground truth ---
+[ARPTAB] stable entries (ARP_TABLE_SIZE=10):
+[ARPTAB]   (no stable entry)
+[BENCH] === cold-warm: 12x connect 10.0.2.2:8108 ===
+[BENCH] cold-warm  conn#00 took 22614 us : ESTABLISHED
+[BENCH] cold-warm  conn#01 took 4850 us : ESTABLISHED
+[BENCH] cold-warm  conn#02 took 4227 us : ESTABLISHED
+[BENCH] cold-warm  conn#03 took 3553 us : ESTABLISHED
+[BENCH] cold-warm  conn#04 took 3587 us : ESTABLISHED
+[BENCH] cold-warm  conn#05 took 3630 us : ESTABLISHED
+[BENCH] cold-warm  conn#06 took 2482 us : ESTABLISHED
+[BENCH] cold-warm  conn#07 took 4098 us : ESTABLISHED
+[BENCH] cold-warm  conn#08 took 2541 us : ESTABLISHED
+[BENCH] cold-warm  conn#09 took 2620 us : ESTABLISHED
+[BENCH] cold-warm  conn#10 took 2678 us : ESTABLISHED
+[BENCH] cold-warm  conn#11 took 2695 us : ESTABLISHED
+[UDP] probe gw-dns -> 10.0.2.3 : rc=4
+[ARPTAB] --- dump @B after resolved 10.0.2.3 ---
+[ARPTAB] stable entries (ARP_TABLE_SIZE=10):
+[ARPTAB]   slot  1: 10.0.2.2 @ 52:55:0a:00:02:02 netif=en2
+[ARPTAB]   slot  2: 10.0.2.3 @ 52:55:0a:00:02:03 netif=en2
+[PEND] sent probe to unresolved 10.0.2.77, watch pending lifecycle ...
+[UDP] probe dead-ip -> 10.0.2.77 : rc=4
+[ARPTAB] --- dump @B right after pending created (public API sees nothing) ---
+[ARPTAB] stable entries (ARP_TABLE_SIZE=10):
+[ARPTAB]   slot  1: 10.0.2.2 @ 52:55:0a:00:02:02 netif=en2
+[ARPTAB]   slot  2: 10.0.2.3 @ 52:55:0a:00:02:03 netif=en2
+[TICK] +1s
+[TICK] +2s
+[TICK] +3s
+[TICK] +4s
+[TICK] +5s
+[TICK] +6s
+[TICK] +7s
+[ARPTAB] --- dump @C before fault sequence ---
+[ARPTAB] stable entries (ARP_TABLE_SIZE=10):
+[ARPTAB]   slot  1: 10.0.2.2 @ 52:55:0a:00:02:02 netif=en2
+[ARPTAB]   slot  2: 10.0.2.3 @ 52:55:0a:00:02:03 netif=en2
+[BURST] queue-fill: 5 rapid datagrams -> 10.0.2.101 (resolve pending)
+[BURST]   #0 rc=4
+[BURST]   #1 rc=4
+[BURST]   #2 rc=4
+[BURST]   #3 rc=-1Not enough space
+[BURST]   #4 rc=-1Not enough space
+[UDP] probe evictor -> 10.0.2.201 : rc=4
+[BENCH] === post-evict: 3x connect 10.0.2.2:8108 ===
+[BENCH] post-evict conn#00 took 2638 us : ESTABLISHED
+[BENCH] post-evict conn#01 took 2786 us : ESTABLISHED
+[BENCH] post-evict conn#02 took 2702 us : ESTABLISHED
+[ARPTAB] --- dump @C after fault sequence ---
+[ARPTAB] stable entries (ARP_TABLE_SIZE=10):
+[ARPTAB]   slot  1: 10.0.2.2 @ 52:55:0a:00:02:02 netif=en2
+[ARPTAB]   slot  2: 10.0.2.3 @ 52:55:0a:00:02:03 netif=en2
+[STATS] final lwIP stats (ETHARP row: xmit/recv/fw/drop/err/memerr/cachehit)
+
+LINK
+	xmit: 3
+	recv: 3
+	fw: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 0
+	opterr: 0
+	err: 0
+	cachehit: 0
+
+ETHARP
+	xmit: 17
+	recv: 2
+	fw: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 0
+	opterr: 0
+	err: 0
+	cachehit: 58
+
+IP_FRAG
+	xmit: 0
+	recv: 0
+	fw: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 0
+	opterr: 0
+	err: 0
+	cachehit: 0
+
+IPv6 FRAG
+	xmit: 0
+	recv: 0
+	fw: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 0
+	opterr: 0
+	err: 0
+	cachehit: 0
+
+IP
+	xmit: 70
+	recv: 48
+	fw: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 0
+	opterr: 0
+	err: 0
+	cachehit: 0
+
+ND
+	xmit: 3
+	recv: 0
+	fw: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 0
+	opterr: 0
+	err: 0
+	cachehit: 0
+
+IPv6
+	xmit: 3
+	recv: 3
+	fw: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 0
+	opterr: 0
+	err: 0
+	cachehit: 0
+
+IGMP
+	xmit: 0
+	recv: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	proterr: 0
+	rx_v1: 0
+	rx_group: 0
+	rx_general: 0
+	rx_report: 0
+	tx_join: 0
+	tx_leave: 0
+	tx_report: 0
+
+MLDv1
+	xmit: 0
+	recv: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	proterr: 0
+	rx_v1: 0
+	rx_group: 0
+	rx_general: 0
+	rx_report: 0
+	tx_join: 0
+	tx_leave: 0
+	tx_report: 0
+
+ICMP
+	xmit: 0
+	recv: 1
+	fw: 0
+	drop: 1
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 1
+	opterr: 0
+	err: 0
+	cachehit: 0
+
+ICMPv6
+	xmit: 0
+	recv: 0
+	fw: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 0
+	opterr: 0
+	err: 0
+	cachehit: 0
+
+UDP
+	xmit: 10
+	recv: 2
+	fw: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 0
+	opterr: 0
+	err: 0
+	cachehit: 2
+
+TCP
+	xmit: 60
+	recv: 45
+	fw: 0
+	drop: 0
+	chkerr: 0
+	lenerr: 0
+	memerr: 0
+	rterr: 0
+	proterr: 0
+	opterr: 0
+	err: 0
+	cachehit: 45
+
+SYS
+	sem.used:  0
+	sem.max:   0
+	sem.err:   0
+	mutex.used: 0
+	mutex.max:  0
+	mutex.err:  0
+	mbox.used:  0
+	mbox.max:   0
+	mbox.err:   0
+I (14003) ch8lab: == ch8 lab done, idle ==

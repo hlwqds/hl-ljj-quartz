@@ -1,0 +1,135 @@
+Adding SPI flash device
+ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x12 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0040,len:6272
+load:0x40078000,len:15820
+load:0x40080400,len:3920
+entry 0x40080644
+I (671) boot: ESP-IDF v6.0.2 2nd stage bootloader
+I (672) boot: compile time Aug 27 2026 01:26:08
+I (672) boot: Multicore bootloader
+I (704) boot: chip revision: v3.0
+I (706) boot.esp32: SPI Speed      : 40MHz
+I (706) boot.esp32: SPI Mode       : DIO
+I (706) boot.esp32: SPI Flash Size : 2MB
+I (712) boot: Enabling RNG early entropy source...
+I (718) boot: Partition Table:
+I (718) boot: ## Label            Usage          Type ST Offset   Length
+I (718) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (718) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (718) boot:  2 factory          factory app      00 00 00010000 00100000
+I (722) boot: End of partition table
+I (752) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=0f654h ( 63060) map
+I (767) esp_image: segment 1: paddr=0001f67c vaddr=3ffb0000 size=0099ch (  2460) load
+I (780) esp_image: segment 2: paddr=00020020 vaddr=400d0020 size=28fbch (167868) map
+I (800) esp_image: segment 3: paddr=00048fe4 vaddr=3ffb099c size=02140h (  8512) load
+I (815) esp_image: segment 4: paddr=0004b12c vaddr=40080000 size=0b23ch ( 45628) load
+I (832) esp_image: segment 5: paddr=00056370 vaddr=50000000 size=00028h (    40) load
+I (881) boot: Loaded app from partition at offset 0x10000
+I (881) boot: Disabling RNG early entropy source...
+I (892) cpu_start: Multicore app
+I (1475) cpu_start: GPIO 3 and 1 are used as console UART I/O pins
+I (1477) cpu_start: Pro cpu start user code
+I (1477) cpu_start: cpu freq: 160000000 Hz
+I (1478) app_init: Application information:
+I (1478) app_init: Project name:     lwip_ch10_udp_pcb_layers
+I (1478) app_init: App version:      924d871
+I (1478) app_init: Compile time:     Aug 27 2026 01:26:06
+I (1478) app_init: ELF file SHA256:  97509928c...
+I (1478) app_init: ESP-IDF:          v6.0.2
+I (1478) efuse_init: Min chip rev:     v0.0
+I (1478) efuse_init: Max chip rev:     v3.99 
+I (1478) efuse_init: Chip rev:         v3.0
+I (1479) heap_init: Initializing. RAM available for dynamic allocation:
+I (1479) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM
+I (1480) heap_init: At 3FFB4A78 len 0002B588 (173 KiB): DRAM
+I (1480) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM
+I (1480) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM
+I (1480) heap_init: At 4008B23C len 00014DC4 (83 KiB): IRAM
+I (1516) spi_flash: detected chip: winbond
+I (1520) spi_flash: flash io: dio
+I (1528) main_task: Started on CPU0
+I (1528) main_task: Calling app_main()
+I (1528) ch10lab: == ch10 lab: udp pcb layers / 3-api echo / fault injection ==
+CH10-FACT MAX_UDP_PCBS=16 UDP_RECVMBOX_SIZE=6 MAX_SOCKETS=16
+I (1548) esp_eth.netif.netif_glue: 52:54:00:12:34:56
+I (1548) esp_eth.netif.netif_glue: ethernet attached to netif
+I (1648) ch10lab: ETH_EVENT id=0
+E (1648) esp_eth: esp_eth_ioctl(533): add mac address to filter not supported
+E (1648) esp_eth.netif.netif_glue: eth_set_mac_filter(56): failed to add mac filter
+E (1648) esp_netif_lwip: Failed to add multicast filter for IPv4
+I (1648) ch10lab: ETH_EVENT id=2
+I (2648) ch10lab: GOT_IP: 10.0.2.15
+I (2648) esp_netif_handlers: eth ip: 10.0.2.15, mask: 255.255.255.0, gw: 10.0.2.2
+CH10-PCBLIST idx=0 lport=68 rport=67 connected=1
+CH10-FACT sizeof(struct udp_pcb)=80 active_pcbs=1
+CH10-SERVER api=raw(port=ctrl) port=8019 started
+CH10-SERVER api=raw port=8010 started (runs in tcpip thread)
+CH10-SERVER api=netconn port=8011 task=ch10_nc prio=5 stack=4096
+CH10-SERVER api=socket fd=48 port=8012 task=ch10_sock prio=5
+CH10-SERVER api=raw(port=inj) port=7777 started
+CH10-FACT CHECKSUM_CHECK_UDP=1 (per-netif flags may still veto)
+CH10-INJ inject "ch10-inject-ok" len=42 udp_cksum=0x8cb2 (CORRECT)
+CH10-UDPSTATS recv=2 xmit=2 drop=0 chkerr=0 lenerr=0 memerr=0 rterr=0 proterr=0 | app rx raw=0 nc=0 sock=0 inj=0 slow_ms=0
+CH10-INJ delivered payload='ch10-inject-ok'
+CH10-INJ ip4_input returned 0 (consumed by stack)
+CH10-UDPSTATS recv=3 xmit=2 drop=0 chkerr=0 lenerr=0 memerr=0 rterr=0 proterr=0 | app rx raw=0 nc=0 sock=0 inj=1 slow_ms=0
+CH10-INJ inject "ch10-inject-corrupt" len=47 udp_cksum=0x3cc0 (CORRUPT)
+CH10-UDPSTATS recv=3 xmit=2 drop=0 chkerr=0 lenerr=0 memerr=0 rterr=0 proterr=0 | app rx raw=0 nc=0 sock=0 inj=1 slow_ms=0
+CH10-INJ ip4_input returned 0 (consumed by stack)
+CH10-UDPSTATS recv=4 xmit=2 drop=1 chkerr=1 lenerr=0 memerr=0 rterr=0 proterr=0 | app rx raw=0 nc=0 sock=0 inj=1 slow_ms=0
+CH10-PHASE C start MAX_UDP_PCBS=16
+CH10-PCBOK   #0 fd=49 bound :7730
+CH10-PCBOK   #1 fd=50 bound :7731
+CH10-PCBOK   #2 fd=51 bound :7732
+CH10-PCBOK   #3 fd=52 bound :7733
+CH10-PCBOK   #4 fd=53 bound :7734
+CH10-PCBOK   #5 fd=54 bound :7735
+CH10-PHASE C closed 6 sockets, recovery probe:
+CH10-PCBRECOVERY socket=49 OK after close -> memp gate released
+CH10-READY servers on 8010/8011/8012/8019, keepalive 300s
+CH10-SLOW set to 10 ms
+CH10-UDPSTATS recv=10497 xmit=5594 drop=1 chkerr=1 lenerr=0 memerr=0 rterr=0 proterr=0 | app rx raw=5286 nc=305 sock=0 inj=1 slow_ms=10
+CH10-UDPSTATS recv=15718 xmit=5896 drop=1 chkerr=1 lenerr=0 memerr=0 rterr=0 proterr=0 | app rx raw=5286 nc=305 sock=302 inj=1 slow_ms=10
+CH10-UDPSTATS recv=15719 xmit=5896 drop=1 chkerr=1 lenerr=0 memerr=0 rterr=0 proterr=0 | app rx raw=5286 nc=305 sock=302 inj=1 slow_ms=10
+CH10-PCBLIST idx=0 lport=7777 rport=0 connected=0
+CH10-PCBLIST idx=1 lport=8012 rport=0 connected=0
+CH10-PCBLIST idx=2 lport=8011 rport=0 connected=0
+CH10-PCBLIST idx=3 lport=8010 rport=0 connected=0
+CH10-PCBLIST idx=4 lport=8019 rport=0 connected=0
+CH10-PCBLIST idx=5 lport=68 rport=67 connected=1
+CH10-FACT sizeof(struct udp_pcb)=80 active_pcbs=6
+CH10-UDPSTATS recv=15719 xmit=5897 drop=1 chkerr=1 lenerr=0 memerr=0 rterr=0 proterr=0 | app rx raw=5286 nc=305 sock=302 inj=1 slow_ms=10
+CH10-UDPSTATS recv=15719 xmit=5897 drop=1 chkerr=1 lenerr=0 memerr=0 rterr=0 proterr=0 | app rx raw=5286 nc=305 sock=302 inj=1 slow_ms=10
+CH10-UDPSTATS recv=15719 xmit=5897 drop=1 chkerr=1 lenerr=0 memerr=0 rterr=0 proterr=0 | app rx raw=5286 nc=305 sock=302 inj=1 slow_ms=10
+CH10-SLOW set to 0 ms
+CH10-UDPSTATS recv=19210 xmit=9388 drop=1 chkerr=1 lenerr=0 memerr=0 rterr=0 proterr=0 | app rx raw=5286 nc=3795 sock=302 inj=1 slow_ms=0
+CH10-UDPSTATS recv=19210 xmit=9388 drop=1 chkerr=1 lenerr=0 memerr=0 rterr=0 proterr=0 | app rx raw=5286 nc=3795 sock=302 inj=1 slow_ms=0
+CH10-UDPSTATS recv=19210 xmit=9388 drop=1 chkerr=1 lenerr=0 memerr=0 rterr=0 proterr=0 | app rx raw=5286 nc=3795 sock=302 inj=1 slow_ms=0
+CH10-UDPSTATS recv=19210 xmit=9388 drop=1 chkerr=1 lenerr=0 memerr=0 rterr=0 proterr=0 | app rx raw=5286 nc=3795 sock=302 inj=1 slow_ms=0
+CH10-UDPSTATS recv=19210 xmit=9388 drop=1 chkerr=1 lenerr=0 memerr=0 rterr=0 proterr=0 | app rx raw=5286 nc=3795 sock=302 inj=1 slow_ms=0
+CH10-UDPSTATS recv=19210 xmit=9388 drop=1 chkerr=1 lenerr=0 memerr=0 rterr=0 proterr=0 | app rx raw=5286 nc=3795 sock=302 inj=1 slow_ms=0
+CH10-UDPSTATS recv=19210 xmit=9388 drop=1 chkerr=1 lenerr=0 memerr=0 rterr=0 proterr=0 | app rx raw=5286 nc=3795 sock=302 inj=1 slow_ms=0
+CH10-UDPSTATS recv=19210 xmit=9388 drop=1 chkerr=1 lenerr=0 memerr=0 rterr=0 proterr=0 | app rx raw=5286 nc=3795 sock=302 inj=1 slow_ms=0
+CH10-UDPSTATS recv=19210 xmit=9388 drop=1 chkerr=1 lenerr=0 memerr=0 rterr=0 proterr=0 | app rx raw=5286 nc=3795 sock=302 inj=1 slow_ms=0
+CH10-UDPSTATS recv=19210 xmit=9388 drop=1 chkerr=1 lenerr=0 memerr=0 rterr=0 proterr=0 | app rx raw=5286 nc=3795 sock=302 inj=1 slow_ms=0
+CH10-UDPSTATS recv=19210 xmit=9388 drop=1 chkerr=1 lenerr=0 memerr=0 rterr=0 proterr=0 | app rx raw=5286 nc=3795 sock=302 inj=1 slow_ms=0
+CH10-UDPSTATS recv=19210 xmit=9388 drop=1 chkerr=1 lenerr=0 memerr=0 rterr=0 proterr=0 | app rx raw=5286 nc=3795 sock=302 inj=1 slow_ms=0
+CH10-UDPSTATS recv=19210 xmit=9388 drop=1 chkerr=1 lenerr=0 memerr=0 rterr=0 proterr=0 | app rx raw=5286 nc=3795 sock=302 inj=1 slow_ms=0
+CH10-UDPSTATS recv=19210 xmit=9388 drop=1 chkerr=1 lenerr=0 memerr=0 rterr=0 proterr=0 | app rx raw=5286 nc=3795 sock=302 inj=1 slow_ms=0
+CH10-UDPSTATS recv=19210 xmit=9388 drop=1 chkerr=1 lenerr=0 memerr=0 rterr=0 proterr=0 | app rx raw=5286 nc=3795 sock=302 inj=1 slow_ms=0
+CH10-UDPSTATS recv=19210 xmit=9388 drop=1 chkerr=1 lenerr=0 memerr=0 rterr=0 proterr=0 | app rx raw=5286 nc=3795 sock=302 inj=1 slow_ms=0
+CH10-UDPSTATS recv=19210 xmit=9388 drop=1 chkerr=1 lenerr=0 memerr=0 rterr=0 proterr=0 | app rx raw=5286 nc=3795 sock=302 inj=1 slow_ms=0
+CH10-UDPSTATS recv=19210 xmit=9388 drop=1 chkerr=1 lenerr=0 memerr=0 rterr=0 proterr=0 | app rx raw=5286 nc=3795 sock=302 inj=1 slow_ms=0
+CH10-UDPSTATS recv=19210 xmit=9388 drop=1 chkerr=1 lenerr=0 memerr=0 rterr=0 proterr=0 | app rx raw=5286 nc=3795 sock=302 inj=1 slow_ms=0
+CH10-UDPSTATS recv=19210 xmit=9388 drop=1 chkerr=1 lenerr=0 memerr=0 rterr=0 proterr=0 | app rx raw=5286 nc=3795 sock=302 inj=1 slow_ms=0
+CH10-UDPSTATS recv=19210 xmit=9388 drop=1 chkerr=1 lenerr=0 memerr=0 rterr=0 proterr=0 | app rx raw=5286 nc=3795 sock=302 inj=1 slow_ms=0
+CH10-UDPSTATS recv=19210 xmit=9388 drop=1 chkerr=1 lenerr=0 memerr=0 rterr=0 proterr=0 | app rx raw=5286 nc=3795 sock=302 inj=1 slow_ms=0
+CH10-UDPSTATS recv=19210 xmit=9388 drop=1 chkerr=1 lenerr=0 memerr=0 rterr=0 proterr=0 | app rx raw=5286 nc=3795 sock=302 inj=1 slow_ms=0
+CH10-BYE
+I (303348) main_task: Returned from app_main()
+qemu-system-xtensa: terminating on signal 15 from pid 3311159 (timeout)

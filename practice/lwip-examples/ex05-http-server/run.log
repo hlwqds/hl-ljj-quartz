@@ -1,0 +1,297 @@
+Adding SPI flash device
+ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x12 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0040,len:6272
+load:0x40078000,len:15820
+load:0x40080400,len:3920
+entry 0x40080644
+I (662) boot: ESP-IDF v6.0.2 2nd stage bootloader
+I (662) boot: compile time Aug 27 2026 12:42:06
+I (662) boot: Multicore bootloader
+I (696) boot: chip revision: v0.0
+I (697) boot.esp32: SPI Speed      : 40MHz
+I (697) boot.esp32: SPI Mode       : DIO
+I (697) boot.esp32: SPI Flash Size : 2MB
+I (703) boot: Enabling RNG early entropy source...
+I (708) boot: Partition Table:
+I (708) boot: ## Label            Usage          Type ST Offset   Length
+I (708) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (708) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (708) boot:  2 factory          factory app      00 00 00010000 00100000
+I (710) boot: End of partition table
+I (741) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=10b7ch ( 68476) map
+I (758) esp_image: segment 1: paddr=00020ba4 vaddr=3ffb0000 size=02adch ( 10972) load
+I (770) esp_image: segment 2: paddr=00023688 vaddr=40080000 size=0b2ech ( 45804) load
+I (788) esp_image: segment 3: paddr=0002e97c vaddr=50000000 size=00028h (    40) load
+I (797) esp_image: segment 4: paddr=0002e9ac vaddr=00000000 size=0166ch (  5740) 
+I (810) esp_image: segment 5: paddr=00030020 vaddr=400d0020 size=2f884h (194692) map
+I (872) boot: Loaded app from partition at offset 0x10000
+I (872) boot: Disabling RNG early entropy source...
+I (881) cpu_start: Multicore app
+I (1461) cpu_start: GPIO 3 and 1 are used as console UART I/O pins
+I (1463) cpu_start: Pro cpu start user code
+I (1463) cpu_start: cpu freq: 160000000 Hz
+I (1463) app_init: Application information:
+I (1464) app_init: Project name:     ex05-http-server
+I (1464) app_init: App version:      924d871-dirty
+I (1464) app_init: Compile time:     Aug 27 2026 12:42:04
+I (1464) app_init: ELF file SHA256:  94d5fe8f5...
+I (1464) app_init: ESP-IDF:          v6.0.2
+I (1464) efuse_init: Min chip rev:     v0.0
+I (1464) efuse_init: Max chip rev:     v3.99 
+I (1464) efuse_init: Chip rev:         v0.0
+I (1465) heap_init: Initializing. RAM available for dynamic allocation:
+I (1465) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM
+I (1465) heap_init: At 3FFB3F28 len 0002C0D8 (176 KiB): DRAM
+I (1465) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM
+I (1465) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM
+I (1465) heap_init: At 4008B2EC len 00014D14 (83 KiB): IRAM
+I (1492) spi_flash: detected chip: winbond
+I (1495) spi_flash: flash io: dio
+I (1503) main_task: Started on CPU0
+I (1503) main_task: Calling app_main()
+I (1503) ex05: == ex05 http-server: esp_http_server over QEMU openeth ==
+I (1523) esp_eth.netif.netif_glue: 52:54:00:12:34:56
+I (1523) esp_eth.netif.netif_glue: ethernet attached to netif
+E (1623) esp_eth: esp_eth_ioctl(533): add mac address to filter not supported
+E (1623) esp_eth.netif.netif_glue: eth_set_mac_filter(56): failed to add mac filter
+E (1623) esp_netif_lwip: Failed to add multicast filter for IPv4
+I (1623) ex05: ETH_EVENT: CONNECTED
+I (2623) ex05: GOT_IP: 10.0.2.15
+I (2623) esp_netif_handlers: eth ip: 10.0.2.15, mask: 255.255.255.0, gw: 10.0.2.2
+$$$ READY role=httpd port=80 max_sockets=7 backlog=5 recv_to=5s send_to=5s lru_purge=0 fw=Aug 27 2026 12:42:04
+I (32853) ex05: GET /hello -> 200 (hits=1)
+I (32883) ex05: GET /info -> 200 (hits=1)
+I (32903) ex05: GET /info -> 200 (hits=2)
+W (32933) httpd_uri: httpd_uri: URI '/no-such-uri' not found
+W (32933) httpd_txrx: httpd_resp_send_err: 404 Not Found - Nothing matches the given URI
+W (32933) ex05: HTTP_SERVER_EVENT_ERROR #1
+W (55373) httpd_txrx: httpd_sock_err: error in recv : 11
+W (55373) httpd_txrx: httpd_resp_send_err: 408 Request Timeout - Server closed this connection
+W (55373) ex05: HTTP_SERVER_EVENT_ERROR #2
+I (70613) ex05: GET /hello -> 200 (hits=2)
+I (70613) ex05: GET /hello -> 200 (hits=3)
+I (70623) ex05: GET /hello -> 200 (hits=4)
+I (70633) ex05: GET /hello -> 200 (hits=5)
+I (70643) ex05: GET /hello -> 200 (hits=6)
+I (70653) ex05: GET /hello -> 200 (hits=7)
+I (70663) ex05: GET /hello -> 200 (hits=8)
+I (70673) ex05: GET /hello -> 200 (hits=9)
+I (70683) ex05: GET /hello -> 200 (hits=10)
+I (70693) ex05: GET /hello -> 200 (hits=11)
+I (70703) ex05: GET /hello -> 200 (hits=12)
+I (70713) ex05: GET /hello -> 200 (hits=13)
+I (70723) ex05: GET /hello -> 200 (hits=14)
+I (70733) ex05: GET /hello -> 200 (hits=15)
+I (70743) ex05: GET /hello -> 200 (hits=16)
+I (70753) ex05: GET /hello -> 200 (hits=17)
+I (70763) ex05: GET /hello -> 200 (hits=18)
+I (70773) ex05: GET /hello -> 200 (hits=19)
+I (70783) ex05: GET /hello -> 200 (hits=20)
+I (70793) ex05: GET /hello -> 200 (hits=21)
+I (70803) ex05: GET /hello -> 200 (hits=22)
+I (70813) ex05: GET /hello -> 200 (hits=23)
+I (70823) ex05: GET /hello -> 200 (hits=24)
+I (70833) ex05: GET /hello -> 200 (hits=25)
+I (70843) ex05: GET /hello -> 200 (hits=26)
+I (70853) ex05: GET /hello -> 200 (hits=27)
+I (70863) ex05: GET /hello -> 200 (hits=28)
+I (70863) ex05: GET /hello -> 200 (hits=29)
+I (70873) ex05: GET /hello -> 200 (hits=30)
+I (70883) ex05: GET /hello -> 200 (hits=31)
+I (70893) ex05: GET /hello -> 200 (hits=32)
+I (70903) ex05: GET /hello -> 200 (hits=33)
+I (70913) ex05: GET /hello -> 200 (hits=34)
+I (70923) ex05: GET /hello -> 200 (hits=35)
+I (70933) ex05: GET /hello -> 200 (hits=36)
+I (70943) ex05: GET /hello -> 200 (hits=37)
+I (70953) ex05: GET /hello -> 200 (hits=38)
+I (70963) ex05: GET /hello -> 200 (hits=39)
+I (70973) ex05: GET /hello -> 200 (hits=40)
+I (70983) ex05: GET /hello -> 200 (hits=41)
+I (70993) ex05: GET /hello -> 200 (hits=42)
+I (71003) ex05: GET /hello -> 200 (hits=43)
+I (71013) ex05: GET /hello -> 200 (hits=44)
+I (71023) ex05: GET /hello -> 200 (hits=45)
+I (71033) ex05: GET /hello -> 200 (hits=46)
+I (71043) ex05: GET /hello -> 200 (hits=47)
+I (71053) ex05: GET /hello -> 200 (hits=48)
+I (71063) ex05: GET /hello -> 200 (hits=49)
+I (71073) ex05: GET /hello -> 200 (hits=50)
+I (71083) ex05: GET /hello -> 200 (hits=51)
+I (71093) ex05: GET /hello -> 200 (hits=52)
+I (71103) ex05: GET /hello -> 200 (hits=53)
+I (71113) ex05: GET /hello -> 200 (hits=54)
+I (71123) ex05: GET /hello -> 200 (hits=55)
+I (71123) ex05: GET /hello -> 200 (hits=56)
+I (71143) ex05: GET /hello -> 200 (hits=57)
+I (71153) ex05: GET /hello -> 200 (hits=58)
+I (71163) ex05: GET /hello -> 200 (hits=59)
+I (71173) ex05: GET /hello -> 200 (hits=60)
+I (71183) ex05: GET /hello -> 200 (hits=61)
+I (71193) ex05: GET /hello -> 200 (hits=62)
+I (71203) ex05: GET /hello -> 200 (hits=63)
+I (71213) ex05: GET /hello -> 200 (hits=64)
+I (71223) ex05: GET /hello -> 200 (hits=65)
+I (71233) ex05: GET /hello -> 200 (hits=66)
+I (71243) ex05: GET /hello -> 200 (hits=67)
+I (71253) ex05: GET /hello -> 200 (hits=68)
+I (71263) ex05: GET /hello -> 200 (hits=69)
+I (71273) ex05: GET /hello -> 200 (hits=70)
+I (71283) ex05: GET /hello -> 200 (hits=71)
+I (71293) ex05: GET /hello -> 200 (hits=72)
+I (71303) ex05: GET /hello -> 200 (hits=73)
+I (71313) ex05: GET /hello -> 200 (hits=74)
+I (71323) ex05: GET /hello -> 200 (hits=75)
+I (71333) ex05: GET /hello -> 200 (hits=76)
+I (71343) ex05: GET /hello -> 200 (hits=77)
+I (71353) ex05: GET /hello -> 200 (hits=78)
+I (71363) ex05: GET /hello -> 200 (hits=79)
+I (71373) ex05: GET /hello -> 200 (hits=80)
+I (71383) ex05: GET /hello -> 200 (hits=81)
+I (71393) ex05: GET /hello -> 200 (hits=82)
+I (71403) ex05: GET /hello -> 200 (hits=83)
+I (71413) ex05: GET /hello -> 200 (hits=84)
+I (71423) ex05: GET /hello -> 200 (hits=85)
+I (71433) ex05: GET /hello -> 200 (hits=86)
+I (71443) ex05: GET /hello -> 200 (hits=87)
+I (71453) ex05: GET /hello -> 200 (hits=88)
+I (71463) ex05: GET /hello -> 200 (hits=89)
+I (71473) ex05: GET /hello -> 200 (hits=90)
+I (71483) ex05: GET /hello -> 200 (hits=91)
+I (71493) ex05: GET /hello -> 200 (hits=92)
+I (71503) ex05: GET /hello -> 200 (hits=93)
+I (71513) ex05: GET /hello -> 200 (hits=94)
+I (71523) ex05: GET /hello -> 200 (hits=95)
+I (71533) ex05: GET /hello -> 200 (hits=96)
+I (71543) ex05: GET /hello -> 200 (hits=97)
+I (71553) ex05: GET /hello -> 200 (hits=98)
+I (71563) ex05: GET /hello -> 200 (hits=99)
+I (71573) ex05: GET /hello -> 200 (hits=100)
+I (71583) ex05: GET /hello -> 200 (hits=101)
+I (71593) ex05: GET /hello -> 200 (hits=102)
+I (71613) ex05: GET /hello -> 200 (hits=103)
+I (71623) ex05: GET /hello -> 200 (hits=104)
+I (71633) ex05: GET /hello -> 200 (hits=105)
+I (71643) ex05: GET /hello -> 200 (hits=106)
+I (71653) ex05: GET /hello -> 200 (hits=107)
+I (71663) ex05: GET /hello -> 200 (hits=108)
+I (71673) ex05: GET /hello -> 200 (hits=109)
+I (71683) ex05: GET /hello -> 200 (hits=110)
+I (71693) ex05: GET /hello -> 200 (hits=111)
+I (99913) ex05: GET /hello -> 200 (hits=112)
+I (99913) ex05: GET /hello -> 200 (hits=113)
+I (99923) ex05: GET /hello -> 200 (hits=114)
+I (99933) ex05: GET /hello -> 200 (hits=115)
+I (99943) ex05: GET /hello -> 200 (hits=116)
+I (99953) ex05: GET /hello -> 200 (hits=117)
+I (99963) ex05: GET /hello -> 200 (hits=118)
+I (99973) ex05: GET /hello -> 200 (hits=119)
+I (99983) ex05: GET /hello -> 200 (hits=120)
+I (99993) ex05: GET /hello -> 200 (hits=121)
+I (100003) ex05: GET /hello -> 200 (hits=122)
+I (100013) ex05: GET /hello -> 200 (hits=123)
+I (100023) ex05: GET /hello -> 200 (hits=124)
+I (100033) ex05: GET /hello -> 200 (hits=125)
+I (100043) ex05: GET /hello -> 200 (hits=126)
+I (100053) ex05: GET /hello -> 200 (hits=127)
+I (100063) ex05: GET /hello -> 200 (hits=128)
+I (100073) ex05: GET /hello -> 200 (hits=129)
+I (100083) ex05: GET /hello -> 200 (hits=130)
+I (100093) ex05: GET /hello -> 200 (hits=131)
+I (100103) ex05: GET /hello -> 200 (hits=132)
+I (100113) ex05: GET /hello -> 200 (hits=133)
+I (100123) ex05: GET /hello -> 200 (hits=134)
+I (100133) ex05: GET /hello -> 200 (hits=135)
+I (100143) ex05: GET /hello -> 200 (hits=136)
+I (100153) ex05: GET /hello -> 200 (hits=137)
+I (100163) ex05: GET /hello -> 200 (hits=138)
+I (100163) ex05: GET /hello -> 200 (hits=139)
+I (100173) ex05: GET /hello -> 200 (hits=140)
+I (100183) ex05: GET /hello -> 200 (hits=141)
+I (100193) ex05: GET /hello -> 200 (hits=142)
+I (100203) ex05: GET /hello -> 200 (hits=143)
+I (100213) ex05: GET /hello -> 200 (hits=144)
+I (100223) ex05: GET /hello -> 200 (hits=145)
+I (100233) ex05: GET /hello -> 200 (hits=146)
+I (100243) ex05: GET /hello -> 200 (hits=147)
+I (100253) ex05: GET /hello -> 200 (hits=148)
+I (100263) ex05: GET /hello -> 200 (hits=149)
+I (100273) ex05: GET /hello -> 200 (hits=150)
+I (100283) ex05: GET /hello -> 200 (hits=151)
+I (100293) ex05: GET /hello -> 200 (hits=152)
+I (100303) ex05: GET /hello -> 200 (hits=153)
+I (100313) ex05: GET /hello -> 200 (hits=154)
+I (100323) ex05: GET /hello -> 200 (hits=155)
+I (100333) ex05: GET /hello -> 200 (hits=156)
+I (100343) ex05: GET /hello -> 200 (hits=157)
+I (100353) ex05: GET /hello -> 200 (hits=158)
+I (100363) ex05: GET /hello -> 200 (hits=159)
+I (100373) ex05: GET /hello -> 200 (hits=160)
+I (100383) ex05: GET /hello -> 200 (hits=161)
+I (100393) ex05: GET /hello -> 200 (hits=162)
+I (100403) ex05: GET /hello -> 200 (hits=163)
+I (100413) ex05: GET /hello -> 200 (hits=164)
+I (100423) ex05: GET /hello -> 200 (hits=165)
+I (100423) ex05: GET /hello -> 200 (hits=166)
+I (100443) ex05: GET /hello -> 200 (hits=167)
+I (100453) ex05: GET /hello -> 200 (hits=168)
+I (100463) ex05: GET /hello -> 200 (hits=169)
+I (100473) ex05: GET /hello -> 200 (hits=170)
+I (100483) ex05: GET /hello -> 200 (hits=171)
+I (100493) ex05: GET /hello -> 200 (hits=172)
+I (100503) ex05: GET /hello -> 200 (hits=173)
+I (100513) ex05: GET /hello -> 200 (hits=174)
+I (100523) ex05: GET /hello -> 200 (hits=175)
+I (100533) ex05: GET /hello -> 200 (hits=176)
+I (100543) ex05: GET /hello -> 200 (hits=177)
+I (100553) ex05: GET /hello -> 200 (hits=178)
+I (100563) ex05: GET /hello -> 200 (hits=179)
+I (100573) ex05: GET /hello -> 200 (hits=180)
+I (100583) ex05: GET /hello -> 200 (hits=181)
+I (100593) ex05: GET /hello -> 200 (hits=182)
+I (100603) ex05: GET /hello -> 200 (hits=183)
+I (100613) ex05: GET /hello -> 200 (hits=184)
+I (100623) ex05: GET /hello -> 200 (hits=185)
+I (100633) ex05: GET /hello -> 200 (hits=186)
+I (100643) ex05: GET /hello -> 200 (hits=187)
+I (100653) ex05: GET /hello -> 200 (hits=188)
+I (100663) ex05: GET /hello -> 200 (hits=189)
+I (100673) ex05: GET /hello -> 200 (hits=190)
+I (100683) ex05: GET /hello -> 200 (hits=191)
+I (100693) ex05: GET /hello -> 200 (hits=192)
+I (100703) ex05: GET /hello -> 200 (hits=193)
+I (100713) ex05: GET /hello -> 200 (hits=194)
+I (100723) ex05: GET /hello -> 200 (hits=195)
+I (100733) ex05: GET /hello -> 200 (hits=196)
+I (100743) ex05: GET /hello -> 200 (hits=197)
+I (100753) ex05: GET /hello -> 200 (hits=198)
+I (100763) ex05: GET /hello -> 200 (hits=199)
+I (100773) ex05: GET /hello -> 200 (hits=200)
+I (100783) ex05: GET /hello -> 200 (hits=201)
+I (100793) ex05: GET /hello -> 200 (hits=202)
+I (100803) ex05: GET /hello -> 200 (hits=203)
+I (100813) ex05: GET /hello -> 200 (hits=204)
+I (100823) ex05: GET /hello -> 200 (hits=205)
+I (100833) ex05: GET /hello -> 200 (hits=206)
+I (100843) ex05: GET /hello -> 200 (hits=207)
+I (100853) ex05: GET /hello -> 200 (hits=208)
+I (100863) ex05: GET /hello -> 200 (hits=209)
+I (100873) ex05: GET /hello -> 200 (hits=210)
+I (100883) ex05: GET /hello -> 200 (hits=211)
+I (100893) ex05: GET /hello -> 200 (hits=212)
+I (100903) ex05: GET /hello -> 200 (hits=213)
+I (100913) ex05: GET /hello -> 200 (hits=214)
+I (100923) ex05: GET /hello -> 200 (hits=215)
+I (100933) ex05: GET /hello -> 200 (hits=216)
+I (100943) ex05: GET /hello -> 200 (hits=217)
+I (100953) ex05: GET /hello -> 200 (hits=218)
+I (100963) ex05: GET /hello -> 200 (hits=219)
+I (100973) ex05: GET /hello -> 200 (hits=220)
+I (100983) ex05: GET /hello -> 200 (hits=221)
+I (123473) ex05: GET /info -> 200 (hits=3)
+qemu-system-xtensa: terminating on signal 15 from pid 3816553 ()

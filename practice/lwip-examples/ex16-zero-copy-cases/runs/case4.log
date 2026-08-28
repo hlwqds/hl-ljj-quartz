@@ -1,0 +1,128 @@
+Adding SPI flash device
+ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x12 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0040,len:6272
+load:0x40078000,len:15820
+load:0x40080400,len:3920
+entry 0x40080644
+I (679) boot: ESP-IDF v6.0.2 2nd stage bootloader
+I (679) boot: compile time Aug 27 2026 22:39:42
+I (679) boot: Multicore bootloader
+I (729) boot: chip revision: v0.0
+I (730) boot.esp32: SPI Speed      : 40MHz
+I (730) boot.esp32: SPI Mode       : DIO
+I (730) boot.esp32: SPI Flash Size : 2MB
+I (735) boot: Enabling RNG early entropy source...
+I (751) boot: Partition Table:
+I (751) boot: ## Label            Usage          Type ST Offset   Length
+I (751) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (751) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (751) boot:  2 factory          factory app      00 00 00010000 00100000
+I (754) boot: End of partition table
+I (799) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=1081ch ( 67612) map
+I (829) esp_image: segment 1: paddr=00020844 vaddr=3ffb0000 size=0382ch ( 14380) load
+I (848) esp_image: segment 2: paddr=00024078 vaddr=40080000 size=0b23ch ( 45628) load
+I (872) esp_image: segment 3: paddr=0002f2bc vaddr=50000000 size=00028h (    40) load
+I (892) esp_image: segment 4: paddr=0002f2ec vaddr=00000000 size=00d2ch (  3372) 
+I (916) esp_image: segment 5: paddr=00030020 vaddr=400d0020 size=2dcfch (187644) map
+I (997) boot: Loaded app from partition at offset 0x10000
+I (998) boot: Disabling RNG early entropy source...
+I (1010) cpu_start: Multicore app
+I (1716) cpu_start: GPIO 3 and 1 are used as console UART I/O pins
+I (1718) cpu_start: Pro cpu start user code
+I (1718) cpu_start: cpu freq: 160000000 Hz
+I (1718) app_init: Application information:
+I (1718) app_init: Project name:     ex16_zero_copy_cases
+I (1718) app_init: App version:      924d871-dirty
+I (1718) app_init: Compile time:     Aug 27 2026 22:40:30
+I (1719) app_init: ELF file SHA256:  be27ddfd0...
+I (1719) app_init: ESP-IDF:          v6.0.2
+I (1719) efuse_init: Min chip rev:     v0.0
+I (1719) efuse_init: Max chip rev:     v3.99 
+I (1719) efuse_init: Chip rev:         v0.0
+I (1719) heap_init: Initializing. RAM available for dynamic allocation:
+I (1720) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM
+I (1720) heap_init: At 3FFD97B8 len 00006848 (26 KiB): DRAM
+I (1720) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM
+I (1720) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM
+I (1720) heap_init: At 4008B23C len 00014DC4 (83 KiB): IRAM
+I (1757) spi_flash: detected chip: winbond
+I (1763) spi_flash: flash io: dio
+I (1772) main_task: Started on CPU0
+I (1772) main_task: Calling app_main()
+
+=== ex16 zero-copy-cases | build Aug 27 2026 22:40:30 ===
+$$$ EX16-FACT build="Aug 27 2026 22:40:30" case=4 idf_lwip_port='TX_SINGLE_PBUF hardcoded=1' target='esp32' reflector=0 rounds_per_stage=1200 block=300 rec_body=1024 b_hdr=16 b_body=512 c_msg=256 c_msgs=400 c_passes=5 d_arena=114688 trace_facility=1 lwip_stats=0
+I (1792) esp_eth.netif.netif_glue: 52:54:00:12:34:56
+I (1792) esp_eth.netif.netif_glue: ethernet attached to netif
+E (1892) esp_eth: esp_eth_ioctl(533): add mac address to filter not supported
+E (1892) esp_eth.netif.netif_glue: eth_set_mac_filter(56): failed to add mac filter
+E (1892) esp_netif_lwip: Failed to add multicast filter for IPv4
+I (1892) ex16: [t=172 ms] ETH_EVENT CONNECTED
+I (1892) ex16: waiting for DHCP lease ...
+I (2892) ex16: [t=1170 ms] IP_EVENT GOT_IP: ip 10.0.2.15 gw 10.0.2.2
+I (2892) esp_netif_handlers: eth ip: 10.0.2.15, mask: 255.255.255.0, gw: 10.0.2.2
+$$$ EXREADY case=4 ip=10.0.2.15 gw=10.0.2.2 dst=127.0.0.1:8330 self_target_forbidden=10.0.2.15 note='Batch8: own-IP as dst wedges tcpip'
+$$$ EX16-CFG case=D stream_len=114688 chunk_payload=1360 passes_per_variant=3 note='END handshake code carries NEXT stage mode+len'
+EX16-CLICONN who=D dst=127.0.0.1:8330
+$$$ EX16-DIGEST item=d-golden len=114688 value=78c51387
+EX16-HEAP at=case-D begin free=113956 largest=110592 min_ever=113192
+EX16-STAGE name=D-finalize mode=STREAM bytes=0 ok=1 role=marker
+== EX16-PHASE name=D-transfer kind=LAND round=0 ==
+EX16-PROG case=D emitted=16/85 sink_accum=16320
+EX16-PROG case=D emitted=32/85 sink_accum=38080
+EX16-PROG case=D emitted=48/85 sink_accum=58480
+EX16-PROG case=D emitted=64/85 sink_accum=84320
+EX16-PROG case=D emitted=80/85 sink_accum=106080
+EX16-STAGE name=D-finalize mode=LAND bytes=114688 us=393 ok=1
+== EX16-PHASE name=D-transfer kind=STREAM round=0 ==
+EX16-PROG case=D emitted=16/85 sink_accum=16320
+EX16-PROG case=D emitted=32/85 sink_accum=38080
+EX16-PROG case=D emitted=48/85 sink_accum=58480
+EX16-PROG case=D emitted=64/85 sink_accum=84320
+EX16-PROG case=D emitted=80/85 sink_accum=106080
+EX16-STAGE name=D-finalize mode=STREAM bytes=114688 us=345 ok=1
+== EX16-PHASE name=D-transfer kind=LAND round=1 ==
+EX16-PROG case=D emitted=16/85 sink_accum=16320
+EX16-PROG case=D emitted=32/85 sink_accum=38080
+EX16-PROG case=D emitted=48/85 sink_accum=58480
+EX16-PROG case=D emitted=64/85 sink_accum=84320
+EX16-PROG case=D emitted=80/85 sink_accum=106080
+EX16-STAGE name=D-finalize mode=LAND bytes=114688 us=257 ok=1
+== EX16-PHASE name=D-transfer kind=STREAM round=1 ==
+EX16-PROG case=D emitted=16/85 sink_accum=16320
+EX16-PROG case=D emitted=32/85 sink_accum=38080
+EX16-PROG case=D emitted=48/85 sink_accum=58480
+EX16-PROG case=D emitted=64/85 sink_accum=84320
+EX16-PROG case=D emitted=80/85 sink_accum=106080
+EX16-STAGE name=D-finalize mode=STREAM bytes=114688 us=362 ok=1
+== EX16-PHASE name=D-transfer kind=LAND round=2 ==
+EX16-PROG case=D emitted=16/85 sink_accum=16320
+EX16-PROG case=D emitted=32/85 sink_accum=38080
+EX16-PROG case=D emitted=48/85 sink_accum=58480
+EX16-PROG case=D emitted=64/85 sink_accum=84320
+EX16-PROG case=D emitted=80/85 sink_accum=106080
+EX16-STAGE name=D-finalize mode=LAND bytes=114688 us=790 ok=1
+== EX16-PHASE name=D-transfer kind=STREAM round=2 ==
+EX16-PROG case=D emitted=16/85 sink_accum=16320
+EX16-PROG case=D emitted=32/85 sink_accum=38080
+EX16-PROG case=D emitted=48/85 sink_accum=58480
+EX16-PROG case=D emitted=64/85 sink_accum=84320
+EX16-PROG case=D emitted=80/85 sink_accum=106080
+EX16-STAGE name=D-finalize mode=STREAM bytes=114688 us=1057 ok=1
+EX16-STAGE name=D-mem land_residency_bytes=114688 stream_residency_bytes<=~1378 (single record spill)
+$$$ EX16-RESULT case=D kind=memory peak_extra_bytes_land=114688 peak_extra_bytes_stream=0 ratio_numerator=arena
+$$$ EX16-SAMPLE who=D-land-checksum-0 us=393 bytes=114688
+$$$ EX16-SAMPLE who=D-land-checksum-1 us=257 bytes=114688
+$$$ EX16-SAMPLE who=D-land-checksum-2 us=790 bytes=114688
+$$$ EX16-SAMPLE who=D-stream-checksum-0 us=345 bytes=114688
+$$$ EX16-SAMPLE who=D-stream-checksum-1 us=362 bytes=114688
+$$$ EX16-SAMPLE who=D-stream-checksum-2 us=1057 bytes=114688
+$$$ EX16-RESULT case=D kind=pair metric=fletcher32_total_us copy_med_us=393 land=n/a zc_med_us=362 land_sweep_med=393 n_land=3 n_stream=3 note='zc med=feed sum fused into rx; copy med=deferred sweep'
+EX16-HEAP at=case-D end free=112396 largest=106496 min_ever=100936
+$$$ EXDONE case=4(stream-checksum) result=ok dur_ms=1501 fail=0
+qemu-system-xtensa: terminating on signal 15 from pid 75538 (timeout)

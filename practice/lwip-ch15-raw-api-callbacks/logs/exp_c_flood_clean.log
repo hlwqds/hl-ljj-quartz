@@ -1,0 +1,6 @@
+FLOODTP t=1.0s rx_bytes=11089440 rate_mbit=88.71
+FLOODTP t=2.0s rx_bytes=24418080 rate_mbit=97.67
+FLOODTP t=3.0s rx_bytes=37677600 rate_mbit=100.47
+FLOODTP t=4.0s rx_bytes=51180480 rate_mbit=102.36
+FLOODTP t=5.0s rx_bytes=64571040 rate_mbit=103.31
+FLOODTP-DONE dur=6.0 rx=77247360 errs=['[Errno 9] Bad file descriptor']

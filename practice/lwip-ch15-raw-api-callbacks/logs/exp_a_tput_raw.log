@@ -1,0 +1,3 @@
+TPUT label=raw_r1 port=8017 size=1200 window=16 blocks=1200 echoed=1200 missing_tail=0 secs=0.136 mbit=84.86
+TPUT label=raw_r2 port=8017 size=1200 window=16 blocks=1200 echoed=1200 missing_tail=0 secs=0.339 mbit=33.96
+TPUT label=raw_r3 port=8017 size=1200 window=16 blocks=1200 echoed=1200 missing_tail=0 secs=0.136 mbit=84.40

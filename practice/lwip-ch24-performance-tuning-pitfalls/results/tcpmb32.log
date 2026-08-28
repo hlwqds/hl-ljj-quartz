@@ -1,0 +1,11 @@
+== point tcpmb32 rounds=2 06:57:15 ==
+--- round 1 ---
+RESULT kind=thrx mb=4 ack=b'K' secs=0.387 mbit=82.77
+--- round 2 ---
+RESULT kind=thrx mb=4 ack=b'K' secs=0.439 mbit=72.92
+[fw] $$$ LBRTT ok=200/200 size=512 avg_rtt_us=584 min=428 max=1257
+[fw] $$$ LBTH ack_r=0 bytes=4000000 elapsed_us=372556 mbit=85.89
+[fw] $$$ LBRTT ok=200/200 size=512 avg_rtt_us=567 min=424 max=1004
+[fw] $$$ LBTH ack_r=0 bytes=4000000 elapsed_us=379988 mbit=84.21
+[fw] $$$ MEM on-cmd free=206468 largest=110592 min_ever=182600
+$$$ BUILD 06:57:05 sndbuf=5760 wnd=5760 mss=1440 tcpip_mbox=32 pbuf_pool=16

@@ -1,0 +1,24 @@
+[  0.00s] held conn #0 (partial header sent)
+[  0.00s] held conn #1 (partial header sent)
+[  0.00s] held conn #2 (partial header sent)
+[  0.00s] held conn #3 (partial header sent)
+[  0.00s] held conn #4 (partial header sent)
+[  0.00s] held conn #5 (partial header sent)
+[  0.00s] held conn #6 (partial header sent)
+--- phase2: dripping 6B every 3.0s for 40.0s ---
+[  1.00s] conn #0 EVICTED (server closed)
+[  1.00s] conn #5 EVICTED (server closed)
+[ 28.07s] drip 6B -> alive=5
+[ 29.07s] conn #1 EVICTED (server closed)
+[ 29.07s] conn #2 EVICTED (server closed)
+[ 29.07s] conn #3 EVICTED (server closed)
+[ 29.07s] conn #4 EVICTED (server closed)
+[ 29.07s] conn #6 EVICTED (server closed)
+--- done: alive=0 evicted=7 ---
+  conn #0: evicted@1.0035044649848714s
+  conn #1: evicted@29.068623066996224s
+  conn #2: evicted@29.068623066996224s
+  conn #3: evicted@29.068623066996224s
+  conn #4: evicted@29.068623066996224s
+  conn #5: evicted@1.0035044649848714s
+  conn #6: evicted@29.068623066996224s

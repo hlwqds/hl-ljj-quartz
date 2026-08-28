@@ -1,0 +1,4 @@
+# OpenCores Ethernet MAC 驱动（仅用于 QEMU 仿真，真机不可用）
+CONFIG_ETH_USE_OPENETH=y
+# 开启 lwIP 统计（stats_display 打印 etharp.cachehit/xmit/recv/drop 等计数）
+CONFIG_LWIP_STATS=y

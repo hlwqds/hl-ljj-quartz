@@ -1,0 +1,79 @@
+Adding SPI flash device
+ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x12 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0040,len:6272
+load:0x40078000,len:15820
+load:0x40080400,len:3920
+entry 0x40080644
+I (659) boot: ESP-IDF v6.0.2 2nd stage bootloader
+I (659) boot: compile time Aug 27 2026 03:30:12
+I (659) boot: Multicore bootloader
+I (696) boot: chip revision: v0.0
+I (698) boot.esp32: SPI Speed      : 40MHz
+I (698) boot.esp32: SPI Mode       : DIO
+I (698) boot.esp32: SPI Flash Size : 2MB
+I (707) boot: Enabling RNG early entropy source...
+I (712) boot: Partition Table:
+I (712) boot: ## Label            Usage          Type ST Offset   Length
+I (712) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (712) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (712) boot:  2 factory          factory app      00 00 00010000 00100000
+I (715) boot: End of partition table
+I (753) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=0e0fch ( 57596) map
+I (769) esp_image: segment 1: paddr=0001e124 vaddr=3ffb0000 size=01ef4h (  7924) load
+I (781) esp_image: segment 2: paddr=00020020 vaddr=400d0020 size=2ac48h (175176) map
+I (808) esp_image: segment 3: paddr=0004ac70 vaddr=3ffb1ef4 size=00bf8h (  3064) load
+I (825) esp_image: segment 4: paddr=0004b870 vaddr=40080000 size=0b140h ( 45376) load
+I (845) esp_image: segment 5: paddr=000569b8 vaddr=50000000 size=00028h (    40) load
+I (922) boot: Loaded app from partition at offset 0x10000
+I (922) boot: Disabling RNG early entropy source...
+$$$ ECHOREADY accept_prio=5 port=8888
+$$$ CTRLREADY port=9999
+E (1769) esp_eth: esp_eth_ioctl(533): add mac address to filter not supported
+E (1769) esp_eth.netif.netif_glue: eth_set_mac_filter(56): failed to add mac filter
+E (1769) esp_netif_lwip: Failed to add multicast filter for IPv4
+### TASKTABLE boot n=11
+### T main           prio= 1 core=0  rt=8506 hwm=3012
+### T IDLE1          prio= 0 core=1  rt=1108605 hwm=1100
+### T IDLE0          prio= 0 core=0  rt=1101021 hwm=1088
+### T tcpip          prio=18 core=NA rt=19401 hwm=2344
+### T esp_timer      prio=22 core=0  rt=54 hwm=3640
+### T ipc1           prio=24 core=1  rt=53162 hwm=572
+### T echo_srv       prio= 5 core=0  rt=2404 hwm=3052
+### T ctrl_srv       prio=22 core=1  rt=7970 hwm=2992
+### T emac_rx        prio=15 core=NA rt=1010 hwm=3328
+### T sys_evt        prio=20 core=0  rt=774 hwm=1760
+### T ipc0           prio=24 core=0  rt=52397 hwm=564
+### ENDTASKTABLE
+### TASKTABLE on-cmd n=12
+### T spinner        prio=23 core=0  rt=2661669 hwm=2600
+### T ctrl_srv       prio=22 core=1  rt=18662 hwm=2736
+### T tcpip          prio=18 core=NA rt=275174 hwm=2296
+### T emac_rx        prio=15 core=NA rt=82971 hwm=3248
+### T IDLE1          prio= 0 core=1  rt=174751638 hwm=988
+### T IDLE0          prio= 0 core=0  rt=79445470 hwm=976
+### T main           prio= 1 core=0  rt=10198 hwm=3012
+### T sys_evt        prio=20 core=0  rt=774 hwm=1760
+### T echo_srv       prio= 5 core=0  rt=4061 hwm=3052
+### T esp_timer      prio=22 core=0  rt=3282 hwm=3640
+### T ipc0           prio=24 core=0  rt=52397 hwm=564
+### T ipc1           prio=24 core=1  rt=53162 hwm=572
+### ENDTASKTABLE
+### TASKTABLE on-cmd n=11
+### T ctrl_srv       prio=22 core=1  rt=35291 hwm=2736
+### T IDLE0          prio= 0 core=0  rt=200186928 hwm=912
+### T IDLE1          prio= 0 core=1  rt=435490268 hwm=988
+### T main           prio= 1 core=0  rt=10232 hwm=3012
+### T tcpip          prio=18 core=NA rt=6164530 hwm=2296
+### T echo_srv       prio= 5 core=0  rt=6827 hwm=3052
+### T ipc1           prio=24 core=1  rt=53162 hwm=572
+### T esp_timer      prio=22 core=0  rt=9440 hwm=3640
+### T emac_rx        prio=15 core=NA rt=3200433 hwm=3072
+### T sys_evt        prio=20 core=0  rt=774 hwm=1760
+### T ipc0           prio=24 core=0  rt=52397 hwm=564
+### ENDTASKTABLE
+qemu-system-xtensa: terminating on signal 15 from pid 3480202 (/usr/sbin/bash)

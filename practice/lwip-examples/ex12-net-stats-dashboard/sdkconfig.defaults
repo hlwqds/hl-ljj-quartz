@@ -1,0 +1,17 @@
+# 必填：OpenCores Ethernet MAC 驱动（仅用于 QEMU openeth 虚拟网卡，真机不可用）
+CONFIG_ETH_USE_OPENETH=y
+
+# 可观测性叠加层 1：lwip_stats 全局计数结构。本示例的 LINK/IP/ICMP/TCP/UDP
+# 五段协议计数增量打印（EX12-ST 行）依赖它；关闭后示例仍可运行，只是统计段恒空。
+# 注意：IDF lwIP 全堆化（MEM_LIBC_MALLOC/MEMP_MEM_MALLOC=1），stats_display 输出
+# 里没有 MEM/MEMP 段——内存观测走 heap_caps API（EX12-HEAP 行），不要找 memp 池计数。
+CONFIG_LWIP_STATS=y
+
+# 可观测性叠加层 2：FreeRTOS 任务状态查询（同 ch24 任务表打印的三件套配置）。
+# uxTaskGetSystemState()（任务表快照 EX12-TASK 行）需要 TRACE_FACILITY，
+# IDF v6 默认关；xCoreID 字段要 VTASKLIST_INCLUDE_COREID 才编入 TaskStatus_t
+# （依赖 STATS_FORMATTING_FUNCTIONS）。不开则任务表段降级为 disabled 提示。
+# 注意：修改本文件后必须删除生成的 sdkconfig 重新构建才生效（曾踩坑项）。
+CONFIG_FREERTOS_USE_TRACE_FACILITY=y
+CONFIG_FREERTOS_USE_STATS_FORMATTING_FUNCTIONS=y
+CONFIG_FREERTOS_VTASKLIST_INCLUDE_COREID=y

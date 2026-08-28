@@ -1,0 +1,104 @@
+Adding SPI flash device
+ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x12 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0040,len:6272
+load:0x40078000,len:15820
+load:0x40080400,len:3920
+entry 0x40080644
+I (661) boot: ESP-IDF v6.0.2 2nd stage bootloader
+I (661) boot: compile time Aug 27 2026 12:52:23
+I (661) boot: Multicore bootloader
+I (697) boot: chip revision: v0.0
+I (698) boot.esp32: SPI Speed      : 40MHz
+I (698) boot.esp32: SPI Mode       : DIO
+I (698) boot.esp32: SPI Flash Size : 2MB
+I (703) boot: Enabling RNG early entropy source...
+I (708) boot: Partition Table:
+I (709) boot: ## Label            Usage          Type ST Offset   Length
+I (709) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (709) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (709) boot:  2 factory          factory app      00 00 00010000 00100000
+I (712) boot: End of partition table
+I (744) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=0f9c4h ( 63940) map
+I (759) esp_image: segment 1: paddr=0001f9ec vaddr=3ffb0000 size=0062ch (  1580) load
+I (768) esp_image: segment 2: paddr=00020020 vaddr=400d0020 size=29628h (169512) map
+I (788) esp_image: segment 3: paddr=00049650 vaddr=3ffb062c size=024a0h (  9376) load
+I (799) esp_image: segment 4: paddr=0004baf8 vaddr=40080000 size=0b23ch ( 45628) load
+I (812) esp_image: segment 5: paddr=00056d3c vaddr=50000000 size=00028h (    40) load
+I (864) boot: Loaded app from partition at offset 0x10000
+I (864) boot: Disabling RNG early entropy source...
+I (881) cpu_start: Multicore app
+I (1477) cpu_start: GPIO 3 and 1 are used as console UART I/O pins
+I (1486) cpu_start: Pro cpu start user code
+I (1488) cpu_start: cpu freq: 160000000 Hz
+I (1489) app_init: Application information:
+I (1490) app_init: Project name:     ex03_tcp_echo_client
+I (1492) app_init: App version:      924d871-dirty
+I (1493) app_init: Compile time:     Aug 27 2026 12:52:02
+I (1494) app_init: ELF file SHA256:  d3f945560...
+I (1495) app_init: ESP-IDF:          v6.0.2
+I (1496) efuse_init: Min chip rev:     v0.0
+I (1498) efuse_init: Max chip rev:     v3.99 
+I (1499) efuse_init: Chip rev:         v0.0
+I (1504) heap_init: Initializing. RAM available for dynamic allocation:
+I (1507) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM
+I (1510) heap_init: At 3FFB4390 len 0002BC70 (175 KiB): DRAM
+I (1510) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM
+I (1510) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM
+I (1510) heap_init: At 4008B23C len 00014DC4 (83 KiB): IRAM
+I (1539) spi_flash: detected chip: winbond
+I (1542) spi_flash: flash io: dio
+I (1550) main_task: Started on CPU0
+I (1550) main_task: Calling app_main()
+I (1550) ex03: == ex03: openeth bring-up then tcp-echo-client scenarios ==
+EX03-FACT built="Aug 27 2026 12:53:05" idf_version=v6.0.2
+I (1570) esp_eth.netif.netif_glue: 52:54:00:12:34:56
+I (1570) esp_eth.netif.netif_glue: ethernet attached to netif
+I (1670) ex03: waiting for DHCP lease ...
+E (1670) esp_eth: esp_eth_ioctl(533): add mac address to filter not supported
+E (1670) esp_eth.netif.netif_glue: eth_set_mac_filter(56): failed to add mac filter
+E (1670) esp_netif_lwip: Failed to add multicast filter for IPv4
+I (1670) ex03: ETH_EVENT: CONNECTED (link up)
+I (2680) ex03: GOT_IP: 10.0.2.15
+I (2680) esp_netif_handlers: eth ip: 10.0.2.15, mask: 255.255.255.0, gw: 10.0.2.2
+$$$ EXREADY target=10.0.2.2 ports=8220:echo,8221:silent,8222:reset,8225:dead msgs=8x256
+I (2680) main_task: Returned from app_main()
+EX03-PHASE name=REFUSED target=10.0.2.2:8225 expect=connect-deny
+EX03-CONNECT-DENY port=8225 rc=-1 errno=104(ECONNRESET:Connection reset by peer) elapsed_ms=10.0
+EX03-RES phase=REFUSED status=PASS
+EX03-PHASE name=TIMEOUT target=10.0.2.2:8221 expect=EAGAIN x2
+EX03-CONNECT-OK port=8221 elapsed_ms=2.8 fd=54
+EX03-SOCKOPT SO_RCVTIMEO=3s fd=54 rc=0
+EX03-TIMEOUT hit#1 n=-1 errno=11(EAGAIN/EWOULDBLOCK:No more processes) elapsed_ms=2996 -> EAGAIN branch taken
+EX03-TIMEOUT hit#2 n=-1 errno=11(EAGAIN/EWOULDBLOCK:No more processes) elapsed_ms=2999 -> EAGAIN branch taken
+EX03-RES phase=TIMEOUT status=PASS conn_ms=2
+EX03-PHASE name=RESET target=10.0.2.2:8222 expect=ECONNRESET
+EX03-CONNECT-OK port=8222 elapsed_ms=2.3 fd=54
+EX03-SOCKOPT SO_RCVTIMEO=10s fd=54 rc=0
+EX03-SENT port=8222 msg_len=256 digest_sent=3f1f now-waiting-for-echo
+EX03-RST n=-1 errno=104(ECONNRESET:Connection reset by peer) waited_ms=5 -> connection killed by peer AFTER server consumed our message
+EX03-RES phase=RESET status=PASS
+EX03-PHASE name=ECHO target=10.0.2.2:8220 msgs=8 len=256 expect=digest-match
+EX03-CONNECT-OK port=8220 fd=54
+EX03-SOCKOPT SO_RCVTIMEO=10s fd=54 rc=0
+EX03-ROUND seq=01/08 bytes=256 rtt_ms=8 memcmp=equal
+EX03-ROUND seq=02/08 bytes=256 rtt_ms=0 memcmp=equal
+EX03-ROUND seq=03/08 bytes=256 rtt_ms=0 memcmp=equal
+EX03-ROUND seq=04/08 bytes=256 rtt_ms=0 memcmp=equal
+EX03-ROUND seq=05/08 bytes=256 rtt_ms=0 memcmp=equal
+EX03-ROUND seq=06/08 bytes=256 rtt_ms=0 memcmp=equal
+EX03-ROUND seq=07/08 bytes=256 rtt_ms=1 memcmp=equal
+EX03-ROUND seq=08/08 bytes=256 rtt_ms=1 memcmp=equal
+EX03-CLOSE graceful: shutdown(SHUT_WR) -> drain until EOF
+EX03-CLOSE shutdown rc=0 (FIN queued)
+EX03-CLOSE recv-final n=0 extra_bytes=0 (clean EOF from peer FIN)
+EX03-DIGEST sent=7755 received=7755 total_bytes=2048 match=YES
+EX03-RES phase=ECHO status=PASS rtt_avg_ms=1.2 rtt_min_ms=0.0 rtt_max_ms=8.0
+EX03-SUMMARY refused=PASS timeout=PASS reset=PASS echo=PASS
+$$$ EXDONE all-phases-run idling
+EX03-IDLE uptime_ms=61188
+qemu-system-xtensa: terminating on signal 15 from pid 3829405 (timeout)

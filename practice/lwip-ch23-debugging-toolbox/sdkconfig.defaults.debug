@@ -1,0 +1,8 @@
+# ch23 debug 变体：在 base 之上点亮 LWIP_DEBUG
+CONFIG_ETH_USE_OPENETH=y
+CONFIG_LWIP_STATS=y
+CONFIG_LWIP_TCP_SYNMAXRTX=4
+
+# 全局 debug 开关 + 仅 TCP 模块（"不淹没"的开法）
+CONFIG_LWIP_DEBUG=y
+CONFIG_LWIP_TCP_DEBUG=y

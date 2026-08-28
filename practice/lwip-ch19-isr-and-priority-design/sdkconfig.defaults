@@ -1,0 +1,12 @@
+# ch19：中断与优先级实验
+# openeth 网卡（QEMU 专用，见 ch3 模板）
+CONFIG_ETH_USE_OPENETH=y
+
+# 任务表 + 每任务 run-time 统计（uxTaskGetSystemState 需要 TRACE_FACILITY，
+# ulRunTimeCounter/xCoreID 字段分别由后两项打开）
+CONFIG_FREERTOS_USE_TRACE_FACILITY=y
+CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS=y
+CONFIG_FREERTOS_VTASKLIST_INCLUDE_COREID=y
+
+# 压日志噪声，保证测量期串口输出不影响时序
+CONFIG_LOG_DEFAULT_LEVEL_ERROR=y
