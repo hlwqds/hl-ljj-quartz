@@ -367,7 +367,7 @@ cd ~ && idf.py create-project freertos-ch1 && cd freertos-ch1
 idf.py set-target esp32
 ```
 
-生成的骨架极简：`CMakeLists.txt` + `main/main.c`。把 `main/main.c` 整个替换为下面的内容：
+生成的骨架是三个文件：顶层 `CMakeLists.txt` + `main/CMakeLists.txt` + `main/<工程名>.c`——注意 v6 的 `create-project` **按工程名命名源文件**（这里是 `freertos-ch1.c`，内含一个空 `app_main`），并不存在 `main/main.c`。把 `main/freertos-ch1.c` 的内容整个替换为下面的代码：
 
 ```c
 #include <stdio.h>
@@ -421,7 +421,7 @@ BaseType_t xTaskCreate(TaskFunction_t  pvTaskCode,   // 任务函数
 
 两个函数体里的 `vTaskDelay(pdMS_TO_TICKS(200))` 是全程序的关键：它把当前任务挂起 200ms，**期间 CPU 不属于它**。对照 1.1 节的裸机世界——这里没有任何"打碎长操作"的手法，`slow_task` 想干一整件事就干一整件事，因为它的 1000ms 沉睡挡不住任何人。
 
-`xPortGetCoreID()` 是 IDF 扩展 API，返回任务当前所在的核编号。放它是为了一件事：让你在输出里亲眼看到**两个任务会在两个核之间漂移**——这是 SMP 调度的直接证据，Part VI 的伏笔。
+`xPortGetCoreID()` 是 IDF 扩展 API，返回任务当前所在的核编号。放它是为了一件事：观察**不绑核的任务到底落在哪个核上跑**。先剧透一句诚实的结论：在这个程序里你**看不到**任务「漂移」——两行输出会始终显示 `(core 0)`，为什么、以及怎么让 Core 1 真正出场，见下面第 4 节的第 3 点（这也是 Part VI 的伏笔）。
 
 ### 3. 跑起来
 
@@ -432,16 +432,17 @@ idf.py qemu monitor
 首次会完整编译（几百个文件的进度条），随后 QEMU 启动、串口监视器接上。典型输出（启动日志因版本而异，截取关键部分）：
 
 ```text
-I (290) cpu_start: Starting scheduler on APP CPU.
+I (1604) main_task: Started on CPU0
+I (1604) main_task: Calling app_main()
 [fast] tick 0 (core 0)
 [slow] hello from the low priority task
 [fast] tick 1 (core 0)
-[fast] tick 2 (core 1)
+[fast] tick 2 (core 0)
 [fast] tick 3 (core 0)
-[slow] hello from the low priority task
-[fast] tick 4 (core 1)
 ...
 ```
+
+（以上为本机 QEMU 实跑截取，启动日志因版本而异；完整运行约 15 秒里 `(core 1)` 一次都没出现——这是真实行为，不是异常，下一节解释。）
 
 退出监视器：`Ctrl-]`（QEMU 随之结束）。
 
@@ -451,7 +452,29 @@ I (290) cpu_start: Starting scheduler on APP CPU.
 
 1. **并发是真的**。`fast` 每 200ms 一行、`slow` 每 1000ms 一行，稳定交错——两个"执行流"在同一个 CPU 时间轴上独立推进。1.1 节里"刷屏挡住传感器"的问题，在这个程序里**结构性地不存在**。
 2. **优先级在起作用，但你看不见抢占**。因为两个任务大部分时间都在 `vTaskDelay` 里睡着，醒来的瞬间错开了。想看见抢占，把 `slow_task` 里加一个 `while(1) {}` 的死循环忙等试试——`fast` 依旧准时：tick 中断唤醒它，它优先级更高，立刻抢走 CPU。这个实验留给读者，机制在第 6~8 章拆到指令级。
-3. **任务在核间漂移**。`(core 0)` / `(core 1)` 交替出现：`xTaskCreate`（非 PinnedToCore 版本）创建的任务不绑核，调度器允许它在两个核之间迁移。什么时候迁、代价是什么，第 22 章回答。
+3. **不绑核 ≠ 会漂移**。`xTaskCreate`（非 PinnedToCore 版本）创建的任务亲和掩码是「两个核都行」，但这只表示**允许**，不表示**必然**。本程序里两个任务几乎全程在 `vTaskDelay` 里睡觉，每次都在 tick 上下文里醒来——而 Core 0 此刻闲着，当场就把就绪任务抢走，任务根本没有理由换核（实测 15 秒 72 次打印全在 Core 0）。**漂移/换核需要竞争条件**。做个一行的对照实验：加一个钉死 Core 0、优先级更高的忙等任务，把 Core 0 变成「忙且不可抢占」，再看输出：
+
+   ```c
+   /* 占位任务：忙等，把 Core 0 填满 */
+   static void busy_core0(void *arg)
+   {
+       for (;;) { }
+   }
+
+   void app_main(void)
+   {
+       xTaskCreate(fast_task, "fast", 2048, NULL, 5, NULL);
+       xTaskCreate(slow_task, "slow", 2048, NULL, 3, NULL);
+       /* 顺序很重要：busy0 优先级最高，必须最后创建——先建它会把还在
+          app_main（优先级 1）里的 main 任务永久挤下台，后两行永远执行不到 */
+       xTaskCreatePinnedToCore(busy_core0, "busy0", 2048, NULL, 6, NULL, 0);
+   }
+   ```
+
+   本机 QEMU 实跑（同样约 15 秒）：**前两行落在 Core 0（抢在 busy0 启动之前），之后 115 行全部 `(core 1)`**——Core 0 被 priority 6 的忙等占满，优先级 5 的 `fast` 醒来后只能在 Core 1 上运行。「任务跑到当时有空的那个核」这才是 SMP 调度的真实语义，第 22 章拆机制。
+
+   两个实操坑（都是实测踩过的）：① 忙等会饿死 Core 0 的 Idle 任务、触发任务看门狗复位，需在 `sdkconfig.defaults` 加 `CONFIG_ESP_TASK_WDT_EN=n`；② 即便如此，Core 0 上的高优先级系统任务（如 esp_timer，优先级 22）仍能正常抢占 `busy0`——优先级秩序没有被破坏。
+
 4. **printf 没有把调度搞乱**。UART 速度慢，`printf` 内部有缓冲与锁，但任务优先级结构保证了低优先级的 `slow` 打印再慢也挡不住 `fast`。要是反过来（高优先级任务频繁 printf 低优先级任务的数据），就要小心优先级反转——第 11 章的主题。
 
 ### 5. 背后发生了什么（一页全景）
@@ -562,7 +585,7 @@ grep -n "xTaskCreate" tasks.c | head    # 从 API 入口向下追
 - 裸机的结构性约束是**等待占住执行流**；所有手搓状态机都是在用应用代码模拟调度。RTOS 把这件事正式抽象出来：任务有自己的栈与执行流，阻塞让 CPU，优先级显式化。
 - FreeRTOS 是单核假设下的小而完整内核（六大文件）；ESP32 上的那份是 **IDF FreeRTOS**——以 Vanilla v10.5.1 为基线、为双核 SMP 深度改造的 fork，默认编入 `FreeRTOS-Kernel/`；旁边的 `FreeRTOS-Kernel-SMP/` 是实验性上游新内核。栈单位（字 vs 字节）是撞过一次就忘不了的第一个差异。
 - 环境：ESP-IDF v6.x + Espressif QEMU fork，`idf.py qemu monitor` 一条命令跑通，全程无需硬件。
-- 第一个程序验证了三件事：并发结构性地成立、优先级保证高优先级任务按时运行、任务会在双核间漂移。
+- 第一个程序验证了三件事：并发结构性地成立、优先级保证高优先级任务按时运行、不绑核的任务落在「当时有空的核」上（默认程序里全程 Core 0；把 Core 0 用高优先级忙等占住后，全部输出立刻落到 Core 1）。
 - 源码地图已领：`components/freertos/FreeRTOS-Kernel/` 是后半程主战场，`idf_changes.md` 值得先通读一遍。
 
 下一章暂离软件，把 ESP32 的硬件底座补齐：Xtensa LX6 的编程模型（寄存器窗口是它和 ARM 最大的不同）、中断体系、内存映射。Part IV 读上下文切换汇编时，那一章是唯一的入场券。

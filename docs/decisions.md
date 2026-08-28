@@ -162,3 +162,32 @@ Decision: 实验性 sink 改 busy-wait（esp_timer_get_time 自旋 2ms）：writ
 钉死 ~500 帧/s，环稳定打满（high_wm 1976/2048，DROP cnt 到 896）。
 Impact: practice/lwip-pcapx-lab 的 slow_sink；后续一切「QEMU 下构造时序压力」
 的实验统一用自旋不用 sleep；S4 文章实验节。
+
+## KD-12: create-project 骨架源文件按工程名命名，系列文章误写 main/main.c — RESOLVED 2026-08-28
+
+Phenomenon: 用户实测反馈：按 ch1 指令 `idf.py create-project freertos-ch1`
+后找不到 `main/main.c`。本机 hello-s3 实证：v6 骨架是顶层 CMakeLists.txt +
+main/CMakeLists.txt + main/<工程名>.c（hello-s3.c），无 main.c。
+Root cause: FreeRTOS 系列写作时未实测骨架结构，凭旧版本印象写了 main/main.c，
+16 个文件（FreeRTOS 系列 14 章 + BOX-3 系列 2 章）的指令与代码注释同错。
+Decision: 指令性表述全部改为 main/<工程名>.c（如 freertos-ch1.c）；ch1 骨架
+描述改为三文件结构并显式提醒「不存在 main/main.c」；BOX-3 章用泛指
+<工程名>。教训：涉及「生成物长什么样」的描述必须实测（hello-s3 就是现成
+证据源）。
+Impact: 16 文件批量修订；与 KD-5①（--target）同属 create-project 事实族。
+
+## KD-13: ch1 示例输出虚构了「核间漂移」——不绑核≠会漂移 — RESOLVED 2026-08-28
+
+Phenomenon: 用户实测：ch1 双任务程序输出全部 `(core 0)`，文章示例输出里的
+`(core 1)` 交替行不出现。本机复现实证（同一工程、QEMU、15 秒）：
+72 次打印全在 Core 0。
+Root cause: 文章示例输出为示意而非实跑。机理上：两任务几乎全程睡眠，
+在 tick 上下文醒来时 Core 0 空闲、当场取走就绪任务——迁移需要竞争条件，
+本程序不存在。写「调度行为类」结论必须实测。
+Decision: ch1 三处修订：示例输出换成本机实跑（全 core 0，并明示这是真实
+行为）；观察点 3 重写为「不绑核=允许而非必然」+ busy0 对照实验（钉 Core 0、
+优先级 6 忙等 → 实测前 2 行 core 0、后 115 行全 core 1）+ 两个实操坑
+（TWDT 需关、创建顺序必须 busy0 最后）；小结措辞同步。ch8 的漂移表述
+场景不同（持续可运行负载下的轮转）保留。
+Impact: ch1；对照实验工程 ~/freertos-ch1-mig（含排障链：merge-bin 需
+--pad-to-size 2MB 否则 QEMU mtd 拒载、后台运行 QEMU 需防 tee 截断）。
