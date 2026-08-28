@@ -62,3 +62,16 @@ lab/kernel-led/.*.cmd
 lab/kernel-led/Module.symvers
 lab/kernel-led/modules.order
 lab/kernel-led/.tmp_versions/
+
+# ESP-IDF 实验工程生成物（lwIP 系列）
+practice/*/build*/
+practice/*/managed_components/
+practice/*/sdkconfig
+practice/*/qemu_efuse.bin
+# lwIP 示例套件（practice/lwip-examples/exNN-*，比章级工程深一层）
+practice/lwip-examples/*/build*/
+practice/lwip-examples/*/managed_components/
+practice/lwip-examples/*/sdkconfig
+practice/lwip-examples/*/qemu_efuse.bin
+.mimosa/
+qemu.pid
