@@ -510,7 +510,7 @@ cd ~ && idf.py create-project freertos-ch19 && cd freertos-ch19
 idf.py set-target esp32
 ```
 
-`main/main.c` 整体替换为（直接用 heap 组件 API 观测，同时验证 heap_idf.c 的转接等价性）：
+`main/freertos-ch19.c` 整体替换为（直接用 heap 组件 API 观测，同时验证 heap_idf.c 的转接等价性）：
 
 ```c
 #include <stdio.h>

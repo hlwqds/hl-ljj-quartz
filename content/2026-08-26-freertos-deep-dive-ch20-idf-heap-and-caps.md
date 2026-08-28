@@ -460,7 +460,7 @@ Light 档在每个分配块前后埋：
 照例 QEMU 主线（`idf.py qemu monitor`）。实验做三件事：注册失败回调、盘点各能力位的余量与最大块、故意发起三种"注定失败/可疑"的分配。
 
 ```c
-/* main/main.c —— 第二十章实验 */
+/* main/freertos-ch20.c —— 第二十章实验 */
 #include <stdio.h>
 #include <inttypes.h>
 #include "freertos/FreeRTOS.h"

@@ -487,7 +487,7 @@ void app_main(void)
 ### 2. 跑起来
 
 ```bash
-idf.py create-project freertos-ch8 && cd freertos-ch8 && idf.py set-target esp32   # 建项目; main/main.c 换成上面代码
+idf.py create-project freertos-ch8 && cd freertos-ch8 && idf.py set-target esp32   # 建项目; main/freertos-ch8.c 换成上面代码
 idf.py qemu monitor                                 # QEMU 主线; 真机: idf.py -p /dev/ttyUSB0 flash monitor
 ```
 

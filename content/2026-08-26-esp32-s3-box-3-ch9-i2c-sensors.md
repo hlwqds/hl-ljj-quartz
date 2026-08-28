@@ -277,7 +277,7 @@ SDA: ‾\__[START]‾‾[0x71=0x38<<1|R]__[st]__[H19..12][H11..4][H3..0|T19..16]
 > 以下代码未在真机编译运行过，为待验证骨架。前置条件：SENSOR 板插在主机上（AHT20/AT581X 在扩展板上）；烧本实验时**不能同时跑 factory_demo**（BSP 会抢先安装 I2C 驱动，同一端口新旧驱动叠加即冲突）。
 
 ```c
-/* main/main.c —— I2C 总线扫描 + AHT20 裸读（不用 aht20 组件，练协议） */
+/* main/<工程名>.c —— I2C 总线扫描 + AHT20 裸读（不用 aht20 组件，练协议） */
 #include <stdio.h>
 #include <inttypes.h>
 #include "freertos/FreeRTOS.h"

@@ -342,7 +342,7 @@ void app_main(void)
 
 ```bash
 idf.py create-project freertos-ch11 && cd freertos-ch11 && idf.py set-target esp32
-# 用上面内容替换 main/main.c，然后：
+# 用上面内容替换 main/freertos-ch11.c，然后：
 idf.py qemu monitor
 ```
 

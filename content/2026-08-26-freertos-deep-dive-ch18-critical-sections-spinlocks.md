@@ -543,7 +543,7 @@ cd ~ && idf.py create-project freertos-ch18 && cd freertos-ch18
 idf.py set-target esp32
 ```
 
-把 `main/main.c` 替换为：
+把 `main/freertos-ch18.c` 替换为：
 
 ```c
 #include <stdio.h>

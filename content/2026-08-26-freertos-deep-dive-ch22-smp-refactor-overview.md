@@ -471,7 +471,7 @@ echo "CONFIG_FREERTOS_USE_TICK_HOOK=y" >> sdkconfig.defaults   # 先写 defaults
 idf.py set-target esp32
 ```
 
-### 2. 完整代码（main/main.c）
+### 2. 完整代码（main/freertos-ch22.c）
 
 ```c
 #include <stdio.h>

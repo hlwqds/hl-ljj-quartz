@@ -239,7 +239,7 @@ esp_timer_start_once(t, 5000000);              /* 或 5s 后单次触发 */
 三段式把本章四个组件串成一条链：**NVS 记重启次数 → 触摸中断进事件循环 → 处理任务干活，日志全程打点**。GPIO 中断的驱动细节是第八章主题，此处只取最小组装。
 
 ```c
-/* main/main.c —— 实验骨架（ IDF v6，esp32s3 ） */
+/* main/<工程名>.c —— 实验骨架（IDF v6，esp32s3） */
 #include <stdio.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"

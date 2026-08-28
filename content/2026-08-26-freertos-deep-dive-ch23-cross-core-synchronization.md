@@ -394,7 +394,7 @@ cd ~ && idf.py create-project freertos-ch23 && cd freertos-ch23 && idf.py set-ta
 ### 1. 版本一：无保护（错误示范）
 
 ```c
-/* main/main.c —— 版本一：注定丢更新的裸共享变量 */
+/* main/freertos-ch23.c —— 版本一：注定丢更新的裸共享变量 */
 #include <stdio.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"

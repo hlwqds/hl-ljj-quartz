@@ -511,7 +511,7 @@ if( xTaskCheckForTimeOut( &xTimeOut, &xTicksToWait ) == pdFALSE )
 ### 1. 代码
 
 ```c
-/* main/main.c — freertos-ch10 */
+/* main/freertos-ch10.c —— 队列实验 */
 #include <stdio.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"

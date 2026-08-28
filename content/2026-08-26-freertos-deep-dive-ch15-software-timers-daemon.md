@@ -446,7 +446,7 @@ void on_key_pressed(void)
 ### 2. 代码
 
 ```c
-/* main/main.c —— freertos-ch15 */
+/* main/freertos-ch15.c —— 软件定时器实验 */
 #include <stdio.h>
 #include <inttypes.h>
 #include "freertos/FreeRTOS.h"

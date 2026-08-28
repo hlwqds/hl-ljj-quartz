@@ -436,7 +436,7 @@ v6.0.2 还有一棵 `FreeRTOS-Kernel-SMP/`（上游 Amazon SMP 内核，v11.1.0 
 cd ~ && idf.py create-project freertos-ch12 && cd freertos-ch12 && idf.py set-target esp32
 ```
 
-`main/main.c`：
+`main/freertos-ch12.c`：
 
 ```c
 #include <stdio.h>

@@ -70,15 +70,15 @@ QEMU 在 GDB 连上之前不会放行 CPU，所以你可以从第一条指令开
 
 ```text
 (gdb) b app_main
-Breakpoint 1 at 0x42001abc: file main/main.c, line 42.
+Breakpoint 1 at 0x42001abc: file main/freertos-ch24.c, line 42.
 (gdb) c
 Continuing.
 [Switching to Thread 2]
 
-Breakpoint 1, app_main () at main/main.c:42
+Breakpoint 1, app_main () at main/freertos-ch24.c:42
 42	    xTaskCreate(worker_task, "worker", 2048, NULL, 4, NULL);
 (gdb) bt
-#0  app_main () at main/main.c:42
+#0  app_main () at main/freertos-ch24.c:42
 #1  0x400d2c1e in main_task (...) at components/esp_system/startup.c:...
 ```
 
