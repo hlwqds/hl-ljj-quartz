@@ -222,13 +222,13 @@ expect -c '
 
 ### 结论
 
-| 维度 | 状态 |
-| --- | --- |
-| telnetd 本身 | ✅ 正常工作（fork/pty/exec 全部成功，strace 确认） |
-| 管道式客户端 | ❌ EOF 过早断连，触发正常 SIGHUP 清理 |
-| expect 客户端 | ✅ 验证通过（uid=0 root shell） |
-| 验证脚本 | `scripts/verify-telnet.sh`（expect 驱动，rc=0） |
-| 证据 | `lab/diag-state/evidence-telnet-success.log` |
+| 维度          | 状态                                               |
+| ------------- | -------------------------------------------------- |
+| telnetd 本身  | ✅ 正常工作（fork/pty/exec 全部成功，strace 确认） |
+| 管道式客户端  | ❌ EOF 过早断连，触发正常 SIGHUP 清理              |
+| expect 客户端 | ✅ 验证通过（uid=0 root shell）                    |
+| 验证脚本      | `scripts/verify-telnet.sh`（expect 驱动，rc=0）    |
+| 证据          | `lab/diag-state/evidence-telnet-success.log`       |
 
 ### 诊断产物
 
@@ -256,13 +256,13 @@ vexpress-a9 是老式 machine，没有 PCI 总线（实测 `qemu-system-arm -M v
 
 成功搭建的实验环境，关键参数如下：
 
-| 组件 | 参数 |
-| --- | --- |
-| qemu machine | `-M vexpress-a9 -smp 4 -m 512M` |
-| 网卡 | `-net nic,model=lan9118`（唯一支持的型号） |
-| 网络 | `-net user,hostfwd=tcp:127.0.0.1:5555-:22`（客户机 IP 10.0.2.15） |
-| 随机数 | `-device virtio-rng-device`（必须） |
-| 串口 | `-append "console=ttyAMA0"`（PL011，不是 ttyS0） |
-| DTB 路径 | `arch/arm/boot/dts/arm/vexpress-v2p-ca9.dtb`（6.x 归入 arm/ 子目录） |
-| 远程登录 | Dropbear SSH，`-B` 空口令 root |
-| 内核必开配置 | `MODULES` `BLK_DEV_INITRD` `SMSC911X` `NET` `HW_RANDOM_VIRTIO` |
+| 组件         | 参数                                                                 |
+| ------------ | -------------------------------------------------------------------- |
+| qemu machine | `-M vexpress-a9 -smp 4 -m 512M`                                      |
+| 网卡         | `-net nic,model=lan9118`（唯一支持的型号）                           |
+| 网络         | `-net user,hostfwd=tcp:127.0.0.1:5555-:22`（客户机 IP 10.0.2.15）    |
+| 随机数       | `-device virtio-rng-device`（必须）                                  |
+| 串口         | `-append "console=ttyAMA0"`（PL011，不是 ttyS0）                     |
+| DTB 路径     | `arch/arm/boot/dts/arm/vexpress-v2p-ca9.dtb`（6.x 归入 arm/ 子目录） |
+| 远程登录     | Dropbear SSH，`-B` 空口令 root                                       |
+| 内核必开配置 | `MODULES` `BLK_DEV_INITRD` `SMSC911X` `NET` `HW_RANDOM_VIRTIO`       |
