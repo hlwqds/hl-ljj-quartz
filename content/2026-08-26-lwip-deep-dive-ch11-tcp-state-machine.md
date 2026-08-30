@@ -219,21 +219,21 @@ if (flags & TCP_RST) {
 
 `tcp_process()` 中段是一个按 state 分派的 switch，所有迁移边汇总如下（行号指向 2.2.0-dev 源码语义）：
 
-| 当前态                   | 输入条件                              | 动作                                                                  | 下一态              |
-| ------------------------ | ------------------------------------- | --------------------------------------------------------------------- | ------------------- | -------- |
-| SYN_SENT                 | SYN\|ACK 且 ackno==lastack+1          | 抢答 established，free 掉 unacked 里的 SYN 段，connected 回调，回 ACK | ESTABLISHED         |
-| SYN_SENT                 | 只有 ACK（半开残迹）                  | 回 RST + 立即重发 SYN（nrtx<上限）                                    | SYN_SENT            |
-| SYN_RCVD                 | 第三次 ACK 合法                       | backlog 收尾（`tcp_backlog_accepted`）、accept 回调、初始化 cwnd      | ESTABLISHED         |
-| SYN_RCVD                 | 收到重复 SYN（seqno==rcv_nxt−1）      | 重发 SYN                                                              | ACK（`tcp_rexmit`） | SYN_RCVD |
-| SYN_RCVD                 | ackno 非法                            | 回 RST                                                                | —                   |
-| SYN_RCVD                 | 带对端 FIN                            | ACK it                                                                | CLOSE_WAIT          |
-| ESTABLISHED / CLOSE_WAIT | 收到 FIN                              | ack_now                                                               | CLOSE_WAIT          |
-| FIN_WAIT_1               | 对端 FIN 且 ACK 我方 FIN 且 unsent 空 | 清理队列、迁往 tw 链表                                                | **TIME_WAIT**       |
-| FIN_WAIT_1               | 对端 FIN 但我方未被 ACK               | ack_now                                                               | CLOSING             |
-| FIN_WAIT_1               | 只是 ACK                              | （安静的等待）                                                        | FIN_WAIT_2          |
-| FIN_WAIT_2               | 对端 FIN                              | ack_now、迁往 tw 链表                                                 | **TIME_WAIT**       |
-| CLOSING                  | ACK 且覆盖我方 FIN                    | 迁往 tw 链表                                                          | **TIME_WAIT**       |
-| LAST_ACK                 | ACK 覆盖我方 FIN                      | recv_flags \|= TF_CLOSED（延迟清理）                                  | (CLOSED/free)       |
+| 当前态                   | 输入条件                              | 动作                                                                  | 下一态        |
+| ------------------------ | ------------------------------------- | --------------------------------------------------------------------- | ------------- |
+| SYN_SENT                 | SYN\|ACK 且 ackno==lastack+1          | 抢答 established，free 掉 unacked 里的 SYN 段，connected 回调，回 ACK | ESTABLISHED   |
+| SYN_SENT                 | 只有 ACK（半开残迹）                  | 回 RST + 立即重发 SYN（nrtx<上限）                                    | SYN_SENT      |
+| SYN_RCVD                 | 第三次 ACK 合法                       | backlog 收尾（`tcp_backlog_accepted`）、accept 回调、初始化 cwnd      | ESTABLISHED   |
+| SYN_RCVD                 | 收到重复 SYN（seqno==rcv_nxt−1）      | 重发 SYN\|ACK（`tcp_rexmit`）                                         | SYN_RCVD      |
+| SYN_RCVD                 | ackno 非法                            | 回 RST                                                                | —             |
+| SYN_RCVD                 | 带对端 FIN                            | ACK it                                                                | CLOSE_WAIT    |
+| ESTABLISHED / CLOSE_WAIT | 收到 FIN                              | ack_now                                                               | CLOSE_WAIT    |
+| FIN_WAIT_1               | 对端 FIN 且 ACK 我方 FIN 且 unsent 空 | 清理队列、迁往 tw 链表                                                | **TIME_WAIT** |
+| FIN_WAIT_1               | 对端 FIN 但我方未被 ACK               | ack_now                                                               | CLOSING       |
+| FIN_WAIT_1               | 只是 ACK                              | （安静的等待）                                                        | FIN_WAIT_2    |
+| FIN_WAIT_2               | 对端 FIN                              | ack_now、迁往 tw 链表                                                 | **TIME_WAIT** |
+| CLOSING                  | ACK 且覆盖我方 FIN                    | 迁往 tw 链表                                                          | **TIME_WAIT** |
+| LAST_ACK                 | ACK 覆盖我方 FIN                      | recv_flags \|= TF_CLOSED（延迟清理）                                  | (CLOSED/free) |
 
 三点解释：
 

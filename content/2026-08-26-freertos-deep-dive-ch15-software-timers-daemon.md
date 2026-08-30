@@ -420,13 +420,13 @@ void on_key_pressed(void)
 
 软件定时器逻辑本身与核数无关，但 IDF fork（`FreeRTOS-Kernel/`，v10.5.1 基线 + Espressif SMP 改造）在三处动了它：
 
-| 主题                 | Vanilla FreeRTOS v10.5.1                                                         | IDF FreeRTOS（v6.0.2 默认树）                                                                                                                            |
-| -------------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 守护任务创建         | `xTaskCreate(prvTimerTask, ...)` / `xTaskCreateStatic(...)`                      | `xTaskCreatePinnedToCore(..., configTIMER_SERVICE_TASK_CORE_AFFINITY)` / `xTaskCreateStaticPinnedToCore(...)`（`timers.c` 的 `xTimerCreateTimerTask()`） |
-| 守护任务亲和性       | 概念不存在（单核）                                                               | `configTIMER_SERVICE_TASK_CORE_AFFINITY` 只允许 0x0、0x1 或 `tskNO_AFFINITY`，编译期 `#error` 检查；Kconfig 默认 **No affinity**                         |
-| 定时器状态的并发保护 | `prvProcessTimerOrBlockTask` 用 `vTaskSuspendAll()`（挂起调度器即独占）          | 换成 `prvENTER_CRITICAL_OR_SUSPEND_ALL(&xTimerLock)`；`timers.c` 有独立的 `portMUX_TYPE xTimerLock` 自旋锁                                               |
-| 栈深单位             | `configTIMER_TASK_STACK_DEPTH` 以**字**计（典型值 128 = 512B）                   | 以**字节**计（`CONFIG_FREERTOS_TIMER_TASK_STACK_DEPTH` 默认 2048B，范围 1536~32768）                                                                     |
-| 其余默认值           | 两边相同：任务名 "Tmr Svc"；优先级/队列深度在 IDF 进了 menuconfig（默认 1 / 10） |
+| 主题                 | Vanilla FreeRTOS v10.5.1                                                | IDF FreeRTOS（v6.0.2 默认树）                                                                                                                            |
+| -------------------- | ----------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 守护任务创建         | `xTaskCreate(prvTimerTask, ...)` / `xTaskCreateStatic(...)`             | `xTaskCreatePinnedToCore(..., configTIMER_SERVICE_TASK_CORE_AFFINITY)` / `xTaskCreateStaticPinnedToCore(...)`（`timers.c` 的 `xTimerCreateTimerTask()`） |
+| 守护任务亲和性       | 概念不存在（单核）                                                      | `configTIMER_SERVICE_TASK_CORE_AFFINITY` 只允许 0x0、0x1 或 `tskNO_AFFINITY`，编译期 `#error` 检查；Kconfig 默认 **No affinity**                         |
+| 定时器状态的并发保护 | `prvProcessTimerOrBlockTask` 用 `vTaskSuspendAll()`（挂起调度器即独占） | 换成 `prvENTER_CRITICAL_OR_SUSPEND_ALL(&xTimerLock)`；`timers.c` 有独立的 `portMUX_TYPE xTimerLock` 自旋锁                                               |
+| 栈深单位             | `configTIMER_TASK_STACK_DEPTH` 以**字**计（典型值 128 = 512B）          | 以**字节**计（`CONFIG_FREERTOS_TIMER_TASK_STACK_DEPTH` 默认 2048B，范围 1536~32768）                                                                     |
+| 其余默认值           | 任务名 "Tmr Svc"；优先级/队列深度为 FreeRTOSConfig 编译期常量           | 任务名同左；优先级/队列深度改在 menuconfig（默认 1 / 10）                                                                                                |
 
 > [!tip] 为什么 IDF 要给定时器加自旋锁？
 > Vanilla 里"挂起调度器"就能独占定时器状态，因为单核上没人能插进来。双核上不行：守护任务在 Core 1 改链表时，Core 0 上的任务可能正在调 `vTimerSetReloadMode()` / `pvTimerGetTimerID()`（这两个 API 在 IDF 里都包着 `taskENTER_CRITICAL(&xTimerLock)`）。所以 IDF 把"所有定时器"收敛到一把 `xTimerLock`（`idf_changes.md` 明确列为 SMP 细粒度锁之一）：活跃链表本身仍只许守护任务碰，锁只保护状态位与 ID 这类跨核共享字段。自旋锁的代价与实现是第 18 章的主题。

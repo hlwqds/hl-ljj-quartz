@@ -166,13 +166,13 @@ typedef struct xLIST                        /* 链表头 */
 
 ### 2. 每条链表的职责
 
-| 链表                       | 谁会进去                                                  | 进入方式                                                     | 出去方式                                                                                                             |
-| -------------------------- | --------------------------------------------------------- | ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- | ---------- |
-| `pxReadyTasksLists[p]`     | 优先级 p 且可立即运行的任务                               | `prvAddTaskToReadyList()`（插队尾）                          | 被选中上 CPU / 开始阻塞 / 被删                                                                                       |
-| `pxDelayedTaskList`        | `vTaskDelay()`、等队列带超时的任务                        | `prvAddCurrentTaskToDelayedList()`（按唤醒时刻**有序**插入） | tick 到期由 `xTaskIncrementTick()` 唤醒，或事件先到                                                                  |
-| `xPendingReadyList[x]`     | 调度器被 `vTaskSuspendAll()` 挂起期间，ISR 里变就绪的任务 | 中断内不能动就绪链表，先寄存                                 | `xTaskResumeAll()` 统一搬回就绪链表                                                                                  |
-| `xSuspendedTaskList`       | `vTaskSuspend()` 的任务、**无限期**等事件的任务           | `vTaskSuspend()` / 无限期阻塞路径                            | `vTaskResume()` / 事件到达                                                                                           |
-| `xTasksWaitingTermination` | `vTaskDelete()` 已删除、TCB 和栈还没释放的任务            | `vTaskDelete()` 把 `xStateListItem` 挂进去                   | Idle 任务里 `prvCheckTasksWaitingTermination()` 释放内存（见 [[2026-08-26-freertos-deep-dive-ch9-blocking-delay-idle | 第九章]]） |
+| 链表                       | 谁会进去                                                  | 进入方式                                                     | 出去方式                                                                                                                         |
+| -------------------------- | --------------------------------------------------------- | ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
+| `pxReadyTasksLists[p]`     | 优先级 p 且可立即运行的任务                               | `prvAddTaskToReadyList()`（插队尾）                          | 被选中上 CPU / 开始阻塞 / 被删                                                                                                   |
+| `pxDelayedTaskList`        | `vTaskDelay()`、等队列带超时的任务                        | `prvAddCurrentTaskToDelayedList()`（按唤醒时刻**有序**插入） | tick 到期由 `xTaskIncrementTick()` 唤醒，或事件先到                                                                              |
+| `xPendingReadyList[x]`     | 调度器被 `vTaskSuspendAll()` 挂起期间，ISR 里变就绪的任务 | 中断内不能动就绪链表，先寄存                                 | `xTaskResumeAll()` 统一搬回就绪链表                                                                                              |
+| `xSuspendedTaskList`       | `vTaskSuspend()` 的任务、**无限期**等事件的任务           | `vTaskSuspend()` / 无限期阻塞路径                            | `vTaskResume()` / 事件到达                                                                                                       |
+| `xTasksWaitingTermination` | `vTaskDelete()` 已删除、TCB 和栈还没释放的任务            | `vTaskDelete()` 把 `xStateListItem` 挂进去                   | Idle 任务里 `prvCheckTasksWaitingTermination()` 释放内存（见 [[2026-08-26-freertos-deep-dive-ch9-blocking-delay-idle\|第九章]]） |
 
 ### 3. 一个 TCB，两个节点：`xStateListItem` 与 `xEventListItem`
 

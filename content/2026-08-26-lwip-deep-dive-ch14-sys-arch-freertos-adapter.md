@@ -290,19 +290,19 @@ void sys_arch_unprotect(sys_prot_t pval)
 
 上游 lwIP 仓库带了 FreeRTOS 参考移植（本仓库路径 `lwip/contrib/ports/freertos/`）。把它和 IDF port 并排放，差异一目了然：
 
-| 维度                  | 上游 contrib（freertos port）                                                | IDF port                                                                                                         |
-| --------------------- | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------ |
-| 类型包裹              | wrapper struct 包 void*（`struct \_sys_sem { void *sem; }`，一点点类型安全） | 直接用 FreeRTOS 原生类型别名（`StaticSemaphore_t` 值内嵌等）                                                     |
-| 对象分配              | 全动态 `xQueueCreate/xSemaphoreCreateBinary`                                 | 邮箱/信号量静态化（`heap_caps_malloc`+`CreateStatic`）                                                           |
-| 内存上舱              | 接口未管内存能力                                                             | `MALLOC_CAP_INTERNAL` 强制内网                                                                                   |
-| SYS_ARCH_PROTECT      | 默认 `taskENTER_CRITICAL`（关调度），可选 mutex 版（可递归）                 | 固定 mutex 版（不可递归），返回恒 1                                                                              |
-| sys_now 开关          | `LWIP_FREERTOS_SYS_NOW_FROM_FREERTOS` 可换硬件时基                           | 写死 tick 公式                                                                                                   |
-| 信号量等待返回        | 成功返回 1                                                                   | 成功返回 0（旧语义宽容）                                                                                         |
-| 互斥量类型            | 递归互斥量 `xSemaphoreCreateRecursiveMutex`                                  | 非递归 `xSemaphoreCreateMutex`                                                                                   |
-| sys_thread_new 栈单位 | `stacksize / sizeof(StackType_t)`（lwIP 字节数→FreeRTOS 字，或有字数开关）   | 字节数直传（IDF 内核 `portSTACK_TYPE=uint8_t`，参见 [[2026-08-26-freertos-deep-dive-ch16-portmacro-port-contract | FreeRTOS 十六章]] 的类型契约） |
-| 任务创建              | `xTaskCreate`（不控核）                                                      | `xTaskCreatePinnedToCore`+Kconfig 亲和性                                                                         |
-| 核锁定检查            | `LWIP_FREERTOS_CHECK_CORE_LOCKING` 可选块                                    | `sys_thread_tcpip()` 五态查询 + VFS 注册塞进 `sys_init`                                                          |
-| 附加件                | 无                                                                           | per-thread netdb/信号量（TLS）、`ERR_NEED_SCHED` 双侧贯通                                                        |
+| 维度                  | 上游 contrib（freertos port）                                                | IDF port                                                                                                                                         |
+| --------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 类型包裹              | wrapper struct 包 void*（`struct \_sys_sem { void *sem; }`，一点点类型安全） | 直接用 FreeRTOS 原生类型别名（`StaticSemaphore_t` 值内嵌等）                                                                                     |
+| 对象分配              | 全动态 `xQueueCreate/xSemaphoreCreateBinary`                                 | 邮箱/信号量静态化（`heap_caps_malloc`+`CreateStatic`）                                                                                           |
+| 内存上舱              | 接口未管内存能力                                                             | `MALLOC_CAP_INTERNAL` 强制内网                                                                                                                   |
+| SYS_ARCH_PROTECT      | 默认 `taskENTER_CRITICAL`（关调度），可选 mutex 版（可递归）                 | 固定 mutex 版（不可递归），返回恒 1                                                                                                              |
+| sys_now 开关          | `LWIP_FREERTOS_SYS_NOW_FROM_FREERTOS` 可换硬件时基                           | 写死 tick 公式                                                                                                                                   |
+| 信号量等待返回        | 成功返回 1                                                                   | 成功返回 0（旧语义宽容）                                                                                                                         |
+| 互斥量类型            | 递归互斥量 `xSemaphoreCreateRecursiveMutex`                                  | 非递归 `xSemaphoreCreateMutex`                                                                                                                   |
+| sys_thread_new 栈单位 | `stacksize / sizeof(StackType_t)`（lwIP 字节数→FreeRTOS 字，或有字数开关）   | 字节数直传（IDF 内核 `portSTACK_TYPE=uint8_t`，参见 [[2026-08-26-freertos-deep-dive-ch16-portmacro-port-contract\|FreeRTOS 十六章]] 的类型契约） |
+| 任务创建              | `xTaskCreate`（不控核）                                                      | `xTaskCreatePinnedToCore`+Kconfig 亲和性                                                                                                         |
+| 核锁定检查            | `LWIP_FREERTOS_CHECK_CORE_LOCKING` 可选块                                    | `sys_thread_tcpip()` 五态查询 + VFS 注册塞进 `sys_init`                                                                                          |
+| 附加件                | 无                                                                           | per-thread netdb/信号量（TLS）、`ERR_NEED_SCHED` 双侧贯通                                                                                        |
 
 > [!warning] IDF 还动了协议栈的心脏旁边
 > 别忘了系列暗线 B：IDF 不只在 port 层替换实现，还往 lwIP core 里打了自己的补丁。对本章最相关的是"按需定时器"——`timeouts.c` 里一圈 `ESP_LWIP_XXX_TIMERS_ONDEMAND` 条件编译：

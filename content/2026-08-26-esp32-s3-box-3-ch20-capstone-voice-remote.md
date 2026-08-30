@@ -77,13 +77,13 @@ tags: [esp32, esp32-s3, esp-idf, series, project]
 
 ### 3. IPC 通道选型
 
-| 边       | 载荷形态                                              | 选择                                                      | 论证                                                                                                             |
-| -------- | ----------------------------------------------------- | --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ---------------- |
-| audio→sr | PCM 字节流（每 chunk 数 KB）                          | AFE 内部环形（本质是流式缓冲）；自建则用 StreamBuffer     | 字节流、单产单销、不可分帧——正是流缓冲的甜点区，见 [[2026-08-26-freertos-deep-dive-ch14-stream-message-buffers   | （十四）流缓冲]] |
-| sr→sm    | 定长事件 `sr_result_t{wakenet_mode,state,command_id}` | 队列，深度 3                                              | 定长小事件、天然背压；深度 3 为 factory_demo 实测值，见 [[2026-08-26-freertos-deep-dive-ch10-queue-universal-ipc | （十）队列]]     |
-| sm→ir    | 单个 `cmd_id`（表索引）                               | 任务通知                                                  | 32 位值即全部信息，最轻量 IPC，见 [[2026-08-26-freertos-deep-dive-ch13-task-notifications                        | （十三）通知]]   |
-| sm→ui    | 文本/状态变更                                         | `bsp_display_lock(0)` 临界区 + `lv_label_set_text_static` | LVGL 非线程安全，纪律见 20.5 节与 [[2026-08-26-freertos-deep-dive-ch11-semaphore-mutex-priority-inheritance      | （十一）互斥量]] |
-| 生命周期 | 删除握手（NEED_DELETE/DELETED 位）                    | 事件组                                                    | 多任务多位状态汇聚，见 [[2026-08-26-freertos-deep-dive-ch12-event-groups                                         | （十二）事件组]] |
+| 边       | 载荷形态                                              | 选择                                                      | 论证                                                                                                                             |
+| -------- | ----------------------------------------------------- | --------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| audio→sr | PCM 字节流（每 chunk 数 KB）                          | AFE 内部环形（本质是流式缓冲）；自建则用 StreamBuffer     | 字节流、单产单销、不可分帧——正是流缓冲的甜点区，见 [[2026-08-26-freertos-deep-dive-ch14-stream-message-buffers\|（十四）流缓冲]] |
+| sr→sm    | 定长事件 `sr_result_t{wakenet_mode,state,command_id}` | 队列，深度 3                                              | 定长小事件、天然背压；深度 3 为 factory_demo 实测值，见 [[2026-08-26-freertos-deep-dive-ch10-queue-universal-ipc\|（十）队列]]   |
+| sm→ir    | 单个 `cmd_id`（表索引）                               | 任务通知                                                  | 32 位值即全部信息，最轻量 IPC，见 [[2026-08-26-freertos-deep-dive-ch13-task-notifications\|（十三）通知]]                        |
+| sm→ui    | 文本/状态变更                                         | `bsp_display_lock(0)` 临界区 + `lv_label_set_text_static` | LVGL 非线程安全，纪律见 20.5 节与 [[2026-08-26-freertos-deep-dive-ch11-semaphore-mutex-priority-inheritance\|（十一）互斥量]]    |
+| 生命周期 | 删除握手（NEED_DELETE/DELETED 位）                    | 事件组                                                    | 多任务多位状态汇聚，见 [[2026-08-26-freertos-deep-dive-ch12-event-groups\|（十二）事件组]]                                       |
 
 ---
 
@@ -256,13 +256,13 @@ LVGL 不是线程安全的，所有非 UI 任务触碰控件必须走显示锁�
 
 ## 20.6 复盘：设计风险清单
 
-| 风险                  | 机理                                                                                                            | 缓解                                                                                                                                                                                                    |
-| --------------------- | --------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- | ---------- |
-| 优先级反转            | sm_task(高) 等显示锁，而持锁的 ui_task(4) 又被同核更高任务挤占；或 echo 播放在临界区内 `portMAX_DELAY` 等待 I2S | 锁内只做 O(1) 调用；播放等长操作移出临界区；显示锁选互斥量（PI）而非二值信号量，见 [[2026-08-26-freertos-deep-dive-ch11-semaphore-mutex-priority-inheritance                                            | （十一）]]                                                                |
-| 任务看门狗复位        | Core 1 上 audio+sr 双 5 级任务近似满载，Idle 饿死触发 TWDT；推理段又是长直跑代码                                | `ESP_TASK_WDT_TIMEOUT_S=7`（factory_demo 同值 ✦）；确认 sr_task 在 fetch 处自然阻塞；必要时用 esp_task_wdt API 显式管理订阅，排坑方法见 [[2026-08-26-freertos-deep-dive-ch24-debugging-tracing-pitfalls | （二十四）排坑]]与本系列[[2026-08-26-esp32-s3-box-3-ch13-timers-watchdogs | 第十三章]] |
-| 音频丢帧              | feed 缓冲被 PSRAM 分配失败拖累（模型加载吃掉大块 PSRAM 后内部碎片化）；或 feed 任务被同核长任务抢占             | feed 缓冲钉 `MALLOC_CAP_INTERNAL` 并在 LVGL 初始化**之前**申请（启动顺序即内存顺序）；丢帧计数器进 UI，超阈值告警                                                                                       |
-| IR 与语音互扰         | 发码期间提示音回灌麦克风造成误识别                                                                              | 状态机互斥：仅 IR_FIRE 态发码，提示音播放期暂停 MN detect（factory_demo 守卫 ✦）；后续可开 AEC                                                                                                          |
-| MN/AFE chunksize 失配 | 两个模型分量不对齐时数据流错位                                                                                  | 集成期断言校验（官方同款 assert ✦），失败即配置错误而非运行错误                                                                                                                                         |
+| 风险                  | 机理                                                                                                            | 缓解                                                                                                                                                                                                                                                                                           |
+| --------------------- | --------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 优先级反转            | sm_task(高) 等显示锁，而持锁的 ui_task(4) 又被同核更高任务挤占；或 echo 播放在临界区内 `portMAX_DELAY` 等待 I2S | 锁内只做 O(1) 调用；播放等长操作移出临界区；显示锁选互斥量（PI）而非二值信号量，见 [[2026-08-26-freertos-deep-dive-ch11-semaphore-mutex-priority-inheritance\|（十一）]]                                                                                                                       |
+| 任务看门狗复位        | Core 1 上 audio+sr 双 5 级任务近似满载，Idle 饿死触发 TWDT；推理段又是长直跑代码                                | `ESP_TASK_WDT_TIMEOUT_S=7`（factory_demo 同值 ✦）；确认 sr_task 在 fetch 处自然阻塞；必要时用 esp_task_wdt API 显式管理订阅，排坑方法见 [[2026-08-26-freertos-deep-dive-ch24-debugging-tracing-pitfalls\|（二十四）排坑]]与本系列[[2026-08-26-esp32-s3-box-3-ch13-timers-watchdogs\|第十三章]] |
+| 音频丢帧              | feed 缓冲被 PSRAM 分配失败拖累（模型加载吃掉大块 PSRAM 后内部碎片化）；或 feed 任务被同核长任务抢占             | feed 缓冲钉 `MALLOC_CAP_INTERNAL` 并在 LVGL 初始化**之前**申请（启动顺序即内存顺序）；丢帧计数器进 UI，超阈值告警                                                                                                                                                                              |
+| IR 与语音互扰         | 发码期间提示音回灌麦克风造成误识别                                                                              | 状态机互斥：仅 IR_FIRE 态发码，提示音播放期暂停 MN detect（factory_demo 守卫 ✦）；后续可开 AEC                                                                                                                                                                                                 |
+| MN/AFE chunksize 失配 | 两个模型分量不对齐时数据流错位                                                                                  | 集成期断言校验（官方同款 assert ✦），失败即配置错误而非运行错误                                                                                                                                                                                                                                |
 
 ---
 
@@ -293,27 +293,27 @@ LVGL 不是线程安全的，所有非 UI 任务触碰控件必须走显示锁�
 
 二十章走完，用一张对照图把两条系列线钉在一起——左列是本系列（工程视角：产品怎么搭），右列是 FreeRTOS 深度解析（源码视角：内核怎么写）：
 
-| 本系列章节            | FreeRTOS 系列对应章                                                                                                                                         | 咬合点                                 |
-| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
-| 一 三十分钟跑通       | [[2026-08-26-freertos-deep-dive-ch1-from-bare-metal-to-rtos\|（一）从裸机到 RTOS]]                                                                          | 同一套 IDF 环境，QEMU↔真机互补         |
-| 二 生态地图           | [[2026-08-26-freertos-deep-dive-series-index\|系列索引]]                                                                                                    | 仓库地图互见                           |
-| 三 idf.py 工具链      | [[2026-08-26-freertos-deep-dive-ch3-esp-idf-build-and-bootflow\|（三）构建与启动]]                                                                          | 工具链使用↔构建系统源码                |
-| 四 工程解剖           | [[2026-08-26-freertos-deep-dive-ch3-esp-idf-build-and-bootflow\|（三）构建与启动]]                                                                          | 组件模型↔project.cmake 走读            |
-| 五 镜像与烧录         | [[2026-08-26-freertos-deep-dive-ch3-esp-idf-build-and-bootflow\|（三）构建与启动]]                                                                          | 三镜像结构↔boot 链路                   |
-| 六 上电到 app_main    | [[2026-08-26-freertos-deep-dive-ch3-esp-idf-build-and-bootflow\|（三）构建与启动]]                                                                          | 启动日志↔app_start 源码                |
-| 七 系统服务           | [[2026-08-26-freertos-deep-dive-ch12-event-groups\|（十二）事件组]]、[[2026-08-26-freertos-deep-dive-ch15-software-timers-daemon\|（十五）软件定时器]]      | esp_event↔事件组；esp_timer↔定时器守护 |
-| 八 GPIO 与中断        | [[2026-08-26-freertos-deep-dive-ch13-task-notifications\|（十三）通知]]、[[2026-08-26-freertos-deep-dive-ch18-critical-sections-spinlocks\|（十八）临界区]] | ISR 侧的唤醒路径                       |
-| 九 I2C 传感器         | [[2026-08-26-freertos-deep-dive-ch11-semaphore-mutex-priority-inheritance\|（十一）互斥量]]                                                                 | 总线共享的锁保护                       |
-| 十 SPI 屏幕           | [[2026-08-26-freertos-deep-dive-ch20-idf-heap-and-caps\|（二十）堆与 caps]]                                                                                 | DMA 缓冲的 caps 选择                   |
-| 十一 I2S 音频         | [[2026-08-26-freertos-deep-dive-ch10-queue-universal-ipc\|（十）队列]]、[[2026-08-26-freertos-deep-dive-ch14-stream-message-buffers\|（十四）流缓冲]]       | 本章 audio→sr 的原型                   |
-| 十二 RMT 红外         | [[2026-08-26-freertos-deep-dive-ch15-software-timers-daemon\|（十五）软件定时器]]                                                                           | 硬件波形 vs 软件定时                   |
-| 十三 定时器看门狗     | [[2026-08-26-freertos-deep-dive-ch24-debugging-tracing-pitfalls\|（二十四）排坑]]                                                                           | TWDT 触发条件                          |
-| 十四 BSP 走读         | [[2026-08-26-freertos-deep-dive-ch5-task-lifecycle-and-tcb\|（五）任务生命周期]]                                                                            | BSP 内创建的任务们                     |
-| 十五 LVGL             | [[2026-08-26-freertos-deep-dive-ch8-priority-timeslice-rr\|（八）时间片]]、（十一）互斥量                                                                   | 显示锁与同优先级轮转                   |
-| 十六 WiFi             | [[2026-08-26-freertos-deep-dive-ch12-event-groups\|（十二）事件组]]                                                                                         | 断线重连状态机                         |
-| 十七 RainMaker/Matter | ——                                                                                                                                                          | 生态章，无内核对应                     |
-| 十八 ESP-SR           | （五~九）任务与调度、[[2026-08-26-freertos-deep-dive-ch23-cross-core-synchronization\|（二十三）跨核]]                                                      | 推理任务的实时性设计                   |
-| 十九 ESP-DL           | [[2026-08-26-freertos-deep-dive-ch19-heap-allocators-comparison\|（十九）分配器对比]]、（二十）堆                                                           | 模型内存布局                           |
-| 二十 综合（本章）     | 全系列                                                                                                                                                      | 本篇                                   |
+| 本系列章节            | FreeRTOS 系列对应章                                                                    | 咬合点                                                                             |
+| --------------------- | -------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ------------------------------ | -------------------------------------- |
+| 一 三十分钟跑通       | [[2026-08-26-freertos-deep-dive-ch1-from-bare-metal-to-rtos\\                          | （一）从裸机到 RTOS]]                                                              | 同一套 IDF 环境，QEMU↔真机互补 |
+| 二 生态地图           | [[2026-08-26-freertos-deep-dive-series-index\\                                         | 系列索引]]                                                                         | 仓库地图互见                   |
+| 三 idf.py 工具链      | [[2026-08-26-freertos-deep-dive-ch3-esp-idf-build-and-bootflow\\                       | （三）构建与启动]]                                                                 | 工具链使用↔构建系统源码        |
+| 四 工程解剖           | [[2026-08-26-freertos-deep-dive-ch3-esp-idf-build-and-bootflow\\                       | （三）构建与启动]]                                                                 | 组件模型↔project.cmake 走读    |
+| 五 镜像与烧录         | [[2026-08-26-freertos-deep-dive-ch3-esp-idf-build-and-bootflow\\                       | （三）构建与启动]]                                                                 | 三镜像结构↔boot 链路           |
+| 六 上电到 app_main    | [[2026-08-26-freertos-deep-dive-ch3-esp-idf-build-and-bootflow\\                       | （三）构建与启动]]                                                                 | 启动日志↔app_start 源码        |
+| 七 系统服务           | [[2026-08-26-freertos-deep-dive-ch12-event-groups\\                                    | （十二）事件组]]、[[2026-08-26-freertos-deep-dive-ch15-software-timers-daemon\\    | （十五）软件定时器]]           | esp_event↔事件组；esp_timer↔定时器守护 |
+| 八 GPIO 与中断        | [[2026-08-26-freertos-deep-dive-ch13-task-notifications\\                              | （十三）通知]]、[[2026-08-26-freertos-deep-dive-ch18-critical-sections-spinlocks\\ | （十八）临界区]]               | ISR 侧的唤醒路径                       |
+| 九 I2C 传感器         | [[2026-08-26-freertos-deep-dive-ch11-semaphore-mutex-priority-inheritance\\            | （十一）互斥量]]                                                                   | 总线共享的锁保护               |
+| 十 SPI 屏幕           | [[2026-08-26-freertos-deep-dive-ch20-idf-heap-and-caps\\                               | （二十）堆与 caps]]                                                                | DMA 缓冲的 caps 选择           |
+| 十一 I2S 音频         | [[2026-08-26-freertos-deep-dive-ch10-queue-universal-ipc\\                             | （十）队列]]、[[2026-08-26-freertos-deep-dive-ch14-stream-message-buffers\\        | （十四）流缓冲]]               | 本章 audio→sr 的原型                   |
+| 十二 RMT 红外         | [[2026-08-26-freertos-deep-dive-ch15-software-timers-daemon\\                          | （十五）软件定时器]]                                                               | 硬件波形 vs 软件定时           |
+| 十三 定时器看门狗     | [[2026-08-26-freertos-deep-dive-ch24-debugging-tracing-pitfalls\\                      | （二十四）排坑]]                                                                   | TWDT 触发条件                  |
+| 十四 BSP 走读         | [[2026-08-26-freertos-deep-dive-ch5-task-lifecycle-and-tcb\\                           | （五）任务生命周期]]                                                               | BSP 内创建的任务们             |
+| 十五 LVGL             | [[2026-08-26-freertos-deep-dive-ch8-priority-timeslice-rr\\                            | （八）时间片]]、（十一）互斥量                                                     | 显示锁与同优先级轮转           |
+| 十六 WiFi             | [[2026-08-26-freertos-deep-dive-ch12-event-groups\\                                    | （十二）事件组]]                                                                   | 断线重连状态机                 |
+| 十七 RainMaker/Matter | ——                                                                                     | 生态章，无内核对应                                                                 |
+| 十八 ESP-SR           | （五~九）任务与调度、[[2026-08-26-freertos-deep-dive-ch23-cross-core-synchronization\\ | （二十三）跨核]]                                                                   | 推理任务的实时性设计           |
+| 十九 ESP-DL           | [[2026-08-26-freertos-deep-dive-ch19-heap-allocators-comparison\\                      | （十九）分配器对比]]、（二十）堆                                                   | 模型内存布局                   |
+| 二十 综合（本章）     | 全系列                                                                                 | 本篇                                                                               |
 
 收官回望：系列开场承诺的「四层下钻」在本章兑现为一条完整的数据通路——一句「打开电视」从麦克风（L4 声波）进入 ES7210（L3 I2S/TDM 寄存器），经 AFE 与 MultiNet（L2 组件源码），最终由 `bsp_i2s_read` 这类 API（L1）汇入状态机，再反向走到 RMT 引脚上的 38kHz 载波（L4）。自顶向下走一遍，自底向上又走一遍，这块板子的每一层都不再是黑盒。设计已备，蓝图上每一个「待真机验证」都是下一迭代的施工清单——板子到货之日，就是本章从设计文档变成可复现实验之时。

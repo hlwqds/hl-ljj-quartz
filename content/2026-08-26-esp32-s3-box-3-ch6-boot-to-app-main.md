@@ -322,13 +322,13 @@ I (..) main_task: Returned from app_main()                        ← app_main �
 
 同一主题两条线写，边界这样切：
 
-| 维度       | 本篇（工程视角）                        | [[2026-08-26-freertos-deep-dive-ch3-esp-idf-build-and-bootflow | FreeRTOS（三）]]（构建/内核视角） |
-| ---------- | --------------------------------------- | -------------------------------------------------------------- | --------------------------------- |
-| 主角       | BOX-3 真机 esp32s3、v6.0.2 源码逐行对账 | 经典 esp32 + QEMU、构建系统怎么产出这些镜像                    |
-| bootloader | 启动模式 strap、分区表校验细节、回滚    | 为什么 bootloader 是独立 CMake 子工程                          |
-| init.fn    | 次序表 `system_init_fn.txt` 的工程读法  | 链接器收集机制本身                                             |
-| 调度器     | 到 `vTaskStartScheduler()` 为止         | `xPortStartScheduler` 往下的汇编级派发                         |
-| 证据       | 源码行号 + 真机日志（待补录）           | QEMU 日志 + GDB 断点回溯                                       |
+| 维度       | 本篇（工程视角）                        | [[2026-08-26-freertos-deep-dive-ch3-esp-idf-build-and-bootflow\|FreeRTOS（三）]]（构建/内核视角） |
+| ---------- | --------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| 主角       | BOX-3 真机 esp32s3、v6.0.2 源码逐行对账 | 经典 esp32 + QEMU、构建系统怎么产出这些镜像                                                       |
+| bootloader | 启动模式 strap、分区表校验细节、回滚    | 为什么 bootloader 是独立 CMake 子工程                                                             |
+| init.fn    | 次序表 `system_init_fn.txt` 的工程读法  | 链接器收集机制本身                                                                                |
+| 调度器     | 到 `vTaskStartScheduler()` 为止         | `xPortStartScheduler` 往下的汇编级派发                                                            |
+| 证据       | 源码行号 + 真机日志（待补录）           | QEMU 日志 + GDB 断点回溯                                                                          |
 
 两篇互不重复，卡在某一环时按表跳线。
 

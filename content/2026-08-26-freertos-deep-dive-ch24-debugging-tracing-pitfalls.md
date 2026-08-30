@@ -136,27 +136,27 @@ $4 = 712
 
 ### 5. GDB 命令速查表
 
-| 目的        | 命令                                                     | 说明                                                                                          |
-| ----------- | -------------------------------------------------------- | --------------------------------------------------------------------------------------------- | ---------- |
-| 启动调试    | `idf.py qemu --gdb monitor` + `idf.py gdb`               | 双终端；或 `idf.py qemu gdb` 一体化                                                           |
-| 断点        | `b app_main`、`b main.c:42`                              | 函数 / 文件:行                                                                                |
-| 条件断点    | `b vTaskDelay if xTicksToDelay > 100`                    | 抓"睡过头"的调用                                                                              |
-| 临时断点    | `tb prvIdleTask`                                         | 命中一次即消失                                                                                |
-| 执行控制    | `c` / `s` / `n` / `finish`                               | 继续 / 步入 / 步过 / 跑完当前函数                                                             |
-| 调用栈      | `bt` / `bt full`                                         | 后者带局部变量                                                                                |
-| 切核        | `info threads` → `thread 2`                              | QEMU 中每核一个线程                                                                           |
-| 寄存器      | `info reg` / `p/x $a1`                                   | Xtensa：`a1`=SP，`a0`=返回地址（[[2026-08-26-freertos-deep-dive-ch2-esp32-xtensa-architecture | 第二章]]） |
-| 反汇编      | `x/8i $pc` / `disas`                                     | 对着第七章的切换汇编看现场                                                                    |
-| 看内存      | `x/16wx ADDR` / `x/s ADDR` / `x/64bx ADDR`               | 字 / 字符串 / 字节                                                                            |
-| 看类型      | `ptype TCB_t`、`ptype TaskStatus_t`                      | 打印结构体定义                                                                                |
-| 当前任务    | `p pxCurrentTCBs[0]` / `p pxCurrentTCBs[1]`              | 每核一个                                                                                      |
-| 任务身份    | `p pxCurrentTCBs[0]->pcTaskName`                         | 最常用的第一问                                                                                |
-| 优先级/继承 | `p ...->uxPriority` 与 `...->uxBasePriority`             | 不等 = 优先级继承生效中                                                                       |
-| 持锁情况    | `p ...->uxMutexesHeld`                                   | 死锁排查                                                                                      |
-| 栈余量      | `p (char*)...->pxTopOfStack - (char*)...->pxStack`       | 见上小节                                                                                      |
-| 看门点      | `watch *(int *)0x3ffb1234`                               | 谁改了这块内存                                                                                |
-| 拦截崩溃    | `b esp_system_abort` / `b vApplicationStackOverflowHook` | 在 panic 打印前停住，现场最完整                                                               |
-| 事后分析    | `idf.py coredump-info` / `idf.py coredump-debug`         | 见 24.3                                                                                       |
+| 目的        | 命令                                                     | 说明                                                                                                      |
+| ----------- | -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| 启动调试    | `idf.py qemu --gdb monitor` + `idf.py gdb`               | 双终端；或 `idf.py qemu gdb` 一体化                                                                       |
+| 断点        | `b app_main`、`b main.c:42`                              | 函数 / 文件:行                                                                                            |
+| 条件断点    | `b vTaskDelay if xTicksToDelay > 100`                    | 抓"睡过头"的调用                                                                                          |
+| 临时断点    | `tb prvIdleTask`                                         | 命中一次即消失                                                                                            |
+| 执行控制    | `c` / `s` / `n` / `finish`                               | 继续 / 步入 / 步过 / 跑完当前函数                                                                         |
+| 调用栈      | `bt` / `bt full`                                         | 后者带局部变量                                                                                            |
+| 切核        | `info threads` → `thread 2`                              | QEMU 中每核一个线程                                                                                       |
+| 寄存器      | `info reg` / `p/x $a1`                                   | Xtensa：`a1`=SP，`a0`=返回地址（[[2026-08-26-freertos-deep-dive-ch2-esp32-xtensa-architecture\|第二章]]） |
+| 反汇编      | `x/8i $pc` / `disas`                                     | 对着第七章的切换汇编看现场                                                                                |
+| 看内存      | `x/16wx ADDR` / `x/s ADDR` / `x/64bx ADDR`               | 字 / 字符串 / 字节                                                                                        |
+| 看类型      | `ptype TCB_t`、`ptype TaskStatus_t`                      | 打印结构体定义                                                                                            |
+| 当前任务    | `p pxCurrentTCBs[0]` / `p pxCurrentTCBs[1]`              | 每核一个                                                                                                  |
+| 任务身份    | `p pxCurrentTCBs[0]->pcTaskName`                         | 最常用的第一问                                                                                            |
+| 优先级/继承 | `p ...->uxPriority` 与 `...->uxBasePriority`             | 不等 = 优先级继承生效中                                                                                   |
+| 持锁情况    | `p ...->uxMutexesHeld`                                   | 死锁排查                                                                                                  |
+| 栈余量      | `p (char*)...->pxTopOfStack - (char*)...->pxStack`       | 见上小节                                                                                                  |
+| 看门点      | `watch *(int *)0x3ffb1234`                               | 谁改了这块内存                                                                                            |
+| 拦截崩溃    | `b esp_system_abort` / `b vApplicationStackOverflowHook` | 在 panic 打印前停住，现场最完整                                                                           |
+| 事后分析    | `idf.py coredump-info` / `idf.py coredump-debug`         | 见 24.3                                                                                                   |
 
 > [!tip] Vanilla vs ESP-IDF：GDB 眼中的"当前任务"长得不一样
 > Vanilla FreeRTOS 的 `tasks.c` 里是单一指针 `pxCurrentTCB`；IDF fork（默认树）把它改成数组 `pxCurrentTCBs[configNUMBER_OF_CORES]`，GDB 命令相应地从 `p *pxCurrentTCB` 变成 `p *pxCurrentTCBs[n]`。另外 TCB 里 SMP 特有的 `xCoreID` 字段（`tskNO_AFFINITY` 为 -1）是 Vanilla 没有的观察维度；TCB 字段名与语义见 [[2026-08-26-freertos-deep-dive-ch5-task-lifecycle-and-tcb|第五章]]，SMP 化的来龙去脉见 [[2026-08-26-freertos-deep-dive-ch22-smp-refactor-overview|第二十二章]]。
@@ -514,32 +514,32 @@ E (25103) task_wdt: CPU 1: worker
 
 ### 1. 七个 Part，一条主线
 
-| 章  | 主题                                                                                        | 一句话核心                                                               |
-| --- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| 1   | [[2026-08-26-freertos-deep-dive-ch1-from-bare-metal-to-rtos\|从裸机到 RTOS]]                | 裸机的根本约束是"等待占住执行流"，RTOS 把调度正式抽象出来                |
-| 2   | [[2026-08-26-freertos-deep-dive-ch2-esp32-xtensa-architecture\|ESP32 与 Xtensa 速览]]       | 双核 LX6、寄存器窗口、中断体系与内存映射是全系列的硬件底座               |
-| 3   | [[2026-08-26-freertos-deep-dive-ch3-esp-idf-build-and-bootflow\|构建体系与启动流程]]        | 从 ROM bootloader 到 `app_main` 的完整链条，两棵内核树的编译选择         |
-| 4   | [[2026-08-26-freertos-deep-dive-ch4-kernel-source-map\|内核源码地图]]                       | 六个内核文件的职责与体量，Kconfig 裁剪面，默认树与实验 SMP 树的关系      |
-| 5   | [[2026-08-26-freertos-deep-dive-ch5-task-lifecycle-and-tcb\|任务的生与死]]                  | `xTaskCreate` 全流程与 TCB 逐字段解剖（`pxTopOfStack` 必须是第一个成员） |
-| 6   | [[2026-08-26-freertos-deep-dive-ch6-scheduler-ready-lists\|调度器核心]]                     | 按优先级分级的就绪链表与最高优先级任务选择的每一步                       |
-| 7   | [[2026-08-26-freertos-deep-dive-ch7-context-switch-deep-dive\|上下文切换]]                  | 从 `portYIELD()` 到 Xtensa 汇编的完整路径，切换成本的来源                |
-| 8   | [[2026-08-26-freertos-deep-dive-ch8-priority-timeslice-rr\|优先级与时间片]]                 | 固定优先级抢占语义；IDF 的 Best-Effort Round-Robin 与 Vanilla 的差异     |
-| 9   | [[2026-08-26-freertos-deep-dive-ch9-blocking-delay-idle\|阻塞与 Idle]]                      | 阻塞状态机与延时链表；Idle 兼职内存回收，饿死 Idle 的连带后果            |
-| 10  | [[2026-08-26-freertos-deep-dive-ch10-queue-universal-ipc\|队列即万能 IPC]]                  | `queue.c` 一个数据结构承载队列/信号量/互斥量的同源本质                   |
-| 11  | [[2026-08-26-freertos-deep-dive-ch11-semaphore-mutex-priority-inheritance\|信号量与互斥量]] | 优先级继承的实现与翻转实验；互斥量为什么不能进 ISR                       |
-| 12  | [[2026-08-26-freertos-deep-dive-ch12-event-groups\|事件组]]                                 | 一个 24 位字 + 等待链表实现多事件同步点                                  |
-| 13  | [[2026-08-26-freertos-deep-dive-ch13-task-notifications\|任务通知]]                         | 内嵌在 TCB 里的最轻 IPC，快于队列一个数量级                              |
-| 14  | [[2026-08-26-freertos-deep-dive-ch14-stream-message-buffers\|流/消息缓冲]]                  | 单读单写约束换来免锁的 memcpy 语义                                       |
-| 15  | [[2026-08-26-freertos-deep-dive-ch15-software-timers-daemon\|软件定时器]]                   | 命令队列 + 单守护任务模型——回调里阻塞等于全系统定时器陪葬                |
-| 16  | [[2026-08-26-freertos-deep-dive-ch16-portmacro-port-contract\|portmacro.h 契约]]            | 每个端口宏背后的硬件事实，内核与芯片的接口面                             |
-| 17  | [[2026-08-26-freertos-deep-dive-ch17-xtensa-port-internals\|Xtensa 端口内部]]               | 寄存器窗口、协处理器上下文、中断嵌套如何塑造切换汇编                     |
-| 18  | [[2026-08-26-freertos-deep-dive-ch18-critical-sections-spinlocks\|临界区]]                  | 单核关中断到 SMP 自旋锁的升级，总线锁与临界区成本                        |
-| 19  | [[2026-08-26-freertos-deep-dive-ch19-heap-allocators-comparison\|堆分配器全家桶]]           | `heap_1`~`heap_5` 的取舍谱系：确定性与碎片的对价                         |
-| 20  | [[2026-08-26-freertos-deep-dive-ch20-idf-heap-and-caps\|IDF 堆与 caps]]                     | `heap_idf.c` 转接 + 多分配器 + caps 查询，内部/外部 RAM 的统一视图       |
-| 21  | [[2026-08-26-freertos-deep-dive-ch21-stack-and-memory-layout\|栈与内存布局]]                | 溢出检测三层（canary/看门点/高水位）、IRAM/DRAM 映射、linker script      |
-| 22  | [[2026-08-26-freertos-deep-dive-ch22-smp-refactor-overview\|SMP 改造全景]]                  | 单核内核如何被改成双核：核亲和、每核 Idle、tick 职责划分                 |
-| 23  | [[2026-08-26-freertos-deep-dive-ch23-cross-core-synchronization\|核间同步]]                 | IPC 中断、跨核让出、spinlock 体系与缓存一致性的工程现实                  |
-| 24  | **调试、追踪与排坑（本章）**                                                                | 机制知识变现为定位能力：工具分层 + 四步排坑法                            |
+| 章  | 主题                                                                        | 一句话核心                                    |
+| --- | --------------------------------------------------------------------------- | --------------------------------------------- | ------------------------------------------------------------------------ |
+| 1   | [[2026-08-26-freertos-deep-dive-ch1-from-bare-metal-to-rtos\\               | 从裸机到 RTOS]]                               | 裸机的根本约束是"等待占住执行流"，RTOS 把调度正式抽象出来                |
+| 2   | [[2026-08-26-freertos-deep-dive-ch2-esp32-xtensa-architecture\\             | ESP32 与 Xtensa 速览]]                        | 双核 LX6、寄存器窗口、中断体系与内存映射是全系列的硬件底座               |
+| 3   | [[2026-08-26-freertos-deep-dive-ch3-esp-idf-build-and-bootflow\\            | 构建体系与启动流程]]                          | 从 ROM bootloader 到 `app_main` 的完整链条，两棵内核树的编译选择         |
+| 4   | [[2026-08-26-freertos-deep-dive-ch4-kernel-source-map\\                     | 内核源码地图]]                                | 六个内核文件的职责与体量，Kconfig 裁剪面，默认树与实验 SMP 树的关系      |
+| 5   | [[2026-08-26-freertos-deep-dive-ch5-task-lifecycle-and-tcb\\                | 任务的生与死]]                                | `xTaskCreate` 全流程与 TCB 逐字段解剖（`pxTopOfStack` 必须是第一个成员） |
+| 6   | [[2026-08-26-freertos-deep-dive-ch6-scheduler-ready-lists\\                 | 调度器核心]]                                  | 按优先级分级的就绪链表与最高优先级任务选择的每一步                       |
+| 7   | [[2026-08-26-freertos-deep-dive-ch7-context-switch-deep-dive\\              | 上下文切换]]                                  | 从 `portYIELD()` 到 Xtensa 汇编的完整路径，切换成本的来源                |
+| 8   | [[2026-08-26-freertos-deep-dive-ch8-priority-timeslice-rr\\                 | 优先级与时间片]]                              | 固定优先级抢占语义；IDF 的 Best-Effort Round-Robin 与 Vanilla 的差异     |
+| 9   | [[2026-08-26-freertos-deep-dive-ch9-blocking-delay-idle\\                   | 阻塞与 Idle]]                                 | 阻塞状态机与延时链表；Idle 兼职内存回收，饿死 Idle 的连带后果            |
+| 10  | [[2026-08-26-freertos-deep-dive-ch10-queue-universal-ipc\\                  | 队列即万能 IPC]]                              | `queue.c` 一个数据结构承载队列/信号量/互斥量的同源本质                   |
+| 11  | [[2026-08-26-freertos-deep-dive-ch11-semaphore-mutex-priority-inheritance\\ | 信号量与互斥量]]                              | 优先级继承的实现与翻转实验；互斥量为什么不能进 ISR                       |
+| 12  | [[2026-08-26-freertos-deep-dive-ch12-event-groups\\                         | 事件组]]                                      | 一个 24 位字 + 等待链表实现多事件同步点                                  |
+| 13  | [[2026-08-26-freertos-deep-dive-ch13-task-notifications\\                   | 任务通知]]                                    | 内嵌在 TCB 里的最轻 IPC，快于队列一个数量级                              |
+| 14  | [[2026-08-26-freertos-deep-dive-ch14-stream-message-buffers\\               | 流/消息缓冲]]                                 | 单读单写约束换来免锁的 memcpy 语义                                       |
+| 15  | [[2026-08-26-freertos-deep-dive-ch15-software-timers-daemon\\               | 软件定时器]]                                  | 命令队列 + 单守护任务模型——回调里阻塞等于全系统定时器陪葬                |
+| 16  | [[2026-08-26-freertos-deep-dive-ch16-portmacro-port-contract\\              | portmacro.h 契约]]                            | 每个端口宏背后的硬件事实，内核与芯片的接口面                             |
+| 17  | [[2026-08-26-freertos-deep-dive-ch17-xtensa-port-internals\\                | Xtensa 端口内部]]                             | 寄存器窗口、协处理器上下文、中断嵌套如何塑造切换汇编                     |
+| 18  | [[2026-08-26-freertos-deep-dive-ch18-critical-sections-spinlocks\\          | 临界区]]                                      | 单核关中断到 SMP 自旋锁的升级，总线锁与临界区成本                        |
+| 19  | [[2026-08-26-freertos-deep-dive-ch19-heap-allocators-comparison\\           | 堆分配器全家桶]]                              | `heap_1`~`heap_5` 的取舍谱系：确定性与碎片的对价                         |
+| 20  | [[2026-08-26-freertos-deep-dive-ch20-idf-heap-and-caps\\                    | IDF 堆与 caps]]                               | `heap_idf.c` 转接 + 多分配器 + caps 查询，内部/外部 RAM 的统一视图       |
+| 21  | [[2026-08-26-freertos-deep-dive-ch21-stack-and-memory-layout\\              | 栈与内存布局]]                                | 溢出检测三层（canary/看门点/高水位）、IRAM/DRAM 映射、linker script      |
+| 22  | [[2026-08-26-freertos-deep-dive-ch22-smp-refactor-overview\\                | SMP 改造全景]]                                | 单核内核如何被改成双核：核亲和、每核 Idle、tick 职责划分                 |
+| 23  | [[2026-08-26-freertos-deep-dive-ch23-cross-core-synchronization\\           | 核间同步]]                                    | IPC 中断、跨核让出、spinlock 体系与缓存一致性的工程现实                  |
+| 24  | **调试、追踪与排坑（本章）**                                                | 机制知识变现为定位能力：工具分层 + 四步排坑法 |
 
 ### 2. 暗线回顾：Vanilla vs IDF 的五处代表差异
 
