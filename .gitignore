@@ -73,5 +73,9 @@ practice/lwip-examples/*/build*/
 practice/lwip-examples/*/managed_components/
 practice/lwip-examples/*/sdkconfig
 practice/lwip-examples/*/qemu_efuse.bin
+# 硬件基础系列章级工程（practice/hwbasics/chNN-*，比章级工程深一层）
+practice/hwbasics/*/build*/
 .mimosa/
 qemu.pid
+
+# 硬件基础系列 scratch 编译工程（不入库）
