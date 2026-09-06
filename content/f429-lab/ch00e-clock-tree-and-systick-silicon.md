@@ -112,8 +112,8 @@ HSE 25MHz(晶振) ──► PLL 倍频器：
 
 > [!tip] 🧪 配套实验：rcc-uart-read
 > 三连验尸术的**固件版**——先读时钟树算真实 PCLK2 再配波特率，逐位解码打印到
-> USART1。源码直达：[main.c（代码浏览）](/static/code/?p=f429-lab%2Frcc-uart-read&f=main.c)、
-> [完整工程](/static/code/?p=f429-lab%2Frcc-uart-read&f=README.md)、
+> USART1。源码直达：[main.c（代码浏览）](/static/code/#/f429-lab/rcc-uart-read/main.c)、
+> [完整工程](/static/code/#/f429-lab/rcc-uart-read/README.md)、
 > [GitHub 源](https://github.com/hlwqds/hl-ljj-quartz/tree/v4/practice/f429-lab/rcc-uart-read)。
 
 1. `mdw 0x40023800 3`——RCC 三连逐位解码（实测 `03035883/07405a19/0000940a` 全对账）；

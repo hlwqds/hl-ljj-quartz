@@ -47,8 +47,8 @@
 1. **站内代码浏览器深链（首选）**——读者不离开站点即可看高亮源码：
    `/static/code/?p=<项目ID>&f=<工程内相对路径>`，项目ID 即工程目录路径
    （如 `lwip-examples/ex02-tcp-echo-server`、`lwip-ch03-qemu-network-lab`、`hwbasics`）。
-   URL 中 `/` 用 `%2F` 编码；可追加 `#L42` 行锚点定位。文章中用普通 Markdown 链接
-   `[看实现](/static/code/?p=...%2F...&f=main/main.c)`——**不是 wikilink**（代码页不是笔记节点）。
+   注意用**锚点路由格式** `/static/code/#/<项目>/<文件>`（如 `/static/code/#/f429-lab/rcc-uart-read/main.c`）——Quartz 的链接转换器会 slugify 查询串（`?p=&f=` 形式会被改写成死链），锚点则原样保留。文章中用普通 Markdown 链接
+   `[看实现](/static/code/#/lwip-examples/ex02-tcp-echo-server/main/main.c)`——**不是 wikilink**（代码页不是笔记节点）。
 2. **GitHub 源链（次选）**——需要历史 blame/PR 语境时：
    `https://github.com/hlwqds/hl-ljj-quartz/blob/v4/practice/<路径>`。
 3. **文内代码块（限短片段）**——≤30 行的关键片段可直接嵌入文章讲解，但必须标注

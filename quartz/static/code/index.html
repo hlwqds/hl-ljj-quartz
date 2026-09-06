@@ -116,6 +116,23 @@ function expandTo(el){
     if(!first)first=d.querySelector(".f");
   });
   var q=new URLSearchParams(location.search),qa=q.get("p"),qf=q.get("f"),target=null;
+  /* 路由三形态：#/项目/文件（干净）> slug化锚点（文章链接被站点 slugify 后）> ?p=&f=（旧） */
+  var h=location.hash;
+  if(!qa&&h.length>1){
+    var raw=h.slice(1);
+    if(raw.indexOf("/")===0){
+      var hp=raw.slice(1).split("/");
+      qa=hp[0];qf=hp.slice(1).join("/");
+    }else{
+      /* slug 化形态：按同样规则（去 / 与 .）反查唯一命中 */
+      var want=raw;var hit=null;
+      for(var i=0;i<FILES.length;i++){
+        var fi=FILES[i];
+        if((fi.p+"/"+fi.f).replace(///g,"").replace(/./g,"")===want){hit=fi;break;}
+      }
+      if(hit){qa=hit.p;qf=hit.f;}
+    }
+  }
   if(qa&&qf){
     target=TREE.querySelector('[data-path="'+CSS.escape(qa+"/"+qf)+'"]');
     if(target){var pd=target.closest("details.proj");if(pd)pd.open=true;}
@@ -173,7 +190,7 @@ async function openFile(f,el){
   var i=0;
   Array.prototype.forEach.call($("#inner").children,function(ln){i++;if(!ln.id)ln.id="L"+i;});
   CURHTML=$("#inner").textContent;
-  history.replaceState(null,"","?p="+encodeURIComponent(f.p)+"&f="+encodeURIComponent(f.f));
+  history.replaceState(null,"","#"+f.p+"/"+f.f);
   $("#code").scrollTop=0;
   codeEl.scrollIntoView({block:"start"});
 }
