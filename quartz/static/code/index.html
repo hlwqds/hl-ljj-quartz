@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>💻 示例代码浏览</title>
+<style>
+:root{--bg:#ffffff;--fg:#1f2328;--muted:#656d76;--border:#d8dee4;--side:#f6f8fa;--accent:#0969da;}
+[data-theme="dark"]{--bg:#0d1117;--fg:#e6edf3;--muted:#8b949e;--border:#30363d;--side:#161b22;--accent:#4493f8;}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--fg)}
+header{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg);z-index:5}
+header h1{font-size:16px;margin:0}
+header .sp{flex:1}
+button{background:var(--side);color:var(--fg);border:1px solid var(--border);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:13px}
+a{color:var(--accent);text-decoration:none}
+#wrap{display:flex;height:calc(100vh - 49px)}
+#side{width:320px;min-width:320px;border-right:1px solid var(--border);overflow:auto;background:var(--side);padding:8px}
+#filter{width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--fg);margin-bottom:8px}
+details.proj,details.dir{margin:1px 0}
+details.proj>summary{cursor:pointer;font-weight:600;padding:3px 6px;border-radius:5px;list-style:none}
+details.dir>summary{cursor:pointer;padding:2px 6px;border-radius:5px;list-style:none;color:var(--muted);font-size:13px}
+details.proj>summary::before,details.dir>summary::before{content:"▸ ";}
+details.proj[open]>summary::before,details.dir[open]>summary::before{content:"▾ ";}
+.f{display:block;padding:2px 6px 2px 22px;border-radius:5px;cursor:pointer;color:var(--fg);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:ui-monospace,Consolas,monospace}
+.f:hover{background:var(--border)}
+.f.sel{background:var(--accent);color:#fff}
+#main{flex:1;overflow:auto;display:flex;flex-direction:column;min-width:0}
+#fhead{display:flex;gap:10px;align-items:center;padding:8px 16px;border-bottom:1px solid var(--border);font-size:13px;color:var(--muted);flex-wrap:wrap}
+#fpath{font-family:ui-monospace,monospace;color:var(--fg);font-weight:600;word-break:break-all}
+.badge{border:1px solid var(--border);border-radius:10px;padding:0 8px;font-size:12px}
+#code{margin:0;padding:12px 0;overflow:auto;flex:1}
+/* shiki 双主题：--shiki-light/dark 内联在每个 token span 上，必须按作用域直接引用 */
+.shiki, .shiki span{color:var(--shiki-light, inherit);}
+[data-theme="dark"] .shiki, [data-theme="dark"] .shiki span{color:var(--shiki-dark, inherit);}
+pre.shiki{background:var(--shiki-light-bg, transparent) !important;margin:0;font-size:13.5px;line-height:1.55;}
+[data-theme="dark"] pre.shiki{background:var(--shiki-dark-bg, transparent) !important;}
+pre.shiki code{display:block;padding:0 16px;counter-reset:ln}
+pre.shiki code .line{counter-increment:ln;display:inline-block;width:100%}
+pre.shiki code .line::before{content:counter(ln);display:inline-block;width:3.5em;margin-right:16px;text-align:right;color:var(--muted);user-select:none}
+pre.shiki code .line:target{background:rgba(9,105,218,.18);border-radius:3px}
+#empty{margin:auto;color:var(--muted)}
+</style>
+</head>
+<body>
+<header><h1>💻 示例代码浏览</h1><span class="sp"></span>
+<button id="theme" onclick="toggleTheme()">🌓 主题</button>
+<a href="https://github.com/hlwqds/hl-ljj-quartz/tree/v4/practice" target="_blank" rel="noopener">GitHub ↗</a></header>
+<div id="wrap">
+<div id="side"><input id="filter" placeholder="过滤文件名…"/><div id="tree"></div></div>
+<div id="main"><div id="fhead"><span id="fpath">选择左侧文件</span><span id="fmeta"></span>
+<span style="flex:1"></span><button id="copy" onclick="copyCode()">复制</button>
+<a id="ghlink" href="#">源 ↗</a></div>
+<pre id="code"><code id="inner"></code></pre><div id="empty">← 从左侧选择项目与文件</div></div>
+</div>
+<script>
+var FILES=[],SEL=null,CURHTML="",TREE=null;
+function $(s){return document.querySelector(s)}
+var BASE=new URL(".",location.href);
+function initTheme(){var s=localStorage.getItem("code-theme")||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");document.documentElement.dataset.theme=s;}
+function toggleTheme(){var d=document.documentElement.dataset.theme==="dark"?"light":"dark";document.documentElement.dataset.theme=d;localStorage.setItem("code-theme",d);}
+initTheme();
+/* ---- 递归目录树 ---- */
+function buildNode(){return {dirs:{},files:[]}}
+function insertPath(root,f){
+  var parts=f.f.split("/"),n=root;
+  for(var i=0;i<parts.length-1;i++){n=n.dirs[parts[i]]||(n.dirs[parts[i]]=buildNode());}
+  n.files.push({name:parts[parts.length-1],f:f,el:null});
+}
+function renderDir(name,node,parent){
+  var d=document.createElement("details");d.className="dir";d.open=true;node.el=d;
+  var s=document.createElement("summary");s.textContent=name+"/";d.appendChild(s);
+  renderNode(node,d);parent.appendChild(d);
+}
+function renderNode(node,parent){
+  Object.keys(node.dirs).sort().forEach(function(k){renderDir(k,node.dirs[k],parent)});
+  node.files.sort(function(a,b){return a.name<b.name?-1:1}).forEach(function(fe){
+    var a=document.createElement("a");a.className="f";a.textContent=fe.name;
+    a.title=fe.f.p+"/"+fe.f.f;a.dataset.path=fe.f.p+"/"+fe.f.f;
+    a.onclick=function(){openFile(fe.f,a)};fe.el=a;parent.appendChild(a);
+  });
+}
+function filterNode(node,v){
+  var any=false,k,c,show;
+  for(k in node.dirs){c=node.dirs[k];show=filterNode(c,v);c.el.style.display=show?"":"none";if(show){any=true;if(v)c.el.open=true;}}
+  node.files.forEach(function(fe){show=!v||(fe.f.f.toLowerCase().indexOf(v)>=0);fe.el.style.display=show?"":"none";if(show)any=true;});
+  return any;
+}
+function expandTo(el){
+  var e=el;
+  while(e&&e.id!=="tree"){if(e.tagName==="DETAILS")e.open=true;e=e.parentElement;}
+  el.scrollIntoView({block:"nearest"});
+}
+(async function(){
+  FILES=await (await fetch(new URL("files.json",BASE))).json();
+  var groups={};
+  FILES.forEach(function(f){(groups[f.p]=groups[f.p]||[]).push(f);});
+  TREE=$("#tree");
+  var gIds=Object.keys(groups),first=null;
+  gIds.forEach(function(pid){
+    var fs=groups[pid],root=buildNode();
+    fs.forEach(function(f){insertPath(root,f);});
+    var d=document.createElement("details");d.className="proj";d.open=(pid===gIds[0]);
+    var s=document.createElement("summary");s.textContent=fs[0].pd+" ("+fs.length+")";d.appendChild(s);
+    renderNode(root,d);TREE.appendChild(d);d.dataset.pid=pid;
+    if(!first)first=d.querySelector(".f");
+  });
+  var q=new URLSearchParams(location.search),qa=q.get("p"),qf=q.get("f"),target=null;
+  if(qa&&qf){
+    target=TREE.querySelector('[data-path="'+CSS.escape(qa+"/"+qf)+'"]');
+    if(target){var pd=target.closest("details.proj");if(pd)pd.open=true;}
+  }
+  if(target){expandTo(target);target.click();}
+  else if(first){first.click();}
+  if(location.hash){setTimeout(function(){var t=document.getElementById(location.hash.slice(1));if(t)t.scrollIntoView({block:"center"});},400);}
+  $("#filter").oninput=function(){
+    var v=$("#filter").value.trim().toLowerCase();
+    var ps=TREE.querySelectorAll("details.proj");
+    Array.prototype.forEach.call(ps,function(pd){
+      // 每个 proj 自己持有渲染根：重扫其内部结构
+      var any=filterProj(pd,v);
+      pd.style.display=any||!v?"":"none";
+    });
+  };
+  /* 对每个项目内部做递归过滤（项目根等价于一个 dir 节点集合） */
+  function filterProj(pd,v){
+    if(!v)return true;
+    var any=false;
+    Array.prototype.forEach.call(pd.children,function(ch){
+      if(ch.tagName==="DETAILS"){var s=filterDirEl(ch,v);ch.style.display=s?"":"none";if(s){any=true;ch.open=true;}}
+      else if(ch.classList&&ch.classList.contains("f")){var show=ch.title.toLowerCase().indexOf(v)>=0;ch.style.display=show?"":"none";if(show)any=true;}
+    });
+    return any;
+  }
+  function filterDirEl(d,v){
+    var any=false;
+    Array.prototype.forEach.call(d.children,function(ch){
+      if(ch.tagName==="DETAILS"){var s=filterDirEl(ch,v);ch.style.display=s?"":"none";if(s){any=true;ch.open=true;}}
+      else if(ch.classList&&ch.classList.contains("f")){var show=ch.title.toLowerCase().indexOf(v)>=0;ch.style.display=show?"":"none";if(show)any=true;}
+    });
+    return any;
+  }
+})();
+async function openFile(f,el){
+  Array.prototype.forEach.call(document.querySelectorAll(".f.sel"),function(a){a.classList.remove("sel")});
+  el.classList.add("sel");SEL=f;
+  $("#fpath").textContent=f.p+"/"+f.f;
+  $("#fmeta").textContent="";
+  var b=document.createElement("span");b.className="badge";b.textContent=f.lang;
+  var m=document.createElement("span");m.textContent=f.lines+" 行";
+  $("#fmeta").appendChild(b);$("#fmeta").appendChild(m);
+  $("#ghlink").href="https://github.com/hlwqds/hl-ljj-quartz/blob/v4/"+f.gh;
+  $("#empty").style.display="none";
+  var h=await (await fetch(new URL("html/"+f.p+"/"+f.f+".html",BASE))).text();
+  var doc=new DOMParser().parseFromString(h,"text/html");
+  var pre=doc.querySelector("pre");
+  var codeEl=$("#code");
+  /* 关键：把片段 pre 的 shiki 类与背景变量搬到容器，token 颜色才能生效 */
+  codeEl.className=pre.className;
+  var st=pre.getAttribute("style");
+  if(st)codeEl.setAttribute("style",st);else codeEl.removeAttribute("style");
+  $("#inner").replaceChildren.apply($("#inner"),Array.from(pre.firstChild.childNodes));
+  var i=0;
+  Array.prototype.forEach.call($("#inner").children,function(ln){i++;if(!ln.id)ln.id="L"+i;});
+  CURHTML=$("#inner").textContent;
+  history.replaceState(null,"","?p="+encodeURIComponent(f.p)+"&f="+encodeURIComponent(f.f));
+  $("#code").scrollTop=0;
+  codeEl.scrollIntoView({block:"start"});
+}
+async function copyCode(){if(CURHTML){await navigator.clipboard.writeText(CURHTML);var b=$("#copy");b.textContent="已复制";setTimeout(function(){b.textContent="复制"},1200);}}
+</script>
+</body></html>

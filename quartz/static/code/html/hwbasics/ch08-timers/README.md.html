@@ -1,0 +1,133 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold"># ch08-timers — 定时器：SysTick 深入 + CMSDK 双定时器双时基</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">《嵌入式硬件基础》系列（ch08）实验工程，基于</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`ch04-baremetal-template`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 底座（启动文件/链接脚本同源，仅向量表为</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">CMSDK 定时器开出了具名 IRQ 槽位）。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">对应文章：</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`content/2026-08-30-embedded-basics-ch08-timer-systick.md`</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 文件清单</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 文件            | 职责                                                              |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| --------------- | ----------------------------------------------------------------- |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`startup.S`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">     | 启动文件（同 ch04 + IRQ8/9/10 具名向量：Timer0/1/DualTimer）      |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`mps2_an385.ld`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> | 链接脚本（与 ch04 模板逐字一致）                                  |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`main.c`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">        | 两个实验：SysTick 轮询/中断双模式 + 双时基并行                    |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`Makefile`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">      | </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`make`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> / </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`make run`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> / </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`make capture`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> / </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`make disasm`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> / </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`make gdb`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> |</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 环境</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> `arm-none-eabi-gcc`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 15.2.0（测试版本）</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> `qemu-system-arm`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 10.1.5（测试版本）</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 机型 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`-M mps2-an385`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（Cortex-M3）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 用法</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```bash</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">make</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">            # 编译 + 链接 + size</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">make</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> run</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">        # 交互运行（Ctrl-A X 退出），实验全程约 8~12 秒</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">make</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> capture</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    # timeout 15 批量运行，输出落 build/run.log</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">make</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> disasm</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">     # 反汇编（看向量表槽 15/26 与 delay_us）</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">程序打印完 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`summary:`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 后静默 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`wfi`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（两个时基仍在跑但不再刷屏），</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`timeout`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 杀掉 QEMU 属预期。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## mps2-an385 定时器资源考证（QEMU v10.1.5 源码）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 资源                         | 地址/时钟                    | IRQ | 出处                                        |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| ---------------------------- | ---------------------------- | --- | ------------------------------------------- |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| SysTick（核内）              | 0xE000E010..，cpuclk=25MHz   | -15 | ARMv7-M PPB；armv7m cpuclk                  |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| SysTick 参考时钟             | refclk = 1MHz（CLKSOURCE=0） | —   | mps2.c REFCLK_FRQ                           |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| CMSDK APB Timer0             | 0x40000000                   | 8   | mps2.c（base=0x40000000+i·0x1000, irq=8+i） |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| CMSDK APB Timer1             | 0x40001000                   | 9   | 同上                                        |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| CMSDK APB DualTimer（SST-2） | 0x40002000，TIMCLK=25MHz     | 10  | mps2.c 固定映射                             |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| CMSDK APB Watchdog           | 0x40008000                   | NMI | mps2.c                                      |</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">DualTimer 寄存器布局（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`hw/timer/cmsdk-apb-dualtimer.c`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">，Timer1 偏移</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">0x00，Timer2 加 0x20）：</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`LOAD +0x00`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（向下重装值）、</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`VALUE +0x04`</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（当前值）、</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`CONTROL +0x08`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">、</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`INTCLR +0x0C`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（写任意值清中断）、</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`RIS +0x10`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（裸状态）、</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`MIS +0x14`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（INTEN 掩码后状态）、`BGLOAD</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">+0x18`。CONTROL 位：ONESHOT(0)、SIZE(1)=32 位、PRESCALE(2..3)=÷1/16/256、</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">INTEN(5)、MODE(6)=周期、ENABLE(7)。计到 0 置 intstatus 并拉中断线，</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**必须写 INTCLR 才撤**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">；周期模式自动从 LOAD 重装。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 实验一要点（SysTick 深入）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 轮询模式：</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`CSR = ENABLE|CLKSOURCE`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（TICKINT=0），完全不经过 NVIC；</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  COUNTFLAG（bit16）在计数器数到 0 时置位，</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**读 CSR 即清零**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">；</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> `delay_us`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 的三个坑与对策：</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">  1.</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> CVR 回绕是 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`0 -> RELOAD`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（不是 0xFFFFFF），朴素减法会溢出；</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">  2.</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 等待窗宽度 = 周期 − chunk，chunk 逼近整周期时窗口窄到一拍，</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">     轮询粒度粗就整窗跳过——单段等待压到 ≤ 半周期（反汇编可见</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">     `movw r4, #12500`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">）；</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">  3.</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 读 CVR 测时长有"同值二义"（差 1 拍还是差 1 个周期？），要请</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">     COUNTFLAG（电平保持）作证消歧。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 实验二要点（双时基并行）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> SysTick 切中断模式 1kHz（RTOS tick 姿势）维护 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`g_ms`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 毫秒计数；</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> CMSDK DualTimer Timer1：</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`LOAD=25,000,000`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（TIMCLK 25MHz → 1Hz）、</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  `CONTROL=0xE2`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（EN|PERIODIC|SIZE32|INTEN）、NVIC </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`ISER0 |= 1&#x3C;&#x3C;10`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">；</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 主循环每 250ms 打印 DualTimer 倒计数值，1Hz 中断独立打点——</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  两路心跳时间戳交错，可见：频率严格同源（同一个 25MHz），</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  相位差恒定（dualtimer 先启动约 1ms，是三行 banner 打印的功夫）。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 预期输出（真实运行，</span><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">`make capture`</span><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">== ch08 exp1: SysTick polling (TICKINT=0) ==</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">CSR   = 0x00000005 (ENABLE|CLKSOURCE, TICKINT=0)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">CALIB = 0x0000270f (TENMS=9999: 10ms @ 1MHz refclk, no SKEW/NOREF)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">poll 5 x 200ms by COUNTFLAG:</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  t=200ms t=400ms t=600ms t=800ms t=1000ms</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  flags read = 1000 (expect 1000)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">COUNTFLAG read-clear: first=0x00010000, immediate re-read=0x00000000</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">delay_us(1) = 434 ticks (ideal 25)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">delay_us(100) = 2610 ticks (ideal 2500)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">delay_us(999) = 25104 ticks (ideal 24975)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">1000 x delay_us(1000): flags=1000 (expect ~1000)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">== ch08 exp2: dual timebase ==</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">SysTick: 1kHz irq-mode tick (RTOS style), g_ms heartbeat</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">dualtimer: LOAD=25000000, CTRL=0xE2 (EN|PERIODIC|32B|INTEN)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">every 250ms main prints dt VALUE; every 1s irq prints line</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[systick ms=250] dt.VALUE=18742311</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[systick ms=500] dt.VALUE=12492648</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[systick ms=750] dt.VALUE=6243246</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[dt irq 1 @ ms=999] VALUE=24995960 RIS=1 MIS=1 -> after-clear MIS=0</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[systick ms=1000] dt.VALUE=24989755</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[systick ms=1250] dt.VALUE=18743418</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[systick ms=1500] dt.VALUE=12493145</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[systick ms=1750] dt.VALUE=6241898</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[dt irq 2 @ ms=1999] VALUE=24995641</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[systick ms=2000] dt.VALUE=24992035</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[systick ms=2500] dt.VALUE=12494221</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[systick ms=2750] dt.VALUE=6243544</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[dt irq 3 @ ms=2999] VALUE=24999373</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[systick ms=3000] dt.VALUE=24994071</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[systick ms=3750] dt.VALUE=6238106</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[dt irq 4 @ ms=3998] VALUE=24998974</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[systick ms=4250] dt.VALUE=18717848</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[systick ms=4500] dt.VALUE=12466641</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[systick ms=4750] dt.VALUE=6217509</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[dt irq 5 @ ms=4998] VALUE=24999148</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">summary: 5 dt irqs, ms(first)=999 ms(last)=4998 -> period=999ms (expect 1000)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[dt irq 6 @ ms=5999] VALUE=24986444</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[dt irq 7 @ ms=6998] VALUE=24999192</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（节选；summary 之后程序静默运行，timeout 到期收尾。）</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`period=999ms`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 是整数截断：真实平均 (4998−999)/4 = 999.75ms，误差</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">来自 g_ms 以 1kHz 中断为粒度采样中断时刻。连续 irq 时间戳的差</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">999/1000/1000/1000/1001/999… 平均恰为 1000——两个时基同源自 25MHz，</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">只有相位差、没有频率漂移。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## QEMU 边界</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> TCG 下 MMIO 轮询一次的代价比真机高一个数量级（微秒级），所以</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  `delay_us(1)`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 实测 overhead ~400 拍；真机 84MHz 直排循环约 20~30 拍。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> dt 中断响应延迟（重装到 handler 读 VALUE）实测几百 µs（QEMU 主循环</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  粒度），真机为异常入口 12 周期 + 流水线冲刷，亚微秒量级。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 构建产物 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`build/`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 已被仓库 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`.gitignore`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`practice/*/build*/`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">）排除。</span></span>
+<span class="line"></span></code></pre>

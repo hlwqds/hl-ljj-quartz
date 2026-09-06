@@ -2,13 +2,18 @@
 title: 🏠 主页
 ---
 
-欢迎来到我的数字花园！这里主要记录了关于 DeepFlow、eBPF、Kubernetes 以及可观测性相关的技术笔记。
+欢迎来到我的数字花园。全站 **21 个系列、约 740 章**，完整目录见 [[series|📚 系列总览]]；未入系列的散记保持花园平铺，按时间在下方沉淀。
 
-## AI Agent 与开发工具
+## 📚 主打系列
 
-- [[2026-06-12-pi-agent-deep-dive-series-index|Pi Agent 深度探索系列]]
+| 系列                                        | 篇数  | 一句话                                                          |
+| ------------------------------------------- | ----- | --------------------------------------------------------------- |
+| [[freertos-deep-dive\|FreeRTOS 深度解析]]   | 24 章 | ESP32 上的 RTOS 内核源码级走读：调度、IPC、端口层到双核 SMP     |
+| [[lwip-deep-dive\|lwIP 深度解析]]           | 24 章 | RTOS 上的网络协议栈：pbuf、TCP 状态机、邮箱模型，全部 QEMU 实测 |
+| [[embedded-basics\|嵌入式硬件基础]]         | 12 章 | STM32+GD32 双架构：裸机启动、外设、总线协议，无板先行版         |
+| [[esp32-s3-box-3\|ESP32-S3-BOX-3 工程实战]] | 20 章 | 真机全栈实战：从点灯到语音识别的完整项目线                      |
+| [[dpdk-deep-dive\|DPDK 深度探索]]           | 77 章 | 数据面全家桶：从 mbuf 到性能调优                                |
+| [[ebpf-deep-dive\|eBPF 深度探索]]           | 52 章 | 从 verifier 到全栈可观测性                                      |
 
-## 高性能网络与 I/O
-
-- [[2026-05-24-rdma-deep-dive-series-index|RDMA 深度探索系列]]
-- [[2026-05-24-rdma-beginner-guide|RDMA 入门教程：从概念到第一个 verbs 程序]]
+> [!tip] 全部系列
+> 内核协议栈 / QUIC / SRv6 / VPN / RDMA / VPP / P4 / Cilium / Suricata / Zeek / F429 实验室 / 树莓派实验室 等 15 个系列，见 [[series|📚 系列总览]]。

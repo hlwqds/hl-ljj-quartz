@@ -1,0 +1,40 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold"># ex02 极简验证说明（nc 自带，无需额外依赖）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">前置：QEMU 已按 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`tools/run_qemu.sh`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 启动，日志出现 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`$$$ EX02ECHOREADY port=8210`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 1. 单连接往返</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```bash</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">$</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> nc</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> localhost</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 8210</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">hello</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> ex02</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">            # 手敲任意文本回车，服务端原样回显</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">hello</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> ex02</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">^C</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">                    # Ctrl-C 断开；guest 日志随即打印 conn #N ... CLOSED</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">一行式（发送即断）：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```bash</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">printf</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> 'ping-from-host\n'</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> |</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> timeout</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 3</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> nc</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> localhost</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 8210</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 预期输出：ping-from-host</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 2. 第二连接排队语义（串行 accept 实测）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">终端 A：</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`nc localhost 8210`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（保持连接不发数据）</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">终端 B：</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`nc localhost 8210`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 敲 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`from-B`</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">观察：B </span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**收不到**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">任何回显；guest 日志也没有 B 的 ACCEPT 行。</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">关闭 A（Ctrl-C）：B 的 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`from-B`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 回显立刻到达；日志顺序为</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">conn #N A 的 CLOSED 行  →  conn #N+1 ACCEPT from ...</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">结论：单任务 accept 循环一次只服务一条连接，B 在内核 backlog 里排队，</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">直到 A 被 close 后才被 accept（详见 README「并发语义」节）。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 3. 压测</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```bash</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">python3</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> tools/bench.py</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> --conns</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 4</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> --msgs</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 20</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> --size</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 512</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span></code></pre>

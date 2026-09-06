@@ -132,3 +132,15 @@
   文章引用不得凭记忆重打。
 - 成文批次跑既有三项：prettier → `npm run check` → `npx quartz build` + 死链扫描。
 - 实验翻车（预期外结果）必进 KD 日志——翻车与做通同为教学资产（救板实录已示范）。
+- **图优先（2026-09-01 追加，用户指令）**：重要机制/结构/流程**必配 ASCII 图**（代码块
+  内绘制），图的口径优先于文字——用户明确反馈"画图才能教会"。适用：时钟树、总线
+  架构、协议时序、数据通路、接线关系、状态机。
+- **Tag 唯一性（2026-09-01 追加，用户指令）**：每系列一个唯一系列 tag——f429-lab /
+  rpi-lab / wifi-rf-hw / embedded-basics / electronics-fundamentals；主题词取自受控
+  词表（STM32/RPi/FreeRTOS/SWD/JTAG/SysTick/ClockTree/DMA/SPI/I2C/UART/ADC/Flash/
+  Boot/GDB/Debug/Ethernet/Stack/Heap…），每篇 = 系列 tag + 2~4 个主题词。
+- **专业措辞（2026-09-01 追加，用户指令）**：跨章引用与正文禁用口语化说法——
+  「救砖/砖机/救板/首烧即砖」→「故障恢复/调试链路失效/首次烧录即失效」；
+  「傻瓜」→「防呆」；「穷人」→「低成本」；「血案」→「陷阱」；「剥洋葱」→「层层
+  定位」。原 brick-rescue 文章已更名 clock-misconfig-postmortem（时钟配置错误故障
+  复盘），引用显示名统一为「故障复盘」。

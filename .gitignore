@@ -79,3 +79,6 @@ practice/hwbasics/*/build*/
 qemu.pid
 
 # 硬件基础系列 scratch 编译工程（不入库）
+
+# 浏览器调试产物
+.playwright-mcp/

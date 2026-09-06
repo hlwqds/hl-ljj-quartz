@@ -1,0 +1,13 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># lwIP 深度解析（十五）默认构建：raw TCP echo 基准 + 返回值协议 + busy-wait 注入。</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 跨线程误用断言变体见 sdkconfig.defaults.thrcheck（仅 CHECK_THREAD_SAFETY 一行不同）。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># OpenCores Ethernet MAC 驱动（仅用于 QEMU 仿真，真机不可用）</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_ETH_USE_OPENETH</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=y</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 观察用计数器</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_LWIP_STATS</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=y</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_LWIP_MAX_SOCKETS</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=16</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># TCP 窗口与缓冲保持 IDF 默认（5760/5760），让 ERR_MEM/背压路径真实可见</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># CONFIG_LWIP_TCP_SND_BUF_DEFAULT 不改、CONFIG_LWIP_TCP_WND_DEFAULT 不改</span></span>
+<span class="line"></span></code></pre>

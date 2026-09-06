@@ -15,7 +15,7 @@ description: "用两个完整可复现的实验把 NFV 数据通路（OVS-DPDK +
 >
 > 上层概念（NFV/VNF/CNF 商业逻辑、vhost-user 协议、memif 实现）在
 > [[2026-05-26-nfv-network-functions-virtualization|NFV 深入理解]] 和
-> [[2026-05-26-vpp-deep-dive-ch19a-memif|VPP memif 深入探讨]] 里讲过，这里只讲“怎么做”。
+> [[ch19a-memif|VPP memif 深入探讨]] 里讲过，这里只讲“怎么做”。
 
 ## 0. 全文导览
 
@@ -609,6 +609,6 @@ lspci -vvs <BDF>           # 看 kernel driver / iommu group
 
 > [!info] 对应仓库内容
 >
-> - 概念层：[[2026-05-26-nfv-network-functions-virtualization|NFV 深入理解]]、[[2026-05-26-vpp-deep-dive-ch19a-memif|VPP memif 深入探讨]]
+> - 概念层：[[2026-05-26-nfv-network-functions-virtualization|NFV 深入理解]]、[[ch19a-memif|VPP memif 深入探讨]]
 > - 协议细节：`content/2026-04-09-dpdk-deep-dive-ch16-vhost-user.md` 等 ch16/ch25/ch26 系列
 > - 实践代码：`practice/guest_dpdk_virtio/`、`practice/cnf_multus_demo/`

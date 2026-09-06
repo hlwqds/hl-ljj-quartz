@@ -8,7 +8,7 @@ description: "在 Linux 上实战配置 IPsec 三种加密卸载模式：纯软�
 # Linux IPsec 三种加密卸载模式实战
 
 > [!info] 前置知识
-> 本文是 [[2026-04-09-dpdk-deep-dive-ch30-lookaside-crypto|DPDK Lookaside 加速]] 的 Linux 内核实战篇，理论背景请先阅读该文。
+> 本文是 [[ch30-lookaside-crypto|DPDK Lookaside 加速]] 的 Linux 内核实战篇，理论背景请先阅读该文。
 
 ---
 
@@ -1225,7 +1225,7 @@ ip xfrm state list | grep -E "offload|proto"
 
 > [!tip] 相关阅读
 >
-> - [[2026-04-09-dpdk-deep-dive-ch30-lookaside-crypto|DPDK Lookaside 加速]] — DPDK 框架下的三种模式详解
+> - [[ch30-lookaside-crypto|DPDK Lookaside 加速]] — DPDK 框架下的三种模式详解
 > - [XFRM Device 内核文档](https://docs.kernel.org/networking/xfrm/xfrm_device.html)
 > - [NVIDIA IPsec Crypto Offload](https://docs.nvidia.com/networking/display/MLNXOFEDv24101140lts/IPsec+Crypto+Offload)
 > - [NVIDIA IPsec Packet Offload](https://docs.nvidia.com/doca/archive/3-0-0/ipsec+packet+offload/index.html)

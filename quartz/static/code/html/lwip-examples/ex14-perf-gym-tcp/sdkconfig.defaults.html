@@ -1,0 +1,28 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># ex14 默认档 = 场景 0 健康基线（与 sdkconfig.defaults.sc0 同内容）。</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># ┌──────────────────────────────────────────────────────────────────────────┐</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># │ ⚠ 切场景标准三步（Batch 1 教训，跳步必翻车）：                          │</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># │   cp sdkconfig.defaults.scN sdkconfig.defaults                          │</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># │   rm -f sdkconfig        # ← 必须删！defaults 只在 sdkconfig 缺席时生效    │</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># │   idf.py build           # 重新生成全量 sdkconfig                         │</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># │ 残留旧 sdkconfig 会静默吃掉新预设——开机 EX14FACT 行会打印生效值供核对。 │</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># └──────────────────────────────────────────────────────────────────────────┘</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 场景文件清单：sc0(本文件)/sc1/sc1.fixed/sc2/sc2.fixed/sc3/sc3.fixed/sc4/sc4.fixed</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 各场景语义与坏/修对照见 README。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># ---- 必填：QEMU openeth 虚拟网卡 -----------------------------------------</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_ETH_USE_OPENETH</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=y</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># ---- 可观测性：lwip_stats 协议计数（诊断读数的来源，EX14STATS 行依赖）----</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># IDF lwIP 全堆化：无 MEM/MEMP 静态段输出；内存观测走 heap_caps，不要找 memp 池。</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_LWIP_STATS</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=y</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># ---- 口径锁定：与套件基线对齐（5760/5760/1440 = ex11 base &#x26; ch24 base 口径）----</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_LWIP_TCP_MSS</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=1440</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_LWIP_TCP_SND_BUF_DEFAULT</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=5760</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_LWIP_TCP_WND_DEFAULT</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=5760</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># ---- 场景号：健康基线 ------------------------------------------------------</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_GYM_SCENARIO</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=0</span></span>
+<span class="line"></span></code></pre>

@@ -1,0 +1,17 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># ex07 最小配置：只有 openeth 是必填项（SPEC §3）。</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_ETH_USE_OPENETH</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=y</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># --- 观测类开关（本示例需要，注明理由）---</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># SNTP 协议状态机内部日志（STARTUP_DELAY 倒计时、发请求、收响应、加卸服务器），</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 是「请求确实发出去了/回包到了哪一层」的路径级证据，裁决实验必备。</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_LWIP_DEBUG</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=y</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_LWIP_SNTP_DEBUG</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=y</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># RFC 4330 规定对时周期不得小于 15s，默认 1h 单次运行看不到第二次对时；</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 取 20s 让一次 ~60s 的 QEMU 会话能观测到两次 SYNC 事件（教学点：周期重对时）。</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_LWIP_SNTP_UPDATE_DELAY</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=20000</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 初次对时的随机启动延迟保持默认开启（上限 5000ms）：</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 这本身就是教学点——为什么上电后第一笔 SNTP 查询可能迟到最多 5 秒，</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 固件的同步等待预算必须把它算进去（main.c 同步等待 40s 的依据）。</span></span>
+<span class="line"></span></code></pre>

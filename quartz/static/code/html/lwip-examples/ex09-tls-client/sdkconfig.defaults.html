@@ -1,0 +1,15 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 必填：OpenCores Ethernet MAC 驱动（仅 QEMU 可用，真机不可用）</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_ETH_USE_OPENETH</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=y</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># QEMU 不仿真 ESP32 硬件加密外设：纯软件密码实现（与 ch22 同口径，测量数字才可比）。</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 真机工程删掉这三行即可恢复硬件加速。</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_MBEDTLS_HARDWARE_AES</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=n</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_MBEDTLS_HARDWARE_SHA</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=n</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_MBEDTLS_HARDWARE_MPI</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=n</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 教学模板默认姿势：自签证书不在任何信任链里，开启全局跳过服务器证书验证。</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 生产工程严禁开启这两项！升级到 CA 固定（pinning）的完整路径见</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># README「证书验证升级」一节 + main.c 里 tls_connect() 的注释。</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_ESP_TLS_INSECURE</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=y</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_ESP_TLS_SKIP_SERVER_CERT_VERIFY</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=y</span></span>
+<span class="line"></span></code></pre>

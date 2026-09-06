@@ -1,0 +1,6 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 实验 d 专用叠加层：把 MEMP_TCP_PCB 池压到最小，复现 tcp_listen_input()</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 在 tcp_alloc() 失败时静默丢弃 SYN（tcp.memerr 爬升、不回 RST）的现象。</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 构建：idf.py -B build_d -D SDKCONFIG=sdkconfig.d11 \</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#       -D SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.ch11d.defaults" build</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_LWIP_MAX_ACTIVE_TCP</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=2</span></span>
+<span class="line"></span></code></pre>

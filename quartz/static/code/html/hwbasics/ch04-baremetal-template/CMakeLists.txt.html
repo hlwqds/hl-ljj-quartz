@@ -1,0 +1,18 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># ch04-baremetal-template -- CMake 等价构建（与 Makefile 二选一）</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 配置（无独立 toolchain 文件的最简方式）：</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#   cmake -B build -DCMAKE_SYSTEM_NAME=Generic -DCMAKE_SYSTEM_PROCESSOR=arm \</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#         -DCMAKE_C_COMPILER=arm-none-eabi-gcc -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#   cmake --build build</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">cmake_minimum_required</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">VERSION</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 3.20)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">project</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(ch04_baremetal C ASM)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">set</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(CMAKE_C_FLAGS </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">"${CMAKE_C_FLAGS} -mcpu=cortex-m3 -mthumb -Og -g3 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">\</span></span>
+<span class="line"><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">-ffreestanding -fno-common -Wall -Wextra -ffunction-sections -fdata-sections"</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">set</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">CMAKE_EXE_LINKER_FLAGS</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "${CMAKE_EXE_LINKER_FLAGS} </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">\</span></span>
+<span class="line"><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">-mcpu=cortex-m3 -mthumb -nostdlib -T ${CMAKE_CURRENT_SOURCE_DIR}/mps2_an385.ld </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">\</span></span>
+<span class="line"><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">-Wl,--gc-sections -Wl,-Map=${CMAKE_CURRENT_BINARY_DIR}/ch04-baremetal.map"</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">add_executable</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(ch04-baremetal startup.S main.c)</span></span>
+<span class="line"></span></code></pre>

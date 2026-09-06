@@ -1,0 +1,23 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold"># lwip-ch16-socket-netconn-vfs</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">《lwIP 深度解析（十六）》实验工程：socket / netconn / VFS。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">基于系列 ch3 联网模板（openeth bring-up + DHCP），全部测量在 guest 内部</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">127.0.0.1 回环完成，排除 SLIRP 干扰。IDF v6.0.2 全默认 lwIP 配置</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（MAX_SOCKETS=10 / FD_SETSIZE=64 / TCP_RECVMBOX=6），唯一非默认项：</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`CONFIG_ETH_USE_OPENETH=y`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（QEMU openeth 驱动）。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">四个阶段（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`main/lab_main.c`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">）：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">1.</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **PHASE A**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 分层成本标定：64B RTT 与 105KB 有界流水线吞吐，</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   socket 栈 vs netconn 栈各 3 轮；</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">2.</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **PHASE B**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> VFS 集成验证：fd 值域（54 起）、fstat(S_IFSOCK)、</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   POSIX read/write 直操作 socket、双连接 poll、FIONREAD 门控行为；</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">3.</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **PHASE C**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 故障注入·fd 耗尽：循环 socket() 触发 ENFILE 临界、</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   close 后槽位回收时延；</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">4.</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **PHASE D**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 故障注入·阻塞 recv 窒息：跨任务 close 解救 /</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   SO_RCVTIMEO / O_NONBLOCK / select(timeout) 四种处境对照。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">构建与运行见 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`practice/lwip-labs/CONVENTIONS.md`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 第 3 节；QEMU hostfwd</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">按章号约定使用 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`hostfwd=tcp::8018-:8888`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">。实验输出在 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`run.log`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">。</span></span>
+<span class="line"></span></code></pre>

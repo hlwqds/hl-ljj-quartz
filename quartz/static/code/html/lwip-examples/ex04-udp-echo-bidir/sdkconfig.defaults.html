@@ -1,0 +1,5 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># ex04 udp-echo-bidir —— 最小配置集（SPEC §3：只放必需项）</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># OpenCores Ethernet MAC 驱动（仅 QEMU open_eth 可用，真机不可用）</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_ETH_USE_OPENETH</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=y</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># SO_RCVTIMEO 无需任何开关：IDF 在 port/include/lwipopts.h:1008 硬编码 LWIP_SO_RCVTIMEO=1</span></span>
+<span class="line"></span></code></pre>

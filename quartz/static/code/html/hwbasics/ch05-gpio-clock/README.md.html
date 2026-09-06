@@ -1,0 +1,92 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold"># ch05-gpio-clock — GPIO 与时钟树（F407 编译验证 + QEMU 实跑）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">《嵌入式硬件基础》系列（ch05）的实证工程，基于</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`../ch04-baremetal-template/`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 启动链扩展，双目标：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 目标                 | 源文件        | -mcpu     | 链接脚本        | 运行方式                   |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| -------------------- | ------------- | --------- | --------------- | -------------------------- |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`ch05-gpio-qemu.elf`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> | </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`qemu_main.c`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> | cortex-m3 | </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`mps2_an385.ld`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> | QEMU </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`-M mps2-an385`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 实跑  |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`ch05-gpio-f407.elf`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> | </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`f407_gpio.c`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> | cortex-m4 | </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`f407.ld`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">       | 仅编译验证（QEMU 无 F407） |</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">对应文章：</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`content/2026-08-30-embedded-basics-ch05-gpio-and-mco.md`</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 与 ch04 模板的差异</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> `startup.S`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：去掉文件内固定 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`.cpu cortex-m3`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">，改由命令行 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`-mcpu`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 传入，</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  同一启动文件同时服务 M3（QEMU）与 M4（F407）两个目标；</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> `f407.ld`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：F407VET6 真机内存映射（FLASH 0x08000000/512K，RAM 0x20000000/128K）；</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> `qemu_main.c`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：MPS2 FPGAIO（0x40028000）点灯/读键/计数器 + 占位设备探针；</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> `f407_gpio.c`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：STM32F407 真寄存器（RCC_AHB1ENR/GPIOA 全寄存器族），</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  CMSIS 风格结构体与裸地址宏两种写法对照。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 环境</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> `arm-none-eabi-gcc`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 15.2.0（Fedora 打包）</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> `qemu-system-arm`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 10.1.5，机型 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`-M mps2-an385`</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 用法</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```bash</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">make</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">            # 构建双目标 + size</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">make</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> run</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">        # QEMU 运行（Ctrl-A X 退出）</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">make</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> run-log</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    # 4s 超时批量取证：串口 + guest_errors/unimp 日志 -> build/run.log</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">make</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> disasm</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">     # F407 目标反汇编摘录（led_init/led_on）</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">make</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> clean</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 预期输出（真实运行，make run-log）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">ch05 gpio on qemu mps2-an385 (fpgaio 0x40028000)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[1] LED0 &#x3C;- 0x0        readback 0x00000000</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[1] LED0 &#x3C;- 0x1        readback 0x00000001</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[2] blink x5 ..... done (final LED0=0x00000000)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[3] BUTTON readback   0x00000000 (QEMU 不仿真按键, 恒 0)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[4] CLK100HZ t0=0x00000022 t1=0x00000025 delta=0x00000003</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">cmsdk-ahb-gpio: unimplemented device write (size 4, offset 0x000, value 0x0000a55a)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[5] stub 0x40010000 &#x3C;- 0xa55a readback cmsdk-ahb-gpio: unimplemented device read  (size 4, offset 0x000)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">0x00000000 (unimplemented: 吞写返 0)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">done</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（第 5 步两行是 QEMU stderr 日志与串口 stdout 交错的原样记录；CLK100HZ 的</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">t0/t1/delta 每次运行不同，量级一致。）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## mps2-an385 模型考证结论（QEMU v10.1 源码）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 资源                         | 地址                                       | 状态                                 |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| ---------------------------- | ------------------------------------------ | ------------------------------------ |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| MPS2 FPGAIO（LED/按键/计数） | </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`0x40028000`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                               | 真模型 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`hw/misc/mps2-fpgaio.c`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">       |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| "cmsdk-ahb-gpio" 0..3        | </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`0x40010000`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">..</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`0x40013000`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                 | </span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**占位设备**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（create_unimplemented） |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| CMSDK APB UART0..4           | </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`0x40004000`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">/</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`0x40005000`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">/</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`0x40006000`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">/... | 真模型                               |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| F407 的 GPIOA/RCC 地址       | </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`0x40020000`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">/</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`0x40023800`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                  | mps2 上分别是 PL022 SPI / 未映射区   |</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">FPGAIO 寄存器（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`hw/misc/mps2-fpgaio.c`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">）：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 偏移            | 寄存器                  | 行为                                   |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| --------------- | ----------------------- | -------------------------------------- |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`+0x00`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">         | LED0                    | 读写；bit_i = 用户 LED_i（num-leds=2） |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`+0x04`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">         | DBGCTRL                 | 写入被 LOG_UNIMP 记录（未实现）        |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`+0x08`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">         | BUTTON                  | 只读恒 0（模型不仿真按键）             |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`+0x10`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">         | CLK1HZ                  | 只读，1Hz 自由计数器（虚拟时钟驱动）   |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`+0x14`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">         | CLK100HZ                | 只读，100Hz 自由计数器                 |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`+0x18`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">~</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`+0x20`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> | COUNTER/PRESCALE/PSCNTR | 预分频计数器                           |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`+0x28`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">         | SWITCH                  | 只读恒 0（has-switches 时）            |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`+0x4c`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">         | MISC                    | 读回写入值，控制位未实现               |</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">注：本机 QEMU 10.1.5 无 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`query-leds`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> QMP 命令（实测 CommandNotFound），</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">LED 状态以固件读回 LED0 寄存器为证。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## F407 关键地址（RM0090）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> RCC 基址 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`0x40023800`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">；</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`RCC_AHB1ENR`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 偏移 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`0x30`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（APB2RSTR 与 AHB1ENR</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  之间有 </span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**两个**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 保留字 0x28/0x2C——结构体映射少写一个，AHB1ENR 就错位到</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  0x2C，本章反汇编实证过并修正）</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> GPIOA 基址 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`0x40020000`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：MODER+0x00 / OTYPER+0x04 / OSPEEDR+0x08 /</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  PUPDR+0x0C / IDR+0x10 / ODR+0x14 / BSRR+0x18 / LCKR+0x1C / AFR+0x20..24 / BRR+0x28</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 注意</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> `build/`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 已被仓库 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`.gitignore`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`practice/*/build*/`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">）排除，勿提交。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> F407 目标的硬件行为（点灯/按键）为真机待验证项，见文章 5.7 节。</span></span>
+<span class="line"></span></code></pre>

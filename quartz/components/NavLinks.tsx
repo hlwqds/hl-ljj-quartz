@@ -5,6 +5,8 @@ import { resolveRelative, SimpleSlug } from "../util/path"
 const NavLinks: QuartzComponent = ({ displayClass, fileData }: QuartzComponentProps) => {
   const homePath = resolveRelative(fileData.slug!, "index" as SimpleSlug)
   const tagsPath = resolveRelative(fileData.slug!, "tags" as SimpleSlug)
+  const seriesPath = resolveRelative(fileData.slug!, "series" as SimpleSlug)
+  const codePath = resolveRelative(fileData.slug!, "static/code/index.html" as SimpleSlug)
 
   return (
     <div className={classNames(displayClass, "nav-links")}>
@@ -13,6 +15,18 @@ const NavLinks: QuartzComponent = ({ displayClass, fileData }: QuartzComponentPr
           <a href={homePath} className="nav-link-item">
             <span className="icon">🏠</span>
             <span className="text">首页</span>
+          </a>
+        </li>
+        <li style={{ margin: "0.8rem 0" }}>
+          <a href={seriesPath} className="nav-link-item">
+            <span className="icon">📚</span>
+            <span className="text">系列总览</span>
+          </a>
+        </li>
+        <li style={{ margin: "0.8rem 0" }}>
+          <a href={`${codePath}/`} className="nav-link-item">
+            <span className="icon">💻</span>
+            <span className="text">示例代码</span>
           </a>
         </li>
         <li style={{ margin: "0.8rem 0" }}>

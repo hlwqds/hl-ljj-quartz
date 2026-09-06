@@ -1,0 +1,264 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold"># ex15 perf-gym-rtos —— RTOS 调度错误健身房</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">lwIP 示例套件 ex15：与 ex14 perf-gym-tcp（TCP 配置错误健身房，同套件姊妹篇）</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">对称的姊妹篇。ex14 让你亲手经历"网络配置坏了→定位→修复"，本工程把杠铃换到了</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**RTOS 调度层**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：一个固件内建 4 个可切换的错误场景（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`CONFIG_GYM_SCENARIO`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">，0=健康</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">基线），全部走自动注入时序（起振→注入→观测→解除），每个场景配齐"诊断用的观测</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">原语"演示——任务表（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`uxTaskGetSystemState`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">）、run-time 统计、邮箱水位代理、栈高水</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">位步进，所有关键事件都输出机器可读的 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`$$$ EX15-ALARM`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> / </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`$$$ EX15-RECOVER`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 行。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">症状不是编造的：四个场景分别复刻《lwIP 深度解析》ch13（tcpip 单线程停摆实验 C/D）</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">与 ch19（优先级占空比崩塌实验）在本书实验中真实实测过的失败模式。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 课程主线：心跳是被受害者</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">固件里有一个健康的双层心跳源，贯穿所有场景：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 层      | 实现                              | 观测行                      | 衡量什么         |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| ------- | --------------------------------- | --------------------------- | ---------------- |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| RTOS 层 | </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`ex15_hb`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 任务 500ms 一拍         | </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`EX15-HB`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（带 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`lag_ms`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">）    | 调度器还活着吗   |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 网络层  | esp_ping 无限会话 ping SLIRP 网关 | </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`EX15-NET`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> / </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`EX15-NETTOUT`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> | 协议栈还在服务吗 |</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">告警由</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**旁路观测者**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">发出：</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`ex15_watch`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 任务 pin core1、prio 21/22，压过 tcpip(18)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">——Batch 4/7 双核测量纪律："测量任务优先级要压过 tcpip(18)"。它的存在本身也是一课：</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">当受害者包括监控自己时（场景 1 的 serial 全程无声），只有活在受害者带宽之外的观测者</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">才能喊出 ALARM。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">每类根因让心跳以不同方式失联，</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**从失联模式反推调度根因**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">就是本课程的解法模板：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 场景 | HB（RTOS 层） | NET（网络层）                | 指纹                                    |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| ---- | ------------- | ---------------------------- | --------------------------------------- |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| sc0  | 满拍 lag=0    | 全应答                       | 健康基线                                |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| sc1  | 整段缺席      | 零超时、零日志               | "暂停"而非"超时"+serial 无声 → 调度饿死 |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| sc2  | 满拍不缺      | NETTOUT 连发 + rttd 应答全灭 | 调度活+网络死 → 单线程堵点（tcpip 内）  |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| sc3  | 满拍不缺      | 正常                         | 延迟进长尾 → 邮箱水位饱和               |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| sc4  | 满拍不缺      | 正常                         | HWM 先于一切崩溃报警                    |</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 网络拓扑</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">      QEMU guest (esp32) —— 全部负载自环，主机侧零配合</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">┌─────────────────────────────────────────────┐</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">│  ex15_hb(5) ──EX15-HB──► console            │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">│  esp_ping ──ICMP echo──► 10.0.2.2 (SLIRP gw)│</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">│        ▲                    │ 回程被堵时的   │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">│        │ tcpip_thread(18) ◄─┘ 排队地点 =    │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">│  32 槽邮箱 / raw UDP :8320 慢回调 / 饱和水位 │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">│                                             │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">│  spin_c0(20)●core0   spin_c1(20)●core1      │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">│  （sc1 才上场的两个高优自旋者）              │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">│  ex15_gym/ex15_watch(21~22)●core1 旁路观测  │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">└─────────────────────────────────────────────┘</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">openeth MAC 52:54:00:12:34:56 · DHCP 得 10.0.2.15/24</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">端口：8320 号段自环负载为主，无 hostfwd（SPEC §4）</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 构建命令</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```bash</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">cd</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> practice/lwip-examples/ex15-perf-gym-rtos</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">.</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> ~/esp/esp-idf/export.sh</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 场景 N 用变体配置构建到独立目录（注意分隔符是分号；改过 defaults 必须删 sdkconfig 重生成）</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">SDKCONFIG_DEFAULTS</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">"sdkconfig.defaults;sdkconfig.defaults.sc3"</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> idf.py</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -B</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> build-sc3</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> build</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 或一把梭全场景重建+归档（内部逐个校验 EXREADY/EXDONE，输出 runs/scN.log）：</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">tools/run_all.sh</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">            # 缺省跑 0..4；也可 tools/run_all.sh 2 3 只跑两个</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`sdkconfig.defaults`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 在 openeth 必填项之上叠加三组可观测性开关：</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`CONFIG_LWIP_STATS=y`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（五段协议计数）、`CONFIG_FREERTOS_USE_TRACE_FACILITY +</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">VTASKLIST_INCLUDE_COREID + GENERATE_RUN_TIME_STATS=y`（任务表/core 归属/run-time</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">统计，时钟默认 esp_timer@1MHz）。每个场景另有一行 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`sdkconfig.defaults.scN`</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（内容仅 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`CONFIG_GYM_SCENARIO=n`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">）；sc3 变体多一行 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`CONFIG_EX15_HB_PRIO=19`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">，</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">用途见其文件头注释。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 运行命令</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```bash</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 镜像已由 build 步骤生成时可直接运行（默认 110s 覆盖整个注入时间轴）：</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">BUILD_DIR</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">build-sc1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> LOG</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">runs/sc1.log</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> tools/run_qemu.sh</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 110</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># timeout 到点退出码 124 属正常截停；进程主动复位退出码 0/-1 也算正常</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">时间轴（所有故障场景共用）：READY → 12s 注入 → 18s/29s 两张诊断帧 → 42s 解除 →</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">48s/60s 恢复确认帧 → 75s </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`$$$ EXDONE result=ok ... alarms[...]`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 收口。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 机器可读行协议（CI 可 grep）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 行                                          | 含义                               |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| ------------------------------------------- | ---------------------------------- |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`$$$ EX15-FACT`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                             | 固件指纹 + 场景与全部参数          |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`$$$ EXREADY sc=N(...)`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                     | DHCP 起播成功（验收断言锚点）      |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`EX15-HB`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> / </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`EX15-NET(TOUT)`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                | 双层心跳原始拍                     |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`== EX15-PHASE name=X ==`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                   | 时间轴推进标记（inject/remove 等） |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`EX15-INJECT phase=in\|out`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                 | 注入/解除事件及参数                |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`$$$ EX15-FRAME id=.. phase=..`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">…</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`FRAME-END`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> | 诊断帧（观测原语打包）             |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`$$$ EX15-ALARM kind=...`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                   | kind ∈ sched/net/mbx/stk           |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`$$$ EX15-RECOVER kind=...`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                 | 对应解除                           |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`$$$ EXDONE ... result=ok`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                  | 观察窗收口 + 四类告警总账          |</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">诊断帧内的观测原语：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> `EX15-TASK`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> / </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`EX15-T`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：任务表一行一个任务（状态/优先级/核/HWM/run-time 计数/</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  本窗占比 share%），按名字字典序排序保证帧间 diff 不失真；</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> `EX15-ST`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：lwip_stats 五段计数 snap-diff（LINK/IP/ICMP/TCP/UDP）；tcpip 卡死时</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  直接降级为 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`disabled reason=tcpip_no_ack wait_ms=1500`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">——这一行本身就是</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  "tcpip 线程 1.5 秒没消化任何消息"的一手证据；</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> `EX15-MBX`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：邮箱水位代理（try 投递成功率即"未满槽位的实时供给率"）+</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  阻塞投递等待分布（背压的一手观测）；</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> `EX15-STKSTEP`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> / </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`EX15-STKUNWIND`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> / </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`EX15-STKDONE`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：sc4 填栈步进与回退。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 五步法课程</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">每个场景按「症状 → 诊断 → 根因 → 修复 → 前后数据」组织。健康基线参照系</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（runs/sc0.log）：150 拍心跳全部 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`lag_ms=0`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">，76 发 ping 全部应答 rtt≤1ms，</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">四类告警全 0，IDLE0/IDLE1 占比各约 49.9%。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">### 基线帧怎么读（ex12 仪表盘的增量口径）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">$$$ EX15-FRAME id=1 phase=baseline rel_ms=1501 sc=0-healthy-baseline fault=0</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">EX15-HBSUM beats=3 last_gap_ms=2 alarms_sched=0</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">EX15-NETSUM ok=2 tout=0 consec=0 rtt_last=0 rtt_min=0 rtt_max=1 alarms_net=0</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">EX15-TASK n=12 order=name_asc clock=esp_timer-1MHz</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">EX15-T IDLE0            st=ready    prio= 0 core=0  hwm= 1088 rt_us=2607753    win_ms=2607 share=48.7%</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">...</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">EX15-T tcpip            st=blocked  prio=18 core=NA hwm= 2328 rt_us=24263      win_ms=24 share=0.4%</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">EX15-HEAP free=262140 largest=139264 min_ever=258836 cap=MALLOC_CAP_8BIT</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（摘自 runs/sc0.log。）任务表是全书实测地图的重现：tcpip prio18 栈高水位 2328B、</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">NO_AFFINITY——与 Batch 4 实测值完全一致。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">### 场景 1 · 优先级倒挂饿死监控（sc1）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">1.</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **症状**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：t+12s 起控制台除了周期 HB 缺席外一片死寂——没有报错、没有 panic。</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">   `EX15-HBSUM beats=24 last_gap_ms=17512`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：心跳停在注入那一刻；NETSUM 显示</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   ping 一个都没超时。两核各被一个 prio20 自旋任务钉死（`EX15-INJECT phase=in</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">event=spinner_pin_both_cores prio=20 duty=100`）。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">2.</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **诊断**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：旁路看门狗 2.5s 后升旗 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`$$$ EX15-ALARM kind=sched gap_ms=2502`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">。</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   故障窗诊断帧拿到定罪现场：`spin_c0/spin_c1 各吃掉本窗 49.9% 共 ~100%，</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">IDLE 占比 0%，tcpip win_ms=0</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`；同时 `</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">EX15-ST disabled reason=tcpip_no_ack`</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   证明协议栈也在挨饿。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">3.</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **根因**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：高优先级×时长×频率的伤害公式；prio 自旋钉核的占空比 70%~85% 是存活</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   分水岭，100% 全灭且 serial 无声（ch19 实验 C；CONVENTIONS Batch 5）。独占 CPU</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   时连 esp_ping 的超时回调都不再执行——所以网络心跳表现为"暂停"而不是"超时"，</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   日志静默本身就是线索。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">4.</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **修复**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：给低优工作留出确定性空隙（降占空比/削峰）、控制面与测量探针钉在</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   受害者带宽之外（本工程的 ex15_gym/watch 即此设计，见 ch19 ctrl_srv 教训：</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   "spinstop 曾被自己的注入卡住"）。真实系统中再加 TWDT 兜底。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">5.</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **前后数据**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：解除后 `EX15-RECOVER kind=sched gap_back_to=234ms</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">beats_missing=60`；恢复期可见心跳快速补拍的"时间债清偿"曲线；EXDONE 总账</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">   `alarms[sched=1 net=0]`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">，网络层自始至终零丢账。想复测分水岭把</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">   `CONFIG_EX15_SC1_DUTY_PCT`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 调到 70/85 再跑即可。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">### 场景 2 · raw 回调里做慢操作拖死协议栈（sc2）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">1.</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **症状**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：t+12s 绑定 8320 端口的 raw UDP 回调开始每次 busy-wait 900ms</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   （</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`EX15-INJECT arm event=udp_raw_bound port=8320 busy_ms=900`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">）。14.8s 起</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">   `EX15-NETTOUT consec=1/2`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 连发，网关心跳判死。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">2.</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **诊断**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：判别性一眼——</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`EX15-HBSUM beats=36 last_gap_ms=251`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：调度层毫发无损</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   （500ms 心跳一拍不落、lag&#x3C;320ms），死的只有经 tcpip 线程的一切。这就是</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   "单线程堵点"指纹：凶手不在调度表里，在被投进同一个线程的某段代码里。</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   `EX15-SLOWCB enter hits=N busy_ms=900 (running INSIDE 'tcpip' -- whole stack</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">stalls)` 直接指认现行。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">3.</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **根因**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：一切 raw 回调/sys_timeout 都在 tcpip_thread 内执行；回调睡觉＝全栈</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   停摆（含 ICMP/TCP/定时器），3 秒卡死使 ICMP 会话零进展、echo 建连 9ms→2955ms</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   （ch13 实验 C；CONVENTIONS Batch 4 单线程停摆实证）。附带教训：泵任务的</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   socket send 也被拖住——`EX15-PUMP exit sent=121 slow_sends=35 avg_slow_ms=846</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">max_ms=905`，阻塞沿传导链爬回了应用层。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">4.</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **修复**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：回调只做无阻塞的最小动作，重活交给 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`tcpip_callback()`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 投递的工作队列</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   任务；确实要长时间持有时分段检查取消闸门（本工程 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`burn_ms_checked`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 的</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   分片模式即是范例，解除注入后 ≤50ms 内释放线程）。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">5.</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **前后数据**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：`$$$ EX15-RECOVER kind=net downtime_ms=27260 lost_during=0</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">ok_total=14</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`；EXDONE `</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">alarms[sched=0 net=1] hb_beats=150`——RTC 层心跳全程</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   150/150 满，证明"死的是协议栈线程，不是调度器"。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">### 场景 3 · tcpip 邮箱打满传导（sc3）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">1.</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **症状**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：t+12s 三个生产者任务开始向全局唯一邮箱高频投递回调，容量探针立刻给出</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   教科书数字：</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`EX15-MBXEV kind=capacity_probe posted=64 accepted=34 rejected=30`</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   ——接受数≈TCPIP_MBOX_SIZE=32（此刻已有在途消息占用若干槽位）。此后</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   try_full 以每秒上万的速度累积。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">2.</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **诊断**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：两张故障帧读出稳定水位：`EX15-MBX mode=flooded try_ok=14307(+14307)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">try_full=210459(+210459) satur=93.6% blk_n=21 blk_avg_us=294 blk_max_us=1628`。</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   失败即返（tcpip*try_callback→ERR_MEM）就是实时水面标尺；pacemaker 每 300ms 的</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   阻塞投递则量出背压等待分布（均值百微秒级、尾部 ~1.6ms）。读法：</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">\*\*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> satur 是</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   "邮箱不健康的瞬时占比"，blk*</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">\*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 是"投递方正在为拥挤付多少税"</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">\*\*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">3.</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **根因**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：邮箱硬容量唯一约束是 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`CONFIG_LWIP_TCPIP_RECVMBOX_SIZE`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(32)——IDF 全堆化</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   后 MEMP_NUM_TCPIP_MSG_API 票闸不生效（ch13 实验 D；CONVENTIONS Batch 4）。</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   两种语义的分野：</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`tcpip_callback`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 给调用者施压（背压，最坏把自己也拖下水），</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">   `tcpip_try_callback`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 给调用者决定权（丢弃，失败分支必须自己处理）。</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   INPKT 走 trypost——把洪峰换成网络包，邮箱满＝真实报文被丢弃。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">4.</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **修复**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：为高频路径减负/合并投递；消费者侧避免人为加重消化（本场景用</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">   `CONFIG_EX15_SC3_WORK_US=400`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 模拟"真实消息带工作量"，这是诚实前提）；</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   测量探针先于业务做好优先级隔离——sc3 变体专设 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`CONFIG_EX15_HB_PRIO=19`</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   压过 tcpip(18)，否则满负荷的 tcpip 会连带饿死低优心跳，故事就串台成 sc1</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   了（Batch 4/7 纪律的应用；首轮不带此旋钮的试验确实打出过 5 次</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   kind=sched 假警报）。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">5.</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **前后数据**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：解除后工人退场对账 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`EX15-FLOODER exit id=0 ok=23401 fail=341963`</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   （单工人 accept 率 ~6.4%），两个静默确认拍后</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">   `$$$ EX15-RECOVER kind=mbx quiet_ticks=2 final_try_full=1025552`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">；EXDONE</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">   `alarms[sched=0 net=0 mbx=1]`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">，心跳与 ping 全程无恙——伤情被精确限制在邮箱维度。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">### 场景 4 · 任务栈余量耗尽告警（sc4）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">1.</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **症状**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：专用受害者 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`ex15_stkburn`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（4096B 栈）每 400ms 递归一层、每层吃掉</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   288B（256B 数组+调用开销），EX15-STKSTEP 行实时直播余量下潜：</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">   `lvl=8 hwm_free=956`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> → crossing！</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">2.</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **诊断**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：越线的瞬间告警：`$$$ EX15-ALARM kind=stk task=ex15_stkburn hwm=956</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">below=1024 lvl=8`。这里教的第一件事是</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**告警阈值设计点要选在危险之上**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   阈值 1024 高于绝对护栏 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`STOP_MARGIN=768`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">，留出"发现→响应"窗口；若把阈值设在</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   地板之下，永远轮不到告警就先撞墙了。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">3.</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **根因与一次真实事故**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：首版地板只有 192B，lvl=11 余 92B 后继续在栈上 printf</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   （自身要几百字节）——真溢出了，Backtrace 里赫然出现</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">   `0xa5a5a5a5 |&#x3C;-CORRUPTED`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（正是我们 memset 的填充图案写穿了返回地址）。</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   教学目标定在告警而非崩溃表演，故地板提到 768B 并写进 Kconfig help。</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   另一处必考知识点：HWM（usStackHighWaterMark）是</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**单调的历史最低值**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">——弹栈不</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   回血，</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`hwm_final=380 min_seen=668`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（收尾打印自己又把瞬时余量打到过 380 并计入</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   极值），想归零只能重建任务。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">4.</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **修复**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：栈深审计 + 合理预留 + 上电自检打印 HWM（本工程诊断帧的 hwm 列）+</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   阈值告警＋（真机）stack canary/TWDT。演示收尾用行动教学：</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">   `round1_min_seen=668 round2_fresh_initial_hwm=3628`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">——重建任务后 HWM 从满格</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   重新开始。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">5.</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **前后数据**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：EXDONE </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`alarms[sched=0 net=0 mbx=0 stk=1]`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">；全程心跳 150/150、</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   ping 零超时——栈耗尽型风险靠 HWM 预警，不需要等到任何功能挂掉才能看见。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 已知边界与排障</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **并行纪律**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：QEMU 必须 kill 精确 PID（按 cmdline 特征过滤），禁止 pkill——仓库</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  里有并行作者实例（CONVENTIONS Batch 3 起）。tools/run_qemu.sh 头部给了模板。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **镜像时效**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：换场景重编译后务必确认 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`$`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> EX15-FACT 的 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`build="..."`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 时间戳变化；</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  疑似烧旧镜像时手动 merge-bin 兜底（Batch 6）。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **sdkconfig 陷阱**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：五个场景共用工程根部的 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`sdkconfig`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 文件（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`idf.py -B`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 不改它</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  的位置）。手工切换场景请先 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`rm -f sdkconfig`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 再 build，否则新默认值不生效、</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  会拿旧场景参数跑出新场景名（本项目所有坑都替你踩过了一遍，run_all.sh 已内置）。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **心跳探测单会话**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：网络心跳只用一个 esp_ping 会话且永不重建（SLIRP 同刻第二会话</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  恒超时，ch3/ch10 经验）；ICMP 只能 guest 发起，主机→guest ICMP 不可达是 SLIRP</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  硬边界不是本工程的缺陷。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **自环路径**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：sc2 的触发流量发往 127.0.0.1:8320（lwIP 把 loopback 内建于 ip4_route</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  特判，Batch 3）；发往自身网卡 IP 反而出网卡被 SLIRP 吞掉——本地短路的只有回环。</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  裸 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`send()`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 对未连接 UDP socket 会直接失败（errno 路径已在泵任务里如实打印）。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **QEMU 计时口径**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：宿主负载可使吞吐/延迟漂移 ±50%（Batch 4），对比实验请同时段</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  开机配对；本工程所有结论都以"同一开机内的相对对照"给出。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **实时统计时钟**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：run-time stats 默认 esp_timer@1MHz，约 4290s 回卷；本工程窗口</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  75s，不受影响。LWIP_STATS 关闭时诊断帧相应段落自动降级提示，不影响场景叙事。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 目录结构</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">ex15-perf-gym-rtos/</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">├── main/main.c               # 全部逻辑（骨架/观测原语/四场景/编排器，注释即文档）</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">├── main/Kconfig.projbuild    # GYM_SCENARIO 与时间轴/各场景旋钮</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">├── sdkconfig.defaults        # openeth + 三组可观测性开关</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">├── sdkconfig.defaults.sc0~4  # 场景变体（sc3 附带心跳提权说明）</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">├── tools/run_qemu.sh         # 去 efuse -global 行标准形态 runner（SPEC §3）</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">├── tools/run_all.sh          # 全场景重建-出图-运行-校验一条龙</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">├── runs/sc{0..4}.log         # 最终固件的五轮完整实测归档</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">└── run.log                   # 基线轮留存（= runs/sc0.log）</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">生成于《lwIP 深度解析》与 FreeRTOS 系列沉淀之上的示例套件成员之一；</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">根因条目均已标注出处章节/批次，欢迎按标注回溯一手实验记录。</span></span>
+<span class="line"></span></code></pre>

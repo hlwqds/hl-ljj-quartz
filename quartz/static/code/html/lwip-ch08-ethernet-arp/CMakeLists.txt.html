@@ -1,0 +1,18 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># lwIP 深度解析（八）实验工程：以太网与 ARP</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 故障注入说明：</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#   ARP_TABLE_SIZE 没有对应 Kconfig（上游 opt.h 默认 10，IDF 亦未覆盖），</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#   本章用全局编译期 -D 注入覆盖（lwIP 所有宏都是 #ifndef 保护，编译器</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#   预定义优先于 opt.h 的默认值）。</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#   默认构建（表大小 10）:      idf.py build</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#   表满故障注入（表大小 2）:   idf.py -DCH08_ARP_TABLE_SIZE=2 build</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">cmake_minimum_required</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">VERSION</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 3.22)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">set</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(CH08_ARP_TABLE_SIZE </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">"10"</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> CACHE</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> STRING</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "ARP_TABLE_SIZE override (ch8 fault injection)"</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">add_compile_definitions(ARP_TABLE_SIZE=</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">${CH08_ARP_TABLE_SIZE}</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">include</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">$ENV{IDF_PATH}</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">/tools/cmake/project.cmake)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">idf_build_set_property(MINIMAL_BUILD </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">ON</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">project</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(lwip_ch08_ethernet_arp)</span></span>
+<span class="line"></span></code></pre>

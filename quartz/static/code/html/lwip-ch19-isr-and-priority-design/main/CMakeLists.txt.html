@@ -1,0 +1,8 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">idf_component_register(SRCS </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">"lab_main.c"</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                       PRIV_REQUIRES esp_eth esp_netif esp_event lwip freertos</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                       INCLUDE_DIRS </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">""</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 实验参数可在命令行覆盖：idf.py -DCH19_APP_PRIO=21 build</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">set</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(CH19_APP_PRIO 5 </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CACHE</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> STRING</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "echo server task priority"</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">add_compile_definitions(APP_ECHO_PRIO=</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">${CH19_APP_PRIO}</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)</span></span>
+<span class="line"></span></code></pre>

@@ -1,0 +1,88 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold"># ch07-nvic-exti -- Cortex-M3 中断实验（QEMU mps2-an385）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">《嵌入式硬件基础（七）：中断体系——NVIC、EXTI 与中断驱动的 UART》配套工程。</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">底座 = </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`../ch04-baremetal-template/`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（同一份链接脚本与启动骨架，向量表换成具名 IRQ 槽）。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 文件</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 文件             | 说明                                                                 |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| ---------------- | -------------------------------------------------------------------- |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`startup.S`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">      | 向量表带具名 IRQ 槽（IRQ 号考证注释自 QEMU v10.1.5 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`hw/arm/mps2.c`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">） |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`main.c`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">         | SysTick 100Hz 心跳 + UART0 RX 中断驱动环形缓冲（两个实验一个映像）   |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`mps2_an385.ld`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  | 与 ch04 相同                                                         |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`Makefile`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">       | </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`make`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> / </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`make run-heart`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> / </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`make run-rx`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> / </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`make gdb`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">               |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`CMakeLists.txt`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> | CMake 等价构建                                                       |</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## mps2-an385 IRQ 号考证（QEMU v10.1.5 hw/arm/mps2.c，FPGA_AN385 分支）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| NVIC IRQ | 设备                        | 源码依据                                          |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| -------- | --------------------------- | ------------------------------------------------- |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 0 / 1    | UART0 RX / TX               | </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`uartirq[] = {0, 2, 4, 18, 20}`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">，RX 在前，TX=RX+1 |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 2 / 3    | UART1 RX / TX               | 同上                                              |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 4 / 5    | UART2 RX / TX               | 同上                                              |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 8        | Timer0（0x40000000）        | </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`irqno = 8 + i`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                                   |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 9        | Timer1（0x40001000）        | 同上                                              |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 10       | DualTimer（0x40002000）     | 显式 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`gpio_in(armv7m, 10)`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                        |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 12       | UART0-2 收发溢出（6 线 OR） | orgate → </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`gpio_in(armv7m, 12)`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                    |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 13       | LAN9118 以太网              | </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`mps2tz.c`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">/mps2.c 同款                            |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 18 / 19  | UART3 RX / TX               | </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`uartirq[3] = 18`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                                 |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 20 / 21  | UART4 RX / TX               | </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`uartirq[4] = 20`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                                 |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| —        | Watchdog                    | 接 NMI（不是 IRQ 号）                             |</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">NVIC 规模：</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`num-irq = 32`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">。时钟：SYSCLK 25 MHz（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`SYSCLK_FRQ`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">）、REFCLK 1 MHz</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`REFCLK_FRQ`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">）。SysTick 在核内，不走 IRQ 号（向量表槽 15，异常号 15）。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 构建</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```bash</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">make</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">            # 产物 build/ch07-nvic-exti.elf（build/ 已 gitignore）</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 实验一：SysTick 心跳（无输入，纯看节拍）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```bash</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">make</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> run-heart</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  # = timeout 6 qemu-system-arm -M mps2-an385 -kernel build/ch07-nvic-exti.elf \</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">                #   -display none -serial stdio &#x3C; /dev/null</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">预期：每秒一行 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`[hb ] tick=N sec=N`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">，6 秒共 7 行（含启动行）。节拍 100Hz</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`SYST_RVR=249999`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">，CLKSOURCE=1 → 25MHz 处理器时钟）。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 实验二：UART RX 中断 + 环形缓冲</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```bash</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">make</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> run-rx</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">     # 启动 2 秒后注入 "nvic alive\r"，3 秒后注入 "irq driven uart\n"</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">预期：注入行被 ISR 收进环形缓冲，主循环按行回显并打印统计</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`[rx ] line done: N bytes, irq=M ...`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">），心跳持续。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## gdb 复现（NVIC 寄存器 + ISR 现场）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```bash</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">qemu-system-arm</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -M</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> mps2-an385</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -kernel</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> build/ch07-nvic-exti.elf</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> \</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    -display none -serial null -S -gdb tcp::1234 &#x26;</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">#</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> 向量表槽</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> 16/17</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> =</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> IRQ0/IRQ1；断在</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> SysTick</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> ISR</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> 后逐个读：</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">gdb</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> --batch</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -ex</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> 'set architecture arm'</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -ex</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> 'file build/ch07-nvic-exti.elf'</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> \</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    -ex 'target remote localhost:1234' \</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">    -ex</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> 'x/2wx 0x40'</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> \</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    -ex 'break SysTick_Handler' -ex 'continue' \</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">    -ex</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> 'info registers pc lr xpsr'</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> \</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    -ex 'x/wx 0xE000E100' \</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">    -ex</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> 'x/2bx 0xE000E400'</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> \</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    -ex 'x/wx 0xE000E010' \</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">    -ex</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> 'disconnect'</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># x/2wx 0x40        → 向量表槽 16/17（UART0 RX/TX handler 地址）</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># info registers    → xpsr 的 IPSR 字段=15、lr=0xfffffff9（EXC_RETURN）</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># x/wx 0xE000E100   → ISER0 = 0x1（IRQ0 已使能）</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># x/2bx 0xE000E400  → IPR[0] = 0x20（优先级 2&#x3C;&#x3C;4）</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># x/wx 0xE000E010   → SYST_CSR = 0x00010007（bit16=COUNTFLAG，读后自清）</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 已知坑（文章 7.7 节展开）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">UART RX ISR 里 </span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**先 W1C 清 </span><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">`INTSTATUS.RX`</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">、再读 </span><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">`DATA`</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">。顺序反了会丢字节通知：</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">读 DATA 触发模型立刻送来下一个字节并重新置位挂起标志，随后的 W1C 把它误清，</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">该字节永远无人通知（现象：只回显第一个字符）。</span></span>
+<span class="line"></span></code></pre>

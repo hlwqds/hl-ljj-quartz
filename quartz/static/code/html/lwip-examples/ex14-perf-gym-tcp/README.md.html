@@ -1,0 +1,375 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold"># ex14 perf-gym-tcp —— TCP 配置错误健身房</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">lwIP 示例套件 ex14：</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**一个固件内建四个可切换的错误配置场景**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">，跑同一套基准负载，</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">让使用者亲手走完「性能坏了 → 用观测原语定位 → 找到根因 → 修复 → 前后数据对比」的</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">闭环。所有数字都来自本仓 QEMU（openeth + SLIRP）真实实测，归档在 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`runs/`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">，</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">每条引用都可以 grep 复核——严禁编造是套件的一票否决项。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">与 ex15（RTOS 调度健身房）互为姊妹篇：那边练调度器病，这边练协议栈配置病。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 场景总表</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| #   | 名字                   | 病根（哪一层）                     | 预设坏档                 | 修复方式                         |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| --- | ---------------------- | ---------------------------------- | ------------------------ | -------------------------------- |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 0   | baseline               | 无（对照口径）                     | </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`sdkconfig.defaults.sc0`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> | —                                |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 1   | tiny-window            | SND_BUF/WND 压到 2×MSS             | </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`sdkconfig.defaults.sc1`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> | 回基线口径（含一次"负结果"教学） |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 2   | wide-window-small-ring | 大窗 × 小环（RX 环深 4）           | </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`sdkconfig.defaults.sc2`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> | 窗口退回工作区                   |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 3   | missing-tcp_sent-hook  | raw 泵漏挂 tcp_sent 回调（代码级） | </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`sdkconfig.defaults.sc3`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> | 恢复回调注册（≈切回场景 0 形态） |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 4   | pcb-gate-2             | MEMP_TCP_PCB 计数闸 = 2            | </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`sdkconfig.defaults.sc4`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> | 恢复默认 16                      |</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 网络拓扑</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">      宿主机 (Fedora)                                   QEMU guest (esp32)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">┌─────────────────────────────┐                 ┌──────────────────────────────────┐</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">│ tools/gym_echo.py  :8312    │◄═══ 双工镜像 ═══►│ LB 腿：select 全双工泵            │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">│ (duplex 反射器, 收到即回发)  │    guest 发起    │ （up=发送口径 dn=回程到达口径）    │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">│                             │                 │                                  │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">│ tools/gym_sink.py  :8311    │◄─── TX 腿 ──────│ raw API 发送泵                    │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">│ (读到底→digest→回 'K')       │    guest 发起    │ tcp_write/output + sent/poll 回调 │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">│                             │                 │                                  │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">│ tools/gym_flood.py ─────────┼──hostfwd:8310──►│ RX 腿监听口（'R'/'K' 应答位）      │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">│ [sc4] nc×4 → 127.0.0.1:8310 │   (宿主主动)     │ ↑ 入向 SYN 在满池时被静默丢弃      │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">└─────────────────────────────┘                 └──────────────────────────────────┘</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">        10.0.2.2 = SLIRP 网关（落宿主 loopback 同端口）      guest IP: 10.0.2.15/24</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">端口归属（SPEC §4 号段 8310/8311；8312 为镜像反射器口）：</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  - 8310  guest 监听，QEMU 参数必须带 hostfwd=tcp::8310-:8310</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  - 8311  guest 外连宿主 sink（无需 hostfwd 配合）</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  - 8312  guest 外连宿主反射器（LB 腿）</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">> </span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**为什么"自环腿"要绕道宿主机？**</span><span style="--shiki-light:#22863A;--shiki-dark:#85E89D"> 本环境实测发现：凡是目的地为自身 IP 的 TCP 流量</span></span>
+<span class="line"><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">> 都会被 ip4_route 送进 lwIP 内建回环队列（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`netif_loop_output`</span><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">），而该路径在持续</span></span>
+<span class="line"><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">> 吞吐下会把 tcpip 线程咬死——gdb 现场取证两次，卡点分别在 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`pbuf_free`</span><span style="--shiki-light:#22863A;--shiki-dark:#85E89D"> 与</span></span>
+<span class="line"><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">> </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`sys_mutex_unlock(g_lwip_protect_mutex)`</span><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">（见排障节 §9.1）。所以 LB 腿采用</span></span>
+<span class="line"><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">> 「经 SLIRP 的镜像回声」：引擎不变、对端换成宿主反射器，教学价值不变。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 构建命令</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```bash</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">.</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> ~/esp/esp-idf/export.sh</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">cd</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> practice/lwip-examples/ex14-perf-gym-tcp</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># ── 切场景标准三步（Batch 1 教训：跳步必翻车）──────────────────</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># cp sdkconfig.defaults.scN{,.fixed} sdkconfig.defaults   # 选坏档或修档</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># rm -f sdkconfig          # ← 必须删！defaults 只在 sdkconfig 缺席时生效</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># idf.py build             # 重新生成全量 sdkconfig</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># ─────────────────────────────────────────────────────────────</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">idf.py</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> set-target</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> esp32</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">   # 仅首次</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">idf.py</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> build</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 生成 QEMU flash/efuse 镜像（monitor 无 TTY 失败属预期，镜像已生成）：</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">idf.py</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> qemu</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> monitor</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> &#x3C;</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> /dev/null</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> ||</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> true</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">ls</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> build/qemu_flash.bin</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> build/qemu_efuse.bin</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">   # 必须存在</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">⚠ 场景切换</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**全部走构建期**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">。开机第一行机器可读指纹会打印生效值供核对：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">$$$ EX14FACT build="Aug 27 2026 19:44:49" scenario=1 name=tiny-window mss=1440 \</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    snd_buf=2880 wnd=2880 openeth_ring=4 max_active_tcp=16 lwip_stats=1</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">若 FACT 行与你以为的场景不符，先怀疑残留的旧 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`sdkconfig`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">，回看三步警告。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 运行命令（完整可复制）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">三个宿主工具各开一个终端（或用 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`&#x26;`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 后台）：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```bash</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">cd</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> practice/lwip-examples/ex14-perf-gym-tcp/tools</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">python3</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> gym_echo.py</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">                      # 8312 反射器，LB 腿对端（常驻）</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">python3</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> gym_sink.py</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> --conns</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 2</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">            # 8311 接收器，TX 腿对端（--conns=轮数）</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">python3</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> gym_flood.py</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> --rounds</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 2</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> --mb</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 2</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">   # hostfwd 灌流器，RX 腿发起方</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">QEMU 启动（统一去 efuse </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`-global`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 行的 runner 形态，SPEC §3）：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```bash</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">QEMU_BIN</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">~/.espressif/tools/qemu-xtensa/esp_develop_9.2.2_20250817/qemu/bin/qemu-system-xtensa</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">timeout</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 90</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> $QEMU_BIN </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">-M</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> esp32</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -m</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> 4M</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> \</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  -drive file=build/qemu_flash.bin,if=mtd,format=raw \</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  -drive</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> file=build/qemu_efuse.bin,if=none,format=raw,id=efuse</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> \</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  -global driver=timer.esp32.timg,property=wdt_disable,value=true \</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  -nic</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> user,model=open_eth,hostfwd=tcp::8310-:8310</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> \</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  -nographic -no-reboot 2>&#x26;1 | tee run.log</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">结束行为：固件打完 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`$$$ EX14DONE`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 后主动 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`esp_restart()`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">，配合 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`-no-reboot`</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">进程干净退出（exit=0）；超时截停 exit=124 也算正常（CONVENTIONS §3）。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**场景 4 追加步骤**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：探针进入 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`inbound-syn-drain`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 窗口时（日志出现该行），</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">宿主打几条短连接进 guest 触发入向 SYN 静默丢弃：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```bash</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">for</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> i </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">in</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> 1</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> 2</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> 3</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> 4</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">; </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">do</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> timeout</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 3</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> nc</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 127.0.0.1</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 8310</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> &#x3C;</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">/dev/null</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> ></span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">/dev/null</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> 2>&#x26;1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">; </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">done</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 机器可读标记一览（CI 化抓手）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 标记                                  | 含义                                                               |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| ------------------------------------- | ------------------------------------------------------------------ |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`$$$ EX14FACT`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                        | 编译期配置指纹（scenario/snd_buf/wnd/ring/max_active_tcp）         |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`$$$ EX14PROFILE`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                     | 本次 profile 的腿组合、轮数、单轮字节数、端口                      |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`$$$ EX14VERDICT key=`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                | 开机四项确定性体检：window_small / wnd_ring / pcb_gate / sent_hook |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`$$$ EX14NETUP`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                       | DHCP 完成，拿到 10.0.2.15                                          |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`$$$ EX14LB_LISTEN`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                   | 镜像腿参数（port/backlog）                                         |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`$$$ EX14ROUND r=N leg=… begin`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">       | 轮次/腿切换锚点                                                    |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`$$$ EX14LB r=`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                       | 镜像腿结果（up/dn 吞吐 + 双向 digest match）                       |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`$$$ EX14TX r= … SNAP`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                | raw 泵每 5s 采样：written/win_mbit/sent_hits/poll_hits/min_sndbuf  |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`$$$ EX14TX r= … RESULT`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">              | 泵结算：状态机终态 + sent_hits（healthy 主通路命中数）/ack 流水    |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`$$$ EX14RX_LISTEN`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> / </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`$$$ EX14RX r=`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> | hostfwd 入向腿（PEER_DOWN=宿主工具缺席）                           |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`$$$ EX14CONC`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                        | sc4 探针逐尝试行 + PHASE 行 + SUMMARY 判决行                       |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`$$$ EX14STATS`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                       | lwip_stats 差分快照（tcpip_callback 同步取样，ex12/ex13 手法）     |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`$$$ EX14HEAP`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                        | heap 三件套 free/largest/min_ever                                  |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`$$$ EX14WD`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                          | 看门狗心跳（每 5s 一行，用于冻结类故障的现场取证）                 |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`$$$ EX14SUMMARY`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                     | 全场汇总（各腿均值/完成数）                                        |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`$$$ EX14DONE`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                        | 收官行；缺失说明被截断或异常                                       |</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">方法学（ch6/Batch 4 沉淀）：双计时口径（guest esp_timer µs 网格 vs 宿主</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">time.monotonic()）、Fletcher-16+64KiB xorshift32 图样两端同构、同开机交错轮次</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（QEMU 吞吐受宿主负载 ±50% 摆动，跨机不作数）。</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**口径警示**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：LB 腿的 up 是</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">"本地栈吸收口径"、dn 是"回程到达口径"，两者天然不对称；吞吐主战场看 TX/RX 腿。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">---</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 五步法课程</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">### 场景 1 · tiny-window —— 第一课：症状缺席 ≠ 配置健康（负结果课）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**第 1 步 症状**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：……没有症状。这正是本题。</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">按 BDP 教条，SND_BUF/WND=2880（2×MSS）×毫秒级 RTT 应把外环打到个位数 Mbit；</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">但 SLIRP 宿主内路径的真实 RTT 是</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**亚毫秒级**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（Batch 4 实测空闲 RTT ~103µs），</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">BDP 小到 2880B 窗口照样喂饱管道。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**第 2~3 步 工具与读数**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`runs/sc1-broken.log`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">）：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">$$$ EX14VERDICT key=window_small predicted_broken snd_buf=2880 wnd=2880 mss=1440</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">$$$ EX14TX r=1 RESULT status=COMPLETE bytes=2000000/2000000 xfer_ms=147 mbit=108.844 sent_hits=1386 ...</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">$$$ EX14SUMMARY scenario=1 rounds=2 lb_ok=2/2 avg_lb_up=22.15 avg_lb_dn=21.02 | tx_complete=2 ... avg_tx_mbit=115.96 | rx_ok=2/2 avg_rx_mbit=70.28</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">开机体检说 predicted_broken，实测三腿全绿。"预测"和"读数"打架时，</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**信读数**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**第 4 步 根因**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：不是窗口没生效（FACT 行证明 2880 已编译进镜像），而是这条路径</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">没有足够 RTT 让"窗口÷RTT"成为约束项。理论病灶需要匹配的环境条件才发作。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**第 5 步 修复与前後数据**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`runs/sc1-fixed.log`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">）：回到基线口径 5760/5760，</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">数字依旧全绿（avg_tx_mbit=82.49 / avg_rx_mbit=80.29）——修复动作验证的是</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">"无害化"，不是"提速"。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**加餐（把负结果变成金子）**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：排障时曾试过"抬窗到 11520 并把环深设成恰好够的 16"，</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">结果 RX 腿当场掉进黑洞（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`runs/annex-boundary-wnd11520-ring16.log`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">）：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">$$$ EX14FACT ... snd_buf=11520 wnd=11520 openeth_ring=16 ...</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">$$$ EX14RX r=1 RESULT status=OK got=2000000/2000000 wait_ms=90 xfer_ms=6306 mbit=2.537</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">两个教训打包带走：① 别背教条，环境变了先重测基线；② 不等式的</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**边界值不稳**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">，</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">留余量要给足（衔接场景 2）。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">### 场景 2 · wide-window-small-ring —— 头号调优地雷：大窗小环黑洞</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**第 1 步 症状**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`runs/sc2-broken.log`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">）：症状是</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**选择性**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">的——</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">$$$ EX14VERDICT key=wnd_ring predicted_blackhole wnd=28800 ring=4 need_ring=32 detail=WND>=28800-requires-ring>=32(ch24/Batch5)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">$$$ EX14LB r=1 RESULT status=OK conn_ms=18 up_mbit=21.62 dn_mbit=0.09 up_ms=97 dn_ms=22216 up_digest=3281 dn_digest=3281 match=1</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">$$$ EX14TX r=1 RESULT status=COMPLETE bytes=2000000/2000000 xfer_ms=192 mbit=83.333 sent_hits=1280 poll_hits=0 acked_app=1971360 min_sndbuf=0 k=0 digest=c546 err=0 stage=done_ok</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">$$$ EX14RX r=1 RESULT status=PEER_DOWN waited_s=25</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">出方向的 TX 腿 83 Mbit 生龙活虎，回程方向却被钉死在 </span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**0.09 Mbit**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（22 秒爬完</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">256KB！），RX 腿甚至连握手都没能在预算内完成（PEER_DOWN——灌流器的就绪预算被</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">慢速摄入拖穿）。哪个方向死、哪个方向活，本身就是定位证据：**死的全是要经过</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">openeth RX 描述符环的方向**。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**第 2 步 工具**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：EX14FACT 确认旋钮真实生效；EX14STATS 看 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`d_link.recv`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 是否还在</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">增长（帧还在进，只是进得慢）；换算杆是 Batch 5 的「窗口×RX 环深不等式」：</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">WND≥11520 需环≥16，WND≥28800 需环≥32，只拧窗口不抬环必翻车。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**第 3 步 读数的关键比对**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：同 boot 内 TX/RX(转回程) 数字差了三个数量级，而</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">ch24/Batch 5 记录的同款配方（大窗+小环）现象一致——黑洞性质可复现，不是玄学。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**第 4 步 根因**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：openeth RX 描述符环默认 4 个 1600B 缓冲（IDF Kconfig 默认），</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">洪峰到达速率超过"环回收 + 协议栈搬运"的服务能力后，描述符供不上、帧排队丢给</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">INT_BUSY，窗口再大也只是让栈"想收而收不到"。出处：Batch 5/ch24（CONVENTIONS §6）。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**第 5 步 修复与前後数据**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`runs/sc2-fixed.log`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">）：</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">我们把教科书公式试了两层，两层结论都有价值——</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">a) 抬环到 32（不等式要求的值）→ 依然黑洞（runs/annex-ring32-cure-fails.log）：</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   $$$ EX14LB r=1 RESULT status=OK conn_ms=14 up_mbit=51.15 dn_mbit=0.11 ...</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">b) 把窗口退回 4×MSS 工作区（交付的 .fixed 档）→ 立刻恢复：</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   $$$ EX14RX r=1 RESULT status=OK got=2000000/2000000 wait_ms=1720 xfer_ms=225 mbit=71.221</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   $$$ EX14RX r=2 RESULT status=OK got=2000000/2000000 wait_ms=92 xfer_ms=190 mbit=84.428</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 口径           | broken(28800/ring4) | ring32 公式修复 | 工作区修复(5760)     |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| -------------- | ------------------- | --------------- | -------------------- |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| LB 回程        | </span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**0.09 Mbit**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">       | 0.11 Mbit       | 1.42–1.64 Mbit       |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| RX 腿(hostfwd) | PEER_DOWN           | —               | </span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**71.2 / 84.4 Mbit**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| TX 腿          | 102.7 Mbit 均值     | —               | 72.5 Mbit 均值       |</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">结论升级：不等式在本环境是</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**必要条件而非充分条件**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">——窗口大到 20×MSS 量级后，</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">SLIRP/openeth 联合管道给不出吸纳速率，环再深也填不满。工程答案：旋钮成对规划、</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">实测验收，别信单点公式。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">### 场景 3 · missing-tcp_sent-hook —— 复刻 ch6 真 bug：涓流的诞生</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**第 1 步 症状**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`runs/sc3-broken.log`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">）：连接建立一切正常、digest 校验都能过，</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">但吞吐涓流：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">$$$ EX14TX r=1 SNAP t_ms=5099 written=326880/2000000 win_mbit=0.51 sent_hits=0 poll_hits=10 min_sndbuf=0 acked_app=0</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**第 2 步 工具**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：泵自身的遥测就是显微镜——</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`sent_hits`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（ACK 驱动的补发主通路命中</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">计数）、</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`acked_app`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（应用可见的确认流水账）、</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`poll_hits`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（500ms 级兜底慢车道）、</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`written`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 的步进形状。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**第 3 步 读数**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`sent_hits=0`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 且 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`acked_app=0`</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **全程冻结**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">，同时 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`written`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 以</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">恰好 SND_BUF=5760 字节为台阶、每 500ms 一格缓慢爬升（poll_hits 每 5s +10——</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">正是 tcp_poll 兜底节拍的频率）。 ACK 明明在网络上飞（对端 digest 都能对上：</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">c546），应用却永远不知道。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**第 4 步 根因**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：raw API 的补发有两条路——主通路是 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`tcp_sent()`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 回调随 ACK 即时</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">触发 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`pump_fill()`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（健康档这一项的命中数是 sent_hits≈1386 ≈ 总字节/MSS）；辅通路</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">才是 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`tcp_poll()`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 的百毫秒级轮询。漏挂注册行后应用层失去主通路，只剩慢车道</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">节拍驱动，量化出来就是 0.55 Mbit vs 健康 95 Mbit ≈ </span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**170 倍差距**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">。这是 ch6</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">真实踩过的坑（Batch 2：「发送泵必须注册 tcp_sent() 回调，否则吞吐涓流」）。</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">代码位置：</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`main/main.c`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 中唯一一处条件编译</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`#if SCN != 3 → tcp_sent(tpcb, pump_sent_cb)`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**第 5 步 修复与前後数据**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`runs/sc3-fixed.log`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">）：把注册行还回来即可</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（交付等价操作 = 切回场景 0 形态重建，因此 FIX 档的 FACT 行显示 scenario=0）：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">$$$ EX14VERDICT key=sent_hook present detail=ack-driven-refill-on</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">$$$ EX14TX r=1 RESULT status=COMPLETE bytes=2000000/2000000 xfer_ms=194 mbit=82.474 sent_hits=1384 poll_hits=1 acked_app=1994400 ...</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 口径              | broken(sc3)     | fixed               |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| ----------------- | --------------- | ------------------- |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| TX effective rate | </span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**0.554 Mbit**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  | 82.5–108.1 Mbit     |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| sent_hits         | 0（主通路死亡） | 1384（逐 MSS 补发） |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| acked_app         | 0 冻结          | 1994400 流动        |</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">附产证据：</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`runs/sc3-broken-sink-host.log`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 里宿主端收到的是绵延 29 秒的细水。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">### 场景 4 · pcb-gate-2 —— 计数闸下的静默处决</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**第 1 步 症状**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`runs/sc4-broken.log`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">）：新连接无声无息地不响应，某些路径直接</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">报内存错——而且两种死法都会出现在同一份档案里。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**第 2 步 工具**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：PCB 池算术表 + 探针逐尝试行 + memerr 差分。开机体检直接背书：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">$$$ EX14VERDICT key=pcb_gate predicted_broken max_active_tcp=2 detail=list+client+child-minimum-is-3-pcbs(Batch2)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**第 3 步 读数**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（池 = listen(:8310) 占 1 格 + 探针逐个持有 socket）：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">$$$ EX14CONC attempt=1 op=connect result=SUCCESS echo_check=PASS -- holding-socket</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">$$$ EX14CONC attempt=2 op=connect result=SUCCESS echo_check=PASS -- holding-socket</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">$$$ EX14CONC attempt=3 op=socket_alloc result=FAIL errno=105(No buffer space available) elapsed_ms=2</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">$$$ EX14CONC PHASE=inbound-syn-drain window_s=6 expect=host-nc-to-8310</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">$$$ EX14STATS phase=conc_post_diff d_link.recv=1 d_tcp.xmit=8 d_tcp.recv=9 d_tcp.drop=0 d_tcp.memerr=3</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">$$$ EX14CONC SUMMARY attempts=3 ok=2 silent_drop=0 alloc_fail=1 memerr_delta=3 verdict=starved</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">两个铁证并排：① 第 3 次 socket 创建当场 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`ENOBUFS`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">——</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`MEMP_TCP_PCB`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 计数闸是 IDF</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">lwIP 里</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**唯一起作用的 PCB 上限**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（PBUF_POOL_SIZE 的名义上限并不生效，Batch 2）；</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">② 排水窗里宿主打入 4 条短连接，</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`d_tcp.memerr`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 精确 +3——满池状态下</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`tcp_listen_input`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 分配 child PCB 失败，</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**静默丢弃 SYN 不回 RST**</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（源码 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`lwip/src/core/tcp_in.c`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">，ch5/ch10 同款现象，nc 端表现为无响应超时）。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**第 4 步 根因**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：一票难求的池子里，listen PCB 也占格。MAX_ACTIVE_TCP=2 时</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">"listen(1)+client(1)" 就已打满，任何第三者——无论是本地新建 socket 还是入向</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">SYN 要生的 child——都被静默处决。accept 侧偶见 errno=113(EHOSTDOWN) 的错位语义</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">也是这个家族的（Batch 2 错误账本）。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**第 5 步 修复与前後数据**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`runs/sc4-fixed.log`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">）：恢复默认 16 后同款探针：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">$$$ EX14FACT ... scenario=4 name=pcb-gate-2 ... max_active_tcp=16 ...</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">$$$ EX14CONC attempt=3 op=connect result=SUCCESS echo_check=PASS -- holding-socket</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">$$$ EX14CONC SUMMARY attempts=3 ok=3 silent_drop=0 alloc_fail=0 memerr_delta=0 verdict=healthy</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">注意 FIX 档的 scenario 仍标 4——坏的是旋钮不是代码，tag 只负责挑 profile 与病历本。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">---</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 已知边界与排障（排障过程的实录沉淀）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">### 9.1 本环境的头号工程发现：别用 127.0.0.1 打流量</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">开发本示例过程中，guest 内自环回声服务器模式在持续吞吐下会随机把整个系统咬死</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（包括 tcpip 线程、所有任务、UART 输出）。gdb 附着取证两次独立样本：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">#0 _WindowUnderflow8 () ... xtensa_vectors.S:2166</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">#1 pbuf_free (...) pbuf.c:801</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">#2 tcp_input (...) tcp_in.c:582</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">#3 ip4_input (inp=0x3ffc8714 &#x3C;loop_netif>) ...</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">#5 netif_poll (netif=0x3ffc8714 &#x3C;loop_netif>) netif.c:1317</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">#2 sys_mutex_unlock (pxMutex=0x3ffc8f30 &#x3C;g_lwip_protect_mutex>) sys_arch.c:79</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">#4 netif_loop_output (netif=0x3ffcdd80 ...) netif.c:1212</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">凡是目的地址为自身 IP 的报文都走 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`netif_loop_output`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 内建回环队列（ip4_route 的</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">特殊分支，Batch 3 记录过 loopif.c 已内建于 ip4_route）。高吞吐下该路径会撞上</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">致命态——这属于 QEMU 环境 + lwIP 组合的深层缺陷，与业务代码无关（把回声改为经</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">SLIRP 外部反射后稳定性问题完全消失）。与 ch22 悬案②「guest loopback 仅第一条</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">连接可用」同族。**给后人的行规：在这套 QEMU 环境做 TCP 性能实验，流量一律走</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">外部路径（10.0.2.2 或 hostfwd），不要打自身 IP。**</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">### 9.2 第二课：回调里 printf = UART 背压地狱</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">调试中途曾在 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`pump_sent_cb`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 里加过逐 ACK 打印——瞬间把整条泵打成涓流并连带拖垮</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">系统节拍。tcpip 线程里的每一次控制台写都在消耗 115200 波特的串口预算；教训固化：</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**回调里只动计数器，遥测交给别的任务读数打印**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（main.c 注释同款警告）。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">### 9.3 其他排障速查</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **NIC 未创建/启动崩溃**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：检查 QEMU 命令是否带 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`-global driver=nvram.esp32.efuse,...`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">，</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  统一用去 efuse 行形态（Batch 4 实录；SPEC §3 模板已是安全形态）。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **改了旋钮没生效**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：没删 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`sdkconfig`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">。以 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`$$$ EX14FACT`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 打印值为准。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **RX/TX 腿 PEER_DOWN**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：不是固件的错，是对应宿主工具（gym_flood/gym_sink）没起</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  或端口被占（启动 QEMU 前先 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`ss -tlnp | grep 8310`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">）。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **幻影连接**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：SLIRP hostfwd 会先于 guest 监听放行宿主 connect，所以接入方必须</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  等 guest 的 'R' 发令枪再灌流（ex11 验证过的手法，本例 flood 工具已内置）。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **并行实验杀进程**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：禁止 pkill；按 PID 或专属特征精确清理，避免误伤同机其他</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  作者实例（本次开发中曾误伤一个并行 QEMU 实例，特此记录教训）。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **日志 >1MB 截断政策**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：本示例所有归档均在 250 行以内，未触发截断需求。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 文件清单</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">ex14-perf-gym-tcp/</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">├── CMakeLists.txt / main/{CMakeLists.txt,Kconfig.projbuild,main.c}</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">├── sdkconfig.defaults            # = sc0 基线（构建入口）</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">├── sdkconfig.defaults.sc0        # 场景 0 对照档</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">├── sdkconfig.defaults.sc{1..4}   # 四个坏档</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">├── sdkconfig.defaults.sc{1..4}.fixed  # 四个修复档</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">├── tools/gym_echo.py             # 8312 双工反射器（LB 腿对端 + sc4 探针目标）</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">├── tools/gym_sink.py             # 8311 接收器（TX 腿对端）</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">├── tools/gym_flood.py            # hostfwd 灌流器（RX 腿发起方）</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">├── runs/                         # 全部实测档案（配套 *-host.log 为宿主侧证据）</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">│   ├── sc0-baseline.log                  # 基线</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">│   ├── sc{1..4}-broken.log / sc{1..4}-fixed.log</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">│   ├── annex-boundary-wnd11520-ring16.log  # 环深边界不稳：RX 黑洞复现</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">│   ├── annex-ring32-cure-fails.log         # "抬环公式"不足以救 28800 量级</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">│   └── *-host.log                           # 对应宿主工具输出</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">└── run.log                       # 留存：sc0-baseline 全场日志</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span></code></pre>

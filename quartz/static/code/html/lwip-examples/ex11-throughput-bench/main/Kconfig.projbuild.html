@@ -1,0 +1,57 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span># ex11 throughput-bench —— menuconfig 可调旋钮</span></span>
+<span class="line"><span>#</span></span>
+<span class="line"><span># 说明：TCP 发送缓冲与接收窗口是 lwIP 组件级符号，不在本菜单里重复定义：</span></span>
+<span class="line"><span>#   Component config ---> lwIP ---> TCP 之下：</span></span>
+<span class="line"><span>#     CONFIG_LWIP_TCP_SND_BUF_DEFAULT （即 lwIP 的 TCP_SND_BUF）</span></span>
+<span class="line"><span>#     CONFIG_LWIP_TCP_WND_DEFAULT     （即 lwIP 的 TCP_WND）</span></span>
+<span class="line"><span>#   本工程提供两档预设：sdkconfig.defaults（基线）与 sdkconfig.defaults.wide（宽窗）。</span></span>
+<span class="line"><span>#   ⚠ 切档必须 `rm sdkconfig` 后重新构建——defaults 只在 sdkconfig 不存在时生效。</span></span>
+<span class="line"><span>#   ⚠ 窗口×RX 环深不等式：WND>=11520 需 openeth RX 环深 >=16；WND>=28800 需 >=32</span></span>
+<span class="line"><span>#     （CONFIG_ETH_OPENETH_DMA_RX_BUFFER_NUM），只拧窗口不抬环是吞吐黑洞。</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>menu "Example Throughput Bench Configuration"</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>choice EXAMPLE_BENCH_MODE</span></span>
+<span class="line"><span>    prompt "基准模式"</span></span>
+<span class="line"><span>    default EXAMPLE_BENCH_MODE_BOTH</span></span>
+<span class="line"><span>    help</span></span>
+<span class="line"><span>        BOTH = TX 与 RX 轮次交错（默认，一次开机拿全双向数据）；</span></span>
+<span class="line"><span>        TX   = 仅 guest 泵流到宿主 sink（10.0.2.2:8290，配 tools/sink.py）；</span></span>
+<span class="line"><span>        RX   = 仅宿主 flood 灌入 guest（guest 监听 :8291，经 hostfwd，配 tools/flood.py）。</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    config EXAMPLE_BENCH_MODE_BOTH</span></span>
+<span class="line"><span>        bool "BOTH：TX/RX 轮次交错（默认）"</span></span>
+<span class="line"><span>    config EXAMPLE_BENCH_MODE_TX</span></span>
+<span class="line"><span>        bool "TX：guest 泵流到宿主 sink"</span></span>
+<span class="line"><span>    config EXAMPLE_BENCH_MODE_RX</span></span>
+<span class="line"><span>        bool "RX：宿主灌入 guest"</span></span>
+<span class="line"><span>endchoice</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>config EXAMPLE_BENCH_ROUNDS</span></span>
+<span class="line"><span>    int "每方向轮数"</span></span>
+<span class="line"><span>    range 1 10</span></span>
+<span class="line"><span>    default 3</span></span>
+<span class="line"><span>    help</span></span>
+<span class="line"><span>        BOTH 模式下按 T1,R1,T2,R2,... 交错执行；单方向模式就是 N 轮同向。</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>config EXAMPLE_BENCH_MB</span></span>
+<span class="line"><span>    int "单轮数据量（MB，十进制 MB=1000000B）"</span></span>
+<span class="line"><span>    range 1 64</span></span>
+<span class="line"><span>    default 4</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>config EXAMPLE_BENCH_PEER_WAIT_SEC</span></span>
+<span class="line"><span>    int "TX 每轮等待宿主 sink 就绪的秒数（超时记 PEER_DOWN 跳过）"</span></span>
+<span class="line"><span>    range 3 120</span></span>
+<span class="line"><span>    default 20</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>config EXAMPLE_BENCH_RX_WAIT_SEC</span></span>
+<span class="line"><span>    int "RX 每轮等待 flood 工具来连接的秒数（超时记 PEER_DOWN 跳过）"</span></span>
+<span class="line"><span>    range 3 300</span></span>
+<span class="line"><span>    default 30</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>config EXAMPLE_BENCH_PROGRESS</span></span>
+<span class="line"><span>    bool "打印轮内每 MiB 进度行（默认关：UART 日志本身占带宽，对比测量建议关）"</span></span>
+<span class="line"><span>    default n</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>endmenu</span></span>
+<span class="line"><span></span></span></code></pre>

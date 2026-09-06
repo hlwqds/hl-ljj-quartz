@@ -1,0 +1,35 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold"># ch02-la-uart：零硬件 UART 波形生成 + sigrok 解码实验</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">配套文章：《嵌入式硬件基础（二）：工具驯化——万用表与逻辑分析仪》</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`content/2026-08-30-embedded-basics-ch02-tools-multimeter-la.md`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">）。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 原理</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`gen_uart_sr.py`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 分两层建模：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">1.</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 连续时间信号：一组 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`(时刻 ns, 电平)`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 边沿，构造 8N1 UART TX</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   （idle 高 + 起始位 0 + 8 数据位 LSB first + 停止位 1）；</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">2.</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 采样器：以 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`--rate`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 节拍取样，每字节 1 个采样（bit0 = D0），输出 raw binary。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">同一理想信号可用不同采样率重采，用于验证"采样率 ≥10×"规则</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（理想波形低倍率也能解码，但亚比特毛刺会因欠采样而不可见）。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 复现命令</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```bash</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 24 MHz 采样，抓 0x55 0xAA（clone 分析仪最高档对 115200 baud）</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">python3</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> gen_uart_sr.py</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 1 MHz 欠采样版本 / 注入 100ns 反相毛刺的版本</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">python3</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> gen_uart_sr.py</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> --rate</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 1000000</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -o</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> uart_55aa_1m.sr.bin</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">python3</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> gen_uart_sr.py</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> --rate</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 24000000</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> --glitch-ns</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 100</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -o</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> uart_55aa_glitch.sr.bin</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">python3</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> gen_uart_sr.py</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> --rate</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 1000000</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> --glitch-ns</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 100</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -o</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> uart_55aa_glitch_1m.sr.bin</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 解码（注意 samplerate 必须写全数字，Fedora libsigrok 0.5.2 不认 24m 后缀）</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">sigrok-cli</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -i</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> uart_55aa.sr.bin</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -I</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> binary:numchannels=1:samplerate=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">24000000</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> \</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    -P uart:baudrate=115200:tx=0 \</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">    -A</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> uart=tx-start:tx-data:tx-stop:tx-warnings</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> --protocol-decoder-samplenum</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">生成的 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`.sr.bin`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 是可再生产物，不入库。</span></span>
+<span class="line"></span></code></pre>

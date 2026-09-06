@@ -7,7 +7,7 @@ description: "对照 bad/good 两版代码，用 perf/xstats/ethtool 定位 DPDK
 
 # DPDK 性能调优实战：从瓶颈定位到修复
 
-> 关联章节：[[2026-04-09-dpdk-deep-dive-ch30-performance-tuning|DPDK 深度探索 (三十)：性能调优]]
+> 关联章节：[[ch30-performance-tuning|DPDK 深度探索 (三十)：性能调优]]
 > 实战代码：`practice/dpdk_perf_tuning/`
 
 ## 1. 目标
@@ -714,7 +714,7 @@ imissed = NIC RX ring 溢出 = 包到了但 CPU 没及时收走
 
 > 参考：
 >
-> - [[2026-04-09-dpdk-deep-dive-ch30-performance-tuning|DPDK 深度探索 (三十)：性能调优]]
+> - [[ch30-performance-tuning|DPDK 深度探索 (三十)：性能调优]]
 > - DPDK Sample Application Guide: L2 Forwarding
 > - DPDK Programmer's Guide: Performance Optimization
 > - Intel DPDK Performance Reports

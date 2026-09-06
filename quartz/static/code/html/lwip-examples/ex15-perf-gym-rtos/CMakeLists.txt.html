@@ -1,0 +1,7 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">cmake_minimum_required</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">VERSION</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 3.22)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">include</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">$ENV{IDF_PATH}</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">/tools/cmake/project.cmake)</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># Trim 构建：只编最小组件集 + main + 其依赖（套件标准形态）</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">idf_build_set_property(MINIMAL_BUILD </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">ON</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">project</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(ex15_perf_gym_rtos)</span></span>
+<span class="line"></span></code></pre>

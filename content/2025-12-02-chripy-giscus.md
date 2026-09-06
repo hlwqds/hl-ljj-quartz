@@ -24,7 +24,7 @@ Chirpy 主题内置了多种评论系统的支持，其中 **Giscus** 是目前�
 你需要去 Giscus 官网生成属于你仓库的专属 ID。
 
 1.  访问 [giscus.app](https://giscus.app/zh-CN)。
-2.  **配置仓库**：输入你的 `用户名/仓库名`（例如 `hlwqds/hlwqds.github.io`）。
+2.  **配置仓库**：输入你的 `用户名/仓库名`（例如 `hlwqds/hl-ljj-quartz`）。
 3.  **页面与 Discussion 的映射关系**：推荐选择 “Discussion 的标题包含页面的 URL” (`pathname`)。
 4.  **Discussion 分类**：推荐选择 “General” 或 “Announcements”（确保你选的分类在 GitHub Discussions 里是允许任何人发帖的）。
 5.  **获取配置**：
@@ -47,7 +47,7 @@ comments:
 
   # 2. 填写 Giscus 配置
   giscus:
-    repo: hlwqds/hlwqds.github.io # 你的 用户名/仓库名
+    repo: hlwqds/hl-ljj-quartz # 你的 用户名/仓库名
     repo_id: R_kgDxxxxxxx # 填入从 giscus.app 获取的 data-repo-id
     category: General # 分类名称
     category_id: DIC_kwDxxxxxxx # 填入从 giscus.app 获取的 data-category-id

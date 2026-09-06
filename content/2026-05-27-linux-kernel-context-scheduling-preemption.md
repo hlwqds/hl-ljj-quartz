@@ -1034,4 +1034,4 @@ Linux 内核中，代码总是在某个"上下文"中执行。上下文决定了
 ## 10. 相关文章
 
 - [[2026-05-27-rcu-deep-dive-linux-vs-dpdk|RCU 原理深度解析：Linux 内核与 DPDK 实现对比]] — 理解抢占机制如何决定 Linux RCU 的实现方式
-- [[2026-04-09-dpdk-deep-dive-ch28-multicore-sync|DPDK 深度探索 (二十八)：多核同步]] — DPDK 中的 Spinlock、RCU、Memory Barrier
+- [[ch28-multicore-sync|DPDK 深度探索 (二十八)：多核同步]] — DPDK 中的 Spinlock、RCU、Memory Barrier

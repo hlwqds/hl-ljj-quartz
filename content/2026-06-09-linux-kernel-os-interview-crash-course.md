@@ -274,7 +274,7 @@ struct sk_buff
 - GSO 让一个大 skb 延迟分段，GRO 在 RX 合并报文；
 - checksum offload 依赖 `ip_summed` 等元数据与驱动 descriptor 正确配合。
 
-延伸阅读：[[2026-04-13-kernel-protocol-stack-deep-dive-ch1-skbuff|sk_buff 与数据包生命周期]]。
+延伸阅读：[[ch1-skbuff|sk_buff 与数据包生命周期]]。
 
 ### 5.4 RSS、RPS、RFS、XPS
 

@@ -8,7 +8,7 @@ tags: [rdma, networking, linux, performance]
 # RDMA 入门教程：从概念到第一个 verbs 程序
 
 > [!info] RDMA 深度探索系列
-> 本文是单篇快速总览。系统化学习请从 [[2026-05-24-rdma-deep-dive-series-index|RDMA 深度探索系列索引]] 开始。
+> 本文是单篇快速总览。系统化学习请从 [[index-2026-05-24|RDMA 深度探索系列索引]] 开始。
 
 RDMA 的学习门槛不在“API 很多”，而在编程模型和普通 socket 完全不同。socket 程序通常围绕 `send()`、`recv()`、文件描述符和内核协议栈展开；RDMA 程序则围绕内存注册、队列、工作请求和完成事件展开。
 

@@ -1,0 +1,295 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold"># ex09：TLS 客户端模板（tls-client，诚实版）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`lwip-examples`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 套件的 TLS </span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**客户端**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">模板：guest 用 esp-tls（内嵌 Mbed TLS 4.1.0）连</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">宿主机 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`openssl s_server`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">，完整演示「TCP 连接 → TLS 握手 → 应用记录往返 → 关闭」全周期，</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">并把本环境下真实发生的问题原样留档——</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **PHASE-A 外环主线**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（10.0.2.2:8280）：握手全部成功、首条应用记录全部等不到响应</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  （ch22 已知悬案①在本环境 9/9 复现）。示例代码内置 select 超时逃生舱，超时即报告</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  并优雅关闭，绝不裸阻塞挂死。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **PHASE-B 回环自连替代路径**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（127.0.0.1:8281）：guest 内部起一个 esp-tls TLS echo</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  服务端再用同一套客户端代码自连——回环上「握手 + 应用记录往返」全部走通</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  （4/4 PASS），证明 guest 协议栈与 esp-tls 本身无辜，把问题域隔离在 SLIRP 边界。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">> [</span><span style="--shiki-light:#032F62;--shiki-light-text-decoration:underline;--shiki-dark:#DBEDFF;--shiki-dark-text-decoration:underline">!note</span><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">] 这是"诚实版"示例的意义</span></span>
+<span class="line"><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">> 教学模板最忌讳把 demo 跑通就行。TLS 在 QEMU SLIRP 外环上有一个传输层活着、</span></span>
+<span class="line"><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">> 会话层僵死的现象，任何复用者都会撞上；本工程把它变成第一公民：现象如实测量、</span></span>
+<span class="line"><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">> 代码内置逃生、证据链双端留存（run.log + sserv.log），另给一条能完整走通的</span></span>
+<span class="line"><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">> 替代路径做对照。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 网络拓扑</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">QEMU 用 SLIRP 用户态网络（无 hostfwd——外环只有 guest 出向流量；8281 只活在 guest 内）：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">      ESP32 guest (QEMU openeth)                    宿主机 (Fedora)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> ┌───────────────────────────────────┐        ┌────────────────────────────────┐</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> │ PHASE-A: esp_tls 客户端任务       │        │ openssl s_server -rev         │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> │   10.0.2.15 ──TLS──► 10.0.2.2:8280 ╪═══════╪═► :8280 (self-signed RSA)     │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> │              （SLIRP 落到宿主机     │ SLIRP  │   ↑ 握手可达：ESTABLISHED 打印 │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> │                loopback 同端口）    │        │   ✗ 应用记录：kernel ACK 但    │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> │ PHASE-B: 同一客户端代码            │        │     进程永不回放（悬案①）      │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> │   自连 ──TLS──► 127.0.0.1:8281     │        └────────────────────────────────┘</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> │          （guest 内 esp-tls echo） │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> └───────────────────────────────────┘</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">SLIRP 边界事实：guest 连 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`10.0.2.2:P`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 等价于宿主机连自己的 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`127.0.0.1:P`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">，</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">所以对端就是宿主机上的普通进程，hostfwd 完全不需要。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 文件结构</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">ex09-tls-client/</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">├── CMakeLists.txt           # root 构建（MINIMAL_BUILD ON）</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">├── main/</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">│   ├── CMakeLists.txt       # PRIV_REQUIRES esp_eth esp_netif esp_event lwip</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">│   │                        #             esp_timer esp-tls mbedtls heap</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">│   ├── main.c               # 骨架 bring-up + PHASE-A/B 客户端（全部教学点带注释）</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">│   └── tls_local_certs.h    # PHASE-B 回环服务端的内嵌自签证书（生成命令见文件头）</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">├── tools/</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">│   ├── run_sserver.sh       # 一键生成自签证书 + 启动 openssl s_server</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">│   └── run_qemu.sh          # QEMU 启动器（timeout + tee run.log，无 efuse -global 行）</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">├── sdkconfig.defaults       # OPENETH + 软件密码实现 + INSECURE（跳过证书验证）组</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">├── certs/                   # 宿主端证书（run_sserver.sh 首次运行自动生成，无手工步骤）</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">├── run.log                  # guest 侧真实运行留存（118 行）</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">├── sserv.log                # 宿主侧同场运行留存（3 ESTABLISHED / 3 CLOSED / 0 回放数据）</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">└── README.md</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 构建与运行</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">### 构建（离线可重复，无 managed component）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```bash</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">.</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> ~/esp/esp-idf/export.sh</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">cd</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> practice/lwip-examples/ex09-tls-client</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">idf.py</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> set-target</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> esp32</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">        # 仅首次</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">idf.py</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> build</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 生成 QEMU 镜像（monitor 会因无 TTY 失败，忽略它，镜像已生成）：</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">idf.py</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> qemu</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> monitor</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> &#x3C;</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> /dev/null</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> ||</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> true</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">ls</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> build/qemu_flash.bin</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> build/qemu_efuse.bin</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">   # 必须存在</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">> [</span><span style="--shiki-light:#032F62;--shiki-light-text-decoration:underline;--shiki-dark:#DBEDFF;--shiki-dark-text-decoration:underline">!warning</span><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">] 镜像新鲜度兜底</span></span>
+<span class="line"><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">> 重复构建后 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`idf.py qemu monitor`</span><span style="--shiki-light:#22863A;--shiki-dark:#85E89D"> 可能静默失败（qemu_flash.bin 不再更新）。</span></span>
+<span class="line"><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">> 手动合并兜底：</span></span>
+<span class="line"><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">> </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`cd build &#x26;&#x26; python -m esptool --chip esp32 merge-bin -o qemu_flash.bin --pad-to-size 4MB @flash_args`</span></span>
+<span class="line"><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">> 并核对固件打印的 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`EX09-FACT built="..."`</span><span style="--shiki-light:#22863A;--shiki-dark:#85E89D"> 时间指纹。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">### 运行</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**终端 1**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> —— 启动宿主端 TLS 服务器（首次自动生成证书并打印指纹）：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```bash</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">cd</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> practice/lwip-examples/ex09-tls-client</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">tools/run_sserver.sh</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> |</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> tee</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> sserv.log</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">启动后应看到（真实输出）：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">SSERVO-GEN cert=certs/sserver.crt key=certs/sserver.key subject=/CN=localhost</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">SSERVO-FP sha256=FB:03:01:B2:C1:A8:95:A5:74:78:85:36:21:58:A1:19:2A:6D:2D:AC:75:B9:A1:F2:BC:68:5D:4A:0B:C7:67:FB</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">SSERVO-READY mode=rev port=8280 tls=tls1_2 waiting ...</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">Using default temp DH parameters</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">ACCEPT</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">证书说明：脚本用 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`openssl req -x509 -newkey rsa:2048 -nodes -days 30 -subj "/CN=localhost"`</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">一次性生成（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`certs/sserver.crt`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> + </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`.key`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">，已存在则复用，</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`--renew`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 强制重签）；仅限离线</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">QEMU 教学。</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`s_server -rev`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 是"按行反转回显"——攒齐以 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`\n`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 结尾的一行才回放该行的逐字节</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">反转，所以固件探针行刻意以 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`\r\n`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 收尾。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**终端 2**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> —— 启动 QEMU（默认 90s 自动截停，退出码 124 属正常）：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```bash</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">tools/run_qemu.sh</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 90</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">          # 串口输出落 run.log</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">全程约 40s：boot ~3s → 三轮外环尝试（每轮最多 ~9s，命中悬案即提前收手）→ 两轮回环</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">自连（每轮 ~1s）→ 进入空闲心跳。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">### 结束时精确清理</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">长跑/自动化时请按 PID 杀进程，禁止 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`pkill`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（有并行实验实例共存）：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```bash</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">pgrep</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -af</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> 'qemu-system-xtensa|openssl s_server'</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">   # 找到目标 PID 后</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">kill</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> &#x3C;</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">PI</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">D</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">></span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## run.log 真实输出摘录（本次实测，2026-08-27）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">EX09-FACT built="Aug 27 2026 13:31:36" idf_version=v6.0.2</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">I (2637) ex09: GOT_IP: 10.0.2.15</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">$$$ EXREADY outer=10.0.2.2:8280 local=127.0.0.1:8281 attempts=3+2 probe_len=41 escape_budget_ms=8000</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">EX09-MEM tag=boot-baseline  free=252268 largest=131072 min-ever=252248</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">EX09-PHASE name=TLS-OUTER target=10.0.2.2:8280 seq=1 expect=app-roundtrip</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">EX09-TCPPLUSHS seq=1 elapsed_ms=218 (tcp_connect+tls_handshake)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">EX09-HS-OK version=TLSv1.2 suite=TLS-ECDHE-RSA-WITH-AES-256-GCM-SHA384 peer_cert_bytes=0</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">EX09-MEM tag=post-hs-1      free=229416 largest=110592 min-ever=219700</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">EX09-LEDGER seq=1 handshake_peak_delta=32548 (min-ever 252248 -> 219700)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">EX09-WROTE seq=1 len=41 ms=1 -> waiting app record (budget 8000 ms)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">EX09-APP-TIMEOUT seq=1 budget_ms=8000 got=0 -> KNOWN-ISSUE-HIT (SLIRP outer-loop TLS, see ch22 case#1); closing by escape hatch</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">EX09-MEM tag=post-close-1   free=255344 largest=110592 min-ever=219700</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">注：seq=2/3 同形态——握手 173~196ms 成功，应用记录 8s 无回应，逃生收手。</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">EX09-PHASEOVER name=OUTER attempts=3 pass=0 hang_escaped=3 hs_fail=0 short_echo=0</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">EX09-PHASE name=TLS-LOCAL target=127.0.0.1:8281 seq=4 expect=app-roundtrip</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">EX09-SRV session established fd=56</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">EX09-TCPPLUSHS seq=4 elapsed_ms=999 (tcp_connect+tls_handshake, loopback)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">EX09-WROTE seq=4 len=41 ms=0 -> waiting app record (budget 8000 ms)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">EX09-REPLY seq=4 len=41 xor_match=YES (xor order-independent: outer replies byte-reversed via s_server -rev, local echo returns as-is)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">EX09-SRV session closed</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">EX09-PHASEOVER name=LOCAL attempts=2 pass=2 other=0</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">EX09-SUMMARY outer=pass:0/hang:3/hsfail:0/short:0 local=pass:2/other:0</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">宿主侧 sserv.log 同场关键证据——三次握手全部完成但零应用数据回放：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">CONNECTION ESTABLISHED</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">Protocol version: TLSv1.2</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">Ciphersuite: ECDHE-RSA-AES256-GCM-SHA384</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">CONNECTION CLOSED            ← 直接关闭：没有任何反转回显输出</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（共 3 组 ESTABLISHED/CLOSED，其间没有出现任何探针内容）</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">跨双端对账成立：guest 发出了 41 字节探针（WROTE 成功）、宿主 kernel 完成了握手与</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">ACK，但数据从未抵达服务进程——这就是悬案①的现场。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 已知现象与边界：SLIRP 外环 TLS 悬案①</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">### 现象</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">TLS 握手完全成功（协议版本/套件协商正常、双向 Finished 交换完毕），随后 client 写出的</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">首条</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**应用记录**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">永远得不到回应。表现为 guest 阻塞在等待读写直至放弃，而不是收到任何</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">错误。ch22 的取证结论（引用）：同一字节流在本机 python 客户端上瞬时往返；</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`tcpdump -X`</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">证明 guest 的记录完整到达宿主机 kernel 且每个 segment 都被 ACK——但服务进程永远不回放。</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">openssl（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`-quiet`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 有无一致）与 python ssl 服务端一致复现。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">### 本次环境复现情况（如实测量，不回避）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 时段                         | 尝试对象         | 握手                           | 首条应用记录                     |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| ---------------------------- | ---------------- | ------------------------------ | -------------------------------- |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 本次交付会话三轮运行         | 外环 s_server ×9 | 9/9 成功（~200ms）             | 0/9 有响应，全部命中 8s 逃生预算 |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 本次交付会话两轮运行         | 回环自连 ×4      | 4/4 成功                       | 4/4 完整往返                     |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| ch22 历史（Batch 6，供参考） | 外环             | 前期多次僵死，后期若干次能通过 | —                                |</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">即：</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**当前环境的复现概率接近必现**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">。ch22 后期曾观察到偶发通过的窗口，所以这不排除</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">与时序相关；读者在自己环境跑出 pass 也不足为奇——模板会把两种结果都如实统计出来</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（看 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`EX09-SUMMARY outer=pass:N/hang:N/...`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">）。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">### 定位思路（为什么断定不在 guest）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">PHASE-B 与 PHASE-A 共用同一套客户端代码（连接建立函数不同而已）：回环路径上同样的</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">esp-tls 版本、同样的探针、同样的等待逻辑，握手与应用记录往返全部正常。于是嫌疑只剩</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">SLIRP 出向边界的用户态转发环节——这正是"替代路径用于隔离问题域"的设计动机。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">### 逃生舱设计动机（读代码前先看这个）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">悬案的杀伤力在于它</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**不是报错而是无限挂死**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：阻塞的 recv/read 既不会返回错误也不会</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">EOF，开发者最容易写出的正确 demo 在这里就是一枪毙命。因此本模板立了三条规矩：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">1.</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **一切应用记录等待必须过超时预算**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`select()`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 携带剩余预算等待 fd 可读，</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">   `nready==0`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 即判定命中、打印 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`KNOWN-ISSUE-HIT`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 并立即关闭连接；</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">2.</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **不用 SO_RCVTIMEO 兜这条线**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：SO_RCVTIMEO 能把底层 lwIP </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`recv()`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 打断为 EAGAIN，</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   但经 esp-tls 映射成 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`MBEDTLS_ERR_SSL_WANT_READ`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 后会被当"再试一次"，很容易写出</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   忙轮询甚至漏判；</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`select`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 在等待入口处一次裁决，语义最干净；</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">3.</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **挂死也不许拖死整机会话**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：单轮预算 8s 固定（远大于正常 RTT ~5ms、又小于人</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   注意力阈值），命中后 destroy 连接继续下一轮，最后统一汇总复现率。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">### 对使用者的影响与建议</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 在 QEMU SLIRP 上演示/验证 TLS 数据面，优先用 PHASE-B 形态（回环自连）或直接引</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  esp_https_client 类高层组件前先想清楚观测点；</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 把 guest 从 SLIRP 换成 tap/bridge 直通网络后此现象预期消失（未在本环境验证，属</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  合理推断而非实测结论）；</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 生产真机不受影响：该问题是 QEMU SLIRP 边界的，不是 esp-tls/lwIP 的。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 内存账本（加分项：握手前后 heap 三件套）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">口径照搬 ch22（CONVENTIONS Batch 6）：`heap_caps_get_free_size / largest_free_block /</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">minimum_free_size(MALLOC_CAP_DEFAULT)` 三件套阶段即时快照 + min-ever 阶段差兜住采样</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">间隙里的握手峰值。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 快照位（本轮 seq=1）      | free (B) | largest (B) | min-ever (B) |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| ------------------------- | -------- | ----------- | ------------ |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| boot 基线                 | 252268   | 131072      | 252248       |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| post-hs-1（握手完成后）   | 229416   | 110592      | 219700       |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| post-close-1（关闭+回收） | 255344   | 110592      | 219700       |</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **稳态增量 ≈ −22.9KB**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（252268 → 229416，连接保持期间），与 ch22 实测 −27KB 同量级；</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **握手峰值增量 = 32548 B**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（min-ever 252248 → 219700），与 ch22 的 33072 B 几乎一致；</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> close 后 free 回到基线上方（255344 > 252268），残差为正说明本轮无泄漏积累。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 三个诚实的口径警告（读 LEDGER 行前必看）：</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">  1.</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> min-ever 是全局单调水位，</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**从第二轮起 delta 只反映"比历史更深的坑"**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（实测</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">     seq=2 只有 12 B、seq=3 为 0），不代表第二轮没分配内存；</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">  2.</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> PHASE-B 里 client/server 同池，快照混合两端分配量，不能当单连接成本引用；</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">  3.</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 跨阶段直接拿 free 相减失真（碎片与残留混合），要对照三件套一起读。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## CI 化断言（机器可读标记）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```bash</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">grep</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -q</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> 'EX09-SUMMARY'</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> run.log</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> &#x26;&#x26; </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">\</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">grep</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -cE</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> 'EX09-TCPPLUSHS'</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> run.log</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">                 # >= 5（3 外环 + 2 回环握手都成功）</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">grep</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -c</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> 'EX09-REPLY .* xor_match=YES'</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> run.log</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">      # 回环应答数（本次实测 2）</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">grep</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -c</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> 'EX09-APP-TIMEOUT'</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> run.log</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">                 # 悬案命中数（本次实测 3，如实记录）</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">grep</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -q</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> 'EX09-MEM tag=final'</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> run.log</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">               # 内存账本收口快照存在</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 证书验证升级（pinning 路径）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">默认姿势是"跳过验证"（自签证书不在任何信任链里）：</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`sdkconfig.defaults`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 开启</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`CONFIG_ESP_TLS_INSECURE + CONFIG_ESP_TLS_SKIP_SERVER_CERT_VERIFY`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">，cfg 不带信任锚即放行</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">任何证书。</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**生产工程严禁开启这一组**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">。升级为 CA 固定（pinning）三步：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">1.</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> sdkconfig 删掉上面两项（INSECURE 未开时带 cacert 才合法）；</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">2.</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 把 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`tools/run_sserver.sh`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 生成的 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`certs/sserver.crt`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 内容转成 C 字符串</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   （格式参考 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`main/tls_local_certs.h`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">），填入 cfg：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   ```c</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">   esp_tls_cfg_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> cfg </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> {</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">       .cacert_buf   </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> (</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">const</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> unsigned</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> char</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> *</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)SERVER_CERT_PEM,</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">       .cacert_bytes </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> strlen</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(SERVER_CERT_PEM) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">+</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">,</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* PEM 必须含结尾 NUL！ */</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">       .common_name  </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "localhost"</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">,</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">                 /* 主机名对 CN/SAN 校验 */</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">       .timeout_ms   </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 10000</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">,</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   };</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   ```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">3.</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 证书每次 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`--renew`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 后都要同步重嵌；common_name 与 CN 不匹配时报</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">   `MBEDTLS_ERR_X509_CERT_VERIFY_FAILED`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">，细节看 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`EX09-HS-FAIL cert_flags=`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 打印。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">注意：修复 pinning 只解决"认证"，不影响悬案①——那是外环边界的数据面问题。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 作为模板复制改造</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 换目标服务器：改 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`HOST_IP_STR`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> / </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`PORT_TLS`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（注意套件号段纪律 SPEC §4）；</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 改请求载荷：</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`g_probe`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 一处即可，记得保住结尾 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`\n`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">；</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 需要 mbedTLS 逐行日志排障：加 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`CONFIG_MBEDTLS_DEBUG=y`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> +</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  `CONFIG_MBEDTLS_DEBUG_LEVEL_VERBOSE=y`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> + </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`CONFIG_LOG_DEFAULT_LEVEL_DEBUG=y`</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  （ch22 全记录就是这么抓的），日志量会暴涨，别忘了 run.log 截断政策；</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 分段计时 TCP/TLS 握手（staged 手法）：见 ch22 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`lab_main.c`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 的</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  `set_conn_sockfd + set_conn_state(CONNECTING)`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 用法；</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> ECDSA 对照：宿主换 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`-cert`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 为 EC 证书即可（mbedTLS 侧无需改动）。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 端口登记（套件号段 8280~8289）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 端口 | 用途                                   | 方向                       |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| ---- | -------------------------------------- | -------------------------- |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 8280 | 主服务槽(+0)：宿主 openssl s_server    | guest 出向（无需 hostfwd） |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 8281 | 辅助槽(+1)：guest 内回环 TLS echo 服务 | 仅 guest 内部 127.0.0.1    |</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 排障速查</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 现象                                           | 定位                                                                                     |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| ---------------------------------------------- | ---------------------------------------------------------------------------------------- |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| boot 即崩在 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`esp_eth_mac_new_openeth()`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">        | QEMU 命令残留 efuse </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`-global`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 行（必须用去掉它的形态，CONVENTIONS Batch 4）              |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`SSERVO-LISTEN port=8280 FAILED errno=98`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">      | 8280 被占（并行实验/上一轮没退净），</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`ss -ltnp`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 归属排查                                  |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 全部 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`EX09-HS-FAIL`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                            | 忘了先起 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`tools/run_sserver.sh`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">；或 s_server 死了看 sserv.log                            |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 卡在 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`waiting for DHCP lease ...`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">              | </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`-nic user,model=open_eth`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 丢了；或上一轮 QEMU 未退净                                    |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 外环 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`EX09-APP-TIMEOUT`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 但回环 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`xor_match=YES`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> | 正常！就是本文档"已知现象"所述悬案①被正确逃生接住的样子                                  |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 回环也失败                                     | 参考本地服务器打印 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`EX09-SRV handshake failed`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（查 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`tls_local_certs.h`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 是否损坏/栈溢出） |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| mirror 陈旧导致行为不符                        | 核对 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`EX09-FACT built=`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 指纹；用 README 的 merge-bin 兜底命令重生成镜像                  |</span></span>
+<span class="line"></span></code></pre>

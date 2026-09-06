@@ -1,0 +1,70 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span># ex14 perf-gym-tcp —— menuconfig 旋钮</span></span>
+<span class="line"><span>#</span></span>
+<span class="line"><span># ⚠⚠ 场景切换走构建期（SPEC §5 ex14 硬要求）：</span></span>
+<span class="line"><span>#   不要在这里手改场景后直接 build——sdkconfig.defaults 只在 sdkconfig 不存在时生效，</span></span>
+<span class="line"><span>#   残留旧值会静默吃掉新配置（Batch 1 教训）。标准切法：</span></span>
+<span class="line"><span>#     cp sdkconfig.defaults.scN sdkconfig.defaults</span></span>
+<span class="line"><span>#     rm -f sdkconfig            # ← 必须删！</span></span>
+<span class="line"><span>#     idf.py build               # 重新生成全量 sdkconfig</span></span>
+<span class="line"><span>#   预设文件与场景对照见 README「构建命令」一节。</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>menu "Example Perf Gym TCP Configuration"</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>config GYM_SCENARIO</span></span>
+<span class="line"><span>    int "错误注入场景编号（0=健康基线，构建期切换）"</span></span>
+<span class="line"><span>    range 0 4</span></span>
+<span class="line"><span>    default 0</span></span>
+<span class="line"><span>    help</span></span>
+<span class="line"><span>        本固件把四类真实调参/编码错误做成可切换场景，跑同一套基准负载：</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>        0 = 健康基线（对照口径；也是所有 fixed 变体的"代码侧"形态）</span></span>
+<span class="line"><span>        1 = 窗口过小：SND_BUF/WND 被压到 2×MSS → 外环吞吐坍缩</span></span>
+<span class="line"><span>        2 = 大窗小环黑洞：WND=28800 但 openeth RX 环保持默认 4</span></span>
+<span class="line"><span>            → hostfwd 入向吞吐黑洞（窗口×RX 环深不等式，ch24 头号发现）</span></span>
+<span class="line"><span>        3 = 发送泵漏挂 tcp_sent 回调（代码级错误，复刻 ch6 真 bug）→ 吞吐涓流</span></span>
+<span class="line"><span>        4 = PCB 计数闸 MEMP_TCP_PCB=2（CONFIG_LWIP_MAX_ACTIVE_TCP=2）</span></span>
+<span class="line"><span>            → 新连接静默无响应 + tcp.memerr 爬升</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>        注意数值旋钮本身不在本菜单里：SND_BUF/WND 是 lwIP 组件级符号</span></span>
+<span class="line"><span>        （CONFIG_LWIP_TCP_SND_BUF_DEFAULT / CONFIG_LWIP_TCP_WND_DEFAULT），</span></span>
+<span class="line"><span>        RX 环深是 esp_eth 的 CONFIG_ETH_OPENETH_DMA_RX_BUFFER_NUM，</span></span>
+<span class="line"><span>        PCB 上限是 CONFIG_LWIP_MAX_ACTIVE_TCP。每场景的坏/修两档预设</span></span>
+<span class="line"><span>        以 sdkconfig.defaults.scN / sdkconfig.defaults.scN.fixed 成对交付，</span></span>
+<span class="line"><span>        场景号必须和对应预设配套使用。</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>config GYM_ROUNDS</span></span>
+<span class="line"><span>    int "每腿轮数（LB/TX/RX 三腿交错执行）"</span></span>
+<span class="line"><span>    range 1 5</span></span>
+<span class="line"><span>    default 2</span></span>
+<span class="line"><span>    help</span></span>
+<span class="line"><span>        一轮内按 LB(镜像回声,对端 tools/gym_echo.py) -> TX(raw 泵外发) -> RX(hostfwd 灌流) 顺序执行，</span></span>
+<span class="line"><span>        再进下一轮——同开机交错轮次是 ch6 方法学，用于对冲 QEMU 宿主负载抖动</span></span>
+<span class="line"><span>        （Batch 4 实测 ±50%）。</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>config GYM_MB</span></span>
+<span class="line"><span>    int "单轮数据量（MB，十进制 MB=1000000B）"</span></span>
+<span class="line"><span>    range 1 32</span></span>
+<span class="line"><span>    default 2</span></span>
+<span class="line"><span>    help</span></span>
+<span class="line"><span>        TX/RX/LB 每腿每轮传输的目标字节数。涓流场景靠截断早停规则限幅，</span></span>
+<span class="line"><span>        不会真等满额传输。</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>config GYM_PEER_WAIT_SEC</span></span>
+<span class="line"><span>    int "等待宿主工具就绪的秒数（TX 重试与 RX 接受共用预算）"</span></span>
+<span class="line"><span>    range 5 120</span></span>
+<span class="line"><span>    default 25</span></span>
+<span class="line"><span>    help</span></span>
+<span class="line"><span>        TX 泵拨 10.0.2.2:8311 找 tools/gym_sink.py、RX 口等 tools/gym_flood.py</span></span>
+<span class="line"><span>        接入，超时按 PEER_DOWN 记账并跳过该腿剩余轮次（不是错误，是"对端缺席"）。</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>config GYM_TX_DEADLINE_SEC</span></span>
+<span class="line"><span>    int "raw 泵单轮硬预算秒数"</span></span>
+<span class="line"><span>    range 10 120</span></span>
+<span class="line"><span>    default 30</span></span>
+<span class="line"><span>    help</span></span>
+<span class="line"><span>        到点未发完即中断连接。含涓流早停规则：启动满 12s 后若滑窗速率仍低于</span></span>
+<span class="line"><span>        20KB/s（= tcp_poll 补发节拍的特征值），提前判 TRICKLE_STOP 收档。</span></span>
+<span class="line"><span>        这两个数字本身就是诊断证据的一部分，改小会让涓流特征失去展示窗口。</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>endmenu</span></span>
+<span class="line"><span></span></span></code></pre>

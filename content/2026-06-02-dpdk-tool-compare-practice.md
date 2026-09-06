@@ -6,7 +6,7 @@ description: "用 4 类故障 (mbuf 泄漏/TX 队列满/RSS 关掉/sctp 路径) 
 ---
 
 > [!info] 实战配套文档
-> 本篇是 [[2026-04-09-dpdk-deep-dive-ch34-ethtool-comparison|ch34 工具全景对比]] 的实战版.
+> 本篇是 [[ch34-ethtool-comparison|ch34 工具全景对比]] 的实战版.
 > 能力矩阵和理论见 ch34, 这里聚焦**手把手复现 + 4 工具对比**:
 >
 > - 同一故障, 4 个工具分别能看到什么
@@ -472,9 +472,9 @@ ovs-appctl              ✓               ✓         text        socket
 
 > 参考:
 >
-> - [[2026-04-09-dpdk-deep-dive-ch34-ethtool-comparison|ch34 工具全景对比]]
-> - [[2026-04-09-dpdk-deep-dive-ch31-debugging-tools|ch31 调试工具]]
-> - [[2026-04-09-dpdk-deep-dive-ch33-debug-techniques|ch33 调试技术]]
+> - [[ch34-ethtool-comparison|ch34 工具全景对比]]
+> - [[ch31-debugging-tools|ch31 调试工具]]
+> - [[ch33-debug-techniques|ch33 调试技术]]
 > - [ethtool 官方文档](https://www.kernel.org/pub/software/network/ethtool/)
 > - [iproute2 文档](https://wiki.linuxfoundation.org/networking/iproute2)
 > - [DPDK procinfo 用户指南](https://doc.dpdk.org/guides/tools/proc_info.html)

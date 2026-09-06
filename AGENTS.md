@@ -2,7 +2,71 @@
 
 本仓库的 `content/` 目录是 Obsidian (Quartz) 博客的内容源。所有笔记必须遵循以下格式。
 
-## 文件命名
+## 内容组织（双轨制，2026-09 起生效）
+
+`content/` 下分两类内容，**新文章先判断自己属于哪一类**：
+
+| 类型         | 位置                            | 命名                                                | 例子                                            |
+| ------------ | ------------------------------- | --------------------------------------------------- | ----------------------------------------------- |
+| **系列章节** | `content/<系列文件夹>/`         | `chNN-kebab-case.md`（NN 两位补零，**无日期前缀**） | `freertos-deep-dive/ch13-task-notifications.md` |
+| **系列索引** | `content/<系列文件夹>/index.md` | 固定名 `index.md`（slug 即文件夹名）                | `lwip-deep-dive/index.md`                       |
+| **散记**     | `content/` 根目录               | `YYYY-MM-DD-kebab-case-title.md`（保留日期前缀）    | `2026-08-26-nload.md`                           |
+
+规则：
+
+- 现有 **21 个系列文件夹**清单见 `content/series/index.md`（系列总览页）。新章节写进所属系列文件夹；**开新系列**时新建文件夹 + `index.md`，并**必须在 `content/series/index.md` 登记一行**，否则读者从总览发现不了。
+- 文件基名（不含扩展名）在**全库必须唯一**——Quartz 的 `shortest` 链接策略与 Obsidian 的解析都依赖这一点。起名时带足语义（`ch13-task-notifications` 而不是 `ch13-notifications` 这类易撞名形式）；与其他系列可能撞名时加系列前缀（先例：`zeek-deep-dive-ch1-overview`）。
+- 散记升级为系列时（同主题第 3 篇左右）：建文件夹、移入、改名为 `chNN-*`，全库重写指向它的 wikilink。
+- `content/assets/` 与 `content/series/` 为保留目录，勿挪作他用。
+
+## Wikilink 规范
+
+- 一律使用**基名 wikilink**：`[[ch13-task-notifications|别名]]`；链接系列索引用**文件夹名**：`[[lwip-deep-dive|lwIP 深度解析]]`。
+- **禁止**在 wikilink 里写日期前缀全名（旧结构遗留，已全部迁移）、路径（`[[folder/file]]`）或 `.md` 扩展名。
+- 章节正文互链：章首导航 callout（系列索引 + 本章）、章尾"下一章预告"链接，系列内形成线性阅读链。
+
+## 示例代码规则（存放与引用）
+
+示例/实验代码住 `practice/`，文章住 `content/`，两者通过**站内代码浏览器深链**桥接。完整规则如下。
+
+### 存放规则
+
+- 目录结构：`practice/<套件>/<工程>/`。现有套件：`lwip-examples/`（exNN-slug 示例）、
+  `hwbasics/`（硬件基础实验）、根下 `lwip-chNN-*`（章节实验）、`lwip-labs/`（公约与调研）。
+  新套件开工前先在套件内立 SPEC.md（参考 `practice/lwip-examples/SPEC.md`）。
+- 工程名用英文 kebab-case，带章号/示例号前缀（`ex02-tcp-echo-server`、`ch03-cortex-m-anatomy`），
+  与所属系列的 slug 对齐；**改名/移动工程目录会使浏览页深链全部失效**，须全局搜替后重生成。
+- 工程标准件：`main/`（源码）、`CMakeLists.txt`、`sdkconfig.defaults`（及 `.ci`/`.debug`/场景变体）、
+  `README.md`（中文，含拓扑与复现命令——浏览页会展示）、运行日志（`run.log`/`logs/`/`runs/`）、
+  宿主工具（`tools/`，单文件脚本为佳）。
+- 入库边界与日志截断政策见下文「CI 与提交规范 → practice/ 实验工程入库规则」；
+  生成物（`build*/`、`managed_components/`、`sdkconfig`）已被 .gitignore 固化排除。
+
+### 文章引用规则（三层，按优先级）
+
+1. **站内代码浏览器深链（首选）**——读者不离开站点即可看高亮源码：
+   `/static/code/?p=<项目ID>&f=<工程内相对路径>`，项目ID 即工程目录路径
+   （如 `lwip-examples/ex02-tcp-echo-server`、`lwip-ch03-qemu-network-lab`、`hwbasics`）。
+   URL 中 `/` 用 `%2F` 编码；可追加 `#L42` 行锚点定位。文章中用普通 Markdown 链接
+   `[看实现](/static/code/?p=...%2F...&f=main/main.c)`——**不是 wikilink**（代码页不是笔记节点）。
+2. **GitHub 源链（次选）**——需要历史 blame/PR 语境时：
+   `https://github.com/hlwqds/hl-ljj-quartz/blob/v4/practice/<路径>`。
+3. **文内代码块（限短片段）**——≤30 行的关键片段可直接嵌入文章讲解，但必须标注
+   出处工程与文件（`> 源自 practice/.../main.c`）。**禁止**把大段实现复制进文章：
+   与工程源码形成双份漂移，改一处忘另一处。实验输出摘录（run.log 片段）不受此限。
+
+### 浏览页收录与更新义务
+
+- 浏览页由 `npm run code-site`（`scripts/gen-code-site.mjs`）生成到 `quartz/static/code/`，
+  产物**直接提交**（已列 .prettierignore，随 Quartz 部署 GitHub Pages）。收录范围与过滤规则
+  在脚本顶部 `PROJECT_GLOBS`/`SKIP_DIRS`/`TEXT_EXT` 配置：跳过 `build*`、`managed_components`、
+  日志与 `sdkconfig` 生成物，只收文本源码，单文件 ≤256KB。
+- **新增、修改、删除、重命名任何工程后，必须重跑 `npm run code-site` 再提交**，
+  否则浏览页与仓库实际代码脱节。新增套件需同步在脚本 `PROJECT_GLOBS` 加一条收录规则。
+- 浏览页入口：站点左侧栏 💻 示例代码 tab（`/static/code/`），支持递归目录树、文件名过滤、
+  明暗主题、行锚点与深链。
+
+## 文件命名（散记适用）
 
 格式：`YYYY-MM-DD-kebab-case-title.md`
 
@@ -33,6 +97,9 @@ tags: [tag1, tag2, tag3]
 | `tags`        | 是   | 标签数组，使用 PascalCase 或小写英文 |
 | `pin`         | 否   | 是否置顶，布尔值                     |
 | `description` | 否   | 文章简介                             |
+
+> [!NOTE]
+> 系列章节虽无日期前缀文件名，`date` 字段仍必填（排序与展示用）。
 
 ## 内容格式
 

@@ -1,0 +1,305 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold"># ex16 zero-copy-cases —— 零拷贝优化案例集</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">一个固件内五个可切换案例（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`CONFIG_ZC_CASE`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">），每个案例都按「问题 → 拷贝版实现 →</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">零拷贝版实现 → 成对实测数字表 → 适用边界」组织，全部以 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`esp_timer`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 微基准 +</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">≥1000 轮 + 中位/P95/均值 + digest 校验做</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**同开机配对**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">对比（copy 版与 zc 版按块</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">交错，而非先后整段，把机器漂移摊到两种变体上）。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 环境：ESP-IDF v6.0.2 + QEMU (openeth/SLIRP)，guest 得 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`10.0.2.15/24`</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 负载：默认全部走 guest 内 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`127.0.0.1`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 自环；可选宿主反射器 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`10.0.2.2:8331`</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **严禁把目的地址设为自身网卡 IP**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（10.0.2.15）：持续 TCP 吞吐会咬死 tcpip 线程</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  （Batch 8 gdb 取证卡在 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`pbuf_free`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">/</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`g_lwip_protect_mutex`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 1. 五案例一览</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 案例 | Kconfig     | 主题                                      | 配对结论一句话                                |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| ---- | ----------- | ----------------------------------------- | --------------------------------------------- |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| A    | </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`ZC_CASE=1`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> | RX 就地解析：recv 回调直接读 pbuf payload | 均值 2.54→2.08µs/记录（省 18%）；栈帧深 +644B |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| B    | </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`ZC_CASE=2`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> | TX 分段提交：头/体分离 write+MORE         | 提交均值 15.74→13.09µs/消息（省 17%）         |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| C    | </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`ZC_CASE=3`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> | 接收路径层级拷贝差 raw/netconn/socket     | RTT 301/333/442µs（1.11×/1.47×）              |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| D    | </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`ZC_CASE=4`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> | 流式校验零落地 vs 落地整包再算            | CPU 持平（393 vs 362µs），内存 112KB→0        |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| E    | </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`ZC_CASE=5`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> | 诚实边界：COPY 被 IDF 硬编码强制          | apiflags 证据 + 2400 条 digest 全 PASS        |</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">案例 0（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`ZC_CASE=0`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">，默认）为说明模式：打印案例目录 + 事实引用行，并在 8330 开</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">一扇入向命令门（hostfwd），</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`nc`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 即可验证 SLIRP 入向路径。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 2. 网络拓扑</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">        宿主机 (Fedora)                                QEMU guest (ESP32, lwIP)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> ┌──────────────────────────┐                ┌─────────────────────────────────────┐</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> │ tools/reflector.py       │                │  tcpip 线程（单线程，一切回调在此） │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> │  (可选) listen :8331     │◄───────────────┤  案例客户端 pump ──┐                │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> │        echo 回显         │   guest 出连   │                    ▼               │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> │                          │  10.0.2.2:8331 │  127.0.0.1 自环（默认负载路径）    │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> │ nc localhost 8330 ───────┼────────────────►  汇点 g_svc_main :8330          │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> │   (case0 命令口,hostfwd) │ hostfwd 入向   │  回声服务 :8332 raw（案例 C）      │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> │                          │                │  回声服务 :8333 netconn（案例 C）  │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> └──────────────────────────┘                │  回声服务 :8334 socket（案例 C）   │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                                             └─────────────────────────────────────┘</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  ※ 全部负载目的地 = 127.0.0.1 或 10.0.2.2，绝不用 10.0.2.15（自身 IP）</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">端口纪律（SPEC §4）：8330 为主服务口（hostfwd </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`tcp::8330-:8330`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">），8331 为出连</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">宿主反射器；8332/8333/8334 是 guest 本地环回端口，不出网卡、不占 SLIRP 号段。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 3. 构建与运行</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```bash</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 一次性环境</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">.</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> ~/esp/esp-idf/export.sh</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">cd</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> practice/lwip-examples/ex16-zero-copy-cases</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 单案例构建（以案例 A 为例；切案例只需换 caseN 变体文件）</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">rm</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -f</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> sdkconfig</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">SDKCONFIG_DEFAULTS</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">"sdkconfig.defaults;sdkconfig.defaults.case1"</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> idf.py</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -B</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> build-case1</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> build</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 出镜像（monitor 因无 TTY 失败属预期；重复构建后可能静默不出图，用 merge-bin 兜底）</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">idf.py</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -B</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> build-case1</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> qemu</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> monitor</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> &#x3C;</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> /dev/null</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> ||</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> true</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">cd</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> build-case1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> &#x26;&#x26; </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">python</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -m</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> esptool</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> --chip</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> esp32</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> merge-bin</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> \</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   -o qemu_flash.bin --pad-to-size 4MB @flash_args)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">#</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> 运行（去</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> efuse</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -global</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> 行的形态；并行实验按镜像路径精确</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> kill，禁止</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> pkill）</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">BUILD_DIR</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">build-case1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> LOG</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">runs/case1.log</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> tools/run_qemu.sh</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 100</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 一键归档全部案例（大耗时，可分段：tools/run_all.sh 0 1 / 2 3 / 4 5）</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">tools/run_all.sh</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">说明：改 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`sdkconfig.defaults*`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 后必须删 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`sdkconfig`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 重生成（Batch 1 教训）；</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`run_all.sh`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 已内置 merge-bin 兜底与 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`EXREADY`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 校验。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">### 案例 0 命令门实测（runs/case0-door.log）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">$ nc localhost 8330 然后逐行输入：</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">== HELP == ex16 case0 command door. Commands: HELP CASES STATS HEAP UPTIME</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">== UPTIME == uptime_ms=13517 ready_rel_ms=12320</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">== BOGUS == ERR unknown cmd: BOGUS</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">固件侧同步打印 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`EX16-DOOR cmd=HELP`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> / </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`cmd=unknown line='BOGUS'`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 4. 通用测量方法学</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **时钟**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`esp_timer_get_time()`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（1µs 网格）。</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`sys_now()`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 是 10ms tick 网格，</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  严禁用于微基准。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **同开机配对**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：每个案例在一次开机内让 copy 版与 zc 版按块交错（每</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  `CONFIG_ZC_BLOCK=300`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 条切换一次变体）；案例 C 是三层轮换、案例 D 是</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  LAND/STREAM 流级交错。避免"先测 A 后测 B"的机器漂移偏差。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **统计**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：每变体默认 1200 轮，报中位/P95/均值。esp_timer 是 µs 整数网格，</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  亚微秒差值用多轮均值恢复分辨率（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`mean_us`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 带两位小数）。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **digest 纪律**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：所有承载内容带序号+校验和（magic/type/seq/len/hdr_sum/</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  body_xsum），收端逐条校验；案例 D 另有 112KiB 模式流的 Fletcher32 golden</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  对账；任何一轮错数据立即 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`$$$ EXFAIL`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **闭环握手**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：会话以 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`RT_CTRL_END`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 结束并要求 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`RT_CTRL_ACK`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 回环，</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  杜绝"发完 ≠ 收全"的读数竞态；读统计一律在 ACK 到手之后。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **上下文纪律**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：一切 raw API 调用都在 tcpip 线程；任务侧发送经</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  `tcpip_callback`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 排程（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`zc_cli_post_from_task`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">）。开发期曾因任务侧直接</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  `tcp_write`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 触发 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`tcp_free_acked_segments`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 断言崩溃——正是 ch15 的</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  xtw 误用本尊。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">机器可读行协议（CI 可 grep）：`$$$ EX16-FACT / EXREADY / EX16-CFG /</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">EX16-CATALOG / EX16-SAMPLE / EX16-RESULT / EX16-DIGEST / EX16-CITE /</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">EX16-EFLAG / EXFAIL / EXDONE</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`，过程行 `</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">EX16-PROG / EX16-HEAP / EX16-STAGE /</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">EX16-PHASE / EX16-CLICONN / EX16-SRVUP`。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 5. 案例 A —— RX 就地解析</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**问题**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`tcp_recv`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 回调拿到 pbuf 后，传统写法先 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`memcpy`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 到应用缓冲再解析；</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">就地解析直接在 pbuf payload 上读。省掉的那一跳值多少钱？回调里暂存缓冲对</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">tcpip 线程栈的隐性税是多少？</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**拷贝版实现**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`caseA_on_rec`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 拷贝快路——整条 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`memcpy`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 进暂存缓冲后跑</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`zc_check_rec`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（magic/len/hdr_sum/body_xsum 全套校验）。</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**零拷贝版实现**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`want_zc`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 记录直接把 pbuf 里的连续区指针喂给同一个校验函数，</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">零拷贝。两版校验工作量一致，差值就是搬运本身。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**contiguous 现实**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：TCP 是字节流，SLIRP 分段交付让"记录整条落在本次回调的单一</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">连续区"并非理所当然。只有这种情况才走零拷贝；跨段记录必须先拼装（拷贝不可避</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">免），如实计入 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`span_*`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 且不混入配对统计——本次 2400 条记录里 866 条（36%）跨段。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**成对实测数字**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（runs/case1.log，1200 轮/变体，记录 530B）：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 指标（µs/记录）            | 拷贝版（memcpy+解析） | 零拷贝版（就地解析） | 差值                 |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| -------------------------- | --------------------- | -------------------- | -------------------- |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 中位                       | 2                     | 2                    | 0（µs 网格抹平）     |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| P95                        | 3                     | 3                    | 0                    |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**均值**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                   | </span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**2.54**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">              | </span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**2.08**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">             | </span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**0.46（-18.1%）**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 样本数（contig 快路）      | 768                   | 766                  | —                    |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 跨段记录（span，未入对账） | 432                   | 434                  | 拼装耗时 2350µs 合计 |</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">栈峰值探针（专批 200 条/变体，HWM 单调性：顺序固定先 ZC 后 COPY）：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 指标                            | ZC 批后 | COPY 批后 | 差值 |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| ------------------------------- | ------- | --------- | ---- |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| tcpip 线程 HWM（FreeRTOS 单位） | 2324    | 2308      | 16   |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 回调帧内对象最低地址差（字节）  | —       | —         | +644 |</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">帧地址差 644B ≈ 局部暂存缓冲 530B + 调用帧开销——这就是"回调里开大数组"对</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">tcpip 线程栈的真实附加税（该栈总量仅 ~4.6KB）。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**适用边界**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：就地解析的前提是</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**记录完整落在单一连续区**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（contiguous 检查必须</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">有，否则跨段记录会把解析撕裂）；解析必须轻（本例 O(n) 校验即上限），不得阻塞、</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">不得长占 tcpip 线程；只在 raw API 收包路径可用。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 6. 案例 B —— TX 分段提交</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**问题**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：发送"头+体"消息，传统写法把两段拼进大缓冲后一次 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`tcp_write`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">；</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">分段写法各自 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`tcp_write`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> + </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`TCP_WRITE_FLAG_MORE`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">。省掉的用户侧拼接 memcpy</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">值多少钱？两次 write 调用的开销又是多少？</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**拷贝版实现**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`memcpy(hdr)`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">+</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`memcpy(body)`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 进 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`s_b_stage`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（整帧 1058B）后</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">一次 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`tcp_write`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">。</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**零拷贝版实现**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`tcp_write(tpl_head,34,MORE)`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> +</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`tcp_write(body,1024,COPY)`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">，各自引用自己的存储，无拼接。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**成对实测数字**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（runs/case2.log，1200 轮/变体，消息 1058B）：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 指标（µs/消息）      | 拷贝版（拼接+1 次 write） | 零拷贝版（2 次 write） |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| -------------------- | ------------------------- | ---------------------- |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 提交总账中位         | 19                        | 15                     |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 提交总账 P95         | 23                        | 20                     |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**提交总账均值**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">     | </span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**15.74**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                 | </span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**13.09（-16.8%）**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 其中拼接 memcpy 分项 | 中位 2，均值 2.00         | 0（不存在这一跳）      |</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">分解：</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`拼接跳 2.00µs`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">；两 write 相对一 write 的调用开销 ≈ -0.66µs（分段后单次</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">拷贝更小，write 内部成本随之下降，抵消了多一次调用的开销）——净省 2.65µs/消息。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**边界（必须讲清）**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：IDF 硬编码 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`LWIP_NETIF_TX_SINGLE_PBUF=1`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 使协议栈内部的</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">COPY </span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**仍然存在**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（见案例 E）。本案例省掉的只是</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**用户侧那次拼接 memcpy**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">；</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">"tcp_write 零拷贝"在 IDF 上不存在。计时段落只包住用户动作 + </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`tcp_write`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 调用，</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">批末统一 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`tcp_output`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 冲刷不计入，两变体对称。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 7. 案例 C —— 接收路径层级拷贝差</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**问题**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：同一回声负载（256B 记录，严格 ping-pong）分别走 raw / netconn /</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">socket 三层，应用侧每消息成本差多少？承接 ch10（UDP 三层 RTT 102.9/214.8/</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">287.6µs）与 ch15（TCP 回环 64B RTT raw 162µs vs socket 439µs）的分层税数据。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**实现**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：三对独立的回环"客户端↔回声服务器"——raw 对全在 tcpip 线程回调驱动；</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">netconn 服务器任务 + 编排任务客户端（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`netconn_recv_tcp_pbuf`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">）；socket 对同构</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（SO_RCVTIMEO 兜底）。三层按 pass 轮换（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`raw→netconn→socket`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> × 5 遍）实现同开机</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">配对；每条回声逐位校验后计入 RTT。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**成对实测数字**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（runs/case3.log，1200 样本/层）：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 层      | 中位 (µs) | P95 (µs) | 相对 raw |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| ------- | --------- | -------- | -------- |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| raw     | 301       | 390      | 1.00×    |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| netconn | 333       | 578      | 1.11×    |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| socket  | 442       | 782      | 1.47×    |</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">与章节实验的互证与差异解释：socket/netconn 的分层方向与 ch10/ch15 完全一致；</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">倍率比 ch15 的 2.7× 小，因为本例载荷 256B（ch15 为 64B）——载荷越大，每跳</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">固定开销占比越小，分层税被摊薄；且 ch15 口径含当时的机器负载差异。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**适用边界**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：本例量化的是"应用侧每消息处理成本"（RTT 口径），不是纯 syscall</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">税；netconn/socket 换来的是可移植性与阻塞语义，raw 换来的是最低延迟——按场景</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">选层，不要无脑全 raw（回调里做重活会拖死整个协议栈，见 ch13/ch15）。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 8. 案例 D —— 流式校验零落地</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**问题**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：收到 112KiB 流后要校验 Fletcher32（ex06 方法学）。「边收边算」把校验</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">融进收包热路径、零落地；「收完落地整包再算」需要整块驻留缓冲 + 第二遍扫描。</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">CPU 差多少？内存差多少？</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**拷贝版（LAND）实现**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：payload 全部 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`memcpy`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 进 112KiB 静态 arena，收完在</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">arena 上做一遍计时的 Fletcher32 sweep。</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**零拷贝版（STREAM）实现**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：recv 路径里直接 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`f32_feed`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">，不落地任何 payload</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（驻留只有当前记录 ~1.4KB）。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**成对实测数字**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（runs/case4.log，各 3 条流，流长 114688B，6/6 digest 对上</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">golden </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`78c51387`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">）：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 指标                   | 落地再算（LAND） | 边收边算（STREAM）   |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| ---------------------- | ---------------- | -------------------- |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| Fletcher32 总耗时 (µs) | 393 / 257 / 790  | 345 / 362 / 1057     |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**中位**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">               | </span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**393**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">          | </span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**362**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">              |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 峰值额外内存（字节）   | </span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**114688**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">       | </span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**≈0（单记录量级）**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> |</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**诚实结论**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：CPU 两侧统计上持平（FNV/Fletcher 该算的都算了，流式还占着收包</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">热路径）——</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**零落地买的是内存峰值 112KB→0，不是 CPU**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">。在 240KB 级自由堆的</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">ESP32 上，这 112KB 决定了"能不能同时干别的"。数据点抖动大（QEMU 吞吐受宿主</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">负载影响 ±50%，CONVENTIONS Batch 4）但配对内趋势稳定。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 9. 案例 E —— 诚实边界（必做）：COPY 被硬编码强制</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**问题**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：通用 lwIP 教程说 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`tcp_write(pcb, buf, len, 0)`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（不带</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`TCP_WRITE_FLAG_COPY`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">）是零拷贝提交。在 ESP-IDF 上照做会发生什么？</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**证据一：源码引用**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（固件每次开机都打印，</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`$$$ EX16-CITE`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 行）：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">> </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`components/lwip/port/include/lwipopts.h`</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **line 765**</span><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">：</span></span>
+<span class="line"><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">> </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`#define LWIP_NETIF_TX_SINGLE_PBUF  1`</span><span style="--shiki-light:#22863A;--shiki-dark:#85E89D"> —— 硬编码，不是 Kconfig 旋钮。</span></span>
+<span class="line"><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">></span></span>
+<span class="line"><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">> </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`components/lwip/lwip/src/core/tcp_out.c`</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **lines 425-428**</span><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">：</span></span>
+<span class="line"><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">> </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`#if LWIP_NETIF_TX_SINGLE_PBUF`</span><span style="--shiki-light:#22863A;--shiki-dark:#85E89D"> / `/* Always copy to try to create single</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">pbufs for TX */</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">` / `</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">apiflags |= TCP_WRITE_FLAG_COPY;</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">` —— `</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">tcp_write` 入口</span></span>
+<span class="line"><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">> 无条件强制 COPY，调用方传什么都一样。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**为什么**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：该宏假设 TX 走单 pbuf（DMA 网卡不支持 scatter-gather，如 ESP32</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">内部 EMAC）；强制拷贝还让 lwIP 在拷贝时顺带做校验和预计算。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**证据二：apiflags 请求打印**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（runs/case5.log）：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">$$$ EX16-EFLAG form=copy-explicit     req_apiflags=0x01 semantics='upstream=lwIP-private copy'</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">$$$ EX16-EFLAG form=nocopy-requested  req_apiflags=0x00 semantics='upstream=zero-copy reference; IDF=silently forced to COPY by port macro'</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**证据三：行为学验证**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（流水线深度 4，源缓冲滚动复用——消息 i 写完立刻让位给</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">i+1..i+4，若真走了引用语义，未 ACK 的在途帧必然被撕碎）：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 指标            | copy 显式请求 | no-copy 请求 |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| --------------- | ------------- | ------------ |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 发送消息数      | 1200          | 1200         |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 回声逐位 digest | 全 PASS       | 全 PASS      |</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">$$$ EX16-DIGEST item=E-roundtrip status=PASS verified=2400 planned=2400</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">$$$ EX16-RESULT case=E kind=evidence copy_form_sent=1200 nocopy_req_sent=1200 verdict=PASS</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">两种形态行为完全一致且内容无损——只有 COPY 被静默强制时才会如此。</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**推论**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">在 IDF 上 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`tcp_write`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 后立即复用源缓冲是</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**安全的**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">；把上游"必须等 ACK 才能动</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">缓冲"的守则搬过来是白白自缚（反之，在允许真零拷贝的移植上照搬 IDF 写法会</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">踩数据撕裂）。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**编译期兜底**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`zc_casee.c`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 里有</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`#if LWIP_NETIF_TX_SINGLE_PBUF != 1 #error ...`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">——换了上游环境的移植构建本例</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">会当场编译失败，防止读者拿着错误前提跑数字。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**替代路径**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：真零拷贝 TX 需要（a）自备 netif 移植并把</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`LWIP_NETIF_TX_SINGLE_PBUF`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 置 0（openeth/SLIRP 环境做不到），或（b）走上游</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">pbuf 引用语义可用的环境。RX 侧的零拷贝（案例 A）不受此限制，随时可用。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 10. 已知边界与排障</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 现象                                             | 原因与处置                                                                                                 |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`tcp_free_acked_segments`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 断言崩溃               | 任务上下文直接调了 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`tcp_write`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（ch15 xtw 误用）。任务侧发送必须走 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`tcpip_callback`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                         |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 第二条消息起汇点报 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`absurd_len`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">，首条正常        | 拼接缓冲按"payload 尺寸"而非"整帧尺寸"声明，越界 18B 踩坏相邻静态区（本工程已修，</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`s_b_stage[B_WIRE_TOT]`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">） |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 案例相位永不结束                                 | END 握手缺失/ACK 超时——所有相位必须以 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`RT_CTRL_END`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">+ACK 闭环                                               |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`Connection refused`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 到 8330                     | case0 才开命令门；基准案例的汇点语法是记录流，不是行协议                                                   |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 栈探针 HWM 差值不可信                            | HWM 是历史极值且单位随移植变化——本工程以"帧内对象地址差"为准，HWM 仅旁证                                   |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| QEMU NIC 未创建 / </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`esp_eth_mac_new_openeth`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 崩溃 | runner 带 efuse </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`-global`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 行的偶发坑——去掉该行（本工程 runner 已去）                                       |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`qemu_flash.bin`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 未更新                          | </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`idf.py qemu monitor`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 静默失败（Batch 6）——用 merge-bin 兜底                                               |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 目的地址写成 10.0.2.15 后 tcpip 咬死             | Batch 8 实锤：自环负载一律 127.0.0.1 或宿主反射器                                                          |</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">日志合规：所有归档日志 &#x3C;10KB，远低于 1MB 截断线；</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`runs/*.log`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 为真实运行留存，</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`run.log`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 为 case0 + 命令门演示的真实运行。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 11. 文件导览</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 文件                             | 职责                                                     |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| -------------------------------- | -------------------------------------------------------- |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`main/zc_priv.h`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                 | 线格式/采样器/汇点/客户端 共享声明                       |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`main/zc_common.c`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">               | 收帧引擎、raw 客户端基座、tcpip 桥、Fletcher32           |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`main/zc_casea.c`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> ~ </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`zc_casee.c`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> | 五案例各自实现（头部注释即设计说明）                     |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`main/main.c`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                    | 骨架 bring-up、案例调度、case0 目录与命令门              |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`tools/run_qemu.sh`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">              | QEMU runner（去 efuse 行，hostfwd 8330，精确 kill 注记） |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`tools/run_all.sh`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">               | 全案例构建+运行+校验归档（可分段传参）                   |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`tools/reflector.py`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">             | 可选宿主反射器（8331 回显，配合 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`ZC_HOST_REFLECTOR=y`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">）  |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`runs/case{0..5}.log`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">            | 六次真实运行归档                                         |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`runs/case0-door.log`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">            | case0 命令门入向演示归档                                 |</span></span>
+<span class="line"></span></code></pre>

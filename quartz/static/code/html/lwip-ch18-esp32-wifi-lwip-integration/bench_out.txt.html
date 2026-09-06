@@ -1,0 +1,23 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span>########## PHASE 1: BASELINE ##########</span></span>
+<span class="line"><span>03:35:58.833193595</span></span>
+<span class="line"><span>== RTT suite ==</span></span>
+<span class="line"><span>samples_total=300 completed=300 stalled_failed=0</span></span>
+<span class="line"><span>rtt_p50=0.46ms rtt_p90=0.64ms rtt_p95=0.73ms rtt_p99=1.17ms rtt_max=9.87ms rtt_mean=0.51ms</span></span>
+<span class="line"><span>03:35:59.011088314</span></span>
+<span class="line"><span>== BULK suite ==</span></span>
+<span class="line"><span>upload_target=4194304 sent=4194304 verified_echo=4194304 elapsed=8.91s goodput_verified=3.77Mbit/s partial=False</span></span>
+<span class="line"><span>03:36:07.940634727</span></span>
+<span class="line"><span>########## SWITCH: install lossy linkoutput ##########</span></span>
+<span class="line"><span>ctl b'CTL:LOSSY_ON' -> b'OK\n'</span></span>
+<span class="line"><span>########## PHASE 2: LOSSY 10%% TX FRAME DROP ##########</span></span>
+<span class="line"><span>03:36:08.974357650</span></span>
+<span class="line"><span>== RTT suite ==</span></span>
+<span class="line"><span>samples_total=300 completed=300 stalled_failed=0</span></span>
+<span class="line"><span>rtt_p50=0.55ms rtt_p90=1487.41ms rtt_p95=1497.85ms rtt_p99=4488.12ms rtt_max=10491.88ms rtt_mean=234.99ms</span></span>
+<span class="line"><span>03:37:19.507422120</span></span>
+<span class="line"><span>== BULK suite ==</span></span>
+<span class="line"><span>upload_target=4194304 sent=131072 verified_echo=128192 elapsed=33.48s goodput_verified=0.03Mbit/s partial=True</span></span>
+<span class="line"><span>03:37:53.012895586</span></span>
+<span class="line"><span>########## UNWRAP + guest counters ##########</span></span>
+<span class="line"><span>ctl b'CTL:LOSSY_OFF' -> b'OK\n'</span></span>
+<span class="line"><span></span></span></code></pre>

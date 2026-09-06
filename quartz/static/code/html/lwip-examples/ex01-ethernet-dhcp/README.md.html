@@ -1,0 +1,150 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold"># ex01 ethernet-dhcp —— 以太网起播基线</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`practice/lwip-examples`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 套件的第 1 课，也是最薄的一课：把 QEMU 的 openeth 虚拟网卡带到 DHCP 拿到 IP，</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**全程事件可见**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（START / CONNECTED / GOT_IP 各阶段带时间戳）、</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**机器可读标记齐全**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`$$$ EXREADY`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 一行即可让验收脚本断言成功）。无业务连接、无 hostfwd 端口、不需要任何主机端工具——复制改名就是你的下一个项目的起点。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 目的</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">1.</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 走通 ESP-IDF v6 标准以太网 bring-up 序列：</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`esp_netif_init()`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> → 事件循环 → </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`esp_netif_new(ESP_NETIF_DEFAULT_ETH)`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> → openeth MAC + generic PHY → 驱动安装 → 注册事件 → glue 挂接 → </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`esp_eth_start()`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> → 等 DHCP；</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">2.</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 观察三个关键事件的完整时序与间隔：驱动 START、PHY 自协商完成（CONNECTED）、DHCP 租约到手（GOT_IP）；</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">3.</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 演示如何周期采样 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`lwip_stats.link`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 计数增量（读取经 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`tcpip_callback()`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 投递到 tcpip_thread 执行，示范跨线程观察的正确姿势）。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 网络拓扑</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">     Linux host                                   ESP32 guest (QEMU)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> ┌────────────────────────┐                  ┌──────────────────────────────┐</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> │ qemu-system-xtensa     │   SLIRP 用户态   │ open_eth MAC 52:54:00:12:34:56│</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> │  -M esp32              │◄────────────────►│ esp_eth + esp_netif          │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> │  -nic user,model=open_eth                 │ lwIP 2.2.0-dev (IDF v6.0.2)  │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> │  内置 DHCP/DNS 代理    │                  │ app: 事件打印 + 统计观测      │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> └────────────────────────┘                  └──────────────────────────────┘</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">        10.0.2.2 = 网关；DHCP 下发：</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">        guest 得 10.0.2.15/24，DNS = 10.0.2.3（注意不是网关）</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">端口登记：本示例</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**不占用任何端口**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（SPEC §4 中 ex01 行：「无需联网服务端口」），QEMU 命令不带 hostfwd。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 构建与运行</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">环境：ESP-IDF v6.0.2（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`~/esp/esp-idf`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">），QEMU 用 Espressif fork </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`esp_develop_9.2.2_20250817`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">。从仓库根目录出发：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```bash</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">cd practice/lwip-examples/ex01-ethernet-dhcp</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">. ~/esp/esp-idf/export.sh</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">idf.py set-target esp32                     # 仅首次需要</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">idf.py build</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"># 生成 QEMU 镜像（monitor 因无 TTY 报错属预期，镜像已生成）</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">idf.py qemu monitor &#x3C; /dev/null || true</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">ls build/qemu_flash.bin build/qemu_efuse.bin    # 必须两者都存在</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"># 单命令运行：串口输出实时回显并落盘 run.log（默认超时 45s）</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">tools/run_qemu.sh 45</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">不想用脚本的话，手工等价命令如下（核心特征：</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**不带 efuse </span><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">`-global`</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> 行**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">，理由见「已知边界」）：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```bash</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">QEMU_BIN=~/.espressif/tools/qemu-xtensa/esp_develop_9.2.2_20250817/qemu/bin/qemu-system-xtensa</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">timeout 45 $QEMU_BIN -M esp32 -m 4M \</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  -drive file=build/qemu_flash.bin,if=mtd,format=raw \</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  -drive file=build/qemu_efuse.bin,if=none,format=raw,id=efuse \</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  -global driver=timer.esp32.timg,property=wdt_disable,value=true \</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  -nic user,model=open_eth \</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  -nographic -no-reboot 2>&#x26;1 | tee run.log</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">结束方式：固件打完 30s 统计窗后进入空转保活（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`while(1) vTaskDelay`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">），由外部 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`timeout`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 发 SIGTERM 截停——日志末尾出现 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`terminating on signal 15 from pid ... (timeout)`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 即为正常收场；脚本包装后退出码恒为 0。应用层若在 DHCP 阶段失败会打印 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`$$$ EXFAIL reason=dhcp_timeout`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 后主动返回。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">一键核对（CI 化验证只需这一条 grep）：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```bash</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">grep -E 'EX01-FACT|ETH_EVENT (START|CONNECTED)|GOT_IP|\$\$\$ EXREADY|\$\$\$ EXDONE' run.log</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 真实输出摘录</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">以下逐行来自本目录入库的 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`run.log`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（真实运行，未做任何编辑；标注了行号便于对照）：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">run.log:56-69</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">I (1568) main_task: Calling app_main()</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">I (1568) ex01: == ex01 ethernet-dhcp: openeth bring-up baseline ==</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">I (1568) ex01: EX01-FACT build="Aug 27 2026 12:43:16" lwip_stats=1</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">...</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">I (1588) esp_eth.netif.netif_glue: ethernet attached to netif</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">I (1688) ex01: [t=163 ms] ETH_EVENT START</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">I (1688) ex01: waiting for DHCP lease ...</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">I (1688) ex01: [t=167 ms] ETH_EVENT CONNECTED (link up)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">I (2698) ex01: [t=1173 ms] IP_EVENT GOT_IP: ip 10.0.2.15 nm 255.255.255.0 gw 10.0.2.2</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">I (2698) ex01: $$$ EXREADY ip=10.0.2.15 nm=255.255.255.0 gw=10.0.2.2 dns=10.0.2.3 mac=52:54:00:12:34:56 t_ms=1173</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">时间轴解读：驱动启动（163ms）到链路 up 只隔 </span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**4ms**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（虚拟 PHY 自协商瞬间完成），DHCP 全程约 </span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**1s**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">。DNS 10.0.2.3 由 SLIRP 通过 DHCP option 下发，不是网关地址。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">拿到 IP 后是 30 秒统计窗（每 5s 一个采样点）：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">run.log:70-77</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">I (7698) ex01: EX01-ST tick=1/6 up_s=6 ip=10.0.2.15 rx=2(+1) tx=2(+1) drop=+0 err=+0</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">I (12698) ex01: EX01-ST tick=2/6 up_s=11 ip=10.0.2.15 rx=3(+1) tx=3(+1) drop=+0 err=+0</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">I (17698) ex01: EX01-ST tick=3/6 up_s=16 ip=10.0.2.15 rx=3(+0) tx=3(+0) drop=+0 err=+0</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">I (22698) ex01: EX01-ST tick=4/6 up_s=21 ip=10.0.2.15 rx=3(+0) tx=3(+0) drop=+0 err=+0</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">I (27698) ex01: EX01-ST tick=5/6 up_s=26 ip=10.0.2.15 rx=3(+0) tx=3(+0) drop=+0 err=+0</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">I (32698) ex01: EX01-ST tick=6/6 up_s=31 ip=10.0.2.15 rx=3(+0) tx=3(+0) drop=+0 err=+0</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">I (32698) ex01: $$$ EXDONE stats_window_ms=30000 t_ms=31173</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">qemu-system-xtensa: terminating on signal 15 from pid 3811474 (timeout)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">快照起点在 GOT_IP 之后，所以 DHCP 协商的十来个帧不在绝对值里；tick1/tick2 各有一对零星收发（IP 就位初期协议栈免费 ARP 类控制帧的尾巴），之后链路完全静默，增量为 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`+0`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 属正常观测——本示例刻意不造流量，这是"空载基线"。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 机器可读标记一览</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 标记                          | 含义                                           |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| ----------------------------- | ---------------------------------------------- |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`EX01-FACT build="..."`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">       | 固件编译指纹，用于核对 QEMU 加载的不是旧镜像   |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`$$$ EXREADY ip=... t_ms=`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    | 起播成功门信号：含 ip/nm/gw/dns/MAC 与到达时刻 |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`$$$ EXFAIL reason=...`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">       | 失败门信号（当前仅 dhcp_timeout 一种）         |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`EX01-ST tick=n/N ...`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">        | 周期统计行：链路收发计数绝对值与（+增量）      |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`$$$ EXDONE stats_window_ms=`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> | 统计窗收口                                     |</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 如何读 EX01-ST 的数字</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">依赖 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`sdkconfig.defaults`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 里的 </span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**</span><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">`CONFIG_LWIP_STATS=y`</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（它同时使能 LINK_STATS）；删掉该开关重建后仍可运行，但统计段恒为零。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> `rx`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> / </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`tx`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：链路层累计收/发包数，括号内为距上次采样的增量。统计读取经 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`tcpip_callback()`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 在 tcpip_thread 内完成拷贝，避免裸读共享结构的竞态示范缺位。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> `drop`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：链路层丢弃（openeth RX 描述符环满时的第一受害者，洪峰实验会看到这里爬升）。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> `err`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：三个协议栈侧错误之和（校验和错 + 长度错 + 内存不足）的增量聚合。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 已知边界与排障</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">以下均为本机实测特性，</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**不要把它们当故障**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">1.</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **MAC filter ioctl 错误 ×3 是预期噪音**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">。启动阶段固定刷出：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   ```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   E (1688) esp_eth: esp_eth_ioctl(533): add mac address to filter not supported</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   E (1688) esp_eth.netif.netif_glue: eth_set_mac_filter(56): failed to add mac filter</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   E (1688) esp_netif_lwip: Failed to add multicast filter for IPv4</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   ```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   这是 openeth 的已知白名单噪音（CONVENTIONS Batch 1 / C-05），不影响收发。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">2.</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **虚拟网卡 MAC 固定**</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> `52:54:00:12:34:56`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">，不是随机分配。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">3.</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **SLIRP 地址面**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：guest 恒得 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`10.0.2.15/24`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">，网关/DHCP 服务器 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`10.0.2.2`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">，DNS </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`10.0.2.3`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">4.</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **efuse </span><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">`-global`</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> 行陷阱**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：若给 QEMU 命令手工加回 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`-global driver=nvram.esp32.efuse,...`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 一行，在本机偶发导致 openeth NIC 未创建，固件将在 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`esp_eth_mac_new_openeth()`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 里崩溃复位。套件所有 runner 已统一去掉该行；遇到 NIC 未创建先查这里。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">5.</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **主机→guest 无路可达**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：本示例 guest 上没有任何监听服务；即便有，SLIRP 下主机访问 guest 只有 hostfwd 一条路，且宿主 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`ping 10.0.2.15`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 恒不通（SLIRP 不支持主机→guest 方向 ICMP）。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">6.</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **改过 </span><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">`sdkconfig.defaults`</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> 必须删除生成的 </span><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">`sdkconfig`</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> 再重新构建**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">，否则配置不生效（曾踩坑项）。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">7.</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **亚毫秒/毫秒级时间戳**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">不得基于 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`sys_now()`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（10ms tick 网格），本示例统一走 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`esp_timer_get_time()`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 文件结构</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 文件                  | 作用                                                                      |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| --------------------- | ------------------------------------------------------------------------- |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`main/main.c`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">         | bring-up 序列 + 事件打印 + READY 门信号 + 统计采样循环（全部逻辑）        |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`main/CMakeLists.txt`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> | main 组件声明：</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`PRIV_REQUIRES esp_eth esp_netif esp_event lwip esp_timer`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`CMakeLists.txt`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">      | root 构建骨架（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`MINIMAL_BUILD ON`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> trim 形态）                             |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`sdkconfig.defaults`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  | 最小集：</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`CONFIG_ETH_USE_OPENETH=y`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> + 观测叠加 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`CONFIG_LWIP_STATS=y`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">       |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`tools/run_qemu.sh`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   | 标准 QEMU 启动器（timeout + tee run.log，无 efuse 行、无 hostfwd）        |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`run.log`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">             | 真实运行留存（本文摘录的出处）                                            |</span></span>
+<span class="line"></span></code></pre>

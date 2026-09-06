@@ -1,0 +1,209 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold"># ex02 tcp-echo-server —— TCP 服务端模板</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">lwIP 示例套件 ex02：socket 单任务 accept 循环模型的 TCP echo 服务端。</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">它是"复制改名即可开新服务端项目"的干净基线：openeth bring-up → DHCP → listen :8210 →</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">串行 accept → 对每条连接 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`recv`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 后原样回写 → close → 下一条。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">三条从《lwIP 深度解析》实验沉淀的硬教训已固化进代码结构与注释（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`main/main.c`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 文件头）：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 教训                                                                           | 出处          | 本模板的落法                                                 |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| ------------------------------------------------------------------------------ | ------------- | ------------------------------------------------------------ |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 协议栈上下文不能被应用等待拖住（busy-wait 曾把第二连接吞吐打到 0.06 Mbit）     | ch15 livelock | 数据面循环只做"阻塞 recv → 立即回写"，统计打印走独立低频任务 |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 单任务串行 accept 必须先 recv 后回写、及时 close                               | ch23 结论 a   | per-connection 数据驱动推进，FIN/RST 分支立即退出并 close    |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| listen backlog 必须显式设足，否则 SYN 被静默吞掉（客户端五发空转后 errno=113） | ch23 结论 b   | </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`listen(fd, 8)`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 显式 backlog，注释写明依据与上限关系         |</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 网络拓扑</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">宿主机 (Fedora)                          QEMU guest (esp32)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">┌─────────────────────┐                 ┌──────────────────────────┐</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">│ nc / bench.py       │  tcp:8210       │ SLIRP user-net 10.0.2.2  │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">│ localhost:8210 ─────┼──────────────►  │   │ hostfwd tcp::8210    │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">│                     │                 │   ▼                      │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">│ tools/bench.py      │                 │ openeth MAC              │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">│  (N 连接压测)        │                 │ 52:54:00:12:34:56        │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">└─────────────────────┘                 │   │ DHCP                 │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                                        │   ▼                      │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                                        │ lwIP socket echo server  │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                                        │ 10.0.2.15:8210 backlog=8 │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                                        └──────────────────────────┘</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> guest IP 由 SLIRP DHCP 固定分配 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`10.0.2.15/24`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">，网关/DNS </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`10.0.2.x`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">；</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 宿主机只能经 </span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**hostfwd**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 一条路访问 guest（ICMP 入向不通）；</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 端口约定见套件 SPEC §4：ex02 号段 8210/8211，本例只用 8210。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 构建命令</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```bash</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">cd</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> practice/lwip-examples/ex02-tcp-echo-server</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">.</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> ~/esp/esp-idf/export.sh</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">idf.py</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> set-target</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> esp32</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">        # 仅首次</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">idf.py</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> build</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">                   # MINIMAL_BUILD ON，只编最小组件集</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 运行命令</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```bash</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 生成 QEMU 镜像（monitor 因无 TTY 失败属预期，镜像已生成）：</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">idf.py</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> qemu</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> monitor</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> &#x3C;</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> /dev/null</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> ||</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> true</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">ls</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> build/qemu_flash.bin</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> build/qemu_efuse.bin</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">   # 必须存在</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 启动（tools/run_qemu.sh 内核 = 去 efuse -global 行的标准形态，</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 输出 tee 到 run.log；timeout 到点退出码 124 属正常截停）：</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">tools/run_qemu.sh</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> [秒数]       </span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 默认 600s</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">等日志出现机器可读 READY 行即可开始连接：</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`$$$ EX02ECHOREADY port=8210 backlog=8`</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 真实输出摘录</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">以下全部摘自本工程入库的 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`run.log`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（同一次真实运行）。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">### 启动 bring-up 与 READY</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">I (1595) ex02: == ex02 tcp-echo-server build@Aug 27 2026 12:42:58 ==</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">I (1715) ex02: ETH_EVENT: START</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">E (1715) esp_eth: esp_eth_ioctl(533): add mac address to filter not supported</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">I (1715) ex02: ETH_EVENT: CONNECTED (link up)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">I (2715) ex02: GOT_IP: 10.0.2.15/255.255.255.0 gw 10.0.2.2</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">I (2715) ex02: net ready: 10.0.2.15/24 gw 10.0.2.2, starting echo server on :8210</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">$$$ EX02NETUP ip=10.0.2.15 gw=10.0.2.2</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">I (2715) ex02: echo server listening on 0.0.0.0:8210 backlog=8</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">$$$ EX02ECHOREADY port=8210 backlog=8</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">> 开头 3 条 MAC filter ioctl 错误是 openeth 的固定预期噪音（CONVENTIONS C-05 白名单），不是故障。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">### 单连接往返（宿主机 </span><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">`printf ... | nc localhost 8210`</span><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">I (23425) ex02: conn #1 ACCEPT from 10.0.2.2:59226 (active=1)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">I (23435) ex02: conn #1 msg 1: echo 37 bytes "hello-ex02-first-line</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">ping-from-host</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">"</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">I (23435) ex02: conn #1 peer closed (FIN) after 1 msgs, 37 bytes</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">I (23435) ex02: conn #1 10.0.2.2:59226 CLOSED srv=6ms (37 bytes echoed)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">$$$ EX02CLOSE conn=1 bytes=37</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">两行文本被 TCP 合并成一次 recv 回来（面向字节流，不是消息边界服务——这正是模板要示范的语义）。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">### 断开的三种路径（同一 run.log 内均有实证）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">I (45675) ex02: conn #2 peer closed (FIN) after 1 msgs, 10 bytes</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">W (145995) ex02: conn #16 recv failed errno=104 after 1 msgs</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">I (206795) ex02: conn #17 peer closed (FIN) after 0 msgs, 0 bytes</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> conn #2：客户端正常 FIN（nc Ctrl-C）；</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> conn #16：客户端 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`SO_LINGER(0)+close`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 强发 RST → recv 返回 -1，errno=104（ECONNRESET）；</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> conn #17：connect 后立即 close 的空连接 → FIN 路径、0 字节优雅退出。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">### 周期统计行（独立观测任务每 10s 打印）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">$$$ EX02STATS active=0 total_accepted=29 bytes_echoed=449991 uptime_s=320</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 并发语义说明（第二连接排队行为的实测描述）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">单任务 accept 循环一次只能服务一条连接：第二条连接的握手会照常完成（挂在内核</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">backlog 里），但它的数据</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**不会**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">被处理，直到前一条被 close。用两条 nc 实测：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">宿主机侧时间线（A 先连、B 后连并立即发送）：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">12:44:05.338 A: connect+send 'AAA-first'      A 收到回显 b'AAA-first\n'</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">12:44:05.349 B: connect+send 'BBB-second'</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">12:44:08.351 B: 3s 无回显（在 backlog 中排队）</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">12:44:10.351 A: close</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">12:44:10.852 B: 收到回显 b'BBB-second\n'（A 关闭后 0.00s 内立即到达）</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">guest 侧对应日志——conn #3（即 B）的 ACCEPT 时间戳与 conn #2（即 A）的 CLOSED</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**在同一毫秒 tick**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（I(45675)）：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">I (40665) ex02: conn #2 ACCEPT from 10.0.2.2:33148 (active=1)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">I (40675) ex02: conn #2 msg 1: echo 10 bytes "AAA-first</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">I (45675) ex02: conn #2 peer closed (FIN) after 1 msgs, 10 bytes</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">I (45675) ex02: conn #2 10.0.2.2:33148 CLOSED srv=5010ms (10 bytes echoed)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">I (45675) ex02: conn #3 ACCEPT from 10.0.2.2:33158 (active=1)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">I (45675) ex02: conn #3 msg 1: echo 11 bytes "BBB-second</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">结论：B 从宿主机视角早在 A 存活期间就已 connect 成功（hostfwd 下 SLIRP 代答了</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">三次握手），它的等待发生在 lwIP 的 listen backlog 里，应用层完全不可见</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`active`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 计数只有被 accept 之后才 +1）。这是</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**排队不拒绝**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">的串行模型：队列容量由</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">显式 backlog（本例 8）保证；吃满则新 SYN 被 lwIP 静默丢弃（ch23 的 errno=113 病灶）。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">### 压测数字（tools/bench.py，digest 校验逐字节比对）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">$ python3 tools/bench.py --conns 4 --msgs 20 --size 512</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">conn   0: PASS connect=0.0s rtt_avg=1ms rtt_max=14ms</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">conn   1: PASS connect=0.0s rtt_avg=11ms rtt_max=212ms</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">conn   2: PASS connect=0.0s rtt_avg=1ms rtt_max=3ms</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">conn   3: PASS connect=0.0s rtt_avg=2ms rtt_max=24ms</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">BENCH RESULT PASS conns=4 msgs_per_conn=20 total_wire_bytes=81920 wall=0.2s agg=2.88Mbit/s</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">$ python3 tools/bench.py --conns 8 --msgs 30 --size 1024</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">conn   0: PASS connect=0.0s rtt_avg=47ms rtt_max=1408ms</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">...</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">conn   4: PASS connect=0.0s rtt_avg=194ms rtt_max=5800ms</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">BENCH RESULT PASS conns=8 msgs_per_conn=30 total_wire_bytes=491520 wall=5.8s agg=0.68Mbit/s</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 两轮共 16 条并发连接全部 digest PASS（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`sha256(发出字节流)==sha256(收到字节流)`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 且逐条消息相等）；</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> guest 日志里各连接 ACCEPT/CLOSED 严格交替、无一交叠，单条已排队连接被服务时</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  全部 ~30 条消息在 13~41ms 内回显完毕；</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> wall 时间远大于服务耗时之和的部分来自</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**排队的尾延迟**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：8 流同刻灌入时有一条流出现</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  ~5.8s 尾部等待（重传退避型阶梯）。呼应 ch24 发现——SLIRP/openeth 的默认 RX 环深</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  （4）是多流洪峰的第一瓶颈。聚合吞吐数字不代表协议栈能力天花板（对比 ex11 基准）。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 已知边界 / 排障</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **WiFi 不可仿真**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：本环境 QEMU 无 esp-wifi-mac，openeth 以太网路径为唯一联网路径。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **并行实验端口冲突**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：启动失败先看是否 8210 被别的 QEMU 占了。按 hostfwd 特征精确</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  kill（禁止 pkill，有并行作者实例在跑）：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  ```bash</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">  for</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> p </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">in</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> $(</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">pgrep</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -f</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> '^/home/huanglin/.espressif/tools/qemu-xtensa'</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">); </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">do</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    tr </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">'\0'</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> ' '</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> &#x3C;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> /proc/$p/cmdline </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">|</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> grep</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -q</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> 'tcp::8210'</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> &#x26;&#x26; </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">kill</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> $p </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">||</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> true</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">  done</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  ```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **镜像陈旧**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：重复构建后 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`idf.py qemu monitor`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 可能静默不更新镜像（Batch 6 教训），</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  核对启动日志里的 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`build@__DATE__ __TIME__`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 指纹；必要时手动合并：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  ```bash</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  cd build &#x26;&#x26; </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">python</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -m</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> esptool</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> --chip</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> esp32</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> merge-bin</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> \</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">    -o</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> qemu_flash.bin</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> --pad-to-size</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> 4MB</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> @flash_args</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  ```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **性能天花板**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：SLIRP 用户态转发约 ~120 Mbit 封顶，且受宿主机负载影响可达 ±50%；</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  本示例定位是"正确性模板"，吞吐基准见 ex11。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **想做超时版 accept**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：给 accepted socket 加 SO_RCVTIMEO 即可让慢客户端到期放行</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  （参考 ex03 的超时分支写法）；本模板刻意保持无超时的最简形态。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 目录结构</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">ex02-tcp-echo-server/</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">├── CMakeLists.txt          # root：MINIMAL_BUILD ON</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">├── main/</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">│   ├── CMakeLists.txt      # PRIV_REQUIRES esp_eth esp_netif esp_event lwip esp_timer</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">│   └── main.c              # 全部业务：bring-up + echo 数据面 + 观测面</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">├── sdkconfig.defaults      # 仅 CONFIG_ETH_USE_OPENETH=y</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">├── tools/</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">│   ├── run_qemu.sh         # 标准 QEMU 启动器（去 efuse 形态，tee run.log）</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">│   ├── verify.md           # nc 极简验证步骤（含第二连接排队演示）</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">│   └── bench.py            # N 连接 × M 消息 sha256 digest 校验压测</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">├── README.md               # 本文</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">└── run.log                 # 真实运行留存（128KB 未截断）</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span></code></pre>

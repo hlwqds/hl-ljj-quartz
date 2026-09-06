@@ -60,7 +60,6 @@ export const defaultContentPageLayout: PageLayout = {
       ],
     }),
     Component.NavLinks(),
-    Component.Explorer(),
   ],
   right: [
     Component.Graph(),
@@ -83,9 +82,10 @@ export const defaultListPageLayout: PageLayout = {
           grow: true,
         },
         { Component: Component.Darkmode() },
+        { Component: Component.ReaderMode() },
       ],
     }),
-    Component.Explorer(),
+    Component.NavLinks(),
   ],
   right: [Component.Graph(), Component.TagCloud()],
 }

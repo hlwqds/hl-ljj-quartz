@@ -6,13 +6,13 @@ description: "从 5 类典型 DPDK bug 出发, 完整演示编译、运行、cra
 ---
 
 > [!info] 实战配套文档
-> 本篇是 [[2026-04-09-dpdk-deep-dive-ch33-debug-techniques|第三十三章: 调试技术]] 的实战版.
+> 本篇是 [[ch33-debug-techniques|第三十三章: 调试技术]] 的实战版.
 > 原理和工具讲解见那一篇, 这里聚焦**手把手复现 + 诊断 + 修复**.
 >
 > 相关:
 >
-> - [[2026-04-09-dpdk-deep-dive-ch30-performance-tuning|第三十章: 性能调优]]
-> - [[2026-04-09-dpdk-deep-dive-ch31-debugging-tools|第三十一章: 调试工具]]
+> - [[ch30-performance-tuning|第三十章: 性能调优]]
+> - [[ch31-debugging-tools|第三十一章: 调试工具]]
 
 ---
 
@@ -714,6 +714,6 @@ DPDK 调试的实战要点:
 
 > 相关阅读:
 >
-> - [[2026-04-09-dpdk-deep-dive-ch33-debug-techniques|DPDK 调试技术详解]]
-> - [[2026-04-09-dpdk-deep-dive-ch30-performance-tuning|性能调优]]
-> - [[2026-04-09-dpdk-deep-dive-ch31-debugging-tools|DPDK 调试工具]]
+> - [[ch33-debug-techniques|DPDK 调试技术详解]]
+> - [[ch30-performance-tuning|性能调优]]
+> - [[ch31-debugging-tools|DPDK 调试工具]]

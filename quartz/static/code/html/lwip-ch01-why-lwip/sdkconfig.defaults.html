@@ -1,0 +1,27 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># lwIP 深度解析（一）实验：最小化 lwIP 配置</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 生效方式：删除 sdkconfig 后重新 idf.py build（或 idf.py fullclean）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># ---- 连接数上限：全部压到 1 ----</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_LWIP_MAX_SOCKETS</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=1</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_LWIP_MAX_ACTIVE_TCP</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=1</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_LWIP_MAX_LISTENING_TCP</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=1</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_LWIP_MAX_UDP_PCBS</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=1</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_LWIP_MAX_RAW_PCBS</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=1</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># ---- TCP 尺寸参数：压到 Kconfig 允许的最小值 ----</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_LWIP_TCP_MSS</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=536</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_LWIP_TCP_WND_DEFAULT</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=2440</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_LWIP_TCP_SND_BUF_DEFAULT</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=2440</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># ---- 邮箱与任务：tcpip 收件箱降到下限 6，栈降到下限 2048 ----</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_LWIP_TCPIP_RECVMBOX_SIZE</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=6</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_LWIP_TCPIP_TASK_STACK_SIZE</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=2048</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># ---- 关闭用不到的协议族与校验 ----</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># CONFIG_LWIP_IPV6 is not set</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># CONFIG_LWIP_CHECKSUM_CHECK_ICMP is not set</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># ---- 第三组配置追加：观察统计账本与任务清单 ----</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_LWIP_STATS</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=y</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_FREERTOS_USE_TRACE_FACILITY</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=y</span></span>
+<span class="line"></span></code></pre>

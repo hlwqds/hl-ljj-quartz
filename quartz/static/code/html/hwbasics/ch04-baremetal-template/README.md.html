@@ -1,0 +1,93 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold"># ch04-baremetal-template — Cortex-M3 裸机最小模板</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">《嵌入式硬件基础》系列（ch04）的技术底座工程：一个</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**零依赖**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">的 QEMU 裸机模板，</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">含自写启动文件、链接脚本与构建系统。后续章节（ch05 GPIO、ch07 中断、ch08 定时器）</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">都在本模板上叠加外设代码，不再重写启动链。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">对应文章：</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`content/2026-08-30-embedded-basics-ch04-baremetal-boot.md`</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 文件清单</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 文件             | 职责                                                             |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| ---------------- | ---------------------------------------------------------------- |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`startup.S`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">      | 启动文件：向量表（.isr_vector）+ Reset_Handler + Default_Handler |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`mps2_an385.ld`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  | 链接脚本：MEMORY（FLASH/RAM）+ SECTIONS + </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`_sidata`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 等布局符号   |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`main.c`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">         | 裸机 main：直写 CMSDK APB UART0 寄存器打印                       |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`Makefile`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">       | 一条 make 完成编译链接（产物在 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`build/`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">）                        |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`CMakeLists.txt`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> | CMake 等价构建（与 Makefile 二选一）                             |</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 环境</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> `arm-none-eabi-gcc`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（测试版本 15.2.0）</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> `qemu-system-arm`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（测试版本 10.1.5）</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 机型 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`-M mps2-an385`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（Cortex-M3，AN385 FPGA image）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 用法</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```bash</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 方式一：Makefile</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">make</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">            # 编译 + 链接 + arm-none-eabi-size</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">make</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> run</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">        # QEMU 运行，串口接终端（退出：Ctrl-A 然后 X）</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">make</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> disasm</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">     # 反汇编摘录</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">make</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> gdb</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">        # QEMU 起 gdbserver（-S -s），另开终端 arm gdb 连 :1234</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">make</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> clean</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 方式二：CMake</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">cmake</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -B</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> build</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -DCMAKE_SYSTEM_NAME=Generic</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -DCMAKE_SYSTEM_PROCESSOR=arm</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> \</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">      -DCMAKE_C_COMPILER=arm-none-eabi-gcc \</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">      -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">cmake</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> --build</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> build</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">qemu-system-arm</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -M</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> mps2-an385</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -kernel</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> build/ch04-baremetal.elf</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -nographic</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">无需交互的批量运行（CI/记录输出）：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```bash</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">timeout</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 3</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> qemu-system-arm</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -M</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> mps2-an385</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -kernel</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> build/ch04-baremetal.elf</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> \</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  -display none -serial stdio</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 预期输出（真实运行结果）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">hello baremetal</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">text  : FLASH 0x00000000 .. _etext 0x00000368</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">.data : copy 0x00000368 (LMA in FLASH) -> 0x20000000 (VMA in RAM)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">.bss  : zero 0x20000004 .. 0x20000008</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">data_var @ 0x20000000 = 0x20260830 (reset copy OK)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">bss_var  @ 0x20000004 = 0x00000000 (zero OK)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">stack  : MSP top 0x20020000</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">程序打印完进入 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`wfi`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 死循环，</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`timeout`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 到期杀掉 QEMU 属预期行为。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## mps2-an385 关键地址（依据 QEMU v10.1 源码）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 资源                             | 地址                                        | 出处                            |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| -------------------------------- | ------------------------------------------- | ------------------------------- |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 代码区（ZBT SSRAM1，角色=FLASH） | 0x00000000，4MB                             | </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`hw/arm/mps2.c`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> FPGA_AN385 分支 |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 数据 RAM（ZBT SSRAM2&#x26;3）         | 0x20000000，4MB                             | 同上                            |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| UART0（CMSDK APB UART）          | 0x40004000                                  | </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`hw/arm/mps2.c`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> uartbase[]      |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| UART1/2/3/4                      | 0x40005000/0x40006000/0x40007000/0x40009000 | 同上                            |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| DualTimer / WDT / SCC            | 0x40002000 / 0x40008000 / 0x4002f000        | 同上                            |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| SYSCLK / REFCLK                  | 25 MHz / 1 MHz                              | </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`hw/arm/mps2.c`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> SYSCLK_FRQ 等   |</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">UART 寄存器（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`hw/char/cmsdk-apb-uart.c`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">）：DATA +0x00 / STATE +0x04 /</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">CTRL +0x08 / INTSTATUS +0x0c / BAUDDIV +0x10；模型固定 8N1，</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`BAUDDIV = pclk / baud`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">，QEMU 要求 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`16 &#x3C;= BAUDDIV &#x3C;= pclk`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 作为模板复用</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 新增外设：在 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`main.c`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 加寄存器宏即可（本模板不引 CMSIS 头，保持 0 依赖）。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 启用中断：向量表已含 16 个系统异常槽 + 32 个 IRQ 槽，写一个同名强符号</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  （如 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`void SysTick_Handler(void)`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">）即可覆盖 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`Default_Handler`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 弱符号。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 换到真机 STM32F407：改 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`MEMORY`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 里的起址/长度（FLASH 0x08000000、</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  RAM 0x20000000），换启动文件中与板相关的外设初始化；启动链逻辑不变。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 注意（QEMU 边界）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> mps2-an385 的 0x0 区在硬件上是 ZBT SSRAM（可写 RAM），不是真 flash；</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  QEMU 的 ELF 加载器按 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`p_paddr`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（LMA）把 .data 初值放到 0x368，Reset_Handler</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  再拷贝到 RAM——与真机"flash 保存初值 + 启动代码搬运"行为一致。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 构建产物 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`build/`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 已被仓库 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`.gitignore`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`practice/*/build*/`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">）排除，勿提交。</span></span>
+<span class="line"></span></code></pre>
