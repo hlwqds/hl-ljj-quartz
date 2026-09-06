@@ -1,0 +1,43 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold"># rcc-uart-read —— RCC 三连读取器（固件版）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">把 [[</span><span style="--shiki-light:#032F62;--shiki-light-text-decoration:underline;--shiki-dark:#DBEDFF;--shiki-dark-text-decoration:underline">ch00e-clock-tree-and-systick-silicon|时钟树章</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">]] 的 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`mdw 0x40023800 3`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 验尸术写成</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">固件：</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**先读时钟树算出真实 PCLK2 → 按它配 USART1 波特率 → 逐位解码打印三寄存器**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">。</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">不改任何时钟配置，读到什么打什么——上电 HSI 默认态、clock_init 后的 180MHz 态都能</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">正确打印（波特率随树自适应，这正是"三连"精神的代码版）。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 结构</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> `startup.S`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 最小启动（向量表 + .data/.bss 初始化，无库依赖）</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> `stm32f429.ld`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 链接脚本（flash 2MB @0x08000000，SRAM 192KB @0x20000000）</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> `main.c`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 寄存器级全部逻辑：tree_probe / uart_init / 解码打印</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 构建（本机已验证）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```bash</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">.</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> ~/esp/esp-idf/export.sh</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> 2></span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">/dev/null</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">; </span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 无需，直接用 arm-none-eabi-gcc 15.x</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">cd</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> practice/f429-lab/rcc-uart-read</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> &#x26;&#x26; </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">make</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 真机（挑战者 F429-V2，DAP + openocd）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```bash</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">make</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> flash</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">   # cmsis-dap + stm32f4x.cfg</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">make</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> term</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    # /dev/ttyUSB0 @115200（USART1 PA9/PA10 -> CH340）</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 预期输出（clock_init 后的典型态；上电默认 HSI 态则为 16MHz 系列数字）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=== RCC 三连 @ 0x40023800 ===</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">RCC_CR     = 0x03035883  HSI:RDY  HSE:RDY  PLL:LOCKED</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">RCC_PLLCFGR= 0x07405a19  M=25 N=360 P=/2 Q=/7 SRC=HSE</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">RCC_CFGR   = 0x0000940a  SWS=PLL HPRE=/1 PPRE1=/4 PPRE2=/2</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=> SYSCLK=180MHz HCLK=180MHz PCLK1=45MHz PCLK2=90MHz</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">SysTick: CTRL=0x00000?05 LOAD=0x0002bf1f => tick=1000Hz</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">> [</span><span style="--shiki-light:#032F62;--shiki-light-text-decoration:underline;--shiki-dark:#DBEDFF;--shiki-dark-text-decoration:underline">!WARNING</span><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">]</span></span>
+<span class="line"><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">> 输出块为按 RM0090 位段推演的预期形态，</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**真机数值待上板核对**</span><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">（对照章内实测</span></span>
+<span class="line"><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">> </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`03035883/07405a19/0000940a`</span><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">、tick 1000.5Hz）。QEMU 无 F429 机型（netduinoplus2</span></span>
+<span class="line"><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">> 的 RCC/USART1 模型残缺），本工程以编译验证为准。</span></span>
+<span class="line"></span></code></pre>

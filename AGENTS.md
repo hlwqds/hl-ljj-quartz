@@ -55,6 +55,11 @@
    出处工程与文件（`> 源自 practice/.../main.c`）。**禁止**把大段实现复制进文章：
    与工程源码形成双份漂移，改一处忘另一处。实验输出摘录（run.log 片段）不受此限。
 
+**章节 ↔ 实验互链（强制）**：系列章节配有 practice 工程时，**必须**在实验相关小节给
+出该工程的站内深链（推荐 tip callout 形式，含 main.c 直达 + 完整工程两级链接，
+参考 `f429-lab/ch00e` 第 5 节的示范）；工程 README 必须反向 wikilink 回所属章节。
+新增实验后流程：`npm run code-site` 重生成 → 章节补深链 → 提交。
+
 ### 浏览页收录与更新义务
 
 - 浏览页由 `npm run code-site`（`scripts/gen-code-site.mjs`）生成到 `quartz/static/code/`，
