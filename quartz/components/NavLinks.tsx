@@ -24,7 +24,7 @@ const NavLinks: QuartzComponent = ({ displayClass, fileData }: QuartzComponentPr
           </a>
         </li>
         <li style={{ margin: "0.8rem 0" }}>
-          <a href={`${codePath}/`} className="nav-link-item">
+          <a href={codePath} className="nav-link-item">
             <span className="icon">💻</span>
             <span className="text">示例代码</span>
           </a>
