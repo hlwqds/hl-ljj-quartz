@@ -30,6 +30,14 @@ tags: [f429-lab, STM32, ClockTree, SysTick]
 | 触发器      | 存 1 比特的硬件原子，时钟沿更新               | 第 6 节 |
 | PPB         | CPU 核内私有外设总线——SysTick 的住址          | 第 7 节 |
 
+## 0. 一图看懂：时钟系统物理链（交互图）
+
+从石英振动到触发器闭锁的全链路——晶振只负责"准"，PLL 模拟环路造新频率，分频计数器抽稀节拍，时钟树电网配送，触发器在边沿瞬间闭锁。点击节点/连线可高亮追踪，右上角可切明暗主题。
+
+<iframe src="../static/clock-system/" style="width: 100%; height: 760px; border: 1px solid var(--lightgray); border-radius: 8px;" loading="lazy" title="时钟系统物理链交互图"></iframe>
+
+打不开或想单独研究：[全屏打开交互图 ↗](../static/clock-system/)
+
 ---
 
 ## 1. 名字破译：H 和 S 在说什么
@@ -121,6 +129,13 @@ HSE 25MHz(晶振) ──► PLL 倍频器：
 3. 串口乱码=树配错的烟雾报警（BRR 按错枝的 PCLK 必乱码）。
 
 ## 6. SysTick 硅片解剖：一段刻在硅里的硬件循环
+
+> [!tip] 🎬 交互动画：时钟如何驱动 CPU（五幕）
+> 压电起振 → 放大整形 → 时钟沿传播 → 栅极成桥 → 触发器闭锁——本文第 1~6 节的
+> 物理全链路动画演示，可暂停、可逐幕、可调倍速。
+> [全屏打开动画 ↗](../static/clock-animation/)
+
+<iframe src="../static/clock-animation/" style="width: 100%; height: 860px; border: 1px solid var(--lightgray); border-radius: 8px;" loading="lazy" title="时钟驱动 CPU 五幕动画"></iframe>
 
 ### 6.1 三个硬件积木（软件人的最小硬件课）
 

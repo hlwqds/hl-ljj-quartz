@@ -128,7 +128,7 @@ function expandTo(el){
       var want=raw;var hit=null;
       for(var i=0;i<FILES.length;i++){
         var fi=FILES[i];
-        if((fi.p+"/"+fi.f).replace(///g,"").replace(/./g,"")===want){hit=fi;break;}
+        if((fi.p+"/"+fi.f).split("/").join("").split(".").join("")===want){hit=fi;break;}
       }
       if(hit){qa=hit.p;qf=hit.f;}
     }

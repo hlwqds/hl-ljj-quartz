@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>🎬 时钟如何驱动 CPU：五幕动画</title>
+<style>
+:root{--bg:#ffffff;--fg:#1f2328;--muted:#656d76;--border:#d8dee4;--side:#f6f8fa;--accent:#0969da;}
+[data-theme="dark"]{--bg:#0d1117;--fg:#e6edf3;--muted:#8b949e;--border:#30363d;--side:#161b22;--accent:#4493f8;}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--fg)}
+header{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg);z-index:5}
+header h1{font-size:15px;margin:0;font-weight:600}
+header .sp{flex:1}
+button{background:var(--side);color:var(--fg);border:1px solid var(--border);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:13px}
+button:hover{border-color:var(--accent)}
+button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+a{color:var(--accent);text-decoration:none}
+#bar{display:flex;gap:6px;padding:10px 16px;flex-wrap:wrap}
+#cvbox{display:flex;justify-content:center;padding:0 12px}
+canvas{width:100%;max-width:1080px;border:1px solid var(--border);border-radius:8px;background:var(--side)}
+#narr{max-width:1080px;margin:12px auto;padding:12px 16px;border-left:3px solid var(--accent);background:var(--side);border-radius:0 8px 8px 0;font-size:14.5px;line-height:1.7}
+#ctrl{display:flex;gap:10px;justify-content:center;align-items:center;padding:10px}
+#tl{max-width:1080px;margin:0 auto;height:6px;background:var(--border);border-radius:3px;cursor:pointer;position:relative}
+#tlfill{height:100%;background:var(--accent);border-radius:3px;width:0}
+</style>
+</head>
+<body>
+<header>
+  <h1>🎬 时钟如何驱动 CPU：从石英振动到触发器闭锁</h1><span class="sp"></span>
+  <button id="theme" onclick="toggleTheme()">🌓</button>
+  <a href="../../" id="home">← 返回</a>
+</header>
+<div id="bar"></div>
+<div id="cvbox"><canvas id="cv" width="1080" height="560"></canvas></div>
+<div id="narr"></div>
+<div id="ctrl">
+  <button onclick="jump(-1)">⏮ 上一幕</button>
+  <button id="pp" onclick="togglePP()">⏸ 暂停</button>
+  <button onclick="jump(1)">下一幕 ⏭</button>
+  <button id="sp" onclick="cycleSpeed()">1×</button>
+</div>
+<div id="tl"><div id="tlfill"></div></div>
+<script>
+"use strict";
+/* ---------- 主题 ---------- */
+function toggleTheme(){var d=document.documentElement.dataset.theme==="dark"?"light":"dark";document.documentElement.dataset.theme=d;localStorage.setItem("clk-anim-theme",d);refreshPalette();}
+document.documentElement.dataset.theme=localStorage.getItem("clk-anim-theme")||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");
+var C={};
+function refreshPalette(){
+  var cs=getComputedStyle(document.documentElement);
+  C={bg:cs.getPropertyValue("--side").trim()||"#f6f8fa",fg:cs.getPropertyValue("--fg").trim()||"#1f2328",
+     muted:cs.getPropertyValue("--muted").trim()||"#656d76",border:cs.getPropertyValue("--border").trim()||"#d8dee4",
+     accent:cs.getPropertyValue("--accent").trim()||"#0969da",
+     red:"#d73a49",green:"#1a7f37",purple:"#8250df",orange:"#e36209",yellow:"#ffd33d",blue:"#54aeff",gray:"#8b949e"};
+  if(document.documentElement.dataset.theme==="dark"){C.red="#f97583";C.green="#3fb950";C.purple="#b392f0";C.orange="#f0883e";C.yellow="#e3b341";C.blue="#79c0ff";C.gray="#6e7681";}
+}
+refreshPalette();
+
+/* ---------- 舞台定义 ---------- */
+var STAGES=[
+ {name:"① 压电起振",dur:7,text:"石英片加电压会形变、形变又产生电压——接进放大回路后，它就在自己的机械固有频率上振动（25MHz 的音叉）。振幅从热噪声开始指数式长大，这就是 HSERDY 位要等的「起振时间」。频率由晶片的几何尺寸决定——电学环境动不了它，所以准。"},
+ {name:"② 放大整形",dur:6,text:"放大器每个周期往回路补一点能量，把小正弦不断放大并削顶，输出 0↔3.3V 的干净方波。从此「时钟」变成一根电压方波线——注意：稳态下电压是等幅摆动，不是越来越大。"},
+ {name:"③ 时钟沿传播",dur:6,text:"时钟线是一根真实的铜线，物理连着全芯片几十亿个栅极。电压沿导线皮秒级传播，所有栅极几乎同时经历同一次爬升。「同步」不是协调出来的——是共用一根线。"},
+ {name:"④ 栅极成桥",dur:8,text:"栅压升高 → 电场穿透几纳米的绝缘层 → 硅体里的电子被吸到表面聚成「导电桥」（反型层），源漏间的开关闭合。没有人去「检测」阈值——电压越过它，桥就自动成形；就像水位漫过坝顶，不是被谁查出来的。"},
+ {name:"⑤ 触发器闭锁",dur:9,text:"时钟高电平：进数据的门开，代表 1bit 的电荷流入存储节点；时钟下降沿的瞬间：进门关、保持环通——电荷被物理关进两个反相器首尾相接的环里。这就是「存 1 bit」。CPU 的每一步，就是几十亿个这样的环同时换岗。"}
+];
+var cv=document.getElementById("cv"),ctx=cv.getContext("2d");
+var W=1080,H=560;
+var cur=0,t=0,playing=true,speed=1,last=0;
+var narr=document.getElementById("narr"),bar=document.getElementById("bar"),tlfill=document.getElementById("tlfill");
+STAGES.forEach(function(s,i){
+  var b=document.createElement("button");b.textContent=s.name;b.onclick=function(){cur=i;t=0;sync();};
+  b.id="sb"+i;bar.appendChild(b);
+});
+function sync(){
+  narr.textContent="【"+STAGES[cur].name+"】 "+STAGES[cur].text;
+  Array.prototype.forEach.call(bar.children,function(b,i){b.className=i===cur?"on":"";});
+}
+function togglePP(){playing=!playing;document.getElementById("pp").textContent=playing?"⏸ 暂停":"▶ 播放";}
+function jump(d){cur=(cur+d+STAGES.length)%STAGES.length;t=0;sync();}
+var speeds=[1,0.5,2],si=0;
+function cycleSpeed(){si=(si+1)%speeds.length;speed=speeds[si];document.getElementById("sp").textContent=speed+"×";}
+document.getElementById("tl").onclick=function(e){
+  var r=this.getBoundingClientRect(),f=(e.clientX-r.left)/r.width,total=0;
+  STAGES.forEach(function(s){total+=s.dur;});
+  var aim=f*total,acc=0;
+  for(var i=0;i<STAGES.length;i++){acc+=STAGES[i].dur;if(aim<=acc){cur=i;t=(aim-(acc-STAGES[i].dur))/STAGES[i].dur;break;}}
+  sync();
+};
+/* ---------- 绘制工具 ---------- */
+function txt(s,x,y,size,color,align,bold){ctx.fillStyle=color||C.fg;ctx.font=(bold?"600 ":"")+ (size||14)+"px 'Segoe UI','PingFang SC',sans-serif";ctx.textAlign=align||"left";ctx.fillText(s,x,y);}
+function line(x1,y1,x2,y2,c,w,dash){ctx.strokeStyle=c||C.fg;ctx.lineWidth=w||2;if(dash)ctx.setLineDash(dash);ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();ctx.setLineDash([]);}
+function rect(x,y,w,h,fill,stroke,lw){if(fill){ctx.fillStyle=fill;ctx.fillRect(x,y,w,h);}if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=lw||2;ctx.strokeRect(x,y,w,h);}}
+function circle(x,y,r,fill,stroke,lw){ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);if(fill){ctx.fillStyle=fill;ctx.fill();}if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=lw||2;ctx.stroke();}}
+function tri(x,y,w,h,dir,fill,stroke){ctx.beginPath();
+  if(dir==="r"){ctx.moveTo(x,y);ctx.lineTo(x+w,y+h/2);ctx.lineTo(x,y+h);}
+  else{ctx.moveTo(x+w,y);ctx.lineTo(x,y+h/2);ctx.lineTo(x+w,y+h);}
+  ctx.closePath();if(fill){ctx.fillStyle=fill;ctx.fill();}ctx.strokeStyle=stroke||C.fg;ctx.lineWidth=2;ctx.stroke();}
+function stageBanner(){txt(STAGES[cur].name,24,36,20,C.accent,"left",true);}
+function clamp(v,a,b){return v<a?a:v>b?b:v;}
+function ease(p){return p<0?0:p>1?1:p*p*(3-2*p);}
+
+/* ---------- 第①幕 压电起振 ---------- */
+function drawPiezo(t){
+  var cx=270,cy=300,cw=190,ch=120;
+  var vib=1+0.07*Math.sin(t*Math.PI*10);      /* 机械伸缩 */
+  var bw=cw*vib;
+  txt("石英晶片（压电效应）",cx,cy-110,15,C.fg,"center",true);
+  rect(cx-bw/2,cy-ch/2,bw,ch,C.blue,"#8250df",2);
+  rect(cx-bw/2-8,cy-ch/2-10,bw+16,10,C.gray);   /* 上电极 */
+  rect(cx-bw/2-8,cy+ch/2,bw+16,10,C.gray);      /* 下电极 */
+  txt("电极",cx-bw/2-8,cy-ch/2-16,12,C.muted);
+  var ay=cy+ch/2+40+Math.sin(t*Math.PI*10)*10;
+  txt(vib>1?"↔ 形变中":"",cx,cy+ch/2+70,13,C.muted,"center");
+  /* 右侧示波器：振幅指数增长的正弦 */
+  var ox=560,oy=140,ow=440,oh=300;
+  rect(ox,oy,ow,oh,null,C.border,1);
+  line(ox,oy+oh/2,ox+ow,oy+oh/2,C.border,1);
+  txt("输出电压（示波器视角）",ox+ow/2,oy-12,14,C.fg,"center");
+  var grow=clamp(t*1.6,0.06,1),ph=t*Math.PI*6;
+  ctx.strokeStyle=C.accent;ctx.lineWidth=2.5;ctx.beginPath();
+  for(var x=0;x<=ow;x+=3){
+    var env=grow*(0.15+0.85*clamp(x/ow,0,1));
+    var y=oy+oh/2-Math.sin(x/28+ph*3)*oh*0.38*env;
+    x===0?ctx.moveTo(ox+x,y):ctx.lineTo(ox+x,y);
+  }
+  ctx.stroke();
+  txt("振幅：从热噪声指数增长",ox+ow-8,oy+oh-10,13,C.muted,"right");
+  txt("机械共振 = 天然音叉，频率由晶片几何尺寸决定（±50ppm）",540,530,14,C.muted,"center");
+  stageBanner();
+}
+/* ---------- 第②幕 放大整形 ---------- */
+function drawShape(t){
+  var ph=t*Math.PI*5;
+  txt("小正弦（晶振输出）",170,90,14,C.fg,"center");
+  ctx.strokeStyle=C.accent;ctx.lineWidth=2.5;ctx.beginPath();
+  for(var x=0;x<=220;x+=3){var y=250-Math.sin(x/22+ph)*55;x===0?ctx.moveTo(60+x,y):ctx.lineTo(60+x,y);}
+  ctx.stroke();
+  tri(330,190,90,120,"r",C.side,C.fg);txt("放大器",375,255,14,C.fg,"center");
+  txt("持续补能 · 削顶",375,285,12,C.muted,"center");
+  txt("输出：0 ↔ 3.3V 方波",810,90,14,C.fg,"center");
+  var hi=180,lo=320;
+  line(600,hi,1000,hi,C.border,1,[6,6]);line(600,lo,1000,lo,C.border,1,[6,6]);
+  txt("3.3V",575,hi+4,12,C.muted,"right");txt("0V",575,lo+4,12,C.muted,"right");
+  ctx.strokeStyle=C.green;ctx.lineWidth=2.5;ctx.beginPath();
+  for(var x2=0;x2<=400;x2+=4){
+    var s=Math.sin(x2/22+ph),y=s>=0?hi:lo;
+    var x0=Math.floor(x2/110)*110,y0=s>=0?hi:lo;
+    var xx=600+x2;
+    if(x2%110<4){ctx.moveTo(xx,y0);}else{ctx.lineTo(xx,y);}
+  }
+  ctx.stroke();
+  txt("稳态下电压是等幅摆动——不是越来越大",540,430,15,C.fg,"center");
+  txt("放大器饱和限幅把正弦「砍」成方波；每个周期补一次能量（相位被晶振钉死）",540,462,13,C.muted,"center");
+  stageBanner();
+}
+/* ---------- 第③幕 时钟沿传播 ---------- */
+function drawProp(t){
+  var wy=210,x0=80,x1=1000;
+  txt("时钟铜线：物理连着全芯片几十亿个栅极",540,120,15,C.fg,"center",true);
+  var front=x0+(x1-x0)*ease(t*1.15);
+  line(x0,wy,x1,wy,C.gray,10);
+  line(x0,wy,front,wy,C.red,10);
+  circle(front,wy,7,C.yellow,C.fg,2);
+  txt("电场沿线传播（皮秒级）",front+12,wy-24,13,C.orange);
+  var gates=6;
+  for(var i=0;i<gates;i++){
+    var gx=x0+90+i*150;
+    line(gx,wy,gx,wy+55,C.fg,2);
+    var on=front>=gx;
+    rect(gx-26,wy+55,52,44,on?"rgba(9,105,218,.35)":C.side,C.fg,2);
+    txt(on?"桥成":"断",gx,wy+83,13,on?C.accent:C.muted,"center",true);
+  }
+  txt("0V ────────► 3.3V：电压爬升的每一刻，电场在栅极下同步增强",540,380,14,C.muted,"center");
+  txt("「同步」不是协调出来的——是几十亿个栅极共用同一根线",540,420,15,C.fg,"center");
+  stageBanner();
+}
+/* ---------- 第④幕 栅极成桥 ---------- */
+function drawMos(t){
+  var mx=340,my=140;
+  txt("N-MOS 剖面（放大 100 万倍看）",540,90,15,C.fg,"center",true);
+  rect(mx,my+150,400,150,"#dbeafe",C.fg,2);           /* P 型硅衬底 */
+  txt("P 型硅衬底（缺自由电子）",mx+200,my+280,13,C.muted,"center");
+  rect(mx+20,my+110,80,42,"#374151");txt("源极 S",mx+60,my+135,12,"#fff","center");
+  rect(mx+300,my+110,80,42,"#374151");txt("漏极 D",mx+340,my+135,12,"#fff","center");
+  rect(mx+120,my+95,160,14,"#d4a72c");                 /* 绝缘层 */
+  txt("绝缘层 ~几纳米（玻璃）",mx+200,my+125,12,C.muted,"center");
+  rect(mx+120,my+55,160,40,C.gray,C.fg,2);             /* 栅极金属 */
+  txt("栅极（接时钟线）",mx+200,my+45,13,C.fg,"center");
+  /* 栅压爬升 */
+  var vg=ease(t*1.2)*3.3;
+  txt("Vg = "+vg.toFixed(1)+" V（阈值 ≈ 0.8V）",mx+200,my+20,14,vg>0.8?C.accent:C.muted,"center",true);
+  /* 电场箭头 */
+  if(vg>0.15){for(var i=0;i<5;i++){var ax=mx+140+i*30;var al=clamp(vg/3.3,0,1)*26+6;
+    line(ax,my+95,ax,my+95+al,C.purple,1.5,[4,3]);txt("▼",ax,my+95+al+12,10,C.purple,"center");}}
+  /* 电子聚集成桥 */
+  var bridge=clamp((vg-0.8)/1.2,0,1);
+  var ey=my+150-42*bridge;
+  for(var e=0;e<9;e++){
+    var ex=mx+128+e*18+((e*37)%9);
+    circle(ex,my+215-(my+215-ey)*ease(t*1.2),4.5,bridge>0.15?C.blue:C.muted);
+  }
+  if(bridge>0.85){
+    line(mx+60,my+131,mx+340,my+131,C.blue,bridge*6);
+    txt("导电桥成形（反型层）——源漏导通！",mx+200,my+185,14,C.accent,"center",true);
+  }
+  txt("电压过阈值 → 电场吸电子成桥。没有谁在「检测」——",830,260,14,C.fg,"left");
+  txt("就像水位漫过坝顶：漫过去不是被查出来的，",830,288,14,C.fg,"left");
+  txt("是重力让水物理地溢出。",830,316,14,C.fg,"left");
+  txt("栅极与通道隔着一层玻璃，永不接触——",830,360,13,C.muted,"left");
+  txt("所以是电压控制（电场），几乎不耗电流。",830,386,13,C.muted,"left");
+  stageBanner();
+}
+/* ---------- 第⑤幕 触发器闭锁 ---------- */
+function drawFF(t){
+  txt("D 触发器：一个「时钟沿」如何锁存 1 bit",540,80,15,C.fg,"center",true);
+  var cyc=(t*1.6)%1,phase=cyc<0.38?0:(cyc<0.62?1:2);   /* 0=CLK高进门开 1=沿瞬间 2=保持 */
+  var clkHi=phase===0;
+  /* 输入 D */
+  rect(90,250,90,70,C.side,C.fg,2);txt("数据 D",135,278,13,C.fg,"center");
+  txt(phase===2?"（随便变）":"1",135,302,18,phase===2?C.muted:C.accent,"center",true);
+  /* TG1 进门 */
+  line(180,285,255,285,C.fg,2.5);
+  rect(255,265,60,40,null,clkHi?C.accent:C.gray,3);
+  txt(clkHi?"门开":"门关",285,290,12,clkHi?C.accent:C.muted,"center",true);
+  /* 存储节点 A */
+  line(315,285,395,285,C.fg,2.5);
+  circle(420,285,16,phase===0?"rgba(215,58,73,.25)":C.red,C.fg,2.5);
+  txt("节点 A",420,330,13,C.fg,"center");
+  /* 两个反相器环 */
+  line(436,285,470,285,C.fg,2.5);
+  tri(470,255,60,60,"r",C.side,C.fg);txt("反相器",500,240,12,C.muted,"center");
+  line(530,285,560,285,C.fg,2.5);line(560,285,560,360,C.fg,2.5);
+  tri(590,330,60,60,"l",C.side,C.fg);txt("反相器",620,395,12,C.muted,"center");
+  line(590,360,560,360,C.fg,2.5);line(560,360,560,415,C.fg,2.5);line(560,415,420,415,C.fg,2.5);line(420,415,420,301,C.fg,2.5);
+  /* TG2 保持门（环上） */
+  rect(475,398,60,34,null,!clkHi?C.green:C.gray,3);
+  txt(!clkHi?"环通":"环断",505,420,12,!clkHi?C.green:C.muted,"center",true);
+  /* 电荷包 */
+  var dot=ctx;
+  if(phase===0){var px=180+(315-180)*ease(cyc/0.38);circle(px,285,9,C.yellow,C.red,2);}
+  else{var lx=(cyc*140)%1;circle(420+lx*110,285,9,C.yellow,C.red,2);}
+  /* 时钟波形 */
+  var wy=500;txt("CLK",60,wy+5,13,C.fg);
+  line(100,wy-24,600,wy-24,C.border,1,[5,5]);line(100,wy+24,600,wy+24,C.border,1,[5,5]);
+  ctx.strokeStyle=C.fg;ctx.lineWidth=2.5;ctx.beginPath();
+  for(var x=0;x<=500;x+=4){var hi=((x/125+ (1-phase===0?0:0) + (t*1.6%1>0.38?0:0))%2)<1;var y=((Math.floor((x+(t*200))/125)%2)===0)?wy-24:wy+24;var xx=100+x;x===0?ctx.moveTo(xx,y):ctx.lineTo(xx,y);}
+  ctx.stroke();
+  var nowX=100+((t*200)%500);line(nowX,wy-40,nowX,wy+40,C.accent,2);
+  txt("当前",nowX,wy-46,12,C.accent,"center");
+  var msg=["进门开：电荷流入节点 A","⚡ 沿的瞬间：进门关、环通——换岗！","被关进反相器环里：状态保持（1 bit 存好了）"][phase];
+  txt(msg,540,470,16,phase===1?C.accent:C.fg,"center",true);
+  txt("CPU 的每一步 = 几十亿个这样的环同时换岗一次",540,530,13.5,C.muted,"center");
+  stageBanner();
+}
+var DRAW=[drawPiezo,drawShape,drawProp,drawMos,drawFF];
+/* ---------- 主循环 ---------- */
+function frame(ts){
+  if(!last)last=ts;
+  var dt=(ts-last)/1000;last=ts;
+  if(playing)t+=dt*speed;
+  var s=STAGES[cur];
+  if(t>=s.dur){cur=(cur+1)%STAGES.length;t=0;sync();}
+  ctx.clearRect(0,0,W,H);
+  rect(0,0,W,H,C.bg);
+  DRAW[cur](t/s.dur);
+  var total=0,acc=0;STAGES.forEach(function(x){total+=x.dur;});
+  for(var i=0;i<cur;i++)acc+=STAGES[i].dur;
+  tlfill.style.width=((acc+t)/total*100)+"%";
+  requestAnimationFrame(frame);
+}
+sync();requestAnimationFrame(frame);
+</script>
+</body>
+</html>
