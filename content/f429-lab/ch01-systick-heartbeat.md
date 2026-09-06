@@ -285,12 +285,12 @@ beat 3   g_ms=3000
 
 ## 与 ESP32 / Linux 对照
 
-| 维度       | STM32F429（本章）                 | ESP32（[[2026-08-26-freertos-deep-dive-ch17-xtensa-port-internals\|FreeRTOS（十七）]] Xtensa 端口） | Linux                       |
-| ---------- | --------------------------------- | --------------------------------------------------------------------------------------------------- | --------------------------- |
-| tick 硬件  | SysTick（内核自带，每核一颗）     | 无 SysTick，用芯片定时器组 + INTMUX                                                                 | per-CPU tick device/hrtimer |
-| 上电默认   | HSI 16MHz，需要自己重算 LOAD      | 上电即有确定的 tick 源（IDF 打包好）                                                                | TSC/PIT 定标后才可用        |
-| 移植过路费 | 三行 `#define` 映射（序章头号坑） | IDF 已代接，用户无感                                                                                | —                           |
-| 周期调整   | `Suspend/Reload`（写 LOAD）       | esp_timer 抽象层                                                                                    | `NO_HZ`/highres 切换        |
+| 维度       | STM32F429（本章）                 | ESP32（[[ch17-xtensa-port-internals\|FreeRTOS（十七）]] Xtensa 端口） | Linux                       |
+| ---------- | --------------------------------- | --------------------------------------------------------------------- | --------------------------- |
+| tick 硬件  | SysTick（内核自带，每核一颗）     | 无 SysTick，用芯片定时器组 + INTMUX                                   | per-CPU tick device/hrtimer |
+| 上电默认   | HSI 16MHz，需要自己重算 LOAD      | 上电即有确定的 tick 源（IDF 打包好）                                  | TSC/PIT 定标后才可用        |
+| 移植过路费 | 三行 `#define` 映射（序章头号坑） | IDF 已代接，用户无感                                                  | —                           |
+| 周期调整   | `Suspend/Reload`（写 LOAD）       | esp_timer 抽象层                                                      | `NO_HZ`/highres 切换        |
 
 （表中 ESP32 列的 INTMUX/esp_timer 是乐鑫封装好的中断分发矩阵与定时器抽象层——又是"别人替你做掉的事"）
 

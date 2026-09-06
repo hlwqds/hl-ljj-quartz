@@ -476,17 +476,17 @@ Guest DPDK app
 
 ```text
 DPDK virtio PMD:
-  [[2026-04-09-dpdk-deep-dive-ch25-virtio-driver|DPDK Virtio 驱动]]
+  [[ch25-virtio-driver|DPDK Virtio 驱动]]
 
 vhost-user:
-  [[2026-04-09-dpdk-deep-dive-ch26-vhost-user|vhost-user 原理]]
+  [[ch26-vhost-user|vhost-user 原理]]
 
 KVM I/O 虚拟化:
   [[2026-03-31-kvm-io-virtualization-device-emulation|KVM I/O 虚拟化]]
 
 DPDK 性能优化:
-  [[2026-04-09-dpdk-deep-dive-ch25-cache-optimization|Cache 优化]]
-  [[2026-04-09-dpdk-deep-dive-ch26-numa-optimization|NUMA 优化]]
+  [[ch25-cache-optimization|Cache 优化]]
+  [[ch26-numa-optimization|NUMA 优化]]
 ```
 
 ---

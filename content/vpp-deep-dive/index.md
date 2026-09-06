@@ -135,4 +135,4 @@ pin: true
 ## 相关系列
 
 - [[dpdk-deep-dive|DPDK 深度探索系列]] - 兄弟系列，聚焦数据平面开发框架
-- [[2026-04-09-ebpf-deep-dive-series-index|eBPF 深度探索系列]] - 内核可编程数据面
+- [[ebpf-deep-dive|eBPF 深度探索系列]] - 内核可编程数据面

@@ -120,12 +120,12 @@ RDMA 在 AI 训练和超算中的应用。
 
 RDMA 网络的排错与监控。
 
-| #   | 章节                                                  | 主题         | 状态                                 |
-| --- | ----------------------------------------------------- | ------------ | ------------------------------------ | --- |
-| 32  | [[2026-04-13-rdma-deep-dive-ch32-debug                | 故障诊断]]   | ibdiagnet、ibnetdiscover、错误码分析 | 🚧  |
-| 33  | [[2026-04-13-rdma-deep-dive-ch33-performance-counters | 性能计数器]] | perfmon、PMU、QoS 监控               | 🚧  |
-| 34  | [[2026-04-13-rdma-deep-dive-ch34-network-validation   | 网络验证]]   | 链路验证、拥塞测试、一致性检查       | 🚧  |
-| 35  | [[2026-04-13-rdma-deep-dive-ch35-common-issues        | 常见问题]]   | PKEY 错误、GID 问题、LID 冲突        | 🚧  |
+| #   | 章节                        | 主题         | 状态                                 |
+| --- | --------------------------- | ------------ | ------------------------------------ | --- |
+| 32  | [[ch32-debug                | 故障诊断]]   | ibdiagnet、ibnetdiscover、错误码分析 | 🚧  |
+| 33  | [[ch33-performance-counters | 性能计数器]] | perfmon、PMU、QoS 监控               | 🚧  |
+| 34  | [[ch34-network-validation   | 网络验证]]   | 链路验证、拥塞测试、一致性检查       | 🚧  |
+| 35  | [[ch35-common-issues        | 常见问题]]   | PKEY 错误、GID 问题、LID 冲突        | 🚧  |
 
 ---
 
@@ -133,12 +133,12 @@ RDMA 网络的排错与监控。
 
 RDMA 高级特性与新技术。
 
-| #   | 章节                                              | 主题           | 状态                                |
-| --- | ------------------------------------------------- | -------------- | ----------------------------------- | --- |
-| 36  | [[2026-04-13-rdma-deep-dive-ch36-shared-rx-ring   | 共享接收队列]] | SRQ、Shared Receive Queue、内存效率 | 🚧  |
-| 37  | [[2026-04-13-rdma-deep-dive-ch37-extended-atomics | 扩展原子操作]] | Extended Atomics、FV、OMO           | 🚧  |
-| 38  | [[2026-04-13-rdma-deep-dive-ch38-rdma-cxl         | CXL 与 RDMA]]  | CXL Cache Coherent、RDMA over CXL   | 🚧  |
-| 39  | [[2026-04-13-rdma-deep-dive-ch39-roce-v3          | RoCE v3]]      | 多路径 RoCE (MRMP)、AI-Eye ECN      | 🚧  |
+| #   | 章节                                            | 主题           | 状态                                |
+| --- | ----------------------------------------------- | -------------- | ----------------------------------- | --- |
+| 36  | [[2026-04-13-rdma-deep-dive-ch36-shared-rx-ring | 共享接收队列]] | SRQ、Shared Receive Queue、内存效率 | 🚧  |
+| 37  | [[ch37-extended-atomics                         | 扩展原子操作]] | Extended Atomics、FV、OMO           | 🚧  |
+| 38  | [[2026-04-13-rdma-deep-dive-ch38-rdma-cxl       | CXL 与 RDMA]]  | CXL Cache Coherent、RDMA over CXL   | 🚧  |
+| 39  | [[ch39-roce-v3                                  | RoCE v3]]      | 多路径 RoCE (MRMP)、AI-Eye ECN      | 🚧  |
 
 ---
 
@@ -146,12 +146,12 @@ RDMA 高级特性与新技术。
 
 RDMA 在各行业的应用与对比。
 
-| #   | 章节                                          | 主题            | 状态                                 |
-| --- | --------------------------------------------- | --------------- | ------------------------------------ | --- |
-| 40  | [[2026-04-13-rdma-deep-dive-ch40-storage      | RDMA 存储]]     | NVMe-oF、SFST、RDMA 文件系统         | 🚧  |
-| 41  | [[2026-04-13-rdma-deep-dive-ch41-tcp-vs-rdma  | TCP vs RDMA]]   | 性能/成本/复杂度对比、适用场景       | 🚧  |
-| 42  | [[2026-04-13-rdma-deep-dive-ch42-dpdk-vs-rdma | DPDK vs RDMA]]  | DPDK 适用场景、RDMA vs Kernel Bypass | 🚧  |
-| 43  | [[2026-04-13-rdma-deep-dive-ch43-future       | RDMA 未来趋势]] | CNDP/ODP、可编程网络、端侧智能       | 🚧  |
+| #   | 章节                | 主题            | 状态                                 |
+| --- | ------------------- | --------------- | ------------------------------------ | --- |
+| 40  | [[ch40-storage      | RDMA 存储]]     | NVMe-oF、SFST、RDMA 文件系统         | 🚧  |
+| 41  | [[ch41-tcp-vs-rdma  | TCP vs RDMA]]   | 性能/成本/复杂度对比、适用场景       | 🚧  |
+| 42  | [[ch42-dpdk-vs-rdma | DPDK vs RDMA]]  | DPDK 适用场景、RDMA vs Kernel Bypass | 🚧  |
+| 43  | [[ch43-future       | RDMA 未来趋势]] | CNDP/ODP、可编程网络、端侧智能       | 🚧  |
 
 ---
 

@@ -17,16 +17,16 @@ tags: [rpi-lab, RPi, Linux, Lab]
 
 ## R0–R5：Linux 反向解剖课主线
 
-| #   | 章节                                                                                      | 主题                                                          | 状态 |
-| --- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------- | ---- |
-| 1   | [[2026-08-30-rpi-lab-ch01-bookworm-surgery-baseline\|手术台：Bookworm 升级与实验室基线]]  | SD 卡 dd 备份→全新刷机→恢复 8082/公钥→NTP 校时→共地与电平红线 | ✍️   |
-| 2   | [[2026-08-30-rpi-lab-ch02-devmem-direct-register\|devmem 直捅：找回 F429 的手感]]         | BCM2711 GPIO 基址 0xFE200000；sysfs 旧接口的废与立            | ✍️   |
-| 3   | [[2026-08-30-rpi-lab-ch03-libgpiod-userspace-toll\|libgpiod 与用户态的过路费]]            | gpioset/gpiomon + C API；strace 记账；翻转速率对比            | ✍️   |
-| 4   | [[2026-08-30-rpi-lab-ch04-kernel-module-mygpio\|内核模块入门：hello 与 my_gpio 字符设备]] | file_operations=裸机函数指针表的内核版；udev 放权             | ✍️   |
-| 5   | [[2026-08-30-rpi-lab-ch05-request-irq-vs-nvic\|request_irq：Linux 的中断官僚体系]]        | 顶半/底半/threaded IRQ；对照 NVIC 直配与 FreeRTOS 的 ISR 语义 | ✍️   |
-| 6   | [[2026-08-30-rpi-lab-ch06-device-tree-overlay-spi\|设备树：嵌入式的 BIOS]]                | /proc/device-tree 解读；overlay 开 SPI；参数流进驱动的路径    | ✍️   |
-| 7   | [[2026-08-30-rpi-lab-ch07-read-syscall-fullstack-trace\|一次 read() 的全栈旅行]]          | strace+ftrace 从 syscall 到 SPI 驱动寄存器写的四层证据        | ✍️   |
-| 8   | [[2026-08-30-rpi-lab-ch08-instrument-roles-guide\|仪器手册：低成本逻辑分析仪与网络之眼]]  | piscope/tcpdump/iperf/hostapd/usbmon 六种角色速查             | ✍️   |
+| #   | 章节                                                                   | 主题                                                          | 状态 |
+| --- | ---------------------------------------------------------------------- | ------------------------------------------------------------- | ---- |
+| 1   | [[ch01-bookworm-surgery-baseline\|手术台：Bookworm 升级与实验室基线]]  | SD 卡 dd 备份→全新刷机→恢复 8082/公钥→NTP 校时→共地与电平红线 | ✍️   |
+| 2   | [[ch02-devmem-direct-register\|devmem 直捅：找回 F429 的手感]]         | BCM2711 GPIO 基址 0xFE200000；sysfs 旧接口的废与立            | ✍️   |
+| 3   | [[ch03-libgpiod-userspace-toll\|libgpiod 与用户态的过路费]]            | gpioset/gpiomon + C API；strace 记账；翻转速率对比            | ✍️   |
+| 4   | [[ch04-kernel-module-mygpio\|内核模块入门：hello 与 my_gpio 字符设备]] | file_operations=裸机函数指针表的内核版；udev 放权             | ✍️   |
+| 5   | [[ch05-request-irq-vs-nvic\|request_irq：Linux 的中断官僚体系]]        | 顶半/底半/threaded IRQ；对照 NVIC 直配与 FreeRTOS 的 ISR 语义 | ✍️   |
+| 6   | [[ch06-device-tree-overlay-spi\|设备树：嵌入式的 BIOS]]                | /proc/device-tree 解读；overlay 开 SPI；参数流进驱动的路径    | ✍️   |
+| 7   | [[ch07-read-syscall-fullstack-trace\|一次 read() 的全栈旅行]]          | strace+ftrace 从 syscall 到 SPI 驱动寄存器写的四层证据        | ✍️   |
+| 8   | [[ch08-instrument-roles-guide\|仪器手册：低成本逻辑分析仪与网络之眼]]  | piscope/tcpdump/iperf/hostapd/usbmon 六种角色速查             | ✍️   |
 
 ## 三重身份定位
 

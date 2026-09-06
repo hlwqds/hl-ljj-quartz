@@ -305,19 +305,19 @@ diff 里什么变、什么不变，可以预先画出来：
 
 各章入口（先行章板未到即可直接开工）：
 
-| #    | 章节                                                                    | 主题                                  |
-| ---- | ----------------------------------------------------------------------- | ------------------------------------- |
-| 二   | [[2026-08-30-embedded-basics-ch02-tools-multimeter-la\|工具驯化]]       | 万用表判读、PulseView、UART 波形自检  |
-| 三   | [[2026-08-30-embedded-basics-ch03-arm-cortex-m-anatomy\|Cortex-M 解剖]] | 寄存器组、MSP/PSP、向量表、异常入栈   |
-| 四   | [[2026-08-30-embedded-basics-ch04-baremetal-boot\|裸机启动]]            | 最小 startup.s/linker script/Makefile |
-| 五   | [[2026-08-30-embedded-basics-ch05-gpio-and-mco\|GPIO 与时钟树]]         | RCC 倍频分频、GPIO 寄存器（RM0090）   |
-| 六   | [[2026-08-30-embedded-basics-ch06-uart-protocol\|UART 协议]]            | 8N1、波特率容差、双板成帧协议         |
-| 七   | [[2026-08-30-embedded-basics-ch07-interrupts-nvic\|中断体系]]           | NVIC、优先级分组、EXTI、SysTick 实跑  |
-| 八   | [[2026-08-30-embedded-basics-ch08-timer-systick\|定时器]]               | SysTick 源码级、预分频/ARR、PWM 思想  |
-| 九   | [[2026-08-30-embedded-basics-ch09-riscv-gd32-contrast\|RISC-V 对照]]    | RV32IMAC、mtvec/mepc/mcause、ECLIC    |
-| 十   | [[2026-08-30-embedded-basics-ch10-i2c-spi-theory\|I2C/SPI 理论]]        | 时序图、ACK、CPOL/CPHA、BME280 首读   |
-| 十一 | [[2026-08-30-embedded-basics-ch11-debug-swd-jtag\|调试体系]]            | SWD/JTAG、openocd、gdb 远程调试       |
-| 十二 | [[2026-08-30-embedded-basics-ch12-freertos-port-contrast\|port 对照]]   | PendSV vs Xtensa vs RISC-V 收官       |
+| #    | 章节                                         | 主题                                  |
+| ---- | -------------------------------------------- | ------------------------------------- |
+| 二   | [[ch02-tools-multimeter-la\|工具驯化]]       | 万用表判读、PulseView、UART 波形自检  |
+| 三   | [[ch03-arm-cortex-m-anatomy\|Cortex-M 解剖]] | 寄存器组、MSP/PSP、向量表、异常入栈   |
+| 四   | [[ch04-baremetal-boot\|裸机启动]]            | 最小 startup.s/linker script/Makefile |
+| 五   | [[ch05-gpio-and-mco\|GPIO 与时钟树]]         | RCC 倍频分频、GPIO 寄存器（RM0090）   |
+| 六   | [[ch06-uart-protocol\|UART 协议]]            | 8N1、波特率容差、双板成帧协议         |
+| 七   | [[ch07-interrupts-nvic\|中断体系]]           | NVIC、优先级分组、EXTI、SysTick 实跑  |
+| 八   | [[ch08-timer-systick\|定时器]]               | SysTick 源码级、预分频/ARR、PWM 思想  |
+| 九   | [[ch09-riscv-gd32-contrast\|RISC-V 对照]]    | RV32IMAC、mtvec/mepc/mcause、ECLIC    |
+| 十   | [[ch10-i2c-spi-theory\|I2C/SPI 理论]]        | 时序图、ACK、CPOL/CPHA、BME280 首读   |
+| 十一 | [[ch11-debug-swd-jtag\|调试体系]]            | SWD/JTAG、openocd、gdb 远程调试       |
+| 十二 | [[ch12-freertos-port-contrast\|port 对照]]   | PendSV vs Xtensa vs RISC-V 收官       |
 
 与已读软件线的三个会师点，也预先标定——硬件课不是孤立开新课，而是给已有知识补上物理底座：
 

@@ -396,18 +396,18 @@ BSP Kconfig 默认（100 行条带）= 64,000 B → 12.8 ms/块
 
 ## 10.9 翻车点表与小结
 
-| 症状                             | 根因                                                                                              | 处理                                                                                                                                                   |
-| -------------------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 背光亮但屏全黑                   | 没调 `esp_lcd_panel_disp_on_off(panel, true)`，DISPON 从未发出（init 不代发，display.h 注释明言） | init 后显式调用；裸序列方案则确认厂商序列含 0x29                                                                                                       |
-| 背光也不亮                       | GPIO47 背光没使能（LEDC duty=0 或 GPIO 没拉）                                                     | `bsp_display_backlight_on()`，或实验里的 GPIO 拉高                                                                                                     |
-| 全白/花屏，命令全发了            | RST 极性接反：BOX-3 是**高电平复位**（`reset_active_high=1`，罕见）                               | 对照 esp-box-3.c:399 改极性                                                                                                                            |
-| 红蓝互换                         | rgb_endian（BGR）与面板/像素序不匹配                                                              | 换 `LCD_RGB_ENDIAN_BGR/RGB` 或改 MADCTL 的 BGR 位                                                                                                      |
-| 画面镜像/颠倒                    | MADCTL 的 MX/MY 与预期不符                                                                        | 对照 BSP 的 `mirror(true, true)`（0x08 → 0xC8）                                                                                                        |
-| 帧率远低于 32.6fps 理论值        | draw buf 落在 PSRAM/普通堆，SPI 驱动在 `setup_priv_desc` 里悄悄 malloc+memcpy（spi_master.c:867） | 用 `MALLOC_CAP_DMA` 分配（esp_lvgl_port 的 `buff_dma` 同理），详见 [[2026-08-26-freertos-deep-dive-ch20-idf-heap-and-caps\|FreeRTOS（二十）内存 caps]] |
-| 刷屏数据偶发损坏                 | `draw_bitmap` 返回即改写 color 缓冲——异步语义，DMA 还在读                                         | 在 `on_color_trans_done` 后（任务通知唤醒）再复用缓冲                                                                                                  |
-| 抓 SPI 波形全是噪声              | 24MHz 分析仪对 40MHz 时钟欠采样                                                                   | 临时降 `pclk_hz` 抓结构，量完改回（10.7）                                                                                                              |
-| 想再加一块 SPI 设备失败/总线冲突 | 忘了屏独占 SPI3；或共享总线时忽略 MISO 未接（读不了从设备）                                       | 新设备挂 SPI2（DOCK 的 PMOD2 预留）或评估真共享                                                                                                        |
-| 初始化后首帧前短暂白屏           | SLPOUT 后面板内部电源需要稳定时间（驱动里 `vTaskDelay(100)`）                                     | 属正常时序，别删延时                                                                                                                                   |
+| 症状                             | 根因                                                                                              | 处理                                                                                                                     |
+| -------------------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| 背光亮但屏全黑                   | 没调 `esp_lcd_panel_disp_on_off(panel, true)`，DISPON 从未发出（init 不代发，display.h 注释明言） | init 后显式调用；裸序列方案则确认厂商序列含 0x29                                                                         |
+| 背光也不亮                       | GPIO47 背光没使能（LEDC duty=0 或 GPIO 没拉）                                                     | `bsp_display_backlight_on()`，或实验里的 GPIO 拉高                                                                       |
+| 全白/花屏，命令全发了            | RST 极性接反：BOX-3 是**高电平复位**（`reset_active_high=1`，罕见）                               | 对照 esp-box-3.c:399 改极性                                                                                              |
+| 红蓝互换                         | rgb_endian（BGR）与面板/像素序不匹配                                                              | 换 `LCD_RGB_ENDIAN_BGR/RGB` 或改 MADCTL 的 BGR 位                                                                        |
+| 画面镜像/颠倒                    | MADCTL 的 MX/MY 与预期不符                                                                        | 对照 BSP 的 `mirror(true, true)`（0x08 → 0xC8）                                                                          |
+| 帧率远低于 32.6fps 理论值        | draw buf 落在 PSRAM/普通堆，SPI 驱动在 `setup_priv_desc` 里悄悄 malloc+memcpy（spi_master.c:867） | 用 `MALLOC_CAP_DMA` 分配（esp_lvgl_port 的 `buff_dma` 同理），详见 [[ch20-idf-heap-and-caps\|FreeRTOS（二十）内存 caps]] |
+| 刷屏数据偶发损坏                 | `draw_bitmap` 返回即改写 color 缓冲——异步语义，DMA 还在读                                         | 在 `on_color_trans_done` 后（任务通知唤醒）再复用缓冲                                                                    |
+| 抓 SPI 波形全是噪声              | 24MHz 分析仪对 40MHz 时钟欠采样                                                                   | 临时降 `pclk_hz` 抓结构，量完改回（10.7）                                                                                |
+| 想再加一块 SPI 设备失败/总线冲突 | 忘了屏独占 SPI3；或共享总线时忽略 MISO 未接（读不了从设备）                                       | 新设备挂 SPI2（DOCK 的 PMOD2 预留）或评估真共享                                                                          |
+| 初始化后首帧前短暂白屏           | SLPOUT 后面板内部电源需要稳定时间（驱动里 `vTaskDelay(100)`）                                     | 属正常时序，别删延时                                                                                                     |
 
 本章小结：
 

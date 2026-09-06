@@ -674,7 +674,7 @@ I/O 虚拟化：
 
 DPDK virtio:
   Guest virtio PMD 如何读写 virtqueue
-  -> [[2026-04-09-dpdk-deep-dive-ch25-virtio-driver|DPDK Virtio 驱动]]
+  -> [[ch25-virtio-driver|DPDK Virtio 驱动]]
 ```
 
 ---

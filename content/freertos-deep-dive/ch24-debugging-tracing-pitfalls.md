@@ -136,27 +136,27 @@ $4 = 712
 
 ### 5. GDB 命令速查表
 
-| 目的        | 命令                                                     | 说明                                                                                                      |
-| ----------- | -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| 启动调试    | `idf.py qemu --gdb monitor` + `idf.py gdb`               | 双终端；或 `idf.py qemu gdb` 一体化                                                                       |
-| 断点        | `b app_main`、`b main.c:42`                              | 函数 / 文件:行                                                                                            |
-| 条件断点    | `b vTaskDelay if xTicksToDelay > 100`                    | 抓"睡过头"的调用                                                                                          |
-| 临时断点    | `tb prvIdleTask`                                         | 命中一次即消失                                                                                            |
-| 执行控制    | `c` / `s` / `n` / `finish`                               | 继续 / 步入 / 步过 / 跑完当前函数                                                                         |
-| 调用栈      | `bt` / `bt full`                                         | 后者带局部变量                                                                                            |
-| 切核        | `info threads` → `thread 2`                              | QEMU 中每核一个线程                                                                                       |
-| 寄存器      | `info reg` / `p/x $a1`                                   | Xtensa：`a1`=SP，`a0`=返回地址（[[2026-08-26-freertos-deep-dive-ch2-esp32-xtensa-architecture\|第二章]]） |
-| 反汇编      | `x/8i $pc` / `disas`                                     | 对着第七章的切换汇编看现场                                                                                |
-| 看内存      | `x/16wx ADDR` / `x/s ADDR` / `x/64bx ADDR`               | 字 / 字符串 / 字节                                                                                        |
-| 看类型      | `ptype TCB_t`、`ptype TaskStatus_t`                      | 打印结构体定义                                                                                            |
-| 当前任务    | `p pxCurrentTCBs[0]` / `p pxCurrentTCBs[1]`              | 每核一个                                                                                                  |
-| 任务身份    | `p pxCurrentTCBs[0]->pcTaskName`                         | 最常用的第一问                                                                                            |
-| 优先级/继承 | `p ...->uxPriority` 与 `...->uxBasePriority`             | 不等 = 优先级继承生效中                                                                                   |
-| 持锁情况    | `p ...->uxMutexesHeld`                                   | 死锁排查                                                                                                  |
-| 栈余量      | `p (char*)...->pxTopOfStack - (char*)...->pxStack`       | 见上小节                                                                                                  |
-| 看门点      | `watch *(int *)0x3ffb1234`                               | 谁改了这块内存                                                                                            |
-| 拦截崩溃    | `b esp_system_abort` / `b vApplicationStackOverflowHook` | 在 panic 打印前停住，现场最完整                                                                           |
-| 事后分析    | `idf.py coredump-info` / `idf.py coredump-debug`         | 见 24.3                                                                                                   |
+| 目的        | 命令                                                     | 说明                                                                        |
+| ----------- | -------------------------------------------------------- | --------------------------------------------------------------------------- |
+| 启动调试    | `idf.py qemu --gdb monitor` + `idf.py gdb`               | 双终端；或 `idf.py qemu gdb` 一体化                                         |
+| 断点        | `b app_main`、`b main.c:42`                              | 函数 / 文件:行                                                              |
+| 条件断点    | `b vTaskDelay if xTicksToDelay > 100`                    | 抓"睡过头"的调用                                                            |
+| 临时断点    | `tb prvIdleTask`                                         | 命中一次即消失                                                              |
+| 执行控制    | `c` / `s` / `n` / `finish`                               | 继续 / 步入 / 步过 / 跑完当前函数                                           |
+| 调用栈      | `bt` / `bt full`                                         | 后者带局部变量                                                              |
+| 切核        | `info threads` → `thread 2`                              | QEMU 中每核一个线程                                                         |
+| 寄存器      | `info reg` / `p/x $a1`                                   | Xtensa：`a1`=SP，`a0`=返回地址（[[ch2-esp32-xtensa-architecture\|第二章]]） |
+| 反汇编      | `x/8i $pc` / `disas`                                     | 对着第七章的切换汇编看现场                                                  |
+| 看内存      | `x/16wx ADDR` / `x/s ADDR` / `x/64bx ADDR`               | 字 / 字符串 / 字节                                                          |
+| 看类型      | `ptype TCB_t`、`ptype TaskStatus_t`                      | 打印结构体定义                                                              |
+| 当前任务    | `p pxCurrentTCBs[0]` / `p pxCurrentTCBs[1]`              | 每核一个                                                                    |
+| 任务身份    | `p pxCurrentTCBs[0]->pcTaskName`                         | 最常用的第一问                                                              |
+| 优先级/继承 | `p ...->uxPriority` 与 `...->uxBasePriority`             | 不等 = 优先级继承生效中                                                     |
+| 持锁情况    | `p ...->uxMutexesHeld`                                   | 死锁排查                                                                    |
+| 栈余量      | `p (char*)...->pxTopOfStack - (char*)...->pxStack`       | 见上小节                                                                    |
+| 看门点      | `watch *(int *)0x3ffb1234`                               | 谁改了这块内存                                                              |
+| 拦截崩溃    | `b esp_system_abort` / `b vApplicationStackOverflowHook` | 在 panic 打印前停住，现场最完整                                             |
+| 事后分析    | `idf.py coredump-info` / `idf.py coredump-debug`         | 见 24.3                                                                     |
 
 > [!tip] Vanilla vs ESP-IDF：GDB 眼中的"当前任务"长得不一样
 > Vanilla FreeRTOS 的 `tasks.c` 里是单一指针 `pxCurrentTCB`；IDF fork（默认树）把它改成数组 `pxCurrentTCBs[configNUMBER_OF_CORES]`，GDB 命令相应地从 `p *pxCurrentTCB` 变成 `p *pxCurrentTCBs[n]`。另外 TCB 里 SMP 特有的 `xCoreID` 字段（`tskNO_AFFINITY` 为 -1）是 Vanilla 没有的观察维度；TCB 字段名与语义见 [[ch5-task-lifecycle-and-tcb|第五章]]，SMP 化的来龙去脉见 [[ch22-smp-refactor-overview|第二十二章]]。

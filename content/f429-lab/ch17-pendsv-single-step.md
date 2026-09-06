@@ -422,7 +422,7 @@ bl 前后换手:     p pxCurrentTCB->pcTaskName → "fast" → "slow"（或 → 
 
 ## 与主系列对照：同一实验，两种架构的「可见度」
 
-| 维度         | CM4F（本板）                                   | Xtensa（ESP32，[[2026-08-26-freertos-deep-dive-ch17-xtensa-port-internals\|FreeRTOS（十七）]]）    |
+| 维度         | CM4F（本板）                                   | Xtensa（ESP32，[[ch17-xtensa-port-internals\|FreeRTOS（十七）]]）                                  |
 | ------------ | ---------------------------------------------- | -------------------------------------------------------------------------------------------------- |
 | 切换执行体   | PendSV handler，21 条指令**全软件可单步**      | `_frxt_dispatch` + 向量代码，核心路径可单步，但依赖硬件陷阱                                        |
 | 触发方式     | 写 ICSR.PENDSVSET 挂起（黏位，最低优先级进场） | `port_switch_flag[core]` 置位，最外层 `_frxt_int_exit` 兑现                                        |

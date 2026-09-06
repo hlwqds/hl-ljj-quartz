@@ -696,7 +696,7 @@ imissed = NIC RX ring 溢出 = 包到了但 CPU 没及时收走
 排查:
   1. 查 RSS 是否生效: ethtool -x eth0
   2. 查各队列包量: xstats 按 queue 分
-  3. 如果是隧道流量 → 参考 [[2026-04-09-dpdk-deep-dive-ch30-performance-tuning|ch30 3.3 隧道 RSS 失衡]]
+  3. 如果是隧道流量 → 参考 [[ch30-performance-tuning|ch30 3.3 隧道 RSS 失衡]]
   4. 考虑用 rte_flow 做精确分流
 ```
 

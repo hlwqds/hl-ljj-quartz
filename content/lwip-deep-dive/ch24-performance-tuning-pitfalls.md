@@ -392,32 +392,32 @@ dropped_frames_total_serial_lines=25          ← p2/p4 阶段共吞掉 25 个�
 
 ### 1. 七个 Part 的行军路线
 
-| Part                  | 章  | 一句话核心（粗体为关键实测锚点）                                                                                                   |
-| --------------------- | --- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| **I 为什么与在哪跑**  | 1   | lwIP 以「一套实现、raw/netconn/socket 三皮」换来嵌入式定价 ——链接器 GC 让纸面尺寸虚低 ~10 KB，探针必须真走路径                     |
-|                       | 2   | IDF 网络体系 = lwIP 内核 + esp_netif 适配层 + 闭源 WiFi 库的组合，`netif` 只是众人共享的一个结构体（sizeof=260）                   |
-|                       | 3   | QEMU openeth + SLIRP 给出确定性网络实验室：DHCP 10.0.2.15、网关/DNS 10.0.2.2/10.0.2.3                                              |
-| **II 内存与缓冲**     | 4   | pbuf 是带引用计数的分层链仓，layer 头偏移 RAW=0/LINK=14/IP=54；POOL 元素整格 ~1536 B                                               |
-|                       | 5   | IDF 全堆化：memp 池不存在了，但 `MEMP_NUM_*` 计数闸还在；PCB 耗尽表现为 SYN 静默丢弃                                               |
-|                       | 6   | `LWIP_NETIF_TX_SINGLE_PBUF` 被 IDF 硬编码为 1 → no-copy 写路径编译期不可达；发送泵必须挂 `tcp_sent()`                              |
-| **III 协议内核**      | 7   | netif 抽象：路由输入输出函数指针的组装现场，`loopif.c` 已亡、127.0.0.1 特判内建于 ip4_route                                        |
-|                       | 8   | ARP 缓存只在 admin-down 清理；首包 ARP 税 ~8×（22.6 ms vs 2.5–4.8 ms）；IDF 补丁改队满策略丢新保旧                                 |
-|                       | 9   | IP 重组默认关、REASS_MAXAGE 被覆写为 30 s；SLIRP 回程分片让重组成为可实测对象                                                      |
-|                       | 10  | UDP 三层 API 单价：raw 102.9/netconn 214.8/socket 287.6 µs；`MAX_UDP_PCBS` 是死旋钮，fd 才是真闸                                   |
-|                       | 11  | TCP 状态机：TIME_WAIT 是阶梯式泄洪不是悬崖清零；backlog 队列物理只在内存                                                           |
-|                       | 12  | 有损链路的主宰是 RTO 占空比：10% 丢帧→退避到 3000 ms；40% →连接事实死亡（rto≈96 s）                                                |
-| **IV 执行模型与 API** | 13  | tcpip 单线程邮箱是全系列的头号暗线；系统路径单价 ~37 µs/api 往返                                                                   |
-|                       | 14  | sys_arch 转接层全貌：`sys_now()` 10 ms 网格决定亚毫秒测量不能用它；ISR 专用通道 ERR_NEED_SCHED=123                                 |
-|                       | 15  | raw API 回调时代码住在 tcpip 线程里：recv 回调 busy-wait 200 ms 就能把第二连接的 103 Mbit 变成 0.06 Mbit                           |
-|                       | 16  | socket/netconn/VFS 三层换血的价目表：RTT 162→439 µs（2.7×）；`CHECK_THREAD_SAFETY=y` 能当场击毙裸调                                |
-| **V 硬件接缝**        | 17  | 移植面就是填 ethernetif 的六个坑；openeth RX 环洪峰第一瓶颈、过载窗坍缩 33 fps                                                     |
-|                       | 18  | WiFi 接缝函数族 wlanif_init/input 由 esp_netif_lwip_defaults 提供，`esp_wifi_internal_tx/reg_rxcb` 闭源导出                        |
-|                       | 19  | 每包 CPU 账单 601 µs（emac_rx 137/tcpip 298/app 166）；优先级倒挡临界 duty 70%~85% 分水岭                                          |
-| **VI 应用实战**       | 20  | HTTP 服务在弱网组合注入下永不失败、只会长尾爆炸（本章 24.5 的量化画像）                                                            |
-|                       | 21  | MQTT outbox 离线积压 1048 B/条，broker 判死 ∈[1.5×ka, 2×ka]，上游 lwIP mqtt app 被 `LWIP_MQTT=0` 悬置成死码                        |
-|                       | 22  | TLS 的代价分割：握手 335–347 ms、稳态 +27 KB、回环加密税 ~97%；内核 ACK 与进程回放的两条悬案                                       |
-| **VII 调试与收官**    | 23  | （[[2026-08-26-lwip-deep-dive-ch23-debugging-toolbox\|第二十三章]]）调试工具箱：stats/hooks/控制通道，本章的全部观测位都是它的现货 |
-|                       | 24  | **（本章）** 性能问题本质是资源不等式：接收侧深度 ≥ 在途量；先分层定锅、再单拧对应旋钮                                             |
+| Part                  | 章  | 一句话核心（粗体为关键实测锚点）                                                                                 |
+| --------------------- | --- | ---------------------------------------------------------------------------------------------------------------- |
+| **I 为什么与在哪跑**  | 1   | lwIP 以「一套实现、raw/netconn/socket 三皮」换来嵌入式定价 ——链接器 GC 让纸面尺寸虚低 ~10 KB，探针必须真走路径   |
+|                       | 2   | IDF 网络体系 = lwIP 内核 + esp_netif 适配层 + 闭源 WiFi 库的组合，`netif` 只是众人共享的一个结构体（sizeof=260） |
+|                       | 3   | QEMU openeth + SLIRP 给出确定性网络实验室：DHCP 10.0.2.15、网关/DNS 10.0.2.2/10.0.2.3                            |
+| **II 内存与缓冲**     | 4   | pbuf 是带引用计数的分层链仓，layer 头偏移 RAW=0/LINK=14/IP=54；POOL 元素整格 ~1536 B                             |
+|                       | 5   | IDF 全堆化：memp 池不存在了，但 `MEMP_NUM_*` 计数闸还在；PCB 耗尽表现为 SYN 静默丢弃                             |
+|                       | 6   | `LWIP_NETIF_TX_SINGLE_PBUF` 被 IDF 硬编码为 1 → no-copy 写路径编译期不可达；发送泵必须挂 `tcp_sent()`            |
+| **III 协议内核**      | 7   | netif 抽象：路由输入输出函数指针的组装现场，`loopif.c` 已亡、127.0.0.1 特判内建于 ip4_route                      |
+|                       | 8   | ARP 缓存只在 admin-down 清理；首包 ARP 税 ~8×（22.6 ms vs 2.5–4.8 ms）；IDF 补丁改队满策略丢新保旧               |
+|                       | 9   | IP 重组默认关、REASS_MAXAGE 被覆写为 30 s；SLIRP 回程分片让重组成为可实测对象                                    |
+|                       | 10  | UDP 三层 API 单价：raw 102.9/netconn 214.8/socket 287.6 µs；`MAX_UDP_PCBS` 是死旋钮，fd 才是真闸                 |
+|                       | 11  | TCP 状态机：TIME_WAIT 是阶梯式泄洪不是悬崖清零；backlog 队列物理只在内存                                         |
+|                       | 12  | 有损链路的主宰是 RTO 占空比：10% 丢帧→退避到 3000 ms；40% →连接事实死亡（rto≈96 s）                              |
+| **IV 执行模型与 API** | 13  | tcpip 单线程邮箱是全系列的头号暗线；系统路径单价 ~37 µs/api 往返                                                 |
+|                       | 14  | sys_arch 转接层全貌：`sys_now()` 10 ms 网格决定亚毫秒测量不能用它；ISR 专用通道 ERR_NEED_SCHED=123               |
+|                       | 15  | raw API 回调时代码住在 tcpip 线程里：recv 回调 busy-wait 200 ms 就能把第二连接的 103 Mbit 变成 0.06 Mbit         |
+|                       | 16  | socket/netconn/VFS 三层换血的价目表：RTT 162→439 µs（2.7×）；`CHECK_THREAD_SAFETY=y` 能当场击毙裸调              |
+| **V 硬件接缝**        | 17  | 移植面就是填 ethernetif 的六个坑；openeth RX 环洪峰第一瓶颈、过载窗坍缩 33 fps                                   |
+|                       | 18  | WiFi 接缝函数族 wlanif_init/input 由 esp_netif_lwip_defaults 提供，`esp_wifi_internal_tx/reg_rxcb` 闭源导出      |
+|                       | 19  | 每包 CPU 账单 601 µs（emac_rx 137/tcpip 298/app 166）；优先级倒挡临界 duty 70%~85% 分水岭                        |
+| **VI 应用实战**       | 20  | HTTP 服务在弱网组合注入下永不失败、只会长尾爆炸（本章 24.5 的量化画像）                                          |
+|                       | 21  | MQTT outbox 离线积压 1048 B/条，broker 判死 ∈[1.5×ka, 2×ka]，上游 lwIP mqtt app 被 `LWIP_MQTT=0` 悬置成死码      |
+|                       | 22  | TLS 的代价分割：握手 335–347 ms、稳态 +27 KB、回环加密税 ~97%；内核 ACK 与进程回放的两条悬案                     |
+| **VII 调试与收官**    | 23  | （[[ch23-debugging-toolbox\|第二十三章]]）调试工具箱：stats/hooks/控制通道，本章的全部观测位都是它的现货         |
+|                       | 24  | **（本章）** 性能问题本质是资源不等式：接收侧深度 ≥ 在途量；先分层定锅、再单拧对应旋钮                           |
 
 ### 2. 三条贯穿暗线的总结陈词
 

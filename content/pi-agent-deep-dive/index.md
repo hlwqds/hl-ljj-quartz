@@ -55,13 +55,13 @@ package version at snapshot: 0.79.1
 
 ## Part I：使用与整体认知
 
-| #   | 章节                                                                         | 主题                             | 状态 |
-| --- | ---------------------------------------------------------------------------- | -------------------------------- | ---- |
-| 1   | [[2026-06-12-pi-agent-deep-dive-ch01-overview\|第一章]]                      | Pi 的定位、设计取舍与适用边界    | ✅   |
-| 2   | [[2026-06-12-pi-agent-deep-dive-ch02-installation-providers\|第二章]]        | 安装、认证、Provider 与模型配置  | ✅   |
-| 3   | [[2026-06-12-pi-agent-deep-dive-ch03-tui-modes-queue\|第三章]]               | TUI、运行模式、快捷键与消息队列  | ✅   |
-| 4   | [[2026-06-12-pi-agent-deep-dive-ch04-sessions-branching-compaction\|第四章]] | Session、分支、恢复与 Compaction | ✅   |
-| 5   | [[2026-06-12-pi-agent-deep-dive-ch05-monorepo-architecture\|第五章]]         | Monorepo 与四个核心包的协作关系  | ✅   |
+| #   | 章节                                           | 主题                             | 状态 |
+| --- | ---------------------------------------------- | -------------------------------- | ---- |
+| 1   | [[ch01-overview\|第一章]]                      | Pi 的定位、设计取舍与适用边界    | ✅   |
+| 2   | [[ch02-installation-providers\|第二章]]        | 安装、认证、Provider 与模型配置  | ✅   |
+| 3   | [[ch03-tui-modes-queue\|第三章]]               | TUI、运行模式、快捷键与消息队列  | ✅   |
+| 4   | [[ch04-sessions-branching-compaction\|第四章]] | Session、分支、恢复与 Compaction | ✅   |
+| 5   | [[ch05-monorepo-architecture\|第五章]]         | Monorepo 与四个核心包的协作关系  | ✅   |
 
 ## Part II：Agent 核心原理
 

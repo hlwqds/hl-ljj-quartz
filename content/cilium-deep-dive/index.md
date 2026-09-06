@@ -19,7 +19,7 @@ tags:
 > [!tip] 系列说明
 > 本系列约 40+ 篇文章，从 Cilium 诞生背景（替代 kube-proxy 的 eBPF 方案）出发，系统讲解 Cilium 架构（eBPF 数据面/CCN/CNCM）、K8s CNI 集成、Hubble 观测（Flow 可视化/L7 策略）、Cluster Mesh 多集群网络、Cilium Ingress/Gateway API、Ambient Mode（无 Sidecar 零信任）、eBPF 限速与 QoS、网络策略（CiliumNetworkPolicy/NetworkPolicy）、Envoy 集成、生产级部署与排错。
 >
-> 配合 [[2026-04-13-ebpf-deep-dive-series-index|eBPF 系列]]（eBPF 基础）和 [[2026-04-13-kubernetes-network-series-index|Kubernetes 网络系列]]，构成完整的"云原生网络"知识体系。
+> 配合 [[ebpf-deep-dive|eBPF 系列]]（eBPF 基础）和 [[2026-04-13-kubernetes-network-series-index|Kubernetes 网络系列]]，构成完整的"云原生网络"知识体系。
 
 ---
 
@@ -161,7 +161,7 @@ Cilium 生态与竞品对比。
 
 ## 相关系列
 
-- [[2026-04-13-ebpf-deep-dive-series-index|eBPF 深度探索系列]] — eBPF 基础
+- [[ebpf-deep-dive|eBPF 深度探索系列]] — eBPF 基础
 - [[dpdk-deep-dive|DPDK 深度探索系列]] — 用户态数据包处理
 - [[p4-deep-dive|P4 深度探索系列]] — 可编程数据面
 - [[srv6-deep-dive|SRv6 深度探索系列]] — 网络编程

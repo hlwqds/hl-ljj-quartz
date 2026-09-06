@@ -55,7 +55,7 @@ tags: [embedded-basics, STM32, RISC-V]
          │← 位时间 8.68 µs @115200 →│   整帧 86.8 µs
 
 LSB 先发：发 0x55（0b01010101）时线上数据位是 1,0,1,0,1,0,1,0
-——这就是 [[2026-08-30-embedded-basics-ch02-tools-multimeter-la|第二章]]
+——这就是 [[ch02-tools-multimeter-la|第二章]]
 sigrok 实验里 0x55/0xAA 成为标准测试向量的原因：交替位最容易肉眼分辨错位。
 ```
 
