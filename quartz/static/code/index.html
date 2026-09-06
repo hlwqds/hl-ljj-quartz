@@ -9,8 +9,11 @@
 [data-theme="dark"]{--bg:#0d1117;--fg:#e6edf3;--muted:#8b949e;--border:#30363d;--side:#161b22;--accent:#4493f8;}
 *{box-sizing:border-box}
 body{margin:0;font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--fg)}
-header{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg);z-index:5}
-header h1{font-size:16px;margin:0}
+header{display:flex;align-items:center;gap:12px;padding:8px 16px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg);z-index:5}
+#sitenav{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+#sitenav a,#sitenav .cur{padding:4px 10px;border-radius:6px;font-size:13.5px}
+#sitenav a:hover{background:var(--border)}
+#sitenav .cur{background:var(--accent);color:#fff}
 header .sp{flex:1}
 button{background:var(--side);color:var(--fg);border:1px solid var(--border);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:13px}
 a{color:var(--accent);text-decoration:none}
@@ -43,7 +46,14 @@ pre.shiki code .line:target{background:rgba(9,105,218,.18);border-radius:3px}
 </style>
 </head>
 <body>
-<header><h1>💻 示例代码浏览</h1><span class="sp"></span>
+<header>
+<nav id="sitenav">
+  <a href="../../">🏠 主页</a>
+  <a href="../../series/">📚 系列总览</a>
+  <span class="cur">💻 示例代码</span>
+  <a href="../../tags/">🏷️ 所有标签</a>
+</nav>
+<span class="sp"></span>
 <button id="theme" onclick="toggleTheme()">🌓 主题</button>
 <a href="https://github.com/hlwqds/hl-ljj-quartz/tree/v4/practice" target="_blank" rel="noopener">GitHub ↗</a></header>
 <div id="wrap">

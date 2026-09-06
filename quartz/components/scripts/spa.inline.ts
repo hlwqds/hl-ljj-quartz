@@ -62,8 +62,18 @@ async function _navigate(url: URL, isBack: boolean = false) {
   isNavigating = true
   startLoading()
   p = p || new DOMParser()
+  // 用重定向后的最终 URL 做相对路径基准：目录页的无尾斜杠链接会被主机 301 到带斜杠
+  // 形态，若按原始 URL 重定基，../assets 会跳出站点子路径（项目页部署下丢前缀 404）
+  let finalUrl: URL = url
   const contents = await fetchCanonical(url)
     .then((res) => {
+      if (res.url && res.url !== url.href) {
+        try {
+          finalUrl = new URL(res.url)
+        } catch {
+          /* 保底沿用原始 url */
+        }
+      }
       const contentType = res.headers.get("content-type")
       if (contentType?.startsWith("text/html")) {
         return res.text()
@@ -86,7 +96,7 @@ async function _navigate(url: URL, isBack: boolean = false) {
   cleanupFns.clear()
 
   const html = p.parseFromString(contents, "text/html")
-  normalizeRelativeURLs(html, url)
+  normalizeRelativeURLs(html, finalUrl)
 
   let title = html.querySelector("title")?.textContent
   if (title) {
