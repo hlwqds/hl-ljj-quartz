@@ -83,7 +83,10 @@ tags: [f429-lab, STM32, LwIP, Ethernet]
 
 ## 第〇步：源码与移植层三件套
 
-lwIP 源码本机暂无（`~/stm32` 下只有 FreeRTOS/CMSIS），按与主系列一致的版本取：
+lwIP 2.2.0 源码已随配套工程 vendor 进 `practice/f429-lab/lwip-arp-ping/lwip-src/`
+（按 ARP+ICMP+raw+IPv4 的编译闭包裁剪：`core/` 13 个 .c + `core/ipv4/` 9 个 + `netif/ethernet.c`
+
+- 头文件树），工程自含、可离线编译；下列命令是完整源码树的手动取法（同版本，行为可对照）：
 
 ```bash
 git clone https://git.savannah.gnu.org/git/lwip.git ~/stm32/lwip   # 或 GitHub 镜像 lwip-tcpip/lwip
@@ -253,6 +256,16 @@ pbuf 链逐段拷进连续 DMA 缓冲 → 描述符写长度+FS/LS+OWN → 写 T
 对照 lwIP 主系列的地图：`netif_add` 每个参数在
 [[ch7-netif-abstraction|lwIP（七）：netif 抽象]]逐字段拆过；`etharp_output`
 接手后 ARP 构造/缓存/重发全不劳烦你（[[ch8-ethernet-arp|lwIP（八）：以太网与 ARP]]）。
+
+> [!tip] 🧪 配套实验：lwip-arp-ping
+> 本章三步走的固件版——lwIP 2.2.0 已 vendor 进工程（`lwip-src/`），`lwipopts.h`/`cc.h`/
+> `ethernetif.c` 三件套照上表落地：NO_SYS=1 轮询、静态 IP 10.42.0.10、raw API 手搓 ping
+> 用 DWT 量 RTT。已编译通过（text 23KB / bss 42.8KB），tcpdump 实测待核销。
+> 源码直达：[main.c（代码浏览）](/static/code/#/f429-lab/lwip-arp-ping/main.c)、
+> [ethernetif.c](/static/code/#/f429-lab/lwip-arp-ping/ethernetif.c)、
+> [lwipopts.h](/static/code/#/f429-lab/lwip-arp-ping/port/lwipopts.h)、
+> [完整工程](/static/code/#/f429-lab/lwip-arp-ping/README.md)、
+> [GitHub 源](https://github.com/hlwqds/hl-ljj-quartz/tree/v4/practice/f429-lab/lwip-arp-ping)。
 
 ## 第二步：第一声 ARP——tcpdump 见证仪式
 

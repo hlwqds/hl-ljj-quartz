@@ -35,6 +35,7 @@ practice/simd_vectorization/simd_demo
 docs/黄琳*
 docs/assets/huanglin-resume-photo.jpg
 scripts/*
+!scripts/gen-code-site.mjs
 !scripts/*.sh
 
 # lab 生成物（内核/busybox/dropbear 编译产物、initramfs 镜像、诊断产物）
@@ -75,6 +76,10 @@ practice/lwip-examples/*/sdkconfig
 practice/lwip-examples/*/qemu_efuse.bin
 # 硬件基础系列章级工程（practice/hwbasics/chNN-*，比章级工程深一层）
 practice/hwbasics/*/build*/
+# F429 裸机实验室章级工程（practice/f429-lab/chNN-*，比章级工程深一层）
+practice/f429-lab/*/build*/
+practice/f429-lab/*/*.elf
+practice/f429-lab/*/*.bin
 .mimosa/
 qemu.pid
 

@@ -334,6 +334,13 @@ MACMIIDR（+0x14）取；`phy_scan_and_reset` 拿 ID1==0xFFFF/0x0000 当「此�
 只打印**翻转**不打印稳态——串口安静就是链路稳定。缓冲取 1536=MTU 1500+余量（MTU 你的主场：以太网
 payload 传统上限，多出的留给 VLAN 头/对齐）。
 
+> [!tip] 🧪 配套实验：eth-mdio-probe
+> 本章设计的固件版——时钟 180MHz、RMII 九脚 AF11、DMA 描述符环上架、MDIO 扫描 32 个
+> PHY 地址读 ID，半秒轮询 BSR 只打印 Link 翻转。已编译通过（arm-none-eabi-gcc），
+> 真机行为待实测核销。源码直达：[main.c（代码浏览）](/static/code/#/f429-lab/eth-mdio-probe/main.c)、
+> [完整工程](/static/code/#/f429-lab/eth-mdio-probe/README.md)、
+> [GitHub 源](https://github.com/hlwqds/hl-ljj-quartz/tree/v4/practice/f429-lab/eth-mdio-probe)。
+
 ## 预期输出（待实测核销）
 
 串口侧（LAN8720 候选值的推导：ID1=0x0007、ID2=0xC0F0；BSR 数值整体读数待实测，只推位段）：
