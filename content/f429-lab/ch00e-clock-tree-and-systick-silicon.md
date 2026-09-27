@@ -101,7 +101,7 @@ HSE 25MHz(晶振) ──► PLL 倍频器：
 ```text
 想从 25MHz 晶振得到 X MHz：
   M = 25               （让 VCO 输入=1MHz，落在 1~2MHz 窗口）
-  N = X × P            （VCO=1MHz×N，须落在 192~433MHz）
+  N = X × P            （VCO=1MHz×N，须落在 192~432MHz）
   P ∈ {2,4,6,8}        （VCO÷P = X）
   Q：要 USB 48MHz 时 VCO 必须整除出 48 ⇒ N=336/P=2/SYSCLK=168 的整套妥协方案
 ```
@@ -222,6 +222,14 @@ HSI 继续活着。调试链路失效那晚卡在 PLLRDY 死等时，CPU 就是�
 - [ ] M/N/P 换频实验：同一固件跑 168MHz（USB 兼容方案），BRR/LOAD/PSC 全套改算对账
 - [ ] 矩阵实验 D 的 93ms 天花板实测读数回填（固件已编译，板下次开机即测）
 - [ ] CubeMX 生成的时钟配置与手写 clock_init 的逐行对照
+
+> [!tip] 🧪 配套实验：pll-4046-breadboard
+> 想把第 2 节时钟树里那个「PLL 倍频器」方框拆开看？用 74HC4046 + 74HC4040 在面包板上
+> 亲手搭一个：32.768kHz 参考 → 鉴相 → RC 环路滤波 → VCO → ÷16 反馈，锁定出
+> 524.288kHz。改一根跳线 = 改 M/N/P 倍频配置，调偏 VCO 频段 = 亲眼看失锁
+> （CSS 兜底的现实版），加大环路电容 = 看慢收敛。
+> [完整工程](/static/code/#/f429-lab/pll-4046-breadboard/README.md)、
+> [实验教程（管脚表/接线表/六步实验/分诊表）](/static/code/#/f429-lab/pll-4046-breadboard/docs/tutorial.md)。
 
 ## 相关阅读
 
