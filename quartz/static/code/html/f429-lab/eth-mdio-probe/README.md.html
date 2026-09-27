@@ -1,0 +1,62 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold"># eth_mdio_probe —— EMAC 与 PHY 上电探针（ch20 配套）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">对应章节：[[ch20-ethernet-emac-phy|以太网上电：EMAC 与 PHY]]（F429 裸机实验室第二十章）。</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">系列总目录：[[f429-lab|F429 裸机实验室索引]]。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">把章节的「MDIO 读 PHY ID + Link 检测」设计落成固件：全寄存器级裸机（无 HAL/CubeMX），</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">SYSCFG 选 RMII → ETH 三时钟 → DMA 描述符环上架 → MDIO 扫描 32 个 PHY 地址读 ID →</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">BCR 软复位+自协商 → 半秒轮询 BSR bit2，串口只打印 Link 翻转。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">> 状态：</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**先成文、后实跑**</span><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">——固件已编译通过（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`arm-none-eabi-gcc 15.2`</span><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">），真机行为待实测核销，</span></span>
+<span class="line"><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">> 章节「待核对清单」里的 PHY 型号/地址/REF_CLK 方案以本固件串口读数为准对号入座。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 硬件拓扑</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[笔记本] --USB--> [CH340] --USART1 PA9/PA10--> [STM32F429 挑战者 V2]</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                                                  |  (RMII 九脚 + 50MHz REF_CLK)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                                                  [LAN8720/8742 PHY] --RJ45--> 网线 --> [树莓派 4B]</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[野火 DAP] --SWD--> 烧录/调试（openocd）</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 目录结构</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 文件           | 说明                                                                        |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| -------------- | --------------------------------------------------------------------------- |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`main.c`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">       | 时钟 180MHz + USART1 + SysTick + ETH 初始化 + MDIO 扫描 + Link 轮询（全部） |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`startup.S`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    | 向量表（内核 16 异常 + 91 外部中断兜底；SysTick 槽指向 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`SysTick_Handler`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">）  |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`stm32f429.ld`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> | F429IG 2MB flash + 192KB 主 SRAM；描述符/帧缓冲落 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`.bss`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（禁 CCM）          |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`Makefile`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">     | </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`make`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 编译、</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`make flash`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 烧录、</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`make term`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 串口                            |</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 复现命令</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```bash</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">make</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">                 # 编译（arm-none-eabi-gcc，NixOS 下 nix-shell -p gcc-arm-embedded）</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">make</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> flash</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">           # openocd + DAP 烧录</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">make</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> term</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">            # minicom /dev/ttyUSB0 @115200 看输出</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 活体寄存器核销（另一终端，任务跑着时）：</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">openocd</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -f</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> interface/cmsis-dap.cfg</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -f</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> target/stm32f4x.cfg</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">telnet</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> localhost</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 4444</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">></span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> mdw 0x40023830 1   </span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># RCC_AHB1ENR：bit25:27=111 即 ETH 三时钟齐</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">></span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> mdw 0x40013804 1   </span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># SYSCFG_PMC：bit23=1 即 RMII 已选</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">></span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> mdw 0x40028000 1   </span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># MACCR：预期 0x0000408C</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">></span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> mdw 0x4002900C 1   </span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># DMARDLAR：应等于 nm 查到的 rx_d 地址（0x2000xxxx 段）</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 预期输出（待实测核销）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=== eth_mdio_probe : ch20 EMAC+PHY ===</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">-- MDIO scan (reg2/3, addr 0..31) --</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">phy 0 ID1=0x0007 ID2=0xC0F0        # LAN8720 候选；若 0xC13x → LAN8742</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">link: UP   BSR=0x79xx autoneg=1    # 插网线直连树莓派后 1–3s</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">link: DOWN BSR=0x79xx autoneg=0    # 拔线</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">实测后把真实输出（含 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`run.log`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">）回填本文件与章节，替换上表的推导值。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 下一步</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`lwip-arp-ping`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（[[ch21-baremetal-lwip|裸机 lwIP]]）复用本工程的</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`eth_hw_init()`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">/描述符环，把硬件邮箱接上协议栈发出第一声 ARP。</span></span>
+<span class="line"></span></code></pre>

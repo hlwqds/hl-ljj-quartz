@@ -1,0 +1,238 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">@file</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * MDNS responder private definitions</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /*</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Copyright (c) 2015 Verisure Innovation AB</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * All rights reserved.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Redistribution and use in source and binary forms, with or without modification,</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * are permitted provided that the following conditions are met:</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 1. Redistributions of source code must retain the above copyright notice,</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    this list of conditions and the following disclaimer.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 2. Redistributions in binary form must reproduce the above copyright notice,</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    this list of conditions and the following disclaimer in the documentation</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    and/or other materials provided with the distribution.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 3. The name of the author may not be used to endorse or promote products</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    derived from this software without specific prior written permission.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * OF SUCH DAMAGE.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * This file is part of the lwIP TCP/IP stack.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Author: Erik Ekman &#x3C;erik@kryo.se></span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Author: Jasper Verschueren &#x3C;jasper.verschueren@apart-audio.com></span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_HDR_MDNS_PRIV_H</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_HDR_MDNS_PRIV_H</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#include</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "lwip/apps/mdns.h"</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#include</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "lwip/apps/mdns_opts.h"</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#include</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "lwip/pbuf.h"</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifdef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> __cplusplus</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">extern</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "C"</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> {</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_MDNS_RESPONDER</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> MDNS_READNAME_ERROR</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> 0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">FFFF</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> NUM_DOMAIN_OFFSETS</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 10</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SRV_PRIORITY</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 0</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SRV_WEIGHT</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">   0</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/* mDNS TTL: (RFC6762 section 10)</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *  - 120 seconds if the hostname appears somewhere in the RR</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *  - 75 minutes if not (4500 seconds)</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *  - 10 seconds if responding to a legacy query</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> MDNS_TTL_10</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">    10</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> MDNS_TTL_120</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">   120</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> MDNS_TTL_4500</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  4500</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/* RFC6762 section 8.1: If fifteen conflicts occur within any ten-second period,</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * then the host MUST wait at least five seconds before each successive</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * additional probe attempt.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> MDNS_PROBE_MAX_CONFLICTS_BEFORE_RATE_LIMIT</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  15</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> MDNS_PROBE_MAX_CONFLICTS_TIME_WINDOW</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">        10000</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> MDNS_PROBE_MAX_CONFLICTS_TIMEOUT</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">            5000</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_MDNS_SEARCH</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/** Description of a search request */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">struct</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> mdns_request {</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /** Name of service, like 'myweb' */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">  char</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70"> name</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[MDNS_LABEL_MAXLEN </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">+</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">];</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /** Type of service, like '_http' or '_services._dns-sd' */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">  struct</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> mdns_domain service;</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /** Callback function called for each response */</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  search_result_fn_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> result_fn;</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">  void</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> *</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">arg;</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /** Protocol, TCP or UDP */</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  u16_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> proto;</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /** Query type (PTR, SRV, ...) */</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  u8_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> qtype;</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /** PTR only request. */</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  u16_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> only_ptr;</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">};</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/** Description of a service */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">struct</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> mdns_service {</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /** TXT record to answer with */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">  struct</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> mdns_domain txtdata;</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /** Name of service, like 'myweb' */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">  char</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70"> name</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[MDNS_LABEL_MAXLEN </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">+</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">];</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /** Type of service, like '_http' */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">  char</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70"> service</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[MDNS_LABEL_MAXLEN </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">+</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">];</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /** Callback function and userdata</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">   * to update txtdata buffer */</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  service_get_txt_fn_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> txt_fn;</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">  void</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> *</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">txt_userdata;</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /** Protocol, TCP or UDP */</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  u16_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> proto;</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /** Port of the service */</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  u16_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> port;</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">};</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/** mDNS output packet */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">struct</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> mdns_outpacket {</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /** Packet data */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">  struct</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> pbuf </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">pbuf;</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /** Current write offset in packet */</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  u16_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> write_offset;</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /** Number of questions written */</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  u16_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> questions;</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /** Number of normal answers written */</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  u16_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> answers;</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /** Number of authoritative answers written */</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  u16_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> authoritative;</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /** Number of additional answers written */</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  u16_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> additional;</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /** Offsets for written domain names in packet.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">   *  Used for compression */</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  u16_t</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70"> domain_offsets</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[NUM_DOMAIN_OFFSETS];</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">};</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/** mDNS output message */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">struct</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> mdns_outmsg {</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /** Identifier. Used in legacy queries */</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  u16_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> tx_id;</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /** dns flags */</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  u8_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> flags;</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /** Destination IP/port if sent unicast */</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  ip_addr_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> dest_addr;</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  u16_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> dest_port;</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /** If all answers in packet should set cache_flush bit */</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  u8_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> cache_flush;</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /** If reply should be sent unicast (as requested) */</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  u8_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> unicast_reply_requested;</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /** If legacy query. (tx_id needed, and write</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">   *  question again in reply before answer) */</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  u8_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> legacy_query;</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /** If the query is a probe msg we need to respond immediately. Independent of</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">   *  the QU or QM flag. */</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  u8_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> probe_query_recv;</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /* Question bitmask for host information */</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  u8_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> host_questions;</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /* Questions bitmask per service */</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  u8_t</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70"> serv_questions</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[MDNS_MAX_SERVICES];</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /* Reply bitmask for host information */</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  u8_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> host_replies;</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /* Bitmask for which reverse IPv6 hosts to answer */</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  u8_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> host_reverse_v6_replies;</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /* Reply bitmask per service */</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  u8_t</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70"> serv_replies</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[MDNS_MAX_SERVICES];</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifdef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_MDNS_SEARCH</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /** Search query to send */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">  struct</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> mdns_request </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">query;</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">};</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/** Delayed msg info */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">struct</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> mdns_delayed_msg {</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /** Signals if a multicast msg needs to be send out */</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  u8_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> multicast_msg_waiting;</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /** Multicast timeout for all multicast traffic except probe answers */</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  u8_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> multicast_timeout;</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /** Multicast timeout only for probe answers */</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  u8_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> multicast_probe_timeout;</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /** Output msg used for delayed multicast responses */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">  struct</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> mdns_outmsg delayed_msg_multicast;</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /** Prefer multicast over unicast timeout -> 25% of TTL = we take 30s as</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">      general delay. */</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  u8_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> multicast_timeout_25TTL;</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /** Only send out new unicast message if previous was send */</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  u8_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> unicast_msg_in_use;</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /** Output msg used for delayed unicast responses */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">  struct</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> mdns_outmsg delayed_msg_unicast;</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">};</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/* MDNS states */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">typedef</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> enum</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> {</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /* MDNS module is off */</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  MDNS_STATE_OFF,</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /* Waiting before probing can be started */</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  MDNS_STATE_PROBE_WAIT,</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /* Probing the unique records */</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  MDNS_STATE_PROBING,</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /* Waiting before announcing the probed unique records */</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  MDNS_STATE_ANNOUNCE_WAIT,</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /* Announcing all records */</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  MDNS_STATE_ANNOUNCING,</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /* Probing and announcing completed */</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  MDNS_STATE_COMPLETE</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">} </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">mdns_resp_state_enum_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">;</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/** Description of a host/netif */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">struct</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> mdns_host {</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /** Hostname */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">  char</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70"> name</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[MDNS_LABEL_MAXLEN </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">+</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">];</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /** Pointer to services */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">  struct</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> mdns_service </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">*</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">services</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[MDNS_MAX_SERVICES];</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /** Number of probes/announces sent for the current name */</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  u8_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> sent_num;</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /** State of the mdns responder */</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  mdns_resp_state_enum_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> state;</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_IPV4</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /** delayed msg struct for IPv4 */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">  struct</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> mdns_delayed_msg ipv4;</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_IPV6</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /** delayed msg struct for IPv6 */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">  struct</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> mdns_delayed_msg ipv6;</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /** Timestamp of probe conflict saved in list */</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  u32_t</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70"> conflict_time</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[MDNS_PROBE_MAX_CONFLICTS_BEFORE_RATE_LIMIT];</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /** Rate limit flag */</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  u8_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> rate_limit_activated;</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /** List index for timestamps */</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  u8_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> index;</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /** number of conflicts since startup */</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  u8_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> num_conflicts;</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">};</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">struct</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> mdns_host</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">*</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> netif_mdns_data</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">struct</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> netif </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">*</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">netif</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">);</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">struct</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> udp_pcb</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">*</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> get_mdns_pcb</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">void</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">);</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* LWIP_MDNS_RESPONDER */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifdef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> __cplusplus</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">}</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* LWIP_HDR_MDNS_PRIV_H */</span></span>
+<span class="line"></span></code></pre>

@@ -1,0 +1,162 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">@file</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Debug messages infrastructure</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/*</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Copyright (c) 2001-2004 Swedish Institute of Computer Science.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * All rights reserved.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Redistribution and use in source and binary forms, with or without modification,</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * are permitted provided that the following conditions are met:</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 1. Redistributions of source code must retain the above copyright notice,</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    this list of conditions and the following disclaimer.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 2. Redistributions in binary form must reproduce the above copyright notice,</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    this list of conditions and the following disclaimer in the documentation</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    and/or other materials provided with the distribution.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 3. The name of the author may not be used to endorse or promote products</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    derived from this software without specific prior written permission.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * OF SUCH DAMAGE.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * This file is part of the lwIP TCP/IP stack.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Author: Adam Dunkels &#x3C;adam@sics.se></span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_HDR_DEBUG_H</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_HDR_DEBUG_H</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#include</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "lwip/arch.h"</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#include</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "lwip/opt.h"</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">@defgroup</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> debugging_levels LWIP_DBG_MIN_LEVEL and LWIP_DBG_TYPES_ON values</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">@ingroup</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> lwip_opts_debugmsg</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * @{</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/** </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">@name</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> Debug level (LWIP_DBG_MIN_LEVEL)</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * @{</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/** Debug level: ALL messages*/</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_DBG_LEVEL_ALL</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">     0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">00</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/** Debug level: Warnings. bad checksums, dropped packets, ... */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_DBG_LEVEL_WARNING</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> 0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">01</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/** Debug level: Serious. memory allocation failures, ... */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_DBG_LEVEL_SERIOUS</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> 0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">02</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/** Debug level: Severe */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_DBG_LEVEL_SEVERE</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">  0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">03</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * @}</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_DBG_MASK_LEVEL</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">03</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/* compatibility define only */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_DBG_LEVEL_OFF</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">     LWIP_DBG_LEVEL_ALL</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/** </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">@name</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> Enable/disable debug messages completely (LWIP_DBG_TYPES_ON)</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * @{</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/** flag for LWIP_DEBUGF to enable that debug message */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_DBG_ON</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">            0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">80</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">U</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/** flag for LWIP_DEBUGF to disable that debug message */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_DBG_OFF</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">           0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">00</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">U</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * @}</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/** </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">@name</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> Debug message types (LWIP_DBG_TYPES_ON)</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * @{</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/** flag for LWIP_DEBUGF indicating a tracing message (to follow program flow) */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_DBG_TRACE</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">         0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">40</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">U</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/** flag for LWIP_DEBUGF indicating a state debug message (to follow module states) */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_DBG_STATE</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">         0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">20</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">U</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/** flag for LWIP_DEBUGF indicating newly added code, not thoroughly tested yet */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_DBG_FRESH</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">         0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">10</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">U</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/** flag for LWIP_DEBUGF to halt after printing this debug message */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_DBG_HALT</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">          0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">08</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">U</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * @}</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * @}</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">@defgroup</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> lwip_assertions Assertion handling</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">@ingroup</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> lwip_opts_debug</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * @{</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * LWIP_NOASSERT: Disable LWIP_ASSERT checks:</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * To disable assertions define LWIP_NOASSERT in arch/cc.h.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifdef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> __DOXYGEN__</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_NOASSERT</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#undef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_NOASSERT</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * @}</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_NOASSERT</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_ASSERT</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">message</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">, </span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">assertion</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">do</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> { </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">if</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> (</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">!</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(assertion)) { </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">\</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">  LWIP_PLATFORM_ASSERT</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(message); }} </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">while</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#else</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /* LWIP_NOASSERT */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_ASSERT</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">message</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">, </span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">assertion</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* LWIP_NOASSERT */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_ERROR</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifdef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_DEBUG</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_PLATFORM_ERROR</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">message</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">) </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">LWIP_PLATFORM_DIAG</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">((message))</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#else</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_PLATFORM_ERROR</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">message</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/* if "expression" isn't true, then print "message" and execute "handler" expression */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_ERROR</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">message</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">, </span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">expression</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">, </span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">handler</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">do</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> { </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">if</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> (</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">!</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(expression)) { </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">\</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">  LWIP_PLATFORM_ERROR</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(message); handler;}} </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">while</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* LWIP_ERROR */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/** Enable debug message printing, but only if debug message type is enabled</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *  AND is of correct type AND is at least LWIP_DBG_LEVEL.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifdef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> __DOXYGEN__</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_DEBUG</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#undef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_DEBUG</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifdef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_DEBUG</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_DEBUG_ENABLED</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">debug</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">) (((debug) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">&#x26;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> LWIP_DBG_ON) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">&#x26;&#x26;</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> \</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                                   ((debug) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">&#x26;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> LWIP_DBG_TYPES_ON) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">&#x26;&#x26;</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> \</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                                   ((</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">s16_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)((debug) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">&#x26;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> LWIP_DBG_MASK_LEVEL) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">>=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> LWIP_DBG_MIN_LEVEL))</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_DEBUGF</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">debug</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">, </span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">message</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">do</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> { </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">\</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">                               if</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> (</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">LWIP_DEBUG_ENABLED</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(debug)) { </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">\</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">                                 LWIP_PLATFORM_DIAG</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(message); </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">\</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">                                 if</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> ((debug) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">&#x26;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> LWIP_DBG_HALT) { </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">\</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">                                   while</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">); </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">\</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                                 } </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">\</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                               } </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">\</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                             } </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">while</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#else</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /* LWIP_DEBUG */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_DEBUG_ENABLED</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">debug</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">) </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">0</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_DEBUGF</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">debug</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">, </span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">message</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* LWIP_DEBUG */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* LWIP_HDR_DEBUG_H */</span></span>
+<span class="line"></span></code></pre>

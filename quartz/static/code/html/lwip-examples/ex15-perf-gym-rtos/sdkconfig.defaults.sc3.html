@@ -1,0 +1,9 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 场景变体：sc3 = tcpip 邮箱打满传导（ch13 实验 D 的应用版）</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 构建方式：SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.sc3" idf.py build -B build-sc3</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_GYM_SCENARIO</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=3</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 心跳探针提到 19（压过 tcpip=18）：本场景考察纯邮箱水位，按 Batch 4/7</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># "测量探针优先级要压过 tcpip"的纪律隔离调度维度的连带伤害——否则饱和的</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># tcpip 线程满负荷运转时，低于它的心跳会被连带饿出 kind=sched 假警报，</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 故事就串台到场景 1 了。</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_EX15_HB_PRIO</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=19</span></span>
+<span class="line"></span></code></pre>

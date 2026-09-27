@@ -1,0 +1,192 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/*</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * ipv6cp.h - PPP IPV6 Control Protocol.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Copyright (c) 1999 Tommi Komulainen.  All rights reserved.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Redistribution and use in source and binary forms, with or without</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * modification, are permitted provided that the following conditions</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * are met:</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 1. Redistributions of source code must retain the above copyright</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    notice, this list of conditions and the following disclaimer.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 2. Redistributions in binary form must reproduce the above copyright</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    notice, this list of conditions and the following disclaimer in</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    the documentation and/or other materials provided with the</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    distribution.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 3. The name(s) of the authors of this software must not be used to</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    endorse or promote products derived from this software without</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    prior written permission.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 4. Redistributions of any form whatsoever must retain the following</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    acknowledgment:</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    "This product includes software developed by Tommi Komulainen</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *     &#x3C;Tommi.Komulainen@iki.fi>".</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * THE AUTHORS OF THIS SOFTWARE DISCLAIM ALL WARRANTIES WITH REGARD TO</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * AND FITNESS, IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/*  Original version, based on RFC2023 :</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    Copyright (c) 1995, 1996, 1997 Francis.Dupont@inria.fr, INRIA Rocquencourt,</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    Alain.Durand@imag.fr, IMAG,</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    Jean-Luc.Richier@imag.fr, IMAG-LSR.</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    Copyright (c) 1998, 1999 Francis.Dupont@inria.fr, GIE DYADE,</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    Alain.Durand@imag.fr, IMAG,</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    Jean-Luc.Richier@imag.fr, IMAG-LSR.</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    Ce travail a été fait au sein du GIE DYADE (Groupement d'Intérêt</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    Économique ayant pour membres BULL S.A. et l'INRIA).</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    Ce logiciel informatique est disponible aux conditions</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    usuelles dans la recherche, c'est-à-dire qu'il peut</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    être utilisé, copié, modifié, distribué à l'unique</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    condition que ce texte soit conservé afin que</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    l'origine de ce logiciel soit reconnue.</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    Le nom de l'Institut National de Recherche en Informatique</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    et en Automatique (INRIA), de l'IMAG, ou d'une personne morale</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    ou physique ayant participé à l'élaboration de ce logiciel ne peut</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    être utilisé sans son accord préalable explicite.</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    Ce logiciel est fourni tel quel sans aucune garantie,</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    support ou responsabilité d'aucune sorte.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    Ce logiciel est dérivé de sources d'origine</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    "University of California at Berkeley" et</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    "Digital Equipment Corporation" couvertes par des copyrights.</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    L'Institut d'Informatique et de Mathématiques Appliquées de Grenoble (IMAG)</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    est une fédération d'unités mixtes de recherche du CNRS, de l'Institut National</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    Polytechnique de Grenoble et de l'Université Joseph Fourier regroupant</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    sept laboratoires dont le laboratoire Logiciels, Systèmes, Réseaux (LSR).</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    This work has been done in the context of GIE DYADE (joint R &#x26; D venture</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    between BULL S.A. and INRIA).</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    This software is available with usual "research" terms</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    with the aim of retain credits of the software. </span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    Permission to use, copy, modify and distribute this software for any</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    purpose and without fee is hereby granted, provided that the above</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    copyright notice and this permission notice appear in all copies,</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    and the name of INRIA, IMAG, or any contributor not be used in advertising</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    or publicity pertaining to this material without the prior explicit</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    permission. The software is provided "as is" without any</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    warranties, support or liabilities of any kind.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    This software is derived from source code from</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    "University of California at Berkeley" and</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    "Digital Equipment Corporation" protected by copyrights.</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    Grenoble's Institute of Computer Science and Applied Mathematics (IMAG)</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    is a federation of seven research units funded by the CNRS, National</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    Polytechnic Institute of Grenoble and University Joseph Fourier.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    The research unit in Software, Systems, Networks (LSR) is member of IMAG.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">*/</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/*</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Derived from :</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * ipcp.h - IP Control Protocol definitions.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Copyright (c) 1984-2000 Carnegie Mellon University. All rights reserved.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Redistribution and use in source and binary forms, with or without</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * modification, are permitted provided that the following conditions</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * are met:</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 1. Redistributions of source code must retain the above copyright</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    notice, this list of conditions and the following disclaimer.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 2. Redistributions in binary form must reproduce the above copyright</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    notice, this list of conditions and the following disclaimer in</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    the documentation and/or other materials provided with the</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    distribution.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 3. The name "Carnegie Mellon University" must not be used to</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    endorse or promote products derived from this software without</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    prior written permission. For permission or any legal</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    details, please contact</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *      Office of Technology Transfer</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *      Carnegie Mellon University</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *      5000 Forbes Avenue</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *      Pittsburgh, PA  15213-3890</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *      (412) 268-4387, fax: (412) 268-7395</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *      tech-transfer@andrew.cmu.edu</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 4. Redistributions of any form whatsoever must retain the following</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    acknowledgment:</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    "This product includes software developed by Computing Services</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *     at Carnegie Mellon University (http://www.cmu.edu/computing/)."</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * CARNEGIE MELLON UNIVERSITY DISCLAIMS ALL WARRANTIES WITH REGARD TO</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * AND FITNESS, IN NO EVENT SHALL CARNEGIE MELLON UNIVERSITY BE LIABLE</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * $Id: ipv6cp.h,v 1.7 2002/12/04 23:03:32 paulus Exp $</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#include</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "netif/ppp/ppp_opts.h"</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPP_SUPPORT</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> &#x26;&#x26;</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPP_IPV6_SUPPORT</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /* don't build if not configured for use in lwipopts.h */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> IPV6CP_H</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">	IPV6CP_H</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#include</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "eui64.h"</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifdef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> __cplusplus</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">extern</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "C"</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> {</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/*</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Options.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> CI_IFACEID</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">	1</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">	/* Interface Identifier */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifdef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> IPV6CP_COMP</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> CI_COMPRESSTYPE</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">	2</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">	/* Compression Type     */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* IPV6CP_COMP */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/* No compression types yet defined.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *#define IPV6CP_COMP	0x004f</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">typedef</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> struct</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> ipv6cp_options {</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    unsigned</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> int</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> neg_ifaceid    :</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /* Negotiate interface identifier? */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    unsigned</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> int</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> req_ifaceid    :</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /* Ask peer to send interface identifier? */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    unsigned</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> int</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> accept_local   :</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /* accept peer's value for iface id? */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    unsigned</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> int</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> opt_local      :</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /* ourtoken set by option */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    unsigned</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> int</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> opt_remote     :</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /* histoken set by option */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    unsigned</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> int</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> use_ip         :</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /* use IP as interface identifier */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 0</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    unsigned int use_persistent :1;  /* use uniquely persistent value for address */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifdef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> IPV6CP_COMP</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    unsigned</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> int</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> neg_vj         :</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /* Van Jacobson Compression? */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* IPV6CP_COMP */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifdef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> IPV6CP_COMP</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    u_short</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> vj_protocol;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">        /* protocol value to use in VJ option */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* IPV6CP_COMP */</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">    eui64_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> ourid, hisid;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">       /* Interface identifiers */</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">} ipv6cp_options;</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">extern</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> const</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> struct</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> protent ipv6cp_protent;</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifdef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> __cplusplus</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">}</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* IPV6CP_H */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* PPP_SUPPORT &#x26;&#x26; PPP_IPV6_SUPPORT */</span></span>
+<span class="line"></span></code></pre>

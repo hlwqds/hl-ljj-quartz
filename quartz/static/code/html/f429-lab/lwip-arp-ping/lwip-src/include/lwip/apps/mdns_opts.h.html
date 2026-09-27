@@ -1,0 +1,122 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">@file</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * MDNS responder</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /*</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Copyright (c) 2015 Verisure Innovation AB</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * All rights reserved.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Redistribution and use in source and binary forms, with or without modification,</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * are permitted provided that the following conditions are met:</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 1. Redistributions of source code must retain the above copyright notice,</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    this list of conditions and the following disclaimer.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 2. Redistributions in binary form must reproduce the above copyright notice,</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    this list of conditions and the following disclaimer in the documentation</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    and/or other materials provided with the distribution.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 3. The name of the author may not be used to endorse or promote products</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    derived from this software without specific prior written permission.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * OF SUCH DAMAGE.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * This file is part of the lwIP TCP/IP stack.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Author: Erik Ekman &#x3C;erik@kryo.se></span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Author: Jasper Verschueren &#x3C;jasper.verschueren@apart-audio.com></span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_HDR_APPS_MDNS_OPTS_H</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_HDR_APPS_MDNS_OPTS_H</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#include</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "lwip/opt.h"</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">@defgroup</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> mdns_opts Options</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">@ingroup</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> mdns</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * @{</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * LWIP_MDNS_RESPONDER==1: Turn on multicast DNS module. UDP must be available for MDNS</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * transport. IGMP is needed for IPv4 multicast.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_MDNS_RESPONDER</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_MDNS_RESPONDER</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">             0</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* LWIP_MDNS_RESPONDER */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/** The maximum number of services per netif */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> MDNS_MAX_SERVICES</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> MDNS_MAX_SERVICES</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">               1</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/** The minimum delay between probes in ms. RFC 6762 require 250ms.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * In noisy WiFi environment, adding 30-50ms to this value help a lot for</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * a successful Apple BCT tests.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> MDNS_PROBE_DELAY_MS</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> MDNS_PROBE_DELAY_MS</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">           250</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/** The maximum number of received packets stored in chained list of known</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * answers for pending truncated questions. This value define the size of</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * the MDNS_PKTS mempool.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Up to MDNS_MAX_STORED_PKTS pbuf can be stored in addition to TC questions</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * that are pending.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> MDNS_MAX_STORED_PKTS</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> MDNS_MAX_STORED_PKTS</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">            4</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/** Payload size allocated for each outgoing UDP packet. Will be allocated with</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * PBUF_RAM and freed after packet was sent.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * According to RFC 6762, there is no reason to retain the 512 bytes restriction</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * for link-local multicast packet.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 512 bytes isn't enough when 2 services need to be probed.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> MDNS_OUTPUT_PACKET_SIZE</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> MDNS_OUTPUT_PACKET_SIZE</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">      ((MDNS_MAX_SERVICES </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">==</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">?</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 512</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> :</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 1450</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/** MDNS_RESP_USENETIF_EXTCALLBACK==1: register an ext_callback on the netif</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * to automatically restart probing/announcing on status or address change.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> MDNS_RESP_USENETIF_EXTCALLBACK</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> MDNS_RESP_USENETIF_EXTCALLBACK</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  LWIP_NETIF_EXT_STATUS_CALLBACK</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * LWIP_MDNS_SEARCH==1: Turn on search over multicast DNS module.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_MDNS_SEARCH</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_MDNS_SEARCH</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">                1</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/** The maximum number of running requests */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> MDNS_MAX_REQUESTS</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> MDNS_MAX_REQUESTS</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">               2</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * MDNS_DEBUG: Enable debugging for multicast DNS.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> MDNS_DEBUG</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> MDNS_DEBUG</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                       LWIP_DBG_OFF</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * @}</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* LWIP_HDR_APPS_MDNS_OPTS_H */</span></span>
+<span class="line"></span></code></pre>

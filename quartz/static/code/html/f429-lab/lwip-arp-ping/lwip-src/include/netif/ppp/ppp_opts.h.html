@@ -1,0 +1,611 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/*</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Redistribution and use in source and binary forms, with or without modification,</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * are permitted provided that the following conditions are met:</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 1. Redistributions of source code must retain the above copyright notice,</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    this list of conditions and the following disclaimer.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 2. Redistributions in binary form must reproduce the above copyright notice,</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    this list of conditions and the following disclaimer in the documentation</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    and/or other materials provided with the distribution.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 3. The name of the author may not be used to endorse or promote products</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    derived from this software without specific prior written permission.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * OF SUCH DAMAGE.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * This file is part of the lwIP TCP/IP stack.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_PPP_OPTS_H</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_PPP_OPTS_H</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#include</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "lwip/opt.h"</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * PPP_SUPPORT==1: Enable PPP.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPP_SUPPORT</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPP_SUPPORT</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">                     0</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * PPPOE_SUPPORT==1: Enable PPP Over Ethernet</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPPOE_SUPPORT</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPPOE_SUPPORT</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">                   0</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * PPPOE_SCNAME_SUPPORT==1: Enable PPP Over Ethernet Service Name and Concentrator Name support</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPPOE_SCNAME_SUPPORT</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPPOE_SCNAME_SUPPORT</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">            0</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * PPPOL2TP_SUPPORT==1: Enable PPP Over L2TP</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPPOL2TP_SUPPORT</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPPOL2TP_SUPPORT</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">                0</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * PPPOL2TP_AUTH_SUPPORT==1: Enable PPP Over L2TP Auth (enable MD5 support)</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPPOL2TP_AUTH_SUPPORT</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPPOL2TP_AUTH_SUPPORT</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">           PPPOL2TP_SUPPORT</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * PPPOS_SUPPORT==1: Enable PPP Over Serial</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPPOS_SUPPORT</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPPOS_SUPPORT</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                   PPP_SUPPORT</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * LWIP_PPP_API==1: Enable PPP API (in pppapi.c)</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_PPP_API</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_PPP_API</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                    (PPP_SUPPORT </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">&#x26;&#x26;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> (NO_SYS </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">==</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">))</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPP_SUPPORT</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * MEMP_NUM_PPP_PCB: the number of simultaneously active PPP</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * connections (requires the PPP_SUPPORT option)</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> MEMP_NUM_PPP_PCB</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> MEMP_NUM_PPP_PCB</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">                1</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * PPP_NUM_TIMEOUTS_PER_PCB: the number of sys_timeouts running in parallel per</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * ppp_pcb. See the detailed explanation at the end of ppp_impl.h about simultaneous</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * timers analysis.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPP_NUM_TIMEOUTS_PER_PCB</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPP_NUM_TIMEOUTS_PER_PCB</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">        (</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">2</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> +</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> PPP_IPV4_SUPPORT </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">+</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> PPP_IPV6_SUPPORT </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">+</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> CCP_SUPPORT)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/* The number of sys_timeouts required for the PPP module */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPP_NUM_TIMEOUTS</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                (PPP_SUPPORT </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> PPP_NUM_TIMEOUTS_PER_PCB </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> MEMP_NUM_PPP_PCB)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * MEMP_NUM_PPPOS_INTERFACES: the number of concurrently active PPPoS</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * interfaces (only used with PPPOS_SUPPORT==1)</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> MEMP_NUM_PPPOS_INTERFACES</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> MEMP_NUM_PPPOS_INTERFACES</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">       MEMP_NUM_PPP_PCB</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * MEMP_NUM_PPPOE_INTERFACES: the number of concurrently active PPPoE</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * interfaces (only used with PPPOE_SUPPORT==1)</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> MEMP_NUM_PPPOE_INTERFACES</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> MEMP_NUM_PPPOE_INTERFACES</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">       1</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * MEMP_NUM_PPPOL2TP_INTERFACES: the number of concurrently active PPPoL2TP</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * interfaces (only used with PPPOL2TP_SUPPORT==1)</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> MEMP_NUM_PPPOL2TP_INTERFACES</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> MEMP_NUM_PPPOL2TP_INTERFACES</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">       1</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * MEMP_NUM_PPP_API_MSG: Number of concurrent PPP API messages (in pppapi.c)</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> MEMP_NUM_PPP_API_MSG</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> MEMP_NUM_PPP_API_MSG</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 5</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * PPP_DEBUG: Enable debugging for PPP.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPP_DEBUG</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPP_DEBUG</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                       LWIP_DBG_OFF</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * PPP_INPROC_IRQ_SAFE==1 call pppos_input() using tcpip_callback().</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Please read the "PPPoS input path" chapter in the PPP documentation about this option.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPP_INPROC_IRQ_SAFE</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPP_INPROC_IRQ_SAFE</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">             0</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * PRINTPKT_SUPPORT==1: Enable PPP print packet support</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Mandatory for debugging, it displays exchanged packet content in debug trace.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PRINTPKT_SUPPORT</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PRINTPKT_SUPPORT</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">                0</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * PPP_IPV4_SUPPORT==1: Enable PPP IPv4 support</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPP_IPV4_SUPPORT</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPP_IPV4_SUPPORT</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                (LWIP_IPV4)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * PPP_IPV6_SUPPORT==1: Enable PPP IPv6 support</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPP_IPV6_SUPPORT</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPP_IPV6_SUPPORT</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                (LWIP_IPV6)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * PPP_NOTIFY_PHASE==1: Support PPP notify phase support</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * PPP notify phase support allows you to set a callback which is</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * called on change of the internal PPP state machine.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * This can be used for example to set a LED pattern depending on the</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * current phase of the PPP session.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPP_NOTIFY_PHASE</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPP_NOTIFY_PHASE</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">                0</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * PPP_FCS_TABLE: Keep a 256*2 byte table to speed up FCS calculation for PPPoS</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPP_FCS_TABLE</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPP_FCS_TABLE</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">                   1</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * PAP_SUPPORT==1: Support PAP.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PAP_SUPPORT</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PAP_SUPPORT</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">                     0</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * CHAP_SUPPORT==1: Support CHAP.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> CHAP_SUPPORT</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> CHAP_SUPPORT</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">                    0</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * MSCHAP_SUPPORT==1: Support MSCHAP.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> MSCHAP_SUPPORT</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> MSCHAP_SUPPORT</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">                  0</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> MSCHAP_SUPPORT</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/* MSCHAP requires CHAP support */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#undef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> CHAP_SUPPORT</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> CHAP_SUPPORT</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">                    1</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* MSCHAP_SUPPORT */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * EAP_SUPPORT==1: Support EAP.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> EAP_SUPPORT</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> EAP_SUPPORT</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">                     0</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * CCP_SUPPORT==1: Support CCP.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> CCP_SUPPORT</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> CCP_SUPPORT</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">                     0</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * MPPE_SUPPORT==1: Support MPPE.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> MPPE_SUPPORT</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> MPPE_SUPPORT</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">                    0</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> MPPE_SUPPORT</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/* MPPE requires CCP support */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#undef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> CCP_SUPPORT</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> CCP_SUPPORT</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">                     1</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/* MPPE requires MSCHAP support */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#undef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> MSCHAP_SUPPORT</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> MSCHAP_SUPPORT</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">                  1</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/* MSCHAP requires CHAP support */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#undef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> CHAP_SUPPORT</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> CHAP_SUPPORT</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">                    1</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* MPPE_SUPPORT */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * CBCP_SUPPORT==1: Support CBCP. CURRENTLY NOT SUPPORTED! DO NOT SET!</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> CBCP_SUPPORT</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> CBCP_SUPPORT</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">                    0</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * ECP_SUPPORT==1: Support ECP. CURRENTLY NOT SUPPORTED! DO NOT SET!</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> ECP_SUPPORT</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> ECP_SUPPORT</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">                     0</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * DEMAND_SUPPORT==1: Support dial on demand. CURRENTLY NOT SUPPORTED! DO NOT SET!</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> DEMAND_SUPPORT</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> DEMAND_SUPPORT</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">                  0</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * LQR_SUPPORT==1: Support Link Quality Report. Do nothing except exchanging some LCP packets.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LQR_SUPPORT</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LQR_SUPPORT</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">                     0</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * PPP_SERVER==1: Enable PPP server support (waiting for incoming PPP session).</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Currently only supported for PPPoS.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPP_SERVER</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPP_SERVER</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">                      0</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPP_SERVER</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/*</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * PPP_OUR_NAME: Our name for authentication purposes</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPP_OUR_NAME</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPP_OUR_NAME</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">                    "lwIP"</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* PPP_SERVER */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * VJ_SUPPORT==1: Support VJ header compression.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">BEWARE:</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> It is known to be broken when built with some compiler optimizations enabled.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> VJ_SUPPORT</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> VJ_SUPPORT</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">                      0</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/* VJ compression is only supported for TCP over IPv4 over PPPoS. */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> !</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">PPPOS_SUPPORT</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> ||</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> !</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">PPP_IPV4_SUPPORT</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> ||</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> !</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">LWIP_TCP</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#undef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> VJ_SUPPORT</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> VJ_SUPPORT</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">                      0</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* !PPPOS_SUPPORT */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * PPP_MD5_RANDM==1: Use MD5 for better randomness.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Enabled by default if CHAP, EAP, or L2TP AUTH support is enabled.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPP_MD5_RANDM</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPP_MD5_RANDM</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                   (CHAP_SUPPORT </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">||</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> EAP_SUPPORT </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">||</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> PPPOL2TP_AUTH_SUPPORT)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * PolarSSL embedded library</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * lwIP contains some files fetched from the latest BSD release of</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * the PolarSSL project (PolarSSL 0.10.1-bsd) for ciphers and encryption</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * methods we need for lwIP PPP support.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * The PolarSSL files were cleaned to contain only the necessary struct</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * fields and functions needed for lwIP.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * The PolarSSL API was not changed at all, so if you are already using</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * PolarSSL you can choose to skip the compilation of the included PolarSSL</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * library into lwIP.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * If you are not using the embedded copy you must include external</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * libraries into your arch/cc.h port file.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Beware of the stack requirements which can be a lot larger if you are not</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * using our cleaned PolarSSL library.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * LWIP_USE_EXTERNAL_POLARSSL: Use external PolarSSL library</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_USE_EXTERNAL_POLARSSL</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_USE_EXTERNAL_POLARSSL</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">      0</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * LWIP_USE_EXTERNAL_MBEDTLS: Use external mbed TLS library</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_USE_EXTERNAL_MBEDTLS</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_USE_EXTERNAL_MBEDTLS</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">       0</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/*</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * PPP Timeouts</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * FSM_DEFTIMEOUT: Timeout time in seconds</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> FSM_DEFTIMEOUT</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> FSM_DEFTIMEOUT</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">                  6</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * FSM_DEFMAXTERMREQS: Maximum Terminate-Request transmissions</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> FSM_DEFMAXTERMREQS</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> FSM_DEFMAXTERMREQS</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">              2</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * FSM_DEFMAXCONFREQS: Maximum Configure-Request transmissions</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> FSM_DEFMAXCONFREQS</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> FSM_DEFMAXCONFREQS</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">              10</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * FSM_DEFMAXNAKLOOPS: Maximum number of nak loops</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> FSM_DEFMAXNAKLOOPS</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> FSM_DEFMAXNAKLOOPS</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">              5</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * UPAP_DEFTIMEOUT: Timeout (seconds) for retransmitting req</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> UPAP_DEFTIMEOUT</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> UPAP_DEFTIMEOUT</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">                 6</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * UPAP_DEFTRANSMITS: Maximum number of auth-reqs to send</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> UPAP_DEFTRANSMITS</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> UPAP_DEFTRANSMITS</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">               10</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPP_SERVER</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * UPAP_DEFREQTIME: Time to wait for auth-req from peer</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> UPAP_DEFREQTIME</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> UPAP_DEFREQTIME</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">                 30</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* PPP_SERVER */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * CHAP_DEFTIMEOUT: Timeout (seconds) for retransmitting req</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> CHAP_DEFTIMEOUT</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> CHAP_DEFTIMEOUT</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">                 6</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * CHAP_DEFTRANSMITS: max # times to send challenge</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> CHAP_DEFTRANSMITS</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> CHAP_DEFTRANSMITS</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">               10</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPP_SERVER</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * CHAP_DEFRECHALLENGETIME: If this option is > 0, rechallenge the peer every n seconds</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> CHAP_DEFRECHALLENGETIME</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> CHAP_DEFRECHALLENGETIME</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">         0</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* PPP_SERVER */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * EAP_DEFREQTIME: Time to wait for peer request</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> EAP_DEFREQTIME</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> EAP_DEFREQTIME</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">                  6</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * EAP_DEFALLOWREQ: max # times to accept requests</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> EAP_DEFALLOWREQ</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> EAP_DEFALLOWREQ</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">                 10</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPP_SERVER</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * EAP_DEFTIMEOUT: Timeout (seconds) for rexmit</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> EAP_DEFTIMEOUT</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> EAP_DEFTIMEOUT</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">                  6</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * EAP_DEFTRANSMITS: max # times to transmit</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> EAP_DEFTRANSMITS</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> EAP_DEFTRANSMITS</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">                10</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* PPP_SERVER */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * LCP_DEFLOOPBACKFAIL: Default number of times we receive our magic number from the peer</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * before deciding the link is looped-back.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LCP_DEFLOOPBACKFAIL</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LCP_DEFLOOPBACKFAIL</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">             10</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * LCP_ECHOINTERVAL: Interval in seconds between keepalive echo requests, 0 to disable.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LCP_ECHOINTERVAL</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LCP_ECHOINTERVAL</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">                0</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * LCP_MAXECHOFAILS: Number of unanswered echo requests before failure.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LCP_MAXECHOFAILS</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LCP_MAXECHOFAILS</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">                3</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * PPP_MAXIDLEFLAG: Max Xmit idle time (in ms) before resend flag char.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPP_MAXIDLEFLAG</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPP_MAXIDLEFLAG</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">                 100</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * PPP Packet sizes</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * PPP_MRU: MRU value we want to negotiate (peer MTU)</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * It only affects PPPoS because PPPoE value is derived from the</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Ethernet interface MTU and PPPoL2TP have a separate setting.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPP_MRU</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPP_MRU</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">                         1500</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * PPP_MAXMRU: Normally limit peer MRU to this</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * This is the upper limit value to which we set our interface MTU.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * If the peer sends a larger number, we will just ignore it as we</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * are not required to maximize the use of the peer capacity.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * It only affects PPPoS because PPPoE value is derived from the</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Ethernet interface MTU and PPPoL2TP have a separate setting.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPP_MAXMRU</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPP_MAXMRU</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">                      1500</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * PPP_MINMRU: No peer MRUs below this</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Peer must be able to receive at least our minimum MTU.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPP_MINMRU</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPP_MINMRU</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">                      128</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * PPPOL2TP_DEFMRU: Default MTU and MRU for L2TP</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Default = 1500 - PPPoE(6) - PPP Protocol(2) - IPv4 header(20) - UDP Header(8)</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * - L2TP Header(6) - HDLC Header(2) - PPP Protocol(2) - MPPE Header(2) - PPP Protocol(2)</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPPOL2TP_SUPPORT</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPPOL2TP_DEFMRU</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPPOL2TP_DEFMRU</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">                 1450</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* PPPOL2TP_SUPPORT */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">MAXNAMELEN:</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> max length of hostname or name for auth</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> MAXNAMELEN</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> MAXNAMELEN</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">                      256</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">MAXSECRETLEN:</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> max length of password or secret</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> MAXSECRETLEN</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> MAXSECRETLEN</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">                    256</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/* ------------------------------------------------------------------------- */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/*</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Build triggers for embedded PolarSSL</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> !</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">LWIP_USE_EXTERNAL_POLARSSL</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> &#x26;&#x26;</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> !</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">LWIP_USE_EXTERNAL_MBEDTLS</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/* CHAP, EAP, L2TP AUTH and MD5 Random require MD5 support */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> CHAP_SUPPORT</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> ||</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> EAP_SUPPORT</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> ||</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPPOL2TP_AUTH_SUPPORT</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> ||</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPP_MD5_RANDM</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_INCLUDED_POLARSSL_MD5</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">      1</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* CHAP_SUPPORT || EAP_SUPPORT || PPPOL2TP_AUTH_SUPPORT || PPP_MD5_RANDM */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> MSCHAP_SUPPORT</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/* MSCHAP require MD4 support */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_INCLUDED_POLARSSL_MD4</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">      1</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/* MSCHAP require SHA1 support */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_INCLUDED_POLARSSL_SHA1</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">     1</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/* MSCHAP require DES support */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_INCLUDED_POLARSSL_DES</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">      1</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/* MS-CHAP support is required for MPPE */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> MPPE_SUPPORT</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/* MPPE require ARC4 support */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_INCLUDED_POLARSSL_ARC4</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">     1</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* MPPE_SUPPORT */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* MSCHAP_SUPPORT */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* !LWIP_USE_EXTERNAL_POLARSSL &#x26;&#x26; !LWIP_USE_EXTERNAL_MBEDTLS */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/* Default value if unset */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_INCLUDED_POLARSSL_MD4</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_INCLUDED_POLARSSL_MD4</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">      0</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* LWIP_INCLUDED_POLARSSL_MD4 */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_INCLUDED_POLARSSL_MD5</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_INCLUDED_POLARSSL_MD5</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">      0</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* LWIP_INCLUDED_POLARSSL_MD5 */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_INCLUDED_POLARSSL_SHA1</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_INCLUDED_POLARSSL_SHA1</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">     0</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* LWIP_INCLUDED_POLARSSL_SHA1 */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_INCLUDED_POLARSSL_DES</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_INCLUDED_POLARSSL_DES</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">      0</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* LWIP_INCLUDED_POLARSSL_DES */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_INCLUDED_POLARSSL_ARC4</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_INCLUDED_POLARSSL_ARC4</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">     0</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* LWIP_INCLUDED_POLARSSL_ARC4 */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* PPP_SUPPORT */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/* Default value if unset */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPP_NUM_TIMEOUTS</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPP_NUM_TIMEOUTS</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">                0</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* PPP_NUM_TIMEOUTS */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* LWIP_PPP_OPTS_H */</span></span>
+<span class="line"></span></code></pre>

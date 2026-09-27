@@ -1,0 +1,105 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">@file</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * DHCPv6 client: IPv6 address autoconfiguration as per</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * RFC 3315 (stateful DHCPv6) and</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * RFC 3736 (stateless DHCPv6).</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/*</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Copyright (c) 2018 Simon Goldschmidt</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * All rights reserved.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Redistribution and use in source and binary forms, with or without modification,</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * are permitted provided that the following conditions are met:</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 1. Redistributions of source code must retain the above copyright notice,</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    this list of conditions and the following disclaimer.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 2. Redistributions in binary form must reproduce the above copyright notice,</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    this list of conditions and the following disclaimer in the documentation</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    and/or other materials provided with the distribution.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 3. The name of the author may not be used to endorse or promote products</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    derived from this software without specific prior written permission.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * OF SUCH DAMAGE.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * This file is part of the lwIP TCP/IP stack.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Author: Simon Goldschmidt &#x3C;goldsimon@gmx.de></span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_HDR_IP6_DHCP6_H</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_HDR_IP6_DHCP6_H</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#include</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "lwip/opt.h"</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_IPV6_DHCP6</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /* don't build if not configured for use in lwipopts.h */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#include</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "lwip/err.h"</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#include</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "lwip/netif.h"</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifdef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> __cplusplus</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">extern</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "C"</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> {</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/** period (in milliseconds) of the application calling dhcp6_tmr() */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> DHCP6_TIMER_MSECS</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">   500</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">struct</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> dhcp6</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">{</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /** transaction identifier of last sent request */</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  u32_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> xid;</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /** track PCB allocation state */</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  u8_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> pcb_allocated;</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /** current DHCPv6 state machine state */</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  u8_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> state;</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /** retries of current request */</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  u8_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> tries;</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /** if request config is triggered while another action is active, this keeps track of it */</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  u8_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> request_config_pending;</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /** #ticks with period DHCP6_TIMER_MSECS for request timeout */</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  u16_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> request_timeout;</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_IPV6_DHCP6_STATEFUL</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /* @todo: add more members here to keep track of stateful DHCPv6 data, like lease times */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* LWIP_IPV6_DHCP6_STATEFUL */</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">};</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">void</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> dhcp6_set_struct</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">struct</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> netif </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">*</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">netif</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">, </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">struct</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> dhcp6 </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">*</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">dhcp6</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">);</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/** Remove a struct dhcp6 previously set to the netif using dhcp6_set_struct() */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> dhcp6_remove_struct</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">netif</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">) </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">netif_set_client_data</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(netif, LWIP_NETIF_CLIENT_DATA_INDEX_DHCP6, </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">NULL</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">void</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> dhcp6_cleanup</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">struct</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> netif </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">*</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">netif</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">);</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">err_t</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> dhcp6_enable_stateful</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">struct</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> netif </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">*</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">netif</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">);</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">err_t</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> dhcp6_enable_stateless</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">struct</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> netif </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">*</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">netif</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">);</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">void</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> dhcp6_disable</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">struct</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> netif </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">*</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">netif</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">);</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">void</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> dhcp6_tmr</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">void</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">);</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">void</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> dhcp6_nd6_ra_trigger</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">struct</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> netif </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">*</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">netif</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">, </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">u8_t</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70"> managed_addr_config</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">, </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">u8_t</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70"> other_config</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">);</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_DHCP6_GET_NTP_SRV</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/** This function must exist, in other to add offered NTP servers to</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * the NTP (or SNTP) engine.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * See LWIP_DHCP6_MAX_NTP_SERVERS */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">extern</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> void</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> dhcp6_set_ntp_servers</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">u8_t</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70"> num_ntp_servers</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">, </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">const</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> ip_addr_t</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">*</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70"> ntp_server_addrs</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">);</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* LWIP_DHCP6_GET_NTP_SRV */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> netif_dhcp6_data</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">netif</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">) ((</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">struct</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> dhcp6</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">netif_get_client_data</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(netif, LWIP_NETIF_CLIENT_DATA_INDEX_DHCP6))</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifdef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> __cplusplus</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">}</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* LWIP_IPV6_DHCP6 */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* LWIP_HDR_IP6_DHCP6_H */</span></span>
+<span class="line"></span></code></pre>

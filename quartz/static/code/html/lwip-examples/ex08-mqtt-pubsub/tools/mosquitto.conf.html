@@ -1,0 +1,8 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># ex08 demo broker 配置：允许匿名、监听 1883、不落盘</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># SLIRP 下 guest 访问 10.0.2.2:1883 会落到宿主机 loopback 同端口，</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 因此监听全部接口即可（同时方便 mosquitto_sub/pub 从 127.0.0.1 观察）。</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">listener 1883 0.0.0.0</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">allow_anonymous true</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">persistence false</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">log_dest stdout</span></span>
+<span class="line"></span></code></pre>

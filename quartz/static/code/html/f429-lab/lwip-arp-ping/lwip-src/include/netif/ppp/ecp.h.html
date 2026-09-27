@@ -1,0 +1,63 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/*</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * ecp.h - Definitions for PPP Encryption Control Protocol.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Copyright (c) 2002 Google, Inc.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * All rights reserved.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Redistribution and use in source and binary forms, with or without</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * modification, are permitted provided that the following conditions</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * are met:</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 1. Redistributions of source code must retain the above copyright</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    notice, this list of conditions and the following disclaimer.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 2. Redistributions in binary form must reproduce the above copyright</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    notice, this list of conditions and the following disclaimer in</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    the documentation and/or other materials provided with the</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    distribution.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 3. The name(s) of the authors of this software must not be used to</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    endorse or promote products derived from this software without</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    prior written permission.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * THE AUTHORS OF THIS SOFTWARE DISCLAIM ALL WARRANTIES WITH REGARD TO</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * AND FITNESS, IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * $Id: ecp.h,v 1.2 2003/01/10 07:12:36 fcusack Exp $</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#include</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "netif/ppp/ppp_opts.h"</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPP_SUPPORT</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> &#x26;&#x26;</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> ECP_SUPPORT</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /* don't build if not configured for use in lwipopts.h */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> ECP_H</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> ECP_H</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifdef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> __cplusplus</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">extern</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "C"</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> {</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">typedef</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> struct</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> ecp_options {</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    bool</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> required;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">		/* Is ECP required? */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    unsigned</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> enctype;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">		/* Encryption type */</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">} ecp_options;</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">extern</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> fsm ecp_fsm</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">[]</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">;</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">extern</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> ecp_options ecp_wantoptions</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">[]</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">;</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">extern</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> ecp_options ecp_gotoptions</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">[]</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">;</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">extern</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> ecp_options ecp_allowoptions</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">[]</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">;</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">extern</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> ecp_options ecp_hisoptions</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">[]</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">;</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">extern</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> const</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> struct</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> protent ecp_protent;</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifdef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> __cplusplus</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">}</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* ECP_H */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* PPP_SUPPORT &#x26;&#x26; ECP_SUPPORT */</span></span>
+<span class="line"></span></code></pre>

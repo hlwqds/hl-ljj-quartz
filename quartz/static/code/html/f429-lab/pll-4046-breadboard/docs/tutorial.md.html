@@ -1,0 +1,436 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold"># 分立 PLL 面包板实验教程 —— 把 STM32 片内 PLL 拆开看</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">> 本文是 [</span><span style="--shiki-light:#032F62;--shiki-light-text-decoration:underline;--shiki-dark:#DBEDFF;--shiki-dark-text-decoration:underline">pll-4046-breadboard</span><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">](</span><span style="--shiki-light:#22863A;--shiki-light-text-decoration:underline;--shiki-dark:#85E89D;--shiki-dark-text-decoration:underline">/static/code/#/f429-lab/pll-4046-breadboard/README.md</span><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">) 工程的</span></span>
+<span class="line"><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">> 实验教程。前置阅读:[[ch00e-clock-tree-and-systick-silicon|时钟树与 SysTick 章]]第 2 节(时钟树)与</span></span>
+<span class="line"><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">> 第 4 节(M/N/P 算法)——浏览页里 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`[[wikilink]]`</span><span style="--shiki-light:#22863A;--shiki-dark:#85E89D"> 是纯文本,该笔记即仓库的</span></span>
+<span class="line"><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">> </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`content/f429-lab/ch00e-clock-tree-and-systick-silicon.md`</span><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">。状态:</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**先成文、后实跑**</span><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">——零件在途,所有「预期现象」待实测核销。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 0. 实验目标与原理</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**一句话结论**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">:STM32 时钟树里的 PLL 在 ch00e 里是一个名字、一个方框;本实验用</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">74HC4046 + 74HC4040 在面包板上搭出同样的环路,让「倍频」「锁定」「失锁」变成</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">万用表和 piscope 上看得见的过程。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">### 0.1 链路图(与 ch00e 时钟树对照着看)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">              参考方向                        反馈方向</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 32.768kHz 晶振 ──► SIGIN(14)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                      │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                      ▼                ┌─────────────────┐</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">              PC2 鉴相器+电荷泵        │  环路里的「积」  │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">              PC2OUT(13) ──R3 100k──► │  节点A = VCOIN(9)│──C2 100nF──GND</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                                       └─────────────────┘</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                                                │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                                                ▼</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                                      VCO(4) ──► TP1(输出测试点)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                                                │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                                                ▼</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                                      4040 CP(10) ÷2^n 计数</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                                                │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                              反馈跳线 J1:Q4(5)/Q5(3)/Q6(2) ──► COMPIN(3)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">五个部件,每个对应 STM32 片内 PLL 的一部分(见 0.3 映射表)。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">### 0.2 原理速览(网络工程师版)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">把 PLL 当一个</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**拥塞控制回路**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">读:</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 部件                  | 干什么                                                   | 网络侧类比                                     |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| --------------------- | -------------------------------------------------------- | ---------------------------------------------- |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 参考 32.768kHz        | 目标速率:环路唯一追求的「合同速率」                      | 目标带宽/SLA                                   |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| PC2 鉴相器(边沿型)    | 比较参考与反馈的</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**边沿先后**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">,输出三态脉冲                | RTT 估计:谁超前谁让路,误差决定修正量           |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 电荷泵 + C2(环路滤波) | 误差脉冲被积分成电压存进电容——</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**VCOIN 是相位误差的积分**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> | cwnd 的 AIMD 积分状态;cwnd 只记积分,不记每一步 |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| VCO                   | 执行器:电压→频率,可调范围有上下限                        | 发送速率:受链路物理上限约束                    |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 4040 ÷N 反馈          | 把 VCO 输出除以 N 送回鉴相——</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**N 就是倍频数**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">             | ACK 时钟/速率反馈路径                          |</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">锁定 = 回路收敛:频率差被积分器吃干净后,VCOIN 停在某个直流值。所以——</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">> </span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**锁定电压不是固定目标值**</span><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">。锁定的唯一条件是「VCO 频率 = N × 参考」;任何能让</span></span>
+<span class="line"><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">> VCO 输出这个频率的电压都是合法工作点,具体落在哪由器件离散性(C1 容差、R1/R2、</span></span>
+<span class="line"><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">> 芯片个体)决定。类比:TCP 稳态 cwnd 不是常数,是路径 BDP 决定的——吞吐匹配就对了,</span></span>
+<span class="line"><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">> cwnd 本身记下即可。典型落在约 1.1~2.1V 邻域(3.3V 线性区插值,见 1.1 表下注);</span></span>
+<span class="line"><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">> 读数稳但落在邻域外的,回第 1 步扫频曲线对账。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">### 0.3 与 STM32F429 片内 PLL 的映射</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 面包板上的部件     | F429 片内对应                                     | 备注                                        |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| ------------------ | ------------------------------------------------- | ------------------------------------------- |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 32.768kHz 有源晶振 | HSE:板上 25MHz 晶振(紧贴主控 PH0/PH1)             | 我们选 32.768kHz=与板上 LSE 同频,便宜又够用 |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| PC2 鉴相 + 电荷泵  | PLL 的 PFD + 电荷泵                               | 同一种电路思想                              |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| R3+C2 环路滤波     | 片内环路滤波                                      | 我们看得见 τ=R3·C2                          |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 4046 VCO           | 片内 VCO(输出区间 192~432MHz,见 ch00e 约束表)     | 我们的 VCO 在数百 kHz 档                    |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 4040 ÷N            | 反馈分频(倍频数实体);M=1(参考直进)、P=1(VCO 直出) | </span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**改跳线 = 改 M/N/P 寄存器配置**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">            |</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">### 0.4 频率算术</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">参考 REF = 32 768 Hz,锁定时 f(VCOOUT) = N × REF:</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| N   | 反馈点(4040 输出) | f(VCOOUT)    | 反馈点频率 | 测量手段                     |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| --- | ----------------- | ------------ | ---------- | ---------------------------- |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 16  | Q4 = 脚 5         | 524 288 Hz   | 32 768 Hz  | 频率计 @Q4 直读,×16 还原     |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 32  | Q5 = 脚 3         | 1 048 576 Hz | 32 768 Hz  | 频率计 @Q5 ×32;VCO 直测需 LA |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 64  | Q6 = 脚 2         | 2 097 152 Hz | 32 768 Hz  | 频率计 @Q6 ×64;VCO 直测需 LA |</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">pigpio 1µs 采样档(=piscope 约 1MSa/s)可靠检测的边沿上限约 </span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**500kHz**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">——524kHz 的</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">VCOOUT 直测会混叠欠读、N≥32 直接超出。所以**精确测频一律在 4040 的 Q 输出上做</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(锁定后恒 32 768Hz),读数 ×2ⁿ 还原 VCO 频率**(奈奎斯特账详见</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[</span><span style="--shiki-light:#032F62;--shiki-light-text-decoration:underline;--shiki-dark:#DBEDFF;--shiki-dark-text-decoration:underline">docs/instruments.md</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">](</span><span style="--shiki-light:#24292E;--shiki-light-text-decoration:underline;--shiki-dark:#E1E4E8;--shiki-dark-text-decoration:underline">/static/code/#/f429-lab/pll-4046-breadboard/docs/instruments.md</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">) §3)。</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**相位对齐观察(SIGIN vs COMPIN,均 32.768kHz)任何档位都在 piscope 能力内**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 1. 管脚速查表</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">> [</span><span style="--shiki-light:#032F62;--shiki-light-text-decoration:underline;--shiki-dark:#DBEDFF;--shiki-dark-text-decoration:underline">!warning</span><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">] 管脚免责铁律</span></span>
+<span class="line"><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">> 下表已按厂商 datasheet 对拍,但有三处厂商分歧必须知道:**① 4046 家族第 15 脚功能</span></span>
+<span class="line"><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">> 厂商不同**(TI/Nexperia 74HC4046A 是 PC3OUT;TI CD4046B 是内部稳压管 ZENER 引出);</span></span>
+<span class="line"><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">> </span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**② 4040 的 Q 输出物理引脚乱序**</span><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">(Q4 不挨着 Q3);**③ 4040 的 Q 编号有 1 起/0 起</span></span>
+<span class="line"><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">> 两种命名**:onsemi/TI 从 Q1 数到 Q12(本表口径,÷16=Q4=脚 5),Nexperia</span></span>
+<span class="line"><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">> 74HC_HCT4040 却从 Q0 起算(pin5=Q3、pin3=Q4)——两边物理引脚功能完全相同</span></span>
+<span class="line"><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">> (脚 5=÷16、脚 3=÷32、脚 2=÷64),冲突的只是 Q 名。所以查表对不上</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**先别改接线**</span><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">,</span></span>
+<span class="line"><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">> 认「脚号+分频比」对齐。买到芯片第一件事:读丝印、下载</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**对应厂商**</span><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">的 datasheet,</span></span>
+<span class="line"><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">> 对着下表核一遍再用。查不准的一律以实物 datasheet 为准,绝不猜。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">### 1.1 74HC4046(DIP-16)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">核对来源:TI CD74HC4046A datasheet(SCHS204J)Pin Descriptions 表,本会话逐脚核对。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 脚  | 名称           | 功能                                           | 本实验接法                  | 核对状态                |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| --- | -------------- | ---------------------------------------------- | --------------------------- | ----------------------- |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 1   | PCPOUT         | 鉴相脉冲输出;</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**锁定时≈高电平,可当锁定指示**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    | 测试点(可选)                | 已对拍                  |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 2   | PC1OUT         | 鉴相器 1(异或门)输出                           | 不用,悬空(输出可悬空)       | 已对拍                  |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 3   | COMPIN         | 比较器输入(反馈进环)                           | ← 4040 Q4/Q5/Q6 跳线        | 已对拍                  |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 4   | VCOOUT         | VCO 输出(占空比 50% 规格)                      | → TP1 + 4040 CP(脚 10)      | 已对拍                  |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 5   | INH            | 禁止输入,</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**高=关断 VCO**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                       | </span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**必须接 GND**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">              | 已对拍                  |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 6   | C1A            | 定时电容 C1 一端                               | → C1 470pF → 脚 7           | 已对拍                  |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 7   | C1B            | 定时电容 C1 另一端                             | (与脚 6 之间,不是对地!)     | 已对拍                  |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 8   | GND            | 地                                             | → 地轨                      | 已对拍                  |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 9   | VCOIN          | VCO 控制电压(环路滤波节点)                     | ← 节点 A                    | 已对拍                  |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 10  | DEMOUT         | 解调输出(VCOIN 的源极跟随缓冲)                 | 不用,悬空(用时才接负载电阻) | 已对拍                  |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 11  | R1             | VCO 频段宽度电阻                               | → 10k → GND                 | 已对拍                  |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 12  | R2             | VCO 频段偏移电阻                               | → 10k → GND                 | 已对拍                  |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 13  | PC2OUT         | 鉴相器 2 输出(</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**边沿型,三态**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)                 | → R3 100k                   | 已对拍                  |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 14  | SIGIN          | 信号输入(自偏置放大,DC 耦合可)                 | ← 晶振 OUT                  | 已对拍                  |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 15  | PC3OUT / ZENER | 第三鉴相器输出(74HC4046A)/ 内部稳压管(CD4046B) | 不用,悬空                   | </span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**厂商不同,以实物为准**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 16  | VCC            | 电源 2~6V(HC 档)                               | → 3.3V 红轨                 | 已对拍                  |</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">datasheet 关键数(设计依据):R1、R2 取值区间 3k~300k,R1∥R2 > 2.7k(我们 10k∥10k</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">= 5k ✓);C1 > 40pF;VCOIN 线性工作区 VCC=3V 时 1.1~1.9V、VCC=4.5V 时 1.1~3.2V——</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">我们 3.3V 供电,按两端点插值锁定电压落在约 1.1~2.1V 邻域;实测若读数稳定但落在</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">邻域外,回第 1 步扫频曲线对账,不另设合格区间——对账法:在压控曲线上查</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">524.288kHz 对应的电压,与实测 VCOIN 相互印证;对不上说明频段已漂(温度/个体差),</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">以重扫的曲线为准。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">### 1.2 74HC4040(DIP-16,12 级纹波计数器)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">核对来源:Renesas HD74HC4040(Rev 2.00)Pin Arrangement,与 onsemi MC74AC4040 一致</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(onsemi 口径 Q1~Q12,1 起编号);时钟</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**下降沿**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">计数,MR </span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**高电平**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">复位。注意</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">Nexperia 74HC_HCT4040 用 0 起编号(pin3=Q4、pin5=Q3),与本表是**同一物理引脚、</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">仅 Q 名错位**——接线认脚号+分频比,不认 Q 名。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 脚  | 名称 | 脚  | 名称 | 说明                       |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| --- | ---- | --- | ---- | -------------------------- |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 1   | Q12  | 9   | Q1   | Qn 输出频率 = CP ÷ 2^n     |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 2   | Q6   | 10  | CP   | 时钟输入(下降沿计数)       |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 3   | Q5   | 11  | MR   | 复位,</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**高有效,必须接 GND**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 4   | Q7   | 12  | Q9   |                            |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 5   | Q4   | 13  | Q8   | </span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**Q4=÷16,反馈默认点**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">      |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 6   | Q3   | 14  | Q10  |                            |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 7   | Q2   | 15  | Q11  |                            |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 8   | GND  | 16  | VCC  | → 3.3V                     |</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">本实验只用:CP(10)、MR(11)、Q4(5)、Q5(3)、Q6(2),其余 Q 脚悬空(输出可悬空;</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">Nexperia 印字的同三脚记作 Q3(5)/Q4(3)/Q5(2),分频比不变)。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">### 1.3 32.768kHz 有源晶振(DIP 钟振)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**引脚定义随厂商**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">,常见 1=NC、2=GND、3=OUT、4=VCC(1 脚也可能是 EN 使能脚、需接</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">VCC)——以实物 datasheet 为准;务必选 3.0~3.6V 供电档(也有 5V-only 版本)。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">到货核对三步(对出来之前,接线表 #9-11 先不接):</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">1.</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **看丝印**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">:壳顶通常印频率(32768/32.768kHz)与出脚编号图,壳体一角常有点状</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   或斜角标记 </span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**pin 1**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(DIP 对角即 pin 3);</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">2.</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **按丝印/datasheet 对号**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">入座,再核对供电档位;</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">3.</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **实在搜不到 datasheet 时的空试法**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">:按最常见定义只接 GND/VCC 两脚、OUT 悬空,</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   先把电流档串进 3V3 线再上电(做法见 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`docs/instruments.md`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> §2);万用表直流档</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   逐脚对地量——一脚 ≈0V(GND)、一脚 ≈3.3V(VCC)、一脚在 1~2V 间摆(方波的</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   平均值,即 OUT)。若静态电流异常大或壳体发热,</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**立即断电**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">换一种对法。钟振</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   一般没有电源反接保护,VCC/GND 接反可能永久损坏——所以第 1 步的丝印辨认</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   务必先做,空试是最后手段。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">### 1.4 第一次上板:五个上手常识(老手直接跳到第 2 节)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">1.</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **面包板连通规则**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">:中间芯区纵向每 5 孔一列相通,</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**中沟两侧互不相通**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(所以</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   IC 要跨沟插,两排脚天然落在不同列);两侧红/蓝长轨因厂商而异——有的整条</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   贯通、</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**多数廉价 830 板中间有断点**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">。上电前用万用表通断档量红轨两端、地轨</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   两端:不蜂鸣就用一根短线把断点桥接起来。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">2.</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **DIP 芯片方向**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">:缺口/圆点统一朝红轨侧(上方),</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**脚 1 永远在缺口左侧**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">,</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   两片同向插,管脚表才对得上。新芯片两排脚外张:捏住芯片在桌面上把整排同时</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   压垂直(或用插座两脚对压),别掰单根;建议先装插座、芯片再进插座。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">3.</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **3296W 电位器**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">:三个脚,中脚通常是滑臂、两侧两个是「两端」——以万用表</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">   **实测为准**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">:电阻档夹任意两脚,「两端」之间恒读 ≈10k 且不随旋转变;某端与</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   另一脚之间阻值随旋转变、且能旋到 ≈0,那对就是「滑臂+低端」。往哪边旋到底</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   是最低端以实测为准;调节孔用 ~2.5mm 一字微调螺丝刀(已列 BOM)。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">4.</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **LED 极性**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">:长脚 = 正极(A),接电阻侧(朝红轨);短脚 = 负极(K),接地轨。</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   反接只是不亮、不损坏,对调即可。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">5.</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **测试点 TP1~TP3 的做法**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">:不用专门器件——取公对母杜邦线,</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**公端**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">插在该</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   信号同一列的空孔里(面包板同列即连通),</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**母端**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">就是测试点,直接套 Pi 的</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   GPIO 针或仪器夹子。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 2. 接线表(逐条编号)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">「从 → 到」按信号方向写;先接线后插芯片更顺手。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">### 2.1 供电与参考</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| #   | 从                   | 到                | 用途           |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| --- | -------------------- | ----------------- | -------------- |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 1   | Pi 排针物理脚 1(3V3) | 面包板红轨(+)     | 全案 3.3V 供电 |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 2   | Pi 排针物理脚 9(GND) | 面包板地轨(−)     | 共地参考       |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 3   | 红轨                 | 4046 脚 16(VCC)   | PLL 供电       |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 4   | 地轨                 | 4046 脚 8(GND)    |                |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 5   | 红轨                 | 4040 脚 16(VCC)   | 分频器供电     |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 6   | 地轨                 | 4040 脚 8(GND)    |                |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 7   | 红轨 → 100nF → 地轨  | 靠 4046 脚 16/8   | 电源去耦 A     |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 8   | 红轨 → 100nF → 地轨  | 靠 4040 脚 16/8   | 电源去耦 B     |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 9   | 晶振 VCC             | 红轨              | (引脚号待核对) |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 10  | 晶振 GND             | 地轨              |                |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 11  | 晶振 OUT             | 4046 脚 14(SIGIN) | 参考进环       |</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">### 2.2 环路与反馈</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| #   | 从                     | 到                   | 用途                       |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| --- | ---------------------- | -------------------- | -------------------------- |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 12  | 4046 脚 13(PC2OUT)     | R3 100k 一端         | 鉴相输出进滤波             |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 13  | R3 另一端              | 节点 A               | 环路滤波串联臂             |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 14  | 节点 A                 | 4046 脚 9(VCOIN)     | VCO 控制电压               |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 15  | 节点 A → C2 100nF      | 地轨                 | 环路滤波并联臂,τ=10ms      |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 16  | 4046 脚 11(R1)         | 10k → 地轨           | VCO 频段宽度               |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 17  | 4046 脚 12(R2)         | 10k → 地轨           | VCO 频段偏移               |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 18  | 4046 脚 6              | 470pF → 脚 7         | 定时电容 C1(引线尽量短)    |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 19  | 4046 脚 5(INH)         | 地轨                 | </span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**必须**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">:悬空=VCO 随机关断 |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 20  | 4046 脚 4(VCOOUT)      | TP1 + 4040 脚 10(CP) | VCO 输出/进分频器          |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 21  | 4040 脚 11(MR)         | 地轨                 | </span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**必须**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">:悬空=随机清零     |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 22  | 4040 脚 5(Q4)          | 4046 脚 3(COMPIN)    | 反馈跳线 J1 默认位置(÷16)  |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 23  | 4040 脚 3(Q5)/脚 2(Q6) | 备选反馈点           | 改 N 用(只接一个)          |</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">### 2.3 开环支路与指示(暂不接,第 1 步用)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| #   | 从                         | 到            | 用途                                                                                              |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| --- | -------------------------- | ------------- | ------------------------------------------------------------------------------------------------- |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 24  | 3296W 两端(非中脚)         | 红轨 / 地轨   | 手动扫压电源;哪个脚是滑臂用万用表实测(§1.4-3)                                                     |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 25  | 3296W 滑臂(中脚)           | 跳线 → 节点 A | </span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**开环时才插**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">,闭环必拔                                                                           |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 26  | 红轨 → 1k → LED → 地轨     | 靠红轨入口    | 电源指示;LED </span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**长脚朝 1k/红轨侧**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">、短脚朝地轨(§1.4-4)                                             |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 27  | TP1/TP2(SIGIN)/TP3(COMPIN) | 公对母杜邦线  | 做法见 §1.4-5:公端插信号同列空孔,母端即测试点                                                     |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 28  | Pi GPIO17(物理脚 11)       | 探针 A 杜邦线 | 频率计默认脚/piscope 通道 1;另一端按阶段换接——</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**第 1 步夹 4040 Q4(脚 5),第 2 步起夹 TP2**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">         |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 29  | Pi GPIO27(物理脚 13)       | 探针 B 杜邦线 | piscope 通道 2;另一端</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**第 2 步起夹 TP3**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(COMPIN,即 J1 所接的那个 Q 脚),逐阶段见 instruments.md §1 |</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**探针只碰低阻测试点**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(TP1=VCOOUT、TP2=SIGIN、TP3=COMPIN、4040 的 Q 输出);</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">VCOIN 节点 A 是高阻环路节点,只许万用表 10MΩ 碰——探头负载会改环路</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(instruments.md §8)。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">4046 脚 2(PC1OUT)、10(DEMOUT)、15(PC3/ZENER)是输出类,</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**悬空不接**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 3. 面包板布局建议(功能分区)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">像给交换机分板:管理口、业务口、电源各自一块,排障时才知道去哪儿找。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> ┌红轨(+3V3)─────────────────────────────┐ ←─ Pi 3V3</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> ┌地轨(GND)─────────────────────────────┐ ←─ Pi GND</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   [电源区]        [参考区]     [4046 PLL 区]      [4040 分频区]</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   LED指示+去耦     晶振(3.3V)   跨沟插,滤波RC      跨沟插,Q4/Q5/Q6</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   电位器(独立列)              在芯片正下方         朝外侧便于跳线</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **两片 IC 都跨中沟插**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">,一排接脚一排便于走线;</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> C1(470pF 起步档)直接跨在 4046 脚 6/7 之间——两脚相邻,引线最短,频率最稳;</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> R3/C2 滤波器贴在 4046 下方,</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**节点 A 留一个空列**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">,电位器滑臂跳线与反馈跳线 J1</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  都插这里——「开环/闭环」一眼可辨(类比:patch cord 拔插=链路切换,不用改配置);</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 4040 的 Q4(5)/Q5(3)/Q6(2) 朝面包板外侧,改 N 跳线不穿线堆;</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 去耦电容 100nF 直接贴各芯片 VCC/GND 脚旁边的轨;</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 测试点 TP1~TP3 就是插在各信号列的公对母杜邦线(§1.4-5),母端统一朝板边,</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  仪器夹子不碰乱线。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 4. 上电前检查清单</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> [ ] 3V3/GND 没接反:万用表量红轨-地轨 ≈ 3.3V(插芯片</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**之前**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">量)</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> [ ] 红轨/地轨全线连通:通断档量红轨两端、地轨两端应蜂鸣(830 板长轨常见中点</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">      断开,断则桥接——§1.4-1)</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> [ ] 4046 INH(脚 5)已接地;4040 MR(脚 11)已接地</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> [ ] 无悬空</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**输入**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">:SIGIN(14)/COMPIN(3)/CP(10) 都有驱动(输出脚悬空没关系)</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> [ ] C1 是接在 4046 脚 6-7 </span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**之间**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">,不是对地</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> [ ] R1/R2 是对</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**地**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">,不是对电源</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> [ ] 电位器滑臂跳线(#25)已</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**拔**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(第 1 步开环扫频才插);反馈跳线 J1(#22)插在</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">      默认位 Q4→COMPIN——COMPIN 是输入脚,不许悬空(红线 3)</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> [ ] 若与其他设备(F429 板/示波器)同台:先共地</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> [ ] 上电后静态电流 &#x3C;20mA(万用表 200mA 档串入 Pi 3V3 线量一次)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 5. 六步实验</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">每步四段:</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**操作 → 预期现象 → 测量方法 → 记录**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">。仪器操作细节见</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[</span><span style="--shiki-light:#032F62;--shiki-light-text-decoration:underline;--shiki-dark:#DBEDFF;--shiki-dark-text-decoration:underline">docs/instruments.md</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">](</span><span style="--shiki-light:#24292E;--shiki-light-text-decoration:underline;--shiki-dark:#E1E4E8;--shiki-dark-text-decoration:underline">/static/code/#/f429-lab/pll-4046-breadboard/docs/instruments.md</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(万用表/频率计 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`tools/measure_freq.py`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">/piscope/LA 四档分工);数据记录见</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[</span><span style="--shiki-light:#032F62;--shiki-light-text-decoration:underline;--shiki-dark:#DBEDFF;--shiki-dark-text-decoration:underline">results/RESULTS.md</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">](</span><span style="--shiki-light:#24292E;--shiki-light-text-decoration:underline;--shiki-dark:#E1E4E8;--shiki-dark-text-decoration:underline">/static/code/#/f429-lab/pll-4046-breadboard/results/RESULTS.md</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">### 第 0 步:上电前检查 + 静态体检</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **操作**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">:第 4 节清单逐项打勾;芯片插上;只拔 #25 滑臂跳线,J1 反馈跳线保持默认位</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  Q4(脚 5)→COMPIN——COMPIN 是输入脚,悬空违反安全红线 3。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **预期**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">:LED 亮;静态电流数 mA 级(&#x3C;20mA);VCOOUT 已有振荡波形(VCO 不需要任何</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  输入就会振荡)。注意此态与第 2 步闭环</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**完全同构**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">——若 470pF 频段在 3.3V 下已</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  覆盖 524.288kHz,此处就会直接锁定(Q4 读 32768Hz、VCOIN 稳定);未覆盖则是失锁</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  搜索态,VCOIN 由电荷泵经 R3 驱到某个电压。两种都属正常,读数不必较真。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **测量**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">:万用表电压档量轨间电压、电流档量静态电流(电流档要换插孔、串进</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  3V3 线,做法见 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`docs/instruments.md`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> §2);piscope 看 Q4(脚 5)有</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  翻转即可,频率读数此时不必较真(→ </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`docs/instruments.md`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> §1、§2)。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **记录**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> → </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`results/RESULTS.md`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> §0:供电电压、静态电流、初见波形描述。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">### 第 1 步:开环 VCO 验证(定标压控曲线)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **操作**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">:</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**拔下反馈跳线 J1**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(环路开路)。开环期间 COMPIN(脚 3)短暂悬空是本步</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  对安全红线 3 的</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**唯一例外**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">,因果链有两跳:悬空的 COMPIN 至多拾噪自振、给 PC2</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  馈入杂散沿→杂散泵电流要经 R3=100k 才能到达节点 A(即 VCOIN,脚 9),而节点 A</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  被电位器滑臂低阻钳住,扰动只剩 mV 级,不会污染扫频;悬空本身也不伤芯片。</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  扫完必须插回 J1。不想破例也可把 COMPIN 临时接地(等效「比较器永无边沿」,</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  泵电流同样被滑臂吸收)。#25 滑臂跳线插上,旋电位器从最低端到最高端,均匀取</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  ≥10 个点。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **预期**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">:VCOOUT 频率随滑臂电压</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**单调上升**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">;两端点=VCO 频段 [fmin, fmax]。</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  起步 C1=470pF/R1=10k:按 datasheet 定量锚点 f0≈2.0/(R1·C1)(Nexperia 74HC4046A</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  Rev.7:17MHz typ @VCC=4.5V、R1=3kΩ、C1=40pF)推算 f0≈425kHz@4.5V,3.3V 实际频段</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  偏低、待扫频定。</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**验收只看一条:实测频段覆盖 524.288kHz**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">——整体偏低换 C1=220pF</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  上调、偏高换 1nF 下调(均为 BOM 档位),重扫。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **测量**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">:万用表直流档量节点 A 电压;频率在 </span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**Q4 上直读 ×16 还原**</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  (</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`tools/measure_freq.py --gpio 17`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">,探针接法见 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`docs/instruments.md`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> §1/§3;</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  VCOOUT 直测 524kHz 已过 pigpio 边沿上限,欠读勿用)。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **记录**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> → </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`results/RESULTS.md`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> §1:电压-频率表 + 手绘/打印压控曲线。</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">  **这是全实验最重要的定标数据**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">:曲线斜率 K_VCO 定了,后面每档 N 的锁定电压</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  都能反推验证。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **类比**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">:开环扫频=iperf 打满测链路上限——先摸清执行器的全部能力,再谈闭环。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">### 第 2 步:闭环锁定(核心时刻)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **操作**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">:拔 #25 滑臂跳线(电位器退场);插反馈跳线 J1:Q4(脚 5)→COMPIN。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **预期**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">:数秒内锁定——VCOOUT=524.288kHz(±晶振偏差);VCOIN 稳定直流</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  (</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**约 1.1~2.1V 邻域的某个值,不是固定目标值**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">,原因见 0.2 节引文);PCPOUT(脚 1)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  近似高电平(datasheet:可作为锁定指示);PC2OUT 近似三态——其窄脉冲万用表/</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  piscope 都看不清属正常,</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**要看脉冲得 LA**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **测量**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">:万用表量 VCOIN(稳定不动=锁定铁证)与脚 1;piscope 双通道</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  SIGIN vs COMPIN 看</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**边沿对齐不再移动**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">——即 instruments.md 的「探针 A 接</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  REF、探针 B 接反馈 Q 输出」:**SIGIN=TP2=晶振 OUT=REF,COMPIN=TP3=J1 所接的</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  Q4(脚 5)**,各是同一张网,夹测点或夹源头读数相同(→ </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`docs/instruments.md`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> §1、§4)。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **记录**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> → </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`results/RESULTS.md`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> §2:锁定电压、f(VCOOUT)、相位关系描述、</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  用第 1 步曲线反推的预测电压 vs 实测电压。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **类比**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">:回路收敛完成,cwnd 停在稳态——你盯着的 VCOIN 就是那个 cwnd。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">### 第 3 步:改 N(倍频配置实体化)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **操作**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">:J1 依次换到 Q5(脚 3,÷32)、Q6(脚 2,÷64)。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **预期**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">:每换一次,VCOOUT 阶跃到 1 048 576 / 2 097 152 Hz,VCOIN 跳到新工作点</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  并重新稳住;每换一次跳线都是一次完整的「失锁→重新捕捉→锁定」。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **测量**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">:频率在 Q5/Q6 上直读、×2ⁿ 还原(VCOOUT 的 1.05/2.1MHz 超 pigpio/piscope</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  上限,直测需 LA);**相位对齐观察始终在 32.768kHz 的 SIGIN/COMPIN 上做,piscope</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  足够**(→ </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`docs/instruments.md`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> §3 奈奎斯特账、§5 LA)。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **记录**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> → </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`results/RESULTS.md`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> §3:N / f(VCOOUT) / VCOIN 三列表——验证</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  f = N × REF 的线性,以及锁定电压随 N 上升而上升(VCO 要跑更快,需要更高电压)。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **类比**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">:换 N=改目标速率档位;STM32 里改 PLLN 寄存器重配时钟,同一件事的</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  寄存器版本。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">### 第 4 步:失锁与捕捉范围</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **操作**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">:J1 换回 Q4;把 C1 换大一档(470pF → 1nF),</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**把整个 VCO 频段下移**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">,</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  使 524.288kHz 落到 [fmin, fmax] 之外(先回到开环扫频法确认新频段);</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  极端玩法:直接拔掉晶振 OUT 线(信号丢失)。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **预期**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">:失锁——VCOIN 被积分器顶到端点(0V 或最大),VCOOUT 停在频段端点,</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  PCPOUT 不再常高,SIGIN/COMPIN 频率不再相等(出现拍频)。把频段调回覆盖</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  524kHz,环路自动重新捕捉。datasheet 明文:PC2 的捕捉范围=锁定范围=**整个 VCO</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  频段**,与环路滤波无关——所以「失锁」要靠把目标频率挪出频段,而不是调滤波器。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **测量**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">:万用表盯 VCOIN 是否钉死;piscope 双通道看 SIGIN vs COMPIN 拍频</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  (边沿相对滑动)与 PCPOUT 脉冲(→ </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`docs/instruments.md`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> §2 平均值技巧、§4)。</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  拔晶振线时:datasheet 写明无信号时 PC2 会把 VCO 压到最低频——顺带验证。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **记录**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> → </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`results/RESULTS.md`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> §4:fmin/fmax 与目标频率的相对位置 vs 锁/不锁。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **类比**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">:目标速率超出链路物理能力,控制器积分器饱和(windup)钉在端点;</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  F429 的 CSS 时钟安全系统在 HSE 失效时切回 HSI,就是片内版的「失锁兜底」。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">### 第 5 步:慢锁定(把收敛过程拖到肉眼可见)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **操作**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">:C1 换回 470pF 档、锁定恢复后,把 C2 从 100nF 换成 1µF(τ=R3·C2 从</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  10ms → 100ms);断开 J1 一瞬再插回,制造一次重新捕捉。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **预期**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">:VCOIN 以数百 ms 量级的速度从端点</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**爬**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">到工作点——锁相的动态过程</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  从黑盒里拖出来了;稳定后的表现与 100nF 无差别(稳态由频率匹配决定,滤波器</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  只改变收敛路径的速度与平滑度)。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **测量**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">:万用表直流档盯 VCOIN 读数爬升(秒级观察足够;**别把 VCOIN 接上</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  Pi/LA——高阻节点,探头负载会改环路**,见 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`docs/instruments.md`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> §8)。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **记录**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> → </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`results/RESULTS.md`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> §5:两种 C2 的收敛时间对比(同一起点、同一终点,</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  不同路径)。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **类比**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">:大 C2=深 buffer/高 BDP 路径:同样收敛、时延不同;AI 的每一拍都变慢,</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  但稳态吞吐不变。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">### 第 6 步:进阶选做——HSE bypass(自制时钟给 CPU 供拍子)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">前置:前五步全绿、压控曲线已定标。详见第 7 节。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 6. 调试分诊表</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 症状                       | 可能原因                                                                               | 定位手段                                                                         |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| -------------------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 上电无任何输出(TP1 无波形) | 供电接反/没电;INH(5) 悬空或为高;C1 接成对地                                            | 万用表量 4046 脚 16=3.3V、脚 5=0V;复查 C1 在脚 6-7 之间                          |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| VCO 不振荡(供电对仍无输出) | R1/R2 断路或接去电源;C1 虚焊/值错;芯片坏                                               | 量脚 11/12 对地≈10k;换 C1 470pF;换芯片(先换插座里的,别反复焊)                    |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 4040 无输出(Q 脚全低/全乱) | MR(11) 悬空或为高;CP 线断;</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**Q 脚认错**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(乱序)                                           | 量脚 11=0V;piscope 量脚 10 有 VCOOUT;对照 1.2 表:Q4=脚 5 不是 7/15               |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 不锁定(VCOIN 钉在一端不动) | 反馈跳线松;Q 脚选错;VCO 频段不覆盖 N×REF;晶振无输出                                    | 量 SIGIN(脚 14)有 32.768kHz;回开环扫频核对频段覆盖;查 J1 两端                    |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 不锁定且 VCOIN 摆动不停    | C2 太小/漏电;R3 断(环路开路成纯电容);SIGIN 幅度不足                                    | 换 C2;量 R3 两端;量 SIGIN 应接近满摆幅 3.3V                                      |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 锁定后 VCOIN 缓慢游走/漂移 | C2 漏电(仅当第 5 步改用电解/钽才可能:查极性;瓷片基本无此虞);C1 受热漂(手靠近);电源噪声 | 手指靠近 C1 看灵敏度;换低漏电容;查去耦与 Pi 取电点                               |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 锁定但频率不是 N×REF       | Q 脚用错(乱序);晶振标称不符                                                            | piscope 量 SIGIN 实测频率;按 f/N 反推实际用的 Qn                                 |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 锁定但 VCOIN 带 32kHz 纹波 | 轻微纹波</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**正常**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(窄脉冲经 R3C2 残留);过大则 R3 阻值错                                  | 先核 R3=100k、C2=100nF;示波器直连 VCOIN 会改环路,不作常规手段(instruments.md §8) |</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">通用三板斧:①量供电与两个「必须接地」脚;②开环扫频隔离 VCO 侧;③双通道看</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">SIGIN/COMPIN 频率是否相等——先把故障切到「参考侧/环路侧/VCO 侧/分频侧」四分之</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">一再细查。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 7. 进阶选做:HSE bypass</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">让 F429 的 CPU 用你自制的 PLL 当主时钟——闭环整个学习路径。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **接法**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">:N 置 64(VCOOUT=2.097152MHz);VCOOUT 经 </span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**100Ω 串阻**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">进 F429</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  OSC_IN(PH0)(100Ω 已列 BOM 电阻栏);</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**先共地再接信号**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">;全程 3.3V。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **算术**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(用 ch00e 第 4 节的配方):M=2(VCO 输入 1.048576MHz ✓ 落 1~2MHz 窗)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  → N=192(VCO=201.3MHz ✓ 落 192~432MHz)→ P=2(SYSCLK≈100.7MHz);</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  或 N=336/P=2 → 176.1MHz。BRR/LOAD/PSC 全套按新频率重算(ch00e 的「三连验尸术」</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  照跑:RCC 三连寄存器逐位解码、SysTick 实测速率对表、串口乱码烟雾报警——见</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  ch00e 第 5 节)。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **验证**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">:固件里把 </span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**MCO1(PA8)**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 配成 HSE 输出,piscope/LA 在 PA8 上量到</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  2.097152MHz,即「我的 PLL 在给 CPU 供拍子」的实锤;再读 RCC 三连对账。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **⚠ 待核对(实跑前必须做)**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">:</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">  -</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> HSE bypass 允许的输入频率</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**下限**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">以 F429 datasheet 为准——N=16 的 524kHz</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    大概率太低,别拿它直灌;</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">  -</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 野火挑战者核心板 HSE 的实际走线(晶振焊位、是否有串阻可断)以板卡原理图为准</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    (网盘 A 盘《野火STM32F429挑战者</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">\_</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">V2核心板原理图.pdf》),bypass 前先确认</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    信号注入点;</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">  -</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 固件骨架复用 [</span><span style="--shiki-light:#032F62;--shiki-light-text-decoration:underline;--shiki-dark:#DBEDFF;--shiki-dark-text-decoration:underline">rcc-uart-read 的 main.c</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">](</span><span style="--shiki-light:#24292E;--shiki-light-text-decoration:underline;--shiki-dark:#E1E4E8;--shiki-dark-text-decoration:underline">/static/code/#/f429-lab/rcc-uart-read/main.c</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">),</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    只改 clock_init(HSEBYP 置位后再 HSEON),实测时再入库。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 8. 安全红线</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">1.</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **全案 3.3V**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">:从树莓派排针取电(物理脚 1=3V3、脚 9=GND),永远不要把 5V</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   引上这块面包板。Pi 的 GPIO </span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**只容忍 3.3V**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">——若改 5V 供电做实验,一切去 Pi</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   的信号必须先分压/电平转换,否则烧 Pi。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">2.</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **共地**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">:Pi、F429 板、万用表/示波器同台时,</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**先共地、后接信号**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">;隔离测量</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   (两手各一表笔)只在断电时做。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">3.</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **禁止悬空输入**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">:INH、MR、一切输入脚必须接定电平(HC 输入悬空=随机逻辑,</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   相当于「端口没有 carrier 却时起时落」的硬件版)。输出脚悬空无害。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">4.</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **电流预算 &#x3C;50mA**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(预期 &#x3C;20mA):Pi 3V3 轨足够,但别在面包板上再挂灯带之类。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">5.</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **改接线先断电**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">:拔 Pi 侧 3V3 杜邦线即断电。插拔芯片、换 C1/C2 一律先断电;</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   J1 反馈跳线的带电插拔是第 3/5 步的设计动作本身(看「失锁→重新捕捉」),</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   插拔时只捏跳线两端,别让线头扫过其他列。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">6.</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> C2 若用 1µF 电解/钽(第 5 步):环路电压恒为正,</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**正极朝节点 A 侧**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">;首推</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   陶瓷或钽,避免漏电流污染 VCOIN。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">---</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">下一步:零件到货 → 按</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[</span><span style="--shiki-light:#032F62;--shiki-light-text-decoration:underline;--shiki-dark:#DBEDFF;--shiki-dark-text-decoration:underline">docs/instruments.md</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">](</span><span style="--shiki-light:#24292E;--shiki-light-text-decoration:underline;--shiki-dark:#E1E4E8;--shiki-dark-text-decoration:underline">/static/code/#/f429-lab/pll-4046-breadboard/docs/instruments.md</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">装好 pigpio/piscope → 按第 5 节逐格核销</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[</span><span style="--shiki-light:#032F62;--shiki-light-text-decoration:underline;--shiki-dark:#DBEDFF;--shiki-dark-text-decoration:underline">results/RESULTS.md</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">](</span><span style="--shiki-light:#24292E;--shiki-light-text-decoration:underline;--shiki-dark:#E1E4E8;--shiki-dark-text-decoration:underline">/static/code/#/f429-lab/pll-4046-breadboard/results/RESULTS.md</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">→ 实测数字回填本教程与 ch00e 章节。</span></span>
+<span class="line"></span></code></pre>

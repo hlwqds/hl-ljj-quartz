@@ -1,0 +1,92 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">@file</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * ACD protocol definitions</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/*</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Copyright (c) 2007 Dominik Spies &#x3C;kontakt@dspies.de></span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Copyright (c) 2018 Jasper Verschueren &#x3C;jasper.verschueren@apart-audio.com></span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * All rights reserved.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Redistribution and use in source and binary forms, with or without modification,</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * are permitted provided that the following conditions are met:</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 1. Redistributions of source code must retain the above copyright notice,</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    this list of conditions and the following disclaimer.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 2. Redistributions in binary form must reproduce the above copyright notice,</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    this list of conditions and the following disclaimer in the documentation</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    and/or other materials provided with the distribution.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 3. The name of the author may not be used to endorse or promote products</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    derived from this software without specific prior written permission.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * OF SUCH DAMAGE.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Author: Jasper Verschueren &#x3C;jasper.verschueren@apart-audio.com></span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Author: Dominik Spies &#x3C;kontakt@dspies.de></span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_HDR_PROT_ACD_H</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_HDR_PROT_ACD_H</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifdef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> __cplusplus</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">extern</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "C"</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> {</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/* RFC 5227 and RFC 3927 Constants */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PROBE_WAIT</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">           1</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">   /* second  (initial random delay)                    */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PROBE_MIN</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">            1</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">   /* second  (minimum delay till repeated probe)       */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PROBE_MAX</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">            2</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">   /* seconds (maximum delay till repeated probe)       */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PROBE_NUM</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">            3</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">   /*         (number of probe packets)                 */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> ANNOUNCE_NUM</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">         2</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">   /*         (number of announcement packets)          */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> ANNOUNCE_INTERVAL</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">    2</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">   /* seconds (time between announcement packets)       */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> ANNOUNCE_WAIT</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">        2</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">   /* seconds (delay before announcing)                 */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> MAX_CONFLICTS</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">        10</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /*         (max conflicts before rate limiting)      */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> RATE_LIMIT_INTERVAL</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  60</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /* seconds (delay between successive attempts)       */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> DEFEND_INTERVAL</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">      10</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /* seconds (minimum interval between defensive ARPs) */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/* ACD states */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">typedef</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> enum</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> {</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /* ACD is module is off */</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  ACD_STATE_OFF,</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /* Waiting before probing can be started */</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  ACD_STATE_PROBE_WAIT,</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /* Probing the ipaddr */</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  ACD_STATE_PROBING,</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /* Waiting before announcing the probed ipaddr */</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  ACD_STATE_ANNOUNCE_WAIT,</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /* Announcing the new ipaddr */</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  ACD_STATE_ANNOUNCING,</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /* Performing ongoing conflict detection with one defend within defend inferval */</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  ACD_STATE_ONGOING,</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /* Performing ongoing conflict detection but immediately back off and Release</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">   * the address when a conflict occurs. This state is used for LL addresses</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">   * that stay active even if the netif has a routable address selected.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">   * In such a case, we cannot defend our address */</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  ACD_STATE_PASSIVE_ONGOING,</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /* To many conflicts occurred, we need to wait before restarting the selection</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">   * process */</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  ACD_STATE_RATE_LIMIT</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">} </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">acd_state_enum_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">;</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">typedef</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> enum</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> {</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  ACD_IP_OK,</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">            /* IP address is good, no conflicts found in checking state */</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  ACD_RESTART_CLIENT,</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">   /* Conflict found -> the client should try again */</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  ACD_DECLINE</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">           /* Decline the received IP address (rate limiting)*/</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">} </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">acd_callback_enum_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">;</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifdef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> __cplusplus</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">}</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* LWIP_HDR_PROT_ACD_H */</span></span>
+<span class="line"></span></code></pre>

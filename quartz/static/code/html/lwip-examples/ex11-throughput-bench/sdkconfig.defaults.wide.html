@@ -1,0 +1,25 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># ex11 宽窗口档（wide）：放开协议栈两侧缓冲并加宽 openeth RX 描述符环。</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># ┌─────────────────────────────────────────────────────────────────────────┐</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># │ ⚠⚠ 使用方法（Batch 1 教训，跳步必翻车）：                             │</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># │   cp sdkconfig.defaults.wide sdkconfig.defaults                        │</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># │   rm -f sdkconfig            # ← 必须删！defaults 只在无 sdkconfig 时生效 │</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># │   idf.py build               # 重新生成全量 sdkconfig                    │</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># └─────────────────────────────────────────────────────────────────────────┘</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 「窗口×RX 环深不等式」（ch24 头号调优发现）：</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#   WND >= 11520 时 openeth RX 环深必须 >= 16，环 4 是吞吐黑洞；</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#   WND >= 28800 时环深必须 >= 32。只拧窗口不抬环 = 白改。</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 所以本文件把 CONFIG_ETH_OPENETH_DMA_RX_BUFFER_NUM 一并拧到 32，两者成对出现，</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 请整体复制，不要单取 WND 行。</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_ETH_USE_OPENETH</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=y</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_LWIP_STATS</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=y</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_LWIP_TCP_SND_BUF_DEFAULT</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=28800</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_LWIP_TCP_WND_DEFAULT</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=28800</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_LWIP_TCP_MSS</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=1440</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># openeth RX 描述符环深：配合 WND=28800 的不等式要求（>=32）</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_ETH_OPENETH_DMA_RX_BUFFER_NUM</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=32</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 消息邮箱加深，避免突发下 tcpip/api 邮箱满（ch24 实测 8→64 不敏感，属顺手加固）</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_LWIP_TCPIP_RECVMBOX_SIZE</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=32</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_LWIP_TCP_RECVMBOX_SIZE</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=32</span></span>
+<span class="line"></span></code></pre>

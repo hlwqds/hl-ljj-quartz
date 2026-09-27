@@ -1,0 +1,126 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">@file</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Network Point to Point Protocol over Serial header file.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/*</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Redistribution and use in source and binary forms, with or without modification,</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * are permitted provided that the following conditions are met:</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 1. Redistributions of source code must retain the above copyright notice,</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    this list of conditions and the following disclaimer.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 2. Redistributions in binary form must reproduce the above copyright notice,</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    this list of conditions and the following disclaimer in the documentation</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    and/or other materials provided with the distribution.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 3. The name of the author may not be used to endorse or promote products</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    derived from this software without specific prior written permission.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * OF SUCH DAMAGE.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * This file is part of the lwIP TCP/IP stack.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#include</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "netif/ppp/ppp_opts.h"</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPP_SUPPORT</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> &#x26;&#x26;</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPPOS_SUPPORT</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* don't build if not configured for use in lwipopts.h */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPPOS_H</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPPOS_H</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#include</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "lwip/sys.h"</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#include</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "ppp.h"</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#include</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "vj.h"</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifdef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> __cplusplus</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">extern</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "C"</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> {</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/* PPP packet parser states.  Current state indicates operation yet to be</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * completed. */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">enum</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> {</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  PDIDLE </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">,</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /* Idle state - waiting. */</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  PDADDRESS,</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">   /* Process address field. */</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  PDCONTROL,</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">   /* Process control field. */</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  PDPROTOCOL1,</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* Process protocol field 1. */</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  PDPROTOCOL2,</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* Process protocol field 2. */</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  PDDATA</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">       /* Process data byte. */</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">};</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/* PPPoS serial output callback function prototype */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">typedef</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> u32_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> (</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">pppos_output_cb_fn)(ppp_pcb </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">pcb, </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">const</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> void</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> *</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">data, </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">u32_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> len, </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">void</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> *</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">ctx);</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/*</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Extended asyncmap - allows any character to be escaped.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">typedef</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> u8_t</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70"> ext_accm</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">32</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">];</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/*</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * PPPoS interface control block.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">typedef</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> struct</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> pppos_pcb_s pppos_pcb;</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">struct</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> pppos_pcb_s {</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /* -- below are data that will NOT be cleared between two sessions */</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  ppp_pcb </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">ppp;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">                    /* PPP PCB */</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  pppos_output_cb_fn output_cb;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    /* PPP serial output callback */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /* -- below are data that will be cleared between two sessions</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">   *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">   * last_xmit must be the first member of cleared members, because it is</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">   * used to know which part must not be cleared.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">   */</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  u32_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> last_xmit;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">                 /* Time of last transmission. */</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  ext_accm out_accm;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">               /* Async-Ctl-Char-Map for output. */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /* flags */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">  unsigned</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> int</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> open            :</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* Set if PPPoS is open */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">  unsigned</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> int</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> pcomp           :</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* Does peer accept protocol compression? */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">  unsigned</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> int</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> accomp          :</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* Does peer accept addr/ctl compression? */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /* PPPoS rx */</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  ext_accm in_accm;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">                /* Async-Ctl-Char-Map for input. */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">  struct</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> pbuf </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">in_head, </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">in_tail;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /* The input packet. */</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  u16_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> in_protocol;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">               /* The input protocol code. */</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  u16_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> in_fcs;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">                    /* Input Frame Check Sequence value. */</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  u8_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> in_state;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">                   /* The input process state. */</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  u8_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> in_escaped;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">                 /* Escape next character. */</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">};</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/* Create a new PPPoS session. */</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">ppp_pcb </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">*</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">pppos_create</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">struct</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> netif </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">*</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">pppif</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">, pppos_output_cb_fn </span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">output_cb</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">,</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">       ppp_link_status_cb_fn </span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">link_status_cb</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">, </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">void</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> *</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">ctx_cb</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">);</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> !</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">NO_SYS</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> &#x26;&#x26;</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> !</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">PPP_INPROC_IRQ_SAFE</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/* Pass received raw characters to PPPoS to be decoded through lwIP TCPIP thread. */</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">err_t</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> pppos_input_tcpip</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(ppp_pcb </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">*</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">ppp</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">, </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">const</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> void</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> *</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">s</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">, </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">int</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70"> l</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">);</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* !NO_SYS &#x26;&#x26; !PPP_INPROC_IRQ_SAFE */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/* PPP over Serial: this is the input function to be called for received data. */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">void</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> pppos_input</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(ppp_pcb </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">*</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">ppp</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">, </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">const</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> void*</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70"> data</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">, </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">int</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70"> len</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">);</span></span>
+<span class="line"></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/*</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Functions called from lwIP</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * DO NOT CALL FROM lwIP USER APPLICATION.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> !</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">NO_SYS</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> &#x26;&#x26;</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> !</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">PPP_INPROC_IRQ_SAFE</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">err_t</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> pppos_input_sys</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">struct</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> pbuf </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">*</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">p</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">, </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">struct</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> netif </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">*</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">inp</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">);</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* !NO_SYS &#x26;&#x26; !PPP_INPROC_IRQ_SAFE */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifdef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> __cplusplus</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">}</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* PPPOS_H */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* PPP_SUPPORT &#x26;&#x26; PPPOL2TP_SUPPORT */</span></span>
+<span class="line"></span></code></pre>

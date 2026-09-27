@@ -1,0 +1,17 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># ex14 场景 1（坏）：窗口过小 —— SND_BUF/WND 压到 2×MSS</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 病理预期：发送侧在途字节被 SND_BUF=2880 钉死、接收侧通告窗被 WND=2880 钉死，</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 外环吞吐按「窗口/RTT」坍缩到个位数 Mbit；自环腿(LB)影响轻微（回环 RTT 微秒级）。</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 用法（不删 sdkconfig 直接改配置 = 白改，Batch 1 教训）：</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#   cp sdkconfig.defaults.sc1 sdkconfig.defaults &#x26;&#x26; rm -f sdkconfig &#x26;&#x26; idf.py build</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_ETH_USE_OPENETH</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=y</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_LWIP_STATS</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=y</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_LWIP_TCP_MSS</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=1440</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># ↓↓↓ 毒药在这两行：恰好 2×MSS，Kconfig 允许的下限区间内（range>=2440）</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_LWIP_TCP_SND_BUF_DEFAULT</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=2880</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_LWIP_TCP_WND_DEFAULT</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=2880</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_GYM_SCENARIO</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=1</span></span>
+<span class="line"></span></code></pre>

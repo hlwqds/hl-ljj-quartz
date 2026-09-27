@@ -1,0 +1,18 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/* arch/sys_arch.h —— lwIP 移植层之二：OS 抽象（NO_SYS=1 极简版）</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * lwip/sys.h 第 95 行 `#include "arch/sys_arch.h"`——注意它在此前只包含了</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * opt.h/err.h，类型要自给自足（&#x3C;stdint.h>），不能假设 u32_t 已定义。</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 升级 NO_SYS=0 + FreeRTOS 时，这里变成 sys_arch.c 的类型映射表</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * （信号量/互斥/邮箱 → FreeRTOS 队列，见 lwIP 主系列 ch14 的裸机作业版）。 */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> F429_LWIP_ARCH_SYS_ARCH_H</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> F429_LWIP_ARCH_SYS_ARCH_H</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#include</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> &#x3C;stdint.h></span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">typedef</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> uint32_t</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> sys_prot_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* SYS_ARCH_PROTECT 的保存槽；NO_SYS 下用默认空实现 */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> !</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">NO_SYS</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#error</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "本工程只提供 NO_SYS=1 移植；OS 模型请补 sys_sem_t/sys_mbox_t/sys_thread_t + sys_arch.c"</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span></code></pre>

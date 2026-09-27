@@ -128,7 +128,9 @@ function expandTo(el){
       var want=raw;var hit=null;
       for(var i=0;i<FILES.length;i++){
         var fi=FILES[i];
-        if((fi.p+"/"+fi.f).split("/").join("").split(".").join("")===want){hit=fi;break;}
+        /* Quartz slugify 会把锚点转小写：比较两侧都 toLowerCase，否则
+           README.md 这类含大写的文件深链永远反查失败，静默回落到首文件 */
+        if((fi.p+"/"+fi.f).split("/").join("").split(".").join("").toLowerCase()===want){hit=fi;break;}
       }
       if(hit){qa=hit.p;qf=hit.f;}
     }

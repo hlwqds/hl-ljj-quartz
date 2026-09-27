@@ -1,0 +1,25 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># ex14 场景 2（修复）：把窗口挪回与环深匹配的工作区</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 与坏的 sc2 的差异：</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#   CONFIG_LWIP_TCP_SND_BUF_DEFAULT 28800 -> 5760</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#   CONFIG_LWIP_TCP_WND_DEFAULT     28800 -> 5760</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#   （openeth 环深保持 IDF 默认 4，不再特殊设置）</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># ⚠⚠ 本环境的诚实实测结论（比教科书更进一步）：</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#   a) 只拧大窗口（28800）不抬环 → 回程黑洞 ~0.09 Mbit（sc2-broken 档案）；</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#   b) 抬环到不等式要求的 32 → **依然黑洞**（实测与 broken 几乎无差）。</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#      ——「窗口×RX 环深不等式」在本环境是必要条件而非充分条件：</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#      窗口大到 20×MSS 这个量级后，SLIRP/openeth 联合管道给不出匹配的</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#      吸纳速率，环再深也填不满协议栈的胃口。</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#   c) 把窗口退回 4×MSS 工作区（本档）→ 立刻恢复满速（对比 broken 提升</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#      三个数量级以上）。工程答案：旋钮要成对规划并实测验收，别信单点公式。</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 用法：cp sdkconfig.defaults.sc2.fixed sdkconfig.defaults &#x26;&#x26; rm -f sdkconfig &#x26;&#x26; idf.py build</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_ETH_USE_OPENETH</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=y</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_LWIP_STATS</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=y</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_LWIP_TCP_MSS</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=1440</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_LWIP_TCP_SND_BUF_DEFAULT</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=5760</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_LWIP_TCP_WND_DEFAULT</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=5760</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_GYM_SCENARIO</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=2</span></span>
+<span class="line"></span></code></pre>

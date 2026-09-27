@@ -1,0 +1,135 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/*</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * ipcp.h - IP Control Protocol definitions.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Copyright (c) 1984-2000 Carnegie Mellon University. All rights reserved.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Redistribution and use in source and binary forms, with or without</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * modification, are permitted provided that the following conditions</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * are met:</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 1. Redistributions of source code must retain the above copyright</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    notice, this list of conditions and the following disclaimer.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 2. Redistributions in binary form must reproduce the above copyright</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    notice, this list of conditions and the following disclaimer in</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    the documentation and/or other materials provided with the</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    distribution.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 3. The name "Carnegie Mellon University" must not be used to</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    endorse or promote products derived from this software without</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    prior written permission. For permission or any legal</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    details, please contact</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *      Office of Technology Transfer</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *      Carnegie Mellon University</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *      5000 Forbes Avenue</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *      Pittsburgh, PA  15213-3890</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *      (412) 268-4387, fax: (412) 268-7395</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *      tech-transfer@andrew.cmu.edu</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 4. Redistributions of any form whatsoever must retain the following</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    acknowledgment:</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    "This product includes software developed by Computing Services</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *     at Carnegie Mellon University (http://www.cmu.edu/computing/)."</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * CARNEGIE MELLON UNIVERSITY DISCLAIMS ALL WARRANTIES WITH REGARD TO</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * AND FITNESS, IN NO EVENT SHALL CARNEGIE MELLON UNIVERSITY BE LIABLE</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * $Id: ipcp.h,v 1.14 2002/12/04 23:03:32 paulus Exp $</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#include</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "netif/ppp/ppp_opts.h"</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPP_SUPPORT</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> &#x26;&#x26;</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PPP_IPV4_SUPPORT</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* don't build if not configured for use in lwipopts.h */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> IPCP_H</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">	IPCP_H</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifdef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> __cplusplus</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">extern</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "C"</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> {</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/*</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Options.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> CI_ADDRS</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">	1</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">	/* IP Addresses */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> VJ_SUPPORT</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> CI_COMPRESSTYPE</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">	2</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">	/* Compression Type */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* VJ_SUPPORT */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">	CI_ADDR</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">		3</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_DNS</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> CI_MS_DNS1</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">      129</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">	/* Primary DNS value */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> CI_MS_DNS2</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">      131</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">     /* Secondary DNS value */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* LWIP_DNS */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 0</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* UNUSED - WINS */</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#define CI_MS_WINS1     130     /* Primary WINS value */</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#define CI_MS_WINS2     132	/* Secondary WINS value */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* UNUSED - WINS */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> VJ_SUPPORT</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> MAX_STATES</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 16</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">		/* from slcompress.h */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> IPCP_VJMODE_OLD</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 1</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">	/* "old" mode (option # = 0x0037) */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> IPCP_VJMODE_RFC1172</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 2</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">	/* "old-rfc"mode (option # = 0x002d) */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> IPCP_VJMODE_RFC1332</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 3</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">	/* "new-rfc"mode (option # = 0x002d, */</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">                                /*  maxslot and slot number compression) */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> IPCP_VJ_COMP</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> 0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">002d</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">	/* current value for VJ compression option*/</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> IPCP_VJ_COMP_OLD</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> 0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">0037</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">	/* "old" (i.e, broken) value for VJ */</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">				/* compression option*/</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> </span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* VJ_SUPPORT */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">typedef</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> struct</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> ipcp_options {</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    unsigned</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> int</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> neg_addr               :</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* Negotiate IP Address? */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    unsigned</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> int</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> old_addrs              :</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* Use old (IP-Addresses) option? */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    unsigned</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> int</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> req_addr               :</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* Ask peer to send IP address? */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 0</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* UNUSED */</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    unsigned int default_route          :1; /* Assign default route through interface? */</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    unsigned int replace_default_route  :1; /* Replace default route through interface? */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* UNUSED */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 0</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* UNUSED - PROXY ARP */</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    unsigned int proxy_arp              :1; /* Make proxy ARP entry for peer? */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* UNUSED - PROXY ARP */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> VJ_SUPPORT</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    unsigned</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> int</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> neg_vj                 :</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* Van Jacobson Compression? */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    unsigned</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> int</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> old_vj                 :</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* use old (short) form of VJ option? */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    unsigned</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> int</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> cflag                  :</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">;</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* VJ_SUPPORT */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    unsigned</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> int</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> accept_local           :</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* accept peer's value for ouraddr */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    unsigned</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> int</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> accept_remote          :</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* accept peer's value for hisaddr */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_DNS</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    unsigned</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> int</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> req_dns1               :</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* Ask peer to send primary DNS address? */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    unsigned</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> int</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> req_dns2               :</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* Ask peer to send secondary DNS address? */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* LWIP_DNS */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">    u32_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> ouraddr, hisaddr;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">	/* Addresses in NETWORK BYTE ORDER */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_DNS</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">    u32_t</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70"> dnsaddr</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">2</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">];</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">	/* Primary and secondary MS DNS entries */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* LWIP_DNS */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 0</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* UNUSED - WINS */</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    u32_t winsaddr[2];	/* Primary and secondary MS WINS entries */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* UNUSED - WINS */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> VJ_SUPPORT</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">    u16_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> vj_protocol;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">		/* protocol value to use in VJ option */</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">    u8_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  maxslotindex;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">		/* values for RFC1332 VJ compression neg. */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* VJ_SUPPORT */</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">} ipcp_options;</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 0</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* UNUSED, already defined by lwIP */</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">char *ip_ntoa (u32_t);</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* UNUSED, already defined by lwIP */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">extern</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> const</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> struct</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> protent ipcp_protent;</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifdef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> __cplusplus</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">}</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* IPCP_H */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* PPP_SUPPORT &#x26;&#x26; PPP_IPV4_SUPPORT */</span></span>
+<span class="line"></span></code></pre>

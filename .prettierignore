@@ -4,3 +4,4 @@ node_modules
 quartz/static/code
 quartz/static/clock-animation
 quartz/static/clock-system
+.zcode

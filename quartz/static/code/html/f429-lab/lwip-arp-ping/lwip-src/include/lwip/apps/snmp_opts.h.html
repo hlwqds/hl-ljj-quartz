@@ -1,0 +1,298 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">@file</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * SNMP server options list</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/*</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Copyright (c) 2015 Dirk Ziegelmeier</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * All rights reserved.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Redistribution and use in source and binary forms, with or without modification,</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * are permitted provided that the following conditions are met:</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 1. Redistributions of source code must retain the above copyright notice,</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    this list of conditions and the following disclaimer.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 2. Redistributions in binary form must reproduce the above copyright notice,</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    this list of conditions and the following disclaimer in the documentation</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    and/or other materials provided with the distribution.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 3. The name of the author may not be used to endorse or promote products</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *    derived from this software without specific prior written permission.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * OF SUCH DAMAGE.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * This file is part of the lwIP TCP/IP stack.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Author: Dirk Ziegelmeier</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_HDR_SNMP_OPTS_H</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_HDR_SNMP_OPTS_H</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#include</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "lwip/opt.h"</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">@defgroup</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> snmp_opts Options</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">@ingroup</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> snmp</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * @{</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * LWIP_SNMP==1: This enables the lwIP SNMP agent. UDP must be available</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * for SNMP transport.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * If you want to use your own SNMP agent, leave this disabled.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * To integrate MIB2 of an external agent, you need to enable</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * LWIP_MIB2_CALLBACKS and MIB2_STATS. This will give you the callbacks</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * and statistics counters you need to get MIB2 working.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> !defined</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_SNMP</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> ||</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> defined</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> __DOXYGEN__</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_SNMP</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">                       0</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * SNMP_USE_NETCONN: Use netconn API instead of raw API.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Makes SNMP agent run in a worker thread, so blocking operations</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * can be done in MIB calls.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> !defined</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SNMP_USE_NETCONN</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> ||</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> defined</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> __DOXYGEN__</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SNMP_USE_NETCONN</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">           0</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * SNMP_USE_RAW: Use raw API.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * SNMP agent does not run in a worker thread, so blocking operations</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * should not be done in MIB calls.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> !defined</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SNMP_USE_RAW</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> ||</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> defined</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> __DOXYGEN__</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SNMP_USE_RAW</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">               1</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SNMP_USE_NETCONN</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> &#x26;&#x26;</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SNMP_USE_RAW</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#error</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> SNMP stack can use only one of the APIs {raw, netconn}</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_SNMP</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> &#x26;&#x26;</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> !</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">SNMP_USE_NETCONN</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> &#x26;&#x26;</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> !</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">SNMP_USE_RAW</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#error</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> SNMP stack needs a receive API and UDP {raw, netconn}</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SNMP_USE_NETCONN</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * SNMP_STACK_SIZE: Stack size of SNMP netconn worker thread</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> !defined</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SNMP_STACK_SIZE</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> ||</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> defined</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> __DOXYGEN__</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SNMP_STACK_SIZE</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">            DEFAULT_THREAD_STACKSIZE</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * SNMP_THREAD_PRIO: SNMP netconn worker thread priority</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> !defined</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SNMP_THREAD_PRIO</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> ||</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> defined</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> __DOXYGEN__</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SNMP_THREAD_PRIO</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">           DEFAULT_THREAD_PRIO</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* SNMP_USE_NETCONN */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * SNMP_TRAP_DESTINATIONS: Number of trap destinations. At least one trap</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * destination is required</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> !defined</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SNMP_TRAP_DESTINATIONS</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> ||</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> defined</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> __DOXYGEN__</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SNMP_TRAP_DESTINATIONS</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">          1</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Only allow SNMP write actions that are 'safe' (e.g. disabling netifs is not</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * a safe action and disabled when SNMP_SAFE_REQUESTS = 1).</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Unsafe requests are disabled by default!</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> !defined</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SNMP_SAFE_REQUESTS</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> ||</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> defined</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> __DOXYGEN__</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SNMP_SAFE_REQUESTS</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">              1</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * The maximum length of strings used.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> !defined</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SNMP_MAX_OCTET_STRING_LEN</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> ||</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> defined</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> __DOXYGEN__</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SNMP_MAX_OCTET_STRING_LEN</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">       127</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * The maximum number of Sub ID's inside an object identifier.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Indirectly this also limits the maximum depth of SNMP tree.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> !defined</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SNMP_MAX_OBJ_ID_LEN</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> ||</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> defined</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> __DOXYGEN__</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SNMP_MAX_OBJ_ID_LEN</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">             50</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> !defined</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SNMP_MAX_VALUE_SIZE</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> ||</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> defined</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> __DOXYGEN__</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * The minimum size of a value.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SNMP_MIN_VALUE_SIZE</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">             (</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">2</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> *</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> sizeof</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">u32_t</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">))</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* size required to store the basic types (8 bytes for counter64) */</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * The maximum size of a value.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SNMP_MAX_VALUE_SIZE</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">             LWIP_MAX</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">LWIP_MAX</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">((SNMP_MAX_OCTET_STRING_LEN), </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">sizeof</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">u32_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(SNMP_MAX_OBJ_ID_LEN)), SNMP_MIN_VALUE_SIZE)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * The snmp read-access community. Used for write-access and traps, too</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * unless SNMP_COMMUNITY_WRITE or SNMP_COMMUNITY_TRAP are enabled, respectively.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> !defined</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SNMP_COMMUNITY</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> ||</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> defined</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> __DOXYGEN__</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SNMP_COMMUNITY</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">                  "public"</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * The snmp write-access community.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Set this community to "" in order to disallow any write access.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> !defined</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SNMP_COMMUNITY_WRITE</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> ||</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> defined</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> __DOXYGEN__</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SNMP_COMMUNITY_WRITE</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">            "private"</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * The snmp community used for sending traps.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> !defined</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SNMP_COMMUNITY_TRAP</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> ||</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> defined</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> __DOXYGEN__</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SNMP_COMMUNITY_TRAP</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">             "public"</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * The maximum length of community string.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * If community names shall be adjusted at runtime via snmp_set_community() calls,</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * enter here the possible maximum length (+1 for terminating null character).</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> !defined</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SNMP_MAX_COMMUNITY_STR_LEN</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> ||</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> defined</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> __DOXYGEN__</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SNMP_MAX_COMMUNITY_STR_LEN</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_MAX</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">LWIP_MAX</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">sizeof</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(SNMP_COMMUNITY), </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">sizeof</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(SNMP_COMMUNITY_WRITE)), </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">sizeof</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(SNMP_COMMUNITY_TRAP))</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * The OID identifiying the device. This may be the enterprise OID itself or any OID located below it in tree.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> !defined</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SNMP_DEVICE_ENTERPRISE_OID</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> ||</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> defined</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> __DOXYGEN__</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SNMP_LWIP_ENTERPRISE_OID</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 26381</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * IANA assigned enterprise ID for lwIP is 26381</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">@see</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> http://www.iana.org/assignments/enterprise-numbers</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">@note</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> this enterprise ID is assigned to the lwIP project,</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * all object identifiers living under this ID are assigned</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * by the lwIP maintainers!</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">@note</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> don't change this define, use snmp_set_device_enterprise_oid()</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * If you need to create your own private MIB you'll need</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * to apply for your own enterprise ID with </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">IANA:</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * http://www.iana.org/numbers.html</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SNMP_DEVICE_ENTERPRISE_OID</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> {</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">, </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">3</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">, </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">6</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">, </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">, </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">4</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">, </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">, SNMP_LWIP_ENTERPRISE_OID}</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Length of SNMP_DEVICE_ENTERPRISE_OID</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SNMP_DEVICE_ENTERPRISE_OID_LEN</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 7</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * SNMP_DEBUG: Enable debugging for SNMP messages.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> !defined</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SNMP_DEBUG</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> ||</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> defined</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> __DOXYGEN__</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SNMP_DEBUG</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                      LWIP_DBG_OFF</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * SNMP_MIB_DEBUG: Enable debugging for SNMP MIBs.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> !defined</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SNMP_MIB_DEBUG</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> ||</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> defined</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> __DOXYGEN__</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SNMP_MIB_DEBUG</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                  LWIP_DBG_OFF</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Indicates if the MIB2 implementation of LWIP SNMP stack is used.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> !defined</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SNMP_LWIP_MIB2</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> ||</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> defined</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> __DOXYGEN__</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SNMP_LWIP_MIB2</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                      LWIP_SNMP</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Value return for sysDesc field of MIB2.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> !defined</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SNMP_LWIP_MIB2_SYSDESC</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> ||</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> defined</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> __DOXYGEN__</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SNMP_LWIP_MIB2_SYSDESC</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">              "lwIP"</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Value return for sysName field of MIB2.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * To make sysName field settable, call snmp_mib2_set_sysname() to provide the necessary buffers.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> !defined</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SNMP_LWIP_MIB2_SYSNAME</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> ||</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> defined</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> __DOXYGEN__</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SNMP_LWIP_MIB2_SYSNAME</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">              "FQDN-unk"</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Value return for sysContact field of MIB2.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * To make sysContact field settable, call snmp_mib2_set_syscontact() to provide the necessary buffers.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> !defined</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SNMP_LWIP_MIB2_SYSCONTACT</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> ||</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> defined</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> __DOXYGEN__</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SNMP_LWIP_MIB2_SYSCONTACT</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">           ""</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Value return for sysLocation field of MIB2.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * To make sysLocation field settable, call snmp_mib2_set_syslocation() to provide the necessary buffers.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> !defined</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SNMP_LWIP_MIB2_SYSLOCATION</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> ||</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> defined</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> __DOXYGEN__</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SNMP_LWIP_MIB2_SYSLOCATION</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">          ""</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * This value is used to limit the repetitions processed in GetBulk requests (value == 0 means no limitation).</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * This may be useful to limit the load for a single request.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * According to SNMP RFC 1905 it is allowed to not return all requested variables from a GetBulk request if system load would be too high.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * so the effect is that the client will do more requests to gather all data.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * For the stack this could be useful in case that SNMP processing is done in TCP/IP thread. In this situation a request with many</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * repetitions could block the thread for a longer time. Setting limit here will keep the stack more responsive.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> !defined</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SNMP_LWIP_GETBULK_MAX_REPETITIONS</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> ||</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> defined</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> __DOXYGEN__</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SNMP_LWIP_GETBULK_MAX_REPETITIONS</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 0</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * @}</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/*</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">   ------------------------------------</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">   ---------- SNMPv3 options ----------</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">   ------------------------------------</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">*/</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * LWIP_SNMP_V3==1: This enables EXPERIMENTAL SNMPv3 support. LWIP_SNMP must</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * also be enabled.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * THIS IS UNDER DEVELOPMENT AND SHOULD NOT BE ENABLED IN PRODUCTS.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_SNMP_V3</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_SNMP_V3</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">               0</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_SNMP_V3_MBEDTLS</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_SNMP_V3_MBEDTLS</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">       LWIP_SNMP_V3</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_SNMP_V3_CRYPTO</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_SNMP_V3_CRYPTO</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">        LWIP_SNMP_V3_MBEDTLS</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifndef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_SNMP_CONFIGURE_VERSIONS</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> LWIP_SNMP_CONFIGURE_VERSIONS</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 0</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* LWIP_HDR_SNMP_OPTS_H */</span></span>
+<span class="line"></span></code></pre>
