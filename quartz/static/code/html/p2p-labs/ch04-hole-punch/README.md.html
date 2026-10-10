@@ -1,0 +1,37 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold"># ch04-hole-punch —— 引路服务器 + UDP 打洞</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">把 [[ch04-nat-traversal|第四章：NAT 穿透]] §4.1 的打洞时序做成真实可跑的三进程实验：</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**rendezvous.c**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 是严格只做情报交换的引路服务器（控制面），</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**punch.c**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 是打洞端——</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">登记（①REG 重试）→ 收情报（②PEER）→ 互射施工包（③PUNCH/PONG，首包被丢是施工</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">不是失败）→ 直连聊天 + 3s 周期 keepalive 维持 NAT 映射。全程单一 socket</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（ch03 那次翻车的教训焊死在结构里）。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 拓扑</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">alice ──①REG(重试)──▶ rendezvous(:12050) ◀──①REG── bob</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">alice ◀──②PEER bob ip:port── rendezvous ──②PEER alice ip:port──▶ bob</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">alice ══③PUNCH/PONG 互射 + keepalive + 聊天══▶ bob      ← 服务器退场，数据面直连</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 编译</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```bash</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">zig</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> cc</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -o</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> rendezvous</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> rendezvous.c</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -lws2_32</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">   # Linux/macOS 去掉 -lws2_32</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">zig</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> cc</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -o</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> punch</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> punch.c</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -lws2_32</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 复现（本机三进程，三个终端）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```bash</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">./rendezvous</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 12050</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">./punch</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> --server</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> 127.0.0.1:12050</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> --room</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> demo</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> --name</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> alice</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">   # 先起，处于登记重试</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">./punch</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> --server</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> 127.0.0.1:12050</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> --room</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> demo</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> --name</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> bob</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">     # 后起，触发配对互射</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">真实互联网实验：把 rendezvous 部署到任一台有公网 IP 的机器，两台各自 NAT 后的</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">设备 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`--server`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 指过去——PEER 报文里的地址就是各自 NAT 的映射端点，EIM（锥形）</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">网络会在几百毫秒内打穿；若一直打不通，多半撞上了对称 NAT（ch03 的 probe 先去判个型）。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">完整真实输出见 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`run.log`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（含三侧日志与时序对账，Windows 10 / zig cc 0.17 编译）。</span></span>
+<span class="line"></span></code></pre>

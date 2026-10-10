@@ -1,0 +1,50 @@
+# ch02-lan-direct 真实运行留存（Windows 10 / Git Bash / zig cc 0.17 编译）
+# 编译命令：
+#   zig cc -o peer peer.c -lws2_32
+#   zig cc -o discover discover.c -lws2_32
+#   zig cc -o filecast filecast.c sha1.c -lws2_32
+
+## 1) filecast 分块传输（100000B 随机文件 = 98 块，末块 784B）
+
+--- 发送端（后台） ---
+[send] test.bin 100000B = 98 块，sha1=3bd14cab04bb3b65f1bf17d6c586882282fd522a… 监听 :12030
+[send] 已被取走 32/98 块
+[send] 已被取走 64/98 块
+[send] 已被取走 96/98 块
+[send] 已被取走 98/98 块
+[send] 全部块均已被取走，退出（真实 BT 会继续做种，见 ch08）
+--- 接收端（前台） ---
+[recv] 50/98 块（收包 50，含重试冗余）[recv] 98/98 块（收包 98，含重试冗余）
+[recv] 拼回 100000B，sha1=3bd14cab04bb3b65f1bf17d6c586882282fd522a
+[recv] SHA-1 核对通过，已写 out.bin
+--- 双方 sha1sum 对账 ---
+3bd14cab04bb3b65f1bf17d6c586882282fd522a  test.bin
+3bd14cab04bb3b65f1bf17d6c586882282fd522a  out.bin
+一致：YES
+
+## 2) peer 对称聊天（A:12031 / B:12032，管道喂话）
+
+--- B 侧（前台） ---
+peer 已启动 0.0.0.0:12032，同伴 1 个；输入消息回车发送，quit 退出
+> <127.0.0.1:12031> /who from A too
+> 
+--- A 侧（后台） ---
+peer 已启动 0.0.0.0:12031，同伴 1 个；输入消息回车发送，quit 退出
+> <127.0.0.1:12032> hi from B
+> 
+注：A 最先发的 "hello from A" 丢了——它发出时 B 还没 bind 端口。UDP 没有握手，
+发往未绑定端口的包直接被丢。这正是 ch02 要建立的第一直觉：不可靠传输 + 对端
+可能还不存在，协议必须自带"对端尚不可达"的容忍（重试/心跳）。
+
+## 3) discover 广播发现（alice:12033 / bob:12034 互指，500ms 间隔）
+
+--- alice 侧 ---
+广播 127.0.0.1:12034 每 500ms 一次，Ctrl-C 结束
+[发现] bob @ 127.0.0.1:12034
+—— 同伴表（1）——
+  bob        127.0.0.1:12034
+--- bob 侧 ---
+广播 127.0.0.1:12033 每 500ms 一次，Ctrl-C 结束
+[发现] alice @ 127.0.0.1:12033
+—— 同伴表（1）——
+  alice      127.0.0.1:12033

@@ -1,0 +1,29 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold"># ch06-mini-chord —— 一致性哈希定宿主 + finger 路由 + churn 自愈</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">把 [[ch06-dht-chord|第六章：分布式哈希表——一致性哈希与 Chord]] 的路由核心做成单文件</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">模拟器：m=8 位环、16 节点、finger[</span><span style="--shiki-light:#032F62;--shiki-light-text-decoration:underline;--shiki-dark:#DBEDFF;--shiki-dark-text-decoration:underline">i</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">]=successor(n+2^i)、查找走 closest-preceding-finger</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">逐跳计数、后继链（r=5）承担容错。模拟边界：算法与协议语义保真，真实传输层（丢包/</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">延迟/RPC 重试）折算成"超时回退"计数（见套件 SPEC §2）。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 实验设计</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">1.</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **健康网络**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：200 个 sha1 哈希 key 从随机起点路由，验证结果 = 真值函数</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   （环上第一个活节点 ≥ key），统计跳数（期望 O(log N)≤4）；</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">2.</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **churn 注入**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：随机杀 6/16 节点 → 3 轮 stabilize（后继链修复 + 随机 fix_fingers）</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   → 再跑 200 次查找，统计成功数与"超时回退"（跳到的 finger 已死、换次优候选——</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">   真实实现里的一次 RPC 超时重选）。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 编译运行</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```bash</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">zig</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> cc</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -o</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> chord</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> chord.c</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> sha1.c</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    # Linux/macOS 同样一行（无平台依赖）</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">./chord</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 16</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 200</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 6</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">                  # 节点数 键数 杀掉数</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">固定随机种子（srand(42)），输出可逐字节复现。实测（run.log）：健康网络平均</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">1.78 跳 / 最大 4 跳 / 零错判；杀 37% 节点后 200/200 全部成功、23 次超时回退——</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**正确性挂在后继链上兜底，慢但不断服**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">，正是章末"快速路径允许脏，正确性挂在</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">慢速路径"的数值形态。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">完整真实输出见 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`run.log`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（含"key 砸在自己 ID 上绕环一圈"的排错实录）。</span></span>
+<span class="line"></span></code></pre>

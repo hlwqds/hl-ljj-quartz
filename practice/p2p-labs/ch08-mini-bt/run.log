@@ -1,0 +1,71 @@
+# ch08-mini-bt 真实运行留存（Windows 10 / Git Bash / zig cc 0.17 编译）
+# 编译：
+#   zig cc -o maketorrent maketorrent.c bencode.c sha1.c -lws2_32
+#   zig cc -o tracker tracker.c bencode.c -lws2_32
+#   zig cc -o bt bt.c bencode.c sha1.c -lws2_32
+# 场景：本机四进程（tracker :12080 + seeder :12101 + leecher），300000B 随机文件
+# = 10 片 × 32768B（末片 5088B）= 19 块 × 16KiB。
+
+## 1) 造种
+
+$ ./maketorrent demo.bin http://127.0.0.1:12080/announce demo.torrent 32768
+[maketorrent] demo.bin：
+  300000 B = 10 片 × 32768 B（末片 5088 B）
+  announce http://127.0.0.1:12080/announce
+  infohash a1be203d8e1016829a1bde779a01baab463d2a38
+  已写 demo.torrent（320 B）
+
+## 2) tracker（HTTP announce 点名，全程只搬元数据）
+
+tracker :12080 就绪（HTTP announce，只做点名不搬数据）
+announce -PB0001-000000013394     127.0.0.1 left=0
+announce -PB0001-000000013050     127.0.0.1 left=300000
+announce -PB0001-000000013050     127.0.0.1 left=0
+（三条记录即完整生命周期：seeder left=0 → leecher left=300000 → 下载完成 left=0）
+
+## 3) seeder（对端视角）
+
+[seed] -PB0001-000000013394 已向 tracker 登记（infohash 前 8 位 a1be203d…）
+[seed] 监听 :12101，等待 leecher 握手（Ctrl-C 退出）
+[seed] 握手完成 127.0.0.1:64572 —— 发 bitfield（10 片全有）
+[seed] 对端 interested → unchoke（单对端场景：直接放行）
+[seed] 已服务 16 块…
+[seed] 对端断开（共服务 19 块），继续等待下一个
+
+## 4) leecher（前台）
+
+$ ./bt get demo.torrent demo.out
+[get ] tracker 回了 1 个 peer
+[get ] 握手完成 127.0.0.1:12101 —— 发 interested
+[get ] 收到 bitfield（2 B 位图）
+[get ] 收到 unchoke —— 开始请求（10 片 × 16384 B 块，流水线 8）
+
+[get ] 1/10 片验收通过（32768 B）   
+[get ] 2/10 片验收通过（65536 B）   
+[get ] 3/10 片验收通过（98304 B）   
+[get ] 4/10 片验收通过（131072 B）   
+[get ] 5/10 片验收通过（163840 B）   
+[get ] 6/10 片验收通过（196608 B）   
+[get ] 7/10 片验收通过（229376 B）   
+[get ] 8/10 片验收通过（262144 B）   
+[get ] 9/10 片验收通过（294912 B）   
+[get ] 10/10 片验收通过（300000 B）   
+[get ] 全部 10 片通过 SHA-1，已写 demo.out（300000 B）
+
+## 5) 端到端对账
+
+$ sha1sum demo.bin demo.out
+152d3fa84d3c94893ba14abd583b2e52cbf069a5 *demo.bin
+152d3fa84d3c94893ba14abd583b2e52cbf069a5 *demo.out
+一致：YES
+
+## 排错实录（保留教学价值：三次翻车都是真问题）
+
+1. seeder 发 piece 时把消息 ID 重复拼进载荷——send_msg 本身带 ID，线缆字节整体
+   错位一节，getter 解出的 piece index 全是垃圾。教训：先定死"消息体不含 ID"
+   的约定，收发两侧按同一约定写。
+2. 同秒启动的 seeder/getter 用 srand(time(NULL)) 生成了一样的 peer_id，被 tracker
+   按"同一 peer 刷新"去重——swarm 里永远只有一个人。种子混进 PID。
+3. getter 的块长解析 off-by-one：plen（不含 ID 的载荷长度）= idx4+begin4+data，
+   blen 应为 plen-8，写成 plen-9 → 每块少一字节 → 第 0 片 SHA-1 立刻报警。
+   piece 级哈希验收的价值当场兑现：错一字节都活不过第一片。

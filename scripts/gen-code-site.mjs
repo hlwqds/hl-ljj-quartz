@@ -34,6 +34,8 @@ const PROJECT_GLOBS = [
   "practice/lwip-ch*", // 根下章节实验 lwip-chNN-*
   "practice/hwbasics", // 硬件基础实验（单项目多子目录）
   "practice/f429-lab/*", // F429 裸机实验室章节工程
+  "practice/p2p-labs/*", // P2P 网络实验室章节工程（C + BSD socket）
+  "practice/vpn-labs/*", // 手写 VPN 实验室章节工程（C + socket/crypto）
   "practice/lwip-labs", // 公约与调研
 ]
 

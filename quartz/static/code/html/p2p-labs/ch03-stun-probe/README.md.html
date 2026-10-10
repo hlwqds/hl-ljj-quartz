@@ -1,0 +1,43 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold"># ch03-stun-probe —— 手搓 STUN 客户端 + 判型实验</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">把 [[ch03-nat-fundamentals|第三章：NAT——P2P 的头号敌人]] §3.5 的判型实验做成可运行</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">工程：</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**stun.c**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 从零构造 RFC 5389 Binding Request（magic cookie、事务 ID、TLV 属性</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">遍历、XOR-MAPPED-ADDRESS 解异或），对多个服务器复用</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**同一个 socket**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 查询，按</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">"同一本地端点在不同服务器眼中端口是否一致" 输出 EIM/对称 判定；</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**mock_stun.c**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 是离线等价的 STUN 服务器，</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`--offset N`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 模拟对称 NAT 的映射漂移。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 拓扑</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                    ┌─ mock_stun :12041  offset=0   ─┐</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">stun（单一 socket） ─┼─ mock_stun :12042  offset=100 ─┼─→ 判定表 + EIM/对称结论</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                    └─ mock_stun :12043  offset=0   ─┘</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">真实环境：把参数换成公网 STUN（如 stun.stunprotocol.org:3478）即可测你家 NAT</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 编译</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```bash</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">zig</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> cc</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -o</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> stun</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> stun.c</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -lws2_32</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">        # Windows（Linux/macOS 去掉 -lws2_32）</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">zig</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> cc</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -o</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> mock_stun</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> mock_stun.c</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -lws2_32</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 复现（本机离线判型实验）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```bash</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">./mock_stun</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 12041</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> &#x26;                  </span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 三台"观察点"，两台同 offset、一台漂移</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">./mock_stun</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 12042</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> --offset</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 100</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> &#x26;</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">./mock_stun</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 12043</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> &#x26;</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">./stun</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> 127.0.0.1:12041</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> 127.0.0.1:12043</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">   # → 映射一致：EIM（锥形）特征</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">./stun</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> 127.0.0.1:12041</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> 127.0.0.1:12042</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">   # → 端口漂移 100：对称（APDM）特征</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 本工程自带的翻车记录（教学点）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">第一版 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`stun.c`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 每次查询新开 socket——即使两台服务器 offset 同为 0，也判成"漂移"，</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">因为它们看到的根本是两个不同的本地源端口。教训即 ch04 §4.2 的纪律：**探测、判型、</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">打洞必须复用同一个本地端点**。修复后的代码在 main 里单 socket 贯穿全程，事故记录</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">同步留在了 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`run.log`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 与 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`stun.c`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 注释里。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">完整真实输出见 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`run.log`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（Windows 10 / Git Bash / zig cc 0.17 编译运行）。</span></span>
+<span class="line"></span></code></pre>

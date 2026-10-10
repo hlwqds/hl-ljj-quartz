@@ -1,0 +1,40 @@
+# ch02-udp-relay 真实运行留存（Windows 10 / Git Bash / zig cc 0.17 编译）
+# 编译：
+#   zig cc -o relay relay.c -lws2_32      # Linux/macOS 去掉 -lws2_32
+#   zig cc -o tclient tclient.c -lws2_32
+# 场景：python -m http.server 8000（真实目标）+ relay :13001 + tclient :13000，
+# curl 连本地 :13000，流量经 UDP 帧穿隧道取回网页。
+
+## 1) curl 穿隧道（前台）
+
+$ curl -s http://127.0.0.1:13000/ | head -4
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+
+## 2) relay（中继侧日志）
+
+relay :13001 就绪（明文 UDP 中继，会话超时 30s）
+session=1 OPEN 127.0.0.1:8000 → ok
+session=1 目标断开 → CLOSE 通知客户端（in=79B out=743B）
+session=2 OPEN 127.0.0.1:8000
+
+H → ok
+session=2 目标断开 → CLOSE 通知客户端（in=79B out=743B）
+
+## 3) tclient（客户端侧日志）
+
+tclient :13000 → relay 127.0.0.1:13001 → 目标 127.0.0.1:8000（Ctrl-C 退出）
+conn[1] OPENACK sid=1
+conn[1] 收到对端 CLOSE
+conn[1] CLOSE
+conn[2] OPENACK sid=2
+conn[2] 收到对端 CLOSE
+conn[2] CLOSE
+
+## 对账
+
+session=1：in=79B（HTTP GET 请求穿隧道到目标）、out=743B（响应穿隧道回来）——
+封装、会话表、select 多路复用、CLOSE 传播全部工作。
+tcpdump/Wireshark 过滤 udp.port==13001 可见 DATA 帧明文——这正是 ch04 加密的靶子。

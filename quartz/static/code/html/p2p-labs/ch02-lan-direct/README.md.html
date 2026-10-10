@@ -1,0 +1,49 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold"># ch02-lan-direct —— 对称聊天 · 广播发现 · 分块传输</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">把 [[ch02-first-peer-direct-connect|第二章：第一个 P2P 程序]] 的三段正文代码做成可编译</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">运行的最小工程：</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**peer.c**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（对称 UDP 聊天，没有服务端身份）、</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**discover.c**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（UDP 广播</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">发现同伴）、</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**filecast.c**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（请求-数据块分块传输 + SHA-1 整体校验）——外加两个教学配套件：</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**net_compat.h**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（Winsock/POSIX 跨平台垫层，lwIP sys_arch 的微缩版）与 </span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**sha1.c**</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（教科书 SHA-1，ch08 造种子直接复用同款）。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 拓扑</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">peer.c / filecast.c：      A(任意端口) ⇄ UDP ⇄ B(任意端口)     双方同构，无 listen/accept</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">discover.c：               A ── HELLO(广播/单播) ──▶ B</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                           A ◀──────── HERE(单播) ─── B</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">filecast.c：               recv ── HELLO ──▶ send</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                           recv ◀─ META n sha1 ── send</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                           recv ── GET i ───▶ send   （缺哪块要哪块，丢了重试）</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                           recv ◀─ DATA i ─── send</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 编译</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```bash</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">zig</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> cc</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -o</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> peer</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> peer.c</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -lws2_32</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">          # Windows（zig 自带 clang；或用任何 cc）</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">zig</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> cc</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -o</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> discover</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> discover.c</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -lws2_32</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">zig</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> cc</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -o</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> filecast</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> filecast.c</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> sha1.c</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -lws2_32</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># Linux/macOS：把 -lws2_32 去掉即可（cc -o peer peer.c）</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 复现（本机双进程）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```bash</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 1) 对称聊天（两个终端；A 先发的那条会丢——B 还没 bind，UDP 无握手，教学点）</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">./peer</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 12031</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> 127.0.0.1:12032</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">./peer</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 12032</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> 127.0.0.1:12031</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 2) 广播发现（两个终端，--target 指到对方模拟广播可达；真实局域网去掉 --target）</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">./discover</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> --name</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> alice</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> --port</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 12033</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> --target</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> 127.0.0.1:12034</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> --interval</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 500</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">./discover</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> --name</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> bob</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">   --port</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 12034</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> --target</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> 127.0.0.1:12033</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> --interval</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 500</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 3) 分块传输（100000B = 98 块，末块 784B 短块路径一并覆盖）</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">python</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -c</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "import os; open('test.bin','wb').write(os.urandom(100_000))"</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">   # 或 dd 造随机文件</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">./filecast</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> send</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> test.bin</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 12030</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> &#x26;</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">./filecast</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> recv</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> 127.0.0.1:12030</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> out.bin</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">sha1sum</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> test.bin</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> out.bin</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">   # 两行必须一致</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">完整真实输出见 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`run.log`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（Windows 10 / Git Bash / zig cc 0.17 编译运行）。</span></span>
+<span class="line"></span></code></pre>

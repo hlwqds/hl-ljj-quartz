@@ -1,0 +1,45 @@
+# ch04-hole-punch 真实运行留存（Windows 10 / Git Bash / zig cc 0.17 编译）
+# 编译命令：
+#   zig cc -o rendezvous rendezvous.c -lws2_32
+#   zig cc -o punch punch.c -lws2_32
+# 场景：本机三进程（引路服务器 + alice + bob）。局域网/公网部署时把 --server
+# 指到有公网 IP 的机器即可——届时 PEER 情报里交换的就是各自 NAT 的映射端点。
+
+## 引路服务器（控制面：只换情报，不转数据）
+
+引路服务器 :12050 就绪（只换情报，不转数据）
+REG alice    room=demo       观测地址 127.0.0.1:52123
+REG alice    room=demo       观测地址 127.0.0.1:52123
+REG alice    room=demo       观测地址 127.0.0.1:52123
+REG alice    room=demo       观测地址 127.0.0.1:52123
+REG alice    room=demo       观测地址 127.0.0.1:52123
+REG bob      room=demo       观测地址 127.0.0.1:49184
+配对 alice ⇄ bob，情报已互发，本服务器功成身退
+
+注：alice 的 5 次 REG 是她的 300ms 登记重试——bob 尚未上线，房间未满员；
+bob 到场即配对、互发情报，服务器退场。
+
+## alice（先上线等待方）
+
+[    0ms] alice 向 127.0.0.1:12050 登记（room=demo）
+[ 1261ms] 情报：bob @ 127.0.0.1:49184 —— 开始互射
+[ 1508ms] 收到 PONG —— 洞通确认
+[ 2016ms] === P2P 直连建立（引路服务器已退场），输入消息回车发送 ===
+
+## bob（后上线触发配对方）
+
+[    0ms] bob 向 127.0.0.1:12050 登记（room=demo）
+[    7ms] 情报：alice @ 127.0.0.1:52123 —— 开始互射
+[  254ms] 收到 alice 的打洞包，回 PONG —— 洞通！
+[  762ms] <127.0.0.1:52123> hello B, hole is open!
+[  762ms] <127.0.0.1:52123> bye
+[  813ms] === P2P 直连建立（引路服务器已退场），输入消息回车发送 ===
+
+## 时序对账（对照系列 ch04 §4.1 的 ①②③）
+
+① t=0ms      双方向引路服务器 REG（alice 每 300ms 重试直到配对）
+② t≈1.2s     bob 登记触发配对，双方各收到 PEER 情报（对方观测地址）
+③ t=254ms(bob)/1508ms(alice)  互射 PUNCH：bob 先收到 alice 的施工包并回 PONG，
+   alice 收到 PONG 确认——洞通。此后聊天直连，引路服务器不再参与。
+真实 NAT 环境下，③ 里被丢的前几发施工包才真正体现"丢包是施工不是失败"：
+每一发都在己方 NAT 上凿出映射，等对端映射也就绪时即穿透。

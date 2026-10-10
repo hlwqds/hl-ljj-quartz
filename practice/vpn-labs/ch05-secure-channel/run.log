@@ -1,0 +1,68 @@
+# ch05-secure-channel 真实运行留存（Windows 10 / Git Bash / zig cc 0.17 编译）
+# 编译：zig cc -o secure secure.c hmac.c sha256.c chacha20.c
+# 五种模式全部实跑（normal/reorder/replay/tamper/old），固定密钥可复现。
+
+[自检] SHA-256 与 HMAC-SHA256 官方向量 PASS
+
+== 模式：normal ==
+  帧 ctr=1    → 收下 ✓（明文="payload-of-frame-1"）
+  帧 ctr=2    → 收下 ✓（明文="payload-of-frame-2"）
+  帧 ctr=3    → 收下 ✓（明文="payload-of-frame-3"）
+  帧 ctr=4    → 收下 ✓（明文="payload-of-frame-4"）
+  帧 ctr=5    → 收下 ✓（明文="payload-of-frame-5"）
+顺序到达全部收下；窗口 h=5
+
+[自检] SHA-256 与 HMAC-SHA256 官方向量 PASS
+
+== 模式：reorder ==
+  帧 ctr=1    → 收下 ✓（明文="payload-of-frame-1"）
+  帧 ctr=4    → 收下 ✓（明文="payload-of-frame-4"）
+  帧 ctr=2    → 收下 ✓（明文="payload-of-frame-2"）
+  帧 ctr=5    → 收下 ✓（明文="payload-of-frame-5"）
+  帧 ctr=3    → 收下 ✓（明文="payload-of-frame-3"）
+网络乱序（UDP 常态）：窗口内的洞后补，全部放行——窗口宽度 64 的意义
+
+[自检] SHA-256 与 HMAC-SHA256 官方向量 PASS
+
+== 模式：replay ==
+  帧 ctr=1    → 收下 ✓（明文="payload-of-frame-1"）
+  帧 ctr=2    → 收下 ✓（明文="payload-of-frame-2"）
+  帧 ctr=3    → 收下 ✓（明文="payload-of-frame-3"）
+  帧 ctr=4    → 收下 ✓（明文="payload-of-frame-4"）
+  帧 ctr=5    → 收下 ✓（明文="payload-of-frame-5"）
+攻击者重放截获的旧帧：
+  帧 ctr=3    → 重放，拒收 ❌
+位图早标记过 ctr=3 → 重放拒绝；这正是滑动窗口的第二职能
+
+[自检] SHA-256 与 HMAC-SHA256 官方向量 PASS
+
+== 模式：tamper ==
+  帧 ctr=1    → 收下 ✓（明文="payload-of-frame-1"）
+  帧 ctr=2    → 收下 ✓（明文="payload-of-frame-2"）
+  帧 ctr=3    → 收下 ✓（明文="payload-of-frame-3"）
+  帧 ctr=4    → MAC 校验失败，拒收 ❌（篡改）
+密文翻转 1 比特 → MAC 当场爆炸；EtM 顺序保证解密器永远不见脏数据
+
+[自检] SHA-256 与 HMAC-SHA256 官方向量 PASS
+
+== 模式：old ==
+(已静默收完 ctr=1..200，攻击者重发窗口外的旧帧 ctr=100：)
+  帧 ctr=100  → 窗口外旧帧，拒收 ❌
+窗口左沿 = h-64 = 136，ctr=100 落在窗外 → 历史包一律作废
+
+
+## 交叉验证
+
+- sha256("abc") == ba7816bf…15ad == python hashlib
+- HMAC("key", "The quick brown fox…") == f7bc83f4…a3cd8 == python hmac
+
+## 排错实录（保留教学价值）
+
+1. SHA-256 第一版 K[58] 常数抄串两位（84c67178 → 正确 84c87814），自检向量当场
+   报警。用常数定义（前 64 个素数的分数立方根 × 2^32）程序化对账定位——手抄
+   常数必查，这就是"官方向量验收"纪律的价值。
+2. 滑动窗口第一版判"窗口内"写成 ctr > h-WINDOW：h<W 时无符号减法回绕成天文
+   数字，正常乱序帧全被判"窗口外"拒收。修复：左沿下限钳 0。无符号回绕是窗口/
+   环形结构的第一经典坑（与 P2P 系列 kad_bucket_of 的 clz 坑同宗）。
+3. 解密缓冲区忘补 NUL，%s 越界把栈垃圾打进日志——密文边界与字符串边界是两个
+   概念，安全代码里每一处 %s 都该问一句"谁保证的终止符"。

@@ -1,0 +1,27 @@
+# ch07-minivpn 入库验证留存（Windows 10 / Git Bash / zig cc 0.17）
+# 本工程面向 Linux 真机；本仓环境无 Linux，按 SPEC §2 以交叉编译验证入库，
+# 运行输出待真机回填（同 embedded-basics「无板先行版」惯例）。
+
+## 交叉编译验证
+
+$ zig cc -target x86_64-linux -O2 -o minivpn-linux minivpn.c chacha20.c sha256.c hmac.c
+$ file minivpn-linux
+ELF 64-bit LSB executable, x86-64（machine 62），静态链接 zig 自带 musl
+
+编译覆盖的 Linux 专有面：
+  - /dev/net/tun + ioctl(TUNSETIFF, IFF_TUN|IFF_NO_PI)（linux/if_tun.h）
+  - select 同时伺候 TUN fd 与 UDP socket
+  - read/write 裸 IP 包路径
+
+## 密码学路径的独立验证（同款代码在 ch04/ch05 工程已真机实测）
+
+- ChaCha20：RFC 8439 官方向量 + pycryptodome 三重一致（ch04 run.log）
+- HMAC-SHA256 / 滑动窗口 / 篡改与重放注入：ch05 run.log 六项 PASS
+- minivpn 的 seal/unseal 与 ch05 secure.c 逐行同构，仅 nonce 魔数带角色字节
+
+## 真机待跑清单（两台 Linux，或一台双 tun）
+
+./minivpn-linux --loopback                     # 自环自检（无需 root）
+A# ./minivpn-linux --tun tun0 --key vpn.key --role a --peer B:51820 --port 51820
+B# ./minivpn-linux --tun tun0 --key vpn.key --role b --peer A:51820 --port 51820
+   + README「系统侧配置」六条命令 → ping 10.7.0.2 / 穿隧道 curl / tcpdump 对拍

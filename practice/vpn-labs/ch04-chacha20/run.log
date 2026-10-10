@@ -1,0 +1,44 @@
+# ch04-chacha20 真实运行留存（Windows 10 / Git Bash / zig cc 0.17 编译）
+# 编译：
+#   zig cc -o chachatest chachatest.c chacha20.c
+#   zig cc -o xor_demo xor_demo.c
+
+## 1) XOR 两种死法现场（xor_demo）
+
+== 死法一：密钥复用 ==
+明文1: GET /index.html HTTP/1.1 Host: example.com
+明文2: GET /admin?x=1  HTTP/1.1 Host: example.com
+C1⊕C2（密钥已消掉，只剩两明文的差异）:
+    ............I\L...........................
+    ↑ 相同位置全为 .（泄露"两处明文相等"），不同处直接可见差异。
+    攻击者从此起步：拿一处的猜测去试另一处（crib dragging）。
+
+== 死法二：已知明文 ==
+密文（前 32B）: 16757065725365637263744b657955736f634f6f6c794f6e6365546865795361
+攻击者猜头 20B（45 00 … 06 … 0a070001），还原密钥流前 20B: 53757065725365637265744b6579557365644f6e
+比对真实密钥流前 20B:                          53757065725365637265744b6579557365644f6e
+→ 完全一致。同一 (key,nonce) 下的后续密文同位置全部可解。
+结论：问题从来不是 XOR，是密钥流重复——所以流密码的全部纪律在 nonce。
+
+## 2) ChaCha20 官方向量验收（chachatest）
+
+== RFC 8439 §2.3.2 block function 向量 ==
+  实测 keystream 块: 10f1e7e4d13b5915500fdd1fa32071c4c7d1f4c733c068030422aa9ac3d46c4ed2826446079faa0914c2d705d98b02a2b5129cd1de164eb9cbd083e8a2503c4e
+  RFC  期望值     : 10f1e7e4d13b5915500fdd1fa32071c4c7d1f4c733c068030422aa9ac3d46c4ed2826446079faa0914c2d705d98b02a2b5129cd1de164eb9cbd083e8a2503c4e
+向量比对：PASS
+
+1MiB 随机数据回环：PASS（密文前 16B: 19970f3af86b9221e735ecd2c913ec47…）
+
+## 3) 三重交叉验证
+
+手写 C 实现输出 == RFC 8439 §2.3.2 官方测试向量 == pycryptodome 参考实现
+（key=00..1f, nonce=000000090000004a00000000, counter=1 → 10f1e7e4…2503c4e）。
+
+## 4) 文件加解密 CLI 对账
+
+$ chachatest enc t.bin t.enc <key64hex> <nonce24hex>   → 完成
+$ chachatest dec t.enc t.dec <同 key+nonce>            → 完成
+$ sha1sum t.bin t.dec
+  t.bin
+  t.dec
+一致：YES

@@ -1,0 +1,37 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold"># ch02-udp-relay —— 明文 UDP 中继隧道</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">把 [[</span><span style="--shiki-light:#032F62;--shiki-light-text-decoration:underline;--shiki-dark:#DBEDFF;--shiki-dark-text-decoration:underline">ch02-udp-tunnel|第二章：明文隧道</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">]] 的 N 造出来：</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**tclient**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（本地 TCP 监听 → 帧封装</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">成 UDP 发中继）+ </span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**relay**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（会话表 + select 多路复用 + 30s 超时回收）。帧格式</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`[type(1)][sid(4)][seq(4)][payload]`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">，type ∈ OPEN/OPENACK/DATA/CLOSE——seq 字段从</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">明文阶段就为 ch05 防重放留位。全程明文（教学点：抓包全裸），是 ch04/05 加密零件的</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">装配底座。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 拓扑</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">应用(curl) ──TCP──▶ tclient:13000 ──UDP 帧──▶ relay:13001 ──TCP──▶ 目标:8000</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                    OPEN(host,port)/DATA/CLOSE          会话表 sid→TCP</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 编译</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```bash</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">zig</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> cc</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -o</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> relay</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> relay.c</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -lws2_32</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">       # Linux/macOS 去掉 -lws2_32</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">zig</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> cc</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -o</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> tclient</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> tclient.c</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -lws2_32</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 复现（本机三进程 + curl 验收）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```bash</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">python</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -m</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> http.server</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 8000</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> --bind</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 127.0.0.1</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    # 终端 1：真实目标</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">./relay</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 13001</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">                                  # 终端 2：中继</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">./tclient</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 13000</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> 127.0.0.1:13001</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 127.0.0.1</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 8000</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> # 终端 3：隧道客户端</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">curl</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -s</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> http://127.0.0.1:13000/</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> |</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> head</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -4</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">      # 终端 4：流量穿隧道，网页回来</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">真实跨网部署：tclient 与 relay 分处两机（或 relay 部署在公网服务器），目标参数换成</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">内网服务——这就是最朴素的"远程接入"。抓包 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`udp.port==13001`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 看 DATA 帧明文可读，</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">下一章实验（ch04）的动机就在这。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">完整真实输出见 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`run.log`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（含两侧日志与字节对账）。</span></span>
+<span class="line"></span></code></pre>
