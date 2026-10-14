@@ -1,0 +1,26 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold"># ch06-sockproxy —— socket 代理 RPC + ws\_\* API 全链路仿真</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[[ch06-socket-proxy|第六章：socket 代理]] 的实现与验收：</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**sockproxy.c**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 里一半是宿主侧</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`ws_*`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> API（socket/connect/send/recv/close/dns，同步演示模型），另一半是假 S3 服务</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（socket 表 + echo 数据行为 + 错误注入 + 水位记账），两半通过</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**内存回环传输层**</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（ch03 帧层 + ch05 TLV，一字不差地完整打包/解析）相连——真机点亮时只替换传输层，</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">协议零改动。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 测试矩阵（8 项全 PASS，见 run.log）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 生命周期：sid 分配递增、connect、echo 往返、close 后复用；</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 错误映射：注入拒绝端口，应用层状态码跨河还原为负返回值；</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 1 MiB echo：4600B 批量 × 自动分帧重组，双向 SHA-1 一致（对账哈希</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  `2a3ff199…`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">，与 p2p/vpn-labs 同款验收习惯）；</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 背压可观测：持续消费下 S3 侧瞬时水位峰值 4600 B ≤ 高水位门限 8192 B。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 编译运行</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```bash</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">zig</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> cc</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -o</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> test</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> test.c</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> sockproxy.c</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> control.c</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> cobs.c</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> crc32.c</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> framing.c</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> sha1.c</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">./test</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">排错实录（宿主缓冲容量、水位公式的消费量口径、宏常量漏网）见 run.log——</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">三条都是背压与观测机制本身的现成教案。</span></span>
+<span class="line"></span></code></pre>

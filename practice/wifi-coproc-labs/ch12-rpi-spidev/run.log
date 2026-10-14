@@ -1,0 +1,29 @@
+# ch12-rpi-spidev 验证留存（Windows 10 / Git Bash / zig cc 0.17）
+
+## 1) fake 传输层全链（Windows 本机实跑，5/5 PASS）
+
+$ zig cc -o test test.c hostd.c transport_fake.c control.c cobs.c crc32.c framing.c
+
+PASS PING 控制通道全链
+PASS 应答回落后 DRDY 已清零
+PASS echo 数据通道 ×50 轮（变长 1–280B）
+PASS 单帧上限 460B echo
+PASS 空闲 poll 稳定
+
+合计：PASS 5 / FAIL 0
+
+## 2) Linux 真机版交叉编译
+
+$ zig cc -target x86_64-linux -c transport_spidev.c   # spidev+sysfs DRDY，含 <linux/spi/spidev.h>
+$ zig cc -target x86_64-linux -c hostd.c
+→ 两个 ELF64 可重定位目标过编译器；真机待板（先成文后实跑）
+
+## 排错实录
+
+1. hostd.h 的原型写了未前置声明的 struct transport——"原型作用域"与
+   transport.h 的文件作用域成了两家人，定义处直接冲突。头文件里跨模块
+   结构体指针一律前置声明。
+2. 首版 do_exchange 开场 memset 发送缓冲——ping 刚装进 s_txbuf 的帧当场
+   被擦掉，全链必然 FAIL。重构为暂存区模式：业务层装 s_stage，交换层负责
+   擦 tx 后再装填——"谁擦谁装"的时序在真机 DMA 版同样成立（DMA 挂缓冲前
+   必须完成装填）。

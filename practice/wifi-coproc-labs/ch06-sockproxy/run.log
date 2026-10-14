@@ -1,0 +1,25 @@
+# ch06-sockproxy 真实运行留存（Windows 10 / Git Bash / zig cc 0.17 编译）
+# 编译：zig cc -o test test.c sockproxy.c control.c cobs.c crc32.c framing.c sha1.c
+
+PASS SOCK_OPEN 分配 sid=1
+PASS SOCK_CONNECT 成功
+PASS echo 数据往返一致
+PASS S3 侧水位记账可见
+PASS CLOSE 后新 socket 复用递增
+PASS 错误码跨河映射（应用层拒绝）
+PASS 1MiB echo 分帧重组 + SHA-1 对账
+     双向 SHA-1=2a3ff199f96f89ed7b6038d1c1dc4191f99008b2…（S3 水线峰值 4600 B / 高水位门限 8192）
+PASS 背压可见：水位未失控（持续消费下）
+
+合计：PASS 8 / FAIL 0
+
+## 排错实录
+
+1. 首版宿主侧每 sid 接收缓冲 460B（等于单帧）：ws_send 一批 4600B 时事件把
+   缓冲顶爆、超额字节走"UDP 语义丢弃"——1MiB echo 的 SHA-1 必然对不上。
+   宿主缓冲必须成批大于发送批量（闸门 3 的本地容量），提至 8192B 后对账一致。
+2. 水位公式首版拿"当前滞留量"当消费量——越消费 instant 水位越大，峰值飙到
+   1MB。正确公式：瞬时水位 = 累计到达 − 累计消费。改为 ws_recv 里累加 consumed
+   后，峰值回到 4600B（≤ 高水位门限 8192），背压三闸门的可观测性成立。
+3. control.h 的 CTL_E_APP 宏多了个等号（= 0x40），ch05 工程没引用它而漏网，
+   本工程一用即炸——宏常量也要被至少一个用例引用过才算验过。

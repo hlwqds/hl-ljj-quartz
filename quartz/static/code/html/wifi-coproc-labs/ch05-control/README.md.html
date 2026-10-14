@@ -1,0 +1,24 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold"># ch05-control —— TLV 控制命令 + req_id 会话 + 扫描分片</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[[</span><span style="--shiki-light:#032F62;--shiki-light-text-decoration:underline;--shiki-dark:#DBEDFF;--shiki-dark-text-decoration:underline">ch05-control-protocol|第五章：控制通道</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">]] 的实现与验收：</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**control.c**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（TLV 编解码游标、</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">请求/应答拼装、扫描分片重组器），测试跑在</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**内存回环传输层**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">上——请求经 ch03 帧层</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">完整打包 → 假 S3 解析应答 → 喂回宿主解析，全链路（帧/COBS/CRC/TLV）一次过。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 测试矩阵（7 项全 PASS，见 run.log）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> PING 全链回环：req_id/status/TLV 载荷无损；</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> JOIN 参数：TLV 顺序无关、未知 type 跳过、重复 type 语义；</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> TLV 溢出置位不截断（调用方换分片策略）；</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 扫描分片：乱序攒齐 + 重放片被拒；</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 越界 len 的 TLV 直接拒绝（线协议 bug 探测）。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 编译运行</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```bash</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">zig</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> cc</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -o</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> test</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> test.c</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> control.c</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> cobs.c</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> crc32.c</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> framing.c</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">   # Linux/macOS 同一行</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">./test</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">排错实录（字节序断言自己踩自己的纪律）见 run.log；四个协议源文件拷自</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">ch03-framing（套件公约：零件随工程走）。</span></span>
+<span class="line"></span></code></pre>

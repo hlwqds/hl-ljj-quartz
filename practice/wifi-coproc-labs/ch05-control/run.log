@@ -1,0 +1,18 @@
+# ch05-control 真实运行留存（Windows 10 / Git Bash / zig cc 0.17 编译）
+# 编译：zig cc -o test test.c control.c cobs.c crc32.c framing.c
+
+PASS PING 请求-应答全链回环（req_id/status 保持）
+PASS 应答 TLV 载荷无损
+PASS JOIN 参数拼装无溢出
+PASS TLV 顺序无关 + 未知 type 跳过
+PASS TLV 溢出置位不截断
+PASS 扫描分片乱序攒齐 + 重放片被拒
+PASS 越界 len 的 TLV 被拒
+
+合计：PASS 7 / FAIL 0
+
+## 排错实录
+
+首版测试的"载荷无损"断言拿本机小端内存(&cookie)比对网络序字节——断言
+自身犯了协议的字节序纪律。修正为逐字节按网络序比对。ch05 §5.1 立的
+"全字段网络序"规矩，第一条咬到的就是测试作者自己。

@@ -1,0 +1,29 @@
+# ch03-framing 真实运行留存（Windows 10 / Git Bash / zig cc 0.17 编译）
+# 编译：zig cc -o test test.c cobs.c crc32.c framing.c
+
+PASS COBS 向量 [00]→[01 01]
+PASS COBS 向量 [01]→[02 01]
+PASS COBS 254 边界回环
+PASS COBS 254 边界回环
+PASS COBS 254 边界回环
+PASS COBS 随机回环 ×3000
+PASS CRC32 向量 123456789
+PASS CRC32 空输入
+PASS 帧回环（填充中切帧）
+PASS 截断续喂 + 连发双帧
+PASS 翻位帧被拒收（CRC/头部）
+PASS 截断帧等待不误收
+
+合计：PASS 12 / FAIL 0
+
+## 交叉对拍
+
+zlib.crc32(b"123456789") = 0xcbf43926 —— 与手写按位实现一致。
+
+## 排错实录
+
+第一版测试脚本两处自身 bug（与实现无关）：①切分点算错——half 取在第一帧
+中间，期望"已收 1 帧"必然落空；②翻位断言写死只认 bad_crc——破坏的是线上
+COBS 字节，可能先撞头部 magic 检查（bad_hdr）。修正：切到第二帧中部、
+断言放宽为"两类坏帧计数其一且无新帧交付"。教训：故障注入测试要顺着
+管线的检查顺序推演期望路径，而不是拍脑袋指定某一层报警。

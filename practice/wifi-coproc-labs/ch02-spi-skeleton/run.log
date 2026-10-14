@@ -1,0 +1,39 @@
+# ch02-spi-skeleton 验证留存（Windows 10 / Git Bash / zig cc 0.17）
+# 三重验证（SPEC §2 诚实性规则）：
+
+## 1) F429 骨架 thumb-freestanding 交叉编译
+
+$ zig cc -target thumb-freestanding-eabihf -mcpu=cortex_m4 -O2 -c f429/spi_master.c
+→ f429_spi.o 生成（Cortex-M4 目标过编译器，7.4KB）
+
+## 2) F429 交换状态机宿主逻辑用例（8/8 PASS）
+
+$ zig cc -DHOST_TEST -o host_test host_test.c spi_master.c && ./host_test
+
+PASS init 写了 CR1/CR2
+PASS enqueue 触发一次交换
+PASS CS 包裹整段 512B 写序列
+PASS DRDY 计数入账
+PASS DRDY 触发交换（EXTI 路径）
+PASS DRDY 消费清零
+PASS 空闲 poll 不空转
+PASS tx 缓冲尾部 IDLE 填充 0x00
+
+合计：PASS 8 / FAIL 0
+
+## 3) S3 骨架对桩 IDF 头编译（API 形状检查）
+
+$ zig cc -I esp32s3/stub -c esp32s3/spi_slave_task.c
+→ s3_stub.o 生成（真机编译刷机待板）
+
+## 排错实录
+
+1. 寄存器名宏（SPI_CR1 等）首版只定义在板级分支——HOST_TEST 一开就满屏未声明。
+   名字是协议、访问方式才是平台：名字上移公共区、WREG/RREG 才分平台。
+2. 首版 poll 的交换条件漏了"本端有货"路径（enqueue 调 poll 但条件不含积压），
+   改为 enqueue 直发 + poll 只认 DRDY——两条发起路径各自独立成义。
+3. 桩编译当场抓到 S3 骨架对 spi_slave_get_trans_result 的指针层级错误
+   （传了 *，真 API 要 **）——"API 形状检查"不是仿真，但这类错误它全包。
+4. 宿主事件缓存 64 槽装不下一次交换的 518 条事件（512 条 DR 写 + 6 条控制），
+   CS-off 那条永远缺席——观测缓冲的容量要按被观测对象的真实事件量预算。
+5. BSRR 复位半区期望常数手算笔误（2147450880 ≠ 1u<<31）。

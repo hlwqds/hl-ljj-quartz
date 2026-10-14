@@ -36,6 +36,7 @@ const PROJECT_GLOBS = [
   "practice/f429-lab/*", // F429 裸机实验室章节工程
   "practice/p2p-labs/*", // P2P 网络实验室章节工程（C + BSD socket）
   "practice/vpn-labs/*", // 手写 VPN 实验室章节工程（C + socket/crypto）
+  "practice/wifi-coproc-labs/*", // WiFi 协处理器实验室（协议层实测 + 板级骨架）
   "practice/lwip-labs", // 公约与调研
 ]
 
