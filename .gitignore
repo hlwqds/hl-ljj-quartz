@@ -19,6 +19,9 @@ excalidraw.log
 __pycache__/
 *.pyc
 
+# 本地调研工作区（克隆、学习笔记原稿、工作流草稿；不入库）
+out/
+
 # build artifacts & VM images under practice/
 *.o
 *.so
