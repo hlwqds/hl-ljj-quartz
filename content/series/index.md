@@ -2,7 +2,7 @@
 title: 📚 系列总览
 ---
 
-全站共 25 个系列、约 783 章。每个系列有独立索引页，从那里进入线性阅读；散记不入系列，保持花园平铺（见首页）。
+全站共 26 个系列、约 784 章。每个系列有独立索引页，从那里进入线性阅读；散记不入系列，保持花园平铺（见首页）。
 
 ## 嵌入式与 RTOS
 
@@ -28,6 +28,7 @@ title: 📚 系列总览
 | [[vpn-deep-dive\|VPN 与翻墙技术]]                   | 50  | 隧道协议全家桶                                             |
 | [[rdma-deep-dive\|RDMA]]                            | 52  | RDMA 深度探索                                              |
 | [[p2p-deep-dive\|P2P 网络深度解析]]                 | 10  | 对等网络由浅入深：NAT 穿透、DHT、BitTorrent、WebRTC        |
+| [[onvif-deep-dive\|ONVIF 协议深度解析]]             | 10  | 网络视频设备通用语言：WS-Discovery/SOAP/RTSP 取流          |
 | [[diy-vpn\|手写 VPN]]                               | 10  | 亲手造轮子：明文隧道→ChaCha20→TUN mini-VPN，对照 WireGuard |
 
 ## 高性能数据面
