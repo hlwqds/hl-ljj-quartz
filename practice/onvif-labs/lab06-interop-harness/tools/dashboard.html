@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="zh">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>ONVIF Lab06 — Dashboard</title>
+    <style>
+      :root {
+        --bg: #0d1117;
+        --card: #161b22;
+        --border: #30363d;
+        --text: #c9d1d9;
+        --accent: #58a6ff;
+        --green: #3fb950;
+        --red: #f85149;
+        --dim: #8b949e;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: -apple-system, "Segoe UI", Roboto, monospace;
+        background: var(--bg);
+        color: var(--text);
+        padding: 16px;
+      }
+      .header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+      .header h1 {
+        font-size: 1.3em;
+        color: var(--accent);
+      }
+      .header .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--green);
+        animation: pulse 2s infinite;
+      }
+      @keyframes pulse {
+        50% {
+          opacity: 0.5;
+        }
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 340px;
+        gap: 16px;
+        max-width: 1400px;
+      }
+      @media (max-width: 900px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 16px;
+      }
+      .card h2 {
+        font-size: 0.85em;
+        color: var(--dim);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 12px;
+      }
+      video-feed img {
+        width: 100%;
+        border-radius: 6px;
+        display: block;
+      }
+      .info-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      .info-table td {
+        padding: 6px 0;
+        border-bottom: 1px solid var(--border);
+      }
+      .info-table td:first-child {
+        color: var(--dim);
+        width: 140px;
+      }
+      .metric {
+        display: flex;
+        justify-content: space-between;
+        padding: 4px 0;
+        border-bottom: 1px solid var(--border);
+      }
+      .metric .label {
+        color: var(--dim);
+      }
+      .metric .value {
+        font-family: monospace;
+        color: var(--accent);
+      }
+      .badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 0.75em;
+        font-weight: bold;
+      }
+      .badge.ok {
+        background: #1a3a2a;
+        color: var(--green);
+      }
+      .badge.warn {
+        background: #3a2a1a;
+        color: #f0a030;
+      }
+      .footer {
+        margin-top: 16px;
+        text-align: center;
+        color: var(--dim);
+        font-size: 0.75em;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <div class="dot"></div>
+      <h1>ONVIF Lab06 Dashboard</h1>
+      <span class="badge ok" id="conn-badge">CONNECTING</span>
+    </div>
+
+    <div class="grid">
+      <div>
+        <div class="card video-feed">
+          <h2>Live Stream — RTSP → MJPEG</h2>
+          <img
+            id="video"
+            src="/video.mjpeg"
+            alt="live stream"
+            onerror="
+              this.src =
+                'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22640%22 height=%22480%22%3E%3Ctext x=%22320%22 y=%22240%22 fill=%22%23888%22 text-anchor=%22middle%22 font-size=%2220%22%3EStream unavailable%3C/text%3E%3C/svg%3E'
+            "
+          />
+        </div>
+        <div class="card" style="margin-top: 12px">
+          <h2>Snapshot</h2>
+          <img id="snap-img" src="/api/snapshot" style="width: 100%; border-radius: 6px" />
+          <div style="margin-top: 8px">
+            <button
+              onclick="refreshSnap()"
+              style="
+                background: var(--accent);
+                color: #fff;
+                border: none;
+                padding: 6px 16px;
+                border-radius: 4px;
+                cursor: pointer;
+              "
+            >
+              Refresh Snapshot
+            </button>
+            <span
+              id="snap-status"
+              style="font-size: 0.8em; color: var(--dim); margin-left: 8px"
+            ></span>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <h2>Device Information</h2>
+          <table class="info-table" id="dev-info">
+            <tr>
+              <td colspan="2" style="color: var(--dim)">loading…</td>
+            </tr>
+          </table>
+        </div>
+        <div class="card" style="margin-top: 12px">
+          <h2>Profile</h2>
+          <table class="info-table" id="profile-info">
+            <tr>
+              <td colspan="2" style="color: var(--dim)">loading…</td>
+            </tr>
+          </table>
+        </div>
+        <div class="card" style="margin-top: 12px">
+          <h2>Stream URI</h2>
+          <code
+            id="stream-uri"
+            style="font-size: 0.85em; color: var(--accent); word-break: break-all"
+            >loading…</code
+          >
+        </div>
+        <div class="card" style="margin-top: 12px">
+          <h2>Board Metrics</h2>
+          <div id="metrics"><span style="color: var(--dim)">loading…</span></div>
+        </div>
+        <div class="card" style="margin-top: 12px">
+          <h2>System Time</h2>
+          <div class="metric">
+            <span class="label">Type</span><span class="value" id="dt-type">—</span>
+          </div>
+          <div class="metric">
+            <span class="label">UTC</span><span class="value" id="dt-utc">—</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      ONVIF Lab06 · ESP32-S31-Korvo-1 · SC101IOT 640×480 MJPEG · <span id="fps">—</span> fps
+    </div>
+
+    <script>
+      const $ = (id) => document.getElementById(id)
+      let frameCount = 0,
+        lastFrameTime = 0,
+        fpsTimer = null
+
+      // 连接状态
+      const video = $("video")
+      video.onload = () => {
+        $("conn-badge").textContent = "STREAMING"
+        $("conn-badge").className = "badge ok"
+        frameCount++
+        const now = Date.now()
+        if (lastFrameTime && now - lastFrameTime > 0) {
+          const fps = Math.round((frameCount / ((now - startTime) / 1000)) * 10) / 10
+          $("fps").textContent = fps
+        }
+      }
+      video.onerror = () => {
+        $("conn-badge").textContent = "DISCONNECTED"
+        $("conn-badge").className = "badge warn"
+      }
+      const startTime = Date.now()
+
+      // Device Info
+      fetch("/api/info")
+        .then((r) => r.json())
+        .then((d) => {
+          $("dev-info").innerHTML = Object.entries(d)
+            .map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`)
+            .join("")
+        })
+        .catch(() => {
+          $("dev-info").innerHTML = "<tr><td>unavailable</td></tr>"
+        })
+
+      // Profile
+      fetch("/api/profiles")
+        .then((r) => r.json())
+        .then((list) => {
+          const p = list[0]
+          if (!p) return
+          $("profile-info").innerHTML = `
+    <tr><td>Token</td><td>${p.token}</td></tr>
+    <tr><td>Name</td><td>${p.name}</td></tr>
+    <tr><td>Encoding</td><td>${p.encoding}</td></tr>
+    <tr><td>Resolution</td><td>${p.width}×${p.height}</td></tr>`
+        })
+        .catch(() => {})
+
+      // Stream URI
+      fetch("/api/stream_uri")
+        .then((r) => r.json())
+        .then((d) => {
+          $("stream-uri").textContent = d.Uri || "—"
+        })
+        .catch(() => {
+          $("stream-uri").textContent = "unavailable"
+        })
+
+      // System Time
+      fetch("/api/datetime")
+        .then((r) => r.json())
+        .then((d) => {
+          $("dt-type").textContent = d.DateTimeType || "—"
+          $("dt-utc").textContent = d.UTC || "—"
+        })
+        .catch(() => {})
+
+      // Snapshot refresh (局部刷新，不影响活流)
+      function refreshSnap() {
+        const img = $("snap-img")
+        const ts = Date.now()
+        img.src = "/api/snapshot?ts=" + ts
+        img.onload = () => {
+          $("snap-status").textContent =
+            `✓ ${new Date().toLocaleTimeString()} · ${img.naturalWidth}×${img.naturalHeight}`
+        }
+        img.onerror = () => {
+          $("snap-status").textContent = "✗ fetch failed"
+        }
+      }
+
+      // Board Metrics
+      function refreshMetrics() {
+        fetch("/api/status")
+          .then((r) => r.json())
+          .then((d) => {
+            $("metrics").innerHTML = Object.entries(d)
+              .map(
+                ([k, v]) =>
+                  `<div class="metric"><span class="label">${k}</span><span class="value">${v}</span></div>`,
+              )
+              .join("")
+          })
+          .catch(() => {})
+      }
+      refreshMetrics()
+      setInterval(refreshMetrics, 5000)
+    </script>
+  </body>
+</html>

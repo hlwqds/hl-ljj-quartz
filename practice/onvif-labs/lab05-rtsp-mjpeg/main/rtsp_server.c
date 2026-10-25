@@ -272,7 +272,10 @@ static void rtp_send_frame(rtsp_sess_t *s, const uint8_t *jpeg, size_t jpeg_len)
     } while (off < scan_len);
 
     s->frames_sent++;
-    ESP_LOGI(TAG, "$$$ ONVIF LAB05 FRAME seq=%u bytes=%zu", s->frames_sent, scan_len);
+    if (s->frames_sent % 30 == 0) {
+        ESP_LOGI(TAG, "$$$ ONVIF LAB05 FRAME seq=%u bytes=%zu total=%u",
+                 s->frames_sent, scan_len, s->frames_sent);
+    }
 }
 
 /* 流媒体期间非阻塞窥探控制面（保活/TEARDOWN）；返回 -1 = 连接断开 */
@@ -332,6 +335,7 @@ static void stream_loop(rtsp_sess_t *s)
         s->have_fid = true;
         rtp_send_frame(s, (const uint8_t *)s_frame, (size_t)n);
     }
+    ESP_LOGI(TAG, "$$$ ONVIF LAB05 TEARDOWN total=%u", s->frames_sent);
     heap3("TEARDOWN");
 }
 

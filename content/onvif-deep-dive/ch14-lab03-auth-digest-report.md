@@ -382,7 +382,9 @@ ghost/bytewrong/重放第二发/#7 补采，`runs/auth-probe-*.res*.xml`）**全
 （faultcode/faultstring 两件套——原声探针只走 1.1），1.2 壳的 Code/Subcode(
 ter:NotAuthorized) 结构本轮**未在链路上取样**（zeep 只跑了正向用例，从未吃到
 Fault）——14.2 的双壳 Fault 模板两代都在固件里，1.2 侧的拒绝留样待下一站用带凭据的
-zeep 主动触发一次补上。
+zeep 主动触发一次补上。目录演进注记：本轮 run.log 对应的固件期间 GetServices 仍只列
+Device 一条；「Media 条目」在 lab04 目录模板补 Media 后由重编固件交付，双条目留样见
+[[ch15-lab04-media-snapshot-report|第十五章]]工程的 `runs/zeep-GetServices.res.xml`。
 
 ## 14.6 小结
 

@@ -43,15 +43,9 @@ ssize_t factory_stream_copy_latest(uint8_t *dst, size_t dst_max);
 /**
  * @brief 带 frame_id 的拷贝变体（lab05：RTSP 消费者用它做去重——同一帧不重发）。
  *        @return 同 copy_latest；*frame_id 收到拷贝时刻的 frames_encoded 计数。
+ *        多消费者（RTSP 等）用「轮询 + frame_id 去重」，勿 wait frame_sem。
  */
 ssize_t factory_stream_copy_latest_id(uint8_t *dst, size_t dst_max, uint32_t *frame_id);
-
-/**
- * @brief 等待一帧编码完成信号（frame_sem；lab05 RTSP 消费者的节拍源）。
- *        注意二值信号量会被取走——多消费者场景各自用 copy_latest 轮询 + frame_id 去重。
- *        @return true=有新帧交付；false=超时。
- */
-bool factory_stream_wait_frame(uint32_t timeout_ms);
 
 /**
  * @brief Fill a snapshot of the streaming metrics, safe from any task.

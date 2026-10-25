@@ -191,7 +191,7 @@ lab05 专属风险表（系列级风险见 ch11 11.5 节，不重复）：
 | 帧计数三本账（12s 窗口）    | 板端 FRAME 标记 / 账本客户端成帧 / ffmpeg 解码                                                                                                           | ✅ 会话1：板 188 ↔ 账本 188（精确相等）；会话2：板 182 ↔ ffmpeg TCP 解码 180；会话3：板 182 ↔ ffmpeg UDP 解码 179。解码差值 = PLAY→解码器首帧就绪的启动段，会话内 seq 连续无丢帧。口径注记：会话2 板端从 I(18213) 拖到 I(40103) 共 21.89s——ffmpeg 到 12s 停读后，板端 send 阻塞在 TCP 窗口上直至客户端断开，属长连接停止语义而非丢帧 |
 | PLAYING 稳态 free_dma       | 里程碑三件套打点                                                                                                                                         | ✅ 243,419B（≥170KB 红线）                                                                                                                                                                                                                                                                                                           |
 | 实测 fps / 吞吐             | 会话1：188 帧 / 12.035s = **15.62fps**；帧长 17,484–18,309 B → ≈2.24 Mbps。板端编码 29fps 而 RTSP 发 15.6fps：差值来自发送耗时（消费者节拍），非丢帧策略 | ✅                                                                                                                                                                                                                                                                                                                                   |
-| 机器可读标记行              | `$$$ ONVIF LAB05 FRAME seq=<n> bytes=<n>` ×552（三会话：188/182/182）                                                                                    | ✅                                                                                                                                                                                                                                                                                                                                   |
+| 机器可读标记行              | `$$$ ONVIF LAB05 FRAME seq=<n> bytes=<n> total=<n>`（每 30 帧打一行 + TEARDOWN 总账；三会话 552 帧 = 188/182/182）                                       | ✅                                                                                                                                                                                                                                                                                                                                   |
 
 **里程碑与 heap 三件套**（`run.log`；LISTENING/SETUP/PLAYING/TEARDOWN 四档全打）：
 
@@ -214,7 +214,7 @@ rtsp: heap@TEARDOWN free_dma=243231 free_internal=275239 free_spiram=11398100
 R=91.2/G=91.7/B=87.0，快照 R=91.1/G=91.7/B=87.0，**通道均值最大差 0.1**（Huffman
 表错配的失真通常 >60）——缩略格式 + 标准表假设的端到端色度验证闭环。
 
-**计划外发现**（本轮四件）：
+**计划外发现**（本轮六件）：
 
 1. **Huffman「墙」证伪**：成文期风险表把「编码器非标 Huffman 表」列为两条封包路
    一起死的顶级风险——实测四张 DHT 与 ffmpeg `-huffman default`（标准 Annex K）逐字节
@@ -231,6 +231,12 @@ R=91.2/G=91.7/B=87.0，快照 R=91.1/G=91.7/B=87.0，**通道均值最大差 0.1
 4. **量化表头按 ffmpeg 对齐为 132B**：MBZ(1)+Precision(1)+Length(2)=128+128B 系数
    （Pq|Tq 字节不进表数据）——成文期「加 4 字节头共 132 B」的总量正确，内部布局以
    `rtpenc_jpeg.c` 为准逐字节落定。
+5. **串口控制台刷屏**：FRAME 标记 15fps 逐帧打 → 每秒 15 行淹掉控制台，auth/SNTP/
+   status 全被冲走不可读。改每 30 帧（≈2 秒一行）+ TEARDOWN 总账，格式
+   `FRAME seq=<n> bytes=<n> total=<n>`——保留 grep 可计数能力而不淹控制台。
+6. **多 ffmpeg 消费者堆积**：dashboard 每次重启 spawn 新 ffmpeg 但不杀旧进程，
+   10 个 ffmpeg 同时抢 RTSP 单客户端连接互相踢导致流冻结。临时修（杀到 1 个）+
+   教训：**消费者生命周期必须与创建者绑定**（atexit / PID 追踪 / daemon 管理）。
 
 宿主侧环境事实：curl 打内网 IP 需 `--noproxy '*'`（本机 shell 挂 127.0.0.1:7897 代理，
 502 皆代理截走）；`file` 命令走 `nix shell nixpkgs#file`。

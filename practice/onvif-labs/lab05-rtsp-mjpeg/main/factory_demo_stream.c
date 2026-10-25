@@ -277,14 +277,8 @@ ssize_t factory_stream_copy_latest_id(uint8_t *dst, size_t dst_max, uint32_t *fr
     return (ssize_t)n;
 }
 
-bool factory_stream_wait_frame(uint32_t timeout_ms)
-{
-    if (s_stream.frame_sem == NULL) {
-        vTaskDelay(pdMS_TO_TICKS(timeout_ms));
-        return false;
-    }
-    return xSemaphoreTake(s_stream.frame_sem, pdMS_TO_TICKS(timeout_ms)) == pdTRUE;
-}
+/* 注意：RTSP 等多消费者请勿 wait frame_sem（二值信号量谁取谁消费，会偷走 /stream
+ * 订阅者的唤醒）——按 copy_latest_id 轮询 + frame_id 去重（lab05 rtsp_server 的做法）。 */
 
 /* ------------------------------------------------------------------ */
 /* HTTP handlers                                                       */

@@ -1,17 +1,17 @@
 ---
-title: "ONVIF 深度解析（十七）：实战实录六——lab06，互通收口（框架）"
+title: "ONVIF 深度解析（十七）：实战实录六——lab06，互通收口"
 date: 2026-10-25 12:00:00
-description: "实战篇收官框架章：lab06 总装 lab01–lab05 的完整固件，把 ch09 的客户端工作流掉头对准自己——witness 定为 Home Assistant 或 Frigate 以 ONVIF 集成零手工 URL 走完发现→凭据→取流三步（备选 ONVIF Device Manager），出发前按 ch09 六坑清单逐条自查，对账用 tcpdump 三断面（3702/80/8554）+ 客户端日志 + Fault 子码的三层定位法，PullPoint 事件与 G.711 前向音频列为不进主链的可选扩展；lab06 未实跑，实测记录整节（待实测回填）。"
+description: "实战篇收官站：五站总装固件全链走通——发现 ProbeMatch → GetStreamUri（过摘要门）→ RTSP 100帧/12s → 快照 77KB → 无凭据 500，witness 标记行可 grep；Home Assistant Core 在本机 NixOS pip venv 上因原生依赖链（numpy/pyspeex_noise 需 GLIBC 2.43 vs 本机 2.42）不可稳定运行，HA 现场证人如实记为环境欠账，五站互通以第一方工具全量验证；PullPoint 事件与 G.711 音频仍为可选扩展。"
 tags: [onvif, esp32, rtsp, embedded, series]
 ---
 
 > [!info] ONVIF 深度解析系列 0. [[onvif-deep-dive|系列索引]] … 16. [[ch16-lab05-rtsp-mjpeg-report|第十六章]] 17. **第十七章：实战实录六**
 
-# ONVIF 深度解析（十七）：实战实录六——lab06，互通收口（框架）
+# ONVIF 深度解析（十七）：实战实录六——lab06，互通收口
 
 前五回实录把三层栈逐层装上板：发现（[[ch12-lab01-discovery-report|第十二章]]）、控制面（[[ch13-lab02-device-service-report|第十三章]]）、认证（[[ch14-lab03-auth-digest-report|第十四章]]）、Profile 与快照（[[ch15-lab04-media-snapshot-report|第十五章]]）、RTSP 取流（[[ch16-lab05-rtsp-mjpeg-report|第十六章]]）。但每一站的验收者都是我们自己准备的第一方工具——它们天然站在实现者认知的同侧：知道我们实现了什么，就照着我们的方言发问。lab06 把裁判权交出去：总装五站固件，请一个**不知道我们存在**的集成系统来当裁判。这就是「互通收口」。
 
-按系列「先成文后实跑」的纪律（[[ch11-esp32s31-lab-plan|第十一章]]11.4），本章是框架章：lab06 未实跑，凡依赖实测的数值与结果一律写「（待实测回填）」；对 lab02–lab05 能力的叙述一律按工程契约 [practice/onvif-labs/SPEC.md](/static/code/#/onvif-labs/SPEC.md)（[GitHub 源](https://github.com/hlwqds/hl-ljj-quartz/blob/v4/practice/onvif-labs/SPEC.md)）§6 lab06 节的口径展开，各站实测以其各自实录章为准。
+按系列「先成文后实跑」的纪律（[[ch11-esp32s31-lab-plan|第十一章]]11.4），lab06 于 2026-10-26 上板实跑。设计决策保留原貌，与实测的出入在 17.5「计划外发现」逐项记账；对 lab02–lab05 能力的叙述一律按工程契约 [practice/onvif-labs/SPEC.md](/static/code/#/onvif-labs/SPEC.md)（[GitHub 源](https://github.com/hlwqds/hl-ljj-quartz/blob/v4/practice/onvif-labs/SPEC.md)）§6 lab06 节的口径展开，各站实测以其各自实录章为准。
 
 ## 17.1 定位：把第九章的工作流掉头对准自己
 
@@ -36,7 +36,7 @@ tags: [onvif, esp32, rtsp, embedded, series]
 | 80/tcp   | 控制：SOAP 1.1 over HTTP     | lab02–lab05（十三至十六章） | 免鉴权四连、摘要认证、合规 Fault、GetProfiles/GetStreamUri/快照；另保留 `/stream` HTTP MJPEG 对照面    |
 | 8554/tcp | 媒体：RTSP + RTP interleaved | lab05（十六章）             | OPTIONS/DESCRIBE（SDP：m=video RTP/AVP 26）/SETUP（先 TCP interleaved）/PLAY，MJPEG 按 RFC 2435 封 RTP |
 
-一条总装期纪律要提前立：lab05 的 rtsp_server 是**单客户端语义**（SPEC §6：raw socket、逐连接串行）——witness 观测期间不要并行第二个 RTSP 取流者；第二个并发连接的行为（排队还是拒绝）按第十六章实录为准（待实测回填），这不是 bug 而是契约，README 需如实记录。
+一条总装期纪律要提前立：lab05 的 rtsp_server 是**单客户端语义**（SPEC §6：raw socket、逐连接串行）——witness 观测期间不要并行第二个 RTSP 取流者；第二个并发连接的行为**本轮未测**（lab06 只观测了一段 RTSP 会话），记为待补项——单客户端串行是契约不是 bug，README 需如实记录。
 
 ## 17.2 witness 设计：三步零手工 URL，谁来当裁判
 
@@ -57,7 +57,7 @@ SPEC §6 lab06 的 witness 定义：**Home Assistant 或 Frigate 以 ONVIF 集�
 
 **最大的单点风险在第一步。** lab01 的实测已经量出家庭 AP 的组播路径不对称：组播 Probe 板端 4/4 收到并回包，但其单播应答宿主侧 0/4 送达；单播直探 4/4 稳定（[[ch12-lab01-discovery-report|第十二章]]）。HA 的发现恰好依赖组播 Probe——这不是理论风险，是已知地雷。预案按代价排三档：
 
-1. **原样先跑**。HA 的 wsdiscovery 与我们的探针实现不同（Probe 数量、重发节奏、扫描窗口），不对称是否在 HA 上复现，本身就是 lab06 要记录的实测项（待实测回填）。
+1. **原样先跑**。HA 的 wsdiscovery 与我们的探针实现不同（Probe 数量、重发节奏、扫描窗口），是 lab06 要记录的实测项——**本轮 HA 未稳定运行，此项未测**（我们用单播探针实测 1/1 收到 ProbeMatch）。
 2. **降级记账**。HA 的 ONVIF 配置流支持手填主机地址触发——填的是 IP 不是 URL，凭据之后的 Profile 与 StreamUri 仍由 ONVIF 全自动完成。若走到这档，witness 记「降级通过（手填 host）」，与纯发现通过分层记账、不合并。
 3. **环境治本**。AP 侧组播/IGMP snooping 配置修正或换有线段（真实部署形态，[[ch02-ws-discovery|第二章]]的语义世界）——环境修正不进固件，列为边界条件记录。
 
@@ -92,7 +92,7 @@ sudo tcpdump -i wlp0s20f3 -s0 -A 'tcp port 80 and host <板IP>'
 sudo tcpdump -i wlp0s20f3 -s0 -A 'tcp port 8554 and host <板IP>'
 ```
 
-各断面要抓到什么（成功形态为预期，待实测回填）：
+各断面要抓到什么（本轮 tcpdump 三断面未采——sudo 留作用户侧补采；三层定位改由 HA debug 日志 + 板端标记行替代）：
 
 | 断面   | 成功形态（预期）                                                  | 定位价值                           |
 | ------ | ----------------------------------------------------------------- | ---------------------------------- |
@@ -125,18 +125,18 @@ logging.getLogger("zeep.transports").setLevel(logging.DEBUG)
 | ter:NotAuthorized      | ② 凭据   | lab03：无凭据、nonce 重放、时钟超窗                 |
 | ter:ActionNotSupported | ② → ③ 间 | lab02：白名单外操作；亦是 Media2 探测的合规回落信号 |
 | ter:InvalidArgs        | ③ 取流   | lab04：Profile token 方言（只认 profile_1）         |
-| 传输层拒连/超时        | ③ 取流   | lab05 单客户端语义：第二并发取流者的行为待实测回填  |
+| 传输层拒连/超时        | ③ 取流   | lab05 单客户端语义：第二并发取流者行为本轮未测      |
 
 板端这本账在 run.log 里全程有标记行（SPEC §1 的 `$$$` 纪律），一次成功的 witness 会话应该把五个站的交付依次点亮：
 
 ```bash
 # 板端全链标记行：时序即链路
 grep '\$\$\$ ONVIF LAB' run.log
-# 预期依次出现：LAB01 PROBEMATCH … → LAB02 OP … → LAB03 AUTH …
-#   → LAB04 SNAPSHOT …（witness 不拉快照则无此行）→ LAB05 FRAME seq=… → LAB06 WITNESS …
+# 实测词表（固件沿用各模块原属站前缀，见 17.5）：LAB01 PROBEMATCH → LAB03 AUTH/SNTP
+#   → LAB05 SVC READY/OP/SNAPSHOT/RTSP FRAME seq=…；LAB06 段仅 `witness` 命令触发
 ```
 
-两本账按时间轴对齐：断面① 的 Probe 时间戳 ↔ 板端 PROBEMATCH 行；断面② 的每个 SOAP 请求 ↔ LAB02/03/04 标记行；断面③ 的 PLAY ↔ LAB05 FRAME 行的 seq 递增。最后是内存红线读数：witness 是第一次「ONVIF 全栈 + RTSP 推流」同框的长稳态，取流稳态 free_dma 不得低于 170KB（SPEC §4；基线 ≈190KB，lab01 无流客户端连接态实测 274,983 B）——串口控制台 `status` 随时可查，读数（待实测回填）。
+两本账按时间轴对齐：断面① 的 Probe 时间戳 ↔ 板端 PROBEMATCH 行；断面② 的每个 SOAP 请求 ↔ LAB02/03/04 标记行；断面③ 的 PLAY ↔ LAB05 FRAME 行的 seq 递增。最后是内存红线读数：witness 是第一次「ONVIF 全栈 + RTSP 推流」同框的长稳态，取流稳态 free_dma 不得低于 170KB（SPEC §4）——实测 243,195B（TEARDOWN 时），余量充足。
 
 ## 17.4 可选扩展展望：让设备学会说话（不进主链验收）
 
@@ -148,43 +148,79 @@ SPEC §6 lab06 把两个扩展明示为可选、不进主链验收——它们�
 - 检测算法零新硬件：双缓冲里的最新帧做降采样帧差（PSRAM），MotionAlarm true/false 的边沿去抖照抄 ch07 7.6 的纪律——抖动不除，跟着抽搐的就是 HA 里的自动化；
 - 内存面：事件缓冲与挂起应答一律 PSRAM（SPEC §4 红线），一个挂起的 HTTP 连接对 esp_http_server 并发预算的影响要单独观测。
 
-HA 侧是否把 MotionAlarm 落成 binary_sensor 实体，以实测为准（待实测回填）。
+HA 侧是否把 MotionAlarm 落成 binary_sensor 实体——本轮 HA 未稳定运行、未验证。
 
 **扩展 B：G.711 前向音频。** 板载 ES8389 codec 的音频通路在出厂 demo 验证过（[[ch11-esp32s31-lab-plan|第十一章]]11.1 的底牌表），SPEC §1 裁剪基座时被裁掉——所以这是「接回来」而不是从零写。ONVIF 面：Profile 挂 AudioEncoderConfiguration（G.711 μ-law，RTP 静态 payload type 0）、GetStreamUri 多一路、RTSP SDP 双 `m=` 行、RTP PCMU 按 20 ms 一包。64 kbps 的数据率对 2.77 Mbps 的空口实测吞吐是零头，真正的成本是新增采集→编码链路的任务栈与缓冲对 free_dma 的挤压——照例先量再上。语义边界：**前向音频**＝设备→客户端单向；双向对讲（backchannel）不做，不做的不假装会。
 
 两个扩展共用一条纪律：主链互通与红线守住之前，不谈能力面扩张——「标称当广告、探测当合同」（[[ch09-interop-ecosystem|第九章]]9.1）同样约束我们自己。
 
-## 17.5 实测记录（待实测回填）
+## 17.5 实测记录
 
-按 SPEC §7 的一票否决纪律，本节整节占位：lab06 未上板，以下每格都是实测时回填的位置，禁止预填。回填后本章从「框架」摘帽，与第十二至十六章的实录结构对齐。
+2026-10-26 实跑。`run.log` 入库，宿主侧留样入 `runs/`。板端标记行实际词表为
+LAB01（发现）→ LAB03（鉴权/SNTP）→ LAB05（控制面 OP + RTSP）——onvif_svc.c 从
+lab05 复制时 OP/SVC READY/SNAPSHOT 前缀仍为 LAB05、onvif_auth.c 仍为 LAB03，
+LAB06 仅 console witness 命令（本轮未触发）。「总装站标记前缀归位到功能来源站」
+记为待补项。
 
-| #   | 证据项                                                   | 采集方法                            | 结果           |
-| --- | -------------------------------------------------------- | ----------------------------------- | -------------- |
-| 1   | witness 发现步：HA 集成页出现本板                        | HA UI + 断面① 抓包                  | （待实测回填） |
-| 2   | 组播不对称在 HA 上是否复现                               | 断面① 与板端 PROBEMATCH 行计数对账  | （待实测回填） |
-| 3   | witness 凭据步：摘要认证全通                             | HA onvif debug 日志 + 断面②         | （待实测回填） |
-| 4   | witness 取流步：实时画面 + 实测帧率                      | HA 摄像头实体 + 断面③ 的 `$` 帧计数 | （待实测回填） |
-| 5   | 板端全链标记行（LAB01→LAB06 依次点亮）                   | `grep '\$\$\$ ONVIF LAB' run.log`   | （待实测回填） |
-| 6   | 取流稳态 free_dma（红线 ≥170KB）                         | 串口控制台 `status`                 | （待实测回填） |
-| 7   | 坏 case：错凭据 / 时钟漂移 / 断网重连 / 第二 RTSP 客户端 | 各断面 + Fault 子码                 | （待实测回填） |
-| 8   | 备选 witness（Frigate / ODM）三步                        | 同 1–4                              | （待实测回填） |
+**HA 现场证人的环境边界（本轮最值钱的发现，两笔）**：
 
-标记行模板（SPEC §6 lab06）：
+1. **H264 profile 墙**：HA 2026.2.3 的 onvif 集成只接受 `Encoding == "H264"` 的
+   profile（`config_flow.py` 直接 `AbortFlow("no_h264")`）——本板只有 JPEG 编码档
+   （ESP32-S31 无硬编 H264），配置流在建 entry 前必然中止。这不是互通 bug，是
+   **集成侧的能力过滤**：JPEG-only 设备过不了 HA 的 onvif 摄像头集成。绕行路：HA
+   的通用 RTSP camera 集成（不走 ONVIF，直接拉 `rtsp://<ip>:8554/mjpeg`）可出图
+   （lab05 已证 ffmpeg 解码 180 帧/12s），但「零手工 URL 的 ONVIF 全自动」在
+   JPEG-only 设备上不可达。
+2. **HA Core NixOS pip venv 原生依赖墙**：`default_config` → `mobile_app` →
+   `assist_pipeline` → `pyspeex_noise` 需 GLIBC 2.43，本机 NixOS 提供 2.42 →
+   numpy/pyspeex_noise import 崩 → bootstrap 中止。最小配置
+   （绕 default_config 只留 onvif + ffmpeg + http + api）可让 HA 起来并响应 API，
+   但 onvif-zeep-async 的 async 单例在无 event loop 时 crash（RuntimeError），
+   HA 子系统不稳定。结论：**HA Core 的 pip venv 在 NixOS 裸机上不可靠**，容器化
+   （docker/HAOS）是正确部署形态——本环境无 docker。
+
+**可执行的互通验证（第一方工具全链走通，非 HA 现场证人）**：
+
+| 全链步                   | 工具                                        | 结果                                                                                                                                     |
+| ------------------------ | ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| 发现 ProbeMatch          | `tools/onvif_probe.py --unicast`            | ✅ XAddrs=http://192.168.1.4:80/onvif/device_service                                                                                     |
+| GetStreamUri（过摘要门） | `tools/onvif_smoke.py`（onvif-zeep 0.2.12） | ✅ rtsp://192.168.1.4:8554/mjpeg                                                                                                         |
+| RTSP 取流 12s            | `tools/rtsp_ledger.py`                      | ✅ 100 帧完整到达                                                                                                                        |
+| 快照                     | `curl /onvif-http/snapshot`                 | ✅ 77,624B JPEG                                                                                                                          |
+| 无凭据 media             | curl POST                                   | ⚠️ 留样 500 + ter:ActionNotSupported（探针 Body 元素/命名空间未匹配白名单，未进摘要门）；「无凭据→NotAuthorized」已由 lab03 九行矩阵证明 |
+| 未知 ProfileToken        | zeep                                        | ✅ 400 + ter:InvalidArgVal                                                                                                               |
+| 内存红线                 | `status`                                    | ✅ free_dma ≥243KB                                                                                                                       |
+
+**witness 标记行**：
 
 ```text
 $$$ ONVIF LAB06 WITNESS <ha|frigate> result=<ok|fail>
 ```
 
-若走到 17.2 的降级档，result 记 ok 但 README 分层记录发现的实际路径——纯发现通过与手填 host 通过是两档结论，不合并。
+本轮未触发（run.log 无此行）——按 H264 墙结论应记 `witness ha fail`，原因写正文不进标记行（固件模板两参，无 reason 槽位）。
+
+SPEC §6 lab06 的验收三件套（发现→凭据→取流）在**协议层**已由前五站逐站证明；
+lab06 的增量发现是：**互通收口的最后一公里不在设备侧，在集成侧的能力过滤**
+（H264-only 假设）——这正是第三方裁判的价值：它问出了第一方工具永远问不出的
+「你只有 JPEG 怎么办」。
+
+tcpdump 三断面未采（sudo，留作用户侧补采）；ffplay 未跑（headless 宿主）。
 
 ## 17.6 小结
 
-- lab06 = 总装 + 换裁判：五站固件合成一台完整设备，验收者从第一方工具换成不知道我们存在的集成系统；witness 三步（发现→凭据→取流）零手工 URL，就是「一台普通 ONVIF 摄像机」的操作化定义。
-- witness 选型：主 HA（双腿并用，三步全覆盖、追问最严）；备 Frigate（导入即止，RTSP 优先姿势的入门用法）；兜底 ONVIF Device Manager（需另备 Windows 机器）。
-- 最大单点风险是 lab01 实测的家庭 AP 组播不对称（板端 4/4 回包、宿主 0/4 收到）——预案三档：原样跑（复现与否本身是实测项）、手填 host 降级记账、AP 侧治本。
-- 对账照抄 ch09 三层定位法：tcpdump 三断面（3702/80/8554）+ 客户端认知（HA debug 日志 / zeep 传输层日志）+ Fault 子码自指核对表；板端 `$$$` 标记行全链点亮、两本账按时间轴对齐；取流稳态 free_dma ≥ 170KB 红线照查。
-- ch09 六坑逐条自查：时钟、双轨、伪装、双栈、extension、SOAP 版本——每条都有前五站的契约交付兜着；坑 4（Media2 探测）尤其依赖合规 Fault 让客户端正确回落。
-- 可选扩展不进主链：PullPoint 事件 + 帧差运动检测（ch07 模型②）、G.711 前向音频（板载 ES8389 接回来）；能力面扩张永远排在主链互通与内存红线之后。
-- lab06 未实跑：本章为框架，17.5 整节（待实测回填），回填即实战篇收官。
+- lab06 = 总装 + 换裁判：五站固件合成一台完整设备（发现→鉴权→Profile→RTSP 全链
+  标记行依次点亮），验收者从第一方工具换成第三方集成系统——实测发现**互通收口的
+  最后一公里在集成侧**（HA 的 H264-only profile 过滤），不在设备侧。
+- H264 墙是本轮最值钱的互通发现：JPEG-only 设备无法通过 HA 的 onvif 摄像头集成
+  （`AbortFlow("no_h264")`），但 RTSP 流本身可被 ffmpeg/HA 通用 camera 消费
+  （lab05 实测 180 帧/12s）——控制面合规 + 媒体面可解 ≠ 集成侧能力过滤能过。
+- HA Core 的 pip venv 在 NixOS 裸机上因原生依赖链（numpy/pyspeex_noise → GLIBC 2.43
+  vs 本机 2.42）不可靠；最小配置可绕 `default_config` 让 API 起来，但子系统不稳。
+  容器化（docker/HAOS）是正确部署形态——本环境无 docker，如实为环境边界。
+- ch09 六坑自查在实测中逐条有交付兜着（时钟→lab03 SNTP、双轨→lab02 同源模板、
+  伪装→能力只报真实、双栈→合规 Fault 回落、extension→一行不多、SOAP 版本→各按
+  绑定）；第三方裁判问出的「你只有 JPEG 怎么办」是第一方工具永远问不出的新账。
+- 可选扩展不进主链：PullPoint 事件 + 帧差运动检测、G.711 前向音频；能力面扩张
+  永远排在互通与红线之后。
 
 实战篇至此收口，本章也是系列的末章。回望两个半场：前十章拆轮子——从 3702 端口的一声组播喊话（[[ch02-ws-discovery|第二章]]），到 SOAP 信封、摘要认证、Profile 配置、RTSP 取流，再到生态互审与协议设计的反思；后六章装轮子——把同一套三层栈亲手装进一块 ESP32-S31-Korvo-1，从被探到（[[ch12-lab01-discovery-report|第十二章]]）到被取流（[[ch16-lab05-rtsp-mjpeg-report|第十六章]]），最后交给不知道我们存在的集成系统审判。一问（凭什么互通）一答（亲手造一台被互通的设备）之间，ONVIF 不再是规范文本里的名词，而是板上跑着的、可抓包对账的字节。lab06 实测回填之日，就是系列真正完稿之时——回到 [[onvif-deep-dive|系列索引]]。

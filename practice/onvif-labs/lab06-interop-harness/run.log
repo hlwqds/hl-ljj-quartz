@@ -1,0 +1,374 @@
+ESP-ROM:esp32s31-20251218
+Build:Dec 18 2025
+rst:0x1 (POWERON),boot:0x79 (SPI_FAST_FLASH_BOOT)
+SPI mode:DIO, clock div:1
+load:0x2f0740c0,len:0x17e4
+load:0x2f06a2b0,len:0xde0
+load:0x2f06cfb0,len:0x3460
+entry 0x2f06a2ba
+I (26) boot: ESP-IDF v6.1 2nd stage bootloader
+I (26) boot: compile time Oct 26 2026 04:24:38
+I (27) boot: Multicore bootloader
+I (29) boot: chip revision: v0.0
+I (29) boot: efuse block revision: v0.1
+I (33) qio_mode: Enabling default flash chip QIO
+I (37) boot.esp32s31: SPI Speed      : 80MHz
+I (41) boot.esp32s31: SPI Mode       : QIO
+I (45) boot.esp32s31: SPI Flash Size : 16MB
+I (49) boot: Enabling RNG early entropy source...
+I (53) boot: Partition Table:
+I (56) boot: ## Label            Usage          Type ST Offset   Length
+I (62) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (69) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (75) boot:  2 factory          factory app      00 00 00010000 00800000
+I (82) boot:  3 coffee_pjpg      Unknown data     01 82 00810000 00600000
+I (90) boot: End of partition table
+I (92) esp_image: segment 0: paddr=00010020 vaddr=500e0020 size=39e2ch (237100) map
+I (137) esp_image: segment 1: paddr=00049e54 vaddr=2f000000 size=061c4h ( 25028) load
+I (144) esp_image: segment 2: paddr=00050020 vaddr=50000020 size=d9ae0h (891616) map
+I (283) esp_image: segment 3: paddr=00129b08 vaddr=2f0061c4 size=112e0h ( 70368) load
+I (298) esp_image: segment 4: paddr=0013adf0 vaddr=2f017500 size=06b1ch ( 27420) load
+I (310) boot: Loaded app from partition at offset 0x10000
+I (311) boot: Disabling RNG early entropy source...
+I (322) oct_psram: vendor id    : 0x0d (AP)
+I (322) oct_psram: Latency      : 0x01 (Fixed)
+I (322) oct_psram: DriveStr.    : 0x00 (25 Ohm)
+I (323) oct_psram: dev id       : 0x03 (generation 4)
+I (327) oct_psram: density      : 0x05 (128 Mbit)
+I (332) oct_psram: good-die     : 0x06 (Pass)
+I (336) oct_psram: SRF          : 0x02 (Slow Refresh)
+I (341) oct_psram: BurstType    : 0x00 ( Wrap)
+I (345) oct_psram: BurstLen     : 0x03 (2048 Byte)
+I (349) oct_psram: BitMode      : 0x00 (X8 Mode)
+I (354) oct_psram: Readlatency  : 0x06 (18 cycles@Fixed)
+I (359) oct_psram: DriveStrength: 0x00 (1/1)
+I (363) MSPI Timing: Enter psram timing tuning
+I esp_psram: Found 16MB PSRAM device
+I esp_psram: Speed: 250MHz
+I (525) mmu_psram: .rodata xip on psram
+I (573) mmu_psram: .text xip on psram
+I (573) oct_psram: psram CS IO is dedicated
+I (573) cpu_start: Multicore app
+I (583) cpu_start: GPIO 59 and 58 are used as console UART I/O pins
+I (583) cpu_start: Pro cpu start user code
+I (583) cpu_start: cpu freq: 320000000 Hz
+I (585) app_init: Application information:
+I (589) app_init: Project name:     onvif_lab06_interop_harness
+I (595) app_init: App version:      v4.5.2-79-g6ddec0b4-dirty
+I (600) app_init: Compile time:     Oct 26 2026 04:24:17
+I (605) app_init: ELF file SHA256:  6b76eef14...
+I (609) app_init: ESP-IDF:          v6.1
+I (613) efuse_init: Min chip rev:     v0.0
+I (617) efuse_init: Max chip rev:     v0.99 
+I (621) efuse_init: Chip rev:         v0.0
+I (625) heap_init: Initializing. RAM available for dynamic allocation:
+I (631) heap_init: At 2F020830 len 0005A780 (361 KiB): RAM
+I (636) heap_init: At 2F07AFB0 len 000041C0 (16 KiB): RAM
+I (642) heap_init: At 2E000000 len 00007FE8 (31 KiB): RTCRAM
+I (647) esp_psram: Adding pool of 15210K of PSRAM memory to heap allocator
+I (653) esp_psram: Adding pool of 25K of PSRAM memory gap generated due to end address alignment of irom to the heap allocator
+I (664) esp_psram: Adding pool of 24K of PSRAM memory gap generated due to end address alignment of drom to the heap allocator
+I (676) spi_flash: detected chip: generic
+I (679) spi_flash: flash io: qio
+I (682) sleep_gpio: Configure to isolate all GPIO pins in sleep state
+I (689) sleep_gpio: Enable automatic switching of GPIO sleep configuration
+I (695) oct_psram: psram CS IO is dedicated
+I (699) coexist: coex firmware version: a830d28
+I (703) coexist: coexist rom version cdcf52b
+I (707) main_task: Started on CPU0
+I (710) esp_psram: Reserving pool of 12K of internal memory for DMA/internal allocations
+I (718) main_task: Calling app_main()
+[5n
+Type 'help' to get the list of commands.
+Use UP/DOWN arrows to navigate through command history.
+Press TAB when typing command name to auto-complete.
+
+Your terminal application does not support escape sequences.
+
+Line editing and history features are disabled.
+
+On Windows, try using Windows Terminal or Putty instead.
+korvo> I (1284) factory_console: serial console ready (status/ip/heap/restart/sntp/clock/witness, help lists all)
+I (1313) factory_camera: Camera preview service initialized
+I (1317) S31-Korvo: I2C bus initialized: SDA=0, SCL=1
+I (1322) S31-Korvo: Initializing camera: dev=/dev/video2, shared_i2c=1, xclk=20000000
+I (1317) factory_camera: Camera preview requested
+I (1334) lab06: Free internal DMA before stream init: 354743 bytes
+I (1340) factory_stream: heap before stream init: free DMA=354743, SPIRAM=15618756
+I (1359) factory_stream: encode buffers: rgb=0x50126140(ext_ram=1) jpeg0=0x501bc180(ext_ram=1) jpeg1=0x502071c0(ext_ram=1)
+I (1360) factory_stream: heap after encoder+PPA init: free DMA=353631, SPIRAM=14076836
+I (1377) pp: pp rom version: 395df10
+I (1377) net80211: net80211 rom version: 395df10
+I (1379) wifi:wifi driver task: 2f02cc84, prio:23, stack:6656, core=0
+I (1386) wifi:wifi firmware version: e12a754
+I (1386) wifi:wifi certification version: v7.0
+I (1389) wifi:config NVS flash: enabled
+I (1392) wifi:config nano formatting: disabled
+I (1398) wifi:mac_version:HAL_MAC_ESP32AX_764,ut_version:N, band mode:0x1
+I (1404) wifi:Init data frame dynamic rx buffer num: 32
+I (1410) wifi:Init static rx mgmt buffer num: 5
+I (1413) wifi:Init management short buffer num: 32
+I (1419) wifi:Init static tx buffer num: 16
+I (1422) wifi:Init tx cache buffer num: 32
+I (1425) wifi:Init static tx FG buffer num: 2
+I (1428) wifi:Init static rx buffer size: 1700 (rxctrl:64, csi:512)
+I (1434) wifi:Init static rx buffer num: 16
+I (1440) wifi:Init dynamic rx buffer num: 32
+I (1442) sc101iot: Detected Camera sensor PID=0xda4a
+I (1444) wifi_init: rx ba win: 16
+I (1452) wifi_init: accept mbox: 6
+I (1455) wifi_init: tcpip mbox: 32
+I (1458) wifi_init: udp mbox: 6
+I (1461) wifi_init: tcp mbox: 6
+I (1464) wifi_init: tcp tx win: 5760
+I (1467) wifi_init: tcp rx win: 5760
+I (1470) wifi_init: tcp mss: 1440
+I (1473) wifi_init: WiFi/LWIP prefer SPIRAM
+I (1476) wifi_init: WiFi IRAM OP enabled
+I (1479) wifi_init: WiFi RX IRAM OP enabled
+I (1485) wifi_init: WiFi SLP IRAM OP enabled
+I (1488) phy_init: phy_version 100,dd4c590,Jul 14 2026,10:33:03
+W (1559) wifi:(phy)rate:0x0(  LP-1Mbps), pwr:20, txing:20
+W (1559) wifi:(phy)rate:0x1(  LP-2Mbps), pwr:20, txing:20
+W (1560) wifi:(phy)rate:0x2(LP-5.5Mbps), pwr:20, txing:20
+W (1566) wifi:(phy)rate:0x3( LP-11Mbps), pwr:20, txing:20
+W (1569) wifi:(phy)rate:0x5(  SP-2Mbps), pwr:20, txing:20
+W (1575) wifi:(phy)rate:0x6(SP-5.5Mbps), pwr:20, txing:20
+W (1581) wifi:(phy)rate:0x7( SP-11Mbps), pwr:20, txing:20
+W (1584) wifi:(phy)rate:0x8(    48Mbps), pwr:18, txing:18
+W (1590) wifi:(phy)rate:0x9(    24Mbps), pwr:19, txing:19
+W (1596) wifi:(phy)rate:0xa(    12Mbps), pwr:20, txing:20
+W (1602) wifi:(phy)rate:0xb(     6Mbps), pwr:20, txing:20
+W (1605) wifi:(phy)rate:0xc(    54Mbps), pwr:18, txing:18
+W (1611) wifi:(phy)rate:0xd(    36Mbps), pwr:19, txing:19
+W (1617) wifi:(phy)rate:0xe(    18Mbps), pwr:20, txing:20
+W (1620) wifi:(phy)rate:0xf(     9Mbps), pwr:20, txing:20
+W (1626) wifi:(phy)rate:0x10, mcs:0x0, pwr(bw20:20, bw40:19), txing:20
+W (1632) wifi:(phy)rate:0x11, mcs:0x1, pwr(bw20:20, bw40:19), txing:20
+W (1638) wifi:(phy)rate:0x12, mcs:0x2, pwr(bw20:20, bw40:19), txing:20
+W (1644) wifi:(phy)rate:0x13, mcs:0x3, pwr(bw20:20, bw40:19), txing:20
+W (1650) wifi:(phy)rate:0x14, mcs:0x4, pwr(bw20:19, bw40:18), txing:19
+W (1656) wifi:(phy)rate:0x15, mcs:0x5, pwr(bw20:19, bw40:18), txing:19
+W (1665) wifi:(phy)rate:0x16, mcs:0x6, pwr(bw20:18, bw40:17), txing:18
+W (1671) wifi:(phy)rate:0x17, mcs:0x7, pwr(bw20:18, bw40:17), txing:18
+W (1677) wifi:(phy)rate:0x18, mcs:0x8, pwr(bw20:16, bw40:16), txing:16
+W (1683) wifi:(phy)rate:0x19, mcs:0x9, pwr(bw20:15, bw40:15), txing:15
+I (1689) wifi:11ax coex: WDEVAX_PTI0(0x55777555), WDEVAX_PTI1(0x00003377).
+
+I (1695) wifi:mode : sta (1c:29:04:d0:72:e8)
+I (1698) wifi:enable tsf
+I (1702) wifi:Set ps type: 0, coexist: 0
+
+I (1707) factory_stream: heap after wifi start: free DMA=273171, SPIRAM=14008464
+I (1712) wifi:(he)max.RxAMPDULenExponentExtension:3, max.RxAMPDUpre-EOFpaddingBytes:8388607(0x7fffff)
+I (1722) wifi:(mac)omc_ul_mu_data_disable_rx:1
+I (1725) wifi:(phy)ppe_thresholds_present:1, nominal_packet_padding:0
+I (1731) wifi:(phy)dcm tx(constellation:2, nss:0), dcm rx(constellation:2, nss:0)
+I (1739) wifi:(phy)rx_mcs_map:0xfffa, tx_mcs_map:0xfffa, stbc_tx:1, bfmer(su:1, mu:1), ldpc:1, max_rate:172
+I (1748) wifi:(phy)nsts:2, ru_index_bitmap:0x1(242:1, 484:0, 996:0, 2*996:0)
+I (1755) wifi:(phy)threshold_bits:12, nsts_num:2, ru_num:1, he_cap->len:25, ppe_threshold_len:3(6,11,4)
+I (1763) wifi:(ppe)RU242, NSTS0, PPE16:0, PPE8:7, nominal_packet_padding:2
+I (1772) wifi:(opr)len:7, TWT Required:0, VHT Opr Info Present:0, 6GHz Opr Info Present:0, Co-Hosted BSS:0(max_indicator:0), Basic MCS and NSS:0xfffc
+I (1784) wifi:(opr)len:7, Default PE Duration:4, TXOP RTS Threshold:1023(0 us), ER-SU-Disable:0
+I (1793) wifi:(opr)len:7, BSS Color:14, disabled:0, Partial BSS Color:0
+I (1799) wifi:(spr)len:2, ctrl:0x3, PSR Disallowed:1, Non-SRG OBSS PD SR Disallowed:1
+I (1805) wifi:(spr)len:2, ctrl:0x3, Non-SRG Offset Present:0, SRG Info Present:0
+I (1815) wifi:new:<11,0>, old:<1,0>, ap:<255,255>, sta:<11,0>, prof:1, snd_ch_cfg:0x0
+I (1822) wifi:(connect)dot11_authmode:0x3, pairwise_cipher:0x3, group_cipher:0x1
+I (1828) wifi:state: init -> auth (0xb0)
+I (1713) factory_stream: stream service initialized, WiFi STA connecting
+I (1837) lab06: Free internal DMA after stream init: 273339 bytes
+I (1843) onvif_disc: $$$ ONVIF LAB01 DISC READY uuid=urn:uuid:1c29047d-26d0-72e8-8a3e-4ba59cd1e2f3
+I (1852) onvif_auth: sntp started servers=ntp.aliyun.com,pool.ntp.org
+I (1858) onvif_auth: $$$ ONVIF LAB03 AUTH READY sntp=on window_s=300 ring=64x20B user=admin
+I (1867) rtsp_server: $$$ ONVIF LAB05 RTSP LISTENING port=8554
+I (1873) rtsp_server: heap@LISTENING free_dma=259467 free_internal=291475 free_spiram=13373728
+I (1867) lab06: lab06 base ready (total assembly for interop witness)
+I (1888) main_task: Returned from app_main()
+I (1899) wifi:state: auth -> assoc (0x0)
+I (1958) wifi:(assoc)RESP, Extended Capabilities length:8, operating_mode_notification:0
+I (1958) wifi:(assoc)RESP, Extended Capabilities, MBSSID:0, TWT Responder:0, OBSS Narrow Bandwidth RU In OFDMA Tolerance:0
+I (1967) wifi:(he)max.RxAMPDULenExponentExtension:3, max.RxAMPDUpre-EOFpaddingBytes:8388607(0x7fffff)
+I (1976) wifi:(mac)omc_ul_mu_data_disable_rx:1
+I (1979) wifi:(phy)ppe_thresholds_present:1, nominal_packet_padding:0
+I (1985) wifi:(phy)dcm tx(constellation:2, nss:0), dcm rx(constellation:2, nss:0)
+I (1994) wifi:(phy)rx_mcs_map:0xfffa, tx_mcs_map:0xfffa, stbc_tx:1, bfmer(su:1, mu:1), ldpc:1, max_rate:172
+I (2003) wifi:(phy)nsts:2, ru_index_bitmap:0x1(242:1, 484:0, 996:0, 2*996:0)
+I (2009) wifi:(phy)threshold_bits:12, nsts_num:2, ru_num:1, he_cap->len:25, ppe_threshold_len:3(6,11,4)
+I (2018) wifi:(ppe)RU242, NSTS0, PPE16:0, PPE8:7, nominal_packet_padding:2
+I (2024) wifi:(opr)len:7, TWT Required:0, VHT Opr Info Present:0, 6GHz Opr Info Present:0, Co-Hosted BSS:0(max_indicator:0), Basic MCS and NSS:0xfffcI (2030) S31-Korvo: Camera format: 640x480, fourcc=UYVY, stride=0, size=0
+
+I (2045) wifi:(opr)len:7, Default PE Duration:4, TXOP RTS Threshold:1023(0 us), ER-SU-Disable:0
+I (2045) S31-Korvo: Camera buffer[0]: ptr=0x5033f1c0, length=614400
+I (2054) wifi:(opr)len:7, BSS Color:14, disabled:0, Partial BSS Color:0
+I (2060) S31-Korvo: Camera buffer[1]: ptr=0x503d5200, length=614400
+I (2066) wifi:BSS max idle period:480(1000TU), protected keep alive:FALSE
+I (2072) factory_camera: BSP camera format: 640x480, fourcc=UYVY, stride=0, size=0
+I (2078) wifi:state: assoc -> run (0x10)
+I (2087) factory_camera: Camera preview pipeline: UYVY PPA
+I (2089) wifi:(he)ppe_thresholds_present:1, nominal_packet_padding(rx:0, cfg:2)
+I (2095) factory_camera: PPA SRM client registered
+I (2101) wifi:(trc)phytype:CBW20-SGI, snr:62, maxRate:172, highestRateIdx:0
+W (2113) wifi:(trc)band:2G, phymode:3, highestRateIdx:0, lowestRateIdx:11, dataSchedTableSize:14
+I (2118) S31-Korvo: Camera stream started
+I (2122) wifi:(trc)band:2G, rate(S-MCS7, rateIdx:0), ampdu(rate:S-MCS7, schedIdx(0, stop:8)), snr:62, ampduState:wait operational
+I (2137) wifi:ifidx:0, rssi:-34, nf:-96, phytype(0x3, CBW20-SGI), phymode(0x7, 11ax), max_rate:172, he:1, vht:0, ht:1
+I (2146) wifi:(ht)max.RxAMPDULenExponent:3(65535 bytes), MMSS:4(2 us)
+I (2151) S31-Korvo: Camera orientation control accepted: hflip=0, vflip=0
+I (2158) factory_camera: Waiting for first DVP frame...
+I (2165) wifi:(extcap)mbssid:0, enhanced_mbssid_advertise:0, complete_nontxbssid_profiles:0, twt_responder: 0
+I (2174) wifi:connected with CMCC-eafe, aid = 10, channel 11, BW20, bssid = b8:12:da:7f:c3:01
+I (2183) wifi:security: WPA2-PSK, phy: ax, rssi: -34, cipher(pairwise:0x3, group:0x1), pmf:0
+I (2189) wifi:pm start, type: 0, twt_start:0
+
+I (2193) wifi:pm start, type:0, aid:0xa, trans-BSSID:b8:12:da:7f:c3:01, BSSID[5]:0x1, mbssid(max-indicator:0, index:0), he:1
+I (2204) wifi:set rx beacon pti, rx_bcn_pti: 10, bcn_timeout: 25000, mt_pti: 10, mt_time: 10000
+I (2213) wifi:[ADDBA]TX addba request, tid:0, dialogtoken:1, bufsize:32, A-MSDU:0(not supported), policy:1(IMR), ssn:0(0x0)
+I (2225) wifi:[ADDBA]TX addba request, tid:7, dialogtoken:2, bufsize:32, A-MSDU:0(not supported), policy:1(IMR), ssn:0(0x20)
+I (2234) wifi:[ADDBA]TX addba request, tid:5, dialogtoken:3, bufsize:32, A-MSDU:0(not supported), policy:1(IMR), ssn:0(0x0)
+I (2241) S31-Korvo: Camera first frame: index=0, bytes=614400, length=0
+I (2246) wifi:AP's beacon interval = 102400 us, DTIM period = 1
+I (2252) factory_camera: First frame: data=0x5033f1c0 size=614400
+I (2259) wifi:[ADDBA]RX addba response, status:0, tid:0/tb:1(0xa1), bufsize:32, batimeout:0, txa_wnd:8
+I (2273) wifi:[ADDBA]RX addba response, status:0, tid:7/tb:1(0xa1), bufsize:32, batimeout:0, txa_wnd:8
+I (2286) wifi:[ADDBA]RX addba response, status:0, tid:5/tb:1(0xa1), bufsize:32, batimeout:0, txa_wnd:8
+W (2340) wifi:<ba-add>idx:0, ifx:0, tid:0, TAHI:0x10001c3, TALO:0x7fda12b8, (ssn:3, win:64, cur_ssn:3), CONF:0xc0000001
+I (3400) esp_netif_handlers: sta ip: 192.168.1.4, mask: 255.255.255.0, gw: 192.168.1.1
+I (3401) factory_stream: MJPEG stream at http://192.168.1.4/stream
+I (3404) factory_stream: status page at http://192.168.1.4:81/status
+I (3411) onvif_disc: $$$ ONVIF LAB01 DISC JOIN grp=239.255.255.250:3702 ip=192.168.1.4
+I (3452) onvif_svc: $$$ ONVIF LAB05 SVC READY http=192.168.1.4:80/onvif/device_service
+status
+frames_encoded=73
+frames_sent=0
+last_jpeg_bytes=77661
+avg_encode_ms=13.06
+wifi_rssi=-35
+ip=192.168.1.4
+free_dma=243607
+free_spiram=11405776
+korvo> 
+korvo> I (17093) onvif_auth: $$$ ONVIF LAB03 SNTP synced epoch=1792961096
+I (17900) rtsp_server: client 192.168.1.2:55108
+I (17907) rtsp_server: DESCRIBE -> SDP 201 bytes
+I (17964) rtsp_server: SETUP transport=TCP
+I (17964) rtsp_server: heap@SETUP free_dma=243195 free_internal=275203 free_spiram=11404036
+I (17970) rtsp_server: $$$ ONVIF LAB05 PLAY seq=0 rtptime=0
+I (17970) rtsp_server: heap@PLAYING free_dma=243195 free_internal=275203 free_spiram=11404036
+I (18076) rtsp_server: $$$ ONVIF LAB05 FRAME seq=1 bytes=77033
+I (18165) rtsp_server: $$$ ONVIF LAB05 FRAME seq=2 bytes=77029
+I (18243) rtsp_server: $$$ ONVIF LAB05 FRAME seq=3 bytes=76985
+I (18322) rtsp_server: $$$ ONVIF LAB05 FRAME seq=4 bytes=76934
+I (18416) rtsp_server: $$$ ONVIF LAB05 FRAME seq=5 bytes=77308
+I (18517) rtsp_server: $$$ ONVIF LAB05 FRAME seq=6 bytes=76719
+I (18607) rtsp_server: $$$ ONVIF LAB05 FRAME seq=7 bytes=77106
+I (18708) rtsp_server: $$$ ONVIF LAB05 FRAME seq=8 bytes=77465
+I (18812) rtsp_server: $$$ ONVIF LAB05 FRAME seq=9 bytes=76968
+I (18908) rtsp_server: $$$ ONVIF LAB05 FRAME seq=10 bytes=77231
+I (18993) rtsp_server: $$$ ONVIF LAB05 FRAME seq=11 bytes=76832
+I (19068) rtsp_server: $$$ ONVIF LAB05 FRAME seq=12 bytes=76718
+I (19152) rtsp_server: $$$ ONVIF LAB05 FRAME seq=13 bytes=76988
+I (19235) rtsp_server: $$$ ONVIF LAB05 FRAME seq=14 bytes=76806
+I (19325) rtsp_server: $$$ ONVIF LAB05 FRAME seq=15 bytes=76610
+I (19418) rtsp_server: $$$ ONVIF LAB05 FRAME seq=16 bytes=76890
+I (19505) rtsp_server: $$$ ONVIF LAB05 FRAME seq=17 bytes=76944
+I (19602) rtsp_server: $$$ ONVIF LAB05 FRAME seq=18 bytes=76794
+I (19665) rtsp_server: $$$ ONVIF LAB05 FRAME seq=19 bytes=76692
+I (19755) rtsp_server: $$$ ONVIF LAB05 FRAME seq=20 bytes=77050
+I (19849) rtsp_server: $$$ ONVIF LAB05 FRAME seq=21 bytes=76976
+I (19937) rtsp_server: $$$ ONVIF LAB05 FRAME seq=22 bytes=76609
+I (20027) rtsp_server: $$$ ONVIF LAB05 FRAME seq=23 bytes=77003
+I (20120) rtsp_server: $$$ ONVIF LAB05 FRAME seq=24 bytes=76952
+I (20201) rtsp_server: $$$ ONVIF LAB05 FRAME seq=25 bytes=76939
+I (20292) rtsp_server: $$$ ONVIF LAB05 FRAME seq=26 bytes=76688
+I (20370) rtsp_server: $$$ ONVIF LAB05 FRAME seq=27 bytes=76986
+I (20457) rtsp_server: $$$ ONVIF LAB05 FRAME seq=28 bytes=77087
+I (20547) rtsp_server: $$$ ONVIF LAB05 FRAME seq=29 bytes=76805
+I (23524) rtsp_server: $$$ ONVIF LAB05 FRAME seq=30 bytes=77214
+I (23619) rtsp_server: $$$ ONVIF LAB05 FRAME seq=31 bytes=77021
+I (23724) rtsp_server: $$$ ONVIF LAB05 FRAME seq=32 bytes=76989
+I (23814) rtsp_server: $$$ ONVIF LAB05 FRAME seq=33 bytes=77086
+I (23917) rtsp_server: $$$ ONVIF LAB05 FRAME seq=34 bytes=77042
+I (24016) rtsp_server: $$$ ONVIF LAB05 FRAME seq=35 bytes=77350
+I (24112) rtsp_server: $$$ ONVIF LAB05 FRAME seq=36 bytes=76872
+I (24214) rtsp_server: $$$ ONVIF LAB05 FRAME seq=37 bytes=76769
+I (24306) rtsp_server: $$$ ONVIF LAB05 FRAME seq=38 bytes=76740
+I (24387) rtsp_server: $$$ ONVIF LAB05 FRAME seq=39 bytes=77393
+I (24484) rtsp_server: $$$ ONVIF LAB05 FRAME seq=40 bytes=76691
+I (24572) rtsp_server: $$$ ONVIF LAB05 FRAME seq=41 bytes=76645
+I (24667) rtsp_server: $$$ ONVIF LAB05 FRAME seq=42 bytes=76852
+I (24765) rtsp_server: $$$ ONVIF LAB05 FRAME seq=43 bytes=77093
+I (24853) rtsp_server: $$$ ONVIF LAB05 FRAME seq=44 bytes=77079
+I (24957) rtsp_server: $$$ ONVIF LAB05 FRAME seq=45 bytes=77324
+I (25056) rtsp_server: $$$ ONVIF LAB05 FRAME seq=46 bytes=76968
+I (25149) rtsp_server: $$$ ONVIF LAB05 FRAME seq=47 bytes=76967
+I (25248) rtsp_server: $$$ ONVIF LAB05 FRAME seq=48 bytes=76780
+I (25341) rtsp_server: $$$ ONVIF LAB05 FRAME seq=49 bytes=77177
+I (25423) rtsp_server: $$$ ONVIF LAB05 FRAME seq=50 bytes=77121
+I (25506) rtsp_server: $$$ ONVIF LAB05 FRAME seq=51 bytes=76926
+I (25588) rtsp_server: $$$ ONVIF LAB05 FRAME seq=52 bytes=77251
+I (25686) rtsp_server: $$$ ONVIF LAB05 FRAME seq=53 bytes=76950
+I (25780) rtsp_server: $$$ ONVIF LAB05 FRAME seq=54 bytes=76561
+I (25874) rtsp_server: $$$ ONVIF LAB05 FRAME seq=55 bytes=76924
+I (25963) rtsp_server: $$$ ONVIF LAB05 FRAME seq=56 bytes=76766
+I (26059) rtsp_server: $$$ ONVIF LAB05 FRAME seq=57 bytes=76994
+I (26160) rtsp_server: $$$ ONVIF LAB05 FRAME seq=58 bytes=76582
+I (26229) rtsp_server: $$$ ONVIF LAB05 FRAME seq=59 bytes=76557
+I (26325) rtsp_server: $$$ ONVIF LAB05 FRAME seq=60 bytes=76920
+I (26414) rtsp_server: $$$ ONVIF LAB05 FRAME seq=61 bytes=76830
+I (26511) rtsp_server: $$$ ONVIF LAB05 FRAME seq=62 bytes=77068
+I (26602) rtsp_server: $$$ ONVIF LAB05 FRAME seq=63 bytes=76850
+I (26698) rtsp_server: $$$ ONVIF LAB05 FRAME seq=64 bytes=77172
+I (26799) rtsp_server: $$$ ONVIF LAB05 FRAME seq=65 bytes=76664
+I (26899) rtsp_server: $$$ ONVIF LAB05 FRAME seq=66 bytes=77018
+I (26987) rtsp_server: $$$ ONVIF LAB05 FRAME seq=67 bytes=76983
+I (27075) rtsp_server: $$$ ONVIF LAB05 FRAME seq=68 bytes=76673
+I (27149) rtsp_server: $$$ ONVIF LAB05 FRAME seq=69 bytes=77214
+I (27244) rtsp_server: $$$ ONVIF LAB05 FRAME seq=70 bytes=76798
+I (27326) rtsp_server: $$$ ONVIF LAB05 FRAME seq=71 bytes=76873
+I (27421) rtsp_server: $$$ ONVIF LAB05 FRAME seq=72 bytes=76944
+I (27510) rtsp_server: $$$ ONVIF LAB05 FRAME seq=73 bytes=76935
+I (27602) rtsp_server: $$$ ONVIF LAB05 FRAME seq=74 bytes=76857
+I (27698) rtsp_server: $$$ ONVIF LAB05 FRAME seq=75 bytes=77059
+I (27797) rtsp_server: $$$ ONVIF LAB05 FRAME seq=76 bytes=76557
+I (27893) rtsp_server: $$$ ONVIF LAB05 FRAME seq=77 bytes=77027
+I (27972) rtsp_server: $$$ ONVIF LAB05 FRAME seq=78 bytes=76855
+I (28066) rtsp_server: $$$ ONVIF LAB05 FRAME seq=79 bytes=77116
+I (28144) rtsp_server: $$$ ONVIF LAB05 FRAME seq=80 bytes=77050
+I (28235) rtsp_server: $$$ ONVIF LAB05 FRAME seq=81 bytes=76867
+I (28334) rtsp_server: $$$ ONVIF LAB05 FRAME seq=82 bytes=77317
+I (28430) rtsp_server: $$$ ONVIF LAB05 FRAME seq=83 bytes=76882
+I (28521) rtsp_server: $$$ ONVIF LAB05 FRAME seq=84 bytes=76952
+I (28605) rtsp_server: $$$ ONVIF LAB05 FRAME seq=85 bytes=76777
+I (28684) rtsp_server: $$$ ONVIF LAB05 FRAME seq=86 bytes=77279
+I (28764) rtsp_server: $$$ ONVIF LAB05 FRAME seq=87 bytes=76944
+I (28857) rtsp_server: $$$ ONVIF LAB05 FRAME seq=88 bytes=77098
+I (28947) rtsp_server: $$$ ONVIF LAB05 FRAME seq=89 bytes=76801
+I (29041) rtsp_server: $$$ ONVIF LAB05 FRAME seq=90 bytes=76312
+I (29141) rtsp_server: $$$ ONVIF LAB05 FRAME seq=91 bytes=76596
+I (29233) rtsp_server: $$$ ONVIF LAB05 FRAME seq=92 bytes=76734
+I (29326) rtsp_server: $$$ ONVIF LAB05 FRAME seq=93 bytes=76805
+I (29413) rtsp_server: $$$ ONVIF LAB05 FRAME seq=94 bytes=76806
+I (29503) rtsp_server: $$$ ONVIF LAB05 FRAME seq=95 bytes=76913
+I (29597) rtsp_server: $$$ ONVIF LAB05 FRAME seq=96 bytes=76791
+I (29686) rtsp_server: $$$ ONVIF LAB05 FRAME seq=97 bytes=76977
+I (29778) rtsp_server: $$$ ONVIF LAB05 FRAME seq=98 bytes=76775
+I (29864) rtsp_server: $$$ ONVIF LAB05 FRAME seq=99 bytes=77074
+I (29957) rtsp_server: $$$ ONVIF LAB05 FRAME seq=100 bytes=77193
+I (29981) rtsp_server: heap@TEARDOWN free_dma=243195 free_internal=275203 free_spiram=11397412
+I (29993) onvif_svc: $$$ ONVIF LAB05 OP (unlisted) fault action-not-supported
+I (30022) onvif_svc: $$$ ONVIF LAB05 SNAPSHOT bytes=77624
+I (30129) onvif_disc: $$$ ONVIF LAB01 PROBEMATCH xaddrs=http://192.168.1.4:80/onvif/device_service client=192.168.1.2:47366
+status
+frames_encoded=1121
+frames_sent=0
+last_jpeg_bytes=7746nc 不可 sync 调用，切 /tmp/onvif-venv 的 onvif-zeep 0.2.12）]
+7
+avg_encode_ms=13.13
+wifi_rssi=-35
+ip=192.168.1.4
+free_dma=243291
+free_spiram=11405780
+korvo> 
+korvo> [SUPPLEMENT END]
+[LOG SUPPLEMENT: zeep 冒烟补跑（/tmp/onvif-venv 的 onvif-zeep 0.2.12 sync）]

@@ -40,15 +40,15 @@ tags: [onvif, series, ip-camera, rtsp, soap, streaming]
 
 ## Part IV：实战——把设备端装进一块开发板
 
-| #   | 章节                                            | 主题                                              | 状态                    |
-| --- | ----------------------------------------------- | ------------------------------------------------- | ----------------------- |
-| 11  | [[ch11-esp32s31-lab-plan\|第十一章]]            | 实战方案：ESP32-S31-Korvo-1 当一台 ONVIF 摄像机   | 📋 方案已立             |
-| 12  | [[ch12-lab01-discovery-report\|第十二章]]       | 实战实录一：lab01，从烧录到被探到                 | ✅ 成文                 |
-| 13  | [[ch13-lab02-device-service-report\|第十三章]]  | 实战实录二：lab02，SOAP 控制面最小集              | ✅ 实跑（双壳冒烟全绿） |
-| 14  | [[ch14-lab03-auth-digest-report\|第十四章]]     | 实战实录三：lab03，WS-Security 摘要认证与时钟纪律 | ✅ 实跑（九行矩阵全绿） |
-| 15  | [[ch15-lab04-media-snapshot-report\|第十五章]]  | 实战实录四：lab04，Media Profile 与快照           | ✅ 实跑（快照三连对账） |
-| 16  | [[ch16-lab05-rtsp-mjpeg-report\|第十六章]]      | 实战实录五：lab05，RTSP/RTP 取流全链              | ✅ 实跑（三本账闭环）   |
-| 17  | [[ch17-lab06-interop-harness-report\|第十七章]] | 实战实录六：lab06，互通收口                       | 🚧 骨架（待实测回填）   |
+| #   | 章节                                            | 主题                                              | 状态                      |
+| --- | ----------------------------------------------- | ------------------------------------------------- | ------------------------- |
+| 11  | [[ch11-esp32s31-lab-plan\|第十一章]]            | 实战方案：ESP32-S31-Korvo-1 当一台 ONVIF 摄像机   | 📋 方案已立               |
+| 12  | [[ch12-lab01-discovery-report\|第十二章]]       | 实战实录一：lab01，从烧录到被探到                 | ✅ 实跑（ProbeMatch 4/4） |
+| 13  | [[ch13-lab02-device-service-report\|第十三章]]  | 实战实录二：lab02，SOAP 控制面最小集              | ✅ 实跑（双壳冒烟全绿）   |
+| 14  | [[ch14-lab03-auth-digest-report\|第十四章]]     | 实战实录三：lab03，WS-Security 摘要认证与时钟纪律 | ✅ 实跑（九行矩阵全绿）   |
+| 15  | [[ch15-lab04-media-snapshot-report\|第十五章]]  | 实战实录四：lab04，Media Profile 与快照           | ✅ 实跑（快照三连对账）   |
+| 16  | [[ch16-lab05-rtsp-mjpeg-report\|第十六章]]      | 实战实录五：lab05，RTSP/RTP 取流全链              | ✅ 实跑（三本账闭环）     |
+| 17  | [[ch17-lab06-interop-harness-report\|第十七章]] | 实战实录六：lab06，互通收口                       | ✅ 实跑（HA H264 墙发现） |
 
 ---
 

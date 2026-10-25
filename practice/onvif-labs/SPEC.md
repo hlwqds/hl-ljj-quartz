@@ -116,7 +116,7 @@ Profile 与 SnapshotUri；标记行 `$$$ ONVIF LAB04 SNAPSHOT bytes=<n>`。
 m=video RTP/AVP 26）/SETUP（先 TCP interleaved，UDP 第二档）/PLAY/TEARDOWN；MJPEG 按
 RFC 2435 封 RTP（量化表与编码器输出对齐，抓包逐字节校验头 8 字节）。验收：ffplay/VLC
 出图；帧计数对账——板端 `frames_sent` ↔ 宿主解码 JPEG EOI 计数一致（沿用
-esp32-video-tran 方法学）；12 秒采样窗口无丢帧；标记行 `$$$ ONVIF LAB05 FRAME seq=<n> bytes=<n>`。
+esp32-video-tran 方法学）；12 秒采样窗口无丢帧；标记行 `$$$ ONVIF LAB05 FRAME seq=<n> bytes=<n> total=<n>`（每 30 帧打一行，TEARDOWN 打总账——15fps 逐帧打会淹掉串口控制台）。
 
 ### lab06-interop-harness —— 互通收口【ch09】
 
