@@ -284,7 +284,7 @@ static esp_err_t onvif_svc_handler(httpd_req_t *req)
 
     shell_ver_t shell = detect_shell(s_rx);
 
-    /* 权威路由：Body 首子元素；SOAPAction 尾段兜底（zeep 1.2 也照发该头）。 */
+    /* 权威路由：Body 首子元素；SOAPAction 尾段兜底（实测 zeep 4.3.3 不发该头，见 ch13 §13.3）。 */
     const char *local = svc_route_by_body(s_rx);
     if (local == NULL) {
         char action[96] = {0};

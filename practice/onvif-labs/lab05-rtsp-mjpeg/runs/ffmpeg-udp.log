@@ -1,0 +1,33 @@
+ffmpeg version 9.0.1 Copyright (c) 2000-2026 the FFmpeg developers
+  built with gcc 15.3.0 (GCC)
+  configuration: --disable-static --prefix=/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-ffmpeg-9.0.1 --target_os=linux --arch=x86_64 --pkg-config=pkg-config --enable-gpl --enable-version3 --disable-nonfree --disable-static --enable-shared --enable-pic --disable-thumb --disable-small --enable-runtime-cpudetect --disable-gray --enable-swscale-alpha --enable-hardcoded-tables --enable-safe-bitstream-reader --enable-pthreads --disable-w32threads --disable-os2threads --enable-network --enable-pixelutils --datadir=/nix/store/3ixjapw54hhhx35swicwlna69kfa790l-ffmpeg-9.0.1-data/share/ffmpeg --enable-ffmpeg --enable-ffplay --enable-ffprobe --bindir=/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-ffmpeg-9.0.1-bin/bin --enable-avcodec --enable-avdevice --enable-avfilter --enable-avformat --enable-avutil --enable-swresample --enable-swscale --libdir=/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-ffmpeg-9.0.1-lib/lib --incdir=/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-ffmpeg-9.0.1-dev/include --enable-doc --enable-htmlpages --enable-manpages --mandir=/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-ffmpeg-9.0.1-man/share/man --enable-podpages --enable-txtpages --docdir=/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-ffmpeg-9.0.1-doc/share/doc/ffmpeg --enable-alsa --enable-amf --enable-libaom --disable-libaribb24 --disable-libaribcaption --enable-libass --disable-avisynth --enable-libbluray --disable-libbs2b --enable-bzlib --disable-libcaca --disable-libcdio --disable-chromaprint --disable-libcodec2 --disable-cuda --enable-cuda-llvm --disable-cuda-nvcc --enable-cuvid --enable-libdav1d --disable-libdavs2 --disable-libdc1394 --enable-libdrm --disable-libdvdnav --disable-libdvdread --disable-libfdk-aac --enable-ffnvcodec --disable-libflite --enable-fontconfig --enable-libfontconfig --enable-libfreetype --disable-frei0r --enable-libfribidi --disable-libgme --enable-gmp --enable-gnutls --disable-libgsm --enable-libharfbuzz --enable-iconv --disable-libilbc --disable-libjack --disable-libjxl --disable-libkvazaar --disable-ladspa --disable-liblc3 --disable-liblcevc-dec --disable-lcms2 --enable-lzma --disable-metal --disable-libmfx --disable-libmodplug --enable-libmp3lame --disable-libmysofa --disable-libnpp --enable-nvdec --enable-nvenc --disable-openal --enable-liboapv --enable-opencl --disable-libopencore-amrnb --disable-libopencore-amrwb --disable-opengl --disable-libopenh264 --enable-libopenjpeg --enable-libopenmpt --enable-libopus --disable-libplacebo --enable-libpulse --disable-libqrencode --disable-libquirc --disable-librav1e --enable-librist --disable-librtmp --disable-librubberband --disable-libsmbclient --enable-sdl2 --disable-libshine --disable-libsnappy --enable-libsoxr --enable-libspeex --enable-libsrt --enable-libssh --disable-librsvg --enable-libsvtav1 --disable-libtensorflow --enable-libtheora --disable-libtwolame --disable-libuavs3d --enable-libv4l2 --enable-v4l2-m2m --enable-vaapi --enable-vdpau --disable-libvpl --enable-libvidstab --disable-libvmaf --disable-libvo-amrwbenc --enable-libvorbis --enable-libvpx --enable-vulkan --disable-libvvenc --enable-libwebp --disable-whisper --enable-libx264 --enable-libx265 --disable-libxavs --disable-libxavs2 --disable-libxcb --disable-libxcb-shape --disable-libxcb-shm --disable-libxcb-xfixes --disable-libxevd --disable-libxeve --disable-xlib --enable-libxml2 --enable-libxvid --enable-libzimg --enable-zlib --disable-libzmq --enable-libzvbi --disable-debug --enable-optimizations --disable-extra-warnings --disable-stripping --nvcc=/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-clang-21.1.8/bin/clang
+  libavutil      61.  1.101 / 61.  1.101
+  libavcodec     63.  1.101 / 63.  1.101
+  libavformat    63.  1.101 / 63.  1.101
+  libavdevice    63.  1.101 / 63.  1.101
+  libavfilter    12.  1.101 / 12.  1.101
+  libswscale     10.  1.101 / 10.  1.101
+  libswresample   7.  1.101 /  7.  1.101
+Input #0, rtsp, from 'rtsp://192.168.1.4:8554/mjpeg':
+  Metadata:
+    title           : ONVIF LAB05 MJPEG
+  Duration: N/A, start: 0.000000, bitrate: N/A
+  Stream #0:0: Video: mjpeg (Baseline), yuvj422p(pc, bt470bg/unknown/unknown), 640x480 [SAR 1:1 DAR 4:3], 15 fps, 15 tbr, 90k tbn
+Stream mapping:
+  Stream #0:0 -> #0:0 (mjpeg (native) -> wrapped_avframe (native))
+Press [q] to stop, [?] for help
+Output #0, null, to 'pipe:':
+  Metadata:
+    title           : ONVIF LAB05 MJPEG
+    encoder         : Lavf63.1.101
+  Stream #0:0: Video: wrapped_avframe, yuvj422p(pc, bt470bg/unknown/unknown, progressive), 640x480 [SAR 1:1 DAR 4:3], q=2-31, 200 kb/s, 15 fps, 15 tbn
+    Metadata:
+      encoder         : Lavc63.1.101 wrapped_avframe
+frame=   28 fps=0.0 q=-0.0 size=N/A time=00:00:01.86 bitrate=N/A speed=3.73x elapsed=0:00:00.50    frame=   36 fps= 36 q=-0.0 size=N/A time=00:00:02.40 bitrate=N/A speed= 2.4x elapsed=0:00:01.00    frame=   44 fps= 29 q=-0.0 size=N/A time=00:00:02.93 bitrate=N/A speed=1.96x elapsed=0:00:01.50    frame=   52 fps= 26 q=-0.0 size=N/A time=00:00:03.46 bitrate=N/A speed=1.73x elapsed=0:00:02.00    frame=   60 fps= 24 q=-0.0 size=N/A time=00:00:04.00 bitrate=N/A speed= 1.6x elapsed=0:00:02.50    frame=   67 fps= 22 q=-0.0 size=N/A time=00:00:04.46 bitrate=N/A speed=1.49x elapsed=0:00:03.00    frame=   75 fps= 21 q=-0.0 size=N/A time=00:00:05.00 bitrate=N/A speed=1.43x elapsed=0:00:03.50    frame=   83 fps= 21 q=-0.0 size=N/A time=00:00:05.53 bitrate=N/A speed=1.38x elapsed=0:00:04.00    frame=   91 fps= 20 q=-0.0 size=N/A time=00:00:06.06 bitrate=N/A speed=1.35x elapsed=0:00:04.50    frame=   98 fps= 20 q=-0.0 size=N/A time=00:00:06.53 bitrate=N/A speed=1.31x elapsed=0:00:05.00    [in#0/rtsp @ 0x5f06cfc5c080] max delay reached. need to consume packet
+[in#0/rtsp @ 0x5f06cfc5c080] RTP: missed 2 packets
+[in#0/rtsp @ 0x5f06cfc5c080] Missing packets; dropping frame.
+[in#0/rtsp @ 0x5f06cfc5c080] max delay reached. need to consume packet
+[in#0/rtsp @ 0x5f06cfc5c080] RTP: missed 1 packets
+[in#0/rtsp @ 0x5f06cfc5c080] Missing packets; dropping frame.
+frame=  105 fps= 19 q=-0.0 size=N/A time=00:00:07.06 bitrate=N/A speed=1.28x elapsed=0:00:05.50    frame=  113 fps= 19 q=-0.0 size=N/A time=00:00:07.60 bitrate=N/A speed=1.27x elapsed=0:00:06.00    [out#0/null @ 0x5f06cfceea40] video:49KiB audio:0KiB subtitle:0KiB other streams:0KiB global headers:0KiB muxing overhead: unknown
+frame=  119 fps= 18 q=-0.0 Lsize=N/A time=00:00:08.00 bitrate=N/A speed=1.24x elapsed=0:00:06.45    

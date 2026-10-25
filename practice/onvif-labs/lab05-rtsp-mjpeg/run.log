@@ -1,0 +1,1138 @@
+ESP-ROM:esp32s31-20251218
+Build:Dec 18 2025
+rst:0x1 (POWERON),boot:0x79 (SPI_FAST_FLASH_BOOT)
+SPI mode:DIO, clock div:1
+load:0x2f0740c0,len:0x17e4
+load:0x2f06a2b0,len:0xde0
+load:0x2f06cfb0,len:0x3460
+entry 0x2f06a2ba
+I (26) boot: ESP-IDF v6.1 2nd stage bootloader
+I (26) boot: compile time Oct 26 2026 02:21:37
+I (27) boot: Multicore bootloader
+I (29) boot: chip revision: v0.0
+I (29) boot: efuse block revision: v0.1
+I (33) qio_mode: Enabling default flash chip QIO
+I (37) boot.esp32s31: SPI Speed      : 80MHz
+I (41) boot.esp32s31: SPI Mode       : QIO
+I (45) boot.esp32s31: SPI Flash Size : 16MB
+I (49) boot: Enabling RNG early entropy source...
+I (53) boot: Partition Table:
+I (56) boot: ## Label            Usage          Type ST Offset   Length
+I (62) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (69) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (75) boot:  2 factory          factory app      00 00 00010000 00800000
+I (82) boot:  3 coffee_pjpg      Unknown data     01 82 00810000 00600000
+I (90) boot: End of partition table
+I (92) esp_image: segment 0: paddr=00010020 vaddr=500e0020 size=39d3ch (236860) map
+I (137) esp_image: segment 1: paddr=00049d64 vaddr=2f000000 size=062b4h ( 25268) load
+I (144) esp_image: segment 2: paddr=00050020 vaddr=50000020 size=d9960h (891232) map
+I (283) esp_image: segment 3: paddr=00129988 vaddr=2f0062b4 size=111f0h ( 70128) load
+I (298) esp_image: segment 4: paddr=0013ab80 vaddr=2f017500 size=06b1ch ( 27420) load
+I (310) boot: Loaded app from partition at offset 0x10000
+I (311) boot: Disabling RNG early entropy source...
+I (321) oct_psram: vendor id    : 0x0d (AP)
+I (322) oct_psram: Latency      : 0x01 (Fixed)
+I (322) oct_psram: DriveStr.    : 0x00 (25 Ohm)
+I (322) oct_psram: dev id       : 0x03 (generation 4)
+I (327) oct_psram: density      : 0x05 (128 Mbit)
+I (332) oct_psram: good-die     : 0x06 (Pass)
+I (336) oct_psram: SRF          : 0x02 (Slow Refresh)
+I (341) oct_psram: BurstType    : 0x00 ( Wrap)
+I (345) oct_psram: BurstLen     : 0x03 (2048 Byte)
+I (349) oct_psram: BitMode      : 0x00 (X8 Mode)
+I (354) oct_psram: Readlatency  : 0x06 (18 cycles@Fixed)
+I (359) oct_psram: DriveStrength: 0x00 (1/1)
+I (363) MSPI Timing: Enter psram timing tuning
+I esp_psram: Found 16MB PSRAM device
+I esp_psram: Speed: 250MHz
+I (525) mmu_psram: .rodata xip on psram
+I (572) mmu_psram: .text xip on psram
+I (573) oct_psram: psram CS IO is dedicated
+I (573) cpu_start: Multicore app
+I (583) cpu_start: GPIO 59 and 58 are used as console UART I/O pins
+I (583) cpu_start: Pro cpu start user code
+I (583) cpu_start: cpu freq: 320000000 Hz
+I (585) app_init: Application information:
+I (589) app_init: Project name:     onvif_lab05_rtsp_mjpeg
+I (594) app_init: App version:      v4.5.2-79-g4b38bd23-dirty
+I (599) app_init: Compile time:     Oct 26 2026 02:31:12
+I (605) app_init: ELF file SHA256:  e40e12dce...
+I (609) app_init: ESP-IDF:          v6.1
+I (613) efuse_init: Min chip rev:     v0.0
+I (616) efuse_init: Max chip rev:     v0.99 
+I (620) efuse_init: Chip rev:         v0.0
+I (624) heap_init: Initializing. RAM available for dynamic allocation:
+I (630) heap_init: At 2F020830 len 0005A780 (361 KiB): RAM
+I (636) heap_init: At 2F07AFB0 len 000041C0 (16 KiB): RAM
+I (641) heap_init: At 2E000000 len 00007FE8 (31 KiB): RTCRAM
+I (646) esp_psram: Adding pool of 15210K of PSRAM memory to heap allocator
+I (653) esp_psram: Adding pool of 25K of PSRAM memory gap generated due to end address alignment of irom to the heap allocator
+I (664) esp_psram: Adding pool of 24K of PSRAM memory gap generated due to end address alignment of drom to the heap allocator
+I (675) spi_flash: detected chip: generic
+I (679) spi_flash: flash io: qio
+I (682) sleep_gpio: Configure to isolate all GPIO pins in sleep state
+I (688) sleep_gpio: Enable automatic switching of GPIO sleep configuration
+I (694) oct_psram: psram CS IO is dedicated
+I (698) coexist: coex firmware version: a830d28
+I (703) coexist: coexist rom version cdcf52b
+I (707) main_task: Started on CPU0
+I (710) esp_psram: Reserving pool of 12K of internal memory for DMA/internal allocations
+I (718) main_task: Calling app_main()
+[5n
+Type 'help' to get the list of commands.
+Use UP/DOWN arrows to navigate through command history.
+Press TAB when typing command name to auto-complete.
+
+Your terminal application does not support escape sequences.
+
+Line editing and history features are disabled.
+
+On Windows, try using Windows Terminal or Putty instead.
+korvo> I (1284) factory_console: serial console ready (status/ip/heap/restart/sntp/clock, help lists all)
+I (1313) factory_camera: Camera preview service initialized
+I (1316) S31-Korvo: I2C bus initialized: SDA=0, SCL=1
+I (1322) S31-Korvo: Initializing camera: dev=/dev/video2, shared_i2c=1, xclk=20000000
+I (1317) factory_camera: Camera preview requested
+I (1334) lab05: Free internal DMA before stream init: 354763 bytes
+I (1340) factory_stream: heap before stream init: free DMA=354763, SPIRAM=15619432
+I (1359) factory_stream: encode buffers: rgb=0x50126140(ext_ram=1) jpeg0=0x501bc180(ext_ram=1) jpeg1=0x502071c0(ext_ram=1)
+I (1360) factory_stream: heap after encoder+PPA init: free DMA=353663, SPIRAM=14077512
+I (1377) pp: pp rom version: 395df10
+I (1377) net80211: net80211 rom version: 395df10
+I (1379) wifi:wifi driver task: 2f02cc64, prio:23, stack:6656, core=0
+I (1386) wifi:wifi firmware version: e12a754
+I (1386) wifi:wifi certification version: v7.0
+I (1389) wifi:config NVS flash: enabled
+I (1392) wifi:config nano formatting: disabled
+I (1398) wifi:mac_version:HAL_MAC_ESP32AX_764,ut_version:N, band mode:0x1
+I (1404) wifi:Init data frame dynamic rx buffer num: 32
+I (1410) wifi:Init static rx mgmt buffer num: 5
+I (1413) wifi:Init management short buffer num: 32
+I (1419) wifi:Init static tx buffer num: 16
+I (1422) wifi:Init tx cache buffer num: 32
+I (1425) wifi:Init static tx FG buffer num: 2
+I (1428) wifi:Init static rx buffer size: 1700 (rxctrl:64, csi:512)
+I (1434) wifi:Init static rx buffer num: 16
+I (1440) wifi:Init dynamic rx buffer num: 32
+I (1441) sc101iot: Detected Camera sensor PID=0xda4a
+I (1444) wifi_init: rx ba win: 16
+I (1452) wifi_init: accept mbox: 6
+I (1455) wifi_init: tcpip mbox: 32
+I (1458) wifi_init: udp mbox: 6
+I (1461) wifi_init: tcp mbox: 6
+I (1464) wifi_init: tcp tx win: 5760
+I (1467) wifi_init: tcp rx win: 5760
+I (1470) wifi_init: tcp mss: 1440
+I (1473) wifi_init: WiFi/LWIP prefer SPIRAM
+I (1476) wifi_init: WiFi IRAM OP enabled
+I (1479) wifi_init: WiFi RX IRAM OP enabled
+I (1485) wifi_init: WiFi SLP IRAM OP enabled
+I (1488) phy_init: phy_version 100,dd4c590,Jul 14 2026,10:33:03
+W (1560) wifi:(phy)rate:0x0(  LP-1Mbps), pwr:20, txing:20
+W (1560) wifi:(phy)rate:0x1(  LP-2Mbps), pwr:20, txing:20
+W (1560) wifi:(phy)rate:0x2(LP-5.5Mbps), pwr:20, txing:20
+W (1566) wifi:(phy)rate:0x3( LP-11Mbps), pwr:20, txing:20
+W (1570) wifi:(phy)rate:0x5(  SP-2Mbps), pwr:20, txing:20
+W (1576) wifi:(phy)rate:0x6(SP-5.5Mbps), pwr:20, txing:20
+W (1581) wifi:(phy)rate:0x7( SP-11Mbps), pwr:20, txing:20
+W (1585) wifi:(phy)rate:0x8(    48Mbps), pwr:18, txing:18
+W (1591) wifi:(phy)rate:0x9(    24Mbps), pwr:19, txing:19
+W (1596) wifi:(phy)rate:0xa(    12Mbps), pwr:20, txing:20
+W (1602) wifi:(phy)rate:0xb(     6Mbps), pwr:20, txing:20
+W (1606) wifi:(phy)rate:0xc(    54Mbps), pwr:18, txing:18
+W (1612) wifi:(phy)rate:0xd(    36Mbps), pwr:19, txing:19
+W (1617) wifi:(phy)rate:0xe(    18Mbps), pwr:20, txing:20
+W (1621) wifi:(phy)rate:0xf(     9Mbps), pwr:20, txing:20
+W (1627) wifi:(phy)rate:0x10, mcs:0x0, pwr(bw20:20, bw40:19), txing:20
+W (1633) wifi:(phy)rate:0x11, mcs:0x1, pwr(bw20:20, bw40:19), txing:20
+W (1639) wifi:(phy)rate:0x12, mcs:0x2, pwr(bw20:20, bw40:19), txing:20
+W (1645) wifi:(phy)rate:0x13, mcs:0x3, pwr(bw20:20, bw40:19), txing:20
+W (1651) wifi:(phy)rate:0x14, mcs:0x4, pwr(bw20:19, bw40:18), txing:19
+W (1657) wifi:(phy)rate:0x15, mcs:0x5, pwr(bw20:19, bw40:18), txing:19
+W (1665) wifi:(phy)rate:0x16, mcs:0x6, pwr(bw20:18, bw40:17), txing:18
+W (1671) wifi:(phy)rate:0x17, mcs:0x7, pwr(bw20:18, bw40:17), txing:18
+W (1677) wifi:(phy)rate:0x18, mcs:0x8, pwr(bw20:16, bw40:16), txing:16
+W (1683) wifi:(phy)rate:0x19, mcs:0x9, pwr(bw20:15, bw40:15), txing:15
+I (1689) wifi:11ax coex: WDEVAX_PTI0(0x55777555), WDEVAX_PTI1(0x00003377).
+
+I (1696) wifi:mode : sta (1c:29:04:d0:72:e8)
+I (1699) wifi:enable tsf
+I (1703) wifi:Set ps type: 0, coexist: 0
+
+I (1707) factory_stream: heap after wifi start: free DMA=273203, SPIRAM=14009140
+I (1713) factory_stream: stream service initialized, WiFi STA connecting
+I (1719) lab05: Free internal DMA after stream init: 273443 bytes
+I (1725) onvif_disc: $$$ ONVIF LAB01 DISC READY uuid=urn:uuid:1c29047d-26d0-72e8-8a3e-4ba59cd1e2f3
+I (1734) onvif_auth: sntp started servers=ntp.aliyun.com,pool.ntp.org
+I (1740) onvif_auth: $$$ ONVIF LAB03 AUTH READY sntp=on window_s=300 ring=64x20B user=admin
+I (1750) rtsp_server: $$$ ONVIF LAB05 RTSP LISTENING port=8554
+I (1753) rtsp_server: heap@LISTENING free_dma=259567 free_internal=291575 free_spiram=13374432
+I (1750) lab05: lab05 base ready (camera+stream+disc+svc+auth+media+rtsp)
+I (1767) wifi:(he)max.RxAMPDULenExponentExtension:3, max.RxAMPDUpre-EOFpaddingBytes:8388607(0x7fffff)
+I (1777) wifi:(mac)omc_ul_mu_data_disable_rx:1
+I (1782) wifi:(phy)ppe_thresholds_present:1, nominal_packet_padding:0
+I (1788) wifi:(phy)dcm tx(constellation:2, nss:0), dcm rx(constellation:2, nss:0)
+I (1795) wifi:(phy)rx_mcs_map:0xfffa, tx_mcs_map:0xfffa, stbc_tx:1, bfmer(su:1, mu:1), ldpc:1, max_rate:172
+I (1804) wifi:(phy)nsts:2, ru_index_bitmap:0x1(242:1, 484:0, 996:0, 2*996:0)
+I (1812) wifi:(phy)threshold_bits:12, nsts_num:2, ru_num:1, he_cap->len:25, ppe_threshold_len:3(6,11,4)
+I (1821) wifi:(ppe)RU242, NSTS0, PPE16:0, PPE8:7, nominal_packet_padding:2
+I (1827) wifi:(opr)len:7, TWT Required:0, VHT Opr Info Present:0, 6GHz Opr Info Present:0, Co-Hosted BSS:0(max_indicator:0), Basic MCS and NSS:0xfffc
+I (1839) wifi:(opr)len:7, Default PE Duration:4, TXOP RTS Threshold:1023(0 us), ER-SU-Disable:0
+I (1848) wifi:(opr)len:7, BSS Color:14, disabled:0, Partial BSS Color:0
+I (1854) wifi:(spr)len:2, ctrl:0x3, PSR Disallowed:1, Non-SRG OBSS PD SR Disallowed:1
+I (1863) wifi:(spr)len:2, ctrl:0x3, Non-SRG Offset Present:0, SRG Info Present:0
+I (1870) wifi:new:<11,0>, old:<1,0>, ap:<255,255>, sta:<11,0>, prof:1, snd_ch_cfg:0x0
+I (1876) wifi:(connect)dot11_authmode:0x3, pairwise_cipher:0x3, group_cipher:0x1
+I (1885) wifi:state: init -> auth (0xb0)
+I (1768) main_task: Returned from app_main()
+I (1956) wifi:state: auth -> assoc (0x0)
+I (1998) wifi:(assoc)RESP, Extended Capabilities length:8, operating_mode_notification:0
+I (1998) wifi:(assoc)RESP, Extended Capabilities, MBSSID:0, TWT Responder:0, OBSS Narrow Bandwidth RU In OFDMA Tolerance:0
+I (2007) wifi:(he)max.RxAMPDULenExponentExtension:3, max.RxAMPDUpre-EOFpaddingBytes:8388607(0x7fffff)
+I (2016) wifi:(mac)omc_ul_mu_data_disable_rx:1
+I (2019) wifi:(phy)ppe_thresholds_present:1, nominal_packet_padding:0
+I (2025) wifi:(phy)dcm tx(constellation:2, nss:0), dcm rx(constellation:2, nss:0)
+I (2030) S31-Korvo: Camera format: 640x480, fourcc=UYVY, stride=0, size=0
+I (2034) wifi:(phy)rx_mcs_map:0xfffa, tx_mcs_map:0xfffa, stbc_tx:1, bfmer(su:1, mu:1), ldpc:1, max_rate:172
+I (2041) S31-Korvo: Camera buffer[0]: ptr=0x5033ef00, length=614400
+I (2049) wifi:(phy)nsts:2, ru_index_bitmap:0x1(242:1, 484:0, 996:0, 2*996:0)
+I (2055) S31-Korvo: Camera buffer[1]: ptr=0x503d4f40, length=614400
+I (2061) wifi:(phy)threshold_bits:12, nsts_num:2, ru_num:1, he_cap->len:25, ppe_threshold_len:3(6,11,4)
+I (2067) factory_camera: BSP camera format: 640x480, fourcc=UYVY, stride=0, size=0
+I (2076) wifi:(ppe)RU242, NSTS0, PPE16:0, PPE8:7, nominal_packet_padding:2
+I (2085) factory_camera: Camera preview pipeline: UYVY PPA
+I (2091) wifi:(opr)len:7, TWT Required:0, VHT Opr Info Present:0, 6GHz Opr Info Present:0, Co-Hosted BSS:0(max_indicator:0), Basic MCS and NSS:0xfffcI (2097) factory_camera: PPA SRM client registered
+
+I (2114) wifi:(opr)len:7, Default PE Duration:4, TXOP RTS Threshold:1023(0 us), ER-SU-Disable:0
+I (2123) wifi:(opr)len:7, BSS Color:14, disabled:0, Partial BSS Color:0
+I (2129) S31-Korvo: Camera stream started
+I (2129) wifi:BSS max idle period:480(1000TU), protected keep alive:FALSE
+I (2138) wifi:state: assoc -> run (0x10)
+I (2141) wifi:(he)ppe_thresholds_present:1, nominal_packet_padding(rx:0, cfg:2)
+I (2150) wifi:(trc)phytype:CBW20-SGI, snr:62, maxRate:172, highestRateIdx:0
+W (2156) wifi:(trc)band:2G, phymode:3, highestRateIdx:0, lowestRateIdx:11, dataSchedTableSize:14
+I (2158) S31-Korvo: Camera orientation control accepted: hflip=0, vflip=0
+I (2165) wifi:(trc)band:2G, rate(S-MCS7, rateIdx:0), ampdu(rate:S-MCS7, schedIdx(0, stop:8)), snr:62, ampduState:wait operationalI (2171) factory_camera: Waiting for first DVP frame...
+
+I (2186) wifi:ifidx:0, rssi:-34, nf:-96, phytype(0x3, CBW20-SGI), phymode(0x7, 11ax), max_rate:172, he:1, vht:0, ht:1
+I (2198) wifi:(ht)max.RxAMPDULenExponent:3(65535 bytes), MMSS:4(2 us)
+I (2207) S31-Korvo: Camera first frame: index=0, bytes=614400, length=0
+I (2210) factory_camera: First frame: data=0x5033ef00 size=614400
+I (2217) wifi:(extcap)mbssid:0, enhanced_mbssid_advertise:0, complete_nontxbssid_profiles:0, twt_responder: 0
+I (2226) wifi:connected with CMCC-eafe, aid = 10, channel 11, BW20, bssid = b8:12:da:7f:c3:01
+I (2235) wifi:security: WPA2-PSK, phy: ax, rssi: -34, cipher(pairwise:0x3, group:0x1), pmf:0
+I (2242) wifi:pm start, type: 0, twt_start:0
+
+I (2245) wifi:pm start, type:0, aid:0xa, trans-BSSID:b8:12:da:7f:c3:01, BSSID[5]:0x1, mbssid(max-indicator:0, index:0), he:1
+I (2257) wifi:set rx beacon pti, rx_bcn_pti: 10, bcn_timeout: 25000, mt_pti: 10, mt_time: 10000
+I (2266) wifi:[ADDBA]TX addba request, tid:0, dialogtoken:1, bufsize:32, A-MSDU:0(not supported), policy:1(IMR), ssn:0(0x0)
+I (2275) wifi:[ADDBA]TX addba request, tid:7, dialogtoken:2, bufsize:32, A-MSDU:0(not supported), policy:1(IMR), ssn:0(0x20)
+I (2287) wifi:[ADDBA]TX addba request, tid:5, dialogtoken:3, bufsize:32, A-MSDU:0(not supported), policy:1(IMR), ssn:0(0x0)
+I (2299) wifi:AP's beacon interval = 102400 us, DTIM period = 1
+I (2305) wifi:[ADDBA]RX addba response, status:0, tid:0/tb:1(0xa1), bufsize:32, batimeout:0, txa_wnd:8
+I (2314) wifi:[ADDBA]RX addba response, status:0, tid:7/tb:1(0xa1), bufsize:32, batimeout:0, txa_wnd:8
+I (2323) wifi:[ADDBA]RX addba response, status:0, tid:5/tb:1(0xa1), bufsize:32, batimeout:0, txa_wnd:8
+W (2369) wifi:<ba-add>idx:0, ifx:0, tid:0, TAHI:0x10001c3, TALO:0x7fda12b8, (ssn:3, win:64, cur_ssn:3), CONF:0xc0000001
+I (3439) esp_netif_handlers: sta ip: 192.168.1.4, mask: 255.255.255.0, gw: 192.168.1.1
+I (3440) factory_stream: MJPEG stream at http://192.168.1.4/stream
+I (3443) factory_stream: status page at http://192.168.1.4:81/status
+I (3450) onvif_disc: $$$ ONVIF LAB01 DISC JOIN grp=239.255.255.250:3702 ip=192.168.1.4
+I (3534) onvif_svc: $$$ ONVIF LAB05 SVC READY http=192.168.1.4:80/onvif/device_service
+I (4149) onvif_auth: $$$ ONVIF LAB03 SNTP synced epoch=1792953153
+I (5689) onvif_svc: $$$ ONVIF LAB05 OP GetCapabilities ok
+I (5785) onvif_auth: $$$ ONVIF LAB03 AUTH ok user=admin
+I (5786) onvif_svc: $$$ ONVIF LAB05 OP GetStreamUri ok
+I (5800) onvif_auth: $$$ ONVIF LAB03 AUTH ok user=admin
+I (5801) onvif_svc: $$$ ONVIF LAB05 OP GetSnapshotUri fault invalid-arg-val
+I (5871) onvif_auth: $$$ ONVIF LAB03 AUTH ok user=admin
+I (5873) onvif_svc: $$$ ONVIF LAB05 OP GetProfiles ok
+I (5930) onvif_svc: $$$ ONVIF LAB05 OP GetDeviceInformation ok
+I (6034) rtsp_server: client 192.168.1.2:35328
+I (6043) rtsp_server: DESCRIBE -> SDP 202 bytes
+I (6089) rtsp_server: SETUP transport=TCP
+I (6090) rtsp_server: heap@SETUP free_dma=243419 free_internal=275427 free_spiram=11404732
+I (6092) rtsp_server: $$$ ONVIF LAB05 PLAY seq=0 rtptime=0
+I (6095) rtsp_server: heap@PLAYING free_dma=243419 free_internal=275427 free_spiram=11404728
+I (6129) rtsp_server: $$$ ONVIF LAB05 FRAME seq=1 bytes=17764
+I (6145) rtsp_server: $$$ ONVIF LAB05 FRAME seq=2 bytes=17699
+I (6231) rtsp_server: $$$ ONVIF LAB05 FRAME seq=3 bytes=17752
+I (6289) rtsp_server: $$$ ONVIF LAB05 FRAME seq=4 bytes=17796
+I (6343) rtsp_server: $$$ ONVIF LAB05 FRAME seq=5 bytes=17816
+I (6422) rtsp_server: $$$ ONVIF LAB05 FRAME seq=6 bytes=17914
+I (6481) rtsp_server: $$$ ONVIF LAB05 FRAME seq=7 bytes=17698
+I (6535) rtsp_server: $$$ ONVIF LAB05 FRAME seq=8 bytes=17708
+I (6607) rtsp_server: $$$ ONVIF LAB05 FRAME seq=9 bytes=17737
+I (6655) rtsp_server: $$$ ONVIF LAB05 FRAME seq=10 bytes=17703
+I (6739) rtsp_server: $$$ ONVIF LAB05 FRAME seq=11 bytes=17831
+I (6792) rtsp_server: $$$ ONVIF LAB05 FRAME seq=12 bytes=17782
+I (6878) rtsp_server: $$$ ONVIF LAB05 FRAME seq=13 bytes=17727
+I (6919) rtsp_server: $$$ ONVIF LAB05 FRAME seq=14 bytes=17887
+I (7002) rtsp_server: $$$ ONVIF LAB05 FRAME seq=15 bytes=17711
+I (7054) rtsp_server: $$$ ONVIF LAB05 FRAME seq=16 bytes=17976
+I (7106) rtsp_server: $$$ ONVIF LAB05 FRAME seq=17 bytes=17826
+I (7184) rtsp_server: $$$ ONVIF LAB05 FRAME seq=18 bytes=17568
+I (7233) rtsp_server: $$$ ONVIF LAB05 FRAME seq=19 bytes=17609
+I (7307) rtsp_server: $$$ ONVIF LAB05 FRAME seq=20 bytes=17848
+I (7382) rtsp_server: $$$ ONVIF LAB05 FRAME seq=21 bytes=17848
+I (7425) rtsp_server: $$$ ONVIF LAB05 FRAME seq=22 bytes=17720
+I (7508) rtsp_server: $$$ ONVIF LAB05 FRAME seq=23 bytes=17813
+I (7560) rtsp_server: $$$ ONVIF LAB05 FRAME seq=24 bytes=17958
+I (7632) rtsp_server: $$$ ONVIF LAB05 FRAME seq=25 bytes=17748
+I (7675) rtsp_server: $$$ ONVIF LAB05 FRAME seq=26 bytes=17681
+I (7766) rtsp_server: $$$ ONVIF LAB05 FRAME seq=27 bytes=17818
+I (7817) rtsp_server: $$$ ONVIF LAB05 FRAME seq=28 bytes=17957
+I (7895) rtsp_server: $$$ ONVIF LAB05 FRAME seq=29 bytes=17703
+I (7938) rtsp_server: $$$ ONVIF LAB05 FRAME seq=30 bytes=17681
+I (8021) rtsp_server: $$$ ONVIF LAB05 FRAME seq=31 bytes=17715
+I (8072) rtsp_server: $$$ ONVIF LAB05 FRAME seq=32 bytes=17840
+status
+frames_encoded=73
+frames_sent=0
+last_jpeg_bytes=18347
+avg_encode_ms=13.09
+wifi_rssi=-34
+ip=192.168.1.4
+free_dma=243247
+free_spiram=11398352
+I (8146) rtsp_server: $$$ ONVIF LAB05 FRAME seq=33 bytes=17705
+korvo> 
+korvo> I (8195) rtsp_server: $$$ ONVIF LAB05 FRAME seq=34 bytes=17651
+I (8282) rtsp_server: $$$ ONVIF LAB05 FRAME seq=35 bytes=17666
+I (8334) rtsp_server: $$$ ONVIF LAB05 FRAME seq=36 bytes=17609
+I (8385) rtsp_server: $$$ ONVIF LAB05 FRAME seq=37 bytes=17753
+I (8461) rtsp_server: $$$ ONVIF LAB05 FRAME seq=38 bytes=17808
+I (8537) rtsp_server: $$$ ONVIF LAB05 FRAME seq=39 bytes=17661
+I (8590) rtsp_server: $$$ ONVIF LAB05 FRAME seq=40 bytes=17754
+I (8643) rtsp_server: $$$ ONVIF LAB05 FRAME seq=41 bytes=17727
+I (8734) rtsp_server: $$$ ONVIF LAB05 FRAME seq=42 bytes=17769
+I (8783) rtsp_server: $$$ ONVIF LAB05 FRAME seq=43 bytes=17823
+I (8842) rtsp_server: $$$ ONVIF LAB05 FRAME seq=44 bytes=17735
+I (8924) rtsp_server: $$$ ONVIF LAB05 FRAME seq=45 bytes=17744
+I (8982) rtsp_server: $$$ ONVIF LAB05 FRAME seq=46 bytes=17736
+I (9040) rtsp_server: $$$ ONVIF LAB05 FRAME seq=47 bytes=17751
+I (9087) rtsp_server: $$$ ONVIF LAB05 FRAME seq=48 bytes=17867
+I (9163) rtsp_server: $$$ ONVIF LAB05 FRAME seq=49 bytes=17705
+I (9246) rtsp_server: $$$ ONVIF LAB05 FRAME seq=50 bytes=17768
+I (9301) rtsp_server: $$$ ONVIF LAB05 FRAME seq=51 bytes=17756
+I (9353) rtsp_server: $$$ ONVIF LAB05 FRAME seq=52 bytes=17777
+I (9434) rtsp_server: $$$ ONVIF LAB05 FRAME seq=53 bytes=17842
+I (9476) rtsp_server: $$$ ONVIF LAB05 FRAME seq=54 bytes=17742
+I (9558) rtsp_server: $$$ ONVIF LAB05 FRAME seq=55 bytes=17720
+I (9607) rtsp_server: $$$ ONVIF LAB05 FRAME seq=56 bytes=17802
+I (9680) rtsp_server: $$$ ONVIF LAB05 FRAME seq=57 bytes=17865
+I (9722) rtsp_server: $$$ ONVIF LAB05 FRAME seq=58 bytes=17817
+I (9799) rtsp_server: $$$ ONVIF LAB05 FRAME seq=59 bytes=17692
+I (9875) rtsp_server: $$$ ONVIF LAB05 FRAME seq=60 bytes=17847
+I (9922) rtsp_server: $$$ ONVIF LAB05 FRAME seq=61 bytes=17829
+I (9998) rtsp_server: $$$ ONVIF LAB05 FRAME seq=62 bytes=17574
+I (10051) rtsp_server: $$$ ONVIF LAB05 FRAME seq=63 bytes=17817
+I (10126) rtsp_server: $$$ ONVIF LAB05 FRAME seq=64 bytes=17703
+I (10173) rtsp_server: $$$ ONVIF LAB05 FRAME seq=65 bytes=17657
+I (10255) rtsp_server: $$$ ONVIF LAB05 FRAME seq=66 bytes=17714
+I (10297) rtsp_server: $$$ ONVIF LAB05 FRAME seq=67 bytes=17720
+I (10382) rtsp_server: $$$ ONVIF LAB05 FRAME seq=68 bytes=17799
+I (10433) rtsp_server: $$$ ONVIF LAB05 FRAME seq=69 bytes=17812
+I (10505) rtsp_server: $$$ ONVIF LAB05 FRAME seq=70 bytes=17766
+I (10591) rtsp_server: $$$ ONVIF LAB05 FRAME seq=71 bytes=17808
+I (10643) rtsp_server: $$$ ONVIF LAB05 FRAME seq=72 bytes=17819
+I (10686) rtsp_server: $$$ ONVIF LAB05 FRAME seq=73 bytes=17712
+I (10766) rtsp_server: $$$ ONVIF LAB05 FRAME seq=74 bytes=17747
+I (10809) rtsp_server: $$$ ONVIF LAB05 FRAME seq=75 bytes=17872
+I (10892) rtsp_server: $$$ ONVIF LAB05 FRAME seq=76 bytes=17848
+I (10985) rtsp_server: $$$ ONVIF LAB05 FRAME seq=77 bytes=17769
+I (11040) rtsp_server: $$$ ONVIF LAB05 FRAME seq=78 bytes=17841
+I (11092) rtsp_server: $$$ ONVIF LAB05 FRAME seq=79 bytes=17880
+I (11145) rtsp_server: $$$ ONVIF LAB05 FRAME seq=80 bytes=17706
+I (11218) rtsp_server: $$$ ONVIF LAB05 FRAME seq=81 bytes=17858
+I (11262) rtsp_server: $$$ ONVIF LAB05 FRAME seq=82 bytes=17730
+I (11350) rtsp_server: $$$ ONVIF LAB05 FRAME seq=83 bytes=17671
+I (11402) rtsp_server: $$$ ONVIF LAB05 FRAME seq=84 bytes=17569
+I (11486) rtsp_server: $$$ ONVIF LAB05 FRAME seq=85 bytes=17625
+I (11529) rtsp_server: $$$ ONVIF LAB05 FRAME seq=86 bytes=17736
+I (11606) rtsp_server: $$$ ONVIF LAB05 FRAME seq=87 bytes=17720
+I (11658) rtsp_server: $$$ ONVIF LAB05 FRAME seq=88 bytes=17858
+I (11731) rtsp_server: $$$ ONVIF LAB05 FRAME seq=89 bytes=17869
+I (11776) rtsp_server: $$$ ONVIF LAB05 FRAME seq=90 bytes=17755
+I (11857) rtsp_server: $$$ ONVIF LAB05 FRAME seq=91 bytes=17670
+I (11908) rtsp_server: $$$ ONVIF LAB05 FRAME seq=92 bytes=17607
+I (11985) rtsp_server: $$$ ONVIF LAB05 FRAME seq=93 bytes=17617
+I (12030) rtsp_server: $$$ ONVIF LAB05 FRAME seq=94 bytes=17835
+I (12117) rtsp_server: $$$ ONVIF LAB05 FRAME seq=95 bytes=17846
+I (12169) rtsp_server: $$$ ONVIF LAB05 FRAME seq=96 bytes=17783
+I (12243) rtsp_server: $$$ ONVIF LAB05 FRAME seq=97 bytes=17757
+I (12289) rtsp_server: $$$ ONVIF LAB05 FRAME seq=98 bytes=17735
+I (12374) rtsp_server: $$$ ONVIF LAB05 FRAME seq=99 bytes=17911
+I (12423) rtsp_server: $$$ ONVIF LAB05 FRAME seq=100 bytes=17738
+I (12522) rtsp_server: $$$ ONVIF LAB05 FRAME seq=101 bytes=17726
+I (12578) rtsp_server: $$$ ONVIF LAB05 FRAME seq=102 bytes=17601
+I (12629) rtsp_server: $$$ ONVIF LAB05 FRAME seq=103 bytes=17756
+I (12678) rtsp_server: $$$ ONVIF LAB05 FRAME seq=104 bytes=17841
+I (12750) rtsp_server: $$$ ONVIF LAB05 FRAME seq=105 bytes=17832
+I (12793) rtsp_server: $$$ ONVIF LAB05 FRAME seq=106 bytes=17636
+I (12870) rtsp_server: $$$ ONVIF LAB05 FRAME seq=107 bytes=17767
+I (12942) rtsp_server: $$$ ONVIF LAB05 FRAME seq=108 bytes=17748
+I (12992) rtsp_server: $$$ ONVIF LAB05 FRAME seq=109 bytes=17675
+I (13065) rtsp_server: $$$ ONVIF LAB05 FRAME seq=110 bytes=17822
+I (13144) rtsp_server: $$$ ONVIF LAB05 FRAME seq=111 bytes=17926
+I (13194) rtsp_server: $$$ ONVIF LAB05 FRAME seq=112 bytes=17864
+I (13269) rtsp_server: $$$ ONVIF LAB05 FRAME seq=113 bytes=17911
+I (13314) rtsp_server: $$$ ONVIF LAB05 FRAME seq=114 bytes=17749
+I (13392) rtsp_server: $$$ ONVIF LAB05 FRAME seq=115 bytes=17844
+I (13452) rtsp_server: $$$ ONVIF LAB05 FRAME seq=116 bytes=17810
+I (13534) rtsp_server: $$$ ONVIF LAB05 FRAME seq=117 bytes=17943
+I (13583) rtsp_server: $$$ ONVIF LAB05 FRAME seq=118 bytes=17840
+I (13632) rtsp_server: $$$ ONVIF LAB05 FRAME seq=119 bytes=17730
+I (13709) rtsp_server: $$$ ONVIF LAB05 FRAME seq=120 bytes=17683
+I (13757) rtsp_server: $$$ ONVIF LAB05 FRAME seq=121 bytes=17810
+I (13837) rtsp_server: $$$ ONVIF LAB05 FRAME seq=122 bytes=17797
+I (13915) rtsp_server: $$$ ONVIF LAB05 FRAME seq=123 bytes=17803
+I (13967) rtsp_server: $$$ ONVIF LAB05 FRAME seq=124 bytes=17679
+I (14017) rtsp_server: $$$ ONVIF LAB05 FRAME seq=125 bytes=17713
+I (14092) rtsp_server: $$$ ONVIF LAB05 FRAME seq=126 bytes=17734
+I (14171) rtsp_server: $$$ ONVIF LAB05 FRAME seq=127 bytes=17805
+I (14220) rtsp_server: $$$ ONVIF LAB05 FRAME seq=128 bytes=17768
+I (14293) rtsp_server: $$$ ONVIF LAB05 FRAME seq=129 bytes=17710
+I (14337) rtsp_server: $$$ ONVIF LAB05 FRAME seq=130 bytes=17595
+I (14420) rtsp_server: $$$ ONVIF LAB05 FRAME seq=131 bytes=17757
+I (14475) rtsp_server: $$$ ONVIF LAB05 FRAME seq=132 bytes=17748
+I (14556) rtsp_server: $$$ ONVIF LAB05 FRAME seq=133 bytes=17866
+I (14600) rtsp_server: $$$ ONVIF LAB05 FRAME seq=134 bytes=17744
+I (14679) rtsp_server: $$$ ONVIF LAB05 FRAME seq=135 bytes=17786
+I (14729) rtsp_server: $$$ ONVIF LAB05 FRAME seq=136 bytes=17773
+I (14803) rtsp_server: $$$ ONVIF LAB05 FRAME seq=137 bytes=17746
+I (14846) rtsp_server: $$$ ONVIF LAB05 FRAME seq=138 bytes=17768
+I (14925) rtsp_server: $$$ ONVIF LAB05 FRAME seq=139 bytes=17801
+I (14998) rtsp_server: $$$ ONVIF LAB05 FRAME seq=140 bytes=17623
+I (15041) rtsp_server: $$$ ONVIF LAB05 FRAME seq=141 bytes=17696
+I (15117) rtsp_server: $$$ ONVIF LAB05 FRAME seq=142 bytes=17693
+I (15193) rtsp_server: $$$ ONVIF LAB05 FRAME seq=143 bytes=17855
+I (15240) rtsp_server: $$$ ONVIF LAB05 FRAME seq=144 bytes=17805
+I (15312) rtsp_server: $$$ ONVIF LAB05 FRAME seq=145 bytes=17708
+I (15357) rtsp_server: $$$ ONVIF LAB05 FRAME seq=146 bytes=17790
+I (15432) rtsp_server: $$$ ONVIF LAB05 FRAME seq=147 bytes=17972
+I (15507) rtsp_server: $$$ ONVIF LAB05 FRAME seq=148 bytes=17700
+I (15551) rtsp_server: $$$ ONVIF LAB05 FRAME seq=149 bytes=17831
+I (15625) rtsp_server: $$$ ONVIF LAB05 FRAME seq=150 bytes=17792
+I (15703) rtsp_server: $$$ ONVIF LAB05 FRAME seq=151 bytes=17728
+I (15753) rtsp_server: $$$ ONVIF LAB05 FRAME seq=152 bytes=17568
+I (15828) rtsp_server: $$$ ONVIF LAB05 FRAME seq=153 bytes=17890
+I (15873) rtsp_server: $$$ ONVIF LAB05 FRAME seq=154 bytes=17792
+I (15946) rtsp_server: $$$ ONVIF LAB05 FRAME seq=155 bytes=17610
+I (16021) rtsp_server: $$$ ONVIF LAB05 FRAME seq=156 bytes=17634
+I (16068) rtsp_server: $$$ ONVIF LAB05 FRAME seq=157 bytes=17581
+I (16150) rtsp_server: $$$ ONVIF LAB05 FRAME seq=158 bytes=17624
+I (16207) rtsp_server: $$$ ONVIF LAB05 FRAME seq=159 bytes=17846
+I (16263) rtsp_server: $$$ ONVIF LAB05 FRAME seq=160 bytes=17755
+I (16337) rtsp_server: $$$ ONVIF LAB05 FRAME seq=161 bytes=17903
+I (16380) rtsp_server: $$$ ONVIF LAB05 FRAME seq=162 bytes=17789
+I (16461) rtsp_server: $$$ ONVIF LAB05 FRAME seq=163 bytes=17717
+I (16535) rtsp_server: $$$ ONVIF LAB05 FRAME seq=164 bytes=17731
+I (16578) rtsp_server: $$$ ONVIF LAB05 FRAME seq=165 bytes=17724
+I (16656) rtsp_server: $$$ ONVIF LAB05 FRAME seq=166 bytes=17797
+I (16707) rtsp_server: $$$ ONVIF LAB05 FRAME seq=167 bytes=17781
+I (16785) rtsp_server: $$$ ONVIF LAB05 FRAME seq=168 bytes=17796
+I (16830) rtsp_server: $$$ ONVIF LAB05 FRAME seq=169 bytes=17770
+I (16923) rtsp_server: $$$ ONVIF LAB05 FRAME seq=170 bytes=17765
+I (16985) rtsp_server: $$$ ONVIF LAB05 FRAME seq=171 bytes=17807
+I (17038) rtsp_server: $$$ ONVIF LAB05 FRAME seq=172 bytes=17714
+I (17087) rtsp_server: $$$ ONVIF LAB05 FRAME seq=173 bytes=17886
+I (17166) rtsp_server: $$$ ONVIF LAB05 FRAME seq=174 bytes=17900
+I (17219) rtsp_server: $$$ ONVIF LAB05 FRAME seq=175 bytes=17861
+I (17302) rtsp_server: $$$ ONVIF LAB05 FRAME seq=176 bytes=17715
+I (17344) rtsp_server: $$$ ONVIF LAB05 FRAME seq=177 bytes=17750
+I (17425) rtsp_server: $$$ ONVIF LAB05 FRAME seq=178 bytes=17738
+I (17467) rtsp_server: $$$ ONVIF LAB05 FRAME seq=179 bytes=17840
+I (17547) rtsp_server: $$$ ONVIF LAB05 FRAME seq=180 bytes=17618
+I (17629) rtsp_server: $$$ ONVIF LAB05 FRAME seq=181 bytes=17821
+I (17672) rtsp_server: $$$ ONVIF LAB05 FRAME seq=182 bytes=17648
+I (17754) rtsp_server: $$$ ONVIF LAB05 FRAME seq=183 bytes=17711
+I (17803) rtsp_server: $$$ ONVIF LAB05 FRAME seq=184 bytes=17792
+I (17879) rtsp_server: $$$ ONVIF LAB05 FRAME seq=185 bytes=17691
+I (17950) rtsp_server: $$$ ONVIF LAB05 FRAME seq=186 bytes=17735
+I (18002) rtsp_server: $$$ ONVIF LAB05 FRAME seq=187 bytes=17620
+I (18055) rtsp_server: $$$ ONVIF LAB05 FRAME seq=188 bytes=17800
+I (18127) rtsp_server: heap@TEARDOWN free_dma=243231 free_internal=275239 free_spiram=11398100
+I (18154) rtsp_server: client 192.168.1.2:45958
+I (18159) rtsp_server: DESCRIBE -> SDP 201 bytes
+I (18211) rtsp_server: SETUP transport=TCP
+I (18211) rtsp_server: heap@SETUP free_dma=243231 free_internal=275239 free_spiram=11404728
+I (18213) rtsp_server: $$$ ONVIF LAB05 PLAY seq=0 rtptime=0
+I (18219) rtsp_server: heap@PLAYING free_dma=243231 free_internal=275239 free_spiram=11404728
+I (18254) rtsp_server: $$$ ONVIF LAB05 FRAME seq=1 bytes=17821
+I (18312) rtsp_server: $$$ ONVIF LAB05 FRAME seq=2 bytes=17751
+I (18407) rtsp_server: $$$ ONVIF LAB05 FRAME seq=3 bytes=17675
+I (18466) rtsp_server: $$$ ONVIF LAB05 FRAME seq=4 bytes=17694
+I (18514) rtsp_server: $$$ ONVIF LAB05 FRAME seq=5 bytes=17713
+I (18573) rtsp_server: $$$ ONVIF LAB05 FRAME seq=6 bytes=17765
+I (18670) rtsp_server: $$$ ONVIF LAB05 FRAME seq=7 bytes=17853
+I (18681) rtsp_server: $$$ ONVIF LAB05 FRAME seq=8 bytes=17724
+I (18769) rtsp_server: $$$ ONVIF LAB05 FRAME seq=9 bytes=17868
+I (18821) rtsp_server: $$$ ONVIF LAB05 FRAME seq=10 bytes=17772
+I (18932) rtsp_server: $$$ ONVIF LAB05 FRAME seq=11 bytes=17760
+I (18953) rtsp_server: $$$ ONVIF LAB05 FRAME seq=12 bytes=17845
+I (19035) rtsp_server: $$$ ONVIF LAB05 FRAME seq=13 bytes=17738
+I (19088) rtsp_server: $$$ ONVIF LAB05 FRAME seq=14 bytes=17846
+I (19138) rtsp_server: $$$ ONVIF LAB05 FRAME seq=15 bytes=17773
+I (19210) rtsp_server: $$$ ONVIF LAB05 FRAME seq=16 bytes=17742
+I (19288) rtsp_server: $$$ ONVIF LAB05 FRAME seq=17 bytes=17594
+I (19336) rtsp_server: $$$ ONVIF LAB05 FRAME seq=18 bytes=17814
+I (19409) rtsp_server: $$$ ONVIF LAB05 FRAME seq=19 bytes=17791
+I (19454) rtsp_server: $$$ ONVIF LAB05 FRAME seq=20 bytes=17844
+I (19539) rtsp_server: $$$ ONVIF LAB05 FRAME seq=21 bytes=17525
+I (19594) rtsp_server: $$$ ONVIF LAB05 FRAME seq=22 bytes=17814
+I (19698) rtsp_server: $$$ ONVIF LAB05 FRAME seq=23 bytes=17764
+I (19713) rtsp_server: $$$ ONVIF LAB05 FRAME seq=24 bytes=17736
+I (19800) rtsp_server: $$$ ONVIF LAB05 FRAME seq=25 bytes=17643
+I (19856) rtsp_server: $$$ ONVIF LAB05 FRAME seq=26 bytes=17762
+I (19900) rtsp_server: $$$ ONVIF LAB05 FRAME seq=27 bytes=17824
+I (20002) rtsp_server: $$$ ONVIF LAB05 FRAME seq=28 bytes=17795
+I (20053) rtsp_server: $$$ ONVIF LAB05 FRAME seq=29 bytes=17775
+I (20107) rtsp_server: $$$ ONVIF LAB05 FRAME seq=30 bytes=17845
+I (20211) rtsp_server: $$$ ONVIF LAB05 FRAME seq=31 bytes=17823
+I (20224) rtsp_server: $$$ ONVIF LAB05 FRAME seq=32 bytes=17727
+I (20309) rtsp_server: $$$ ONVIF LAB05 FRAME seq=33 bytes=17742
+I (20360) rtsp_server: $$$ ONVIF LAB05 FRAME seq=34 bytes=17657
+I (20474) rtsp_server: $$$ ONVIF LAB05 FRAME seq=35 bytes=17653
+I (20509) rtsp_server: $$$ ONVIF LAB05 FRAME seq=36 bytes=17762
+I (20563) rtsp_server: $$$ ONVIF LAB05 FRAME seq=37 bytes=17731
+I (20617) rtsp_server: $$$ ONVIF LAB05 FRAME seq=38 bytes=17777
+I (20701) rtsp_server: $$$ ONVIF LAB05 FRAME seq=39 bytes=17775
+I (20745) rtsp_server: $$$ ONVIF LAB05 FRAME seq=40 bytes=17807
+I (20825) rtsp_server: $$$ ONVIF LAB05 FRAME seq=41 bytes=17612
+I (20877) rtsp_server: $$$ ONVIF LAB05 FRAME seq=42 bytes=17604
+I (20948) rtsp_server: $$$ ONVIF LAB05 FRAME seq=43 bytes=17638
+I (21002) rtsp_server: $$$ ONVIF LAB05 FRAME seq=44 bytes=17741
+I (21082) rtsp_server: $$$ ONVIF LAB05 FRAME seq=45 bytes=17743
+I (21138) rtsp_server: $$$ ONVIF LAB05 FRAME seq=46 bytes=17859
+I (21188) rtsp_server: $$$ ONVIF LAB05 FRAME seq=47 bytes=17805
+I (21279) rtsp_server: $$$ ONVIF LAB05 FRAME seq=48 bytes=17786
+I (21335) rtsp_server: $$$ ONVIF LAB05 FRAME seq=49 bytes=17797
+I (21385) rtsp_server: $$$ ONVIF LAB05 FRAME seq=50 bytes=17725
+I (21457) rtsp_server: $$$ ONVIF LAB05 FRAME seq=51 bytes=17707
+I (21503) rtsp_server: $$$ ONVIF LAB05 FRAME seq=52 bytes=17736
+I (21585) rtsp_server: $$$ ONVIF LAB05 FRAME seq=53 bytes=17796
+I (21641) rtsp_server: $$$ ONVIF LAB05 FRAME seq=54 bytes=17738
+I (21721) rtsp_server: $$$ ONVIF LAB05 FRAME seq=55 bytes=17542
+I (21763) rtsp_server: $$$ ONVIF LAB05 FRAME seq=56 bytes=17564
+I (21846) rtsp_server: $$$ ONVIF LAB05 FRAME seq=57 bytes=17984
+I (21898) rtsp_server: $$$ ONVIF LAB05 FRAME seq=58 bytes=17903
+I (21972) rtsp_server: $$$ ONVIF LAB05 FRAME seq=59 bytes=17716
+I (22013) rtsp_server: $$$ ONVIF LAB05 FRAME seq=60 bytes=17842
+I (22086) rtsp_server: $$$ ONVIF LAB05 FRAME seq=61 bytes=17661
+I (22163) rtsp_server: $$$ ONVIF LAB05 FRAME seq=62 bytes=17771
+I (22212) rtsp_server: $$$ ONVIF LAB05 FRAME seq=63 bytes=17854
+I (22289) rtsp_server: $$$ ONVIF LAB05 FRAME seq=64 bytes=17602
+I (22336) rtsp_server: $$$ ONVIF LAB05 FRAME seq=65 bytes=17819
+I (22416) rtsp_server: $$$ ONVIF LAB05 FRAME seq=66 bytes=17632
+I (22465) rtsp_server: $$$ ONVIF LAB05 FRAME seq=67 bytes=17602
+I (22555) rtsp_server: $$$ ONVIF LAB05 FRAME seq=68 bytes=17803
+I (22611) rtsp_server: $$$ ONVIF LAB05 FRAME seq=69 bytes=17757
+I (22663) rtsp_server: $$$ ONVIF LAB05 FRAME seq=70 bytes=17836
+I (22738) rtsp_server: $$$ ONVIF LAB05 FRAME seq=71 bytes=17917
+I (22782) rtsp_server: $$$ ONVIF LAB05 FRAME seq=72 bytes=17658
+I (22865) rtsp_server: $$$ ONVIF LAB05 FRAME seq=73 bytes=17861
+I (22917) rtsp_server: $$$ ONVIF LAB05 FRAME seq=74 bytes=17753
+I (22993) rtsp_server: $$$ ONVIF LAB05 FRAME seq=75 bytes=17719
+I (23038) rtsp_server: $$$ ONVIF LAB05 FRAME seq=76 bytes=17683
+I (23127) rtsp_server: $$$ ONVIF LAB05 FRAME seq=77 bytes=17763
+I (23181) rtsp_server: $$$ ONVIF LAB05 FRAME seq=78 bytes=17762
+I (23272) rtsp_server: $$$ ONVIF LAB05 FRAME seq=79 bytes=17909
+I (23322) rtsp_server: $$$ ONVIF LAB05 FRAME seq=80 bytes=17826
+I (23377) rtsp_server: $$$ ONVIF LAB05 FRAME seq=81 bytes=17746
+I (23435) rtsp_server: $$$ ONVIF LAB05 FRAME seq=82 bytes=17674
+I (23506) rtsp_server: $$$ ONVIF LAB05 FRAME seq=83 bytes=17784
+I (23556) rtsp_server: $$$ ONVIF LAB05 FRAME seq=84 bytes=17698
+I (23638) rtsp_server: $$$ ONVIF LAB05 FRAME seq=85 bytes=17737
+I (23690) rtsp_server: $$$ ONVIF LAB05 FRAME seq=86 bytes=17758
+I (23771) rtsp_server: $$$ ONVIF LAB05 FRAME seq=87 bytes=17644
+I (23815) rtsp_server: $$$ ONVIF LAB05 FRAME seq=88 bytes=17907
+I (23897) rtsp_server: $$$ ONVIF LAB05 FRAME seq=89 bytes=17847
+I (23949) rtsp_server: $$$ ONVIF LAB05 FRAME seq=90 bytes=17880
+I (24026) rtsp_server: $$$ ONVIF LAB05 FRAME seq=91 bytes=17657
+I (24097) rtsp_server: $$$ ONVIF LAB05 FRAME seq=92 bytes=17787
+I (24151) rtsp_server: $$$ ONVIF LAB05 FRAME seq=93 bytes=17694
+I (24205) rtsp_server: $$$ ONVIF LAB05 FRAME seq=94 bytes=17778
+I (24286) rtsp_server: $$$ ONVIF LAB05 FRAME seq=95 bytes=17738
+I (24328) rtsp_server: $$$ ONVIF LAB05 FRAME seq=96 bytes=17872
+I (24406) rtsp_server: $$$ ONVIF LAB05 FRAME seq=97 bytes=17811
+I (24462) rtsp_server: $$$ ONVIF LAB05 FRAME seq=98 bytes=17698
+I (24512) rtsp_server: $$$ ONVIF LAB05 FRAME seq=99 bytes=17764
+I (24590) rtsp_server: $$$ ONVIF LAB05 FRAME seq=100 bytes=17912
+I (24633) rtsp_server: $$$ ONVIF LAB05 FRAME seq=101 bytes=17648
+I (24723) rtsp_server: $$$ ONVIF LAB05 FRAME seq=102 bytes=17735
+I (24774) rtsp_server: $$$ ONVIF LAB05 FRAME seq=103 bytes=17788
+I (24858) rtsp_server: $$$ ONVIF LAB05 FRAME seq=104 bytes=17725
+I (24920) rtsp_server: $$$ ONVIF LAB05 FRAME seq=105 bytes=17677
+I (24982) rtsp_server: $$$ ONVIF LAB05 FRAME seq=106 bytes=17837
+I (25027) rtsp_server: $$$ ONVIF LAB05 FRAME seq=107 bytes=17682
+I (25118) rtsp_server: $$$ ONVIF LAB05 FRAME seq=108 bytes=17885
+I (25173) rtsp_server: $$$ ONVIF LAB05 FRAME seq=109 bytes=17714
+I (25228) rtsp_server: $$$ ONVIF LAB05 FRAME seq=110 bytes=17786
+I (25322) rtsp_server: $$$ ONVIF LAB05 FRAME seq=111 bytes=17698
+I (25384) rtsp_server: $$$ ONVIF LAB05 FRAME seq=112 bytes=17937
+I (25432) rtsp_server: $$$ ONVIF LAB05 FRAME seq=113 bytes=17846
+I (25482) rtsp_server: $$$ ONVIF LAB05 FRAME seq=114 bytes=17633
+I (25554) rtsp_server: $$$ ONVIF LAB05 FRAME seq=115 bytes=17698
+I (25604) rtsp_server: $$$ ONVIF LAB05 FRAME seq=116 bytes=17777
+I (25686) rtsp_server: $$$ ONVIF LAB05 FRAME seq=117 bytes=17776
+I (25739) rtsp_server: $$$ ONVIF LAB05 FRAME seq=118 bytes=17822
+I (25835) rtsp_server: $$$ ONVIF LAB05 FRAME seq=119 bytes=17920
+I (25884) rtsp_server: $$$ ONVIF LAB05 FRAME seq=120 bytes=17651
+I (25944) rtsp_server: $$$ ONVIF LAB05 FRAME seq=121 bytes=17750
+I (25996) rtsp_server: $$$ ONVIF LAB05 FRAME seq=122 bytes=17731
+I (26074) rtsp_server: $$$ ONVIF LAB05 FRAME seq=123 bytes=17766
+I (26127) rtsp_server: $$$ ONVIF LAB05 FRAME seq=124 bytes=17680
+I (26169) rtsp_server: $$$ ONVIF LAB05 FRAME seq=125 bytes=17695
+I (26252) rtsp_server: $$$ ONVIF LAB05 FRAME seq=126 bytes=17714
+I (26343) rtsp_server: $$$ ONVIF LAB05 FRAME seq=127 bytes=17837
+I (26398) rtsp_server: $$$ ONVIF LAB05 FRAME seq=128 bytes=17782
+I (26452) rtsp_server: $$$ ONVIF LAB05 FRAME seq=129 bytes=17846
+I (26506) rtsp_server: $$$ ONVIF LAB05 FRAME seq=130 bytes=17703
+I (26578) rtsp_server: $$$ ONVIF LAB05 FRAME seq=131 bytes=17792
+I (26621) rtsp_server: $$$ ONVIF LAB05 FRAME seq=132 bytes=17850
+I (26707) rtsp_server: $$$ ONVIF LAB05 FRAME seq=133 bytes=17697
+I (26760) rtsp_server: $$$ ONVIF LAB05 FRAME seq=134 bytes=17792
+I (26838) rtsp_server: $$$ ONVIF LAB05 FRAME seq=135 bytes=17700
+I (26881) rtsp_server: $$$ ONVIF LAB05 FRAME seq=136 bytes=17845
+I (26963) rtsp_server: $$$ ONVIF LAB05 FRAME seq=137 bytes=17821
+I (27016) rtsp_server: $$$ ONVIF LAB05 FRAME seq=138 bytes=17724
+I (27089) rtsp_server: $$$ ONVIF LAB05 FRAME seq=139 bytes=17738
+I (27152) rtsp_server: $$$ ONVIF LAB05 FRAME seq=140 bytes=17649
+I (27195) rtsp_server: $$$ ONVIF LAB05 FRAME seq=141 bytes=17885
+I (27276) rtsp_server: $$$ ONVIF LAB05 FRAME seq=142 bytes=17745
+I (27368) rtsp_server: $$$ ONVIF LAB05 FRAME seq=143 bytes=17764
+I (27426) rtsp_server: $$$ ONVIF LAB05 FRAME seq=144 bytes=17736
+I (27482) rtsp_server: $$$ ONVIF LAB05 FRAME seq=145 bytes=17614
+I (27549) rtsp_server: $$$ ONVIF LAB05 FRAME seq=146 bytes=17842
+I (37923) rtsp_server: $$$ ONVIF LAB05 FRAME seq=147 bytes=17639
+I (37940) rtsp_server: $$$ ONVIF LAB05 FRAME seq=148 bytes=17690
+I (37960) rtsp_server: $$$ ONVIF LAB05 FRAME seq=149 bytes=17807
+I (38035) rtsp_server: $$$ ONVIF LAB05 FRAME seq=150 bytes=17849
+I (38082) rtsp_server: $$$ ONVIF LAB05 FRAME seq=151 bytes=17700
+I (38159) rtsp_server: $$$ ONVIF LAB05 FRAME seq=152 bytes=17844
+I (38222) rtsp_server: $$$ ONVIF LAB05 FRAME seq=153 bytes=17852
+I (38281) rtsp_server: $$$ ONVIF LAB05 FRAME seq=154 bytes=17813
+I (38357) rtsp_server: $$$ ONVIF LAB05 FRAME seq=155 bytes=17849
+I (38429) rtsp_server: $$$ ONVIF LAB05 FRAME seq=156 bytes=17753
+I (38486) rtsp_server: $$$ ONVIF LAB05 FRAME seq=157 bytes=17671
+I (38543) rtsp_server: $$$ ONVIF LAB05 FRAME seq=158 bytes=17779
+I (38593) rtsp_server: $$$ ONVIF LAB05 FRAME seq=159 bytes=17799
+I (38675) rtsp_server: $$$ ONVIF LAB05 FRAME seq=160 bytes=17773
+I (38743) rtsp_server: $$$ ONVIF LAB05 FRAME seq=161 bytes=17605
+I (38797) rtsp_server: $$$ ONVIF LAB05 FRAME seq=162 bytes=17750
+I (38869) rtsp_server: $$$ ONVIF LAB05 FRAME seq=163 bytes=17903
+I (38922) rtsp_server: $$$ ONVIF LAB05 FRAME seq=164 bytes=17718
+I (39001) rtsp_server: $$$ ONVIF LAB05 FRAME seq=165 bytes=17783
+I (39051) rtsp_server: $$$ ONVIF LAB05 FRAME seq=166 bytes=17843
+I (39131) rtsp_server: $$$ ONVIF LAB05 FRAME seq=167 bytes=17814
+I (39172) rtsp_server: $$$ ONVIF LAB05 FRAME seq=168 bytes=17751
+I (39254) rtsp_server: $$$ ONVIF LAB05 FRAME seq=169 bytes=17818
+I (39309) rtsp_server: $$$ ONVIF LAB05 FRAME seq=170 bytes=17666
+I (39382) rtsp_server: $$$ ONVIF LAB05 FRAME seq=171 bytes=17658
+I (39426) rtsp_server: $$$ ONVIF LAB05 FRAME seq=172 bytes=17822
+I (39508) rtsp_server: $$$ ONVIF LAB05 FRAME seq=173 bytes=17735
+I (39559) rtsp_server: $$$ ONVIF LAB05 FRAME seq=174 bytes=17722
+I (39659) rtsp_server: $$$ ONVIF LAB05 FRAME seq=175 bytes=17712
+I (39712) rtsp_server: $$$ ONVIF LAB05 FRAME seq=176 bytes=17849
+I (39766) rtsp_server: $$$ ONVIF LAB05 FRAME seq=177 bytes=17804
+I (39816) rtsp_server: $$$ ONVIF LAB05 FRAME seq=178 bytes=17745
+I (39887) rtsp_server: $$$ ONVIF LAB05 FRAME seq=179 bytes=17801
+I (39929) rtsp_server: $$$ ONVIF LAB05 FRAME seq=180 bytes=18005
+I (40019) rtsp_server: $$$ ONVIF LAB05 FRAME seq=181 bytes=17662
+I (40071) rtsp_server: $$$ ONVIF LAB05 FRAME seq=182 bytes=17743
+I (40103) rtsp_server: TEARDOWN by client
+I (40133) rtsp_server: heap@TEARDOWN free_dma=243119 free_internal=275127 free_spiram=11404348
+I (40133) rtsp_server: client 192.168.1.2:39338
+I (40143) rtsp_server: DESCRIBE -> SDP 202 bytes
+I (40194) rtsp_server: SETUP transport=UDP
+I (40194) rtsp_server: heap@SETUP free_dma=243119 free_internal=275127 free_spiram=11404588
+I (40197) rtsp_server: $$$ ONVIF LAB05 PLAY seq=0 rtptime=0
+I (40200) rtsp_server: heap@PLAYING free_dma=243119 free_internal=275127 free_spiram=11402648
+I (40212) rtsp_server: $$$ ONVIF LAB05 FRAME seq=1 bytes=17744
+I (40247) rtsp_server: $$$ ONVIF LAB05 FRAME seq=2 bytes=17749
+I (40310) rtsp_server: $$$ ONVIF LAB05 FRAME seq=3 bytes=17796
+I (40373) rtsp_server: $$$ ONVIF LAB05 FRAME seq=4 bytes=17811
+I (40436) rtsp_server: $$$ ONVIF LAB05 FRAME seq=5 bytes=17813
+I (40499) rtsp_server: $$$ ONVIF LAB05 FRAME seq=6 bytes=17928
+I (40562) rtsp_server: $$$ ONVIF LAB05 FRAME seq=7 bytes=17801
+I (40625) rtsp_server: $$$ ONVIF LAB05 FRAME seq=8 bytes=17729
+I (40688) rtsp_server: $$$ ONVIF LAB05 FRAME seq=9 bytes=17776
+I (40751) rtsp_server: $$$ ONVIF LAB05 FRAME seq=10 bytes=17700
+I (40844) rtsp_server: $$$ ONVIF LAB05 FRAME seq=11 bytes=17920
+I (40907) rtsp_server: $$$ ONVIF LAB05 FRAME seq=12 bytes=17599
+I (40970) rtsp_server: $$$ ONVIF LAB05 FRAME seq=13 bytes=17805
+I (41033) rtsp_server: $$$ ONVIF LAB05 FRAME seq=14 bytes=17837
+I (41096) rtsp_server: $$$ ONVIF LAB05 FRAME seq=15 bytes=17687
+I (41159) rtsp_server: $$$ ONVIF LAB05 FRAME seq=16 bytes=17818
+I (41222) rtsp_server: $$$ ONVIF LAB05 FRAME seq=17 bytes=17740
+I (41285) rtsp_server: $$$ ONVIF LAB05 FRAME seq=18 bytes=17788
+I (41348) rtsp_server: $$$ ONVIF LAB05 FRAME seq=19 bytes=17932
+I (41411) rtsp_server: $$$ ONVIF LAB05 FRAME seq=20 bytes=17627
+I (41474) rtsp_server: $$$ ONVIF LAB05 FRAME seq=21 bytes=17736
+I (41537) rtsp_server: $$$ ONVIF LAB05 FRAME seq=22 bytes=17793
+I (41600) rtsp_server: $$$ ONVIF LAB05 FRAME seq=23 bytes=17824
+I (41663) rtsp_server: $$$ ONVIF LAB05 FRAME seq=24 bytes=17725
+I (41726) rtsp_server: $$$ ONVIF LAB05 FRAME seq=25 bytes=17785
+I (41789) rtsp_server: $$$ ONVIF LAB05 FRAME seq=26 bytes=17807
+I (41852) rtsp_server: $$$ ONVIF LAB05 FRAME seq=27 bytes=17744
+I (41915) rtsp_server: $$$ ONVIF LAB05 FRAME seq=28 bytes=17812
+I (41978) rtsp_server: $$$ ONVIF LAB05 FRAME seq=29 bytes=17707
+I (42041) rtsp_server: $$$ ONVIF LAB05 FRAME seq=30 bytes=17585
+I (42104) rtsp_server: $$$ ONVIF LAB05 FRAME seq=31 bytes=17814
+I (42167) rtsp_server: $$$ ONVIF LAB05 FRAME seq=32 bytes=17784
+I (42230) rtsp_server: $$$ ONVIF LAB05 FRAME seq=33 bytes=17732
+I (42293) rtsp_server: $$$ ONVIF LAB05 FRAME seq=34 bytes=17895
+I (42356) rtsp_server: $$$ ONVIF LAB05 FRAME seq=35 bytes=17799
+I (42419) rtsp_server: $$$ ONVIF LAB05 FRAME seq=36 bytes=17758
+I (42482) rtsp_server: $$$ ONVIF LAB05 FRAME seq=37 bytes=17692
+I (42545) rtsp_server: $$$ ONVIF LAB05 FRAME seq=38 bytes=17816
+I (42608) rtsp_server: $$$ ONVIF LAB05 FRAME seq=39 bytes=17750
+I (42671) rtsp_server: $$$ ONVIF LAB05 FRAME seq=40 bytes=17858
+I (42764) rtsp_server: $$$ ONVIF LAB05 FRAME seq=41 bytes=17726
+I (42827) rtsp_server: $$$ ONVIF LAB05 FRAME seq=42 bytes=17767
+I (42890) rtsp_server: $$$ ONVIF LAB05 FRAME seq=43 bytes=17743
+I (42953) rtsp_server: $$$ ONVIF LAB05 FRAME seq=44 bytes=17484
+I (43016) rtsp_server: $$$ ONVIF LAB05 FRAME seq=45 bytes=17714
+I (43079) rtsp_server: $$$ ONVIF LAB05 FRAME seq=46 bytes=17730
+I (43142) rtsp_server: $$$ ONVIF LAB05 FRAME seq=47 bytes=17620
+I (43205) rtsp_server: $$$ ONVIF LAB05 FRAME seq=48 bytes=17833
+I (43268) rtsp_server: $$$ ONVIF LAB05 FRAME seq=49 bytes=17786
+I (43331) rtsp_server: $$$ ONVIF LAB05 FRAME seq=50 bytes=17840
+I (43394) rtsp_server: $$$ ONVIF LAB05 FRAME seq=51 bytes=17789
+I (43457) rtsp_server: $$$ ONVIF LAB05 FRAME seq=52 bytes=17679
+I (43520) rtsp_server: $$$ ONVIF LAB05 FRAME seq=53 bytes=17637
+I (43583) rtsp_server: $$$ ONVIF LAB05 FRAME seq=54 bytes=17662
+I (43646) rtsp_server: $$$ ONVIF LAB05 FRAME seq=55 bytes=17751
+I (43709) rtsp_server: $$$ ONVIF LAB05 FRAME seq=56 bytes=17775
+I (43772) rtsp_server: $$$ ONVIF LAB05 FRAME seq=57 bytes=17847
+I (43835) rtsp_server: $$$ ONVIF LAB05 FRAME seq=58 bytes=17792
+I (43898) rtsp_server: $$$ ONVIF LAB05 FRAME seq=59 bytes=17791
+I (43961) rtsp_server: $$$ ONVIF LAB05 FRAME seq=60 bytes=17806
+I (44024) rtsp_server: $$$ ONVIF LAB05 FRAME seq=61 bytes=17862
+I (44087) rtsp_server: $$$ ONVIF LAB05 FRAME seq=62 bytes=17776
+I (44150) rtsp_server: $$$ ONVIF LAB05 FRAME seq=63 bytes=17661
+I (44213) rtsp_server: $$$ ONVIF LAB05 FRAME seq=64 bytes=17856
+I (44276) rtsp_server: $$$ ONVIF LAB05 FRAME seq=65 bytes=17728
+I (44339) rtsp_server: $$$ ONVIF LAB05 FRAME seq=66 bytes=17873
+I (44402) rtsp_server: $$$ ONVIF LAB05 FRAME seq=67 bytes=17802
+I (44465) rtsp_server: $$$ ONVIF LAB05 FRAME seq=68 bytes=17615
+I (44528) rtsp_server: $$$ ONVIF LAB05 FRAME seq=69 bytes=17739
+I (44591) rtsp_server: $$$ ONVIF LAB05 FRAME seq=70 bytes=17884
+I (44684) rtsp_server: $$$ ONVIF LAB05 FRAME seq=71 bytes=17757
+I (44747) rtsp_server: $$$ ONVIF LAB05 FRAME seq=72 bytes=17683
+I (44810) rtsp_server: $$$ ONVIF LAB05 FRAME seq=73 bytes=17852
+I (44873) rtsp_server: $$$ ONVIF LAB05 FRAME seq=74 bytes=17746
+I (44936) rtsp_server: $$$ ONVIF LAB05 FRAME seq=75 bytes=17781
+I (44999) rtsp_server: $$$ ONVIF LAB05 FRAME seq=76 bytes=17761
+I (45062) rtsp_server: $$$ ONVIF LAB05 FRAME seq=77 bytes=17721
+I (45125) rtsp_server: $$$ ONVIF LAB05 FRAME seq=78 bytes=17734
+I (45188) rtsp_server: $$$ ONVIF LAB05 FRAME seq=79 bytes=17689
+I (45251) rtsp_server: $$$ ONVIF LAB05 FRAME seq=80 bytes=17652
+I (45314) rtsp_server: $$$ ONVIF LAB05 FRAME seq=81 bytes=17751
+I (45377) rtsp_server: $$$ ONVIF LAB05 FRAME seq=82 bytes=17767
+I (45440) rtsp_server: $$$ ONVIF LAB05 FRAME seq=83 bytes=17856
+I (45503) rtsp_server: $$$ ONVIF LAB05 FRAME seq=84 bytes=17667
+I (45566) rtsp_server: $$$ ONVIF LAB05 FRAME seq=85 bytes=17776
+I (45629) rtsp_server: $$$ ONVIF LAB05 FRAME seq=86 bytes=17743
+I (45692) rtsp_server: $$$ ONVIF LAB05 FRAME seq=87 bytes=17758
+I (45755) rtsp_server: $$$ ONVIF LAB05 FRAME seq=88 bytes=17737
+I (45818) rtsp_server: $$$ ONVIF LAB05 FRAME seq=89 bytes=17739
+I (45881) rtsp_server: $$$ ONVIF LAB05 FRAME seq=90 bytes=17778
+I (45944) rtsp_server: $$$ ONVIF LAB05 FRAME seq=91 bytes=18042
+I (46007) rtsp_server: $$$ ONVIF LAB05 FRAME seq=92 bytes=18309
+I (46070) rtsp_server: $$$ ONVIF LAB05 FRAME seq=93 bytes=17999
+I (46133) rtsp_server: $$$ ONVIF LAB05 FRAME seq=94 bytes=18057
+I (46196) rtsp_server: $$$ ONVIF LAB05 FRAME seq=95 bytes=18012
+I (46259) rtsp_server: $$$ ONVIF LAB05 FRAME seq=96 bytes=18037
+I (46322) rtsp_server: $$$ ONVIF LAB05 FRAME seq=97 bytes=18104
+I (46385) rtsp_server: $$$ ONVIF LAB05 FRAME seq=98 bytes=18156
+I (46448) rtsp_server: $$$ ONVIF LAB05 FRAME seq=99 bytes=18000
+I (46511) rtsp_server: $$$ ONVIF LAB05 FRAME seq=100 bytes=18158
+I (46604) rtsp_server: $$$ ONVIF LAB05 FRAME seq=101 bytes=18094
+I (46667) rtsp_server: $$$ ONVIF LAB05 FRAME seq=102 bytes=18147
+I (46730) rtsp_server: $$$ ONVIF LAB05 FRAME seq=103 bytes=18089
+I (46793) rtsp_server: $$$ ONVIF LAB05 FRAME seq=104 bytes=18212
+I (46856) rtsp_server: $$$ ONVIF LAB05 FRAME seq=105 bytes=18091
+I (46919) rtsp_server: $$$ ONVIF LAB05 FRAME seq=106 bytes=18188
+I (46982) rtsp_server: $$$ ONVIF LAB05 FRAME seq=107 bytes=18099
+I (47045) rtsp_server: $$$ ONVIF LAB05 FRAME seq=108 bytes=18055
+I (47108) rtsp_server: $$$ ONVIF LAB05 FRAME seq=109 bytes=18126
+I (47171) rtsp_server: $$$ ONVIF LAB05 FRAME seq=110 bytes=18227
+I (47234) rtsp_server: $$$ ONVIF LAB05 FRAME seq=111 bytes=18119
+I (47297) rtsp_server: $$$ ONVIF LAB05 FRAME seq=112 bytes=18262
+I (47360) rtsp_server: $$$ ONVIF LAB05 FRAME seq=113 bytes=18012
+I (47423) rtsp_server: $$$ ONVIF LAB05 FRAME seq=114 bytes=18194
+I (47486) rtsp_server: $$$ ONVIF LAB05 FRAME seq=115 bytes=17764
+I (47549) rtsp_server: $$$ ONVIF LAB05 FRAME seq=116 bytes=17911
+I (47612) rtsp_server: $$$ ONVIF LAB05 FRAME seq=117 bytes=17679
+I (47675) rtsp_server: $$$ ONVIF LAB05 FRAME seq=118 bytes=17730
+I (47738) rtsp_server: $$$ ONVIF LAB05 FRAME seq=119 bytes=17607
+I (47801) rtsp_server: $$$ ONVIF LAB05 FRAME seq=120 bytes=17668
+I (47864) rtsp_server: $$$ ONVIF LAB05 FRAME seq=121 bytes=17710
+I (47927) rtsp_server: $$$ ONVIF LAB05 FRAME seq=122 bytes=17694
+I (47990) rtsp_server: $$$ ONVIF LAB05 FRAME seq=123 bytes=17738
+I (48053) rtsp_server: $$$ ONVIF LAB05 FRAME seq=124 bytes=17975
+I (48116) rtsp_server: $$$ ONVIF LAB05 FRAME seq=125 bytes=17705
+I (48179) rtsp_server: $$$ ONVIF LAB05 FRAME seq=126 bytes=17734
+I (48242) rtsp_server: $$$ ONVIF LAB05 FRAME seq=127 bytes=17799
+I (48305) rtsp_server: $$$ ONVIF LAB05 FRAME seq=128 bytes=17672
+I (48368) rtsp_server: $$$ ONVIF LAB05 FRAME seq=129 bytes=17670
+I (48431) rtsp_server: $$$ ONVIF LAB05 FRAME seq=130 bytes=17792
+I (48524) rtsp_server: $$$ ONVIF LAB05 FRAME seq=131 bytes=17670
+I (48587) rtsp_server: $$$ ONVIF LAB05 FRAME seq=132 bytes=17698
+I (48650) rtsp_server: $$$ ONVIF LAB05 FRAME seq=133 bytes=17719
+I (48713) rtsp_server: $$$ ONVIF LAB05 FRAME seq=134 bytes=17712
+I (48776) rtsp_server: $$$ ONVIF LAB05 FRAME seq=135 bytes=17779
+I (48839) rtsp_server: $$$ ONVIF LAB05 FRAME seq=136 bytes=17541
+I (48902) rtsp_server: $$$ ONVIF LAB05 FRAME seq=137 bytes=17696
+I (48965) rtsp_server: $$$ ONVIF LAB05 FRAME seq=138 bytes=17670
+I (49028) rtsp_server: $$$ ONVIF LAB05 FRAME seq=139 bytes=17765
+I (49091) rtsp_server: $$$ ONVIF LAB05 FRAME seq=140 bytes=17717
+I (49154) rtsp_server: $$$ ONVIF LAB05 FRAME seq=141 bytes=17754
+I (49217) rtsp_server: $$$ ONVIF LAB05 FRAME seq=142 bytes=17902
+I (49280) rtsp_server: $$$ ONVIF LAB05 FRAME seq=143 bytes=17593
+I (49343) rtsp_server: $$$ ONVIF LAB05 FRAME seq=144 bytes=17659
+I (49406) rtsp_server: $$$ ONVIF LAB05 FRAME seq=145 bytes=17759
+I (49469) rtsp_server: $$$ ONVIF LAB05 FRAME seq=146 bytes=17633
+I (49532) rtsp_server: $$$ ONVIF LAB05 FRAME seq=147 bytes=17543
+I (49595) rtsp_server: $$$ ONVIF LAB05 FRAME seq=148 bytes=17687
+I (49658) rtsp_server: $$$ ONVIF LAB05 FRAME seq=149 bytes=17832
+I (49721) rtsp_server: $$$ ONVIF LAB05 FRAME seq=150 bytes=17867
+I (49784) rtsp_server: $$$ ONVIF LAB05 FRAME seq=151 bytes=17551
+I (49847) rtsp_server: $$$ ONVIF LAB05 FRAME seq=152 bytes=17757
+I (49910) rtsp_server: $$$ ONVIF LAB05 FRAME seq=153 bytes=17758
+I (49973) rtsp_server: $$$ ONVIF LAB05 FRAME seq=154 bytes=17672
+I (50036) rtsp_server: $$$ ONVIF LAB05 FRAME seq=155 bytes=17631
+I (50099) rtsp_server: $$$ ONVIF LAB05 FRAME seq=156 bytes=17794
+I (50162) rtsp_server: $$$ ONVIF LAB05 FRAME seq=157 bytes=17641
+I (50225) rtsp_server: $$$ ONVIF LAB05 FRAME seq=158 bytes=17799
+I (50288) rtsp_server: $$$ ONVIF LAB05 FRAME seq=159 bytes=17729
+I (50351) rtsp_server: $$$ ONVIF LAB05 FRAME seq=160 bytes=17822
+I (50444) rtsp_server: $$$ ONVIF LAB05 FRAME seq=161 bytes=17795
+I (50507) rtsp_server: $$$ ONVIF LAB05 FRAME seq=162 bytes=17831
+I (50570) rtsp_server: $$$ ONVIF LAB05 FRAME seq=163 bytes=17693
+I (50633) rtsp_server: $$$ ONVIF LAB05 FRAME seq=164 bytes=17824
+I (50696) rtsp_server: $$$ ONVIF LAB05 FRAME seq=165 bytes=17660
+I (50759) rtsp_server: $$$ ONVIF LAB05 FRAME seq=166 bytes=17701
+I (50822) rtsp_server: $$$ ONVIF LAB05 FRAME seq=167 bytes=17861
+I (50885) rtsp_server: $$$ ONVIF LAB05 FRAME seq=168 bytes=17563
+I (50948) rtsp_server: $$$ ONVIF LAB05 FRAME seq=169 bytes=17609
+I (51011) rtsp_server: $$$ ONVIF LAB05 FRAME seq=170 bytes=17736
+I (51074) rtsp_server: $$$ ONVIF LAB05 FRAME seq=171 bytes=17694
+I (51137) rtsp_server: $$$ ONVIF LAB05 FRAME seq=172 bytes=17717
+I (51200) rtsp_server: $$$ ONVIF LAB05 FRAME seq=173 bytes=17911
+I (51263) rtsp_server: $$$ ONVIF LAB05 FRAME seq=174 bytes=17722
+I (51326) rtsp_server: $$$ ONVIF LAB05 FRAME seq=175 bytes=17634
+I (51389) rtsp_server: $$$ ONVIF LAB05 FRAME seq=176 bytes=17797
+I (51452) rtsp_server: $$$ ONVIF LAB05 FRAME seq=177 bytes=17702
+I (51515) rtsp_server: $$$ ONVIF LAB05 FRAME seq=178 bytes=17574
+I (51578) rtsp_server: $$$ ONVIF LAB05 FRAME seq=179 bytes=17840
+I (51641) rtsp_server: $$$ ONVIF LAB05 FRAME seq=180 bytes=17589
+I (51704) rtsp_server: $$$ ONVIF LAB05 FRAME seq=181 bytes=17870
+I (51767) rtsp_server: $$$ ONVIF LAB05 FRAME seq=182 bytes=17732
+I (51791) onvif_svc: $$$ ONVIF LAB05 OP (unlisted) fault action-not-supported
+I (51798) rtsp_server: TEARDOWN by client
+I (51829) rtsp_server: heap@TEARDOWN free_dma=243119 free_internal=275127 free_spiram=11404436
+status
+frames_encoded=1512
+frames_sent=0
+last_jpeg_bytes=18458
+avg_encode_ms=13.08
+wifi_rssi=-33
+ip=192.168.1.4
+free_dma=243327
+free_spiram=11406480
+korvo> 
+korvo> 
+[LOG SUPPLEMENT 2026-10-26: ffmpeg 双档全量日志存档 + RTSP 解码帧/快照色度对照（--noproxy 修正后）]
+I (351060) rtsp_server: client 192.168.1.2:53024
+I (351065) rtsp_server: DESCRIBE -> SDP 201 bytes
+I (351114) rtsp_server: SETUP transport=TCP
+I (351114) rtsp_server: heap@SETUP free_dma=243199 free_internal=275207 free_spiram=11404776
+I (351116) rtsp_server: $$$ ONVIF LAB05 PLAY seq=0 rtptime=0
+I (351121) rtsp_server: heap@PLAYING free_dma=243199 free_internal=275207 free_spiram=11404776
+I (351160) rtsp_server: $$$ ONVIF LAB05 FRAME seq=1 bytes=19701
+I (351180) rtsp_server: $$$ ONVIF LAB05 FRAME seq=2 bytes=19721
+I (351269) rtsp_server: $$$ ONVIF LAB05 FRAME seq=3 bytes=19679
+I (351320) rtsp_server: $$$ ONVIF LAB05 FRAME seq=4 bytes=19671
+I (351375) rtsp_server: $$$ ONVIF LAB05 FRAME seq=5 bytes=19623
+I (351439) rtsp_server: $$$ ONVIF LAB05 FRAME seq=6 bytes=19800
+I (351484) rtsp_server: $$$ ONVIF LAB05 FRAME seq=7 bytes=19794
+I (351569) rtsp_server: $$$ ONVIF LAB05 FRAME seq=8 bytes=19454
+I (351621) rtsp_server: $$$ ONVIF LAB05 FRAME seq=9 bytes=19643
+I (351695) rtsp_server: $$$ ONVIF LAB05 FRAME seq=10 bytes=19659
+I (351740) rtsp_server: $$$ ONVIF LAB05 FRAME seq=11 bytes=20051
+I (351822) rtsp_server: $$$ ONVIF LAB05 FRAME seq=12 bytes=19598
+I (351879) rtsp_server: $$$ ONVIF LAB05 FRAME seq=13 bytes=19756
+I (351955) rtsp_server: $$$ ONVIF LAB05 FRAME seq=14 bytes=19649
+I (352007) rtsp_server: $$$ ONVIF LAB05 FRAME seq=15 bytes=19648
+I (352091) rtsp_server: $$$ ONVIF LAB05 FRAME seq=16 bytes=19751
+I (352140) rtsp_server: $$$ ONVIF LAB05 FRAME seq=17 bytes=19744
+I (352218) rtsp_server: $$$ ONVIF LAB05 FRAME seq=18 bytes=19719
+I (352270) rtsp_server: $$$ ONVIF LAB05 FRAME seq=19 bytes=19747
+I (352315) rtsp_server: $$$ ONVIF LAB05 FRAME seq=20 bytes=19683
+I (352399) rtsp_server: $$$ ONVIF LAB05 FRAME seq=21 bytes=19708
+I (352447) rtsp_server: $$$ ONVIF LAB05 FRAME seq=22 bytes=19718
+I (352522) rtsp_server: $$$ ONVIF LAB05 FRAME seq=23 bytes=19917
+I (352603) rtsp_server: $$$ ONVIF LAB05 FRAME seq=24 bytes=19747
+I (352650) rtsp_server: $$$ ONVIF LAB05 FRAME seq=25 bytes=19582
+I (352726) rtsp_server: $$$ ONVIF LAB05 FRAME seq=26 bytes=19758
+I (352771) rtsp_server: $$$ ONVIF LAB05 FRAME seq=27 bytes=19673
+I (352852) rtsp_server: $$$ ONVIF LAB05 FRAME seq=28 bytes=19641
+I (352905) rtsp_server: $$$ ONVIF LAB05 FRAME seq=29 bytes=19801
+I (352977) rtsp_server: $$$ ONVIF LAB05 FRAME seq=30 bytes=19852
+I (353023) rtsp_server: $$$ ONVIF LAB05 FRAME seq=31 bytes=19859
+I (353110) rtsp_server: $$$ ONVIF LAB05 FRAME seq=32 bytes=19682
+I (353160) rtsp_server: $$$ ONVIF LAB05 FRAME seq=33 bytes=19753
+I (353236) rtsp_server: $$$ ONVIF LAB05 FRAME seq=34 bytes=19732
+I (353281) rtsp_server: $$$ ONVIF LAB05 FRAME seq=35 bytes=19679
+I (353362) rtsp_server: $$$ ONVIF LAB05 FRAME seq=36 bytes=19711
+I (353419) rtsp_server: $$$ ONVIF LAB05 FRAME seq=37 bytes=19792
+I (353494) rtsp_server: $$$ ONVIF LAB05 FRAME seq=38 bytes=19583
+I (353538) rtsp_server: $$$ ONVIF LAB05 FRAME seq=39 bytes=19703
+I (353623) rtsp_server: $$$ ONVIF LAB05 FRAME seq=40 bytes=19723
+I (353672) rtsp_server: $$$ ONVIF LAB05 FRAME seq=41 bytes=19608
+I (353748) rtsp_server: $$$ ONVIF LAB05 FRAME seq=42 bytes=19542
+I (353795) rtsp_server: $$$ ONVIF LAB05 FRAME seq=43 bytes=19831
+I (353879) rtsp_server: $$$ ONVIF LAB05 FRAME seq=44 bytes=19859
+I (353932) rtsp_server: $$$ ONVIF LAB05 FRAME seq=45 bytes=19811
+I (354012) rtsp_server: $$$ ONVIF LAB05 FRAME seq=46 bytes=19795
+I (354055) rtsp_server: $$$ ONVIF LAB05 FRAME seq=47 bytes=19638
+I (354137) rtsp_server: $$$ ONVIF LAB05 FRAME seq=48 bytes=19880
+I (354187) rtsp_server: $$$ ONVIF LAB05 FRAME seq=49 bytes=19693
+I (354263) rtsp_server: $$$ ONVIF LAB05 FRAME seq=50 bytes=19841
+I (354306) rtsp_server: $$$ ONVIF LAB05 FRAME seq=51 bytes=19756
+I (354388) rtsp_server: $$$ ONVIF LAB05 FRAME seq=52 bytes=19765
+I (354440) rtsp_server: $$$ ONVIF LAB05 FRAME seq=53 bytes=19722
+I (354515) rtsp_server: $$$ ONVIF LAB05 FRAME seq=54 bytes=19621
+I (354561) rtsp_server: $$$ ONVIF LAB05 FRAME seq=55 bytes=19826
+I (354647) rtsp_server: $$$ ONVIF LAB05 FRAME seq=56 bytes=19641
+I (354697) rtsp_server: $$$ ONVIF LAB05 FRAME seq=57 bytes=19760
+I (354772) rtsp_server: $$$ ONVIF LAB05 FRAME seq=58 bytes=19759
+I (354817) rtsp_server: $$$ ONVIF LAB05 FRAME seq=59 bytes=19804
+I (354899) rtsp_server: $$$ ONVIF LAB05 FRAME seq=60 bytes=19654
+I (354956) rtsp_server: $$$ ONVIF LAB05 FRAME seq=61 bytes=19746
+I (355037) rtsp_server: $$$ ONVIF LAB05 FRAME seq=62 bytes=19790
+I (355088) rtsp_server: $$$ ONVIF LAB05 FRAME seq=63 bytes=19724
+I (355138) rtsp_server: $$$ ONVIF LAB05 FRAME seq=64 bytes=19601
+I (355217) rtsp_server: $$$ ONVIF LAB05 FRAME seq=65 bytes=19557
+I (355268) rtsp_server: $$$ ONVIF LAB05 FRAME seq=66 bytes=19845
+I (355357) rtsp_server: $$$ ONVIF LAB05 FRAME seq=67 bytes=19678
+I (355412) rtsp_server: $$$ ONVIF LAB05 FRAME seq=68 bytes=19682
+I (355466) rtsp_server: $$$ ONVIF LAB05 FRAME seq=69 bytes=19746
+I (355544) rtsp_server: $$$ ONVIF LAB05 FRAME seq=70 bytes=19824
+I (355589) rtsp_server: $$$ ONVIF LAB05 FRAME seq=71 bytes=19745
+I (355678) rtsp_server: $$$ ONVIF LAB05 FRAME seq=72 bytes=19687
+I (355727) rtsp_server: $$$ ONVIF LAB05 FRAME seq=73 bytes=19660
+I (355778) rtsp_server: $$$ ONVIF LAB05 FRAME seq=74 bytes=19639
+I (355869) rtsp_server: $$$ ONVIF LAB05 FRAME seq=75 bytes=19648
+I (355924) rtsp_server: $$$ ONVIF LAB05 FRAME seq=76 bytes=19668
+I (355986) rtsp_server: $$$ ONVIF LAB05 FRAME seq=77 bytes=19540
+I (356034) rtsp_server: $$$ ONVIF LAB05 FRAME seq=78 bytes=19706
+I (356114) rtsp_server: $$$ ONVIF LAB05 FRAME seq=79 bytes=19812
+I (356160) rtsp_server: $$$ ONVIF LAB05 FRAME seq=80 bytes=19759
+I (356239) rtsp_server: $$$ ONVIF LAB05 FRAME seq=81 bytes=19683
+I (356293) rtsp_server: $$$ ONVIF LAB05 FRAME seq=82 bytes=19589
+I (356382) rtsp_server: $$$ ONVIF LAB05 FRAME seq=83 bytes=19719
+I (356436) rtsp_server: $$$ ONVIF LAB05 FRAME seq=84 bytes=19783
+I (356492) rtsp_server: $$$ ONVIF LAB05 FRAME seq=85 bytes=19520
+I (356585) rtsp_server: $$$ ONVIF LAB05 FRAME seq=86 bytes=19781
+I (356644) rtsp_server: $$$ ONVIF LAB05 FRAME seq=87 bytes=19581
+I (356704) rtsp_server: $$$ ONVIF LAB05 FRAME seq=88 bytes=19721
+I (356755) rtsp_server: $$$ ONVIF LAB05 FRAME seq=89 bytes=19688
+I (356809) rtsp_server: $$$ ONVIF LAB05 FRAME seq=90 bytes=19786
+I (356910) rtsp_server: $$$ ONVIF LAB05 FRAME seq=91 bytes=19686
+I (356930) rtsp_server: $$$ ONVIF LAB05 FRAME seq=92 bytes=19838
+I (357007) rtsp_server: $$$ ONVIF LAB05 FRAME seq=93 bytes=19726
+I (357059) rtsp_server: $$$ ONVIF LAB05 FRAME seq=94 bytes=20026
+I (357142) rtsp_server: $$$ ONVIF LAB05 FRAME seq=95 bytes=19650
+I (361512) rtsp_server: $$$ ONVIF LAB05 FRAME seq=96 bytes=19699
+I (361525) rtsp_server: $$$ ONVIF LAB05 FRAME seq=97 bytes=19579
+I (361545) rtsp_server: $$$ ONVIF LAB05 FRAME seq=98 bytes=19600
+I (361618) rtsp_server: $$$ ONVIF LAB05 FRAME seq=99 bytes=19588
+I (361664) rtsp_server: $$$ ONVIF LAB05 FRAME seq=100 bytes=19727
+I (361738) rtsp_server: $$$ ONVIF LAB05 FRAME seq=101 bytes=19600
+I (361818) rtsp_server: $$$ ONVIF LAB05 FRAME seq=102 bytes=19701
+I (361876) rtsp_server: $$$ ONVIF LAB05 FRAME seq=103 bytes=19717
+I (361919) rtsp_server: $$$ ONVIF LAB05 FRAME seq=104 bytes=19706
+I (361999) rtsp_server: $$$ ONVIF LAB05 FRAME seq=105 bytes=19574
+I (362048) rtsp_server: $$$ ONVIF LAB05 FRAME seq=106 bytes=19692
+I (362125) rtsp_server: $$$ ONVIF LAB05 FRAME seq=107 bytes=19687
+I (362207) rtsp_server: $$$ ONVIF LAB05 FRAME seq=108 bytes=19828
+I (362254) rtsp_server: $$$ ONVIF LAB05 FRAME seq=109 bytes=19812
+I (362308) rtsp_server: $$$ ONVIF LAB05 FRAME seq=110 bytes=19639
+I (362383) rtsp_server: $$$ ONVIF LAB05 FRAME seq=111 bytes=19733
+I (362434) rtsp_server: $$$ ONVIF LAB05 FRAME seq=112 bytes=19759
+I (362524) rtsp_server: $$$ ONVIF LAB05 FRAME seq=113 bytes=19729
+I (362579) rtsp_server: $$$ ONVIF LAB05 FRAME seq=114 bytes=19802
+I (362635) rtsp_server: $$$ ONVIF LAB05 FRAME seq=115 bytes=19731
+I (362728) rtsp_server: $$$ ONVIF LAB05 FRAME seq=116 bytes=19700
+I (362787) rtsp_server: $$$ ONVIF LAB05 FRAME seq=117 bytes=19772
+I (362839) rtsp_server: $$$ ONVIF LAB05 FRAME seq=118 bytes=19696
+I (362892) rtsp_server: $$$ ONVIF LAB05 FRAME seq=119 bytes=19809
+I (362967) rtsp_server: $$$ ONVIF LAB05 FRAME seq=120 bytes=19763
+I (363011) rtsp_server: $$$ ONVIF LAB05 FRAME seq=121 bytes=19628
+I (363100) rtsp_server: $$$ ONVIF LAB05 FRAME seq=122 bytes=19576
+I (363133) rtsp_server: TEARDOWN by client
+I (363142) rtsp_server: heap@TEARDOWN free_dma=243199 free_internal=275207 free_spiram=11396636
+I (363145) rtsp_server: client 192.168.1.2:59754
+I (363150) rtsp_server: DESCRIBE -> SDP 202 bytes
+I (363197) rtsp_server: SETUP transport=UDP
+I (363197) rtsp_server: heap@SETUP free_dma=243087 free_internal=275095 free_spiram=11404644
+I (363201) rtsp_server: $$$ ONVIF LAB05 PLAY seq=0 rtptime=0
+I (363204) rtsp_server: heap@PLAYING free_dma=243087 free_internal=275095 free_spiram=11402708
+I (363216) rtsp_server: $$$ ONVIF LAB05 FRAME seq=1 bytes=19724
+I (363251) rtsp_server: $$$ ONVIF LAB05 FRAME seq=2 bytes=19702
+I (363314) rtsp_server: $$$ ONVIF LAB05 FRAME seq=3 bytes=19729
+I (363377) rtsp_server: $$$ ONVIF LAB05 FRAME seq=4 bytes=19731
+I (363440) rtsp_server: $$$ ONVIF LAB05 FRAME seq=5 bytes=19767
+I (363503) rtsp_server: $$$ ONVIF LAB05 FRAME seq=6 bytes=19677
+I (363596) rtsp_server: $$$ ONVIF LAB05 FRAME seq=7 bytes=19740
+I (363659) rtsp_server: $$$ ONVIF LAB05 FRAME seq=8 bytes=19678
+I (363722) rtsp_server: $$$ ONVIF LAB05 FRAME seq=9 bytes=19666
+I (363785) rtsp_server: $$$ ONVIF LAB05 FRAME seq=10 bytes=19681
+I (363848) rtsp_server: $$$ ONVIF LAB05 FRAME seq=11 bytes=19688
+I (363911) rtsp_server: $$$ ONVIF LAB05 FRAME seq=12 bytes=19741
+I (363974) rtsp_server: $$$ ONVIF LAB05 FRAME seq=13 bytes=19697
+I (364037) rtsp_server: $$$ ONVIF LAB05 FRAME seq=14 bytes=19509
+I (364100) rtsp_server: $$$ ONVIF LAB05 FRAME seq=15 bytes=19711
+I (364163) rtsp_server: $$$ ONVIF LAB05 FRAME seq=16 bytes=19763
+I (364226) rtsp_server: $$$ ONVIF LAB05 FRAME seq=17 bytes=19683
+I (364289) rtsp_server: $$$ ONVIF LAB05 FRAME seq=18 bytes=19647
+I (364352) rtsp_server: $$$ ONVIF LAB05 FRAME seq=19 bytes=19639
+I (364415) rtsp_server: $$$ ONVIF LAB05 FRAME seq=20 bytes=19677
+I (364478) rtsp_server: $$$ ONVIF LAB05 FRAME seq=21 bytes=19716
+I (364541) rtsp_server: $$$ ONVIF LAB05 FRAME seq=22 bytes=19601
+I (364604) rtsp_server: $$$ ONVIF LAB05 FRAME seq=23 bytes=19856
+I (364667) rtsp_server: $$$ ONVIF LAB05 FRAME seq=24 bytes=19652
+I (364730) rtsp_server: $$$ ONVIF LAB05 FRAME seq=25 bytes=19614
+I (364793) rtsp_server: $$$ ONVIF LAB05 FRAME seq=26 bytes=19552
+I (364856) rtsp_server: $$$ ONVIF LAB05 FRAME seq=27 bytes=19786
+I (364919) rtsp_server: $$$ ONVIF LAB05 FRAME seq=28 bytes=19758
+I (364982) rtsp_server: $$$ ONVIF LAB05 FRAME seq=29 bytes=19532
+I (365045) rtsp_server: $$$ ONVIF LAB05 FRAME seq=30 bytes=19765
+I (365108) rtsp_server: $$$ ONVIF LAB05 FRAME seq=31 bytes=19711
+I (365171) rtsp_server: $$$ ONVIF LAB05 FRAME seq=32 bytes=19643
+I (365234) rtsp_server: $$$ ONVIF LAB05 FRAME seq=33 bytes=19654
+I (365297) rtsp_server: $$$ ONVIF LAB05 FRAME seq=34 bytes=19798
+I (365360) rtsp_server: $$$ ONVIF LAB05 FRAME seq=35 bytes=19795
+I (365423) rtsp_server: $$$ ONVIF LAB05 FRAME seq=36 bytes=19524
+I (365516) rtsp_server: $$$ ONVIF LAB05 FRAME seq=37 bytes=19628
+I (365579) rtsp_server: $$$ ONVIF LAB05 FRAME seq=38 bytes=19754
+I (365642) rtsp_server: $$$ ONVIF LAB05 FRAME seq=39 bytes=19822
+I (365705) rtsp_server: $$$ ONVIF LAB05 FRAME seq=40 bytes=19764
+I (365768) rtsp_server: $$$ ONVIF LAB05 FRAME seq=41 bytes=19591
+I (365831) rtsp_server: $$$ ONVIF LAB05 FRAME seq=42 bytes=19714
+I (365894) rtsp_server: $$$ ONVIF LAB05 FRAME seq=43 bytes=19596
+I (365957) rtsp_server: $$$ ONVIF LAB05 FRAME seq=44 bytes=19659
+I (366020) rtsp_server: $$$ ONVIF LAB05 FRAME seq=45 bytes=19689
+I (366083) rtsp_server: $$$ ONVIF LAB05 FRAME seq=46 bytes=19815
+I (366146) rtsp_server: $$$ ONVIF LAB05 FRAME seq=47 bytes=19734
+I (366209) rtsp_server: $$$ ONVIF LAB05 FRAME seq=48 bytes=19811
+I (366272) rtsp_server: $$$ ONVIF LAB05 FRAME seq=49 bytes=19835
+I (366335) rtsp_server: $$$ ONVIF LAB05 FRAME seq=50 bytes=19760
+I (366398) rtsp_server: $$$ ONVIF LAB05 FRAME seq=51 bytes=19643
+I (366461) rtsp_server: $$$ ONVIF LAB05 FRAME seq=52 bytes=19680
+I (366524) rtsp_server: $$$ ONVIF LAB05 FRAME seq=53 bytes=19881
+I (366587) rtsp_server: $$$ ONVIF LAB05 FRAME seq=54 bytes=19684
+I (366650) rtsp_server: $$$ ONVIF LAB05 FRAME seq=55 bytes=19787
+I (366713) rtsp_server: $$$ ONVIF LAB05 FRAME seq=56 bytes=19674
+I (366776) rtsp_server: $$$ ONVIF LAB05 FRAME seq=57 bytes=19598
+I (366839) rtsp_server: $$$ ONVIF LAB05 FRAME seq=58 bytes=19687
+I (366902) rtsp_server: $$$ ONVIF LAB05 FRAME seq=59 bytes=19673
+I (366965) rtsp_server: $$$ ONVIF LAB05 FRAME seq=60 bytes=19888
+I (367028) rtsp_server: $$$ ONVIF LAB05 FRAME seq=61 bytes=19743
+I (367091) rtsp_server: $$$ ONVIF LAB05 FRAME seq=62 bytes=19713
+I (367154) rtsp_server: $$$ ONVIF LAB05 FRAME seq=63 bytes=19766
+I (367217) rtsp_server: $$$ ONVIF LAB05 FRAME seq=64 bytes=19715
+I (367280) rtsp_server: $$$ ONVIF LAB05 FRAME seq=65 bytes=19738
+I (367343) rtsp_server: $$$ ONVIF LAB05 FRAME seq=66 bytes=19829
+I (367436) rtsp_server: $$$ ONVIF LAB05 FRAME seq=67 bytes=19738
+I (367499) rtsp_server: $$$ ONVIF LAB05 FRAME seq=68 bytes=19862
+I (367562) rtsp_server: $$$ ONVIF LAB05 FRAME seq=69 bytes=19756
+I (367625) rtsp_server: $$$ ONVIF LAB05 FRAME seq=70 bytes=19701
+I (367688) rtsp_server: $$$ ONVIF LAB05 FRAME seq=71 bytes=19789
+I (367751) rtsp_server: $$$ ONVIF LAB05 FRAME seq=72 bytes=19713
+I (367814) rtsp_server: $$$ ONVIF LAB05 FRAME seq=73 bytes=19775
+I (367877) rtsp_server: $$$ ONVIF LAB05 FRAME seq=74 bytes=19757
+I (367940) rtsp_server: $$$ ONVIF LAB05 FRAME seq=75 bytes=19819
+I (368003) rtsp_server: $$$ ONVIF LAB05 FRAME seq=76 bytes=19649
+I (368066) rtsp_server: $$$ ONVIF LAB05 FRAME seq=77 bytes=19822
+I (368129) rtsp_server: $$$ ONVIF LAB05 FRAME seq=78 bytes=19847
+I (368192) rtsp_server: $$$ ONVIF LAB05 FRAME seq=79 bytes=19768
+I (368255) rtsp_server: $$$ ONVIF LAB05 FRAME seq=80 bytes=19915
+I (368318) rtsp_server: $$$ ONVIF LAB05 FRAME seq=81 bytes=19646
+I (368381) rtsp_server: $$$ ONVIF LAB05 FRAME seq=82 bytes=19624
+I (368444) rtsp_server: $$$ ONVIF LAB05 FRAME seq=83 bytes=19702
+I (368507) rtsp_server: $$$ ONVIF LAB05 FRAME seq=84 bytes=19760
+I (368570) rtsp_server: $$$ ONVIF LAB05 FRAME seq=85 bytes=19626
+I (368633) rtsp_server: $$$ ONVIF LAB05 FRAME seq=86 bytes=19675
+I (368696) rtsp_server: $$$ ONVIF LAB05 FRAME seq=87 bytes=19750
+I (368759) rtsp_server: $$$ ONVIF LAB05 FRAME seq=88 bytes=19868
+I (368822) rtsp_server: $$$ ONVIF LAB05 FRAME seq=89 bytes=19693
+I (368885) rtsp_server: $$$ ONVIF LAB05 FRAME seq=90 bytes=19654
+I (368948) rtsp_server: $$$ ONVIF LAB05 FRAME seq=91 bytes=19624
+I (369011) rtsp_server: $$$ ONVIF LAB05 FRAME seq=92 bytes=19792
+I (369074) rtsp_server: $$$ ONVIF LAB05 FRAME seq=93 bytes=19848
+I (369137) rtsp_server: $$$ ONVIF LAB05 FRAME seq=94 bytes=19758
+I (369201) rtsp_server: $$$ ONVIF LAB05 FRAME seq=95 bytes=19709
+I (369264) rtsp_server: $$$ ONVIF LAB05 FRAME seq=96 bytes=19821
+I (369327) rtsp_server: $$$ ONVIF LAB05 FRAME seq=97 bytes=19700
+I (369420) rtsp_server: $$$ ONVIF LAB05 FRAME seq=98 bytes=19799
+I (369483) rtsp_server: $$$ ONVIF LAB05 FRAME seq=99 bytes=19609
+I (369546) rtsp_server: $$$ ONVIF LAB05 FRAME seq=100 bytes=19803
+I (369609) rtsp_server: $$$ ONVIF LAB05 FRAME seq=101 bytes=19870
+I (369672) rtsp_server: $$$ ONVIF LAB05 FRAME seq=102 bytes=19628
+I (369735) rtsp_server: $$$ ONVIF LAB05 FRAME seq=103 bytes=19738
+I (369798) rtsp_server: $$$ ONVIF LAB05 FRAME seq=104 bytes=19876
+I (369861) rtsp_server: $$$ ONVIF LAB05 FRAME seq=105 bytes=19928
+I (369925) rtsp_server: $$$ ONVIF LAB05 FRAME seq=106 bytes=19801
+I (369988) rtsp_server: $$$ ONVIF LAB05 FRAME seq=107 bytes=19799
+I (370051) rtsp_server: $$$ ONVIF LAB05 FRAME seq=108 bytes=19761
+I (370114) rtsp_server: $$$ ONVIF LAB05 FRAME seq=109 bytes=19709
+I (370177) rtsp_server: $$$ ONVIF LAB05 FRAME seq=110 bytes=19638
+I (370240) rtsp_server: $$$ ONVIF LAB05 FRAME seq=111 bytes=19842
+I (370303) rtsp_server: $$$ ONVIF LAB05 FRAME seq=112 bytes=19584
+I (370366) rtsp_server: $$$ ONVIF LAB05 FRAME seq=113 bytes=19580
+I (370429) rtsp_server: $$$ ONVIF LAB05 FRAME seq=114 bytes=19825
+I (370492) rtsp_server: $$$ ONVIF LAB05 FRAME seq=115 bytes=19688
+I (370556) rtsp_server: $$$ ONVIF LAB05 FRAME seq=116 bytes=19650
+I (370619) rtsp_server: $$$ ONVIF LAB05 FRAME seq=117 bytes=19829
+I (370682) rtsp_server: $$$ ONVIF LAB05 FRAME seq=118 bytes=19766
+I (370745) rtsp_server: $$$ ONVIF LAB05 FRAME seq=119 bytes=19666
+I (370808) rtsp_server: $$$ ONVIF LAB05 FRAME seq=120 bytes=19876
+I (370871) rtsp_server: $$$ ONVIF LAB05 FRAME seq=121 bytes=19723
+I (370934) rtsp_server: $$$ ONVIF LAB05 FRAME seq=122 bytes=19702
+I (370966) rtsp_server: TEARDOWN by client
+I (370996) rtsp_server: heap@TEARDOWN free_dma=242975 free_internal=274983 free_spiram=11402320
+I (370996) rtsp_server: client 192.168.1.2:34244
+I (371011) rtsp_server: DESCRIBE -> SDP 201 bytes
+I (371081) rtsp_server: SETUP transport=TCP
+I (371081) rtsp_server: heap@SETUP free_dma=243199 free_internal=275207 free_spiram=11404784
+I (371085) rtsp_server: $$$ ONVIF LAB05 PLAY seq=0 rtptime=0
+I (371089) rtsp_server: heap@PLAYING free_dma=243199 free_internal=275207 free_spiram=11404784
+I (371134) rtsp_server: $$$ ONVIF LAB05 FRAME seq=1 bytes=19704
+I (371150) rtsp_server: $$$ ONVIF LAB05 FRAME seq=2 bytes=19908
+I (371198) rtsp_server: $$$ ONVIF LAB05 FRAME seq=3 bytes=19691
+I (371286) rtsp_server: $$$ ONVIF LAB05 FRAME seq=4 bytes=19792
+I (371341) rtsp_server: $$$ ONVIF LAB05 FRAME seq=5 bytes=19794
+I (371436) rtsp_server: $$$ ONVIF LAB05 FRAME seq=6 bytes=19787
+I (371489) rtsp_server: $$$ ONVIF LAB05 FRAME seq=7 bytes=19623
+I (371544) rtsp_server: $$$ ONVIF LAB05 FRAME seq=8 bytes=19731
+I (371593) rtsp_server: $$$ ONVIF LAB05 FRAME seq=9 bytes=19746
+I (371669) rtsp_server: $$$ ONVIF LAB05 FRAME seq=10 bytes=19683
+I (371712) rtsp_server: $$$ ONVIF LAB05 FRAME seq=11 bytes=19595
+I (371792) rtsp_server: $$$ ONVIF LAB05 FRAME seq=12 bytes=19799
+I (371845) rtsp_server: $$$ ONVIF LAB05 FRAME seq=13 bytes=19785
+I (371919) rtsp_server: $$$ ONVIF LAB05 FRAME seq=14 bytes=19751
+I (371964) rtsp_server: $$$ ONVIF LAB05 FRAME seq=15 bytes=19742
+I (372052) rtsp_server: $$$ ONVIF LAB05 FRAME seq=16 bytes=19662
+I (372104) rtsp_server: $$$ ONVIF LAB05 FRAME seq=17 bytes=19808
+I (372178) rtsp_server: $$$ ONVIF LAB05 FRAME seq=18 bytes=19806
+I (372219) rtsp_server: $$$ ONVIF LAB05 FRAME seq=19 bytes=19684
+I (372297) rtsp_server: $$$ ONVIF LAB05 FRAME seq=20 bytes=19639
+I (372370) rtsp_server: $$$ ONVIF LAB05 FRAME seq=21 bytes=19693
+I (372417) rtsp_server: $$$ ONVIF LAB05 FRAME seq=22 bytes=19504
+I (372483) rtsp_server: heap@TEARDOWN free_dma=243199 free_internal=275207 free_spiram=11404664
+I (372494) onvif_svc: $$$ ONVIF LAB05 SNAPSHOT bytes=20288
+[SUPPLEMENT END]

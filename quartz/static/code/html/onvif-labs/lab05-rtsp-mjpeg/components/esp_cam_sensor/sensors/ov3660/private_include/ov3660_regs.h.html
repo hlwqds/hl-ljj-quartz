@@ -1,0 +1,220 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/*</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * SPDX-License-Identifier: Apache-2.0</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/*</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * OV3660 register definitions.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#pragma</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> once</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifdef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> __cplusplus</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">extern</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "C"</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> {</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> OV3660_REG_DLY</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> 0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">ffff</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> OV3660_REGLIST_TAIL</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> 0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">0000</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/* ov3660 registers */</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/* system control registers */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SYSTEM_CTROL0</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">   0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">3008</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  // Bit[7]: Software reset</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">// Bit[6]: Software power down</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">// Bit[5]: Reserved</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">// Bit[4]: SRB clock SYNC enable</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">// Bit[3]: Isolation suspend select</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">// Bit[2:0]: Not used</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/* output format control registers */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> FORMAT_CTRL</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">     0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">501F</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> // Format select</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">// Bit[2:0]:</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//  000: YUV422</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//  001: RGB</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//  010: Dither</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//  011: RAW after DPC</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//  101: RAW after CIP</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/* format control registers */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> FORMAT_CTRL00</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">   0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">4300</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/* frame control registers */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> FRAME_CTRL01</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">4201</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  // Control Passed Frame Number When both ON and OFF number set to 0x00,frame control is in bypass mode</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">// Bit[7:4]: Not used</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">// Bit[3:0]: Frame ON number</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> FRAME_CTRL02</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">4202</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  // Control Masked Frame Number When both ON and OFF number set to 0x00,frame control is in bypass mode</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">// Bit[7:4]: Not used</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">// BIT[3:0]: Frame OFF number</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/* ISP top control registers */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PRE_ISP_TEST_SETTING_1</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">  0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">503D</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  // Bit[7]: Test enable</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//         0: Test disable</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//         1: Color bar enable</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">// Bit[6]: Rolling</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">// Bit[5]: Transparent</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">// Bit[4]: Square black and white</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">// Bit[3:2]: Color bar style</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//         00: Standard 8 color bar</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//         01: Gradual change at vertical mode 1</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//         10: Gradual change at horizontal</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//         11: Gradual change at vertical mode 2</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">// Bit[1:0]: Test select</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//         00: Color bar</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//         01: Random data</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//         10: Square data</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//         11: Black image</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/* AEC/AGC control functions */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> AEC_PK_MANUAL</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">   0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">3503</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  // AEC Manual Mode Control</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">// Bit[7:6]: Reserved</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">// Bit[5]: Gain delay option</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//         Valid when 0x3503[4]=1’b0</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//         0: Delay one frame latch</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//         1: One frame latch</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">// Bit[4:2]: Reserved</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">// Bit[1]: AGC manual</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//         0: Auto enable</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//         1: Manual enable</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">// Bit[0]: AEC manual</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//         0: Auto enable</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//         1: Manual enable</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/* mirror and flip registers */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> TIMING_TC_REG20</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> 0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">3820</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  // Timing Control Register</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">// Bit[2:1]: Vertical flip enable</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//         00: Normal</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//         11: Vertical flip</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">// Bit[0]: Vertical binning enable</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> TIMING_TC_REG21</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> 0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">3821</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  // Timing Control Register</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">// Bit[5]: Compression Enable</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">// Bit[2:1]: Horizontal mirror enable</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//         00: Normal</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//         11: Horizontal mirror</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">// Bit[0]: Horizontal binning enable</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> CLOCK_POL_CONTROL</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> 0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">4740</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">// Bit[5]: PCLK polarity 0: active low</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//          1: active high</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">// Bit[3]: Gate PCLK under VSYNC</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">// Bit[2]: Gate PCLK under HREF</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">// Bit[1]: HREF polarity</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//          0: active low</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//          1: active high</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">// Bit[0] VSYNC polarity</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//          0: active low</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//          1: active high</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> DRIVE_CAPABILITY</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> 0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">302c</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> // Bit[7:6]:</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//          00: 1x</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//          01: 2x</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//          10: 3x</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//          11: 4x</span></span>
+<span class="line"></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> X_ADDR_ST_H</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">     0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">3800</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> //Bit[3:0]: X address start[11:8]</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> X_ADDR_ST_L</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">     0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">3801</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> //Bit[7:0]: X address start[7:0]</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> Y_ADDR_ST_H</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">     0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">3802</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> //Bit[2:0]: Y address start[10:8]</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> Y_ADDR_ST_L</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">     0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">3803</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> //Bit[7:0]: Y address start[7:0]</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> X_ADDR_END_H</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">3804</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> //Bit[3:0]: X address end[11:8]</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> X_ADDR_END_L</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">3805</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> //Bit[7:0]:</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> Y_ADDR_END_H</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">3806</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> //Bit[2:0]: Y address end[10:8]</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> Y_ADDR_END_L</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">3807</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> //Bit[7:0]:</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">// Size after scaling</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> X_OUTPUT_SIZE_H</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> 0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">3808</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> //Bit[3:0]: DVP output horizontal width[11:8]</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> X_OUTPUT_SIZE_L</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> 0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">3809</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> //Bit[7:0]:</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> Y_OUTPUT_SIZE_H</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> 0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">380a</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> //Bit[2:0]: DVP output vertical height[10:8]</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> Y_OUTPUT_SIZE_L</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> 0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">380b</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> //Bit[7:0]:</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> X_TOTAL_SIZE_H</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">  0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">380c</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> //Bit[3:0]: Total horizontal size[11:8]</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> X_TOTAL_SIZE_L</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">  0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">380d</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> //Bit[7:0]:</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> Y_TOTAL_SIZE_H</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">  0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">380e</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> //Bit[7:0]: Total vertical size[15:8]</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> Y_TOTAL_SIZE_L</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">  0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">380f</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> //Bit[7:0]:</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> X_OFFSET_H</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">      0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">3810</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> //Bit[3:0]: ISP horizontal offset[11:8]</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> X_OFFSET_L</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">      0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">3811</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> //Bit[7:0]:</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> Y_OFFSET_H</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">      0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">3812</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> //Bit[2:0]: ISP vertical offset[10:8]</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> Y_OFFSET_L</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">      0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">3813</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> //Bit[7:0]:</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> X_INCREMENT</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">     0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">3814</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> //Bit[7:4]: Horizontal odd subsample increment</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//Bit[3:0]: Horizontal even subsample increment</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> Y_INCREMENT</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">     0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">3815</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> //Bit[7:4]: Vertical odd subsample increment</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//Bit[3:0]: Vertical even subsample increment</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> ISP_CONTROL_01</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">  0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">5001</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> // Bit[5]: Scale enable</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//          0: Disable</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//          1: Enable</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SCALE_CTRL_1</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">5601</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> // Bit[6:4]: HDIV RW</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//          DCW scale times</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//          000: DCW 1 time</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//          001: DCW 2 times</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//          010: DCW 4 times</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//          100: DCW 8 times</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//          101: DCW 16 times</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//          Others: DCW 16 times</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">// Bit[2:0]: VDIV RW</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//          DCW scale times</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//          000: DCW 1 time</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//          001: DCW 2 times</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//          010: DCW 4 times</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//          100: DCW 8 times</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//          101: DCW 16 times</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//          Others: DCW 16 times</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SCALE_CTRL_2</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">     0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">5602</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> // X_SCALE High Bits</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SCALE_CTRL_3</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">     0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">5603</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> // X_SCALE Low Bits</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SCALE_CTRL_4</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">     0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">5604</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> // Y_SCALE High Bits</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SCALE_CTRL_5</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">     0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">5605</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> // Y_SCALE Low Bits</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SCALE_CTRL_6</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">     0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">5606</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> // Bit[3:0]: V Offset</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> PCLK_RATIO</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">       0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">3824</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> // Bit[4:0]: PCLK ratio manual</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> VFIFO_CTRL0C</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">     0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">460C</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> // Bit[1]: PCLK manual enable</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//          0: Auto</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//          1: Manual by PCLK_RATIO</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> VFIFO_X_SIZE_H</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">   0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">4602</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> VFIFO_X_SIZE_L</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">   0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">4603</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> VFIFO_Y_SIZE_H</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">   0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">4604</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> VFIFO_Y_SIZE_L</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">   0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">4605</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SC_PLLS_CTRL0</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">303a</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> // Bit[7]: PLLS bypass</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SC_PLLS_CTRL1</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">303b</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> // Bit[4:0]: PLLS multiplier</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SC_PLLS_CTRL2</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">303c</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> // Bit[6:4]: PLLS charge pump control</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">// Bit[3:0]: PLLS system divider</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> SC_PLLS_CTRL3</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">303d</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> // Bit[5:4]: PLLS pre-divider</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//          00: 1</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//          01: 1.5</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//          10: 2</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//          11: 3</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">// Bit[2]: PLLS root-divider - 1</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">// Bit[1:0]: PLLS seld5</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//          00: 1</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//          01: 1</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//          10: 2</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//          11: 2.5</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> COMPRESSION_CTRL00</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">   0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">4400</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> COMPRESSION_CTRL01</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">   0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">4401</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> COMPRESSION_CTRL02</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">   0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">4402</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> COMPRESSION_CTRL03</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">   0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">4403</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> COMPRESSION_CTRL04</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">   0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">4404</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> COMPRESSION_CTRL05</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">   0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">4405</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> COMPRESSION_CTRL06</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">   0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">4406</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> COMPRESSION_CTRL07</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">   0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">4407</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> // Bit[5:0]: QS</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> COMPRESSION_ISI_CTRL</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> 0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">4408</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> COMPRESSION_CTRL09</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">   0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">4409</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> COMPRESSION_CTRL0a</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">   0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">440a</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> COMPRESSION_CTRL0b</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">   0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">440b</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> COMPRESSION_CTRL0c</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">   0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">440c</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> COMPRESSION_CTRL0d</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">   0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">440d</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> COMPRESSION_CTRL0E</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">   0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">440e</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">@brief</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> register value</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> TEST_COLOR_BAR</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">  0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">C0</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    /* Enable Color Bar roling Test */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> AEC_PK_MANUAL_AGC_MANUALEN</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">  0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">02</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    /* Enable AGC Manual enable */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> AEC_PK_MANUAL_AEC_MANUALEN</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">  0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">01</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    /* Enable AEC Manual enable */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> TIMING_TC_REG20_VFLIP</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">   0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">06</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* Vertical flip enable */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> TIMING_TC_REG21_HMIRROR</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> 0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">06</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* Horizontal mirror enable */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifdef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> __cplusplus</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">}</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span></code></pre>

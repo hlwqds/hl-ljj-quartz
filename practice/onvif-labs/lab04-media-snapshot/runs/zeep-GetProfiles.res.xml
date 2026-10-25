@@ -1,0 +1,30 @@
+<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope" xmlns:tds="http://www.onvif.org/ver10/device/wsdl" xmlns:tt="http://www.onvif.org/ver10/schema">
+  <s:Body>
+    <trt:GetProfilesResponse xmlns:trt="http://www.onvif.org/ver10/media/wsdl">
+      <trt:Profiles token="profile_1">
+        <tt:Name>mjpeg_640x480</tt:Name>
+        <tt:VideoSourceConfiguration token="vsc_1">
+          <tt:Name>sc101iot_source</tt:Name>
+          <tt:UseCount>1</tt:UseCount>
+          <tt:SourceToken>vs_1</tt:SourceToken>
+          <tt:Bounds x="0" y="0" width="640" height="480"/>
+        </tt:VideoSourceConfiguration>
+        <tt:VideoEncoderConfiguration token="vec_1">
+          <tt:Name>mjpeg_encoder</tt:Name>
+          <tt:UseCount>1</tt:UseCount>
+          <tt:Encoding>JPEG</tt:Encoding>
+          <tt:Resolution>
+            <tt:Width>640</tt:Width>
+            <tt:Height>480</tt:Height>
+          </tt:Resolution>
+          <tt:Quality>80</tt:Quality>
+          <tt:RateControl>
+            <tt:FrameRateLimit>15</tt:FrameRateLimit>
+            <tt:EncodingInterval>1</tt:EncodingInterval>
+            <tt:BitrateLimit>3020</tt:BitrateLimit>
+          </tt:RateControl>
+        </tt:VideoEncoderConfiguration>
+      </trt:Profiles>
+    </trt:GetProfilesResponse>
+  </s:Body>
+</s:Envelope>

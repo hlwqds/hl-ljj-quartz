@@ -1,0 +1,131 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold"># lab05-rtsp-mjpeg — RTSP/RTP 取流全链（ONVIF 设备端实验室第 5 站）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">给 lab04 的 Profile 接上真正的媒体面：8554/tcp raw socket 手写 RTSP 状态机</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（OPTIONS/DESCRIBE/SETUP/PLAY/TEARDOWN，TCP interleaved 优先、UDP 第二档），</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">MJPEG 按 RFC 2435 封 RTP（type 0、量化表带内 Q=255、1400B 载荷避分片），</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">控制面补 GetStreamUri（过 lab03 摘要门）。验收不是「能出图」而是「每帧完整到达」：</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">板端 FRAME 标记、客户端成帧计数、ffmpeg 解码帧数三本账互对。实战叙事见</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">《ONVIF 深度解析》[[</span><span style="--shiki-light:#032F62;--shiki-light-text-decoration:underline;--shiki-dark:#DBEDFF;--shiki-dark-text-decoration:underline">ch16-lab05-rtsp-mjpeg-report|第十六章</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">]]，契约见套件</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[</span><span style="--shiki-light:#032F62;--shiki-light-text-decoration:underline;--shiki-dark:#DBEDFF;--shiki-dark-text-decoration:underline">SPEC</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">](</span><span style="--shiki-light:#24292E;--shiki-light-text-decoration:underline;--shiki-dark:#E1E4E8;--shiki-dark-text-decoration:underline">../../SPEC.md</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`practice/onvif-labs/SPEC.md`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> §6 lab05）。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 拓扑</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">宿主机（NixOS，本仓工作区）                ESP32-S31-Korvo-1（WiFi STA，192.168.1.x）</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  tools/onvif_smoke.py（zeep）               ┌──────────────────────────────────┐</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">      │ POST /onvif/media_service            │ onvif_svc :80（lab02–04 全量）    │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">      │  GetStreamUri → rtsp://ip:8554/mjpeg │ rtsp_server :8554（raw socket）   │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">      │                                      │  ├ OPTIONS/DESCRIBE(SDP)/SETUP   │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  tools/rtsp_ledger.py（stdlib 账本客户端）     │  ├ PLAY → RFC 2435 RTP 流         │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">      │  同信令 + 12s 交织流成帧计数 ────────▶ │  │  TCP interleaved $ / UDP 两档  │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  ffmpeg -rtsp_transport tcp|udp -t 12        │  └ 60s 空闲单方面 TEARDOWN        │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">      └── 解码帧数（第三本账）──────────────▶ │ 消费者：copy_latest_id 轮询+去重    │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                                              │   （只丢整帧，不碰 /stream 节拍）    │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                                              └──────────────────────────────────┘</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">固件 = lab04 全量 + 新模块 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`rtsp_server`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（约 470 行：信令状态机 + RFC 2435 封包器）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> `onvif_svc`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 挂 GetStreamUri + 基座 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`factory_stream_copy_latest_id()`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（frame_id 去</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  重用）。方案语境见 [[</span><span style="--shiki-light:#032F62;--shiki-light-text-decoration:underline;--shiki-dark:#DBEDFF;--shiki-dark-text-decoration:underline">ch13-lab02-device-service-report|第十三章</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">]]–[[</span><span style="--shiki-light:#032F62;--shiki-light-text-decoration:underline;--shiki-dark:#DBEDFF;--shiki-dark-text-decoration:underline">ch15-lab04-media-snapshot-report|第十五章</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">]]。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 构建 / 烧录 / 凭据</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">同 lab03/04（复制上一站 → 改工程名；凭据两个 gitignore 头文件 + example 模板）：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```bash</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">NIXPKGS_ALLOW_UNFREE</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">1</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> nix</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> shell</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> --impure</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> nixpkgs#steam-run</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> nixpkgs#cmake</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> nixpkgs#ninja</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> nixpkgs#git</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> \</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  -c steam-run bash -c '. ~/esp/esp-idf/export.sh &#x26;&#x26; idf.py --preview set-target esp32s31 &#x26;&#x26; idf.py build'</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">NIXPKGS_ALLOW_UNFREE</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">=1</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> nix</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> shell</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> --impure</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> nixpkgs#steam-run</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> nixpkgs#cmake</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> nixpkgs#ninja</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> nixpkgs#git</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> \</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  -c steam-run bash -c '. ~/esp/esp-idf/export.sh &#x26;&#x26; idf.py -p /dev/ttyUSB0 flash'</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">启动判据：lab03/04 全部判据 + </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`$$$ ONVIF LAB05 RTSP LISTENING port=8554`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> →</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`lab05 base ready (…+rtsp)`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">。串口控制台同 lab03/04。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**取证特征**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`serial_capture.py`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 打开串口即断言 DTR/RTS、经板上复位电路把板子重启</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">一次（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`--no-reset`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 可免）——run.log 里因此有多段启动日志与多个独立补采窗口，属工具</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">行为而非设备异常重启。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 验收（宿主侧）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```bash</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">cd</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> practice/onvif-labs/lab05-rtsp-mjpeg</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">mkdir</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -p</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> runs</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">python3</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -m</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> venv</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> /tmp/onvif-venv</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> &#x26;&#x26; </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">/tmp/onvif-venv/bin/pip</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> install</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> onvif-zeep</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> pyserial</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">P</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">/tmp/onvif-venv/bin/python</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">PASS</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">$(</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">grep</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -oP</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> '(?&#x3C;=ONVIF_AUTH_PASS ")[^"]+'</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> main/onvif_secrets.h</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">$P tools/serial_capture.py --port /dev/ttyUSB0 --seconds 115 --send-at 8:status --send-at 100:status </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">></span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> run.log</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 另开终端（等 SNTP synced）：</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">$P tools/onvif_smoke.py --host </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">&#x3C;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">板IP</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">></span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> --password </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">"</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">$PASS</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">"</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> --outdir runs    </span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># GetStreamUri + Fault + 回归</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">$P tools/rtsp_ledger.py </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">&#x3C;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">板IP</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">></span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> --seconds 12                              </span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 抓包侧账本（成帧计数）</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 解码侧账本：TCP 档与 UDP 档（ffmpeg 默认先 UDP，ch06 6.7）各 12 秒（全量 stderr 存 runs/）</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">ffmpeg</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -rtsp_transport</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> tcp</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -i</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> rtsp://</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">&#x3C;</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">板I</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">P</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">></span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">:8554/mjpeg</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -t</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 12</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -f</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> null</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> -</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> 2></span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> runs/ffmpeg-tcp.log</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">ffmpeg</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -i</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> rtsp://</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">&#x3C;</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">板I</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">P</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">></span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">:8554/mjpeg</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -t</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 12</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -f</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> null</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> -</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> 2></span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> runs/ffmpeg-udp.log</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">grep</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -oE</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> 'frame=[ 0-9]+'</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> runs/ffmpeg-tcp.log</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> |</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> tail</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -1</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">grep</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -c</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> 'ONVIF LAB05 FRAME'</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> run.log</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">                                      # 板端账本</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">GetStreamUri 的 WSDL 入参要求 StreamSetup 结构（ProfileToken + Stream=RTP-Unicast +</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">Transport.Protocol=RTSP），zeep 用嵌套 dict 传参；未知 ProfileToken →</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">ter:InvalidArgVal。无凭据 media 访问 → HTTP 500 + ter:NotAuthorized。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 真实输出摘录（2026-10-26 上板实测，板 IP=192.168.1.4 本轮 DHCP）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">zeep 冒烟 3/3（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`runs/smoke-zeep.log`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">）：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">$$$ HOST LAB05 OP GetStreamUri ok  uri=rtsp://192.168.1.4:8554/mjpeg</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">$$$ HOST LAB05 FAULT GetStreamUri(unknown token) ok  \</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  reason=ONVIFError(Fault('Unknown ProfileToken (ter:InvalidArgVal)')))</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">$$$ HOST LAB05 OP GetProfiles ok  token=profile_1</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">$$$ HOST LAB05 SMOKE PASS 3/3（GetStreamUri / Fault / 回归）</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">三本账（单 boot 三会话；板端 552 帧 = 188/182/182；解码侧差值为 PLAY→解码器首帧就绪</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">的启动段，会话内 seq 连续无丢帧；会话2 的 21.89s 拉伸是 ffmpeg 停读后板端 send 阻塞</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">在 TCP 窗口的停止语义，非丢帧）：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">会话1（账本客户端，TCP interleaved）：板端 FRAME 标记 188 帧 ↔ 客户端成帧 188（12.035s ≈ 15.62fps）</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">会话2（ffmpeg，TCP）：板端 182 帧 ↔ ffmpeg 解码 180（frame= 180）</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">会话3（ffmpeg，UDP 默认档）：板端 182 帧 ↔ ffmpeg 解码 179（frame= 179）</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">帧长 17,484–18,309 B（暗光场景）→ 实测码率 ≈2.24 Mbps；Profile 的 BitrateLimit</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">3020 kbps 为亮场基线推导的</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**配置上限**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（25,165 B/帧 × 15fps × 8bit），与暗光实测值</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">不等——两栏并列，出处见 ch15 §15.2 出处表。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">里程碑 heap 三件套（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`run.log`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">；free_dma 全程 ≥243KB，红线 170KB 无压力）：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">rtsp: heap@LISTENING free_dma=259567 free_internal=291575 free_spiram=13374432</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">rtsp: heap@SETUP    free_dma=243419 free_internal=275427 free_spiram=11404732</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">rtsp: heap@PLAYING  free_dma=243419 free_internal=275427 free_spiram=11404728</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">rtsp: heap@TEARDOWN free_dma=243231 free_internal=275239 free_spiram=11398100</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">RFC 2435 对齐证据（宿主侧逐字节解析板上成品 JPEG，存证于本仓提交记录）：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">SOF0: Y 2x1 / Cb 1x1 / Cr 1x1  → RFC 2435 type 0（4:2:2）逐字段命中</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">DQT:  Pq=0 Tq=0 ×64B + Pq=0 Tq=1 ×64B → 量化头 = MBZ(1)+Prec(1)+Len(2)=128+128B 系数（132B）</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">DHT:  四张表与 ffmpeg -huffman default 标准表逐字节相同 → 缩略格式（剥 DHT）合规</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">DRI:  无（type 0 禁重启标记合规）</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">无凭据 media 访问（SOAP 1.1）→ HTTP 500 + </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`s:Receiver`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">/</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`ter:NotAuthorized`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 已知边界（刻意为之）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **单客户端、逐连接串行**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：PLAYING 期间新连接排队（listen backlog），不并发——</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  实验形态取舍，README 明示不装 N 路并发。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **无 RTSP Digest**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：DESCRIBE 不做 401 挑战（内网明文实验形态，与控制面同口径）；</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  凭据接入归 lab06 互通收口。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **无 RTCP SR**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：交织通道 1 预留不发；个别依赖 SR 判超时的客户端行为列入观察。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **UDP 档 server_port=8556-8557**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：设备反向发包形态依赖 AP 路径对称性（lab01 组播</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  教训同源），本轮 ffmpeg UDP 档实测可达。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **量化表带内 Q=255 路生效**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：每帧携带 132B 量化头（「公式路」的 IJG 等价假设未采</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  用，不走侥幸路径）。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 内存/发现面/双壳边界沿袭 lab01–04（见各 README）。</span></span>
+<span class="line"></span></code></pre>

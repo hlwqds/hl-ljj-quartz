@@ -1,0 +1,56 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># This file was generated using idf.py save-defconfig or menuconfig [D] key. It can be edited manually.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># Espressif IoT Development Framework (ESP-IDF) 6.1.0 Project Minimal Configuration</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># default:</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_IDF_TARGET</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">"esp32s31"</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># Keep the WiFi blob debug/verbose log strings in flash_rodata (instead of the</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># NOLOAD rodata region): on esp32s31 PSRAM shares the 0x50000000 bus with flash</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># rodata, and NOLOAD wlog content after _rodata_reserved_end makes the linker</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># move the location counter backwards in .ext_ram.dummy (IDF v6.1 defect).</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_LOG_MAXIMUM_LEVEL_VERBOSE</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=y</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_ESPTOOLPY_FLASHMODE_QIO</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=y</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_ESPTOOLPY_FLASHSIZE_16MB</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=y</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_PARTITION_TABLE_CUSTOM</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=y</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_COMPILER_OPTIMIZATION_PERF</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=y</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_SPIRAM</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=y</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_SPIRAM_SPEED_250M</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=y</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_SPIRAM_XIP_FROM_PSRAM</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=y</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_SPIRAM_MEMTEST</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=n</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=y</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=12768</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=y</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=y</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_FREERTOS_HZ</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=1000</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_ESP_LVGL_ADAPTER_ENABLE_FS</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=y</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_ESP_LVGL_ADAPTER_ENABLE_DECODER</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=y</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_ESP_LVGL_ADAPTER_ENABLE_FPS_STATS</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=y</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_ESP_VIDEO_ENABLE_SPI_VIDEO_DEVICE</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=n</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_CAMERA_OV3660</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=y</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_CAMERA_OV3660_DVP_RGB565_BE_240X240_24FPS</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=y</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_CAMERA_OV3660_DVP_DEFAULT_FMT_RGB565_BE_240X240_24FPS</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=y</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_CAMERA_SC101IOT</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=y</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_CAMERA_SC101IOT_DVP_YUV422_640X480_15FPS</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=y</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_CAMERA_SC101IOT_DVP_YUV422_1280X720_15FPS</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=n</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_CAMERA_SC101IOT_DVP_DEFAULT_FMT_YUV422_640X480_15FPS</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=y</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_LV_USE_CLIB_MALLOC</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=y</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_LV_USE_CLIB_STRING</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=y</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_LV_USE_CLIB_SPRINTF</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=y</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_LV_DEF_REFR_PERIOD</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=15</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_LV_DPI_DEF</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=60</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_LV_DRAW_LAYER_SIMPLE_BUF_SIZE</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=29152</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_LV_CACHE_DEF_SIZE</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=4194304</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_LV_IMAGE_HEADER_CACHE_DEF_CNT</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=32</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_LV_FONT_MONTSERRAT_18</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=y</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_LV_FONT_MONTSERRAT_24</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=y</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_LV_FONT_MONTSERRAT_32</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=y</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_LV_FONT_MONTSERRAT_46</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=y</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># lab01-discovery：stream-only 形态（无 UI/LVGL 画布；LVGL 组件仅为</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># factory_demo_camera.h 的编译期头文件依赖存在，运行时不初始化）。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># lab03-auth-digest：SNTP 对时（ch09 坑 1 的治本件；教学开关 sntp on|off 落 NVS）</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_LWIP_SNTP_MAX_SERVERS</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=3</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># lab05：RTSP 会话 + HTTP TIME_WAIT 并发，默认 10 槽会被 accept EMFILE 打爆</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_LWIP_MAX_SOCKETS</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=16</span></span>
+<span class="line"></span></code></pre>

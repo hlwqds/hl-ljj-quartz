@@ -1,0 +1,6 @@
+$$$ HOST LAB05 OP GetStreamUri ok  uri=rtsp://192.168.1.4:8554/mjpeg
+$$$ HOST LAB05 FAULT GetStreamUri(unknown token) ok  reason=ONVIFError(Fault('Unknown ProfileToken (ter:InvalidArgVal)'))
+$$$ HOST LAB05 OP GetProfiles ok  token=profile_1
+$$$ HOST LAB05 OP GetDeviceInformation ok  sn=1c2904d072e8
+$$$ HOST LAB05 SMOKE PASS 3/3（GetStreamUri / Fault / 回归）
+NOCREDS_HTTP=500

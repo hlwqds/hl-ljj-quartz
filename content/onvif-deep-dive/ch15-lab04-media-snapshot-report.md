@@ -1,15 +1,15 @@
 ---
-title: "ONVIF 深度解析（十五）：实战实录四——lab04，Media Profile 与快照（框架）"
+title: "ONVIF 深度解析（十五）：实战实录四——lab04，Media Profile 与快照"
 date: 2026-10-25 12:00:00
-description: "实战篇第四章（框架，实测待回填）：把第五章的 Media Profile 配置模型最小落地到 ESP32-S31-Korvo-1——GetProfiles 用一张静态模板应答单 profile（token=profile_1，JPEG/MJPEG 编码档 640×480，参数全部取自基座实测与推算），GetSnapshotUri 指向 80 端口 /onvif-http/snapshot；快照零额外编码：从 lab01 既有的最新帧双缓冲锁内拷贝最近一帧成品 JPEG；验收计划 curl+file/ffprobe 完整性与 python-onvif 拿 Profile/SnapshotUri，实测记录整节待回填。工程契约 SPEC §6 lab04。"
+description: "实战篇第四站：第五章的配置模型最小可信落地——GetProfiles 单 profile 静态模板（token=profile_1、JPEG 640×480、Quality 80、15fps，字段全部取自基座固件常量），GetSnapshotUri 以请求 Host 头现拼 /onvif-http/snapshot；快照零额外编码：基座新增 factory_stream_copy_latest()，从 /stream 同源的最新帧双缓冲锁内拷贝成品 JPEG（300KB PSRAM 缓冲、不碰 frame_sem）；两个 media 操作过 lab03 摘要门，未知 ProfileToken 回 s:Sender+ter:InvalidArgVal（HTTP 按壳 400/500）。实测：zeep 冒烟 5/5、curl 快照三张三对字节数板宿互对、file/ffprobe 与声明逐项一致、free_dma 252KB。"
 tags: [onvif, esp32, rtsp, embedded, series]
 ---
 
 > [!info] ONVIF 深度解析系列 0. [[onvif-deep-dive|系列索引]] … 14. [[ch14-lab03-auth-digest-report|第十四章]] 15. **第十五章：实战实录四**
 
-# ONVIF 深度解析（十五）：实战实录四——lab04，Media Profile 与快照（框架）
+# ONVIF 深度解析（十五）：实战实录四——lab04，Media Profile 与快照
 
-实战篇按「先成文后实跑」推进（[[ch11-esp32s31-lab-plan|第十一章]] §11.4）：lab01 已上板验收通过（[[ch12-lab01-discovery-report|第十二章]]），**lab02–lab06 未实跑**。本章给第四站 lab04 先立框架——设计决策、应答模板、验收清单成文；所有依赖实测的数字与结论一律「（待实测回填）」，不把计划写成既成事实（SPEC §7 一票否决第 2 条）。工程契约见 [practice/onvif-labs/SPEC.md](/static/code/#/onvif-labs/SPEC.md)（[GitHub 源](https://github.com/hlwqds/hl-ljj-quartz/blob/v4/practice/onvif-labs/SPEC.md)）§6 lab04 节，关键三条逐字如下：
+实战篇按「先成文后实跑」推进（[[ch11-esp32s31-lab-plan|第十一章]] §11.4）：lab01 已上板验收通过（[[ch12-lab01-discovery-report|第十二章]]），lab02/lab03/lab04 已实跑（[[ch13-lab02-device-service-report|第十三章]]、[[ch14-lab03-auth-digest-report|第十四章]]与本章），lab05–lab06 未实跑。本章给第四站 lab04 成文并逐项上板对账——工程契约见 [practice/onvif-labs/SPEC.md](/static/code/#/onvif-labs/SPEC.md)（[GitHub 源](https://github.com/hlwqds/hl-ljj-quartz/blob/v4/practice/onvif-labs/SPEC.md)）§6 lab04 节，关键三条逐字如下：
 
 > GetProfiles 返回单一 profile（token 固定 `profile_1`，MJPEG 编码档）；GetSnapshotUri 指向 `/onvif-http/snapshot`。快照实现：从最新帧双缓冲拷贝最近一帧编码 JPEG。
 
@@ -96,9 +96,15 @@ GetSnapshotUri 的约定（请求 + 应答模板）：
 
 三点约定：
 
-- **Uri 动态拼**：应答时以 netif 实际 IPv4 现拼（lab01 XAddrs 同款纪律，SPEC §5 禁写死 IP）；上例 192.168.1.4 是 lab01 那轮 DHCP 的实值，仅作示意。路径 `/onvif-http/snapshot` 无扩展名——HTTP 世界里 Content-Type 才是身份，扩展名是装饰。
+- **Uri 动态拼**：应答时按请求 Host 头现拼（与 lab02 的 XAddr 同款回拼纪律，SPEC §5
+  禁写死 IP）——实测 zeep/curl 的 Host 头均不带默认端口，Uri 形态为
+  `http://192.168.1.4/onvif-http/snapshot`；上例的 `:80` 写法仅示意。路径
+  `/onvif-http/snapshot` 无扩展名——HTTP 世界里 Content-Type 才是身份，扩展名是装饰。
 - **语义字段**：InvalidAfterConnect/InvalidAfterReboot = false、Timeout = PT0S——URI 不失效、帧常新（快照无会话语义，ch06 §6.6）。
-- **未知 token**：回合规 SOAP Fault（子码按 media WSDL 的 fault 定义实现时定稿），样本归档 `runs/`。
+- **未知 token（实现时定稿）**：`s:Sender + ter:InvalidArgVal`——media WSDL 未定义具名
+  fault，子码取 [[ch03-soap-services|第三章]]判据表「传了不存在的 token」一行；HTTP 映射
+  按壳分：1.2 的 s:Sender → 400，1.1 Fault 一律 500（坑 6 HTTP 映射的设备端首次自用）。
+  样本已归档 `runs/fault-GetSnapshotUri-unknown-token.res.xml`（zeep 侧捕获）。
 
 ## 15.3 快照实现：零额外编码的最新帧语义
 
@@ -131,61 +137,108 @@ static esp_err_t onvif_snapshot_handler(httpd_req_t *req)
 
 一个诚实声明的鉴权边界：SOAP 侧的 GetProfiles/GetSnapshotUri 走 lab03 的摘要门，但快照本体是一次普通 HTTP GET，WS-Security 头无处安放。第一档按 [[ch11-esp32s31-lab-plan|第十一章]] §11.2 的边界表走内网明文实验形态（快照端点免鉴权直出），HTTP Digest 401 挑战与 TLS 一样列为后续增强、不进里程碑——商用形态必补，此处明示为已知边界，不做能力伪装。
 
-## 15.4 验收计划
+落地实态两处与草图的对账：① 接口定稿为基座新增
+`factory_stream_copy_latest(uint8_t *dst, size_t dst_max)`（返回拷贝字节数，首帧未就绪
+或缓冲不足返回 -1），消费者自带 300KiB 级 PSRAM 缓冲（`onvif_svc` 的 `s_snapshot`），
+与设计一致；② IDF 6.1 的 esp_http_server **没有 503 错误码枚举**——「首帧未就绪回
+503」改用 `httpd_resp_set_status("503 Service Unavailable")` 手工置状态行实现。
 
-验收四步，全部走完才算过站（SPEC §6 lab04 + §7 通用清单）：
+## 15.4 验收实录
 
-**① 板端证据**。沿用 lab01 的 run.log 纪律：每次快照 GET 落一行标记行 `$$$ ONVIF LAB04 SNAPSHOT bytes=<n>`，与宿主侧落地文件字节数两账互对；内存三件套在启动与 lab04 模块初始化后各打一轮，对 SPEC §4 红线。
+验收四步，全部走完（SPEC §6 lab04 + §7 通用清单；2026-10-26 实跑，板 IP=192.168.1.4
+本轮 DHCP）：
 
-**② curl 落地与完整性**：
+**① 板端证据** ✓。每次快照 GET 落一行 `$$$ ONVIF LAB04 SNAPSHOT bytes=<n>`，三张
+快照三对数字与宿主落地文件逐一相等（见 15.5）；内存三件套 t=8/t=70 两轮打点。
+
+**② curl 落地与完整性** ✓：
 
 ```bash
-# 落地一张快照（板 IP 以板端日志为准，DHCP 会变）
-curl -fsS -o snap.jpg http://192.168.1.4/onvif-http/snapshot
-
-# 格式与像素参数：与 profile 声明逐项对账（JPEG、640×480）
-file snap.jpg
-ffprobe -v error -select_streams v:0 \
-  -show_entries stream=codec_name,width,height -of default=nw=1 snap.jpg
-
-# 板宿两账互对：宿主字节数 ↔ run.log 标记行
-ls -l snap.jpg
+curl --noproxy '*' -fsS -o runs/snap-curl.jpg http://192.168.1.4/onvif-http/snapshot
+file runs/snap-curl.jpg            # JPEG image data, JFIF 1.01, precision 8, 640x480, components 3
+ffprobe -v error -select_streams v:0 -show_entries stream=codec_name,width,height \
+  -of default=nw=1 runs/snap-curl.jpg   # codec_name=mjpeg / width=640 / height=480
 grep 'ONVIF LAB04 SNAPSHOT' run.log | tail -3
 ```
 
-`file` 认格式（JPEG image data）、`ffprobe` 认像素参数（codec_name/width/height），读出的三项必须与 profile 声明逐项一致；字节数与标记行 `bytes=<n>` 相等。
+`file`/`ffprobe` 读出的三项与 profile 声明逐项一致（JPEG、640×480）；字节数与标记行
+`bytes=<n>` 相等（20,882 ↔ I(122943)、21,044 ↔ I(75569)、18,901 ↔ I(7340)）。
 
-**③ python-onvif 客户端冒烟**（[[ch09-interop-ecosystem|第九章]]的工具链，zeep 的严格反序列化是第一道验收）：
+**③ python-onvif 客户端冒烟** ✓（`runs/smoke-zeep.log` 5/5）：
 
 ```python
-from onvif import ONVIFCamera   # python-onvif-zeep，第九章工作流同款
-
-cam = ONVIFCamera('192.168.1.4', 80, 'user', 'pass', '/etc/onvif/wsdl/')
-media = cam.create_media_service()
-
-profiles = media.GetProfiles()   # 期望：恰好 1 个，token=profile_1
+media = cam.create_media_service()   # xaddr 取自 GetCapabilities 新增的 tt:Media
+profiles = media.GetProfiles()       # 恰好 1 个，token=profile_1
 uri = media.GetSnapshotUri({'ProfileToken': 'profile_1'})
-print([p.token for p in profiles], uri['Uri'])
+# uri.Uri == http://192.168.1.4/onvif-http/snapshot，GET 落地 18,901B 完整 JPEG
 ```
 
-期望：`profiles` 恰好一个、token 为 `profile_1`；拿到的 Uri 直接 GET 能落地同一张 JPEG。
+**④ 样本归档与坏 case** ✓。GetProfiles/GetSnapshotUri 应答原文
+（`runs/zeep-GetProfiles.res.xml` / `runs/zeep-GetSnapshotUri.res.xml`）；未知
+ProfileToken（zeep 侧，ter:InvalidArgVal）与无凭据 media 访问（1.1 手搓，HTTP 500 +
+`faultcode s:Receiver`/`ter:NotAuthorized`，板端 `AUTH deny reason=no_token`）各留
+Fault 样本；快照本体三张（zeep/curl×2）按字节数对账归档。
 
-**④ 样本归档与坏 case**。GetProfiles/GetSnapshotUri 的应答 XML 按操作名存 `runs/`（SPEC §7 加分项）；未知 ProfileToken、无凭据访问 SOAP 操作两个坏 case 各留一份 Fault 样本。
+## 15.5 实测记录
 
-## 15.5 实测记录（待实测回填）
+`run.log` 32.7KB（含快照补采标注段）入库（`practice/onvif-labs/lab04-media-snapshot/run.log`），
+宿主侧留样 23 件入 `runs/`。固件版本 `v4.5.2-78-g1cae212d-dirty`（版本串 hash 为构建
+时点提交，其后因凭据页清理被 amend 重写）。
 
-本节整节为占位。lab04 上板后按 15.4 清单回填；回填前，本章一切「将/计划」表述均不代表既成事实：
+**启动判据**：`SC101IOT` 识别 → `AUTH READY sntp=on` → `DISC JOIN ip=192.168.1.4` →
+`SVC READY http=192.168.1.4:80/onvif/device_service` → `SNTP synced` →
+`lab04 base ready (camera+stream+disc+svc+auth+media)`。
 
-- run.log 摘录（LAB04 标记行、内存三件套、与 lab01 锚点对账）：（待实测回填）
-- curl/file/ffprobe 实际输出（含多次 GET 的字节数分布）：（待实测回填）
-- python-onvif 返回对象与快照二次验证输出：（待实测回填）
-- 与 SPEC §6 lab04 验收项逐条对账的结论：（待实测回填）
+**快照三连对账**（活帧语义可见——逐帧字节数不同，三对数字逐一相等）：
+
+```text
+I (7340)   onvif_svc: $$$ ONVIF LAB04 SNAPSHOT bytes=18901   ↔ runs/snap-zeep.jpg  18901
+I (75569)  onvif_svc: $$$ ONVIF LAB04 SNAPSHOT bytes=21044   ↔ runs/snap-curl2.jpg 21044
+I (122943) onvif_svc: $$$ ONVIF LAB04 SNAPSHOT bytes=20882   ↔ runs/snap-curl.jpg  20882
+```
+
+**Bad case**：未知 ProfileToken → zeep 收到 `Fault('Unknown ProfileToken
+(ter:InvalidArgVal)')`（1.2 壳，HTTP 400 按壳映射；板端
+`OP GetSnapshotUri fault invalid-arg-val`）；无凭据 GetProfiles → HTTP 500 +
+`faultcode s:Receiver`/`ter:NotAuthorized`（板端 `AUTH deny reason=no_token user=-`）。
+
+**内存红线**：t=8 `free_dma=252067 free_spiram=11726116`、t=70
+`free_dma=252035 free_spiram=11726116`（Δ=32B）——300KB 快照缓冲全在 PSRAM（free_spiram
+相比 lab03 少约 30 万字节，正是 s_snapshot 的体量），内部 DMA 纹丝不动，红线 ≥170KB
+无压力。
+
+**计划外发现**（本轮三件）：
+
+1. **httpd URI 槽位满员**：基座 `max_uri_handlers = 4`（自己占 `/`、`/stream` 两条），
+   lab04 要挂 5 个新处理器，第一条 media 注册就 `no slots left`——且 onvif_svc_task
+   注册失败即退，`SVC READY` 不打，下游客症状是 zeep 报空 URL、curl 报 502（代理把
+   空 host 截走），离真因隔了两层。扩到 9 + 注册失败日志带 `esp_err_to_name` 错误码。
+   教训同 ch13「代码要过编译器」：**多处理器注册要对着槽位预算算**。
+2. **`-Werror=comment` 再咬一口**：头注释里写 `GET /onvif/*` ——注释内嵌 `/*`，与
+   ch13 首编同款错误第二次出现。这类坑值得进团队 lint 清单。
+3. **esp_http_server 无 503 枚举**：IDF 6.1 的错误码表到 414 为止，「无帧回 503」需
+   `httpd_resp_set_status` 手工置状态行（15.3 已注）。
+
+宿主侧环境事实（复现命令已按此写）：本机 shell 挂着 `http_proxy=127.0.0.1:7897`，
+curl 打内网 IP 必须 `--noproxy '*'`（否则 502——zeep 不受影响，onvif-zeep 构造时自己
+pop 掉代理变量）；`file` 命令本机没有，走 `nix shell nixpkgs#file`。
 
 ## 15.6 小结
 
-- lab04 是 [[ch05-media-profiles|第五章]]配置模型的最小可信落地：单 profile 静态模板（token=profile_1、JPEG 编码档 640×480），每个字段有出处、没有的能力不声明、未实现的操作回合规 Fault。
-- GetSnapshotUri 指向 80 端口 `/onvif-http/snapshot`，Uri 以 netif 实时 IP 现拼、禁写死；快照本体免鉴权直出是明示的内网实验形态边界（HTTP Digest 与 TLS 列为后续增强）。
-- 快照零额外编码：复用 lab01 最新帧双缓冲，锁内拷贝最近一帧成品 JPEG；新增缓冲一律 PSRAM——SPEC §4 红线对「快照拷贝」有逐字点名。
-- 验收三板斧：curl 落地 + `file`/`ffprobe` 完整性与声明对账、python-onvif 拿 Profile 与 SnapshotUri、`$$$ ONVIF LAB04 SNAPSHOT bytes=<n>` 标记行板宿互对；实测记录整节待回填。
+- lab04 是 [[ch05-media-profiles|第五章]]配置模型的最小可信落地：单 profile 静态模板
+  （token=profile_1、JPEG 640×480、Quality 80、15fps——与固件常量同源），zeep 严格
+  反序列化一次通过；没有的能力不声明、未实现的操作回合规 Fault。
+- GetSnapshotUri 的 Uri 按请求 Host 头回拼（禁写死）；未知 ProfileToken 定稿
+  s:Sender + ter:InvalidArgVal、HTTP 按壳映射 400/500；快照本体免鉴权直出是明示的
+  内网实验边界（HTTP Digest/TLS 列为后续增强）。
+- 快照零额外编码实测：`factory_stream_copy_latest()` 锁内拷贝 /stream 同源的最新
+  成品 JPEG，不碰 `frame_sem`；三张快照三对字节数板宿互对，`file`/`ffprobe` 与声明
+  逐项一致——[[ch05-media-profiles|第五章]] §5.4 的 ffprobe 对账纪律第一次用在自家
+  设备上。
+- GetCapabilities 按能力实态新增 tt:Media 小节（XAddr + StreamingCapabilities）——
+  onvif-zeep 的 `create_media_service()` 靠它收址；「能力应答只报真实存在的服务」
+  这回是加法而不是减法。
+- 内存红线无压力：free_dma ≈252KB（300KB 快照缓冲全在 PSRAM），上板新账三笔（URI
+  槽位满员、`-Werror=comment` 二进宫、esp_http_server 无 503 枚举）。
 
 一张静态的 JPEG 交了卷，下一章要交的是连续的画面：lab05 把 profile token 换成流——8554 端口自写 RTSP 信令（OPTIONS/DESCRIBE/SETUP/PLAY）、MJPEG 按 RFC 2435 封 RTP、ffplay/VLC 出图，板端 `frames_sent` 与宿主 JPEG EOI 计数逐帧对账，那是六个里程碑里全新代码最多的一站。[[ch16-lab05-rtsp-mjpeg-report|第十六章：实战实录五]]。

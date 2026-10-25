@@ -1,0 +1,66 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/*</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">*</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">* SPDX-License-Identifier: Apache-2.0</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">*/</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#pragma</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> once</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#include</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> &#x3C;stdio.h></span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#include</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> &#x3C;stdint.h></span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#include</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> &#x3C;sdkconfig.h></span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#include</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "mt9d111_regs.h"</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#include</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "mt9d111_types.h"</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> YUV422_UVYV</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> 0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">0000</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> RGB565_LE</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> 0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">0022</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> YUV422_YUYV</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> 0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">0002</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> RGB565_BE</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> 0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">0020</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifdef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> __cplusplus</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">extern</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "C"</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> {</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/** Soft Reset</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  * 1. Bypass the PLL, R0x65:0=0xA000, if it is currently used</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  * 2. Perform MCU reset by setting R0xC3:1=0x0501</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  * 3. Enable soft reset by setting R0x0D:0=0x0021. Bit 0 is used for</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  *    the sensor core reset while bit 5 refers to SOC reset.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  * 4. Disable soft reset by setting R0x0D:0=0x0000</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  * 5. Wait 24 clock cycles before using the two-wire serial interface</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">static</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> const</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> mt9d111_reginfo_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> mt9d111_soft_reset_regs</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">[]</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> =</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> {</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    // Reset</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    {MT9D111_REG_WRITE_PAGE, </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">0000</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">},</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">   // Page Register</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    {</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">65</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">, </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">A000</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">},</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">     // bypassed PLL (prepare for soft reset)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    {MT9D111_REG_WRITE_PAGE, </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">0001</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">},</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">   // Page Register</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    {</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">C3</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">, </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">0501</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">},</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">     // MCU_BOOT_MODE (MCU reset)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    {</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">C3</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">, </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">0500</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">},</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">     // MCU_BOOT_MODE (MCU reset)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    {MT9D111_REG_WRITE_PAGE, </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">0000</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">},</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">   // Page Register</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    {</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">0D</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">, </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">0021</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">},</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">     // RESET_REG (enable soft reset)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    {</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">0D</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">, </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">0000</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">},</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">     // RESET_REG (disable soft reset)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    {MT9D111_REG_DELAY, </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">10</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">},</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//DELAY=10</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">};</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#include</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "mt9d111_dvp_8bit_20Minput_320x240_rgb565_be_10fps.h"</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#include</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "mt9d111_dvp_8bit_20Minput_320x240_rgb565_le_10fps.h"</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#include</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "mt9d111_dvp_8bit_20Minput_800x600_rgb565_be_10fps.h"</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#include</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "mt9d111_dvp_8bit_20Minput_800x600_rgb565_le_10fps.h"</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#include</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "mt9d111_dvp_8bit_20Minput_800x600_yuv422_uyvy_8fps.h"</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#include</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "mt9d111_dvp_8bit_20Minput_800x600_yuv422_yuyv_8fps.h"</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#include</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "mt9d111_dvp_8bit_20Minput_800x600_yuv422_uyvy_14fps.h"</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#include</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "mt9d111_dvp_8bit_20Minput_800x600_yuv422_yuyv_14fps.h"</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#include</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "mt9d111_dvp_8bit_24Minput_800x600_yuv422_uyvy_16fps.h"</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#include</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "mt9d111_dvp_8bit_24Minput_800x600_yuv422_yuyv_16fps.h"</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifdef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> __cplusplus</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">}</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span></code></pre>

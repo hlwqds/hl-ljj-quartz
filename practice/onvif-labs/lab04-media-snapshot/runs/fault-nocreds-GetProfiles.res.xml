@@ -1,0 +1,1 @@
+<?xml version="1.0" encoding="utf-8"?><s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" xmlns:tds="http://www.onvif.org/ver10/device/wsdl" xmlns:tt="http://www.onvif.org/ver10/schema"><s:Body><s:Fault><s:faultcode>s:Receiver</s:faultcode><s:faultstring>ter:NotAuthorized: sender not authorized</s:faultstring></s:Fault></s:Body></s:Envelope>
