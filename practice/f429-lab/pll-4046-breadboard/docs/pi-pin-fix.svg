@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="420" font-family="sans-serif">
+<rect width="880" height="420" fill="#fafafa"/>
+<text x="440" y="30" font-size="18" font-weight="bold" text-anchor="middle">树莓派排针特写：探针线挪针图（方焊盘=脚1 在左侧 SD 卡端）</text>
+<rect x="60" y="70" width="700" height="300" fill="#2e7d32" rx="10" stroke="#1b5e20" stroke-width="2"/>
+<text x="80" y="95" fill="#c8e6c9" font-size="13">树莓派 4B PCB（俯视·SD卡槽在这一端）</text>
+<text x="80" y="115" fill="#a5d6a7" font-size="11">背面方形焊盘对应的角 = 脚1 在这个角上</text>
+<circle cx="150" cy="165" r="19" fill="#e53935" stroke="#263238" stroke-width="3"/>
+<text x="150" y="166" font-size="14" font-weight="bold" text-anchor="middle" fill="#fff" dominant-baseline="middle">1</text>
+<text x="150" y="207" font-size="11" text-anchor="middle" fill="#333">1·3.3V</text>
+<circle cx="200" cy="165" r="19" fill="#90a4ae" stroke="#263238" stroke-width="3"/>
+<text x="200" y="166" font-size="14" font-weight="bold" text-anchor="middle" fill="#fff" dominant-baseline="middle">3</text>
+<text x="200" y="207" font-size="11" text-anchor="middle" fill="#333">3·I2C</text>
+<circle cx="250" cy="165" r="19" fill="#90a4ae" stroke="#263238" stroke-width="3"/>
+<text x="250" y="166" font-size="14" font-weight="bold" text-anchor="middle" fill="#fff" dominant-baseline="middle">5</text>
+<text x="250" y="207" font-size="11" text-anchor="middle" fill="#333">5·I2C</text>
+<circle cx="300" cy="165" r="19" fill="#ff9800" stroke="#263238" stroke-width="3"/>
+<text x="300" y="166" font-size="14" font-weight="bold" text-anchor="middle" fill="#fff" dominant-baseline="middle">7</text>
+<text x="300" y="207" font-size="11" text-anchor="middle" fill="#333">7·GPIO4</text>
+<circle cx="350" cy="165" r="19" fill="#455a64" stroke="#263238" stroke-width="3"/>
+<text x="350" y="166" font-size="14" font-weight="bold" text-anchor="middle" fill="#fff" dominant-baseline="middle">9</text>
+<text x="350" y="207" font-size="11" text-anchor="middle" fill="#333">9·GND</text>
+<circle cx="400" cy="165" r="19" fill="#43a047" stroke="#263238" stroke-width="3"/>
+<text x="400" y="166" font-size="14" font-weight="bold" text-anchor="middle" fill="#fff" dominant-baseline="middle">11</text>
+<text x="400" y="207" font-size="11" text-anchor="middle" fill="#333">11·GPIO17</text>
+<circle cx="450" cy="165" r="19" fill="#90a4ae" stroke="#263238" stroke-width="3"/>
+<text x="450" y="166" font-size="14" font-weight="bold" text-anchor="middle" fill="#fff" dominant-baseline="middle">13</text>
+<text x="450" y="207" font-size="11" text-anchor="middle" fill="#333">13·GPIO27</text>
+<circle cx="150" cy="255" r="19" fill="#e53935" stroke="#263238" stroke-width="3"/>
+<text x="150" y="256" font-size="14" font-weight="bold" text-anchor="middle" fill="#fff" dominant-baseline="middle">2</text>
+<text x="150" y="223" font-size="11" text-anchor="middle" fill="#333">2·5V</text>
+<circle cx="200" cy="255" r="19" fill="#e53935" stroke="#263238" stroke-width="3"/>
+<text x="200" y="256" font-size="14" font-weight="bold" text-anchor="middle" fill="#fff" dominant-baseline="middle">4</text>
+<text x="200" y="223" font-size="11" text-anchor="middle" fill="#333">4·5V·风扇红</text>
+<circle cx="250" cy="255" r="19" fill="#455a64" stroke="#263238" stroke-width="3"/>
+<text x="250" y="256" font-size="14" font-weight="bold" text-anchor="middle" fill="#fff" dominant-baseline="middle">6</text>
+<text x="250" y="223" font-size="11" text-anchor="middle" fill="#333">6·GND·风扇黑</text>
+<circle cx="300" cy="255" r="19" fill="#90a4ae" stroke="#263238" stroke-width="3"/>
+<text x="300" y="256" font-size="14" font-weight="bold" text-anchor="middle" fill="#fff" dominant-baseline="middle">8</text>
+<text x="300" y="223" font-size="11" text-anchor="middle" fill="#333">8·UART</text>
+<circle cx="350" cy="255" r="19" fill="#90a4ae" stroke="#263238" stroke-width="3"/>
+<text x="350" y="256" font-size="14" font-weight="bold" text-anchor="middle" fill="#fff" dominant-baseline="middle">10</text>
+<text x="350" y="223" font-size="11" text-anchor="middle" fill="#333">10·UART</text>
+<circle cx="400" cy="255" r="19" fill="#90a4ae" stroke="#263238" stroke-width="3"/>
+<text x="400" y="256" font-size="14" font-weight="bold" text-anchor="middle" fill="#fff" dominant-baseline="middle">12</text>
+<text x="400" y="223" font-size="11" text-anchor="middle" fill="#333">12·GPIO18</text>
+<circle cx="300" cy="165" r="27" fill="none" stroke="#f57c00" stroke-width="4" stroke-dasharray="6,4"/>
+<text x="300" y="120" font-size="14" font-weight="bold" text-anchor="middle" fill="#e65100">✗ 探针线现在这（GPIO4）</text>
+<circle cx="400" cy="165" r="27" fill="none" stroke="#2e7d32" stroke-width="4"/>
+<text x="400" y="120" font-size="14" font-weight="bold" text-anchor="middle" fill="#1b5e20">✓ 挪到这里（GPIO17）</text>
+<path d="M 330 95 Q 350.0 60 370 95" fill="none" stroke="#1565c0" stroke-width="5" marker-end="url(#arr)"/>
+<text x="350.0" y="53" font-size="13" font-weight="bold" text-anchor="middle" fill="#1565c0">往 USB 方向挪 2 格（跳过脚9 GND）</text>
+<defs><marker id="arr" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L9,3 L0,6 Z" fill="#1565c0"/></marker></defs>
+<text x="80" y="345" font-size="12" fill="#333">■ 红圈=电源(3.3V/5V)  ■ 深灰=GND  ■ 浅灰=其他功能  ■ 橙=GPIO4  ■ 绿=GPIO17(频率计用的针)</text>
+<text x="80" y="368" font-size="12" fill="#333">风扇在【外排 脚4/脚6】上——5V电源针不是GPIO，软件读不到，与本次排查无关</text>
+<text x="80" y="391" font-size="12" fill="#1565c0">操作：只动探针线的 Pi 端，从内排✗圈挪到✓圈。面包板端保持插在列2(GND)等我验证。</text>
+</svg>

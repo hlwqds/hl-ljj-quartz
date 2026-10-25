@@ -51,7 +51,7 @@ def main():
         while True:
             time.sleep(args.gate)  # 闸门：期间 daemon 在后台累加该脚的上升沿计数
             edges = cb.tally()     # 读走闸门内的上升沿总数
-            cb.reset()             # 清零，下一轮从 0 起算
+            cb.reset_tally()       # 清零，下一轮从 0 起算
             f = edges / args.gate
             freqs.append(f)
             avg = sum(freqs) / len(freqs)
