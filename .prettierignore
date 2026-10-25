@@ -6,3 +6,7 @@ quartz/static/clock-animation
 quartz/static/clock-system
 .zcode
 *.svg
+
+# ONVIF 实验室 vendored 组件（esp32_s31_korvo/esp_cam_sensor/esp_lvgl_adapter
+# 上游第三方源码与文档，不做格式整形；自身文件见各 lab 的 patches 说明）
+practice/onvif-labs/*/components/

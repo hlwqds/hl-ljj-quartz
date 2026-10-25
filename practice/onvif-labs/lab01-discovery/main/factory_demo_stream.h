@@ -1,0 +1,58 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#pragma once
+
+#include <stdint.h>
+#include "bsp/esp32_s31_korvo.h"
+#include "esp_err.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**
+ * @brief Snapshot of the streaming metrics (also served by GET /status).
+ */
+typedef struct {
+    uint32_t frames_encoded;    /*!< frames pushed through the hardware JPEG encoder */
+    uint32_t frames_sent;       /*!< JPEG parts delivered to /stream clients */
+    uint32_t last_jpeg_bytes;   /*!< byte size of the newest JPEG frame */
+    double avg_encode_ms;       /*!< average PPA + JPEG encode time per frame, in ms */
+    int wifi_rssi;              /*!< station RSSI in dBm, 0 when not associated */
+    char ip[16];                /**< station IP, empty string when not connected */
+} factory_stream_status_t;
+
+/**
+ * @brief Fill a snapshot of the streaming metrics, safe from any task.
+ */
+void factory_stream_get_status(factory_stream_status_t *out);
+
+/**
+ * @brief Bring up WiFi STA and the MJPEG streaming pipeline.
+ *
+ * Allocates the hardware JPEG encoder, the PPA color conversion client and
+ * their PSRAM buffers, then starts the WiFi station asynchronously so the
+ * factory UI boot is not blocked. The HTTP servers are started from the
+ * IP_EVENT_STA_GOT_IP handler once an address is available.
+ *
+ * @return ESP_OK on success, otherwise an ESP-IDF error code.
+ */
+esp_err_t factory_stream_init(void);
+
+/**
+ * @brief Encode and publish one camera frame (latest-frame semantics).
+ *
+ * Called inline from the camera frame loop between preview rendering and
+ * bsp_camera_return_frame(). Converts the frame to RGB565 with PPA, encodes
+ * it with the hardware JPEG engine and publishes it as the newest frame for
+ * the HTTP stream subscribers. Slow subscribers simply skip frames.
+ */
+void factory_stream_submit_frame(const bsp_camera_format_t *format, const bsp_camera_frame_t *frame);
+
+#ifdef __cplusplus
+}
+#endif

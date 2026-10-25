@@ -1,0 +1,11 @@
+<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope" xmlns:tds="http://www.onvif.org/ver10/device/wsdl" xmlns:tt="http://www.onvif.org/ver10/schema">
+  <s:Body>
+    <tds:GetDeviceInformationResponse>
+      <tds:Manufacturer>Espressif</tds:Manufacturer>
+      <tds:Model>ESP32-S31-Korvo-1 ONVIF Lab</tds:Model>
+      <tds:FirmwareVersion>v4.5.2-77-gf46e24ab-dirty</tds:FirmwareVersion>
+      <tds:SerialNumber>1c2904d072e8</tds:SerialNumber>
+      <tds:HardwareId>ESP32-S31</tds:HardwareId>
+    </tds:GetDeviceInformationResponse>
+  </s:Body>
+</s:Envelope>

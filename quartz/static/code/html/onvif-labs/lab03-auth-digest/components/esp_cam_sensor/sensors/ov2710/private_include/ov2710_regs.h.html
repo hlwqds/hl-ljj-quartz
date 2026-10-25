@@ -1,0 +1,35 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/*</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * SPDX-License-Identifier: Apache-2.0</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/*</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * OV2710 register definitions.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#pragma</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> once</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifdef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> __cplusplus</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">extern</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "C"</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> {</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> OV2710_REG_END</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">      0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">ffff</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> OV2710_REG_DELAY</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">fffe</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/* ov2710 registers */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> OV2710_REG_SENSOR_ID_H</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">             0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">300a</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> OV2710_REG_SENSOR_ID_L</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">             0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">300b</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> OV2710_REG_RED_BEFORE_GAIN_AVERAGE</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">      0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">5196</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /* R Bit[7:0]: Before AWB gain's red data average*/</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> OV2710_REG_GREEN_BEFORE_GAIN_AVERAGE</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">5197</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /* R Bit[7:0]: Before AWB gain's green data average*/</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> OV2710_REG_BLUE_BEFORE_GAIN_AVERAGE</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">     0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">5198</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /* R Bit[7:0]: Before AWB gain's blue data average*/</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> OV2710_REG_AEC_AGC_ADJ_MSB</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">              0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">350A</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> OV2710_REG_AEC_AGC_ADJ_LSB</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">              0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">350B</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> OV2710_REG_AEC_EXPO_H</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">                   0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">3500</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> OV2710_REG_AEC_EXPO_M</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">                   0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">3501</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> OV2710_REG_AEC_EXPO_L</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">                   0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">3502</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifdef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> __cplusplus</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">}</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span></code></pre>

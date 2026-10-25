@@ -1,0 +1,2 @@
+$$$ HOST LAB03 AUTH probe case=getusers-hostclock-host-clock-skew-redo created=2026-10-25T17:40:54Z mode=host-clock
+$$$ HOST LAB03 AUTH probe send#1 http=500 -> DENY ter:NotAuthorized

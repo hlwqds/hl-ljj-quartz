@@ -83,6 +83,13 @@ practice/hwbasics/*/build*/
 practice/f429-lab/*/build*/
 practice/f429-lab/*/*.elf
 practice/f429-lab/*/*.bin
+# ONVIF 设备端实验室（practice/onvif-labs/labNN-*，两层深）
+practice/onvif-labs/*/build*/
+practice/onvif-labs/*/managed_components/
+practice/onvif-labs/*/sdkconfig
+practice/onvif-labs/*/sdkconfig.old
+practice/onvif-labs/*/main/wifi_secrets.h
+practice/onvif-labs/*/main/onvif_secrets.h
 .mimosa/
 qemu.pid
 
@@ -90,3 +97,6 @@ qemu.pid
 
 # 浏览器调试产物
 .playwright-mcp/
+
+# 环境噪音：本机视频代理工作目录（含指向 ~/.zcode 插件缓存的符号链接）
+.video_agent/

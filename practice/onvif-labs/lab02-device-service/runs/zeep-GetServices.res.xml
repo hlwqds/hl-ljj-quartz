@@ -1,0 +1,14 @@
+<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope" xmlns:tds="http://www.onvif.org/ver10/device/wsdl" xmlns:tt="http://www.onvif.org/ver10/schema">
+  <s:Body>
+    <tds:GetServicesResponse>
+      <tds:Service>
+        <tds:Namespace>http://www.onvif.org/ver10/device/wsdl</tds:Namespace>
+        <tds:XAddr>http://192.168.1.4/onvif/device_service</tds:XAddr>
+        <tds:Version>
+          <tt:Major>10</tt:Major>
+          <tt:Minor>12</tt:Minor>
+        </tds:Version>
+      </tds:Service>
+    </tds:GetServicesResponse>
+  </s:Body>
+</s:Envelope>

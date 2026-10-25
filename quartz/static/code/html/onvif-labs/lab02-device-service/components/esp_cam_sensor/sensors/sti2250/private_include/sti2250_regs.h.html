@@ -1,0 +1,32 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/*</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * SPDX-License-Identifier: Apache-2.0</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/*</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * STI2250 register definitions.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#pragma</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> once</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifdef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> __cplusplus</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">extern</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "C"</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> {</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/* sti2250 registers */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> STI2250_REG_DELAY</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">               0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">f9</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> STI2250_REG_CHIP_ID_H</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">           0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">c6</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> STI2250_REG_CHIP_ID_L</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">           0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">c7</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> STI2250_REG_RESET_RELATED</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">       0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">f2</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> STI2250_REG_PAGE_SELECT</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">         0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">fd</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> STI2250_REG_SYSTEM</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">              0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">fe</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> STI2250_REG_EV_UPDATE</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">           0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">12</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> // page0</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> STI2250_REG_EXP_H</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">               0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">2d</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> // page0</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> STI2250_REG_EXP_L</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">               0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">2c</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> // page0</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> STI2250_REG_A_GAIN_FINE</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">         0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">8a</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> // page0</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> STI2250_REG_A_GAIN_COARSE</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">       0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">2e</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> // page0</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifdef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> __cplusplus</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">}</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span></code></pre>

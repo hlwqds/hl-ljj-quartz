@@ -1,0 +1,112 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold"># ChangeLog</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## v0.5.3 (2026-06-22)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Set DMA2D burst size to 128 bytes for maximum PSRAM throughput on IDF >= 6.2</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Fix flash encryption API version guard: use </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`esp_efuse_is_flash_encryption_enabled()`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> on IDF >= 6.0, </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`esp_flash_encryption_enabled()`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> on older versions</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Fix </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`bootloader_support`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> CMake dependency: only link on IDF &#x3C; 6.0; add </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`esp_driver_dma`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> for IDF >= 6.2</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Mark auto sleep state as </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`volatile`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> to prevent compiler optimization across task/ISR boundaries</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## v0.5.2 (2026-06-09)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Add LVGL v9 PPA acceleration for RGB888 displays: ARGB8888 per-pixel alpha blend and opaque fill paths; opaque RGB565/RGB888 images fall back to CPU to preserve tiled image rendering</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Fix framebuffer cache sync to use the destination pixel size (2 for RGB565, 3 for RGB888) instead of </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`sizeof(lv_color_t)`</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Guard PPA source bounds on the custom-handler path to avoid reads outside the source image</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Add bypass mode for adapter-managed ESP-IDF LCD and touch callbacks with public </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`notify_from_isr`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> entry points</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Fix TE vsync wait deadlock by replacing </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`portMAX_DELAY`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> with a bounded timeout (6× TE period, clamped to [20ms, 1000ms])</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Fix stale DMA completion race by moving </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`ulTaskNotifyValueClear()`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> before </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`esp_lcd_panel_draw_bitmap()`</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Add </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`CONFIG_ESP_LVGL_ADAPTER_FREETYPE_MINIMAL_BUILD`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> to reduce FreeType flash footprint</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Fix IRAM coverage of </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`from_isr`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> display and touch notification call chain</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Add LVGL v9 multi-control touch mode for independent control of discrete widgets, plus parameter validation and cleanup handling updates</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## v0.5.1 (2026-05-21)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Add optional FreeType render pool reduction for lower stack usage</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Add optional LVGL FreeRTOS thread stack allocation in PSRAM</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Relax LVGL v9's conservative 32KB FreeType draw-stack diagnostic when the small render pool is enabled</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Simplify optional dependency linking with </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`idf_component_optional_requires`</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## v0.5.0 (2026-05-09)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Add draw bitmap and touch callback hooks for external display/input adaptation</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Improve cache synchronization for accelerated display paths</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Update the PPA hang workaround patch and documentation for ESP-IDF </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`tags/v6.0`</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## v0.4.3 (2026-04-03)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Fix </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`pause()`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> / </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`resume()`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> handling so the internal </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`LVGL tick`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> timer is stopped during pause and restarted during resume</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Update sleep management documentation for tickless auto Light Sleep usage</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## v0.4.2 (2026-03-31)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Add </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`ESP_LV_ADAPTER_TEAR_AVOID_MODE_DOUBLE_PARTIAL`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> for double-buffer partial refresh</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Add </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`ESP_LVGL_ADAPTER_PARTIAL_AUX_IMG_CACHE`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> to increase LVGL image cache in partial tear-avoid modes</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## v0.4.1 (2026-03-12)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Fix refresh issue when LV_DRAW_BUF_STRIDE_ALIGN > 1 in LVGL v9 bridge</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Fix resource leaks and use-after-free risks in deinit path (flush-wait, task stack, VSync callbacks, lv_deinit)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## v0.4.0 (2026-02-11)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Add multi-touch adaptation support</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Add ESP-IDF v6.0 compatibility updates</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## v0.3.2 (2026-01-22)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Fix C++ designated initializer order in SPI-with-PSRAM display profile macros</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## v0.3.1 (2026-01-07)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Fix monochrome SPI default display macro to use the correct profile macro</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## v0.3.0 (2026-01-07)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Added monochrome display support for LVGL v8 and v9</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Add migration guide from esp_lvgl_port to esp_lvgl_adapter</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Reverted conditional dependency management</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## v0.2.0 (2025-12-24)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Optimized dependency management by adding conditional rules for optional dependencies</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## v0.1.4 (2025-12-22)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Fixed the LVGL naming compatibility dependency issue</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## v0.1.3 (2025-12-16)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Fixed the issue with 180-degree rotation</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## v0.1.2 (2025-12-12)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Prevent deadlock when pausing the adapter from the LVGL worker</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## v0.1.1 (2025-12-10)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Improved the screen update failure handling mechanism</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## v0.1.0 (2025-11-17)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Add a sleep mechanism compatible with Light Sleep</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Add a TE-based anti-tearing mechanism</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## v0.1.0-beta.2 (2025-11-4)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Fix a crash that occurred in some cases when PPA acceleration was enabled</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## v0.1.0-beta.1 (2025-10-27)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Support for LVGL v8.x and v9.x with unified API</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Unified display registration for MIPI DSI, RGB, QSPI, SPI, I2C, I80 interfaces</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Multiple buffering modes and screen rotation support (0°/90°/180°/270°)</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Tearing effect avoidance for RGB and MIPI DSI displays</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> PPA hardware acceleration support for ESP32-P4</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Thread-safe LVGL access with lock/unlock APIs</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Input device support: touch screen, button navigation, rotary encoder</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Optional filesystem bridge integration (esp_lv_fs)</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Optional image decoder support (esp_lv_decoder)</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Optional FreeType font rendering support</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> FPS statistics and Dummy Draw mode</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> API naming aligned with esp_lv_decoder and esp_lv_fs for consistency</span></span>
+<span class="line"></span></code></pre>

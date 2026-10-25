@@ -1,0 +1,247 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold"># Migration Guide: esp_lvgl_port -> esp_lvgl_adapter</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">This document helps you migrate projects from </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`esp_lvgl_port`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> to </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`esp_lvgl_adapter`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">, highlighting API changes, configuration differences, and additional features provided by the adapter.</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## Scope</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> ESP-IDF >= 5.5</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> LVGL v8 or v9</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> `esp_lcd`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> / </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`esp_lcd_touch`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> based drivers</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## What the Adapter Adds</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">Compared to </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`esp_lvgl_port`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">, the adapter provides:</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Unified display registration for MIPI DSI / RGB / SPI / I2C / I80 / QSPI.</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Tearing avoidance modes and TE synchronization support (interface-specific).</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Thread-safe LVGL access (</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`esp_lv_adapter_lock()`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> / </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`esp_lv_adapter_unlock()`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">).</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Sleep prepare/recover to detach and rebind LCD hardware without losing UI state.</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Optional modules: filesystem bridge, image decoder, FreeType fonts.</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> FPS statistics and Dummy Draw options.</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Multi-display management in one runtime.</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## Migration Steps</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">### 1) Replace Component Dependencies</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">Update </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`idf_component.yml`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">:</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```yaml</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">dependencies:</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  espressif/esp_lvgl_adapter: "*"</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  # remove: espressif/esp_lvgl_port</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">Optional dependencies (enable only if needed):</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> `espressif/button`</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> `espressif/knob`</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> `espressif/esp_lv_fs`</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> `espressif/esp_lv_decoder`</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> LVGL FreeType support (see Kconfig in this component)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">### 2) Kconfig Changes</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`esp_lvgl_port`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> had </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`LVGL_PORT_ENABLE_PPA`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">. In the adapter, PPA usage is controlled per display via </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`profile.enable_ppa_accel`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">.</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">Adapter options (enable as needed):</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> `CONFIG_ESP_LVGL_ADAPTER_ENABLE_BUTTON`</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> `CONFIG_ESP_LVGL_ADAPTER_ENABLE_KNOB`</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> `CONFIG_ESP_LVGL_ADAPTER_ENABLE_FS`</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> `CONFIG_ESP_LVGL_ADAPTER_ENABLE_DECODER`</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> `CONFIG_ESP_LVGL_ADAPTER_ENABLE_FREETYPE`</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> `CONFIG_ESP_LVGL_ADAPTER_ENABLE_FPS_STATS`</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">### 3) Initialization</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**Old:**</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```c</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">const</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> lvgl_port_cfg_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> cfg </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> ESP_LVGL_PORT_INIT_CONFIG</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">();</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">ESP_ERROR_CHECK</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">lvgl_port_init</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">&#x26;</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">cfg</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">));</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**New:**</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```c</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">esp_lv_adapter_config_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> cfg </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> ESP_LV_ADAPTER_DEFAULT_CONFIG</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">();</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">ESP_ERROR_CHECK</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">esp_lv_adapter_init</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">&#x26;</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">cfg</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">));</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">ESP_ERROR_CHECK</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">esp_lv_adapter_start</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">());</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">Common field mapping:</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| lvgl_port_cfg_t | esp_lv_adapter_config_t | Notes |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| --- | --- | --- |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| task_priority | task_priority | Task priority |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| task_stack | task_stack_size | Stack size (bytes) |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| task_affinity | task_core_id | Core affinity |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| timer_period_ms | tick_period_ms | LVGL tick period |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| task_max_sleep_ms | task_max_delay_ms | Max task delay |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| task_stack_caps | stack_in_psram | No direct mapping; adapter uses a boolean |</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`esp_lv_adapter_config_t`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> also adds </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`task_min_delay_ms`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> (keep defaults unless you have a reason to tune).</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">### 4) Display Registration</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">#### 4.1 Select Interface and Tearing Mode</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">RGB/MIPI DSI require </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`num_fbs`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> before LCD init. Compute it using the adapter API:</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```c</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">esp_lv_adapter_tear_avoid_mode_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> tear_mode </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> ESP_LV_ADAPTER_TEAR_AVOID_MODE_DEFAULT_RGB;</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">esp_lv_adapter_rotation_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> rotation </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> ESP_LV_ADAPTER_ROTATE_0;</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">uint8_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> num_fbs </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> esp_lv_adapter_get_required_frame_buffer_count</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(tear_mode, rotation);</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">// Pass num_fbs into esp_lcd panel config</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">#### 4.2 Config Structure Changes</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**Old focus (port):**</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> `buffer_size`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> in pixels</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> `double_buffer`</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> `rotation.swap_xy / mirror_x / mirror_y`</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> `flags`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> (DMA, PSRAM, direct mode, full refresh, swap bytes)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**New focus (adapter):**</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> `profile.buffer_height`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> (stripe height for LVGL draw buffer)</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> `profile.use_psram`</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> `profile.require_double_buffer`</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> `tear_avoid_mode`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> (buffering strategy and refresh behavior)</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> `te_sync`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> (TE-based sync for SPI/I80/QSPI)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**Recommendation:**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> use the provided </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`ESP_LV_ADAPTER_DISPLAY_*_DEFAULT_CONFIG(...)`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> macros as-is. Avoid modifying the generated struct unless you have a clear, documented reason. This prevents missing required defaults and keeps configurations aligned with supported interfaces.</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">Conversion helper:</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">buffer_height = buffer_size / hor_res</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">#### 4.3 Example: SPI/I2C/I80/QSPI</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**Old:**</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```c</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">const</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> lvgl_port_display_cfg_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> disp_cfg </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> {</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    .io_handle </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> io_handle,</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    .panel_handle </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> panel_handle,</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    .buffer_size </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> HRES </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">*</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 50</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">,</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    .double_buffer </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> true</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">,</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    .hres </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> HRES,</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    .vres </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> VRES,</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    .flags </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> { .buff_dma </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> true</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> },</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">};</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">lv_display_t</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> *</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">disp </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> lvgl_port_add_disp</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">&#x26;</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">disp_cfg</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">);</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**New:**</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```c</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">esp_lv_adapter_display_config_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> disp_cfg </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">    ESP_LV_ADAPTER_DISPLAY_SPI_WITH_PSRAM_DEFAULT_CONFIG</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(panel_handle, io_handle, HRES, VRES, ESP_LV_ADAPTER_ROTATE_0);</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">lv_display_t</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> *</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">disp </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> esp_lv_adapter_register_display</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">&#x26;</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">disp_cfg</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">);</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">#### 4.4 Example: RGB / MIPI DSI</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**Old:**</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```c</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">lv_display_t</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> *</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">disp </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> lvgl_port_add_disp_rgb</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">&#x26;</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">disp_cfg</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">, </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">&#x26;</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">rgb_cfg</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">);</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**New:**</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```c</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">esp_lv_adapter_display_config_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> disp_cfg </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">    ESP_LV_ADAPTER_DISPLAY_RGB_DEFAULT_CONFIG</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(panel_handle, io_handle, HRES, VRES, ESP_LV_ADAPTER_ROTATE_0);</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">disp_cfg.tear_avoid_mode </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> ESP_LV_ADAPTER_TEAR_AVOID_MODE_TRIPLE_PARTIAL;</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">lv_display_t</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> *</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">disp </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> esp_lv_adapter_register_display</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">&#x26;</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">disp_cfg</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">);</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">### 5) Input Devices</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**Touch:**</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```c</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">esp_lv_adapter_touch_config_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> touch_cfg </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> ESP_LV_ADAPTER_TOUCH_DEFAULT_CONFIG</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(disp, tp);</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">lv_indev_t</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> *</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">touch </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> esp_lv_adapter_register_touch</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">&#x26;</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">touch_cfg</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">);</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**Buttons / Encoder:**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> enable Kconfig options first.</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> `lvgl_port_add_navigation_buttons()`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> -> </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`esp_lv_adapter_register_navigation_buttons()`</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> `lvgl_port_add_encoder()`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> -> </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`esp_lv_adapter_register_encoder()`</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">### 6) Thread Safety and Refresh</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**Old:**</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```c</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">if</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> (</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">lvgl_port_lock</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)) {</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* LVGL calls */</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> lvgl_port_unlock</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(); }</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**New:**</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```c</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">if</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> (</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">esp_lv_adapter_lock</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">-</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">==</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> ESP_OK) {</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* LVGL calls */</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> esp_lv_adapter_unlock</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(); }</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">Immediate refresh is available via </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`esp_lv_adapter_refresh_now()`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">.</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">### 7) Sleep / Resource Detach</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">The adapter supports preserving UI state while releasing LCD resources:</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> `esp_lv_adapter_sleep_prepare()`</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> `esp_lv_adapter_sleep_recover()`</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">This is useful when you need to call </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`esp_lcd_panel_del()`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> and later rebind.</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## API Mapping</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| esp_lvgl_port | esp_lvgl_adapter |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| --- | --- |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| lvgl_port_init | esp_lv_adapter_init + esp_lv_adapter_start |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| lvgl_port_deinit | esp_lv_adapter_deinit |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| lvgl_port_lock / unlock | esp_lv_adapter_lock / unlock |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| lvgl_port_add_disp | esp_lv_adapter_register_display |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| lvgl_port_add_disp_rgb | esp_lv_adapter_register_display + RGB profile |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| lvgl_port_add_disp_dsi | esp_lv_adapter_register_display + MIPI profile |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| lvgl_port_remove_disp | esp_lv_adapter_unregister_display |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| lvgl_port_add_touch | esp_lv_adapter_register_touch |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| lvgl_port_remove_touch | esp_lv_adapter_unregister_touch |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| lvgl_port_add_navigation_buttons | esp_lv_adapter_register_navigation_buttons |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| lvgl_port_add_encoder | esp_lv_adapter_register_encoder |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| lvgl_port_stop / resume | esp_lv_adapter_pause / resume |</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`lvgl_port_task_wake()`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> and </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`lvgl_port_flush_ready()`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> have no direct equivalent; the adapter manages LVGL task wakeups and flush lifecycle internally.</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## BSP Migration Notes</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">Most BSPs in </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`esp-bsp`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> use </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`lvgl_port_add_disp()`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> / </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`lvgl_port_add_touch()`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">:</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Replace BSP display init with adapter init + display registration + </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`esp_lv_adapter_start()`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">.</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Replace BSP lock/unlock with adapter lock/unlock.</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> For RGB/MIPI DSI BSPs, compute </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`num_fbs`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> using </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`esp_lv_adapter_get_required_frame_buffer_count()`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> and pass it into panel config.</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">Start with a generic BSP (for example, </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`esp_bsp_generic`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">) to validate the migration before applying the pattern to board-specific BSPs.</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## Pitfalls and Checks</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> RGB/MIPI DSI with </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`TEAR_AVOID_MODE_NONE`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> does not allow rotation.</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> `buffer_height`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> too small hurts performance; too large consumes RAM.</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> For TE sync on SPI/I80/QSPI, connect the panel TE pin to a GPIO and configure </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`te_sync`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">.</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Touch scaling/rotation must match LCD orientation (swap XY/mirror settings).</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> `lvgl_port_lock(0)`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> was an infinite wait; use </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`esp_lv_adapter_lock(-1)`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> for the same behavior.</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## Post-Migration Checklist</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Run LVGL demos/benchmarks to verify rendering and input.</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> If tearing or stutter appears, re-check </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`tear_avoid_mode`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> and </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`num_fbs`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">.</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> Verify that optional modules (FS/decoder/FreeType/FPS stats) are enabled only when needed.</span></span>
+<span class="line"></span></code></pre>

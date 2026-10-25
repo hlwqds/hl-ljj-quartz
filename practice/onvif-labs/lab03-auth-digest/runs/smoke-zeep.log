@@ -1,0 +1,4 @@
+$$$ HOST LAB03 AUTH zeep GetUsers ok  user=admin level=Administrator
+$$$ HOST LAB03 OP GetSystemDateAndTime ok  type=Manual utc=2026-10-25 17:12:32
+$$$ HOST LAB03 OP GetDeviceInformation ok  sn=1c2904d072e8 fw=v4.5.2-78-g1cae212d-dirty
+$$$ HOST LAB03 SMOKE PASS #1 正向基线（zeep 带凭据过门）

@@ -1,0 +1,19 @@
+$$$ HOST LAB03 AUTH probe case=getusers-board-sync created=2026-10-25T17:12:32Z mode=board-sync
+$$$ HOST LAB03 AUTH probe send#1 http=200 -> OK
+$$$ HOST LAB03 AUTH probe case=getusers-noauth-board-sync created=2026-10-25T17:12:32Z mode=board-sync
+$$$ HOST LAB03 AUTH probe send#1 http=500 -> DENY ter:NotAuthorized
+$$$ HOST LAB03 AUTH probe case=getusers-wrongpass-board-sync created=2026-10-25T17:12:33Z mode=board-sync
+$$$ HOST LAB03 AUTH probe send#1 http=500 -> DENY ter:NotAuthorized
+$$$ HOST LAB03 AUTH probe case=getusers-ghost-board-sync created=2026-10-25T17:12:33Z mode=board-sync
+$$$ HOST LAB03 AUTH probe send#1 http=500 -> DENY ter:NotAuthorized
+$$$ HOST LAB03 AUTH probe case=getusers-bytewrong-board-sync created=2026-10-25T17:12:33Z mode=board-sync
+$$$ HOST LAB03 AUTH probe send#1 http=500 -> DENY ter:NotAuthorized
+$$$ HOST LAB03 AUTH probe case=getusers-board-sync created=2026-10-25T17:12:33Z mode=board-sync
+$$$ HOST LAB03 AUTH probe send#1 http=200 -> OK
+$$$ HOST LAB03 AUTH probe send#2 http=500 -> DENY ter:NotAuthorized
+$$$ HOST LAB03 AUTH probe case=getusers-hostclock-host-clock created=2026-10-25T17:13:12Z mode=host-clock
+$$$ HOST LAB03 AUTH probe send#1 http=500 -> DENY ter:NotAuthorized
+$$$ HOST LAB03 AUTH probe case=getusers-board-sync created=1970-01-01T00:00:02Z mode=board-sync
+$$$ HOST LAB03 AUTH probe send#1 http=200 -> OK
+$$$ HOST LAB03 AUTH probe case=getusers-hostclock-host-clock created=2026-10-25T17:13:41Z mode=host-clock
+$$$ HOST LAB03 AUTH probe send#1 http=200 -> OK

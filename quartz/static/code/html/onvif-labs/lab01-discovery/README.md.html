@@ -1,0 +1,127 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold"># lab01-discovery — WS-Discovery 应答（ONVIF 设备端实验室第 1 站）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">把 ESP32-S31-Korvo-1 变成局域网里一台</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**可被发现**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">的 ONVIF 取流设备：上电连</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">WiFi，加入 WS-Discovery 组播组，对 Probe 回 ProbeMatch（Types/XAddrs/Scopes/</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">MetadataVersion）。方案语境见《ONVIF 深度解析》[[</span><span style="--shiki-light:#032F62;--shiki-light-text-decoration:underline;--shiki-dark:#DBEDFF;--shiki-dark-text-decoration:underline">ch11-esp32s31-lab-plan|第十一章</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">]]</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">与套件 [</span><span style="--shiki-light:#032F62;--shiki-light-text-decoration:underline;--shiki-dark:#DBEDFF;--shiki-dark-text-decoration:underline">SPEC</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">](</span><span style="--shiki-light:#24292E;--shiki-light-text-decoration:underline;--shiki-dark:#E1E4E8;--shiki-dark-text-decoration:underline">../../SPEC.md</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`practice/onvif-labs/SPEC.md`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">）。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 拓扑</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">宿主机（NixOS，本仓工作区）              家庭 AP（192.168.1.0/24）</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  python3 tools/onvif_probe.py</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">      │  UDP 组播 Probe → 239.255.255.250:3702</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">      │                                        ┌──────────────────────────┐</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">      └──── 单播 ProbeMatch（XML）◀──────────  │ ESP32-S31-Korvo-1        │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                                               │  WiFi STA（192.168.1.x） │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                                               │  disc_responder :3702/udp│</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                                               │  /stream 对照面 :80（MJPEG）│</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                                               └──────────────────────────┘</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">固件 = 裁剪版 factory_demo 基座（采集→PPA→硬件 JPEG→双缓冲 + WiFi STA + 串口</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">控制台，UI/触摸/USB/音频已裁）+ 新增 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`onvif_disc`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 发现模块。基座复现细节见</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">SPEC §3，上游实测背景见 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`~/code/esp32-video-tran/RUNBOOK.md`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（本机工作区）。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 构建</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">先备好本地凭据（不进版本库，</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`.gitignore`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 已排除）：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```bash</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">cd</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> practice/onvif-labs/lab01-discovery</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">cp</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> main/wifi_secrets.h.example</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> main/wifi_secrets.h</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">   # 然后填入真实 SSID/密码</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">首次构建需联网拉取 registry 组件（BSP/适配器/传感器栈），完成后 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`dependencies.lock`</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">固化、后续离线可重复。环境激活与构建壳（NixOS）：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```bash</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">NIXPKGS_ALLOW_UNFREE</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">1</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> nix</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> shell</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> --impure</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> nixpkgs#steam-run</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> nixpkgs#cmake</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> nixpkgs#ninja</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> nixpkgs#git</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> \</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  -c steam-run bash -c '. ~/esp/esp-idf/export.sh &#x26;&#x26; idf.py --preview set-target esp32s31 &#x26;&#x26; idf.py build'</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（esp32s31 是 IDF v6.1 的 preview target，</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`set-target`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 必带 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`--preview`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">。）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 烧录与上板</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```bash</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 烧录口按 VID:PID=10c4:ea60（CP2102N）定位，口名随枚举顺序变（ttyUSB0/ttyUSB1 都出现过）：</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#   udevadm info -q property -n /dev/ttyUSB0 | grep -E '10c4|ea60'   # 烧前核身份</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 重插后需 sudo chmod 666 &#x3C;口>；同机若插着 CH340（1a86:7523，STM32 板）切勿灌错</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">NIXPKGS_ALLOW_UNFREE</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">1</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> nix</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> shell</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> --impure</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> nixpkgs#steam-run</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> nixpkgs#cmake</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> nixpkgs#ninja</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> nixpkgs#git</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> \</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  -c steam-run bash -c '. ~/esp/esp-idf/export.sh &#x26;&#x26; idf.py -p /dev/ttyUSB0 flash'</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">启动日志判据（串口即日志口，115200）：</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`SC101IOT`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 传感器识别 → `$$$ ONVIF LAB01</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">DISC READY uuid=urn:uuid:…</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">` → WiFi 关联拿 IP → `</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">$$$ ONVIF LAB01 DISC JOIN</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">grp=239.255.255.250:3702 ip=&#x3C;板IP></span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">` → `</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">lab01-discovery base ready`。串口控制台</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`status`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> / </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`ip`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> / </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`heap`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 随时可查（与日志口同口，</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`korvo>`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 提示符）。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 验收（宿主侧）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">证据以</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**双端原文**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">为主（②③必做：探针脚本同屏打出发出的 Probe 原文与收到的</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">ProbeMatch 原文+hex；① tcpdump 需 sudo，作补充证据）：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```bash</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># ① 发现层抓包（补充证据，需 root）：Probe 进 / ProbeMatch 出</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#    （wlp0s20f3 为本机唯一网卡；换机时按 `ip route get 239.255.255.250` 定出口）</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">sudo</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> tcpdump</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -i</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> wlp0s20f3</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -vvv</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -s0</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> 'udp port 3702'</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> |</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> tee</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> runs/tcpdump-3702.log</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># ② 组播探测：发出 Probe 原文 + 收集窗口内应答原文/hex</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">python3</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> tools/onvif_probe.py</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> --timeout</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 3</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> |</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> tee</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> runs/probe-1.log</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># ③ 板端日志：PROBEMATCH 标记行</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">grep</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> '\$\$\$ ONVIF LAB01'</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> run.log</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">预期：② 打出 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`$$$ HOST PROBEMATCH from=&#x3C;板IP> … xaddrs=http://&#x3C;板IP>:80/onvif/device_service`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">；</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">①里能看到宿主 Probe 与板端单播回包；③出现与 ①② 对应的</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`$$$ ONVIF LAB01 PROBEMATCH …`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 行。板 IP 以板端日志为准（DHCP 会变，勿写死）。</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">组播 0 收时改用 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`--unicast &#x3C;板IP>`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（本环境实测组播回包不可靠，见「已知边界」）。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 真实输出摘录（2026-10-25 上板实测，板 IP=192.168.1.4 本轮 DHCP）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">启动判据（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`run.log`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 全文留存）：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">I (1179) sc101iot: Detected Camera sensor PID=0xda4a</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">I (1817) lab01: Free internal DMA before stream init: 356227 bytes</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">I (1817) lab01: Free internal DMA after stream init: 274983 bytes</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">I (1837) onvif_disc: $$$ ONVIF LAB01 DISC READY uuid=urn:uuid:1c29047d-26d0-72e8-8a3e-4ba59cd1e2f3</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">I (1846) lab01: lab01-discovery base ready (camera+stream+disc)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">I (3395) onvif_disc: $$$ ONVIF LAB01 DISC JOIN grp=239.255.255.250:3702 ip=192.168.1.4</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">宿主单播直探（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`runs/probe-unicast.log`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> / </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`runs/probe-unicast-x3.log`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">）：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">probe #1 -> 192.168.1.4:3702</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">$$$ HOST PROBEMATCH from=192.168.1.4 ep=urn:uuid:1c29047d-26d0-72e8-8a3e-4ba59cd1e2f3 \</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  types=dn:NetworkVideoTransmitter xaddrs=http://192.168.1.4:80/onvif/device_service</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">total ProbeMatch: 1        # ×3 复发：total ProbeMatch: 3（4/4 全部送达）</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">板端标记行与组播对照（同一轮，</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`run.log`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">；组播 3 发板端 3 回，宿主 0 收，见边界）：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">I (6842)  onvif_disc: $$$ ONVIF LAB01 PROBEMATCH xaddrs=http://192.168.1.4:80/onvif/device_service client=192.168.1.2:40682</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">I (11928) onvif_disc: $$$ ONVIF LAB01 PROBEMATCH xaddrs=http://192.168.1.4:80/onvif/device_service client=192.168.1.2:47448</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">I (12930) onvif_disc: $$$ ONVIF LAB01 PROBEMATCH xaddrs=http://192.168.1.4:80/onvif/device_service client=192.168.1.2:47448</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">I (13932) onvif_disc: $$$ ONVIF LAB01 PROBEMATCH xaddrs=http://192.168.1.4:80/onvif/device_service client=192.168.1.2:47448</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 已知边界（刻意为之）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **Scopes 宽松匹配**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：Probe 里的 Scopes 不做 scope-matching 校验，一律应答</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  （SPEC §6 lab01 明示的简化；ch02 的 MatchBy 语义留到 lab02+ 收紧）。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **只应答 Probe**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：Resolve/Bye/Hello 语义不实现；无重发与惩罚机制。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **XAddrs 指向的 </span><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">`/onvif/device_service`</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> 尚不存在**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">——SOAP 控制面是 lab02 的</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  交付；本站只证明「发现面可被标准客户端探到」。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 仅 IPv4；HTTP 对照面 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`/stream`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（:80）沿袭基座，端口表见 SPEC §5。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **家庭 AP 无线组播路径不对称（实测）**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：组播 Probe 宿主→板可达（板端 4/4 收到并回包，</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  见 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`run.log`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 标记行），但其单播应答宿主侧 0/4 送达；单播直探（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`--unicast`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">）路径</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  4/4 稳定。本环境验收/日常探测用 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`--unicast`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">；丢包精确定位需 tcpdump（sudo，可选）。</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  真实部署（有线 NVR、IGMP snooping 正确配置）按 [[</span><span style="--shiki-light:#032F62;--shiki-light-text-decoration:underline;--shiki-dark:#DBEDFF;--shiki-dark-text-decoration:underline">ch02-ws-discovery|第二章</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">]]语义走组播。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 内部 DMA 红线观测：</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`status`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 的 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`free_dma`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 推流稳态不得低于 170KB（SPEC §4）；</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  本轮启动实测：stream init 前 356,227 B / 后 274,983 B（无流客户端连接态）。</span></span>
+<span class="line"></span></code></pre>

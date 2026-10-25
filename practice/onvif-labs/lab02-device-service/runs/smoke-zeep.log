@@ -1,0 +1,7 @@
+$$$ HOST LAB02 OP GetCapabilities(implicit-on-init) ok  # 零号用例：构造成功
+$$$ HOST LAB02 OP GetSystemDateAndTime ok  type=Manual utc=1970-01-01 00:00:04
+$$$ HOST LAB02 OP GetDeviceInformation ok  Manufacturer=Espressif Model=ESP32-S31-Korvo-1 ONVIF Lab FirmwareVersion=v4.5.2-77-gf46e24ab-dirty SerialNumber=1c2904d072e8 HardwareId=ESP32-S31
+$$$ HOST LAB02 OP GetServices ok  n=1 ns=tds xaddr=http://192.168.1.4/onvif/device_service version=10.12
+$$$ HOST LAB02 OP GetCapabilities ok  sections=Device xaddr=http://192.168.1.4/onvif/device_service
+$$$ HOST LAB02 FAULT GetUsers ok  reason='Unknown error: Requested action not supported (ter:ActionNotSupported)'
+$$$ HOST LAB02 SMOKE PASS 5/5 (四连 + Fault)，原文留样见 runs/

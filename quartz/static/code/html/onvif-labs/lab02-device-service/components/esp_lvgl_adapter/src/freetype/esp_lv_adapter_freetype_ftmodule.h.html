@@ -1,0 +1,24 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/*</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * SPDX-License-Identifier: Apache-2.0</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/*</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Reduced FreeType module list for LVGL runtime fonts.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * This file intentionally has no include guard because FreeType includes</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * FT_CONFIG_MODULES_H twice with different FT_USE_MODULE definitions.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Keep TrueType and CFF/OpenType support together with their dependencies,</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * plus the anti-aliased renderer used by LVGL. Legacy drivers and extra</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * renderers are intentionally omitted.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">FT_USE_MODULE</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(FT_Driver_ClassRec, tt_driver_class)</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">FT_USE_MODULE</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(FT_Driver_ClassRec, cff_driver_class)</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">FT_USE_MODULE</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(FT_Module_Class, psaux_module_class)</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">FT_USE_MODULE</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(FT_Module_Class, psnames_module_class)</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">FT_USE_MODULE</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(FT_Module_Class, pshinter_module_class)</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">FT_USE_MODULE</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(FT_Module_Class, sfnt_module_class)</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">FT_USE_MODULE</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(FT_Renderer_Class, ft_smooth_renderer_class)</span></span>
+<span class="line"></span></code></pre>

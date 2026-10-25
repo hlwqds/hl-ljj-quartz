@@ -1,0 +1,14 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">set</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(COFFEE_UI_DIR </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">"${CMAKE_CURRENT_LIST_DIR}/../ui"</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">idf_component_register(</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    SRCS</span></span>
+<span class="line"><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">        "main.c"</span></span>
+<span class="line"><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">        "factory_console.c"</span></span>
+<span class="line"><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">        "factory_demo_camera.c"</span></span>
+<span class="line"><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">        "factory_demo_stream.c"</span></span>
+<span class="line"><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">        "onvif_disc.c"</span></span>
+<span class="line"><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">        "onvif_svc.c"</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    INCLUDE_DIRS </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">"."</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    REQUIRES esp32_s31_korvo esp_timer heap esp_driver_ppa esp_mm esp_lvgl_adapter esp_wifi nvs_flash esp_netif esp_event esp_http_server esp_driver_jpeg console esp_app_format</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)</span></span>
+<span class="line"></span></code></pre>

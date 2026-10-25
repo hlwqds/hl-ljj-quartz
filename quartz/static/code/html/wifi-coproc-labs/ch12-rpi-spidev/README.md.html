@@ -10,10 +10,10 @@
 <span class="line"></span>
 <span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 验证（run.log）</span></span>
 <span class="line"></span>
-<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 目标 | 命令 | 结果 |</span></span>
-<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| ---- | ---- | ---- |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 目标         | 命令                                                                                          | 结果                                                  |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| ------------ | --------------------------------------------------------------------------------------------- | ----------------------------------------------------- |</span></span>
 <span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| Windows 全链 | </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`zig cc -o test test.c hostd.c transport_fake.c control.c cobs.c crc32.c framing.c &#x26;&#x26; ./test`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> | 5/5 PASS（PING/echo×50/460B 上限/DRDY 时序/空闲稳定） |</span></span>
-<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| Linux 真机 | </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`zig cc -target x86_64-linux -c transport_spidev.c hostd.c`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> | ELF64 目标过编译器，真机待板 |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| Linux 真机   | </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`zig cc -target x86_64-linux -c transport_spidev.c hostd.c`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                                   | ELF64 目标过编译器，真机待板                          |</span></span>
 <span class="line"></span>
 <span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">真机点火：</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`dtparam=spi=on`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> → export DRDY 的 sysfs → 编译整个目录（去 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`-DHOSTD_LINUX_MAIN`</span></span>
 <span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">任选）→ </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`./hostd /dev/spidev0.0 1000000`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 进 PING 循环。排错实录（原型作用域冲突、</span></span>

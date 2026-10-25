@@ -1,0 +1,15 @@
+<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope" xmlns:tds="http://www.onvif.org/ver10/device/wsdl" xmlns:tt="http://www.onvif.org/ver10/schema">
+  <s:Body>
+    <s:Fault>
+      <s:Code>
+        <s:Value>s:Receiver</s:Value>
+        <s:Subcode>
+          <s:Value xmlns:ter="http://www.onvif.org/ver10/error">ter:ActionNotSupported</s:Value>
+        </s:Subcode>
+      </s:Code>
+      <s:Reason>
+        <s:Text xml:lang="en">Requested action not supported (ter:ActionNotSupported)</s:Text>
+      </s:Reason>
+    </s:Fault>
+  </s:Body>
+</s:Envelope>

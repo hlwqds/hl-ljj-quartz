@@ -1,0 +1,126 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/*</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * SPDX-License-Identifier: Apache-2.0</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#pragma</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> once</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#include</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "esp_err.h"</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#include</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "freertos/FreeRTOS.h"</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#include</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "freertos/queue.h"</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#include</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "freertos/task.h"</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#include</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "driver/spi_slave.h"</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#include</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "driver/parlio_rx.h"</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#include</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "esp_cam_ctlr_interface.h"</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#include</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "esp_cam_ctlr_spi.h"</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#include</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "esp_cam_sensor_types.h"</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> CONFIG_CAM_CTLR_SPI_DISABLE_BACKUP_BUFFER</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> CAM_CTLR_SPI_HAS_BACKUP_BUFFER</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 0</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#else</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* CONFIG_CAM_CTLR_SPI_DISABLE_BACKUP_BUFFER */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> CAM_CTLR_SPI_HAS_BACKUP_BUFFER</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 1</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* CONFIG_CAM_CTLR_SPI_DISABLE_BACKUP_BUFFER */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> CONFIG_CAM_CTLR_SPI_DISABLE_AUTO_DECODE</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> CAM_CTLR_SPI_HAS_AUTO_DECODE</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 0</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#else</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* CONFIG_CAM_CTLR_SPI_DISABLE_AUTO_DECODE */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> CAM_CTLR_SPI_HAS_AUTO_DECODE</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 1</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* CONFIG_CAM_CTLR_SPI_DISABLE_AUTO_DECODE */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifdef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> __cplusplus</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">extern</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "C"</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> {</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">@brief</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> SPI CAM finite state machine</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">typedef</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> enum</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> esp_cam_ctlr_spi_cam_fsm {</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    ESP_CAM_CTLR_SPI_CAM_FSM_INIT </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">,</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">                  /*!&#x3C; SPI CAM initialization state, and next state is "enabled" */</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    ESP_CAM_CTLR_SPI_CAM_FSM_ENABLED,</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">                   /*!&#x3C; SPI CAM enabled state, and next state is "init" or "started" */</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    ESP_CAM_CTLR_SPI_CAM_FSM_STARTED,</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">                   /*!&#x3C; SPI CAM started state, and next state is "init" or "enabled" */</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">} </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">esp_cam_ctlr_spi_cam_fsm_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">;</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">typedef</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> struct</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> esp_cam_ctlr_spi_cam {</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">    esp_cam_ctlr_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> base;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">                                /*!&#x3C; Camera controller base object data */</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">    esp_cam_ctlr_evt_cbs_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> cbs;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">                         /*!&#x3C; Camera controller callback functions */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    void</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> *</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">cbs_user_data;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">                                /*!&#x3C; Camera controller callback private data */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">    esp_cam_ctlr_spi_cam_intf_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> intf;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">                   /*!&#x3C; SPI CAM interface type */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    /**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">     * Peripheral interface private data</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">     */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    union</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> {</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> CONFIG_CAM_CTLR_SPI_ENABLE_PARLIO</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">        struct</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> {</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">            parlio_rx_unit_handle_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> rx_unit;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">            /*!&#x3C; PARLIO RX unit */</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">            parlio_rx_delimiter_handle_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> rx_delimiter;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /*!&#x3C; PARLIO delimiter */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">            QueueHandle_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> ms_queue;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">                     /*!&#x3C; Message queue */</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">            TaskHandle_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> ms_task;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">                       /*!&#x3C; Message task handle */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">            uint32_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> frame_size;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">                        /*!&#x3C; Frame size without cache alignment */</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">        } parlio;</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* CONFIG_CAM_CTLR_SPI_ENABLE_PARLIO */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">        struct</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> {</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">            spi_host_device_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> port;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">                     /*!&#x3C; SPI port */</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">        } spi;</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    };</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">    gpio_num_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> spi_cs_pin;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">                              /*!&#x3C; SPI CS pin */</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">    spi_slave_transaction_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> spi_trans;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">                  /*!&#x3C; SPI transaction, parlio also uses this transaction to reduce repetitive processing code */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    const</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> esp_cam_sensor_spi_frame_info </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">frame_info;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    /*!&#x3C; Frame information */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">    esp_cam_ctlr_spi_cam_fsm_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> fsm;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">                     /*!&#x3C; SPI CAM finite state machine */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    uint8_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> drop_frame_count;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">                           /*!&#x3C; Drop frame count after start SPI sensor */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    uint8_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> dropped_frame_count;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">                        /*!&#x3C; Dropped frame count after start SPI sensor */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> CAM_CTLR_SPI_HAS_AUTO_DECODE</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">    TaskHandle_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> spi_task_handle;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">                       /*!&#x3C; SPI task handle, this is used when auto_decode_dis=0 */</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">    QueueHandle_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> spi_recv_queue;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">                       /*!&#x3C; SPI receive queue, this is used when auto_decode_dis=0 */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> CAM_CTLR_SPI_HAS_BACKUP_BUFFER</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    uint8_t</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> *</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">frame_buffer;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">                              /*!&#x3C; SPI sensor image buffer, size is fb_size_in_bytes */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    bool</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> bk_buffer_exposed;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">                             /*!&#x3C; status of if back_buffer is exposed to users */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> CAM_CTLR_SPI_HAS_AUTO_DECODE</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    uint8_t</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> *</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">backup_buffer;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">                             /*!&#x3C; SPI sensor backup buffer, size is bf_size_in_bytes, this is used when auto_decode_dis=0 */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#else</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    uint8_t</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> *</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">spi_ll_buffer;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">                             /*!&#x3C; SPI sensor low level buffer */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    uint32_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> spi_ll_buffer_size;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">                        /*!&#x3C; SPI sensor low level buffer size */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    uint32_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> fb_lines;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">                                  /*!&#x3C; Input vertical resolution, i.e. the number of lines in a frame */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    uint32_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> fb_size_in_bytes;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">                          /*!&#x3C; SPI sensor frame buffer size with frame header and line header, this is cache aligned */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    uint32_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> bf_size_in_bytes;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">                          /*!&#x3C; SPI sensor backup buffer size without frame header and line header, this is used when auto_decode_dis=0 */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    struct</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> {</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> CAM_CTLR_SPI_HAS_BACKUP_BUFFER</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">        uint32_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> bk_buffer_dis  : </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">                    /*!&#x3C; Disable backup buffer */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#else</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">        uint32_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> setup_ll_buffer : </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">                   /*!&#x3C; Setup low level buffer */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> CONFIG_SPIRAM</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">        uint32_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> bk_buffer_sram : </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">                    /*!&#x3C; Use SRAM for backup buffer */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#if</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> CAM_CTLR_SPI_HAS_AUTO_DECODE</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">        uint32_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> auto_decode_dis : </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">                   /*!&#x3C; 1: disable auto decode, letting applications decode the image frame; 0: enable auto decode, applications receive the decoded image frame */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">        uint32_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> decode_check_dis : </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">                  /*!&#x3C; 1: disable checking the image frame header and line header, just copy the image data to the destination buffer; 0: enable checking the image frame header and line header before decoding the raw image frame */</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    };</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">} </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">esp_cam_ctlr_spi_cam_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">;</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifdef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> __cplusplus</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">}</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span></code></pre>

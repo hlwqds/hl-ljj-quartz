@@ -1,0 +1,195 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold"># lab02-device-service — SOAP 控制面最小集（ONVIF 设备端实验室第 2 站）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">兑现 lab01 发现层开出的支票：在同一个 80 端口的 httpd 实例上挂</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`/onvif/device_service`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">，实现免鉴权四连（GetSystemDateAndTime /</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">GetDeviceInformation / GetServices / GetCapabilities），白名单之外一律回合规</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">SOAP Fault（env:Receiver + ter:ActionNotSupported，HTTP 500）。信封双壳</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（SOAP 1.1 / 1.2 模板共用 Body，回信跟随请求版本）。实战叙事见</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">《ONVIF 深度解析》[[</span><span style="--shiki-light:#032F62;--shiki-light-text-decoration:underline;--shiki-dark:#DBEDFF;--shiki-dark-text-decoration:underline">ch13-lab02-device-service-report|第十三章</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">]]，实现契约见套件</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[</span><span style="--shiki-light:#032F62;--shiki-light-text-decoration:underline;--shiki-dark:#DBEDFF;--shiki-dark-text-decoration:underline">SPEC</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">](</span><span style="--shiki-light:#24292E;--shiki-light-text-decoration:underline;--shiki-dark:#E1E4E8;--shiki-dark-text-decoration:underline">../../SPEC.md</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`practice/onvif-labs/SPEC.md`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> §6 lab02）。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 拓扑</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">宿主机（NixOS，本仓工作区）                  ESP32-S31-Korvo-1（WiFi STA，192.168.1.x）</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  tools/onvif_smoke.py（onvif-zeep 0.2.12）</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">      │  SOAP 1.2 POST /onvif/device_service      ┌────────────────────────────┐</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">      │  Content-Type: application/soap+xml       │ httpd :80（单实例）         │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">      ├─────────────────────────────────────────▶ │  ├ /onvif/device_service   │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">      │                                           │  │   （lab02 SOAP 控制面）  │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  tools/soap11_probe.py（stdlib 手搓 1.1）        │  ├ /stream（MJPEG 对照面）  │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">      │  SOAP 1.1 POST text/xml + SOAPAction      │  └ /（查看页）              │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">      ├─────────────────────────────────────────▶ │                            │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">      │                                           │ onvif_disc :3702/udp（lab01）│</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  tools/serial_capture.py（串口取证+打点）         │ 相机 SC101IOT→JPEG 25fps 管线│</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">      └──────── UART 115200 ◀─────────────────── └────────────────────────────┘</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">固件 = lab01 基座（采集→PPA→硬件 JPEG→双缓冲 + WiFi STA + 串口控制台 +</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`onvif_disc`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 发现模块）+ 新增 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`onvif_svc`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 控制面模块（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`main/onvif_svc.c`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">，</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">393 行）。基座复现细节见 SPEC §3，方案语境见</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[[</span><span style="--shiki-light:#032F62;--shiki-light-text-decoration:underline;--shiki-dark:#DBEDFF;--shiki-dark-text-decoration:underline">ch11-esp32s31-lab-plan|第十一章</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">]]。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 构建</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">先备好本地凭据（不进版本库，</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`.gitignore`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 已排除）：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```bash</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">cd</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> practice/onvif-labs/lab02-device-service</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">cp</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> main/wifi_secrets.h.example</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> main/wifi_secrets.h</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">   # 然后填入真实 SSID/密码</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">首次构建需联网拉取 registry 组件（BSP/传感器栈等），完成后 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`dependencies.lock`</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">固化、后续离线可重复。环境激活与构建壳（NixOS，esp32s31 是 IDF v6.1 的</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">preview target）：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```bash</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">NIXPKGS_ALLOW_UNFREE</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">1</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> nix</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> shell</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> --impure</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> nixpkgs#steam-run</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> nixpkgs#cmake</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> nixpkgs#ninja</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> nixpkgs#git</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> \</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  -c steam-run bash -c '. ~/esp/esp-idf/export.sh &#x26;&#x26; idf.py --preview set-target esp32s31 &#x26;&#x26; idf.py build'</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 烧录与上板</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```bash</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 烧录口按 VID:PID=10c4:ea60（CP2102N）定位，口名随枚举顺序变（ttyUSB0/ttyUSB1 都出现过）：</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#   udevadm info -q property -n /dev/ttyUSB0 | grep -E '10c4|ea60'   # 烧前核身份</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 重插后需 sudo chmod 666 &#x3C;口>；同机若插着 CH340（1a86:7523，STM32 板）切勿灌错</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">NIXPKGS_ALLOW_UNFREE</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">1</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> nix</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> shell</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> --impure</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> nixpkgs#steam-run</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> nixpkgs#cmake</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> nixpkgs#ninja</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> nixpkgs#git</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> \</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  -c steam-run bash -c '. ~/esp/esp-idf/export.sh &#x26;&#x26; idf.py -p /dev/ttyUSB0 flash'</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">启动日志判据（串口即日志口，115200）：</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`SC101IOT`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 传感器识别 →</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`$$$ ONVIF LAB01 DISC READY/JOIN`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（发现面，lab01 交付）→</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`$$$ ONVIF LAB02 SVC READY http=&#x3C;板IP>:80/onvif/device_service`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> →</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`lab02 base ready (camera+stream+disc+svc)`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">。串口控制台</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`status`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> / </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`ip`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> / </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`heap`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> / </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`restart`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 随时可查（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`korvo>`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 提示符）。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 验收（宿主侧）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">客户端两路：python-onvif-zeep 0.2.12（随包 WSDL 全为 soap12 绑定）走 1.2 壳；</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">stdlib 手搓探针走 1.1 壳（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`text/xml`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> + </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`SOAPAction`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 头）。串口取证用</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`serial_capture.py`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（打开端口即硬复位从头收日志，</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`--send-at SS:CMD`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 定时往</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">控制台写打点命令）：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```bash</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">cd</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> practice/onvif-labs/lab02-device-service</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">mkdir</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -p</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> runs</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 宿主依赖用独立 venv（实测配方；NixOS 裸壳 exec 不了 IDF 自带的 glibc python_env）：</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">python3</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -m</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> venv</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> /tmp/onvif-venv</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> &#x26;&#x26; </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">/tmp/onvif-venv/bin/pip</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> install</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> onvif-zeep</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> pyserial</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 本仓实测版本：onvif-zeep 0.2.12（WSDL 随包在 site-packages/wsdl，ONVIFCamera 默认即取到）+ zeep 4.3.3 + pyserial 3.5</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">/tmp/onvif-venv/bin/python</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> tools/serial_capture.py</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> --port</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> /dev/ttyUSB0</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> --seconds</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 75</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> \</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  --send-at 9:status --send-at 32:status --send-at 60:heap > run.log</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">#</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> 另开终端（或等</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> READY</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> 行出现后）：</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">/tmp/onvif-venv/bin/python</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> tools/onvif_smoke.py</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> --host</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> &#x3C;</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">板I</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">P</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">></span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> --outdir</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> runs</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">   # 四连 + 拒绝语义，双端原文留样</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">/tmp/onvif-venv/bin/python</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> tools/soap11_probe.py</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> --host</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> &#x3C;</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">板I</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">P</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">></span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> --outdir</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> runs</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  # 1.1 壳：四连代表 + Fault + GET 405</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">grep</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> '\$\$\$ ONVIF LAB02'</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> run.log</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">                                             # 板端标记行与宿主输出对账</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">冒烟覆盖：①构造 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`ONVIFCamera`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 即零号用例（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`update_xaddrs()`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 内部先发</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">GetCapabilities，答不好走不到下一行）→ ②③④逐操作 zeep 反序列化 + 字段断言</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（DateTimeType=Manual、身份五行、单一 Device 服务、能力树仅 Device 小节、</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">XAddr 必须等于 Host 头拼出的地址）→ ⑤GetUsers 必须收到</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`ter:ActionNotSupported`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">。全部 SOAP 交换由 zeep HistoryPlugin 抓取，请求/应答</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">原文落 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`runs/`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`zeep-*.req/res.xml`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">、</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`fault-*.res.xml`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">、</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`soap11-*`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 为原始字节）。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 真实输出摘录（2026-10-26 上板实测，板 IP=192.168.1.4 本轮 DHCP）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">启动判据（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`run.log`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 全文留存，15.9KB）：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">I (1329) lab02: Free internal DMA before stream init: 356211 bytes</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">I (1438) sc101iot: Detected Camera sensor PID=0xda4a</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">I (1832) lab02: Free internal DMA after stream init: 274975 bytes</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">I (1847) lab02: lab02 base ready (camera+stream+disc+svc)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">I (3417) onvif_disc: $$$ ONVIF LAB01 DISC JOIN grp=239.255.255.250:3702 ip=192.168.1.4</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">I (3447) onvif_svc: $$$ ONVIF LAB02 SVC READY http=192.168.1.4:80/onvif/device_service</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">zeep 1.2 壳冒烟全绿（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`runs/smoke-zeep.log`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">，四连 + Fault 5/5）：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">$$$ HOST LAB02 OP GetCapabilities(implicit-on-init) ok  # 零号用例：构造成功</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">$$$ HOST LAB02 OP GetSystemDateAndTime ok  type=Manual utc=1970-01-01 00:00:04</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">$$$ HOST LAB02 OP GetDeviceInformation ok  Manufacturer=Espressif \</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  Model=ESP32-S31-Korvo-1 ONVIF Lab FirmwareVersion=v4.5.2-77-gf46e24ab-dirty \</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  SerialNumber=1c2904d072e8 HardwareId=ESP32-S31</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">$$$ HOST LAB02 OP GetServices ok  n=1 ns=tds \</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  xaddr=http://192.168.1.4/onvif/device_service version=10.12</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">$$$ HOST LAB02 OP GetCapabilities ok  sections=Device xaddr=http://192.168.1.4/onvif/device_service</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">$$$ HOST LAB02 FAULT GetUsers ok  \</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  reason='Unknown error: Requested action not supported (ter:ActionNotSupported)'</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">$$$ HOST LAB02 SMOKE PASS 5/5 (四连 + Fault)，原文留样见 runs/</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">1.1 壳手工探针（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`runs/smoke-soap11.log`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">）：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">$$$ HOST LAB02 SOAP11 GetDeviceInformation http=200 ctype=text/xml; charset=utf-8 bytes=552</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">$$$ HOST LAB02 SOAP11 GetServices http=200 ctype=text/xml; charset=utf-8 bytes=510</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">$$$ HOST LAB02 SOAP11 GetUsers http=500 ctype=text/xml; charset=utf-8 bytes=372</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">$$$ HOST LAB02 SOAP11 GET http=405  # 期望 405</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">双端对账（板端标记行 ↔ 宿主留样一一对应，</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`run.log`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">）：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">I (4571) onvif_svc: $$$ ONVIF LAB02 OP GetCapabilities ok      # zeep 零号</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">I (4582) onvif_svc: $$$ ONVIF LAB02 OP GetSystemDateAndTime ok # zeep ①</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">I (4640) onvif_svc: $$$ ONVIF LAB02 OP GetDeviceInformation ok # zeep ②</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">I (4691) onvif_svc: $$$ ONVIF LAB02 OP GetServices ok          # zeep ③</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">I (4741) onvif_svc: $$$ ONVIF LAB02 OP GetCapabilities ok      # zeep ④</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">I (4788) onvif_svc: $$$ ONVIF LAB02 OP (unlisted) fault action-not-supported  # zeep ⑤</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">I (4929) onvif_svc: $$$ ONVIF LAB02 OP GetDeviceInformation ok # 1.1 探针 ①</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">I (4950) onvif_svc: $$$ ONVIF LAB02 OP GetServices ok          # 1.1 探针 ①b</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">I (4982) onvif_svc: $$$ ONVIF LAB02 OP (unlisted) fault action-not-supported  # 1.1 探针 ②</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">Fault 结构留样（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`runs/fault-GetUsers.res.xml`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">，1.2 壳；1.1 壳对应</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`soap11-fault-GetUsers.res.xml`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 的 faultcode/faultstring 两件套）：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```xml</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">&#x3C;s:Fault></span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  &#x3C;s:Code></span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    &#x3C;s:Value>s:Receiver&#x3C;/s:Value></span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    &#x3C;s:Subcode></span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">      &#x3C;s:Value xmlns:ter="http://www.onvif.org/ver10/error">ter:ActionNotSupported&#x3C;/s:Value></span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    &#x3C;/s:Subcode></span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  &#x3C;/s:Code></span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  &#x3C;s:Reason></span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    &#x3C;s:Text xml:lang="en">Requested action not supported (ter:ActionNotSupported)&#x3C;/s:Text></span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  &#x3C;/s:Reason></span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">&#x3C;/s:Fault></span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">内存红线观测（SPEC §4，</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`run.log`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 打点；无流客户端连接态）：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">t=9s  status: free_dma=253751 free_spiram=12055112   # 冒烟前</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">t=32s status: free_dma=253719 free_spiram=12055112   # 冒烟后（双客户端全过）</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">t=60s heap : free_dma=253687 free_spiram=12055112</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">红线 free_dma ≥ 170KB：三轮打点全部 ≈253.7KB，冒烟前后漂移仅 32B（至 t=60s 末次打点累计</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">64B）——SOAP 缓冲全在 PSRAM 的纪律没欠账。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 已知边界（刻意为之）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **免鉴权四连，s:Header 一概不校验**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：zeep 每发都带 WS-UsernameToken</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  摘要头（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`runs/zeep-*.req.xml`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 留样可见 Username/PasswordDigest/Nonce/Created），</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  设备照单全收——校验是 lab03 的交付。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **无 SNTP，UTCDateTime=系统时钟**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：开机后 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`time()`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> ≈ 开机秒数，实测</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  `utc=1970-01-01 00:00:04`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">；DateTimeType 诚实填 Manual。NTP 对时与补偿窗口</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  是 lab03 的活（[[</span><span style="--shiki-light:#032F62;--shiki-light-text-decoration:underline;--shiki-dark:#DBEDFF;--shiki-dark-text-decoration:underline">ch09-interop-ecosystem|第九章</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">]]坑 1 的翻车实验也在那边）。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **能力只报真实的**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：GetServices 只报 Device 服务一条（Version 10.12），</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  GetCapabilities 只长 Device 小节（XAddr/Network/System 六 false）；</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  GetServices 的 IncludeCapability=true 时 Capabilities 元素为空——等</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  GetServiceCapabilities 真正实现再议。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **端点语义**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：GET </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`/onvif/device_service`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 回 405（不吐 WSDL，ch03 §3.3</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  纪律）；未注册路径自然 404（实测 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`/onvif/events_service`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> →</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  `404 Nothing matches the given URI`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">）——不装作有服务。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **1.1 壳的先天取舍**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：SOAP 1.1 无 Subcode 位，ter:ActionNotSupported 只能</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  落 faultstring 文本（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`soap11-fault-GetUsers.res.xml`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">）。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **XAddr 纪律**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：所有地址字段由请求 Host 头拼出（缺失回落板端 netif 地址），</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  禁写死 IP（SPEC §5）。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 仅 IPv4；</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`/stream`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 对照面（:80）沿袭基座；发现面边界见 lab01 README。</span></span>
+<span class="line"></span></code></pre>

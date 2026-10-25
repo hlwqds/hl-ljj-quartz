@@ -37,6 +37,7 @@ const PROJECT_GLOBS = [
   "practice/p2p-labs/*", // P2P 网络实验室章节工程（C + BSD socket）
   "practice/vpn-labs/*", // 手写 VPN 实验室章节工程（C + socket/crypto）
   "practice/wifi-coproc-labs/*", // WiFi 协处理器实验室（协议层实测 + 板级骨架）
+  "practice/onvif-labs", // ONVIF 设备端实验室（单项目多子目录：SPEC + lab01–lab06）
   "practice/lwip-labs", // 公约与调研
 ]
 
@@ -55,10 +56,14 @@ const SKIP_DIRS = [
 const PD_OVERRIDE = {
   hwbasics: "嵌入式硬件基础实验",
   "lwip-labs": "lwIP 公约与调研",
+  "onvif-labs": "ONVIF 设备端实验室",
 }
 
 /** 生成物文件名跳过（源文件 sdkconfig.defaults 及 .ci/.debug 变体保留） */
 const SKIP_FILES = new Set(["sdkconfig"])
+/** 凭据文件跳过（wifi_secrets.h / onvif_secrets.h 等，gitignore 掉的真值；
+ * *.example 模板不匹配此模式，照常发布） */
+const SKIP_FILE_RE = /secrets\.h$/
 
 const MAX_FILE_BYTES = 256 * 1024
 
@@ -365,7 +370,7 @@ const main = async () => {
     const pid = path.relative("practice", rel).split(path.sep).join("/")
     const pd = PD_OVERRIDE[pid] ?? path.basename(pdir)
     const abs = walk(pdir, (name, p) => {
-      if (SKIP_FILES.has(name)) return false
+      if (SKIP_FILES.has(name) || SKIP_FILE_RE.test(name)) return false
       if (fs.statSync(p).size > MAX_FILE_BYTES) return false
       return langOf(path.relative(pdir, p).split(path.sep).join("/")) !== null
     }).sort()

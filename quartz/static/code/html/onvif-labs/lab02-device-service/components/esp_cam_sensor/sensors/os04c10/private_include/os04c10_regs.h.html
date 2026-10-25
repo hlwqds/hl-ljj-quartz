@@ -1,0 +1,37 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/*</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * SPDX-License-Identifier: Apache-2.0</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/*</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * OS04C10 register definitions.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#pragma</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> once</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifdef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> __cplusplus</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">extern</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "C"</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> {</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> OS04C10_REG_END</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">      0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">ffff</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> OS04C10_REG_DELAY</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">fffe</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/* os04c10 registers */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> OS04C10_REG_CHIP_ID_H</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">              0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">300a</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> OS04C10_REG_CHIP_ID_L</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">              0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">300b</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> OS04C10_REG_STREAM_ON</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">              0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">0100</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> OS04C10_REG_SOFT_RESET</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">             0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">0103</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> OS04C10_REG_EXP_H</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">                  0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">3501</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> OS04C10_REG_EXP_L</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">                  0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">3502</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> OS04C10_REG_ANALOG_GAIN_H</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">          0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">3508</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> OS04C10_REG_ANALOG_GAIN_L</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">          0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">3509</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> OS04C10_REG_FORMAT1</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">                0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">3820</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> OS04C10_REG_TEST_PATTERN</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">           0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">5040</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifdef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> __cplusplus</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">}</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span></code></pre>

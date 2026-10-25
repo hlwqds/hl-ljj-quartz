@@ -1,0 +1,7 @@
+$$$ HOST LAB02 SOAP11 GetDeviceInformation http=200 ctype=text/xml; charset=utf-8 bytes=552
+$$$ HOST LAB02 SOAP11 GetDeviceInformation ok  # 1.1 信封 + 身份五行
+$$$ HOST LAB02 SOAP11 GetServices http=200 ctype=text/xml; charset=utf-8 bytes=510
+$$$ HOST LAB02 SOAP11 GetServices ok  xaddr=http://192.168.1.4/onvif/device_service  # Host 回拼
+$$$ HOST LAB02 SOAP11 GetUsers http=500 ctype=text/xml; charset=utf-8 bytes=372
+$$$ HOST LAB02 SOAP11 FAULT GetUsers ok  # faultcode/faultstring 两件套
+$$$ HOST LAB02 SOAP11 GET http=405  # 期望 405
