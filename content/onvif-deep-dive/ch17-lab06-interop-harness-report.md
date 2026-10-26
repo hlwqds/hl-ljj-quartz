@@ -417,6 +417,38 @@ libonvif 为 LGPL-2.1——本仓**不引用、不搬移、不派生**两者代�
 第一方（本系列逐提交可溯），后续随企业私有许可演进。给贡献者的红线：
 接触过上述 GPL/LGPL 源码的人不参与本组件的对应模块。
 
+### 17.5.5 Profile G 骨架（宏隔离）与 httpd 收包自守（2026-10-27）
+
+**Profile G（诚实语义）**：Kconfig `ONVIF_PROFILE_G` 编译期裁剪 + 运行期
+`cfg.profile_g` 双保险——未开启的站不含任何 G 代码（gc-sections）。落地四操作：
+trc `GetServiceCapabilities`（按 onvif.xsd 真字段：XAddr/ReceiverSource/
+MediaProfileSource/DynamicRecordings/DynamicTracks/MaxStringLength，无存储设备
+全 false/0）、trc `GetRecordings`（空列表）、trt `SetSynchronizationPoint`
+（Profile G 对出流设备的 MUST 操作，token 门覆盖）；`GetReplayUri` 不注册
+（无回放面，能力宣称不落空）；`GetRecordingSummary` 撤除（属搜索服务 tse，
+recording.wsdl 无此操作——臆造跨服务操作会打断真实 search 客户端）。本设备
+无持久存储，**不做伪装录制**：能力报 0、动态录制关闭，正是 ch09 坑 3
+（Profile 伪装）反向纪律的 G 面应用。配套：路由绑定校验加 TRC_NS、GetServices
+档位模板追加 Recording 条目（XAddr 与实际注册一致）、ops 表 16→32（lab06
+全能力档 20 项）、lab06 sdkconfig.defaults 落 `CONFIG_ONVIF_PROFILE_G=y`。
+
+**httpd 收包自守（「完美运行」欠账首笔还清）**：间歇挂死真身实锤——
+**6 条半开连接（CL<4096 进 recv 循环）即打满 16 槽 socket 池**，控制面
+"看着死了"，清理半开立即恢复；串口复位"治好"只是重置了 socket 池。根因：
+IDF 头解析完把 `SO_RCVTIMEO` 重置为 0（httpd_sess.c 阻塞语义），body 阶段
+无界等待 → 半开会话永久占坑。修复：组件 recv 循环窗口内设 1s 截止
+（lwIP 标准模式 `struct timeval`，传 int 被 EINVAL 拒）、超时 408 +
+`httpd_sess_trigger_close` 主动回收 socket、读毕恢复阻塞语义；六站
+`recv_wait_timeout` 5→1s（头阶段同步收紧）。回归：T31 断言 3 条半开后
+8s 内恢复 200（实测 2.6s；修复前该场景 ~15s 起步必超时）。
+
+**测试（套件 27→31）**：T31 韧性 + T32-T34 G 三操作（诚实档字段断言/
+空列表/同步点+token 门负例）。宏隔离构建验证：未开启站二进制无 G 代码。
+过程教训两条入账：① 臆造元素第三次出现（MaximumNumberOfRecordings 不在
+tt:RecordingCapabilities 字段表）——以后每个新模板先对 schema 字段表逐项
+核对；② python 批量替换三度静默 no-op（锚点被前手 sed 改掉）——**替换后
+必须 grep 回读**，本轮起用 edit 工具 + grep 复核替代盲改。
+
 ## 17.6 小结
 
 - lab06 = 总装 + 换裁判：五站固件合成一台完整设备（发现→鉴权→Profile→RTSP 全链
