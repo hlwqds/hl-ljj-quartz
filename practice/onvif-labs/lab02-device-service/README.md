@@ -26,7 +26,8 @@ SOAP Fault（env:Receiver + ter:ActionNotSupported，HTTP 500）。信封双壳
 ```
 
 固件 = lab01 基座（采集→PPA→硬件 JPEG→双缓冲 + WiFi STA + 串口控制台 +
-`onvif_disc` 发现模块）+ 新增 `onvif_svc` 控制面模块（`main/onvif_svc.c`，
+`onvif_disc` 发现模块）+ 新增 `onvif_svc` 控制面模块（原站点副本已于 ch17 §17.5.2
+并入共享组件 `../components/onvif/src/onvif_svc.c`，按 `onvif_svc_config_t` 旗标装配；
 393 行）。基座复现细节见 SPEC §3，方案语境见
 [[ch11-esp32s31-lab-plan|第十一章]]。
 

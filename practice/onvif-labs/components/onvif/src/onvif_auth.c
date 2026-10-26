@@ -3,7 +3,8 @@
  *
  * 公式与 ch04 逐字相同：PasswordDigest = Base64(SHA1(b64decode(Nonce) + Created + Password))。
  * 字节观三纪律：nonce 参与 SHA1 的是解码后原始字节（非头里的 base64 文本）、Created 是
- * 原样字符串、口令取明文 UTF-8（onvif_secrets.h 编译期注入，gitignore 纪律同 wifi_secrets）。
+ * 原样字符串、口令取明文 UTF-8（由宿主经 onvif_auth_init(user, pass) 运行期注入，
+ * 组件不依赖任何 secrets 头；secrets 仍在 app 侧，gitignore 纪律同 wifi_secrets）。
  * 判据链顺序 = 排错大纲：user → decode → digest → clock → replay；对外统一
  * ter:NotAuthorized，分因只落板端 run.log（ch04 抱怨的「设备不告诉你哪错了」的解法）。
  */

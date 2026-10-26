@@ -125,7 +125,8 @@ static const char BODY_FAULT_11[] =
     "<s:faultstring>ter:ActionNotSupported: requested operation not supported</s:faultstring>"
     "</s:Fault>";
 
-/* lab03 靶子 GetUsers：返回花名册单条 admin（Administrator）；用户名取 onvif_secrets。 */
+/* lab03 靶子 GetUsers：返回花名册单条 admin（Administrator）；用户名取注入凭据
+ * （onvif_auth_username()，secrets 头留在 app 侧）。 */
 static const char BODY_USERS[] =
     "<tds:GetUsersResponse><tds:User>"
     "<tt:Username>%s</tt:Username>"

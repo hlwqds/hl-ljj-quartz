@@ -52,7 +52,7 @@ I (1701) factory_stream: heap after wifi start: free DMA=274815, SPIRAM=14039396
 
 ## 12.3 onvif_disc 应答器：模板 + 定向提取的 243 行闭环
 
-发现面的全部增量是 `main/onvif_disc.c` 一个文件，243 行，零 XML 库——第十一章三决策之二（不引 XML 栈）在发现面的同款实践：**模板字符串出站、定向提取入站**。
+发现面的全部增量是 `onvif_disc.c` 一个文件（当年 243 行；原站点副本已于 ch17 §17.5.2 并入共享组件 `components/onvif/src/onvif_disc.c`），零 XML 库——第十一章三决策之二（不引 XML 栈）在发现面的同款实践：**模板字符串出站、定向提取入站**。
 
 生命周期分两拍：`onvif_disc_init()` 在 app_main 末尾被调，只做三件事——派生 UUID、注册 `IP_EVENT_STA_GOT_IP` 监听、打出 `DISC READY` 标记行；真正干活的 `disc_task` 等 GOT_IP 才创建，任务参数就是拿到的 IPv4（网络序）。为什么等：XAddrs 必须填板端实际 IPv4（SPEC §5 禁写死），组播成员也要按 STA 接口加入；而 GOT_IP 事件可能带旧地址重放多次，`s_task_started` 保证任务只起一次。所以启动日志里 READY 在 WiFi 关联之前、JOIN 在拿到地址之后——12.4 的判据链会看到这两行隔着一次完整的关联+DHCP。
 
