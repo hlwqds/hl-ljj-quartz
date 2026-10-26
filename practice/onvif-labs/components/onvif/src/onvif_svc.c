@@ -26,6 +26,7 @@
 #include "esp_http_server.h"
 #include "esp_log.h"
 #include "esp_mac.h"
+#include "esp_random.h"
 #include "esp_netif.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -46,6 +47,7 @@
 static const char *TAG = "onvif_svc";
 
 static onvif_svc_config_t s_cfg; /* init 时由宿主注入，任务生存期只读 */
+static char s_cur_action[96]; /* 当前操作完整应答 Action URI（handler 装配；未命中置空） */
 
 #define TDS_NS "http://www.onvif.org/ver10/device/wsdl"
 #define TER_NS "http://www.onvif.org/ver10/error"
@@ -407,6 +409,9 @@ static esp_err_t send_soap(httpd_req_t *req, shell_ver_t shell, const char *body
                               gen, echoed);
             if (wn < 0 || (size_t)wn >= sizeof(wsa_hdr)) {
                 wsa_hdr[0] = '\0'; /* 截断的寻址头比没有更糟：整体放弃 */
+            } else if (s_cur_action[0] != '\0') {
+                snprintf(wsa_hdr + wn, sizeof(wsa_hdr) - wn,
+                         "<wsa:Action>%s</wsa:Action>", s_cur_action);
             }
         }
     }
@@ -737,6 +742,8 @@ static esp_err_t onvif_svc_handler(httpd_req_t *req)
     }
 
     const char *local = s_ops[op_idx].local;
+    snprintf(s_cur_action, sizeof(s_cur_action), "%s/%sResponse",
+             s_ops[op_idx].ns, s_ops[op_idx].action_tail);
     if (s_ops[op_idx].needs_auth) {
         auth_rc_t rc = onvif_auth_verify(s_rx); /* 五环判据链，分因落 run.log */
         if (rc != AUTH_OK) {

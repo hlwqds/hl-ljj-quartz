@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """t02 控制面：免鉴权四连中的两条 + HTTP 语义（对齐 lab02 验收）。"""
 
+import re
+
 from ctx import board_get, soap_post
 
 _S12 = ('<?xml version="1.0"?><s:Envelope '
@@ -27,13 +29,21 @@ def t03_datetime(c):
 
 
 def t04b_wsa(c):
-    """T30: 请求带 wsa:MessageID → 应答回 RelatesTo 回显 + 自生成 MessageID
-    （ONVIF Core §5.2；CTT/按 MessageID 配对的客户端都依赖这条）。"""
+    """T30: 请求带 wsa:MessageID（真 uuid4）→ 应答回 RelatesTo 回显 +
+    自生成 MessageID（8-4-4-4-12 uuid 形态）+ wsa:Action（ONVIF Core §5.2）。"""
+    import uuid
+    mid = f"urn:uuid:{uuid.uuid4()}"
     st, body = soap_post(c["host"], 80, "/onvif/device_service",
-                         _S12.format(body="<tds:GetDeviceInformation/>"))
-    ok = (st == 200 and "urn:uuid:onvif-selftest-echo-1" in body
-          and "RelatesTo" in body and "wsa:MessageID" in body)
-    return ok, f"http={st}, RelatesTo={'✓' if 'RelatesTo' in body else '✗'}"
+                         _S12.format(body="<tds:GetDeviceInformation/>").replace(
+                             "urn:uuid:onvif-selftest-echo-1", mid))
+    echo = mid in body
+    gen = re.search(r"<wsa:MessageID>urn:uuid:"
+                    r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                    r"</wsa:MessageID>", body)
+    act = "<wsa:Action>http://www.onvif.org/ver10/device/wsdl/" in body
+    ok = st == 200 and echo and bool(gen) and act
+    return ok, (f"http={st} echo={'✓' if echo else '✗'} "
+                f"gen-uuid={'✓' if gen else '✗'} action={'✓' if act else '✗'}")
 
 
 def t04_405(c):

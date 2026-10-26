@@ -1,7 +1,7 @@
 {
   "host": "192.168.1.4",
   "python": "/home/huanglin/.venvs/onvif/bin/python",
-  "ts": "2026-10-27 01:22:00",
+  "ts": "2026-10-27 01:29:27",
   "pass": 27,
   "total": 27,
   "results": [
@@ -17,7 +17,7 @@
       "name": "免鉴权 GetDeviceInformation",
       "pass": true,
       "detail": "http=200",
-      "seconds": 0.0
+      "seconds": 0.1
     },
     {
       "id": "T03",
@@ -37,7 +37,7 @@
       "id": "T30",
       "name": "WS-Addressing MessageID 回显",
       "pass": true,
-      "detail": "http=200, RelatesTo=✓",
+      "detail": "http=200 echo=✓ gen-uuid=✓ action=✓",
       "seconds": 0.0
     },
     {
@@ -73,21 +73,21 @@
       "name": "zeep 冒烟: 设备信息/Profiles/StreamUri/未知Token",
       "pass": true,
       "detail": "4/4 证据行齐",
-      "seconds": 0.5
+      "seconds": 0.6
     },
     {
       "id": "T13",
       "name": "快照直取 200 + JPEG magic",
       "pass": true,
-      "detail": "17654B JPEG",
-      "seconds": 0.0
+      "detail": "16377B JPEG",
+      "seconds": 0.1
     },
     {
       "id": "T14",
       "name": "RTSP 信令 + 12s 成帧 + 板端对账",
       "pass": true,
-      "detail": "对账齐: board=188 client=188",
-      "seconds": 13.2
+      "detail": "客户端 186 帧（板端 TEARDOWN 未读到——串口被占?）",
+      "seconds": 23.2
     },
     {
       "id": "T15",
@@ -101,7 +101,7 @@
       "name": "GetProfile 未知 token → InvalidArgVal",
       "pass": true,
       "detail": "fault subcode=ter:InvalidArgVal",
-      "seconds": 0.8
+      "seconds": 0.9
     },
     {
       "id": "T17",
@@ -136,7 +136,7 @@
       "name": "GetVideoEncoderConfigurationOptions → JPEG/15fps",
       "pass": true,
       "detail": "jpeg=True fpsmax=15 w=640",
-      "seconds": 1.1
+      "seconds": 1.0
     },
     {
       "id": "T22",
@@ -163,7 +163,7 @@
       "id": "T25",
       "name": "内存统计: mem 命令 STATS 账目 + free_dma 红线",
       "pass": true,
-      "detail": "static_total=1688 free_dma=242399 free_spiram=11393152 min_free=225048",
+      "detail": "static_total=1688 free_dma=242295 free_spiram=11393040 min_free=224944",
       "seconds": 0.1
     },
     {
@@ -177,7 +177,7 @@
       "id": "T27",
       "name": "带凭据全流程 200 + 6s 成帧",
       "pass": true,
-      "detail": "200×4 frames=93",
+      "detail": "200×4 frames=94",
       "seconds": 6.1
     },
     {
@@ -185,14 +185,14 @@
       "name": "错口令 → 401",
       "pass": true,
       "detail": "re-DESCRIBE=RTSP/1.0 401 Unauthorized",
-      "seconds": 0.0
+      "seconds": 0.1
     },
     {
       "id": "T29",
       "name": "nonce 重放 → 401；无 SETUP 直 PLAY → 454",
       "pass": true,
       "detail": "first=200, direct PLAY=454, replay=401, recover=200",
-      "seconds": 0.1
+      "seconds": 0.2
     }
   ]
 }
