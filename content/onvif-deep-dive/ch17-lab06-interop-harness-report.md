@@ -419,7 +419,7 @@ libonvif 为 LGPL-2.1——本仓**不引用、不搬移、不派生**两者代�
 
 ### 17.5.5 Profile G 骨架（宏隔离）与 httpd 收包自守（2026-10-27）
 
-**Profile G（诚实语义）**：Kconfig `ONVIF_PROFILE_G` 编译期裁剪 + 运行期
+**Profile G（诚实语义）**：Kconfig `CONFIG_ONVIF_PROFILE_G`（C 侧宏名带 CONFIG\_ 前缀）编译期裁剪 + 运行期
 `cfg.profile_g` 双保险——未开启的站不含任何 G 代码（gc-sections）。落地四操作：
 trc `GetServiceCapabilities`（按 onvif.xsd 真字段：XAddr/ReceiverSource/
 MediaProfileSource/DynamicRecordings/DynamicTracks/MaxStringLength，无存储设备

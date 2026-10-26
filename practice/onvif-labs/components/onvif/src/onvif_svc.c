@@ -28,6 +28,7 @@
 #include "esp_mac.h"
 #include "esp_random.h"
 #include "esp_netif.h"
+#include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
@@ -791,17 +792,20 @@ static esp_err_t onvif_svc_handler(httpd_req_t *req)
     int rx_len = 0;
     /* IDF 头解析完会把 SO_RCVTIMEO 重置为 0（阻塞）——body 阶段无界等待会让
      * 半开会话永久占住 16 槽 socket 池（实测 6 条半开即打满，控制面"看着死了"）。
-     * 只在本请求窗口内设 1s 截止；超时 408 + 主动关 socket（防 keep-alive 占坑），
-     * 读完恢复原状。 */
+     * 两道防线：① SO_RCVTIMEO 1s 治静默；② 总墙钟预算 3s 治慢速滴漏
+     * （每 0.9s 吐 1 字节的客户端同样占不住控制面）。 */
     int sockfd = httpd_req_to_sockfd(req);
     /* lwIP 标准模式：SO_RCVTIMEO 的 optval 是 struct timeval（传 int 被 EINVAL 拒） */
     struct timeval tv = {.tv_sec = 1, .tv_usec = 0};
     if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) != 0) {
         ESP_LOGW(TAG, "SO_RCVTIMEO set failed: body 阶段将无界等待（socket 池耗尽风险）");
     }
+    const int64_t budget_us = 3000000; /* 总墙钟预算 3s */
+    const int64_t t0_us = esp_timer_get_time();
     while (rx_len < content_len) {
         int n = httpd_req_recv(req, s_rx + rx_len, (size_t)(content_len - rx_len));
-        if (n <= 0) {
+        if (n < 0) {
+            /* 读超时/错误 */
             ESP_LOGI(TAG, "$$$ ONVIF %s RECV TIMEOUT close", s_cfg.marker);
             httpd_resp_set_status(req, "408 Request Timeout");
             httpd_resp_set_type(req, "text/plain");
@@ -809,7 +813,22 @@ static esp_err_t onvif_svc_handler(httpd_req_t *req)
             httpd_sess_trigger_close(s_cfg.io.httpd(), sockfd);
             return ESP_OK;
         }
-        rx_len += n; /* recv 不保证一次读满：TCP 分段时必须循环（否则截断的信封走错路由） */
+        if (n == 0) {
+            /* 对端已关闭：静默回收会话，不报错 */
+            httpd_sess_trigger_close(s_cfg.io.httpd(), sockfd);
+            return ESP_OK;
+        }
+        rx_len += n;
+        if (esp_timer_get_time() - t0_us > budget_us) {
+            ESP_LOGI(TAG, "$$$ ONVIF %s RECV SLOW close got=%d/%d", s_cfg.marker,
+                     rx_len, (int)content_len);
+            httpd_resp_set_status(req, "408 Request Timeout");
+            httpd_resp_set_type(req, "text/plain");
+            httpd_resp_sendstr(req, "soap body slowloris");
+            httpd_sess_trigger_close(s_cfg.io.httpd(), sockfd);
+            return ESP_OK;
+        }
+        /* recv 不保证一次读满：TCP 分段时必须循环（否则截断的信封走错路由） */
     }
     s_rx[rx_len] = '\0';
     struct timeval tv_block = {.tv_sec = 0, .tv_usec = 0};
@@ -826,7 +845,10 @@ static esp_err_t onvif_svc_handler(httpd_req_t *req)
         char action[96] = {0};
         if (httpd_req_get_hdr_value_str(req, "SOAPAction", action, sizeof(action)) == ESP_OK) {
             for (size_t i = 0; i < s_op_n; i++) {
-                if (strstr(action, s_ops[i].action_tail) != NULL) {
+                /* 尾段 + 命名空间双匹配：trc/trt 都有 GetServiceCapabilities，
+                 * 只比尾段会跨服务误路由 */
+                if (strstr(action, s_ops[i].action_tail) != NULL &&
+                    strstr(action, s_ops[i].ns) != NULL) {
                     op_idx = (int)i; /* 兜底仅提示：ns 归属由 Body 为准，此处尽量匹配 */
                     break;
                 }

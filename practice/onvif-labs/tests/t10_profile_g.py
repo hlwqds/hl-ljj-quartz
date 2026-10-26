@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """t10 Profile G 骨架（ch17 §17.5.5，宏隔离 ONVIF_PROFILE_G）。
 
-T32 trc GetServiceCapabilities → RecordingCapabilities（诚实：0 recordings）
+T32 trc GetServiceCapabilities → 诚实档：无录制源/无动态录制/MaxStringLength 0
 T33 GetRecordings 空列表（无存储，诚实档）
 T34 trt SetSynchronizationPoint(profile_1) → 200（G 对出流设备的 MUST 操作）
 
