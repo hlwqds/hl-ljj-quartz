@@ -538,9 +538,12 @@ static size_t s_op_n;
 static void ops_add(const char *local, const char *ns, const char *action_tail,
                     serve_fn serve, bool needs_auth, const char *token)
 {
-    if (s_op_n < sizeof(s_ops) / sizeof(s_ops[0])) {
-        s_ops[s_op_n++] = (svc_op_t){local, ns, action_tail, serve, needs_auth, token};
+    if (s_op_n >= sizeof(s_ops) / sizeof(s_ops[0])) {
+        /* 表满不是理论边界：lab06 全能力档恰好 16/16，加一个操作就静默丢 */
+        ESP_LOGE(TAG, "op table full, dropped %s (raise s_ops capacity)", local);
+        return;
     }
+    s_ops[s_op_n++] = (svc_op_t){local, ns, action_tail, serve, needs_auth, token};
 }
 
 static void ops_build(void)
@@ -569,10 +572,12 @@ static void ops_build(void)
                 serve_vsrc, auth, ">vsc_1<");
         ops_add("GetVideoEncoderConfigurations", TRT_NS, "GetVideoEncoderConfigurations",
                 serve_vencs, auth, NULL);
-        ops_add("GetVideoEncoderConfiguration", TRT_NS, "GetVideoEncoderConfiguration",
-                serve_venc, auth, ">vec_1<");
+        /* Options 先于 Configuration：SOAPAction 兜底按数组序 strstr 首个命中，
+         * 子串名（Configuration）排前会把 …Options 的兜底错答成 Configuration */
         ops_add("GetVideoEncoderConfigurationOptions", TRT_NS,
                 "GetVideoEncoderConfigurationOptions", serve_venc_opts, auth, NULL);
+        ops_add("GetVideoEncoderConfiguration", TRT_NS, "GetVideoEncoderConfiguration",
+                serve_venc, auth, ">vec_1<");
         ops_add("GetNetworkInterfaces", TDS_NS, "GetNetworkInterfaces", serve_netif, auth, NULL);
         ops_add("GetScopes", TDS_NS, "GetScopes", serve_scopes, auth, NULL);
     }
