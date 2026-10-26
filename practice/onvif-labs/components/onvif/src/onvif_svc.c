@@ -52,6 +52,7 @@ static char s_cur_action[96]; /* 当前操作完整应答 Action URI（handler �
 #define TDS_NS "http://www.onvif.org/ver10/device/wsdl"
 #define TER_NS "http://www.onvif.org/ver10/error"
 #define TRT_NS "http://www.onvif.org/ver10/media/wsdl"
+#define TRC_NS "http://www.onvif.org/ver10/recording/wsdl"
 
 #define WSA_NS "http://www.w3.org/2005/08/addressing"
 
@@ -102,6 +103,22 @@ static const char BODY_SERVICES[] =
     "</tds:Service><tds:Service>"
     "<tds:Namespace>" TRT_NS "</tds:Namespace>"
     "<tds:XAddr>http://%s/onvif/media_service</tds:XAddr>"
+    "<tds:Version><tt:Major>10</tt:Major><tt:Minor>12</tt:Minor></tds:Version>"
+    "</tds:Service></tds:GetServicesResponse>";
+
+/* Profile G 档：追加 Recording 服务条目（XAddr 与实际注册一致） */
+static const char BODY_SERVICES_G[] =
+    "<tds:GetServicesResponse><tds:Service>"
+    "<tds:Namespace>" TDS_NS "</tds:Namespace>"
+    "<tds:XAddr>http://%s/onvif/device_service</tds:XAddr>"
+    "<tds:Version><tt:Major>10</tt:Major><tt:Minor>12</tt:Minor></tds:Version>"
+    "</tds:Service><tds:Service>"
+    "<tds:Namespace>" TRT_NS "</tds:Namespace>"
+    "<tds:XAddr>http://%s/onvif/media_service</tds:XAddr>"
+    "<tds:Version><tt:Major>10</tt:Major><tt:Minor>12</tt:Minor></tds:Version>"
+    "</tds:Service><tds:Service>"
+    "<tds:Namespace>" TRC_NS "</tds:Namespace>"
+    "<tds:XAddr>http://%s/onvif/recording_service</tds:XAddr>"
     "<tds:Version><tt:Major>10</tt:Major><tt:Minor>12</tt:Minor></tds:Version>"
     "</tds:Service></tds:GetServicesResponse>";
 
@@ -315,6 +332,54 @@ static const char BODY_SCOPES[] =
     "<tt:ScopeItem>onvif://www.onvif.org/name/onvif-lab01</tt:ScopeItem></tds:Scopes>"
     "</tds:GetScopesResponse>";
 
+/* ---- Profile G（ch17 §17.5.5；宏隔离：ONVIF_PROFILE_G 编译期裁剪）----
+ * 诚实语义：无持久存储——能力报 0 recordings、动态录制关闭，不做"伪装录制"；
+ * GetReplayUri 不注册（回放面不存在）；SetSynchronizationPoint 是 Profile G
+ * 对出流设备的 MUST 操作（同步点确认，live MJPEG 即新帧边界）。 */
+#if CONFIG_ONVIF_PROFILE_G
+static void svc_host_of(httpd_req_t *req, char *out, size_t out_max); /* 定义在后段 */
+
+static const char BODY_REC_CAPS[] =
+    "<trc:GetServiceCapabilitiesResponse xmlns:trc=\"" TRC_NS "\">"
+    "<trc:Capabilities>"
+    "<tt:XAddr>http://%s/onvif/recording_service</tt:XAddr>"
+    "<tt:ReceiverSource>false</tt:ReceiverSource>"
+    "<tt:MediaProfileSource>false</tt:MediaProfileSource>"
+    "<tt:DynamicRecordings>false</tt:DynamicRecordings>"
+    "<tt:DynamicTracks>false</tt:DynamicTracks>"
+    "<tt:MaxStringLength>0</tt:MaxStringLength>"
+    "</trc:Capabilities></trc:GetServiceCapabilitiesResponse>";
+
+static const char BODY_REC_EMPTY[] =
+    "<trc:GetRecordingsResponse xmlns:trc=\"" TRC_NS "\"/>";
+
+static const char BODY_SYNC_POINT[] =
+    "<trt:SetSynchronizationPointResponse xmlns:trt=\"" TRT_NS "\"/>";
+
+static esp_err_t serve_rec_caps(httpd_req_t *req, char *body, size_t body_max)
+{
+    char host[SVC_HOST_BUF];
+    svc_host_of(req, host, sizeof(host));
+    snprintf(body, body_max, BODY_REC_CAPS, host);
+    return ESP_OK;
+}
+
+static esp_err_t serve_recordings(httpd_req_t *req, char *body, size_t body_max)
+{
+    (void)req;
+    snprintf(body, body_max, BODY_REC_EMPTY);
+    return ESP_OK;
+}
+
+static esp_err_t serve_sync_point(httpd_req_t *req, char *body, size_t body_max)
+{
+    (void)req;
+    snprintf(body, body_max, BODY_SYNC_POINT);
+    return ESP_OK;
+}
+
+#endif /* ONVIF_PROFILE_G */
+
 /* 未知 ProfileToken：s:Sender + ter:InvalidArgVal（ch03 判据表；1.1 无 Subcode 位）
  * vsc_1/vec_1 的 token 失配复用同款（subcode 是 CTT 判据，文案沿用 ProfileToken）。 */
 static const char BODY_FAULT_TOKEN_12[] =
@@ -453,6 +518,12 @@ static esp_err_t serve_services(httpd_req_t *req, char *body, size_t body_max)
 {
     char host[SVC_HOST_BUF];
     svc_host_of(req, host, sizeof(host));
+#if CONFIG_ONVIF_PROFILE_G
+    if (s_cfg.profile_g) {
+        snprintf(body, body_max, BODY_SERVICES_G, host, host, host); /* Device/Media/Recording */
+        return ESP_OK;
+    }
+#endif
     snprintf(body, body_max, BODY_SERVICES, host, host); /* Device 与 Media 各一份 XAddr */
     return ESP_OK;
 }
@@ -577,7 +648,7 @@ typedef struct {
     const char *token;       /* 非空 = 请求原文须含该 token 子串，否则 InvalidArgVal */
 } svc_op_t;
 
-static svc_op_t s_ops[16];
+static svc_op_t s_ops[32]; /* lab06 全能力档 20 项：四连4+users+profiles2+stream+P8+G4；余量给后续 */
 static size_t s_op_n;
 
 static void ops_add(const char *local, const char *ns, const char *action_tail,
@@ -608,6 +679,15 @@ static void ops_build(void)
     }
     if (s_cfg.stream_uri) {
         ops_add("GetStreamUri", TRT_NS, "GetStreamUri", serve_stream_uri, auth, ">profile_1<");
+    }
+    if (s_cfg.profile_g) {
+#if CONFIG_ONVIF_PROFILE_G
+        ops_add("GetServiceCapabilities", TRC_NS, "GetServiceCapabilities",
+                serve_rec_caps, auth, NULL);
+        ops_add("GetRecordings", TRC_NS, "GetRecordings", serve_recordings, auth, NULL);
+        ops_add("SetSynchronizationPoint", TRT_NS, "SetSynchronizationPoint",
+                serve_sync_point, auth, ">profile_1<");
+#endif
     }
     if (s_cfg.profile_s) {
         ops_add("GetProfile", TRT_NS, "GetProfile", serve_profile, auth, ">profile_1<");
@@ -675,6 +755,11 @@ static int svc_route_by_body(const char *rx)
         snprintf(decl, sizeof(decl), "xmlns:%s=\"%s\"", prefix, TRT_NS);
         if (strstr(rx, decl) != NULL) {
             ns = TRT_NS;
+        } else {
+            snprintf(decl, sizeof(decl), "xmlns:%s=\"%s\"", prefix, TRC_NS);
+            if (strstr(rx, decl) != NULL) {
+                ns = TRC_NS; /* Profile G（ch17 §17.5.5） */
+            }
         }
     }
     if (ns == NULL) {
@@ -704,16 +789,31 @@ static esp_err_t onvif_svc_handler(httpd_req_t *req)
         return ESP_OK;
     }
     int rx_len = 0;
+    /* IDF 头解析完会把 SO_RCVTIMEO 重置为 0（阻塞）——body 阶段无界等待会让
+     * 半开会话永久占住 16 槽 socket 池（实测 6 条半开即打满，控制面"看着死了"）。
+     * 只在本请求窗口内设 1s 截止；超时 408 + 主动关 socket（防 keep-alive 占坑），
+     * 读完恢复原状。 */
+    int sockfd = httpd_req_to_sockfd(req);
+    /* lwIP 标准模式：SO_RCVTIMEO 的 optval 是 struct timeval（传 int 被 EINVAL 拒） */
+    struct timeval tv = {.tv_sec = 1, .tv_usec = 0};
+    if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) != 0) {
+        ESP_LOGW(TAG, "SO_RCVTIMEO set failed: body 阶段将无界等待（socket 池耗尽风险）");
+    }
     while (rx_len < content_len) {
         int n = httpd_req_recv(req, s_rx + rx_len, (size_t)(content_len - rx_len));
         if (n <= 0) {
-            httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR,
-                                "soap body read failed");
+            ESP_LOGI(TAG, "$$$ ONVIF %s RECV TIMEOUT close", s_cfg.marker);
+            httpd_resp_set_status(req, "408 Request Timeout");
+            httpd_resp_set_type(req, "text/plain");
+            httpd_resp_sendstr(req, "soap body timeout");
+            httpd_sess_trigger_close(s_cfg.io.httpd(), sockfd);
             return ESP_OK;
         }
         rx_len += n; /* recv 不保证一次读满：TCP 分段时必须循环（否则截断的信封走错路由） */
     }
     s_rx[rx_len] = '\0';
+    struct timeval tv_block = {.tv_sec = 0, .tv_usec = 0};
+    setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &tv_block, sizeof(tv_block));
 
     shell_ver_t shell = detect_shell(s_rx);
 
@@ -838,7 +938,7 @@ static void onvif_svc_task(void *arg)
         vTaskDelete(NULL);
         return;
     }
-    if (s_cfg.profiles || s_cfg.stream_uri || s_cfg.profile_s) {
+    if (s_cfg.profiles || s_cfg.stream_uri || s_cfg.profile_s || s_cfg.profile_g) {
         const httpd_uri_t media_post = {
             .uri = "/onvif/media_service",
             .method = HTTP_POST,
@@ -859,6 +959,31 @@ static void onvif_svc_task(void *arg)
             return;
         }
     }
+#if CONFIG_ONVIF_PROFILE_G
+    if (s_cfg.profile_g) {
+        /* Recording 服务端点：XAddr 广告与实际注册一致（能力宣称不得落空） */
+        const httpd_uri_t rec_post = {
+            .uri = "/onvif/recording_service",
+            .method = HTTP_POST,
+            .handler = onvif_svc_handler,
+        };
+        const httpd_uri_t rec_get = {
+            .uri = "/onvif/recording_service",
+            .method = HTTP_GET,
+            .handler = onvif_svc_get_handler,
+        };
+        reg = httpd_register_uri_handler(httpd, &rec_post);
+        if (reg == ESP_OK) {
+            reg = httpd_register_uri_handler(httpd, &rec_get);
+        }
+        if (reg != ESP_OK) {
+            ESP_LOGE(TAG, "register /onvif/recording_service failed (%s)",
+                     esp_err_to_name(reg));
+            vTaskDelete(NULL);
+            return;
+        }
+    }
+#endif
     if (s_cfg.profiles) {
         const httpd_uri_t snapshot_uri = {
             .uri = "/onvif-http/snapshot",

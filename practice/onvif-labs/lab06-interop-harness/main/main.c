@@ -60,6 +60,7 @@ void app_main(void)
         .profiles = true,
         .stream_uri = true,
         .profile_s = true,
+        .profile_g = true, /* Profile G 骨架（ch17 §17.5.5） */
         .io =
             {
                 .httpd = factory_stream_httpd,

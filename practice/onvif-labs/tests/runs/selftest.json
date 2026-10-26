@@ -1,9 +1,9 @@
 {
   "host": "192.168.1.4",
   "python": "/home/huanglin/.venvs/onvif/bin/python",
-  "ts": "2026-10-27 01:33:26",
-  "pass": 27,
-  "total": 27,
+  "ts": "2026-10-27 02:07:00",
+  "pass": 31,
+  "total": 31,
   "results": [
     {
       "id": "T01",
@@ -17,7 +17,7 @@
       "name": "免鉴权 GetDeviceInformation",
       "pass": true,
       "detail": "http=200",
-      "seconds": 0.0
+      "seconds": 0.3
     },
     {
       "id": "T03",
@@ -66,84 +66,84 @@
       "name": "同 nonce 重放 → NotAuthorized",
       "pass": true,
       "detail": "first=200 replay=500",
-      "seconds": 0.1
+      "seconds": 0.0
     },
     {
       "id": "T09",
       "name": "zeep 冒烟: 设备信息/Profiles/StreamUri/未知Token",
       "pass": true,
       "detail": "4/4 证据行齐",
-      "seconds": 0.9
+      "seconds": 0.5
     },
     {
       "id": "T13",
       "name": "快照直取 200 + JPEG magic",
       "pass": true,
-      "detail": "18095B JPEG",
+      "detail": "18064B JPEG",
       "seconds": 0.1
     },
     {
       "id": "T14",
       "name": "RTSP 信令 + 12s 成帧 + 板端对账",
       "pass": true,
-      "detail": "客户端 180 帧（板端 TEARDOWN 未读到——串口被占?）",
-      "seconds": 23.2
+      "detail": "对账齐: board=171 client=171",
+      "seconds": 13.2
     },
     {
       "id": "T15",
       "name": "GetProfile(profile_1) → JPEG",
       "pass": true,
       "detail": "token=profile_1 enc=JPEG",
-      "seconds": 0.8
+      "seconds": 0.7
     },
     {
       "id": "T16",
       "name": "GetProfile 未知 token → InvalidArgVal",
       "pass": true,
       "detail": "fault subcode=ter:InvalidArgVal",
-      "seconds": 0.9
+      "seconds": 0.8
     },
     {
       "id": "T17",
       "name": "GetVideoSourceConfigurations → 640x480",
       "pass": true,
       "detail": "n=1 token=vsc_1 bounds=640x480",
-      "seconds": 1.0
+      "seconds": 0.8
     },
     {
       "id": "T18",
       "name": "GetVideoSourceConfiguration 正/负路径",
       "pass": true,
       "detail": "srctoken=vs_1; fault subcode=ter:InvalidArgVal",
-      "seconds": 1.0
+      "seconds": 0.8
     },
     {
       "id": "T19",
       "name": "GetVideoEncoderConfigurations → JPEG",
       "pass": true,
       "detail": "n=1 enc=JPEG 640x480",
-      "seconds": 0.9
+      "seconds": 0.7
     },
     {
       "id": "T20",
       "name": "GetVideoEncoderConfiguration 正/负路径",
       "pass": true,
       "detail": "enc=JPEG q=80.0; fault subcode=ter:InvalidArgVal",
-      "seconds": 0.9
+      "seconds": 0.8
     },
     {
       "id": "T21",
       "name": "GetVideoEncoderConfigurationOptions → JPEG/15fps",
       "pass": true,
       "detail": "jpeg=True fpsmax=15 w=640",
-      "seconds": 0.9
+      "seconds": 0.8
     },
     {
       "id": "T22",
       "name": "GetNetworkInterfaces → 真实 MAC/IP",
       "pass": true,
       "detail": "hw=1c:29:04:d0:72:e8 ip=192.168.1.4",
-      "seconds": 0.9
+      "seconds": 0.8
     },
     {
       "id": "T23",
@@ -163,7 +163,7 @@
       "id": "T25",
       "name": "内存统计: mem 命令 STATS 账目 + free_dma 红线",
       "pass": true,
-      "detail": "static_total=1688 free_dma=242295 free_spiram=11393064 min_free=224944",
+      "detail": "static_total=1688 free_dma=241775 free_spiram=11389952 min_free=224456",
       "seconds": 0.1
     },
     {
@@ -177,7 +177,7 @@
       "id": "T27",
       "name": "带凭据全流程 200 + 6s 成帧",
       "pass": true,
-      "detail": "200×4 frames=92",
+      "detail": "200×4 frames=94",
       "seconds": 6.2
     },
     {
@@ -192,7 +192,35 @@
       "name": "nonce 重放 → 401；无 SETUP 直 PLAY → 454",
       "pass": true,
       "detail": "first=200, direct PLAY=454, replay=401, recover=200",
-      "seconds": 0.2
+      "seconds": 0.1
+    },
+    {
+      "id": "T31",
+      "name": "httpd 韧性: 3 条半开连接后 8s 内恢复 200",
+      "pass": true,
+      "detail": "恢复耗时 2.6s（<8s 窗口）→ HTTP/1.1 200 OK",
+      "seconds": 3.1
+    },
+    {
+      "id": "T32",
+      "name": "Profile G: RecordingCapabilities 诚实报 0",
+      "pass": true,
+      "detail": "http=200, 诚实档字段=✓",
+      "seconds": 0.0
+    },
+    {
+      "id": "T33",
+      "name": "Profile G: GetRecordings 空列表",
+      "pass": true,
+      "detail": "recordings=200（空列表）",
+      "seconds": 0.0
+    },
+    {
+      "id": "T34",
+      "name": "Profile G: SetSynchronizationPoint + token 门",
+      "pass": true,
+      "detail": "sync=200(384B), bogus=400/InvalidArgVal",
+      "seconds": 0.0
     }
   ]
 }

@@ -429,7 +429,7 @@ static esp_err_t factory_stream_http_start(void)
      * snapshot GET 共 5 个处理器（9 = 2 + 5 + 余量）。 */
     config.max_uri_handlers = 9;
     config.send_wait_timeout = 5;
-    config.recv_wait_timeout = 5;
+    config.recv_wait_timeout = 1; /* 半开阻塞窗口 5s→1s：防串行饿死控制面（ch17 §17.5.4） */
     esp_err_t ret = httpd_start(&s_stream.httpd, &config);
     ESP_RETURN_ON_ERROR(ret, TAG, "start httpd on port %d failed", FACTORY_STREAM_HTTP_PORT);
 

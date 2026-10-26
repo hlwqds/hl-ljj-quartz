@@ -1,0 +1,13 @@
+menu "ONVIF"
+
+    config ONVIF_PROFILE_G
+        bool "Enable Profile G (Recording/Replay skeleton, storage-less honest semantics)"
+        default n
+        help
+            Recording/Replay 服务骨架（trc GetServiceCapabilities/GetRecordings/
+            GetRecordingSummary + trt SetSynchronizationPoint）。本设备无持久存储：
+            能力报 0 recordings、动态录制关闭——不做"伪装录制"。编译期裁剪：
+            未开启的站不含任何 G 代码（gc-sections）；运行期另有 cfg.profile_g
+            双保险（onvif_svc_config_t）。
+
+endmenu

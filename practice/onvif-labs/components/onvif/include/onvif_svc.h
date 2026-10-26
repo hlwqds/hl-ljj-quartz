@@ -20,6 +20,7 @@ extern "C" {
  *   profiles   — GetProfiles + GetSnapshotUri + /onvif-http/snapshot（lab04+）
  *   stream_uri — GetStreamUri（lab05+，rtsp 由独立模块提供取流面）
  *   profile_s  — Profile S 八操作（lab06，ch17 §17.5.1）
+ *   profile_g  — Profile G 骨架（ch17 §17.5.5；须同时编译期 ONVIF_PROFILE_G）
  * marker      — $$$ ONVIF <marker> OP 标记前缀（lab02..lab05 各用本站号；
  *               lab06 归位功能来源站传 LAB05，见 ch17 站点标记纪律）
  *
@@ -37,6 +38,7 @@ typedef struct {
     bool profiles;
     bool stream_uri;
     bool profile_s;
+    bool profile_g;
     onvif_media_io_t io; /* profiles/stream_uri/profile_s 任一为真时必填 */
 } onvif_svc_config_t;
 
