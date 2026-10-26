@@ -23,10 +23,12 @@ extern "C" {
  * marker      — $$$ ONVIF <marker> OP 标记前缀（lab02..lab05 各用本站号；
  *               lab06 归位功能来源站传 LAB05，见 ch17 站点标记纪律）
  *
- * io 注入契约（按需三条，漏配 → init 返回 ESP_ERR_INVALID_ARG，编译期不报）：
- *   httpd          — 无条件必填（/onvif/device_service 每站都挂基座 80 端口）；
- *   copy_latest    — 仅 profiles=true 时必填（快照处理器取帧）；
- *   copy_latest_id — 仅 stream_uri/profile_s 且使用组件 RTSP 时必填（帧号去重取帧）。
+ * io 注入契约（漏配不会在编译期报）：
+ *   httpd          — 无条件必填，onvif_svc_init 校验（漏配 → ESP_ERR_INVALID_ARG）；
+ *   copy_latest    — 仅 profiles=true 时必填，onvif_svc_init 校验（同上）；
+ *   copy_latest_id — RTSP 消费方（stream_uri/profile_s 站）必填，由 rtsp_server_init
+ *                    校验（void 返回：漏配只打一行日志并拒启 RTSP，:8554 不监听，
+ *                    SOAP 面照常——别指望 svc init 替你抓这条）。
  */
 typedef struct {
     const char *marker;
