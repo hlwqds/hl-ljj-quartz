@@ -15,6 +15,8 @@
 - 每工程必备:`main/`(源码)、根 `CMakeLists.txt`、`sdkconfig.defaults`、`README.md`
   (中文,含拓扑与复现命令)、`run.log`(真实上板运行留存);需要宿主配合的附 `tools/`
   (python 脚本为主:wsdiscovery 探测、onvif 冒烟、rtsp 验流)。
+- **许可姿态**:组件代码按企业私有许可演进;对 GPL/LGPL 项目(onvif_simple_server/
+  libonvif 等)不引用/不搬移/不派生,细则见 ch17 §17.5.4。
 - 基座裁剪自 esp32-video-tran 工作区 `~/code/esp32-video-tran/demo/factory_demo`
   （本机工作区，不在本仓；复跑手册 `~/code/esp32-video-tran/RUNBOOK.md`）。裁剪产物
   （本仓入库形态）只保留：采集→PPA→硬件 JPEG→双缓冲 管线 + WiFi STA + 串口控制台；

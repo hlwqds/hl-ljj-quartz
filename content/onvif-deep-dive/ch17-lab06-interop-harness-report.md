@@ -347,13 +347,14 @@ URL userinfo 凭据（实测 130 帧/8.6s 解码恢复），否则 Digest 上线
 
 **已还清（有提交号）**：
 
-| 缺陷                                                         | 锚点                              | 处置                                   |
-| ------------------------------------------------------------ | --------------------------------- | -------------------------------------- |
-| 路由字符集缺 `:`，Body 权威路径从未生效                      | onvif_svc.c `svc_route_by_body`   | a3178935 前身修复（含五站同步）        |
-| 表满静默丢操作 / 兜底序 Options 被子串名截胡                 | onvif_svc.c `ops_add`/`ops_build` | a3178935                               |
-| sess_reset 漏清 session_id，无 SETUP 直 PLAY 带残留 sid 出流 | onvif_rtsp.c `sess_reset`         | a8d46a21 批次修复                      |
-| 响应残体投毒（SDP leftover 拼入下一响应 head）               | tools/rtsp_ledger.py `rtsp()`     | a8d46a21 批次修复                      |
-| WS-Addressing 缺失（Core §5.2：MessageID 回显/RelatesTo）    | onvif_svc.c `send_soap`           | 本节修复（属性感知定向提取，T30 背书） |
+| 缺陷                                                         | 锚点                                           | 处置                                          |
+| ------------------------------------------------------------ | ---------------------------------------------- | --------------------------------------------- |
+| 路由字符集缺 `:`，Body 权威路径从未生效                      | onvif_svc.c `svc_route_by_body`                | 981da68e（Profile S 批次，含五站同步）        |
+| 表满静默丢操作 / 兜底序 Options 被子串名截胡                 | onvif_svc.c `ops_add`/`ops_build`              | a3178935                                      |
+| sess_reset 漏清 session_id，无 SETUP 直 PLAY 带残留 sid 出流 | onvif_rtsp.c `sess_reset`                      | a8d46a21 批次修复                             |
+| 响应残体投毒（SDP leftover 拼入下一响应 head）               | tools/rtsp_ledger.py `rtsp()`                  | a8d46a21 批次修复                             |
+| WS-Addressing 缺失（Core §5.2：MessageID/RelatesTo/Action）  | onvif_svc.c `send_soap`                        | e21dc86b + de1ba25b（属性感知提取，T30 背书） |
+| 跨请求陈旧 Action（Fault 带上一请求操作名）                  | onvif_svc.c `onvif_svc_handler`/`s_cur_action` | eda6865f（handler 入口清零；T30 负例背书）    |
 
 **P1——「合格」欠账（按价值排序）**：
 
