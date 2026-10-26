@@ -3,7 +3,8 @@
 <span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
 <span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 公式与 ch04 逐字相同：PasswordDigest = Base64(SHA1(b64decode(Nonce) + Created + Password))。</span></span>
 <span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 字节观三纪律：nonce 参与 SHA1 的是解码后原始字节（非头里的 base64 文本）、Created 是</span></span>
-<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 原样字符串、口令取明文 UTF-8（onvif_secrets.h 编译期注入，gitignore 纪律同 wifi_secrets）。</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 原样字符串、口令取明文 UTF-8（由宿主经 onvif_auth_init(user, pass) 运行期注入，</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 组件不依赖任何 secrets 头；secrets 仍在 app 侧，gitignore 纪律同 wifi_secrets）。</span></span>
 <span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 判据链顺序 = 排错大纲：user → decode → digest → clock → replay；对外统一</span></span>
 <span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * ter:NotAuthorized，分因只落板端 run.log（ch04 抱怨的「设备不告诉你哪错了」的解法）。</span></span>
 <span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
@@ -40,6 +41,11 @@
 <span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">const</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> char</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> *</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">onvif_auth_username</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">void</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)</span></span>
 <span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">{</span></span>
 <span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    return</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> s_user;</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">}</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">const</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> char</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> *</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">onvif_auth_password</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">void</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">{</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    return</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> s_pass;</span></span>
 <span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">}</span></span>
 <span class="line"></span>
 <span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">const</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> char</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> *</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">onvif_auth_reason</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">auth_rc_t</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70"> rc</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)</span></span>

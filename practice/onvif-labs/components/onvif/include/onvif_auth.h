@@ -39,3 +39,6 @@ bool onvif_auth_sntp_enabled(void);
 
 /* 花名册唯一用户（init 注入；GetUsers 应答与 AUTH 标记行共用） */
 const char *onvif_auth_username(void);
+
+/* 注入口令（onvif_digest 媒体面鉴权复用同一对凭据——单一来源） */
+const char *onvif_auth_password(void);

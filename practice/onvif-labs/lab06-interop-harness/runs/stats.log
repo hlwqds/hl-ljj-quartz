@@ -4,6 +4,6 @@ $$$ ONVIF STATS buf tag=disc name=ip bytes=16
 $$$ ONVIF STATS tag=auth static=1280 heap_live=0 heap_peak=0 allocs=0
 $$$ ONVIF STATS buf tag=auth name=nonce_ring bytes=1280
 $$$ ONVIF STATS tag=svc static=0 heap_live=317440 heap_peak=317440 allocs=4
-$$$ ONVIF STATS tag=rtsp static=80 heap_live=308763 heap_peak=308763 allocs=2 stack_hwm=7324 bytes
+$$$ ONVIF STATS tag=rtsp static=80 heap_live=308763 heap_peak=308763 allocs=2 stack_hwm=2876 bytes
 $$$ ONVIF STATS buf tag=rtsp name=sess bytes=80
-$$$ ONVIF STATS tag=all static_total=1424 free_dma=242719 free_spiram=11397436 min_free=225368
+$$$ ONVIF STATS tag=all static_total=1424 free_dma=242367 free_spiram=11394168 min_free=225048

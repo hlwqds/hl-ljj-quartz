@@ -2,6 +2,7 @@ idf_component_register(
     SRCS
         "src/onvif_disc.c"
         "src/onvif_auth.c"
+        "src/onvif_digest.c"
         "src/onvif_svc.c"
         "src/onvif_rtsp.c"
         "src/onvif_stats.c"

@@ -131,8 +131,9 @@ esp32-video-tran 方法学）；12 秒采样窗口无丢帧；标记行 `$$$ ONV
 PullPoint 事件（帧差运动检测）、G.711 前向音频（板载 ES8389）。
 Profile S 补齐：总装轮（ch17 §17.5.1）补入 GetProfile 单数、VideoSource/Encoder
 Configuration(s)、VideoEncoderConfigurationOptions、GetNetworkInterfaces、GetScopes
-八操作——MUST 清单全量覆盖；套件级统一自测 `practice/onvif-labs/tests/`（21 项）
-为回归基线。
+八操作——MUST 清单全量覆盖；媒体面 RTSP Digest 鉴权（ch17 §17.5.3，站点级开关）；
+套件级统一自测 `practice/onvif-labs/tests/`（26 项）+ 组件宿主单元测试
+（`components/onvif/test/run.sh`）为回归基线。
 
 ## 7. 通用验收清单（一票否决项在前）
 

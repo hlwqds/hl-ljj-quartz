@@ -30,7 +30,8 @@ def t14_rtsp(c):
     try:
         r = subprocess.run(
             [c["venv"], os.path.join(TOOLS_DIR, "rtsp_ledger.py"),
-             c["host"], "--seconds", "12"],
+             c["host"], "--seconds", "12", "--user", "admin",
+             "--password", c["password"]],
             capture_output=True, text=True, timeout=45)
     except subprocess.TimeoutExpired:
         return False, "ledger 45s 超时"

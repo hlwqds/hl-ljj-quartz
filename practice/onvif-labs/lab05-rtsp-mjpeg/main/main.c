@@ -69,7 +69,7 @@ void app_main(void)
     ESP_ERROR_CHECK(onvif_auth_init(ONVIF_AUTH_USER, ONVIF_AUTH_PASS));
 
     /* RTSP/RTP 取流服务：8554 端口（lab05 交付）。 */
-    rtsp_server_init(&svc_cfg.io);
+    rtsp_server_init(&svc_cfg.io, NULL); /* 历史形态：匿名开放（ch16 §16.2 边界） */
 
     ESP_LOGI(TAG, "lab05 base ready (camera+stream+disc+svc+auth+media+rtsp)");
 }

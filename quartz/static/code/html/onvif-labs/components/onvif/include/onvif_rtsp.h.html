@@ -3,10 +3,16 @@
 <span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
 <span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 单客户端、逐连接串行（SPEC §6）：accept 一次只服务一条连接；信令白名单</span></span>
 <span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * OPTIONS/DESCRIBE/SETUP/PLAY/TEARDOWN；传输双档（TCP interleaved 优先，UDP 第二档）。</span></span>
-<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 无 RTSP Digest、无 RTCP SR——明示边界（ch16 §16.2）。</span></span>
 <span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 帧源经 onvif_media_io 注入（组件不依赖采集基座）。</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 媒体面鉴权（ch17 §17.5.3）：站点级开关 + RFC 2617 Digest。</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *   auth=NULL 或 digest=false → 历史形态（lab05 站，匿名开放为明示边界）；</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *   digest=true               → DESCRIBE/SETUP 先 401 质询，凭据复用 onvif_auth</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *                               注入的那一对（单一来源），nonce 一次性防重放。</span></span>
 <span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
 <span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#pragma</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> once</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#include</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> &#x3C;stdbool.h></span></span>
 <span class="line"></span>
 <span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#include</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "onvif_media_io.h"</span></span>
 <span class="line"></span>
@@ -14,8 +20,13 @@
 <span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">extern</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "C"</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> {</span></span>
 <span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
 <span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">typedef</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> struct</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> {</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    bool</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> digest;</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    const</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> char</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> *</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">realm;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* 质询域（如 "onvif@korvo-1"）；digest=true 时必填 */</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">} </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">onvif_rtsp_auth_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">;</span></span>
+<span class="line"></span>
 <span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/* 起监听任务；io->copy_latest_id 为帧源（必填）。 */</span></span>
-<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">void</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> rtsp_server_init</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">const</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> onvif_media_io_t</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> *</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">io</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">);</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">void</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> rtsp_server_init</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">const</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> onvif_media_io_t</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> *</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">io</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">, </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">const</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> onvif_rtsp_auth_t</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> *</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">auth</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">);</span></span>
 <span class="line"></span>
 <span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifdef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> __cplusplus</span></span>
 <span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">}</span></span>

@@ -12,6 +12,8 @@
  */
 #include "onvif_rtsp.h"
 
+#include "onvif_auth.h"
+#include "onvif_digest.h"
 #include "onvif_stats.h"
 
 #include "esp_netif.h"
@@ -34,6 +36,8 @@
 static const char *TAG = "rtsp_server";
 
 static const onvif_media_io_t *s_io; /* init 注入的帧源边界 */
+static bool s_auth_digest;      /* 站点级媒体面鉴权开关（ch17 §17.5.3） */
+static char s_realm[48];
 
 typedef enum { TRANSPORT_TCP, TRANSPORT_UDP } transport_t;
 
@@ -72,6 +76,7 @@ static void sess_reset(rtsp_sess_t *s)
     }
     s->playing = false;
     s->have_fid = false;
+    s->session_id[0] = '\0'; /* 会话态不跨连接：残留会让无 SETUP 直 PLAY 绕过状态前置 */
 }
 
 /* 读一个以 \r\n\r\n 结尾的信令报文（timeout_ms 内无完整报文视为空闲/断开）。
@@ -123,6 +128,44 @@ static bool hdr_get(const char *req, const char *field, char *out, size_t out_ma
     }
     out[n] = '\0';
     return n > 0;
+}
+
+/* 401 质询：签发新 nonce，WWW-Authenticate 按 RFC 2617 无 qop 档 */
+static void send_401(int sock, const char *cseq)
+{
+    char chal[128], val[192], resp[320];
+    onvif_digest_challenge_t ch;
+    onvif_digest_challenge(s_realm, &ch, chal, sizeof(chal));
+    snprintf(val, sizeof(val), "WWW-Authenticate: %s\r\n", chal);
+    int n = snprintf(resp, sizeof(resp),
+                 "RTSP/1.0 401 Unauthorized\r\nCSeq: %s\r\n%s\r\n",
+                 cseq != NULL ? cseq : "0", val);
+    send(sock, resp, (size_t)n, 0);
+}
+
+/* 媒体面鉴权门：authed 已置位直接放行；未带凭据回 401；
+ * 带凭据走 Digest 验证。返回 true = 放行。 */
+static bool rtsp_auth_gate(int conn, const char *cseq, const char *buf, bool *authed)
+{
+    if (*authed) {
+        return true;
+    }
+    const char *hdr = strstr(buf, "Authorization:");
+    if (hdr != NULL) {
+        /* method 与 uri 取请求行前两段（HA2 原料） */
+        char method[16] = {0}, requri[128] = {0};
+        sscanf(buf, "%15s %127s", method, requri);
+        onvif_digest_auth_t parsed;
+        int rc = onvif_digest_verify(hdr, method, requri,
+                                     onvif_auth_username(), onvif_auth_password(),
+                                     s_realm, &parsed);
+        if (rc == 0) {
+            *authed = true;
+            return true;
+        }
+    }
+    send_401(conn, cseq);
+    return false;
 }
 
 /* RTSP 应答：CSeq 回显 + 可选附加头（Session/RTP-Info/Public） */
@@ -417,6 +460,7 @@ static void handle_describe(rtsp_sess_t *s, const char *cseq)
 
 static void rtsp_handle_connection(int conn)
 {
+    bool authed = s_auth_digest == false; /* 匿名档恒放行 */
     char buf[RTSP_BUF];
     rtsp_sess_t *s = &s_sess;
     s->conn = conn;
@@ -439,14 +483,32 @@ static void rtsp_handle_connection(int conn)
             send_resp(conn, cseq,
                       "Public: OPTIONS, DESCRIBE, SETUP, PLAY, TEARDOWN\r\n");
         } else if (strstr(buf, "DESCRIBE") != NULL) {
+            if (!rtsp_auth_gate(conn, cseq, buf, &authed)) {
+                continue; /* 401 已发，等客户端带凭据重试 */
+            }
             handle_describe(s, cseq);
         } else if (strstr(buf, "SETUP") != NULL) {
+            if (!rtsp_auth_gate(conn, cseq, buf, &authed)) {
+                continue;
+            }
             uint8_t sid[4];
             esp_fill_random(sid, sizeof(sid));
             snprintf(s->session_id, sizeof(s->session_id),
                      "%02x%02x%02x%02x", sid[0], sid[1], sid[2], sid[3]);
             handle_setup(s, buf, cseq);
         } else if (strstr(buf, "PLAY") != NULL) {
+            if (!rtsp_auth_gate(conn, cseq, buf, &authed)) {
+                continue;
+            }
+            if (s->session_id[0] == '\0') {
+                /* RFC 2326 §10.5：PLAY 前必须 SETUP——直发 PLAY 无会话可播，
+                 * 454 拒绝（鉴权门已在前，此分支对已鉴权客户端闭合直连旁路） */
+                char resp[128];
+                int n = snprintf(resp, sizeof(resp),
+                                 "RTSP/1.0 454 Session Not Found\r\nCSeq: %s\r\n\r\n", cseq);
+                send(conn, resp, (size_t)n, 0);
+                continue;
+            }
             char extra[160];
             snprintf(extra, sizeof(extra),
                      "RTP-Info: url=rtsp://*/mjpeg;seq=%u;rtptime=%u\r\n"
@@ -494,13 +556,24 @@ static void rtsp_server_task(void *arg)
 }
 
 
-void rtsp_server_init(const onvif_media_io_t *io)
+void rtsp_server_init(const onvif_media_io_t *io, const onvif_rtsp_auth_t *auth)
 {
     if (io == NULL || io->copy_latest_id == NULL) {
         ESP_LOGE(TAG, "media io not provided");
         return;
     }
     s_io = io;
+    s_auth_digest = auth != NULL && auth->digest;
+    if (s_auth_digest) {
+        if (auth->realm == NULL || !onvif_digest_selftest()) {
+            /* 规范向量不过就拒绝开鉴权：宁可匿名也不要坏锁 */
+            ESP_LOGE(TAG, "digest selftest failed, fall back to anonymous");
+            s_auth_digest = false;
+        } else {
+            snprintf(s_realm, sizeof(s_realm), "%s", auth->realm);
+            ESP_LOGI(TAG, "$$$ ONVIF LAB05 DIGEST READY realm=%s", s_realm);
+        }
+    }
     s_frame = onvif_stats_alloc("rtsp", FRAME_BUF, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
     s_pkt = onvif_stats_alloc("rtsp", 12 + 8 + 135 + RTP_PAYLOAD_MAX + 8,
                               MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);

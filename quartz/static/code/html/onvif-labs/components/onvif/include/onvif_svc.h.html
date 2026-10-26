@@ -22,6 +22,13 @@
 <span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *   profile_s  — Profile S 八操作（lab06，ch17 §17.5.1）</span></span>
 <span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * marker      — $$$ ONVIF &#x3C;marker> OP 标记前缀（lab02..lab05 各用本站号；</span></span>
 <span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *               lab06 归位功能来源站传 LAB05，见 ch17 站点标记纪律）</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * io 注入契约（漏配不会在编译期报）：</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *   httpd          — 无条件必填，onvif_svc_init 校验（漏配 → ESP_ERR_INVALID_ARG）；</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *   copy_latest    — 仅 profiles=true 时必填，onvif_svc_init 校验（同上）；</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *   copy_latest_id — RTSP 消费方（stream_uri/profile_s 站）必填，由 rtsp_server_init</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *                    校验（void 返回：漏配只打一行日志并拒启 RTSP，:8554 不监听，</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *                    SOAP 面照常——别指望 svc init 替你抓这条）。</span></span>
 <span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
 <span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">typedef</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> struct</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> {</span></span>
 <span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    const</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> char</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> *</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">marker;</span></span>

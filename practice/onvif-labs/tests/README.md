@@ -38,6 +38,8 @@
 - **RTSP 前置清场**：T14 开测前杀孤儿 ffmpeg/dashboard/keeper（单客户端串行 accept 设计，
   任何存活旧消费者都占死会话槽）。
 - **解释器**：`~/.venvs/onvif`（持久）优先，`/tmp/onvif-venv` 兜底；选用路径随 JSON 落盘。
+- **双层测试**：组件纯逻辑另配宿主单元测试（`components/onvif/test/run.sh`，gcc +
+  RFC 2617 向量，不依赖板子）；板端功能测试走本套件。
 
 ## 不进本套件的（避免重复维护）
 

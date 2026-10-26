@@ -297,6 +297,40 @@ rtsp_handle_connection 3,098B text、应答模板 rodata 单个 300–940B——
 **回归**：22 项测试集（原 21 + T25）全绿；六站全部编译通过，lab06 烧验。
 「五站一致」自此是结构保证（单源组件）而非人工纪律（同步五份副本）。
 
+### 17.5.3 媒体面 Digest 鉴权闭环（同夜第二刀）
+
+控制面的 WS-Security 摘要门外，「匿名开放的媒体流」一直是 ch16 §16.2 的明示
+边界——第三方客户端从 GetStreamUri 拿到凭据后预期同一凭据保护 RTSP。本轮把
+这笔欠账清了，且按真实成本清：**HTTP/RTSP Digest（RFC 2617/7850）与
+WS-Security 是两套摘要**（MD5(HA1:nonce:HA2) vs Base64(SHA1(nonce+created+pass))），
+能复用的只有凭据来源、nonce 防重放骨架与常量时间比较纪律——摘要本体是新写的
+`onvif_digest` 模块（约 240 行），外加 RTSP 状态机里的 401 质询路径。
+
+**依赖接入面**（沿用 onvif_media_io_t 的注入模式）：MD5 后端与 nonce 源都是
+可注入函数指针（目标侧默认 mbedTLS PSA + esp_random；宿主单元测试注入
+RFC 1321 参考实现与确定性序列）；站点级 `onvif_rtsp_auth_t{digest, realm}`
+开关——lab06 开（realm=onvif@korvo-1），lab05 关（历史形态，匿名边界保留）。
+OPTIONS 保持无防（RFC 允许），DESCRIBE/SETUP 过 401 质询门，PLAY 由门闩 +
+**会话前置**双保险（sess_reset 漏清 session_id 的跨连接泄漏正是本轮测试抓出
+的板级真 bug——无 SETUP 直 PLAY 曾带着上一条会话的残留 sid 直接出流）。
+
+**双层测试**：
+
+- 宿主单元测试（`components/onvif/test/`，独立 gcc 运行器，不依赖 IDF）：
+  RFC 2617 向量 + 解析（带引号/无引号/缺字段/Basic 拒绝）+ 一次性重放 +
+  错口令 nonce 退还 + realm 参与哈希，10/10。向量还有一课：RFC 文里印的
+  6629fae4… 是 qop=auth 变体的值，无 qop 档（本实现）的期望应为
+  670fd8c2…（python hashlib 独立复核）——照抄文档会写出永远失败的 selftest。
+- 功能测试（套件 22→26 项）：T26 无凭据 DESCRIBE/裸 PLAY → 401+质询、
+  T27 带凭据全流程 200×4 + 6s 成帧、T28 错口令 401、T29 首用 200 → 重放
+  401 → 新 nonce 恢复 200 → 已鉴权无 SETUP 直 PLAY 454。ledger 升级为
+  质询应答客户端（401→Authorization 自动重试），顺带修掉响应残体投毒
+  （SDP leftover 拼进下一响应 head 的老毛病）。26/26 全绿，板端分因行
+  （digest ok / digest mismatch / nonce unknown or spent）落 runs/digest.log。
+
+边界重申：快照 HTTP 端点仍匿名（HTTP Digest 列为后续增强）；nonce 环 8 槽
+按单客户端语义设计。
+
 ## 17.6 小结
 
 - lab06 = 总装 + 换裁判：五站固件合成一台完整设备（发现→鉴权→Profile→RTSP 全链

@@ -1,9 +1,9 @@
 <pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span>{</span></span>
 <span class="line"><span>  "host": "192.168.1.4",</span></span>
 <span class="line"><span>  "python": "/home/huanglin/.venvs/onvif/bin/python",</span></span>
-<span class="line"><span>  "ts": "2026-10-27 00:10:26",</span></span>
-<span class="line"><span>  "pass": 22,</span></span>
-<span class="line"><span>  "total": 22,</span></span>
+<span class="line"><span>  "ts": "2026-10-27 00:57:35",</span></span>
+<span class="line"><span>  "pass": 26,</span></span>
+<span class="line"><span>  "total": 26,</span></span>
 <span class="line"><span>  "results": [</span></span>
 <span class="line"><span>    {</span></span>
 <span class="line"><span>      "id": "T01",</span></span>
@@ -59,7 +59,7 @@
 <span class="line"><span>      "name": "同 nonce 重放 → NotAuthorized",</span></span>
 <span class="line"><span>      "pass": true,</span></span>
 <span class="line"><span>      "detail": "first=200 replay=500",</span></span>
-<span class="line"><span>      "seconds": 0.1</span></span>
+<span class="line"><span>      "seconds": 0.0</span></span>
 <span class="line"><span>    },</span></span>
 <span class="line"><span>    {</span></span>
 <span class="line"><span>      "id": "T09",</span></span>
@@ -72,15 +72,15 @@
 <span class="line"><span>      "id": "T13",</span></span>
 <span class="line"><span>      "name": "快照直取 200 + JPEG magic",</span></span>
 <span class="line"><span>      "pass": true,</span></span>
-<span class="line"><span>      "detail": "17654B JPEG",</span></span>
-<span class="line"><span>      "seconds": 0.1</span></span>
+<span class="line"><span>      "detail": "17621B JPEG",</span></span>
+<span class="line"><span>      "seconds": 0.0</span></span>
 <span class="line"><span>    },</span></span>
 <span class="line"><span>    {</span></span>
 <span class="line"><span>      "id": "T14",</span></span>
 <span class="line"><span>      "name": "RTSP 信令 + 12s 成帧 + 板端对账",</span></span>
 <span class="line"><span>      "pass": true,</span></span>
-<span class="line"><span>      "detail": "客户端 168 帧（板端 TEARDOWN 未读到——串口被占?）",</span></span>
-<span class="line"><span>      "seconds": 23.2</span></span>
+<span class="line"><span>      "detail": "对账齐: board=155 client=155",</span></span>
+<span class="line"><span>      "seconds": 13.2</span></span>
 <span class="line"><span>    },</span></span>
 <span class="line"><span>    {</span></span>
 <span class="line"><span>      "id": "T15",</span></span>
@@ -94,21 +94,21 @@
 <span class="line"><span>      "name": "GetProfile 未知 token → InvalidArgVal",</span></span>
 <span class="line"><span>      "pass": true,</span></span>
 <span class="line"><span>      "detail": "fault subcode=ter:InvalidArgVal",</span></span>
-<span class="line"><span>      "seconds": 0.8</span></span>
+<span class="line"><span>      "seconds": 3.6</span></span>
 <span class="line"><span>    },</span></span>
 <span class="line"><span>    {</span></span>
 <span class="line"><span>      "id": "T17",</span></span>
 <span class="line"><span>      "name": "GetVideoSourceConfigurations → 640x480",</span></span>
 <span class="line"><span>      "pass": true,</span></span>
 <span class="line"><span>      "detail": "n=1 token=vsc_1 bounds=640x480",</span></span>
-<span class="line"><span>      "seconds": 0.9</span></span>
+<span class="line"><span>      "seconds": 2.3</span></span>
 <span class="line"><span>    },</span></span>
 <span class="line"><span>    {</span></span>
 <span class="line"><span>      "id": "T18",</span></span>
 <span class="line"><span>      "name": "GetVideoSourceConfiguration 正/负路径",</span></span>
 <span class="line"><span>      "pass": true,</span></span>
 <span class="line"><span>      "detail": "srctoken=vs_1; fault subcode=ter:InvalidArgVal",</span></span>
-<span class="line"><span>      "seconds": 2.0</span></span>
+<span class="line"><span>      "seconds": 0.8</span></span>
 <span class="line"><span>    },</span></span>
 <span class="line"><span>    {</span></span>
 <span class="line"><span>      "id": "T19",</span></span>
@@ -122,21 +122,21 @@
 <span class="line"><span>      "name": "GetVideoEncoderConfiguration 正/负路径",</span></span>
 <span class="line"><span>      "pass": true,</span></span>
 <span class="line"><span>      "detail": "enc=JPEG q=80.0; fault subcode=ter:InvalidArgVal",</span></span>
-<span class="line"><span>      "seconds": 0.9</span></span>
+<span class="line"><span>      "seconds": 2.7</span></span>
 <span class="line"><span>    },</span></span>
 <span class="line"><span>    {</span></span>
 <span class="line"><span>      "id": "T21",</span></span>
 <span class="line"><span>      "name": "GetVideoEncoderConfigurationOptions → JPEG/15fps",</span></span>
 <span class="line"><span>      "pass": true,</span></span>
 <span class="line"><span>      "detail": "jpeg=True fpsmax=15 w=640",</span></span>
-<span class="line"><span>      "seconds": 0.8</span></span>
+<span class="line"><span>      "seconds": 1.0</span></span>
 <span class="line"><span>    },</span></span>
 <span class="line"><span>    {</span></span>
 <span class="line"><span>      "id": "T22",</span></span>
 <span class="line"><span>      "name": "GetNetworkInterfaces → 真实 MAC/IP",</span></span>
 <span class="line"><span>      "pass": true,</span></span>
 <span class="line"><span>      "detail": "hw=1c:29:04:d0:72:e8 ip=192.168.1.4",</span></span>
-<span class="line"><span>      "seconds": 0.9</span></span>
+<span class="line"><span>      "seconds": 1.0</span></span>
 <span class="line"><span>    },</span></span>
 <span class="line"><span>    {</span></span>
 <span class="line"><span>      "id": "T23",</span></span>
@@ -156,7 +156,35 @@
 <span class="line"><span>      "id": "T25",</span></span>
 <span class="line"><span>      "name": "内存统计: mem 命令 STATS 账目 + free_dma 红线",</span></span>
 <span class="line"><span>      "pass": true,</span></span>
-<span class="line"><span>      "detail": "static_total=1424 free_dma=242687 free_spiram=11397432 min_free=225368",</span></span>
+<span class="line"><span>      "detail": "static_total=1424 free_dma=242399 free_spiram=11394140 min_free=225048",</span></span>
+<span class="line"><span>      "seconds": 0.1</span></span>
+<span class="line"><span>    },</span></span>
+<span class="line"><span>    {</span></span>
+<span class="line"><span>      "id": "T26",</span></span>
+<span class="line"><span>      "name": "无凭据 DESCRIBE/裸 PLAY → 401+Digest 质询",</span></span>
+<span class="line"><span>      "pass": true,</span></span>
+<span class="line"><span>      "detail": "DESCRIBE=401, PLAY=401",</span></span>
+<span class="line"><span>      "seconds": 0.0</span></span>
+<span class="line"><span>    },</span></span>
+<span class="line"><span>    {</span></span>
+<span class="line"><span>      "id": "T27",</span></span>
+<span class="line"><span>      "name": "带凭据全流程 200 + 6s 成帧",</span></span>
+<span class="line"><span>      "pass": true,</span></span>
+<span class="line"><span>      "detail": "200×4 frames=76",</span></span>
+<span class="line"><span>      "seconds": 6.1</span></span>
+<span class="line"><span>    },</span></span>
+<span class="line"><span>    {</span></span>
+<span class="line"><span>      "id": "T28",</span></span>
+<span class="line"><span>      "name": "错口令 → 401",</span></span>
+<span class="line"><span>      "pass": true,</span></span>
+<span class="line"><span>      "detail": "re-DESCRIBE=RTSP/1.0 401 Unauthorized",</span></span>
+<span class="line"><span>      "seconds": 0.0</span></span>
+<span class="line"><span>    },</span></span>
+<span class="line"><span>    {</span></span>
+<span class="line"><span>      "id": "T29",</span></span>
+<span class="line"><span>      "name": "nonce 重放 → 401；无 SETUP 直 PLAY → 454",</span></span>
+<span class="line"><span>      "pass": true,</span></span>
+<span class="line"><span>      "detail": "first=200, direct PLAY=454, replay=401, recover=200",</span></span>
 <span class="line"><span>      "seconds": 0.1</span></span>
 <span class="line"><span>    }</span></span>
 <span class="line"><span>  ]</span></span>

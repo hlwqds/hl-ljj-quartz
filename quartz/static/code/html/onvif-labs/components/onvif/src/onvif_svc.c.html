@@ -125,7 +125,8 @@
 <span class="line"><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">    "&#x3C;s:faultstring>ter:ActionNotSupported: requested operation not supported&#x3C;/s:faultstring>"</span></span>
 <span class="line"><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">    "&#x3C;/s:Fault>"</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">;</span></span>
 <span class="line"></span>
-<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/* lab03 靶子 GetUsers：返回花名册单条 admin（Administrator）；用户名取 onvif_secrets。 */</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/* lab03 靶子 GetUsers：返回花名册单条 admin（Administrator）；用户名取注入凭据</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * （onvif_auth_username()，secrets 头留在 app 侧）。 */</span></span>
 <span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">static</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> const</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> char</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> BODY_USERS</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">[]</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> =</span></span>
 <span class="line"><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">    "&#x3C;tds:GetUsersResponse>&#x3C;tds:User>"</span></span>
 <span class="line"><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">    "&#x3C;tt:Username></span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">%s</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">&#x3C;/tt:Username>"</span></span>

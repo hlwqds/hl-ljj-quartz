@@ -31,6 +31,8 @@ def main() -> int:
     ap.add_argument("host")
     ap.add_argument("--port", type=int, default=8554)
     ap.add_argument("--seconds", type=float, default=12.0)
+    ap.add_argument("--user", default=None, help="Digest 用户（缺省匿名，lab05 历史形态）")
+    ap.add_argument("--password", dest="password", default=None)
     args = ap.parse_args()
     base = f"rtsp://{args.host}:{args.port}/mjpeg"
 
@@ -45,12 +47,35 @@ def main() -> int:
             f"{method} {base} RTSP/1.0\r\nCSeq: {cseq}\r\n{extra}\r\n".encode()
         )
         resp, rest = recv_response(sock, buf)
-        buf.clear()
-        buf.extend(rest)
+        buf.clear()  # 残体（SDP/交错帧）不进下一响应解析——否则 head 会拼上前体行
+        _ = rest
         return resp
 
     print(rtsp("OPTIONS").splitlines()[0])
-    print(rtsp("DESCRIBE", "Accept: application/sdp\r\n").splitlines()[0])
+    import re as _re
+
+    def digest_resp(method: str, www_auth: str) -> str:
+        """RFC 2617 无 qop 档：response=MD5(MD5(u:r:p):nonce:MD5(m:uri))"""
+        import hashlib
+        realm = _re.search(r'realm="([^"]+)"', www_auth).group(1)
+        nonce = _re.search(r'nonce="([^"]+)"', www_auth).group(1)
+        uri = base
+        ha1 = hashlib.md5(f"{args.user}:{realm}:{args.password}".encode()).hexdigest()
+        ha2 = hashlib.md5(f"{method}:{uri}".encode()).hexdigest()
+        resp = hashlib.md5(f"{ha1}:{nonce}:{ha2}".encode()).hexdigest()
+        return (
+            f"Authorization: Digest username=\"{args.user}\", realm=\"{realm}\", "
+            f'nonce="{nonce}", uri="{uri}", response="{resp}"\r\n'
+        )
+
+    describe = rtsp("DESCRIBE", "Accept: application/sdp\r\n")
+    if describe.startswith("RTSP/1.0 401") and args.user:
+        www = next((ln for ln in describe.splitlines()
+                    if ln.lower().startswith("www-authenticate:")), "")
+        print(describe.splitlines()[0])
+        describe = rtsp("DESCRIBE",
+                        "Accept: application/sdp\r\n" + digest_resp("DESCRIBE", www))
+    print(describe.splitlines()[0])
     setup = rtsp("SETUP", "Transport: RTP/AVP/TCP;unicast;interleaved=0-1\r\n")
     print(setup.splitlines()[0])
     session = ""
@@ -97,7 +122,7 @@ def main() -> int:
                 complete += 1
 
     print(
-        f"\$\$\$ HOST LAB06 RTSP LEDGER frames={complete} "
+        f"$$$ HOST LAB06 RTSP LEDGER frames={complete} "
         f"window={args.seconds}s transport=TCP-interleaved",
         flush=True,
     )

@@ -43,6 +43,11 @@ const char *onvif_auth_username(void)
     return s_user;
 }
 
+const char *onvif_auth_password(void)
+{
+    return s_pass;
+}
+
 const char *onvif_auth_reason(auth_rc_t rc)
 {
     switch (rc) {

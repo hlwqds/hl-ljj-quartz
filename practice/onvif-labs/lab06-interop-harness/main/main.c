@@ -69,8 +69,13 @@ void app_main(void)
     };
     ESP_ERROR_CHECK(onvif_svc_init(&svc_cfg));
 
-    /* RTSP/RTP 取流服务：8554 端口（lab05 交付），帧源同一边界注入。 */
-    rtsp_server_init(&svc_cfg.io);
+    /* RTSP/RTP 取流服务：8554 端口（lab05 交付），帧源同一边界注入；
+     * 媒体面 Digest 鉴权开（ch17 §17.5.3）——凭据复用 onvif_auth 注入的那对。 */
+    static const onvif_rtsp_auth_t rtsp_auth = {
+        .digest = true,
+        .realm = "onvif@korvo-1",
+    };
+    rtsp_server_init(&svc_cfg.io, &rtsp_auth);
 
     ESP_LOGI(TAG, "lab06 base ready (total assembly for interop witness)");
 }
