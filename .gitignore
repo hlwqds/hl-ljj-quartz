@@ -100,3 +100,4 @@ qemu.pid
 
 # 环境噪音：本机视频代理工作目录（含指向 ~/.zcode 插件缓存的符号链接）
 .video_agent/
+practice/onvif-labs/tests/runs/smoke-xml/
