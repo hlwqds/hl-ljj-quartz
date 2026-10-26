@@ -1,7 +1,7 @@
 ---
 title: "ONVIF 深度解析（十三）：实战实录二——lab02，SOAP 控制面最小集"
 date: 2026-10-25 12:00:00
-description: "实战篇第二站：lab01 广播的 XAddrs 指向 /onvif/device_service，本章把这张支票兑付成 ESP32-S31-Korvo-1 上的 SOAP 控制面——onvif_svc 模块（393 行）在基座同一 httpd 实例挂 /onvif/device_service，免鉴权四连以手写模板 XML 应答，白名单之外一律 env:Receiver + ter:ActionNotSupported 合规拒绝；Body 首子元素做权威路由、SOAPAction 仅作兜底（实测 zeep 4.3.3 全程不发该头）；成文期预研定下的双壳信封（回信跟随请求版本）经 python-onvif-zeep 0.2.12 逐操作冒烟与 stdlib 1.1 手搓探针双双验证：5/5 + 4/4 全绿，Fault 结构、XAddr Host 回拼、free_dma 253.7KB 红线、双端标记行对账全部落 runs/ 与 run.log 留样。"
+description: "实战篇第二站：lab01 广播的 XAddrs 指向 /onvif/device_service，本章把这张支票兑付成 ESP32-S31-Korvo-1 上的 SOAP 控制面——onvif_svc 模块（393 行）在基座同一 httpd 实例挂 /onvif/device_service，免鉴权四连以手写模板 XML 应答，白名单之外一律 env:Receiver + ter:ActionNotSupported 合规拒绝；Body 首子元素做权威路由、SOAPAction 仅作兜底；成文期预研定下的双壳信封（回信跟随请求版本）经 python-onvif-zeep 0.2.12 逐操作冒烟与 stdlib 1.1 手搓探针双双验证：5/5 + 4/4 全绿，Fault 结构、XAddr Host 回拼、free_dma 253.7KB 红线、双端标记行对账全部落 runs/ 与 run.log 留样。本章成文时「zeep 不发 SOAPAction」的判断在 lab06 总装轮被源码与板端双证推翻（zeep/wsdl/messages/soap.py 无条件写头），并连带揭出路由字符集缺冒号 bug——Body 权威路径在当年从未被真实流量执行过，详见 [[ch17-lab06-interop-harness-report|第十七章]] 计划外发现。"
 tags: [onvif, esp32, rtsp, embedded, series]
 ---
 
@@ -28,12 +28,12 @@ zeep 这样严格客户端的反序列化。工程契约以
 
 [[ch03-soap-services|第三章]]的协议概念与 lab02 的固件落点，一张表对齐：
 
-| [[ch03-soap-services\|第三章]]的概念  | lab02 的设备侧落点                                    |
-| ------------------------------------- | ----------------------------------------------------- |
-| 命名空间即路由（Body 首子元素展开名） | Body 首子元素权威路由 + SOAPAction 兜底（实测未触发） |
-| WSDL 契约：服务世界的头文件           | 手写模板 XML 严格对 WSDL，一行不多，不引栈            |
-| 免鉴权四连问（对表→身份→目录→能力）   | 四操作白名单，应答体逐个模板化                        |
-| SOAP Fault 与 ter: 错误码字典         | 合规拒绝：env:Receiver + ter:ActionNotSupported       |
+| [[ch03-soap-services\|第三章]]的概念  | lab02 的设备侧落点                                                                  |
+| ------------------------------------- | ----------------------------------------------------------------------------------- |
+| 命名空间即路由（Body 首子元素展开名） | Body 首子元素权威路由 + SOAPAction 兜底（当年 zeep 流量实际全走兜底，见 13.3 翻案） |
+| WSDL 契约：服务世界的头文件           | 手写模板 XML 严格对 WSDL，一行不多，不引栈                                          |
+| 免鉴权四连问（对表→身份→目录→能力）   | 四操作白名单，应答体逐个模板化                                                      |
+| SOAP Fault 与 ter: 错误码字典         | 合规拒绝：env:Receiver + ter:ActionNotSupported                                     |
 
 端口纪律照 SPEC §5 端口表：80/tcp 是全系列的 SOAP 端口——基座的 `/stream`（HTTP MJPEG 对照面）
 已经住在那里，lab02 在**同一个 httpd 实例**上挂 `/onvif/*` 前缀；3702/udp 属于 lab01（已交付），
@@ -109,21 +109,25 @@ faultcode=`s:Receiver`、faultstring 文本承载 ter: 语义，同为 HTTP 500�
 httpd :80（基座复用，/stream 对照面同实例）
  └─ POST /onvif/device_service
      ├─ ① Body 首子元素展开名 → 权威路由（tds URI + 本地名，白名单四选一）
-     ├─ ② SOAPAction 尾段 → 兜底提示（仅 Body 解析失败时才轮到；实测未触发）
+     ├─ ② SOAPAction 尾段 → 兜底提示（仅 Body 解析失败时才轮到；当年实际承担了全部 zeep 流量，见 13.3 翻案）
      └─ ③ 命中 → 模板拼装（rodata 模板 + 运行期字段）→ 200
         未命中 → Fault 模板 → 500 + env:Receiver/ter:ActionNotSupported
 ```
 
 **路由纪律：Body 权威，SOAPAction 只是兜底。**[[ch03-soap-services|第三章]]的纪律：路由信息在
 Body 第一个子元素的展开名里（命名空间 URI 选服务、本地名选操作），URL 与 HTTP 头不承载路由。
-设备端照此实现：handler 先做 Body 定向解析，解析失败才回落 SOAPAction 头。成文期曾据「源码
-预研」断言 zeep 发 1.2 报文时也照发 `SOAPAction` 头、可当快路径——**本轮实跑把这条推翻了**：
-zeep 4.3.3 两个绑定类的 `_set_http_headers` 都只设 `Content-Type`（1.1 绑定
-`text/xml; charset=utf-8`，1.2 绑定 `application/soap+xml; charset=utf-8; action="…"`——action
-进了 Content-Type 参数而不是独立的 SOAPAction 头），全程不发 SOAPAction。于是本轮九笔成功的
-路由**全部由 Body 决定**，兜底分支一次都没轮到。教训与 ch09 坑 6 同款：预研的结论也要上板对
-账，「源码注释说照发」不等于「报文里真有」；留样的 `zeep-*.req.xml`（envelope 全文）与 zeep
-发行包源码（`zeep/wsdl/bindings/soap.py`）双方可复核。
+设备端照此实现：handler 先做 Body 定向解析，解析失败才回落 SOAPAction 头。
+
+> [!WARNING] 本章成文时的一个误判，后来被总装轮推翻
+> 本章成文时曾写「实跑推翻了预研、zeep 全程不发 SOAPAction」——**这个「实跑」结论是错的**。
+> 2026-10-26 lab06 总装轮双证翻案：其一，zeep 源码 `zeep/wsdl/messages/soap.py` 的
+> `_set_http_headers` **无条件**写 `SOAPAction` 头（operation 带动作就写动作，不带也写空串）；
+> 其二，板端路由字符集有一个缺冒号的 bug（见 [[ch17-lab06-interop-harness-report|第十七章]]
+> 计划外发现），`tds:GetSystemDateAndTime` 这类带前缀的 Body 首子元素根本解析不出来——
+> 也就是说**当年所有 zeep 流量走的都是 SOAPAction 兜底**，「Body 权威路径全程由 Body 决定、
+> 兜底一次都没轮到」的叙述恰好反了：兜底承担了全部路由，Body 路径从未被真实流量执行过。
+> 字符集补上冒号后两条路径的结果一致，Body 才真正开始权威。教训加码：预研的结论要上板对账，
+> 「实跑的叙述」本身也要能被源码复核——两道防线的任何一道单独都会漏。
 
 C 视角的路由表（源码原文，模板拼装与 httpd 注册略）：
 
@@ -354,11 +358,13 @@ t=60s heap : free_dma=253687 free_spiram=12055112
 5. **端点语义的原始字节证据**：GET `/onvif/device_service` → 405；未注册路径
    `/onvif/events_service` → `404 Nothing matches the given URI`（curl 实测）——「不装作有服务」
    不是口号，是可复现的 HTTP 状态码。
-6. **成文期「zeep 也照发 SOAPAction」的预研被实跑推翻**：zeep 4.3.3 两个绑定都只设
-   `Content-Type`（1.2 把 action 放进 Content-Type 参数），全程不发 SOAPAction 头
-   （`zeep/wsdl/bindings/soap.py` 两个 `_set_http_headers` 实现可复核）——本轮路由全程由 Body
-   决定，设备端的 SOAPAction 兜底分支一次都没触发。「快路径」是写给野外的老客户端的，不是写给
-   自己的验收客户端的。
+6. **成文期「zeep 不发 SOAPAction」的实跑叙述被总装轮源码复核推翻**：`zeep/wsdl/messages/soap.py`
+   的 `_set_http_headers` 对每个请求**无条件**写 `SOAPAction` 头（有动作为
+   `"动作"`，无动作也写空串 `""`）——本章当年「兜底分支一次都没触发、路由全部由 Body 决定」
+   的判断恰好把两条路径的贡献写反了。真相由 [[ch17-lab06-interop-harness-report|第十七章]]
+   的路由字符集 bug 顺藤摸瓜揭出：Body 权威路径当年解析不出任何带前缀的元素，全部 zeep
+   流量实际走的都是 SOAPAction 兜底。「快路径」写给野外老客户端的表述保留有效，但本章
+   验收客户端自己恰恰就走在那条快路径上。
 
 ## 13.6 小结
 

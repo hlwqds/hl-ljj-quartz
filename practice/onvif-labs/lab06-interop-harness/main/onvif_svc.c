@@ -1,14 +1,15 @@
 /*
- * onvif_svc.c — SOAP 控制面 + Media 三操作（含 GetStreamUri）（lab05；契约 = ch16 / SPEC §6 lab05，
- * 自 lab03 移植）。
+ * onvif_svc.c — SOAP 控制面 + Media 操作全集（GetStreamUri + Profile S 缺口八操作；
+ * lab06 总装，契约 = ch17 / SPEC §6，自 lab05 移植）。
  *
- * 80 端口同一 httpd 实例三个 URI：POST /onvif/device_service（免鉴权四连 + GetUsers）、
- * POST /onvif/media_service（GetProfiles / GetSnapshotUri，均过 lab03 摘要门）、
+ * 80 端口同一 httpd 实例三个 URI：POST /onvif/device_service（免鉴权四连 + GetUsers +
+ * GetNetworkInterfaces/GetScopes）、POST /onvif/media_service（Profiles 族全量，过摘要门）、
  * GET /onvif-http/snapshot（免鉴权直出最新成品 JPEG，明示内网实验边界）。
  * GET /onvif/ 下 SOAP 端点一律 405，未注册路径自然 404。
  *
- * 路由：Body 首子元素（本地名 + 前缀绑定 tds/trt 双命名空间）权威，SOAPAction 尾段兜底
- * （实测 zeep 全程不发该头）。未知 ProfileToken 回 s:Sender + ter:InvalidArgVal——
+ * 路由：Body 首子元素（本地名 + 前缀绑定 tds/trt 双命名空间）权威，SOAPAction 尾段兜底。
+ * 实测修正：zeep 4.3.3 每请求必发 SOAPAction，历史流量全走兜底；路由字符集补 ':' 后
+ * Body 权威路径才真正生效。token 失配回 s:Sender + ter:InvalidArgVal——
  * HTTP 按壳映射：1.2 Sender→400，1.1 Fault 一律 500。
  *
  * 信封：双壳（SOAP 1.1 / 1.2），回信信封版本跟随请求。缓冲一律 PSRAM（含 300KB
@@ -106,7 +107,8 @@ static const char BODY_CAPABILITIES[] =
     "<tt:FirmwareUpgrade>false</tt:FirmwareUpgrade></tt:System>"
     "</tt:Device>"
     "<tt:Media><tt:XAddr>http://%s/onvif/media_service</tt:XAddr>"
-    "<tt:StreamingCapabilities/></tt:Media>"
+    "<tt:StreamingCapabilities><tt:RTP_TCP>true</tt:RTP_TCP>"
+    "<tt:RTP_RTSP_TCP>true</tt:RTP_RTSP_TCP></tt:StreamingCapabilities></tt:Media>"
     "</tds:Capabilities></tds:GetCapabilitiesResponse>";
 
 static const char BODY_FAULT_12[] =
@@ -184,7 +186,125 @@ static const char BODY_STREAM_URI[] =
     "<tt:Timeout>PT0S</tt:Timeout>"
     "</trt:MediaUri></trt:GetStreamUriResponse>";
 
-/* 未知 ProfileToken：s:Sender + ter:InvalidArgVal（ch03 判据表；1.1 无 Subcode 位） */
+/* ---- Profile S 补齐（CTT 最小实现缺口八操作，ch17 计划外发现）----
+ * 单 profile 的三份拆身（GetProfile/VideoSource/VideoEncoder Configuration 应答）
+ * 与 GetProfiles 同源：字段全取基座实测/固件常量，改一处必三处同改。 */
+
+static const char BODY_PROFILE_ONE[] =
+    "<trt:GetProfileResponse xmlns:trt=\"" TRT_NS "\">"
+    "<trt:Profile fixed=\"true\" token=\"profile_1\">"
+    "<tt:Name>mjpeg_640x480</tt:Name>"
+    "<tt:VideoSourceConfiguration token=\"vsc_1\">"
+    "<tt:Name>sc101iot_source</tt:Name>"
+    "<tt:UseCount>1</tt:UseCount>"
+    "<tt:SourceToken>vs_1</tt:SourceToken>"
+    "<tt:Bounds x=\"0\" y=\"0\" width=\"640\" height=\"480\"/>"
+    "</tt:VideoSourceConfiguration>"
+    "<tt:VideoEncoderConfiguration token=\"vec_1\">"
+    "<tt:Name>mjpeg_encoder</tt:Name>"
+    "<tt:UseCount>1</tt:UseCount>"
+    "<tt:Encoding>JPEG</tt:Encoding>"
+    "<tt:Resolution><tt:Width>640</tt:Width><tt:Height>480</tt:Height></tt:Resolution>"
+    "<tt:Quality>80</tt:Quality>"
+    "<tt:RateControl><tt:FrameRateLimit>15</tt:FrameRateLimit>"
+    "<tt:EncodingInterval>1</tt:EncodingInterval>"
+    "<tt:BitrateLimit>3020</tt:BitrateLimit></tt:RateControl>"
+    "</tt:VideoEncoderConfiguration>"
+    "</trt:Profile></trt:GetProfileResponse>";
+
+static const char BODY_VSRCS[] =
+    "<trt:GetVideoSourceConfigurationsResponse xmlns:trt=\"" TRT_NS "\">"
+    "<trt:Configurations token=\"vsc_1\">"
+    "<tt:Name>sc101iot_source</tt:Name>"
+    "<tt:UseCount>1</tt:UseCount>"
+    "<tt:SourceToken>vs_1</tt:SourceToken>"
+    "<tt:Bounds x=\"0\" y=\"0\" width=\"640\" height=\"480\"/>"
+    "</trt:Configurations></trt:GetVideoSourceConfigurationsResponse>";
+
+static const char BODY_VSRC[] =
+    "<trt:GetVideoSourceConfigurationResponse xmlns:trt=\"" TRT_NS "\">"
+    "<trt:Configuration token=\"vsc_1\">"
+    "<tt:Name>sc101iot_source</tt:Name>"
+    "<tt:UseCount>1</tt:UseCount>"
+    "<tt:SourceToken>vs_1</tt:SourceToken>"
+    "<tt:Bounds x=\"0\" y=\"0\" width=\"640\" height=\"480\"/>"
+    "</trt:Configuration></trt:GetVideoSourceConfigurationResponse>";
+
+static const char BODY_VENCS[] =
+    "<trt:GetVideoEncoderConfigurationsResponse xmlns:trt=\"" TRT_NS "\">"
+    "<trt:Configurations token=\"vec_1\">"
+    "<tt:Name>mjpeg_encoder</tt:Name>"
+    "<tt:UseCount>1</tt:UseCount>"
+    "<tt:Encoding>JPEG</tt:Encoding>"
+    "<tt:Resolution><tt:Width>640</tt:Width><tt:Height>480</tt:Height></tt:Resolution>"
+    "<tt:Quality>80</tt:Quality>"
+    "<tt:RateControl><tt:FrameRateLimit>15</tt:FrameRateLimit>"
+    "<tt:EncodingInterval>1</tt:EncodingInterval>"
+    "<tt:BitrateLimit>3020</tt:BitrateLimit></tt:RateControl>"
+    "</trt:Configurations></trt:GetVideoEncoderConfigurationsResponse>";
+
+static const char BODY_VENC[] =
+    "<trt:GetVideoEncoderConfigurationResponse xmlns:trt=\"" TRT_NS "\">"
+    "<trt:Configuration token=\"vec_1\">"
+    "<tt:Name>mjpeg_encoder</tt:Name>"
+    "<tt:UseCount>1</tt:UseCount>"
+    "<tt:Encoding>JPEG</tt:Encoding>"
+    "<tt:Resolution><tt:Width>640</tt:Width><tt:Height>480</tt:Height></tt:Resolution>"
+    "<tt:Quality>80</tt:Quality>"
+    "<tt:RateControl><tt:FrameRateLimit>15</tt:FrameRateLimit>"
+    "<tt:EncodingInterval>1</tt:EncodingInterval>"
+    "<tt:BitrateLimit>3020</tt:BitrateLimit></tt:RateControl>"
+    "</trt:Configuration></trt:GetVideoEncoderConfigurationResponse>";
+
+/* 真实编码器能力：JPEG 档 640x480@15fps（RateControl 实测帧率上限，ch16）；
+ * Quality 1..100 覆盖 vec_1 的 80。结构按 onvif.xsd VideoEncoderConfigurationOptions：
+ * QualityRange(必填, IntRange) + JPEG(JpegOptions)——不要臆造 QualityRangeMin/Max。 */
+static const char BODY_VENC_OPTS[] =
+    "<trt:GetVideoEncoderConfigurationOptionsResponse xmlns:trt=\"" TRT_NS "\">"
+    "<trt:Options>"
+    "<tt:QualityRange><tt:Min>1</tt:Min><tt:Max>100</tt:Max></tt:QualityRange>"
+    "<tt:JPEG>"
+    "<tt:ResolutionsAvailable><tt:Width>640</tt:Width><tt:Height>480</tt:Height>"
+    "</tt:ResolutionsAvailable>"
+    "<tt:FrameRateRange><tt:Min>1</tt:Min><tt:Max>15</tt:Max></tt:FrameRateRange>"
+    "<tt:EncodingIntervalRange><tt:Min>1</tt:Min><tt:Max>1</tt:Max>"
+    "</tt:EncodingIntervalRange>"
+    "</tt:JPEG>"
+    "</trt:Options></trt:GetVideoEncoderConfigurationOptionsResponse>";
+
+/* 网卡应答：MAC 取 esp_read_mac（与 DevInfo SerialNumber 同源），IP 取 Host 头，
+ * DHCP=true（lab01 §2 DHCP 取址事实）；前缀按实验室网段 24 位。 */
+static const char BODY_NETIF[] =
+    "<tds:GetNetworkInterfacesResponse>"
+    "<tds:NetworkInterfaces token=\"eth0\">"
+    "<tt:Enabled>true</tt:Enabled>"
+    "<tt:Info><tt:Name>sta0</tt:Name>"
+    "<tt:HwAddress>%02x:%02x:%02x:%02x:%02x:%02x</tt:HwAddress></tt:Info>"
+    "<tt:IPv4><tt:Enabled>true</tt:Enabled>"
+    "<tt:Config>"
+    "<tt:Manual><tt:Address>%s</tt:Address><tt:PrefixLength>24</tt:PrefixLength></tt:Manual>"
+    "<tt:DHCP>true</tt:DHCP>"
+    "</tt:Config></tt:IPv4>"
+    "</tds:NetworkInterfaces></tds:GetNetworkInterfacesResponse>";
+
+/* Scopes 与 ProbeMatch（onvif_disc.c）逐条一致——CTT 对账两处必须同串。
+ * onvif:// scope 串的标准归属是 tt:ScopeItem（GetScopes ↔ ProbeMatch 对账字段）；
+ * Profile/Streaming 是 Profile S 设备的 Fixed scope（规范 §3.2）。
+ * name scope 保留 onvif-lab01 旧串：与 disc 模板同步改，单改此处即失衡。
+ * 注：随包 zeep schema 只认 ScopeDef+ScopeItem；现行 onvif.xsd 另有 ScopeXAddr(0..1)
+ * 槽位放设备自身 XAddr，scope 串不放那里。 */
+static const char BODY_SCOPES[] =
+    "<tds:GetScopesResponse>"
+    "<tds:Scopes><tt:ScopeDef>Fixed</tt:ScopeDef>"
+    "<tt:ScopeItem>onvif://www.onvif.org/Profile/Streaming</tt:ScopeItem></tds:Scopes>"
+    "<tds:Scopes><tt:ScopeDef>Configurable</tt:ScopeDef>"
+    "<tt:ScopeItem>onvif://www.onvif.org/hardware/ESP32-S31-Korvo-1</tt:ScopeItem></tds:Scopes>"
+    "<tds:Scopes><tt:ScopeDef>Configurable</tt:ScopeDef>"
+    "<tt:ScopeItem>onvif://www.onvif.org/name/onvif-lab01</tt:ScopeItem></tds:Scopes>"
+    "</tds:GetScopesResponse>";
+
+/* 未知 ProfileToken：s:Sender + ter:InvalidArgVal（ch03 判据表；1.1 无 Subcode 位）
+ * vsc_1/vec_1 的 token 失配复用同款（subcode 是 CTT 判据，文案沿用 ProfileToken）。 */
 static const char BODY_FAULT_TOKEN_12[] =
     "<s:Fault><s:Code><s:Value>s:Sender</s:Value>"
     "<s:Subcode><s:Value xmlns:ter=\"" TER_NS "\">ter:InvalidArgVal</s:Value></s:Subcode>"
@@ -319,6 +439,68 @@ static esp_err_t serve_stream_uri(httpd_req_t *req, char *body, size_t body_max)
     return ESP_OK;
 }
 
+/* ---- Profile S 补齐：六静态模板 + 一现拼（网卡）+ 一纯静态（Scopes） ---- */
+
+static esp_err_t serve_profile(httpd_req_t *req, char *body, size_t body_max)
+{
+    (void)req;
+    snprintf(body, body_max, BODY_PROFILE_ONE);
+    return ESP_OK;
+}
+
+static esp_err_t serve_vsrcs(httpd_req_t *req, char *body, size_t body_max)
+{
+    (void)req;
+    snprintf(body, body_max, BODY_VSRCS);
+    return ESP_OK;
+}
+
+static esp_err_t serve_vsrc(httpd_req_t *req, char *body, size_t body_max)
+{
+    (void)req;
+    snprintf(body, body_max, BODY_VSRC);
+    return ESP_OK;
+}
+
+static esp_err_t serve_vencs(httpd_req_t *req, char *body, size_t body_max)
+{
+    (void)req;
+    snprintf(body, body_max, BODY_VENCS);
+    return ESP_OK;
+}
+
+static esp_err_t serve_venc(httpd_req_t *req, char *body, size_t body_max)
+{
+    (void)req;
+    snprintf(body, body_max, BODY_VENC);
+    return ESP_OK;
+}
+
+static esp_err_t serve_venc_opts(httpd_req_t *req, char *body, size_t body_max)
+{
+    (void)req;
+    snprintf(body, body_max, BODY_VENC_OPTS);
+    return ESP_OK;
+}
+
+static esp_err_t serve_netif(httpd_req_t *req, char *body, size_t body_max)
+{
+    uint8_t mac[6] = {0};
+    esp_read_mac(mac, ESP_MAC_WIFI_STA);
+    char host[SVC_HOST_BUF];
+    svc_host_of(req, host, sizeof(host));
+    snprintf(body, body_max, BODY_NETIF,
+             mac[0], mac[1], mac[2], mac[3], mac[4], mac[5], host);
+    return ESP_OK;
+}
+
+static esp_err_t serve_scopes(httpd_req_t *req, char *body, size_t body_max)
+{
+    (void)req;
+    snprintf(body, body_max, BODY_SCOPES);
+    return ESP_OK;
+}
+
 /* ---- 路由表（免鉴权四连 + 鉴权靶子 GetUsers + media 双操作；lab05 RTSP 在此追加） ---- */
 
 typedef esp_err_t (*serve_fn)(httpd_req_t *req, char *body, size_t body_max);
@@ -329,15 +511,26 @@ static const struct {
     const char *action_tail; /* SOAPAction 尾段：仅 Body 解析失败时兜底 */
     serve_fn serve;          /* 模板拼装进 body 缓冲 */
     bool needs_auth;         /* true = 先过 onvif_auth_verify 五环判据链 */
+    const char *token;       /* 非空 = 请求原文须含该 token 子串，否则 InvalidArgVal */
 } kOps[] = {
-    { "GetSystemDateAndTime", TDS_NS, "GetSystemDateAndTime", serve_date_time,    false },
-    { "GetDeviceInformation", TDS_NS, "GetDeviceInformation", serve_dev_info,     false },
-    { "GetServices",          TDS_NS, "GetServices",          serve_services,     false },
-    { "GetCapabilities",      TDS_NS, "GetCapabilities",      serve_capabilities, false },
-    { "GetUsers",             TDS_NS, "GetUsers",             serve_users,        true  },
-    { "GetProfiles",          TRT_NS, "GetProfiles",          serve_profiles,     true  },
-    { "GetSnapshotUri",       TRT_NS, "GetSnapshotUri",       serve_snapshot_uri, true  },
-    { "GetStreamUri",         TRT_NS, "GetStreamUri",         serve_stream_uri,   true  },
+    /* 兜底序注意：长名先于其子串名（GetProfiles→GetProfile、Configurations→Configuration、
+     * Options→Configuration），strstr 兜底才不会误路由；Body 权威路径是精确 strcmp，无此问题 */
+    { "GetSystemDateAndTime", TDS_NS, "GetSystemDateAndTime", serve_date_time,    false, NULL },
+    { "GetDeviceInformation", TDS_NS, "GetDeviceInformation", serve_dev_info,     false, NULL },
+    { "GetServices",          TDS_NS, "GetServices",          serve_services,     false, NULL },
+    { "GetCapabilities",      TDS_NS, "GetCapabilities",      serve_capabilities, false, NULL },
+    { "GetUsers",             TDS_NS, "GetUsers",             serve_users,        true,  NULL },
+    { "GetProfiles",          TRT_NS, "GetProfiles",          serve_profiles,     true,  NULL },
+    { "GetProfile",           TRT_NS, "GetProfile",           serve_profile,      true,  ">profile_1<" },
+    { "GetSnapshotUri",       TRT_NS, "GetSnapshotUri",       serve_snapshot_uri, true,  ">profile_1<" },
+    { "GetStreamUri",         TRT_NS, "GetStreamUri",         serve_stream_uri,   true,  ">profile_1<" },
+    { "GetVideoSourceConfigurations", TRT_NS, "GetVideoSourceConfigurations", serve_vsrcs, true, NULL },
+    { "GetVideoSourceConfiguration",  TRT_NS, "GetVideoSourceConfiguration",  serve_vsrc,  true, ">vsc_1<" },
+    { "GetVideoEncoderConfigurations", TRT_NS, "GetVideoEncoderConfigurations", serve_vencs, true, NULL },
+    { "GetVideoEncoderConfiguration",  TRT_NS, "GetVideoEncoderConfiguration",  serve_venc,  true, ">vec_1<" },
+    { "GetVideoEncoderConfigurationOptions", TRT_NS, "GetVideoEncoderConfigurationOptions", serve_venc_opts, true, NULL },
+    { "GetNetworkInterfaces", TDS_NS, "GetNetworkInterfaces", serve_netif,        true,  NULL },
+    { "GetScopes",            TDS_NS, "GetScopes",            serve_scopes,       true,  NULL },
 };
 
 /* Body 首子元素权威路由：定位 ":Body>" 后的首个元素，取本地名；
@@ -361,7 +554,8 @@ static int svc_route_by_body(const char *rx)
     char local[48] = {0};
     int n = 0;
     while ((*p >= 'A' && *p <= 'Z') || (*p >= 'a' && *p <= 'z') ||
-           (*p >= '0' && *p <= '9') || *p == '.' || *p == '_' || *p == '-') {
+           (*p >= '0' && *p <= '9') || *p == '.' || *p == '_' || *p == '-' ||
+           *p == ':') {
         if (n < (int)sizeof(local) - 1) {
             local[n++] = *p;
         }
@@ -413,17 +607,24 @@ static esp_err_t onvif_svc_handler(httpd_req_t *req)
                             "soap body size out of range");
         return ESP_OK;
     }
-    int rx_len = httpd_req_recv(req, s_rx, (size_t)content_len);
-    if (rx_len <= 0) {
-        httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "soap body read failed");
-        return ESP_OK;
+    int rx_len = 0;
+    while (rx_len < content_len) {
+        int n = httpd_req_recv(req, s_rx + rx_len, (size_t)(content_len - rx_len));
+        if (n <= 0) {
+            httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR,
+                                "soap body read failed");
+            return ESP_OK;
+        }
+        rx_len += n; /* recv 不保证一次读满：TCP 分段时必须循环（否则截断的信封走错路由） */
     }
     s_rx[rx_len] = '\0';
 
     shell_ver_t shell = detect_shell(s_rx);
 
-    /* 权威路由：Body 首子元素（tds/trt 双命名空间）；SOAPAction 尾段兜底
-     * （实测 zeep 4.3.3 不发该头，见 ch13 §13.3）。 */
+    /* 权威路由：Body 首子元素（tds/trt 双命名空间，精确 strcmp）；SOAPAction 尾段仅在
+     * Body 解析失败时兜底。实测修正（ch17）：zeep 4.3.3 每请求必发 SOAPAction
+     * （zeep/wsdl/messages/soap.py 无条件写头），故历史流量全走兜底；路由字符集补
+     * ':' 后 Body 权威路径才真正启用——两路结果如今一致，Body 优先。 */
     int op_idx = svc_route_by_body(s_rx);
     if (op_idx < 0) {
         char action[96] = {0};
@@ -455,14 +656,13 @@ static esp_err_t onvif_svc_handler(httpd_req_t *req)
             return ESP_OK;
         }
     }
-    if ((kOps[op_idx].serve == serve_snapshot_uri ||
-         kOps[op_idx].serve == serve_stream_uri) &&
-        strstr(s_rx, ">profile_1<") == NULL) {
-        /* 未知 ProfileToken：s:Sender + ter:InvalidArgVal（ch03 判据表；
+    const char *want_tok = kOps[op_idx].token;
+    if (want_tok != NULL && strstr(s_rx, want_tok) == NULL) {
+        /* token 失配：s:Sender + ter:InvalidArgVal（ch03 判据表；
          * HTTP 映射按壳分——1.2 Sender→400，1.1 Fault 一律 500） */
         send_soap(req, shell, shell == SHELL_SOAP12 ? BODY_FAULT_TOKEN_12 : BODY_FAULT_TOKEN_11,
                   shell == SHELL_SOAP12 ? "400 Bad Request" : "500 Internal Server Error");
-        ESP_LOGI(TAG, "$$$ ONVIF LAB05 OP GetSnapshotUri fault invalid-arg-val");
+        ESP_LOGI(TAG, "$$$ ONVIF LAB05 OP %s fault invalid-arg-val", local);
         return ESP_OK;
     }
 

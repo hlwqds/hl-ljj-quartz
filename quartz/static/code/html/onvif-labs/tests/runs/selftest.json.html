@@ -1,0 +1,157 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span>{</span></span>
+<span class="line"><span>  "host": "192.168.1.4",</span></span>
+<span class="line"><span>  "python": "/home/huanglin/.venvs/onvif/bin/python",</span></span>
+<span class="line"><span>  "ts": "2026-10-26 23:41:57",</span></span>
+<span class="line"><span>  "pass": 21,</span></span>
+<span class="line"><span>  "total": 21,</span></span>
+<span class="line"><span>  "results": [</span></span>
+<span class="line"><span>    {</span></span>
+<span class="line"><span>      "id": "T01",</span></span>
+<span class="line"><span>      "name": "WS-Discovery ProbeMatch(组播→单播兜底)",</span></span>
+<span class="line"><span>      "pass": true,</span></span>
+<span class="line"><span>      "detail": "单播兜底 ProbeMatch from 192.168.1.4",</span></span>
+<span class="line"><span>      "seconds": 4.0</span></span>
+<span class="line"><span>    },</span></span>
+<span class="line"><span>    {</span></span>
+<span class="line"><span>      "id": "T02",</span></span>
+<span class="line"><span>      "name": "免鉴权 GetDeviceInformation",</span></span>
+<span class="line"><span>      "pass": true,</span></span>
+<span class="line"><span>      "detail": "http=200",</span></span>
+<span class="line"><span>      "seconds": 0.0</span></span>
+<span class="line"><span>    },</span></span>
+<span class="line"><span>    {</span></span>
+<span class="line"><span>      "id": "T03",</span></span>
+<span class="line"><span>      "name": "免鉴权 GetSystemDateAndTime",</span></span>
+<span class="line"><span>      "pass": true,</span></span>
+<span class="line"><span>      "detail": "http=200",</span></span>
+<span class="line"><span>      "seconds": 0.0</span></span>
+<span class="line"><span>    },</span></span>
+<span class="line"><span>    {</span></span>
+<span class="line"><span>      "id": "T04",</span></span>
+<span class="line"><span>      "name": "GET SOAP 端点 → 405",</span></span>
+<span class="line"><span>      "pass": true,</span></span>
+<span class="line"><span>      "detail": "GET http=405",</span></span>
+<span class="line"><span>      "seconds": 0.1</span></span>
+<span class="line"><span>    },</span></span>
+<span class="line"><span>    {</span></span>
+<span class="line"><span>      "id": "T05",</span></span>
+<span class="line"><span>      "name": "摘要门正路径 GetProfiles → 200",</span></span>
+<span class="line"><span>      "pass": true,</span></span>
+<span class="line"><span>      "detail": "http=200",</span></span>
+<span class="line"><span>      "seconds": 0.0</span></span>
+<span class="line"><span>    },</span></span>
+<span class="line"><span>    {</span></span>
+<span class="line"><span>      "id": "T06",</span></span>
+<span class="line"><span>      "name": "无凭据 GetProfiles → NotAuthorized",</span></span>
+<span class="line"><span>      "pass": true,</span></span>
+<span class="line"><span>      "detail": "http=500",</span></span>
+<span class="line"><span>      "seconds": 0.0</span></span>
+<span class="line"><span>    },</span></span>
+<span class="line"><span>    {</span></span>
+<span class="line"><span>      "id": "T07",</span></span>
+<span class="line"><span>      "name": "错口令 → NotAuthorized",</span></span>
+<span class="line"><span>      "pass": true,</span></span>
+<span class="line"><span>      "detail": "http=500",</span></span>
+<span class="line"><span>      "seconds": 0.0</span></span>
+<span class="line"><span>    },</span></span>
+<span class="line"><span>    {</span></span>
+<span class="line"><span>      "id": "T08",</span></span>
+<span class="line"><span>      "name": "同 nonce 重放 → NotAuthorized",</span></span>
+<span class="line"><span>      "pass": true,</span></span>
+<span class="line"><span>      "detail": "first=200 replay=500",</span></span>
+<span class="line"><span>      "seconds": 0.0</span></span>
+<span class="line"><span>    },</span></span>
+<span class="line"><span>    {</span></span>
+<span class="line"><span>      "id": "T09",</span></span>
+<span class="line"><span>      "name": "zeep 冒烟: 设备信息/Profiles/StreamUri/未知Token",</span></span>
+<span class="line"><span>      "pass": true,</span></span>
+<span class="line"><span>      "detail": "4/4 证据行齐",</span></span>
+<span class="line"><span>      "seconds": 0.4</span></span>
+<span class="line"><span>    },</span></span>
+<span class="line"><span>    {</span></span>
+<span class="line"><span>      "id": "T13",</span></span>
+<span class="line"><span>      "name": "快照直取 200 + JPEG magic",</span></span>
+<span class="line"><span>      "pass": true,</span></span>
+<span class="line"><span>      "detail": "16768B JPEG",</span></span>
+<span class="line"><span>      "seconds": 0.1</span></span>
+<span class="line"><span>    },</span></span>
+<span class="line"><span>    {</span></span>
+<span class="line"><span>      "id": "T14",</span></span>
+<span class="line"><span>      "name": "RTSP 信令 + 12s 成帧 + 板端对账",</span></span>
+<span class="line"><span>      "pass": true,</span></span>
+<span class="line"><span>      "detail": "对账齐: board=158 client=157",</span></span>
+<span class="line"><span>      "seconds": 15.5</span></span>
+<span class="line"><span>    },</span></span>
+<span class="line"><span>    {</span></span>
+<span class="line"><span>      "id": "T15",</span></span>
+<span class="line"><span>      "name": "GetProfile(profile_1) → JPEG",</span></span>
+<span class="line"><span>      "pass": true,</span></span>
+<span class="line"><span>      "detail": "token=profile_1 enc=JPEG",</span></span>
+<span class="line"><span>      "seconds": 0.8</span></span>
+<span class="line"><span>    },</span></span>
+<span class="line"><span>    {</span></span>
+<span class="line"><span>      "id": "T16",</span></span>
+<span class="line"><span>      "name": "GetProfile 未知 token → InvalidArgVal",</span></span>
+<span class="line"><span>      "pass": true,</span></span>
+<span class="line"><span>      "detail": "fault subcode=ter:InvalidArgVal",</span></span>
+<span class="line"><span>      "seconds": 0.9</span></span>
+<span class="line"><span>    },</span></span>
+<span class="line"><span>    {</span></span>
+<span class="line"><span>      "id": "T17",</span></span>
+<span class="line"><span>      "name": "GetVideoSourceConfigurations → 640x480",</span></span>
+<span class="line"><span>      "pass": true,</span></span>
+<span class="line"><span>      "detail": "n=1 token=vsc_1 bounds=640x480",</span></span>
+<span class="line"><span>      "seconds": 0.9</span></span>
+<span class="line"><span>    },</span></span>
+<span class="line"><span>    {</span></span>
+<span class="line"><span>      "id": "T18",</span></span>
+<span class="line"><span>      "name": "GetVideoSourceConfiguration 正/负路径",</span></span>
+<span class="line"><span>      "pass": true,</span></span>
+<span class="line"><span>      "detail": "srctoken=vs_1; fault subcode=ter:InvalidArgVal",</span></span>
+<span class="line"><span>      "seconds": 0.9</span></span>
+<span class="line"><span>    },</span></span>
+<span class="line"><span>    {</span></span>
+<span class="line"><span>      "id": "T19",</span></span>
+<span class="line"><span>      "name": "GetVideoEncoderConfigurations → JPEG",</span></span>
+<span class="line"><span>      "pass": true,</span></span>
+<span class="line"><span>      "detail": "n=1 enc=JPEG 640x480",</span></span>
+<span class="line"><span>      "seconds": 0.9</span></span>
+<span class="line"><span>    },</span></span>
+<span class="line"><span>    {</span></span>
+<span class="line"><span>      "id": "T20",</span></span>
+<span class="line"><span>      "name": "GetVideoEncoderConfiguration 正/负路径",</span></span>
+<span class="line"><span>      "pass": true,</span></span>
+<span class="line"><span>      "detail": "enc=JPEG q=80.0; fault subcode=ter:InvalidArgVal",</span></span>
+<span class="line"><span>      "seconds": 0.9</span></span>
+<span class="line"><span>    },</span></span>
+<span class="line"><span>    {</span></span>
+<span class="line"><span>      "id": "T21",</span></span>
+<span class="line"><span>      "name": "GetVideoEncoderConfigurationOptions → JPEG/15fps",</span></span>
+<span class="line"><span>      "pass": true,</span></span>
+<span class="line"><span>      "detail": "jpeg=True fpsmax=15 w=640",</span></span>
+<span class="line"><span>      "seconds": 0.9</span></span>
+<span class="line"><span>    },</span></span>
+<span class="line"><span>    {</span></span>
+<span class="line"><span>      "id": "T22",</span></span>
+<span class="line"><span>      "name": "GetNetworkInterfaces → 真实 MAC/IP",</span></span>
+<span class="line"><span>      "pass": true,</span></span>
+<span class="line"><span>      "detail": "hw=1c:29:04:d0:72:e8 ip=192.168.1.4",</span></span>
+<span class="line"><span>      "seconds": 0.9</span></span>
+<span class="line"><span>    },</span></span>
+<span class="line"><span>    {</span></span>
+<span class="line"><span>      "id": "T23",</span></span>
+<span class="line"><span>      "name": "GetScopes → 与 ProbeMatch 一致",</span></span>
+<span class="line"><span>      "pass": true,</span></span>
+<span class="line"><span>      "detail": "n=3 streaming=True",</span></span>
+<span class="line"><span>      "seconds": 0.9</span></span>
+<span class="line"><span>    },</span></span>
+<span class="line"><span>    {</span></span>
+<span class="line"><span>      "id": "T24",</span></span>
+<span class="line"><span>      "name": "新操作免鉴权 → NotAuthorized",</span></span>
+<span class="line"><span>      "pass": true,</span></span>
+<span class="line"><span>      "detail": "http=500",</span></span>
+<span class="line"><span>      "seconds": 0.1</span></span>
+<span class="line"><span>    }</span></span>
+<span class="line"><span>  ]</span></span>
+<span class="line"><span>}</span></span>
+<span class="line"><span></span></span></code></pre>

@@ -1,0 +1,321 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span>&#x3C;!doctype html></span></span>
+<span class="line"><span>&#x3C;html lang="zh"></span></span>
+<span class="line"><span>  &#x3C;head></span></span>
+<span class="line"><span>    &#x3C;meta charset="utf-8" /></span></span>
+<span class="line"><span>    &#x3C;meta name="viewport" content="width=device-width,initial-scale=1" /></span></span>
+<span class="line"><span>    &#x3C;title>ONVIF Lab06 — Dashboard&#x3C;/title></span></span>
+<span class="line"><span>    &#x3C;style></span></span>
+<span class="line"><span>      :root {</span></span>
+<span class="line"><span>        --bg: #0d1117;</span></span>
+<span class="line"><span>        --card: #161b22;</span></span>
+<span class="line"><span>        --border: #30363d;</span></span>
+<span class="line"><span>        --text: #c9d1d9;</span></span>
+<span class="line"><span>        --accent: #58a6ff;</span></span>
+<span class="line"><span>        --green: #3fb950;</span></span>
+<span class="line"><span>        --red: #f85149;</span></span>
+<span class="line"><span>        --dim: #8b949e;</span></span>
+<span class="line"><span>      }</span></span>
+<span class="line"><span>      * {</span></span>
+<span class="line"><span>        margin: 0;</span></span>
+<span class="line"><span>        padding: 0;</span></span>
+<span class="line"><span>        box-sizing: border-box;</span></span>
+<span class="line"><span>      }</span></span>
+<span class="line"><span>      body {</span></span>
+<span class="line"><span>        font-family: -apple-system, "Segoe UI", Roboto, monospace;</span></span>
+<span class="line"><span>        background: var(--bg);</span></span>
+<span class="line"><span>        color: var(--text);</span></span>
+<span class="line"><span>        padding: 16px;</span></span>
+<span class="line"><span>      }</span></span>
+<span class="line"><span>      .header {</span></span>
+<span class="line"><span>        display: flex;</span></span>
+<span class="line"><span>        align-items: center;</span></span>
+<span class="line"><span>        gap: 12px;</span></span>
+<span class="line"><span>        margin-bottom: 16px;</span></span>
+<span class="line"><span>      }</span></span>
+<span class="line"><span>      .header h1 {</span></span>
+<span class="line"><span>        font-size: 1.3em;</span></span>
+<span class="line"><span>        color: var(--accent);</span></span>
+<span class="line"><span>      }</span></span>
+<span class="line"><span>      .header .dot {</span></span>
+<span class="line"><span>        width: 10px;</span></span>
+<span class="line"><span>        height: 10px;</span></span>
+<span class="line"><span>        border-radius: 50%;</span></span>
+<span class="line"><span>        background: var(--green);</span></span>
+<span class="line"><span>        animation: pulse 2s infinite;</span></span>
+<span class="line"><span>      }</span></span>
+<span class="line"><span>      @keyframes pulse {</span></span>
+<span class="line"><span>        50% {</span></span>
+<span class="line"><span>          opacity: 0.5;</span></span>
+<span class="line"><span>        }</span></span>
+<span class="line"><span>      }</span></span>
+<span class="line"><span>      .grid {</span></span>
+<span class="line"><span>        display: grid;</span></span>
+<span class="line"><span>        grid-template-columns: 1fr 340px;</span></span>
+<span class="line"><span>        gap: 16px;</span></span>
+<span class="line"><span>        max-width: 1400px;</span></span>
+<span class="line"><span>      }</span></span>
+<span class="line"><span>      @media (max-width: 900px) {</span></span>
+<span class="line"><span>        .grid {</span></span>
+<span class="line"><span>          grid-template-columns: 1fr;</span></span>
+<span class="line"><span>        }</span></span>
+<span class="line"><span>      }</span></span>
+<span class="line"><span>      .card {</span></span>
+<span class="line"><span>        background: var(--card);</span></span>
+<span class="line"><span>        border: 1px solid var(--border);</span></span>
+<span class="line"><span>        border-radius: 8px;</span></span>
+<span class="line"><span>        padding: 16px;</span></span>
+<span class="line"><span>      }</span></span>
+<span class="line"><span>      .card h2 {</span></span>
+<span class="line"><span>        font-size: 0.85em;</span></span>
+<span class="line"><span>        color: var(--dim);</span></span>
+<span class="line"><span>        text-transform: uppercase;</span></span>
+<span class="line"><span>        letter-spacing: 1px;</span></span>
+<span class="line"><span>        margin-bottom: 12px;</span></span>
+<span class="line"><span>      }</span></span>
+<span class="line"><span>      video-feed img {</span></span>
+<span class="line"><span>        width: 100%;</span></span>
+<span class="line"><span>        border-radius: 6px;</span></span>
+<span class="line"><span>        display: block;</span></span>
+<span class="line"><span>      }</span></span>
+<span class="line"><span>      .info-table {</span></span>
+<span class="line"><span>        width: 100%;</span></span>
+<span class="line"><span>        border-collapse: collapse;</span></span>
+<span class="line"><span>      }</span></span>
+<span class="line"><span>      .info-table td {</span></span>
+<span class="line"><span>        padding: 6px 0;</span></span>
+<span class="line"><span>        border-bottom: 1px solid var(--border);</span></span>
+<span class="line"><span>      }</span></span>
+<span class="line"><span>      .info-table td:first-child {</span></span>
+<span class="line"><span>        color: var(--dim);</span></span>
+<span class="line"><span>        width: 140px;</span></span>
+<span class="line"><span>      }</span></span>
+<span class="line"><span>      .metric {</span></span>
+<span class="line"><span>        display: flex;</span></span>
+<span class="line"><span>        justify-content: space-between;</span></span>
+<span class="line"><span>        padding: 4px 0;</span></span>
+<span class="line"><span>        border-bottom: 1px solid var(--border);</span></span>
+<span class="line"><span>      }</span></span>
+<span class="line"><span>      .metric .label {</span></span>
+<span class="line"><span>        color: var(--dim);</span></span>
+<span class="line"><span>      }</span></span>
+<span class="line"><span>      .metric .value {</span></span>
+<span class="line"><span>        font-family: monospace;</span></span>
+<span class="line"><span>        color: var(--accent);</span></span>
+<span class="line"><span>      }</span></span>
+<span class="line"><span>      .badge {</span></span>
+<span class="line"><span>        display: inline-block;</span></span>
+<span class="line"><span>        padding: 2px 8px;</span></span>
+<span class="line"><span>        border-radius: 4px;</span></span>
+<span class="line"><span>        font-size: 0.75em;</span></span>
+<span class="line"><span>        font-weight: bold;</span></span>
+<span class="line"><span>      }</span></span>
+<span class="line"><span>      .badge.ok {</span></span>
+<span class="line"><span>        background: #1a3a2a;</span></span>
+<span class="line"><span>        color: var(--green);</span></span>
+<span class="line"><span>      }</span></span>
+<span class="line"><span>      .badge.warn {</span></span>
+<span class="line"><span>        background: #3a2a1a;</span></span>
+<span class="line"><span>        color: #f0a030;</span></span>
+<span class="line"><span>      }</span></span>
+<span class="line"><span>      .footer {</span></span>
+<span class="line"><span>        margin-top: 16px;</span></span>
+<span class="line"><span>        text-align: center;</span></span>
+<span class="line"><span>        color: var(--dim);</span></span>
+<span class="line"><span>        font-size: 0.75em;</span></span>
+<span class="line"><span>      }</span></span>
+<span class="line"><span>    &#x3C;/style></span></span>
+<span class="line"><span>  &#x3C;/head></span></span>
+<span class="line"><span>  &#x3C;body></span></span>
+<span class="line"><span>    &#x3C;div class="header"></span></span>
+<span class="line"><span>      &#x3C;div class="dot">&#x3C;/div></span></span>
+<span class="line"><span>      &#x3C;h1>ONVIF Lab06 Dashboard&#x3C;/h1></span></span>
+<span class="line"><span>      &#x3C;span class="badge ok" id="conn-badge">CONNECTING&#x3C;/span></span></span>
+<span class="line"><span>    &#x3C;/div></span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    &#x3C;div class="grid"></span></span>
+<span class="line"><span>      &#x3C;div></span></span>
+<span class="line"><span>        &#x3C;div class="card video-feed"></span></span>
+<span class="line"><span>          &#x3C;h2>Live Stream — RTSP → MJPEG&#x3C;/h2></span></span>
+<span class="line"><span>          &#x3C;img</span></span>
+<span class="line"><span>            id="video"</span></span>
+<span class="line"><span>            src="/video.mjpeg"</span></span>
+<span class="line"><span>            alt="live stream"</span></span>
+<span class="line"><span>            onerror="</span></span>
+<span class="line"><span>              this.src =</span></span>
+<span class="line"><span>                'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22640%22 height=%22480%22%3E%3Ctext x=%22320%22 y=%22240%22 fill=%22%23888%22 text-anchor=%22middle%22 font-size=%2220%22%3EStream unavailable%3C/text%3E%3C/svg%3E'</span></span>
+<span class="line"><span>            "</span></span>
+<span class="line"><span>          /></span></span>
+<span class="line"><span>        &#x3C;/div></span></span>
+<span class="line"><span>        &#x3C;div class="card" style="margin-top: 12px"></span></span>
+<span class="line"><span>          &#x3C;h2>Snapshot&#x3C;/h2></span></span>
+<span class="line"><span>          &#x3C;img id="snap-img" src="/api/snapshot" style="width: 100%; border-radius: 6px" /></span></span>
+<span class="line"><span>          &#x3C;div style="margin-top: 8px"></span></span>
+<span class="line"><span>            &#x3C;button</span></span>
+<span class="line"><span>              onclick="refreshSnap()"</span></span>
+<span class="line"><span>              style="</span></span>
+<span class="line"><span>                background: var(--accent);</span></span>
+<span class="line"><span>                color: #fff;</span></span>
+<span class="line"><span>                border: none;</span></span>
+<span class="line"><span>                padding: 6px 16px;</span></span>
+<span class="line"><span>                border-radius: 4px;</span></span>
+<span class="line"><span>                cursor: pointer;</span></span>
+<span class="line"><span>              "</span></span>
+<span class="line"><span>            ></span></span>
+<span class="line"><span>              Refresh Snapshot</span></span>
+<span class="line"><span>            &#x3C;/button></span></span>
+<span class="line"><span>            &#x3C;span</span></span>
+<span class="line"><span>              id="snap-status"</span></span>
+<span class="line"><span>              style="font-size: 0.8em; color: var(--dim); margin-left: 8px"</span></span>
+<span class="line"><span>            >&#x3C;/span></span></span>
+<span class="line"><span>          &#x3C;/div></span></span>
+<span class="line"><span>        &#x3C;/div></span></span>
+<span class="line"><span>      &#x3C;/div></span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>      &#x3C;div></span></span>
+<span class="line"><span>        &#x3C;div class="card"></span></span>
+<span class="line"><span>          &#x3C;h2>Device Information&#x3C;/h2></span></span>
+<span class="line"><span>          &#x3C;table class="info-table" id="dev-info"></span></span>
+<span class="line"><span>            &#x3C;tr></span></span>
+<span class="line"><span>              &#x3C;td colspan="2" style="color: var(--dim)">loading…&#x3C;/td></span></span>
+<span class="line"><span>            &#x3C;/tr></span></span>
+<span class="line"><span>          &#x3C;/table></span></span>
+<span class="line"><span>        &#x3C;/div></span></span>
+<span class="line"><span>        &#x3C;div class="card" style="margin-top: 12px"></span></span>
+<span class="line"><span>          &#x3C;h2>Profile&#x3C;/h2></span></span>
+<span class="line"><span>          &#x3C;table class="info-table" id="profile-info"></span></span>
+<span class="line"><span>            &#x3C;tr></span></span>
+<span class="line"><span>              &#x3C;td colspan="2" style="color: var(--dim)">loading…&#x3C;/td></span></span>
+<span class="line"><span>            &#x3C;/tr></span></span>
+<span class="line"><span>          &#x3C;/table></span></span>
+<span class="line"><span>        &#x3C;/div></span></span>
+<span class="line"><span>        &#x3C;div class="card" style="margin-top: 12px"></span></span>
+<span class="line"><span>          &#x3C;h2>Stream URI&#x3C;/h2></span></span>
+<span class="line"><span>          &#x3C;code</span></span>
+<span class="line"><span>            id="stream-uri"</span></span>
+<span class="line"><span>            style="font-size: 0.85em; color: var(--accent); word-break: break-all"</span></span>
+<span class="line"><span>            >loading…&#x3C;/code</span></span>
+<span class="line"><span>          ></span></span>
+<span class="line"><span>        &#x3C;/div></span></span>
+<span class="line"><span>        &#x3C;div class="card" style="margin-top: 12px"></span></span>
+<span class="line"><span>          &#x3C;h2>Board Metrics&#x3C;/h2></span></span>
+<span class="line"><span>          &#x3C;div id="metrics">&#x3C;span style="color: var(--dim)">loading…&#x3C;/span>&#x3C;/div></span></span>
+<span class="line"><span>        &#x3C;/div></span></span>
+<span class="line"><span>        &#x3C;div class="card" style="margin-top: 12px"></span></span>
+<span class="line"><span>          &#x3C;h2>System Time&#x3C;/h2></span></span>
+<span class="line"><span>          &#x3C;div class="metric"></span></span>
+<span class="line"><span>            &#x3C;span class="label">Type&#x3C;/span>&#x3C;span class="value" id="dt-type">—&#x3C;/span></span></span>
+<span class="line"><span>          &#x3C;/div></span></span>
+<span class="line"><span>          &#x3C;div class="metric"></span></span>
+<span class="line"><span>            &#x3C;span class="label">UTC&#x3C;/span>&#x3C;span class="value" id="dt-utc">—&#x3C;/span></span></span>
+<span class="line"><span>          &#x3C;/div></span></span>
+<span class="line"><span>        &#x3C;/div></span></span>
+<span class="line"><span>      &#x3C;/div></span></span>
+<span class="line"><span>    &#x3C;/div></span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    &#x3C;div class="footer"></span></span>
+<span class="line"><span>      ONVIF Lab06 · ESP32-S31-Korvo-1 · SC101IOT 640×480 MJPEG · &#x3C;span id="fps">—&#x3C;/span> fps</span></span>
+<span class="line"><span>    &#x3C;/div></span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    &#x3C;script></span></span>
+<span class="line"><span>      const $ = (id) => document.getElementById(id)</span></span>
+<span class="line"><span>      let frameCount = 0,</span></span>
+<span class="line"><span>        lastFrameTime = 0,</span></span>
+<span class="line"><span>        fpsTimer = null</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>      // 连接状态</span></span>
+<span class="line"><span>      const video = $("video")</span></span>
+<span class="line"><span>      video.onload = () => {</span></span>
+<span class="line"><span>        $("conn-badge").textContent = "STREAMING"</span></span>
+<span class="line"><span>        $("conn-badge").className = "badge ok"</span></span>
+<span class="line"><span>        frameCount++</span></span>
+<span class="line"><span>        const now = Date.now()</span></span>
+<span class="line"><span>        if (lastFrameTime &#x26;&#x26; now - lastFrameTime > 0) {</span></span>
+<span class="line"><span>          const fps = Math.round((frameCount / ((now - startTime) / 1000)) * 10) / 10</span></span>
+<span class="line"><span>          $("fps").textContent = fps</span></span>
+<span class="line"><span>        }</span></span>
+<span class="line"><span>      }</span></span>
+<span class="line"><span>      video.onerror = () => {</span></span>
+<span class="line"><span>        $("conn-badge").textContent = "DISCONNECTED"</span></span>
+<span class="line"><span>        $("conn-badge").className = "badge warn"</span></span>
+<span class="line"><span>      }</span></span>
+<span class="line"><span>      const startTime = Date.now()</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>      // Device Info</span></span>
+<span class="line"><span>      fetch("/api/info")</span></span>
+<span class="line"><span>        .then((r) => r.json())</span></span>
+<span class="line"><span>        .then((d) => {</span></span>
+<span class="line"><span>          $("dev-info").innerHTML = Object.entries(d)</span></span>
+<span class="line"><span>            .map(([k, v]) => `&#x3C;tr>&#x3C;td>${k}&#x3C;/td>&#x3C;td>${v}&#x3C;/td>&#x3C;/tr>`)</span></span>
+<span class="line"><span>            .join("")</span></span>
+<span class="line"><span>        })</span></span>
+<span class="line"><span>        .catch(() => {</span></span>
+<span class="line"><span>          $("dev-info").innerHTML = "&#x3C;tr>&#x3C;td>unavailable&#x3C;/td>&#x3C;/tr>"</span></span>
+<span class="line"><span>        })</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>      // Profile</span></span>
+<span class="line"><span>      fetch("/api/profiles")</span></span>
+<span class="line"><span>        .then((r) => r.json())</span></span>
+<span class="line"><span>        .then((list) => {</span></span>
+<span class="line"><span>          const p = list[0]</span></span>
+<span class="line"><span>          if (!p) return</span></span>
+<span class="line"><span>          $("profile-info").innerHTML = `</span></span>
+<span class="line"><span>    &#x3C;tr>&#x3C;td>Token&#x3C;/td>&#x3C;td>${p.token}&#x3C;/td>&#x3C;/tr></span></span>
+<span class="line"><span>    &#x3C;tr>&#x3C;td>Name&#x3C;/td>&#x3C;td>${p.name}&#x3C;/td>&#x3C;/tr></span></span>
+<span class="line"><span>    &#x3C;tr>&#x3C;td>Encoding&#x3C;/td>&#x3C;td>${p.encoding}&#x3C;/td>&#x3C;/tr></span></span>
+<span class="line"><span>    &#x3C;tr>&#x3C;td>Resolution&#x3C;/td>&#x3C;td>${p.width}×${p.height}&#x3C;/td>&#x3C;/tr>`</span></span>
+<span class="line"><span>        })</span></span>
+<span class="line"><span>        .catch(() => {})</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>      // Stream URI</span></span>
+<span class="line"><span>      fetch("/api/stream_uri")</span></span>
+<span class="line"><span>        .then((r) => r.json())</span></span>
+<span class="line"><span>        .then((d) => {</span></span>
+<span class="line"><span>          $("stream-uri").textContent = d.Uri || "—"</span></span>
+<span class="line"><span>        })</span></span>
+<span class="line"><span>        .catch(() => {</span></span>
+<span class="line"><span>          $("stream-uri").textContent = "unavailable"</span></span>
+<span class="line"><span>        })</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>      // System Time</span></span>
+<span class="line"><span>      fetch("/api/datetime")</span></span>
+<span class="line"><span>        .then((r) => r.json())</span></span>
+<span class="line"><span>        .then((d) => {</span></span>
+<span class="line"><span>          $("dt-type").textContent = d.DateTimeType || "—"</span></span>
+<span class="line"><span>          $("dt-utc").textContent = d.UTC || "—"</span></span>
+<span class="line"><span>        })</span></span>
+<span class="line"><span>        .catch(() => {})</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>      // Snapshot refresh (局部刷新，不影响活流)</span></span>
+<span class="line"><span>      function refreshSnap() {</span></span>
+<span class="line"><span>        const img = $("snap-img")</span></span>
+<span class="line"><span>        const ts = Date.now()</span></span>
+<span class="line"><span>        img.src = "/api/snapshot?ts=" + ts</span></span>
+<span class="line"><span>        img.onload = () => {</span></span>
+<span class="line"><span>          $("snap-status").textContent =</span></span>
+<span class="line"><span>            `✓ ${new Date().toLocaleTimeString()} · ${img.naturalWidth}×${img.naturalHeight}`</span></span>
+<span class="line"><span>        }</span></span>
+<span class="line"><span>        img.onerror = () => {</span></span>
+<span class="line"><span>          $("snap-status").textContent = "✗ fetch failed"</span></span>
+<span class="line"><span>        }</span></span>
+<span class="line"><span>      }</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>      // Board Metrics</span></span>
+<span class="line"><span>      function refreshMetrics() {</span></span>
+<span class="line"><span>        fetch("/api/status")</span></span>
+<span class="line"><span>          .then((r) => r.json())</span></span>
+<span class="line"><span>          .then((d) => {</span></span>
+<span class="line"><span>            $("metrics").innerHTML = Object.entries(d)</span></span>
+<span class="line"><span>              .map(</span></span>
+<span class="line"><span>                ([k, v]) =></span></span>
+<span class="line"><span>                  `&#x3C;div class="metric">&#x3C;span class="label">${k}&#x3C;/span>&#x3C;span class="value">${v}&#x3C;/span>&#x3C;/div>`,</span></span>
+<span class="line"><span>              )</span></span>
+<span class="line"><span>              .join("")</span></span>
+<span class="line"><span>          })</span></span>
+<span class="line"><span>          .catch(() => {})</span></span>
+<span class="line"><span>      }</span></span>
+<span class="line"><span>      refreshMetrics()</span></span>
+<span class="line"><span>      setInterval(refreshMetrics, 5000)</span></span>
+<span class="line"><span>    &#x3C;/script></span></span>
+<span class="line"><span>  &#x3C;/body></span></span>
+<span class="line"><span>&#x3C;/html></span></span>
+<span class="line"><span></span></span></code></pre>

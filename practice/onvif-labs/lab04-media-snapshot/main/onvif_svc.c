@@ -7,8 +7,8 @@
  * GET /onvif-http/snapshot（免鉴权直出最新成品 JPEG，明示内网实验边界）。
  * GET /onvif/ 下 SOAP 端点一律 405，未注册路径自然 404。
  *
- * 路由：Body 首子元素（本地名 + 前缀绑定 tds/trt 双命名空间）权威，SOAPAction 尾段兜底
- * （实测 zeep 全程不发该头）。未知 ProfileToken 回 s:Sender + ter:InvalidArgVal——
+ * 路由：Body 首子元素（本地名 + 前缀绑定 tds/trt 双命名空间）权威，SOAPAction 尾段
+ * 兜底（实测修正 ch17：zeep 每请求必发该头，历史流量全走兜底）。未知 ProfileToken 回 s:Sender + ter:InvalidArgVal——
  * HTTP 按壳映射：1.2 Sender→400，1.1 Fault 一律 500。
  *
  * 信封：双壳（SOAP 1.1 / 1.2），回信信封版本跟随请求。缓冲一律 PSRAM（含 300KB
@@ -342,7 +342,8 @@ static int svc_route_by_body(const char *rx)
     char local[48] = {0};
     int n = 0;
     while ((*p >= 'A' && *p <= 'Z') || (*p >= 'a' && *p <= 'z') ||
-           (*p >= '0' && *p <= '9') || *p == '.' || *p == '_' || *p == '-') {
+           (*p >= '0' && *p <= '9') || *p == '.' || *p == '_' || *p == '-' ||
+           *p == ':') {
         if (n < (int)sizeof(local) - 1) {
             local[n++] = *p;
         }
@@ -394,17 +395,22 @@ static esp_err_t onvif_svc_handler(httpd_req_t *req)
                             "soap body size out of range");
         return ESP_OK;
     }
-    int rx_len = httpd_req_recv(req, s_rx, (size_t)content_len);
-    if (rx_len <= 0) {
-        httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "soap body read failed");
-        return ESP_OK;
+    int rx_len = 0;
+    while (rx_len < content_len) {
+        int n = httpd_req_recv(req, s_rx + rx_len, (size_t)(content_len - rx_len));
+        if (n <= 0) {
+            httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR,
+                                "soap body read failed");
+            return ESP_OK;
+        }
+        rx_len += n; /* recv 不保证一次读满：TCP 分段时必须循环（ch13 计划外发现） */
     }
     s_rx[rx_len] = '\0';
 
     shell_ver_t shell = detect_shell(s_rx);
 
     /* 权威路由：Body 首子元素（tds/trt 双命名空间）；SOAPAction 尾段兜底
-     * （实测 zeep 4.3.3 不发该头，见 ch13 §13.3）。 */
+     * 。实测修正（ch17）：zeep 4.3.3 每请求必发 SOAPAction，历史流量全走兜底；路由字符集补 ':' 后 Body 权威路径才真正生效。 */
     int op_idx = svc_route_by_body(s_rx);
     if (op_idx < 0) {
         char action[96] = {0};

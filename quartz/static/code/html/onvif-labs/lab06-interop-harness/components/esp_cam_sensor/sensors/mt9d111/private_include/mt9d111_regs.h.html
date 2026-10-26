@@ -1,0 +1,34 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/*</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * SPDX-License-Identifier: Apache-2.0</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/*</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * MT9D111 register definitions.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#pragma</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> once</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifdef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> __cplusplus</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">extern</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "C"</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> {</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/* mt9d111 registers */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> MT9D111_REG_DELAY</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">                    0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">fe</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> MT9D111_REG_TEST_MODE</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">                0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">48</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> MT9D111_REG_PAGE0_SOFTWARE_STANDBY</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">   0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">fd</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> // R13:0[2]=1 to soft standby</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> MT9D111_REG_SOFTWARE_STANDBY</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">         0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">12</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> MT9D111_REG_WRITE_PAGE</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">               0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">f0</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> MT9D111_REG_CLOCK_REG</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">                0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">65</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> MT9D111_REG_UC_BOOT_MODE_REG</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">         0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">c3</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> MT9D111_REG_RESET_REG</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">                0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">0d</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/* mt9d111 register vals */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> MT9D111_PAGE0</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">                        0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">0000</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> // Sensor and PLL control</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> MT9D111_PAGE1</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">                        0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">0001</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> // SOC1, image processing and MUC control</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> MT9D111_PAGE2</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">                        0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">0002</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> // SOC2, JPEG control</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifdef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> __cplusplus</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">}</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span></code></pre>

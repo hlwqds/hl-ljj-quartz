@@ -1,0 +1,41 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold"># ONVIF Labs 统一测试集</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">六站散落工具收拢为套件级测试。</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**每次改固件重烧后跑一遍**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">，退化当场现形。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 跑法</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```bash</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">~</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">/.venvs/onvif/bin/python practice/onvif-labs/tests/runner.py --host 192.168.1.4</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 解释器必须是该 venv（依赖 pyserial + onvif-zeep）；口令默认读 lab06 main/onvif_secrets.h</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 证据落 practice/onvif-labs/tests/runs/selftest.json</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 覆盖矩阵</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| ID      | 面        | 验什么                                                                                                                             | 对齐         |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| ------- | --------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------ |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| T01     | 发现      | Probe→ProbeMatch（随机 uuid + 组播 2 次 + 单播兜底 2 次）                                                                          | lab01/ch12   |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| T02–T04 | 控制面    | 免鉴权 DevInfo/DateTime、GET→405                                                                                                   | lab02/ch13   |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| T05–T08 | 鉴权      | 摘要门正路径、无凭据、错口令、nonce 重放                                                                                           | lab03/ch14   |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| T09–T13 | 媒体      | zeep 冒烟逐行证据 + 快照 JPEG magic                                                                                                | lab04/ch15   |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| T14     | 流媒体    | 信令四步 200 + 12s 完整帧 + 板端 TEARDOWN 对账                                                                                     | lab05/ch16   |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| T15–T23 | Profile S | GetProfile 单数/负路径、VideoSource/Encoder Configuration(s)、Options（zeep 严格校验）、NetworkInterfaces 真实 MAC/IP、Scopes 对账 | ch17 §17.5.1 |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| T24     | 鉴权门    | 新操作免凭据 → NotAuthorized                                                                                                       | ch17 §17.5.1 |</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 设计决定</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **逐项证据**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：zeep 冒烟按 stdout 证据行拆项，五个操作不是一条退出码。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **单项失败不中断**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：所有异常被 runner 捕获记 FAIL；subprocess 全包 TimeoutExpired。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **环境事实入测**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：本机 AP 过滤组播 → T01 内建单播兜底（ch16 宿主侧边界同源）。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **三本账**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：T14 比对客户端帧数与板端 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`TEARDOWN total`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（实测精确相等）。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **zeep 当最严裁判**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：T15–T23 全部走 zeep 反序列化，schema 违规当场现形（Options 模板</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  的 QualityRange 违规即被它抓出）；口令不进参数：默认读 secrets.h，避免进 shell 历史。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **RTSP 前置清场**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：T14 开测前杀孤儿 ffmpeg/dashboard/keeper（单客户端串行 accept 设计，</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  任何存活旧消费者都占死会话槽）。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **解释器**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`~/.venvs/onvif`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（持久）优先，</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`/tmp/onvif-venv`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 兜底；选用路径随 JSON 落盘。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 不进本套件的（避免重复维护）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> lab03 九行矩阵（时钟漂移、ghost-user、byte-trap）——用 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`lab03/tools/onvif_auth_probe.py`</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> lab06 HA witness（环境受限，独立证据）——</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`lab06/tools/ha_witness.py`</span></span>
+<span class="line"></span></code></pre>

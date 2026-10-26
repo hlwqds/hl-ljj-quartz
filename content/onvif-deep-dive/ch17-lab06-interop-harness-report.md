@@ -206,6 +206,51 @@ lab06 的增量发现是：**互通收口的最后一公里不在设备侧，在
 
 tcpdump 三断面未采（sudo，留作用户侧补采）；ffplay 未跑（headless 宿主）。
 
+### 17.5.1 Profile S 缺口补齐与统一测试集（2026-10-26 深夜追加）
+
+对照 ONVIF Profile S MUST 清单盘出的缺口有八个操作（GetProfile 单数、
+GetVideoSourceConfiguration(s)、GetVideoEncoderConfiguration(s)、
+GetVideoEncoderConfigurationOptions、GetNetworkInterfaces、GetScopes），
+本轮全部补进 onvif_svc.c（六个静态模板 + 网卡现拼 MAC/IP + Scopes 纯静态），
+token 门从 snapshot/stream 两处硬编码泛化为 kOps 表字段。
+
+**随之立起的统一测试集**：六站散落的验证工具收拢为套件级
+`practice/onvif-labs/tests/`（runner + 每站一模块），21 项逐条 PASS/FAIL，
+一键跑完并落 selftest.json——覆盖发现（含 AP 过滤组播的单播兜底）、控制面、
+摘要门正/负路径、zeep 逐操作证据行、快照 JPEG magic、RTSP 信令 + 12s 成帧 +
+**板端 TEARDOWN total 对账**（三本账不变量首次自动化：board=client 精确相等）、
+Profile S 八操作、新操作鉴权门。板端源码修完烧完即跑，回归当场现形。
+
+**测试集首战战果（四个真 bug，全是板子的）**：
+
+1. **路由字符集缺冒号**：`svc_route_by_body` 的本地名扫描字符集漏了 `:`，
+   `tds:GetSystemDateAndTime` 解析到冒号即断，永远返回 -1——**Body 权威路由从未
+   真正生效过**，此前全部流量（包括 zeep）走的都是 SOAPAction 兜底。这也推翻了
+   ch13 成文时「zeep 全程不发 SOAPAction、兜底零触发」的叙述：zeep 的
+   `zeep/wsdl/messages/soap.py` `_set_http_headers` 对每请求**无条件**写该头。
+   补一个字符，Body 路径首次上岗；ch13 已就地翻案。
+2. **recv 不读满**：`httpd_req_recv` 单次调用不保证读满 content_len，TCP 分段时
+   信封截断、Body 缺失，token 门随机误伤——时好时坏的 InvalidArgVal 即此。修为
+   循环读满，五站副本同步。
+3. **Options 模板 schema 违规**：`QualityRangeMin/Max` 是臆造元素，onvif.xsd 的
+   `VideoEncoderConfigurationOptions` 是具体类型、必填子元素为
+   `QualityRange`（tt:IntRange 的 Min/Max）——zeep 严格校验把应答解析成 None。
+   第一版测试想退回 raw SOAP 字符串断言，被叫停：那会把违规固化成期望。改对模板，
+   zeep 继续当最严裁判。
+4. **Scopes 字段错位**：onvif:// scope 串的标准归属是 `tt:ScopeItem`
+   （GetScopes ↔ ProbeMatch 对账字段），首版误放 `ScopeXAddr`（现行 schema 里
+   0..1 的设备自身 XAddr 槽位）。改 ScopeItem 后 zeep 干净解析，无 raw 兜底。
+
+另有一笔宿主侧：RTSP 是单客户端串行 accept 设计，`dash_keeper.sh` 看护循环
+孵化的孤儿 ffmpeg 会占死唯一会话槽，新连接全部超时——这不是固件 bug，是
+ch16 计划外发现第 6 笔（dashboard 不杀旧 ffmpeg）的活体复现。统一测试集的
+RTSP 项现已前置清场（杀孤儿消费者再连），对账照常三本账齐。
+
+终态：`tests/runner.py` 21/21 全绿，固件为 Profile S MUST 操作全集 + 路由/收包
+双修版。CTT 差距从「8 个 MUST 缺失」收敛到「无 MUST 缺失」，剩余风险在长时间
+压测下 httpd 的稳定性（间歇性挂死需串口复位，见 ch16 第 4 笔，未根治）与
+Set 系操作（SetVideoEncoderConfiguration 等 OPTIONAL 项未实现）。
+
 ## 17.6 小结
 
 - lab06 = 总装 + 换裁判：五站固件合成一台完整设备（发现→鉴权→Profile→RTSP 全链

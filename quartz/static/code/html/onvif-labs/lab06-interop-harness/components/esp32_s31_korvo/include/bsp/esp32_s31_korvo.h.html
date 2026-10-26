@@ -1,0 +1,156 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/*</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * SPDX-License-Identifier: Apache-2.0</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">@file</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">@brief</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> ESP </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">BSP:</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> ESP32-S31-Korvo</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#pragma</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> once</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#include</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "driver/gpio.h"</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#include</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "bsp/audio.h"</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#include</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "bsp/button.h"</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#include</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "bsp/camera.h"</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#include</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "bsp/display.h"</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#include</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "bsp/led.h"</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#include</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "bsp/sdcard.h"</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifdef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> __cplusplus</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">extern</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "C"</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> {</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**************************************************************************************************</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * BSP Board Name</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> **************************************************************************************************/</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_BOARD_ESP32_S31_KORVO</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**************************************************************************************************</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * BSP Capabilities</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> **************************************************************************************************/</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_CAPS_DISPLAY</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">          1</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_CAPS_TOUCH</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">            1</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_CAPS_BUTTONS</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">          1</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_CAPS_AUDIO</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">            1</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_CAPS_AUDIO_SPEAKER</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">    1</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_CAPS_AUDIO_MIC</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">        1</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_CAPS_LED</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">              1</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_CAPS_CAMERA</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">           1</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_CAPS_SDCARD</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">           1</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**************************************************************************************************</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Shared I2C</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> **************************************************************************************************/</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_I2C_SDA</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">               (GPIO_NUM_0)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_I2C_SCL</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">               (GPIO_NUM_1)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**************************************************************************************************</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * RGB LCD</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> **************************************************************************************************/</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_LCD_DATA0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">             (GPIO_NUM_8)</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">   /* B3 */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_LCD_DATA1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">             (GPIO_NUM_9)</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">   /* B4 */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_LCD_DATA2</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">             (GPIO_NUM_10)</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /* B5 */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_LCD_DATA3</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">             (GPIO_NUM_11)</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /* B6 */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_LCD_DATA4</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">             (GPIO_NUM_12)</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /* B7 */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_LCD_DATA5</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">             (GPIO_NUM_13)</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /* G2 */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_LCD_DATA6</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">             (GPIO_NUM_14)</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /* G3 */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_LCD_DATA7</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">             (GPIO_NUM_15)</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /* G4 */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_LCD_DATA8</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">             (GPIO_NUM_16)</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /* G5 */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_LCD_DATA9</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">             (GPIO_NUM_17)</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /* G6 */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_LCD_DATA10</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">            (GPIO_NUM_18)</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /* G7 */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_LCD_DATA11</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">            (GPIO_NUM_19)</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /* R3 */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_LCD_DATA12</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">            (GPIO_NUM_33)</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /* R4 */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_LCD_DATA13</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">            (GPIO_NUM_34)</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /* R5 */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_LCD_DATA14</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">            (GPIO_NUM_35)</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /* R6 */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_LCD_DATA15</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">            (GPIO_NUM_36)</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">  /* R7 */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_LCD_PCLK</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">              (GPIO_NUM_40)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_LCD_DE</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                (GPIO_NUM_43)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_LCD_HSYNC</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">             (GPIO_NUM_44)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_LCD_VSYNC</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">             (GPIO_NUM_45)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/* LCD sub-board control signals are routed but not required by the RGB panel driver yet. */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_LCD_CS</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                (GPIO_NUM_38)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_LCD_MOSI</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">              (GPIO_NUM_60)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_LCD_SCK</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">               (GPIO_NUM_61)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_LCD_BACKLIGHT</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">         (GPIO_NUM_NC)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_LCD_DISP_EN</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">           (GPIO_NUM_NC)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**************************************************************************************************</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * LCD Touch</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> **************************************************************************************************/</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_LCD_TOUCH_I2C_SDA</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">     BSP_I2C_SDA</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_LCD_TOUCH_I2C_SCL</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">     BSP_I2C_SCL</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_LCD_TOUCH_RST</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">         (GPIO_NUM_NC)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_LCD_TOUCH_INT</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">         (GPIO_NUM_NC)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**************************************************************************************************</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * DVP Camera (reserved for the next BSP increment)</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> **************************************************************************************************/</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_CAMERA_SCCB_SDA</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">       (GPIO_NUM_0)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_CAMERA_SCCB_SCL</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">       (GPIO_NUM_1)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_CAMERA_D0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">             (GPIO_NUM_46)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_CAMERA_D1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">             (GPIO_NUM_47)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_CAMERA_D2</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">             (GPIO_NUM_48)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_CAMERA_D3</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">             (GPIO_NUM_49)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_CAMERA_D4</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">             (GPIO_NUM_50)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_CAMERA_D5</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">             (GPIO_NUM_51)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_CAMERA_D6</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">             (GPIO_NUM_52)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_CAMERA_D7</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">             (GPIO_NUM_53)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_CAMERA_PCLK</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">           (GPIO_NUM_54)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_CAMERA_XCLK</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">           (GPIO_NUM_55)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_CAMERA_VSYNC</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">          (GPIO_NUM_56)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_CAMERA_HSYNC</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">          (GPIO_NUM_57)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_CAMERA_PWDN</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">           (GPIO_NUM_NC)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_CAMERA_RESET</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">          (GPIO_NUM_NC)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_CAMERA_GM_FK</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">          (GPIO_NUM_38)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**************************************************************************************************</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * SD Card</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * GPIO20~GPIO25 and GPIO39 are used for SDMMC 4-bit bus.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Note: GPIO20~GPIO25 are shared with the SPI NAND flash footprint. Only one can be populated</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * at a time per board stuffing option.</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> **************************************************************************************************/</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_SD_D0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                 (GPIO_NUM_20)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_SD_D1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                 (GPIO_NUM_21)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_SD_D2</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                 (GPIO_NUM_22)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_SD_D3</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                 (GPIO_NUM_23)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_SD_CLK</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                (GPIO_NUM_24)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_SD_CMD</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                (GPIO_NUM_25)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_SD_CTRL</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">               (GPIO_NUM_39)</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">   /* Active-low power/switch control */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_SD_CTRL_ACTIVE_LEVEL</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  (</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_SD_CTRL_INACTIVE_LEVEL</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> (</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">!</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">BSP_SD_CTRL_ACTIVE_LEVEL)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**************************************************************************************************</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Audio</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> **************************************************************************************************/</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_AUDIO_I2S_MCLK</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">        (GPIO_NUM_2)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_AUDIO_I2S_SCLK</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">        (GPIO_NUM_3)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_AUDIO_I2S_LRCLK</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">       (GPIO_NUM_4)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_AUDIO_I2S_DSIN</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">        (GPIO_NUM_6)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_AUDIO_I2S_SDOUT</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">       (GPIO_NUM_5)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_AUDIO_PA_CTRL</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">         (GPIO_NUM_7)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/**************************************************************************************************</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * Buttons and LED</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> **************************************************************************************************/</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_BUTTONS_ADC</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">           (GPIO_NUM_42)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#define</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> BSP_LED_WS2812</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">            (GPIO_NUM_37)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#ifdef</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> __cplusplus</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">}</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#endif</span></span>
+<span class="line"></span></code></pre>

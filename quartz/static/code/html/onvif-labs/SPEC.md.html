@@ -116,7 +116,7 @@
 <span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">m=video RTP/AVP 26）/SETUP（先 TCP interleaved，UDP 第二档）/PLAY/TEARDOWN；MJPEG 按</span></span>
 <span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">RFC 2435 封 RTP（量化表与编码器输出对齐，抓包逐字节校验头 8 字节）。验收：ffplay/VLC</span></span>
 <span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">出图；帧计数对账——板端 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`frames_sent`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> ↔ 宿主解码 JPEG EOI 计数一致（沿用</span></span>
-<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">esp32-video-tran 方法学）；12 秒采样窗口无丢帧；标记行 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`$$$ ONVIF LAB05 FRAME seq=&#x3C;n> bytes=&#x3C;n>`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">。</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">esp32-video-tran 方法学）；12 秒采样窗口无丢帧；标记行 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`$$$ ONVIF LAB05 FRAME seq=&#x3C;n> bytes=&#x3C;n> total=&#x3C;n>`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（每 30 帧打一行，TEARDOWN 打总账——15fps 逐帧打会淹掉串口控制台）。</span></span>
 <span class="line"></span>
 <span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">### lab06-interop-harness —— 互通收口【ch09】</span></span>
 <span class="line"></span>
@@ -125,6 +125,10 @@
 <span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">证据入 README；tcpdump 三断面（3702/80/8554）各留一段对账；标记行</span></span>
 <span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`$$$ ONVIF LAB06 WITNESS &#x3C;ha|frigate> result=&#x3C;ok|fail>`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">。可选扩展（不进主链验收）：</span></span>
 <span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">PullPoint 事件（帧差运动检测）、G.711 前向音频（板载 ES8389）。</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">Profile S 补齐：总装轮（ch17 §17.5.1）补入 GetProfile 单数、VideoSource/Encoder</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">Configuration(s)、VideoEncoderConfigurationOptions、GetNetworkInterfaces、GetScopes</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">八操作——MUST 清单全量覆盖；套件级统一自测 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`practice/onvif-labs/tests/`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（21 项）</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">为回归基线。</span></span>
 <span class="line"></span>
 <span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 7. 通用验收清单（一票否决项在前）</span></span>
 <span class="line"></span>

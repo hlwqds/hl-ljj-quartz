@@ -12,8 +12,12 @@
   onvif_probe.py ── WS-Discovery 3702 ──▶ onvif_disc（lab01）
   onvif_smoke.py ── SOAP :80 ──────────▶ onvif_svc（lab02–04：四连/GetUsers/）
       │                                      ├ GetProfiles / GetStreamUri（lab04–05）
+      │                                      └ Profile S 补齐八操作（ch17 §17.5.1）
+      │                                        GetProfile 单数 · VideoSource/Encoder
+      │                                        Configuration(s) · Options · NetIf · Scopes
   rtsp_ledger.py ── RTSP :8554 ─────────▶ rtsp_server（lab05：RFC 2435 封包）
   curl /onvif-http/snapshot                快照（lab04）
+  ../tests/runner.py                       套件级统一自测 21 项（见 tests/README.md）
   console: witness ha ok                   ← 互通结论标记行（lab06 新增）
 ```
 
@@ -24,6 +28,7 @@
 ## 验收（全链走通 + witness 标记）
 
 ```bash
+~/.venvs/onvif/bin/python ../tests/runner.py --host <板IP>               # 统一自测 21 项（首选）
 $P tools/onvif_smoke.py --host <板IP> --password "$PASS" --outdir runs    # GetStreamUri+Fault+回归
 $P tools/rtsp_ledger.py <板IP> --seconds 12                              # RTSP 账本
 $P tools/onvif_probe.py --unicast <板IP>                                 # 发现面
