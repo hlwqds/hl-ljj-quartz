@@ -14,6 +14,7 @@
 
 #include "esp_stub.h"
 #include "onvif_digest.h"
+#include <psa/crypto.h>
 
 /* ---- 紧凑 MD5（RFC 1321 参考实现风格，公开域算法；正确性由规范向量背书） ---- */
 static void rfc1321_md5(const char *in, size_t len, uint8_t out[16]);
@@ -246,9 +247,17 @@ void test_md5_hex(const char *in, size_t len, char out[33])
 /* esp_fill_random 桩（默认 nonce 生成路径在注入后不可达） */
 void esp_fill_random(void *buf, size_t len) { memset(buf, 0x5a, len); }
 
-/* mbedtls_md5 符号桩（注入后不可达） */
+/* mbedtls_md5 / psa_hash_compute 符号桩（注入后均不可达） */
 int mbedtls_md5(const unsigned char *in, size_t len, unsigned char out[16])
 {
     (void)in; (void)len; (void)out;
+    return -1;
+}
+
+psa_status_t psa_hash_compute(psa_algorithm_t alg, const uint8_t *input, size_t input_len,
+                              uint8_t *hash, size_t hash_size, size_t *hash_length)
+{
+    (void)alg; (void)input; (void)input_len; (void)hash; (void)hash_size;
+    (void)hash_length;
     return -1;
 }
