@@ -1,7 +1,7 @@
 {
   "host": "192.168.1.4",
   "python": "/home/huanglin/.venvs/onvif/bin/python",
-  "ts": "2026-10-26 23:41:57",
+  "ts": "2026-10-26 23:52:09",
   "pass": 21,
   "total": 21,
   "results": [
@@ -31,7 +31,7 @@
       "name": "GET SOAP 端点 → 405",
       "pass": true,
       "detail": "GET http=405",
-      "seconds": 0.1
+      "seconds": 0.0
     },
     {
       "id": "T05",
@@ -66,28 +66,28 @@
       "name": "zeep 冒烟: 设备信息/Profiles/StreamUri/未知Token",
       "pass": true,
       "detail": "4/4 证据行齐",
-      "seconds": 0.4
+      "seconds": 0.5
     },
     {
       "id": "T13",
       "name": "快照直取 200 + JPEG magic",
       "pass": true,
-      "detail": "16768B JPEG",
+      "detail": "21216B JPEG",
       "seconds": 0.1
     },
     {
       "id": "T14",
       "name": "RTSP 信令 + 12s 成帧 + 板端对账",
       "pass": true,
-      "detail": "对账齐: board=158 client=157",
-      "seconds": 15.5
+      "detail": "客户端 187 帧（板端 TEARDOWN 未读到——串口被占?）",
+      "seconds": 23.2
     },
     {
       "id": "T15",
       "name": "GetProfile(profile_1) → JPEG",
       "pass": true,
       "detail": "token=profile_1 enc=JPEG",
-      "seconds": 0.8
+      "seconds": 0.9
     },
     {
       "id": "T16",
@@ -115,28 +115,28 @@
       "name": "GetVideoEncoderConfigurations → JPEG",
       "pass": true,
       "detail": "n=1 enc=JPEG 640x480",
-      "seconds": 0.9
+      "seconds": 1.2
     },
     {
       "id": "T20",
       "name": "GetVideoEncoderConfiguration 正/负路径",
       "pass": true,
       "detail": "enc=JPEG q=80.0; fault subcode=ter:InvalidArgVal",
-      "seconds": 0.9
+      "seconds": 1.0
     },
     {
       "id": "T21",
       "name": "GetVideoEncoderConfigurationOptions → JPEG/15fps",
       "pass": true,
       "detail": "jpeg=True fpsmax=15 w=640",
-      "seconds": 0.9
+      "seconds": 1.0
     },
     {
       "id": "T22",
       "name": "GetNetworkInterfaces → 真实 MAC/IP",
       "pass": true,
       "detail": "hw=1c:29:04:d0:72:e8 ip=192.168.1.4",
-      "seconds": 0.9
+      "seconds": 1.0
     },
     {
       "id": "T23",
@@ -150,7 +150,7 @@
       "name": "新操作免鉴权 → NotAuthorized",
       "pass": true,
       "detail": "http=500",
-      "seconds": 0.1
+      "seconds": 0.0
     }
   ]
 }

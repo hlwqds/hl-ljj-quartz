@@ -60,7 +60,7 @@ def run(tests, host, password, outdir):
            "pass": n_pass, "total": len(results), "results": results}
     path = os.path.join(outdir, "selftest.json")
     with open(path, "w", encoding="utf-8") as f:
-        json.dump(out, f, indent=2, ensure_ascii=False)
+        f.write(json.dumps(out, indent=2, ensure_ascii=False) + "\n")
     print(f"  证据: {path}")
     return 1 if n_pass < len(results) else 0
 

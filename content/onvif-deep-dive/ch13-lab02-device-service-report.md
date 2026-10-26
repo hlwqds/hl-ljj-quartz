@@ -374,8 +374,10 @@ t=60s heap : free_dma=253687 free_spiram=12055112
 - 操作集是白名单：免鉴权四连之外一律 env:Receiver + ter:ActionNotSupported——诚实拒绝是
   ch09 坑 3（Profile 伪装）的反向纪律，能力应答只报真实存在的服务（实测小节集合={Device}、
   服务条目 n=1）。
-- 实现不引栈：模板 XML + Body 首子元素权威路由 + SOAPAction 兜底（实测 zeep 全程不发该头，
-  兜底分支零触发）；缓冲全进 PSRAM，实测冒烟稳态 free_dma ≈253.7KB，红线 ≥170KB 不动。
+- 实现不引栈：模板 XML + Body 首子元素权威路由 + SOAPAction 兜底（成文时「zeep 不发该头、
+  兜底零触发」的判断已由总装轮翻案：zeep 每请求必发该头，当年流量实际全走兜底、Body 路径
+  从未被真实流量执行，见 13.3 与 [[ch17-lab06-interop-harness-report|第十七章]]）；
+  缓冲全进 PSRAM，实测冒烟稳态 free_dma ≈253.7KB，红线 ≥170KB 不动。
 - 成文期源码预研定下的信封纪律（onvif-zeep 随包 WSDL 全 soap12 绑定、zeep 强校验回信信封 →
   双壳模板、回信跟随请求版本）被实跑验证：zeep 1.2 与手搓 1.1 两条路径的 Content-Type 均按壳
   跟随，坑 6 对策的反向应用成立。
