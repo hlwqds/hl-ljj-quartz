@@ -1,9 +1,9 @@
 {
   "host": "192.168.1.4",
   "python": "/home/huanglin/.venvs/onvif/bin/python",
-  "ts": "2026-10-27 01:14:50",
-  "pass": 26,
-  "total": 26,
+  "ts": "2026-10-27 01:22:00",
+  "pass": 27,
+  "total": 27,
   "results": [
     {
       "id": "T01",
@@ -17,7 +17,7 @@
       "name": "免鉴权 GetDeviceInformation",
       "pass": true,
       "detail": "http=200",
-      "seconds": 0.1
+      "seconds": 0.0
     },
     {
       "id": "T03",
@@ -31,6 +31,13 @@
       "name": "GET SOAP 端点 → 405",
       "pass": true,
       "detail": "GET http=405",
+      "seconds": 0.0
+    },
+    {
+      "id": "T30",
+      "name": "WS-Addressing MessageID 回显",
+      "pass": true,
+      "detail": "http=200, RelatesTo=✓",
       "seconds": 0.0
     },
     {
@@ -72,15 +79,15 @@
       "id": "T13",
       "name": "快照直取 200 + JPEG magic",
       "pass": true,
-      "detail": "18629B JPEG",
-      "seconds": 0.1
+      "detail": "17654B JPEG",
+      "seconds": 0.0
     },
     {
       "id": "T14",
       "name": "RTSP 信令 + 12s 成帧 + 板端对账",
       "pass": true,
-      "detail": "对账齐: board=171 client=171",
-      "seconds": 13.7
+      "detail": "对账齐: board=188 client=188",
+      "seconds": 13.2
     },
     {
       "id": "T15",
@@ -94,14 +101,14 @@
       "name": "GetProfile 未知 token → InvalidArgVal",
       "pass": true,
       "detail": "fault subcode=ter:InvalidArgVal",
-      "seconds": 0.9
+      "seconds": 0.8
     },
     {
       "id": "T17",
       "name": "GetVideoSourceConfigurations → 640x480",
       "pass": true,
       "detail": "n=1 token=vsc_1 bounds=640x480",
-      "seconds": 0.8
+      "seconds": 0.9
     },
     {
       "id": "T18",
@@ -129,7 +136,7 @@
       "name": "GetVideoEncoderConfigurationOptions → JPEG/15fps",
       "pass": true,
       "detail": "jpeg=True fpsmax=15 w=640",
-      "seconds": 0.8
+      "seconds": 1.1
     },
     {
       "id": "T22",
@@ -156,7 +163,7 @@
       "id": "T25",
       "name": "内存统计: mem 命令 STATS 账目 + free_dma 红线",
       "pass": true,
-      "detail": "static_total=1688 free_dma=242399 free_spiram=11393876 min_free=225048",
+      "detail": "static_total=1688 free_dma=242399 free_spiram=11393152 min_free=225048",
       "seconds": 0.1
     },
     {
@@ -170,7 +177,7 @@
       "id": "T27",
       "name": "带凭据全流程 200 + 6s 成帧",
       "pass": true,
-      "detail": "200×4 frames=94",
+      "detail": "200×4 frames=93",
       "seconds": 6.1
     },
     {
@@ -185,7 +192,7 @@
       "name": "nonce 重放 → 401；无 SETUP 直 PLAY → 454",
       "pass": true,
       "detail": "first=200, direct PLAY=454, replay=401, recover=200",
-      "seconds": 0.2
+      "seconds": 0.1
     }
   ]
 }

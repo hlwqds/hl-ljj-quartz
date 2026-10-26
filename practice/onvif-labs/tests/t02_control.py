@@ -6,6 +6,8 @@ from ctx import board_get, soap_post
 _S12 = ('<?xml version="1.0"?><s:Envelope '
         'xmlns:s="http://www.w3.org/2003/05/soap-envelope" '
         'xmlns:tds="http://www.onvif.org/ver10/device/wsdl">'
+        '<s:Header><wsa:MessageID xmlns:wsa="http://www.w3.org/2005/08/addressing">'
+        'urn:uuid:onvif-selftest-echo-1</wsa:MessageID></s:Header>'
         '<s:Body>{body}</s:Body></s:Envelope>')
 
 
@@ -24,6 +26,16 @@ def t03_datetime(c):
     return ok, f"http={st}"
 
 
+def t04b_wsa(c):
+    """T30: 请求带 wsa:MessageID → 应答回 RelatesTo 回显 + 自生成 MessageID
+    （ONVIF Core §5.2；CTT/按 MessageID 配对的客户端都依赖这条）。"""
+    st, body = soap_post(c["host"], 80, "/onvif/device_service",
+                         _S12.format(body="<tds:GetDeviceInformation/>"))
+    ok = (st == 200 and "urn:uuid:onvif-selftest-echo-1" in body
+          and "RelatesTo" in body and "wsa:MessageID" in body)
+    return ok, f"http={st}, RelatesTo={'✓' if 'RelatesTo' in body else '✗'}"
+
+
 def t04_405(c):
     try:
         st, _ = board_get(c["host"], "/onvif/device_service")
@@ -38,4 +50,5 @@ TESTS = [
     ("T02", "免鉴权 GetDeviceInformation", t02_devinfo),
     ("T03", "免鉴权 GetSystemDateAndTime", t03_datetime),
     ("T04", "GET SOAP 端点 → 405", t04_405),
+    ("T30", "WS-Addressing MessageID 回显", t04b_wsa),
 ]

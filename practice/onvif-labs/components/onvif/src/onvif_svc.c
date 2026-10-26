@@ -51,19 +51,25 @@ static onvif_svc_config_t s_cfg; /* init 时由宿主注入，任务生存期只
 #define TER_NS "http://www.onvif.org/ver10/error"
 #define TRT_NS "http://www.onvif.org/ver10/media/wsdl"
 
-/* 信封壳：Body 由运行期填入；ter 命名空间只在 Fault 路径内联声明，正常应答一行不多。 */
+#define WSA_NS "http://www.w3.org/2005/08/addressing"
+
+/* 信封壳：Header/Body 由运行期填入；ter 命名空间只在 Fault 路径内联声明。
+ * Header 槽装 WS-Addressing 回显（ONVIF Core §5.2：请求带 wsa:MessageID 时
+ * 应答须回 RelatesTo + 自生成 MessageID；不带则槽为空，向后兼容旧客户端）。 */
 static const char SHELL_11[] =
     "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
     "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\""
     " xmlns:tds=\"" TDS_NS "\""
+    " xmlns:wsa=\"" WSA_NS "\""
     " xmlns:tt=\"http://www.onvif.org/ver10/schema\">"
-    "<s:Body>%s</s:Body></s:Envelope>";
+    "<s:Header>%s</s:Header><s:Body>%s</s:Body></s:Envelope>";
 static const char SHELL_12[] =
     "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
     "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\""
     " xmlns:tds=\"" TDS_NS "\""
+    " xmlns:wsa=\"" WSA_NS "\""
     " xmlns:tt=\"http://www.onvif.org/ver10/schema\">"
-    "<s:Body>%s</s:Body></s:Envelope>";
+    "<s:Header>%s</s:Header><s:Body>%s</s:Body></s:Envelope>";
 
 /* ---- Body 模板（rodata；运行期只换时间/身份/XAddr 字段） ---- */
 
@@ -366,12 +372,46 @@ static void svc_host_of(httpd_req_t *req, char *out, size_t out_max)
 }
 
 static esp_err_t send_soap(httpd_req_t *req, shell_ver_t shell, const char *body,
-                           const char *status)
+                           const char *status, const char *rx)
 {
     /* status：NULL=200；SOAP 1.1 Fault 一律 500；1.2 的 s:Sender 语义映射 400、
      * s:Receiver 映射 500（坑 6 表的 HTTP 映射，设备端第一次自己用）。 */
+    /* WS-Addressing 回显（定向提取，不做 DOM）：请求带 wsa:MessageID（任意前缀）
+     * → 应答带自生成 MessageID + RelatesTo 回显；不带 → Header 槽留空 */
+    char wsa_hdr[384] = "";
+    const char *mid = rx ? strstr(rx, ":MessageID") : NULL;
+    if (mid != NULL) {
+        /* 元素可能带属性：<wsa:MessageID xmlns:wsa=…>——先跳到标签闭合 '>' 再取值 */
+        while (*mid && *mid != '>') {
+            mid++;
+        }
+        char echoed[96] = {0};
+        size_t k = 0;
+        while (*mid && *mid != '<' && k + 1 < sizeof(echoed)) {
+            echoed[k++] = *mid++;
+        }
+        echoed[k] = '\0';
+        if (k > 0) {
+            uint8_t rnd[16];
+            esp_fill_random(rnd, sizeof(rnd));
+            char gen[48];
+            snprintf(gen, sizeof(gen),
+                     "urn:uuid:%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
+                     rnd[0], rnd[1], rnd[2], rnd[3], rnd[4], rnd[5], rnd[6], rnd[7],
+                     rnd[8], rnd[9], rnd[10], rnd[11], rnd[12], rnd[13], rnd[14], rnd[15]);
+            int wn = snprintf(wsa_hdr, sizeof(wsa_hdr),
+                              "<wsa:MessageID>%s</wsa:MessageID>"
+                              "<wsa:RelatesTo RelationshipType=\"" WSA_NS "/reply\">%s"
+                              "</wsa:RelatesTo>"
+                              "<wsa:To>" WSA_NS "/anonymous</wsa:To>",
+                              gen, echoed);
+            if (wn < 0 || (size_t)wn >= sizeof(wsa_hdr)) {
+                wsa_hdr[0] = '\0'; /* 截断的寻址头比没有更糟：整体放弃 */
+            }
+        }
+    }
     int n = snprintf(s_tx, SVC_TX_BUF,
-                     shell == SHELL_SOAP12 ? SHELL_12 : SHELL_11, body);
+                     shell == SHELL_SOAP12 ? SHELL_12 : SHELL_11, wsa_hdr, body);
     if (n <= 0 || n >= SVC_TX_BUF) {
         return ESP_FAIL;
     }
@@ -691,7 +731,7 @@ static esp_err_t onvif_svc_handler(httpd_req_t *req)
     if (op_idx < 0) {
         /* 白名单之外无特例：env:Receiver + ter:ActionNotSupported（HTTP 500） */
         send_soap(req, shell, shell == SHELL_SOAP12 ? BODY_FAULT_12 : BODY_FAULT_11,
-                  "500 Internal Server Error");
+                  "500 Internal Server Error", s_rx);
         ESP_LOGI(TAG, "$$$ ONVIF %s OP (unlisted) fault action-not-supported", s_cfg.marker);
         return ESP_OK;
     }
@@ -702,7 +742,7 @@ static esp_err_t onvif_svc_handler(httpd_req_t *req)
         if (rc != AUTH_OK) {
             send_soap(req, shell,
                       shell == SHELL_SOAP12 ? BODY_FAULT_AUTH_12 : BODY_FAULT_AUTH_11,
-                      "500 Internal Server Error");
+                      "500 Internal Server Error", s_rx);
             return ESP_OK;
         }
     }
@@ -711,7 +751,8 @@ static esp_err_t onvif_svc_handler(httpd_req_t *req)
         /* token 失配：s:Sender + ter:InvalidArgVal（ch03 判据表；
          * HTTP 映射按壳分——1.2 Sender→400，1.1 Fault 一律 500） */
         send_soap(req, shell, shell == SHELL_SOAP12 ? BODY_FAULT_TOKEN_12 : BODY_FAULT_TOKEN_11,
-                  shell == SHELL_SOAP12 ? "400 Bad Request" : "500 Internal Server Error");
+                  shell == SHELL_SOAP12 ? "400 Bad Request" : "500 Internal Server Error",
+                  s_rx);
         ESP_LOGI(TAG, "$$$ ONVIF %s OP %s fault invalid-arg-val", s_cfg.marker, local);
         return ESP_OK;
     }
@@ -721,7 +762,7 @@ static esp_err_t onvif_svc_handler(httpd_req_t *req)
         svc_log_op(local, false);
         return ret;
     }
-    ret = send_soap(req, shell, s_body, NULL);
+    ret = send_soap(req, shell, s_body, NULL, s_rx);
     svc_log_op(local, ret == ESP_OK);
     return ret;
 }

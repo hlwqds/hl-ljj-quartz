@@ -297,6 +297,48 @@ rtsp_handle_connection 3,098B text、应答模板 rodata 单个 300–940B——
 **回归**：22 项测试集（原 21 + T25）全绿；六站全部编译通过，lab06 烧验。
 「五站一致」自此是结构保证（单源组件）而非人工纪律（同步五份副本）。
 
+### 17.5.4 缺陷台账与「合格嵌入式 ONVIF 服务库」路线（2026-10-27）
+
+目标定版：**合格、好用的 ONVIF 服务库，在嵌入式环境完美运行**。据此立账——
+每条带代码锚点与处置级别，还清一条勾一条；本节即差距账本体。
+
+**已还清（有提交号）**：
+
+| 缺陷                                                         | 锚点                              | 处置                                   |
+| ------------------------------------------------------------ | --------------------------------- | -------------------------------------- |
+| 路由字符集缺 `:`，Body 权威路径从未生效                      | onvif_svc.c `svc_route_by_body`   | a3178935 前身修复（含五站同步）        |
+| 表满静默丢操作 / 兜底序 Options 被子串名截胡                 | onvif_svc.c `ops_add`/`ops_build` | a3178935                               |
+| sess_reset 漏清 session_id，无 SETUP 直 PLAY 带残留 sid 出流 | onvif_rtsp.c `sess_reset`         | a8d46a21 批次修复                      |
+| 响应残体投毒（SDP leftover 拼入下一响应 head）               | tools/rtsp_ledger.py `rtsp()`     | a8d46a21 批次修复                      |
+| WS-Addressing 缺失（Core §5.2：MessageID 回显/RelatesTo）    | onvif_svc.c `send_soap`           | 本节修复（属性感知定向提取，T30 背书） |
+
+**P1——「合格」欠账（按价值排序）**：
+
+1. **Digest 不支持 qop=auth**（onvif_digest.c：质询无 qop、解析不认 nc/cnonce）
+   ——live555/部分 VLC 按 qop=auth 算响应将 401 到死；修复=质询带 qop + nc 计数。
+2. **路由/解析器宿主单测缺失**——`svc_route_by_body` 是纯函数，字符集那类
+   已出厂 bug 应钉死在宿主层（test/ 下加用例，进 CI 门禁）。
+3. **快照面鉴权闭环**（onvif_svc.c `onvif_snapshot_handler` 匿名）——GET 的
+   HA2 按 "GET:/onvif-http/snapshot" 算，onvif_digest 现成。
+4. `rtsp_server_init` 返回 void——分配/任务失败 app 无感知。
+5. PLAY 不校验客户端 Session 头（门闩下低危，RFC 粗糙）。
+6. `stats` heap_live 不回减字节，语义会误读（加 8B 尺寸头或改名）。
+7. Scopes/name 仍硬编码 onvif-lab01——库化须站点身份可配置。
+
+**P2——「好用」欠账（接入者体验）**：操作注册 API（加操作不改 `ops_build`
+核心）；Set 系配置状态模型（配置真生效，非模板应答）；GetWsdlUrl；体上限
+4096 越界返回 500 而非 413 且不可配；RTCP SR / GET_PARAMETER 保活。
+
+**「完美运行」欠账（可靠性）**：长压测下 httpd 间歇挂死需串口复位（ch16
+第 4 笔，未根治）——这是完美运行的最大敌人；watchdog/自恢复策略未做。
+
+**第二裁判计划**：libonvif（Rhombus 维护，onvif.org 收录）——注意它是
+**C++/LGPL-2.1**（libxml2 + vendored rapidjson，GUI fork 另需 SDL2/OpenVINO），
+拉流走 **live555**：比 ffmpeg 更严的 RTSP 客户端（自带 Digest、qop 处理更严、
+发 keepalive/RTCP 期望），正好压我们的 no-qop Digest 与单连接串行设计。
+纪律：可以读它的结构与做法，**不搬它的代码**（LGPL 义务随代码走）；headless
+宿主走其 upstream CLI（cmake + libxml2），nixpkgs 未打包则源码构建。
+
 ### 17.5.3 媒体面 Digest 鉴权闭环（同夜第二刀）
 
 控制面的 WS-Security 摘要门外，「匿名开放的媒体流」一直是 ch16 §16.2 的明示
