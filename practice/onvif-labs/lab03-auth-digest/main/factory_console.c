@@ -17,6 +17,7 @@
 #include <sys/time.h>
 
 #include "onvif_auth.h"
+#include "onvif_stats.h"
 #include "sdkconfig.h"
 #include <inttypes.h>
 
@@ -56,6 +57,13 @@ static int factory_console_cmd_ip(int argc, char **argv)
 static int factory_console_cmd_heap(int argc, char **argv)
 {
     factory_console_print_heap();
+    return 0;
+}
+
+/* ch17 §17.5.2：$$$ ONVIF STATS 内存账四层明细 */
+static int factory_console_cmd_mem(int argc, char **argv)
+{
+    onvif_stats_dump();
     return 0;
 }
 
@@ -170,6 +178,13 @@ void factory_console_init(void)
     ESP_ERROR_CHECK(esp_console_cmd_register(&cmd_ip));
     ESP_ERROR_CHECK(esp_console_cmd_register(&cmd_heap));
     ESP_ERROR_CHECK(esp_console_cmd_register(&cmd_restart));
+    const esp_console_cmd_t cmd_mem = {
+        .command = "mem",
+        .help = "onvif memory ledger: per-module static/heap + heap snapshot",
+        .hint = NULL,
+        .func = factory_console_cmd_mem,
+    };
+    ESP_ERROR_CHECK(esp_console_cmd_register(&cmd_mem));
     ESP_ERROR_CHECK(esp_console_cmd_register(&cmd_sntp));
     ESP_ERROR_CHECK(esp_console_cmd_register(&cmd_clock));
 

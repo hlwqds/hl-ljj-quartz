@@ -11,6 +11,7 @@
 #include "factory_demo_stream.h"
 #include "onvif_disc.h"
 #include "onvif_auth.h"
+#include "onvif_secrets.h"
 #include "onvif_svc.h"
 
 #include "esp_err.h"
@@ -47,10 +48,25 @@ void app_main(void)
     ESP_ERROR_CHECK(onvif_disc_init());
 
     /* 控制面：等基座 httpd 就绪后挂 /onvif/device_service（lab02 交付）。 */
-    ESP_ERROR_CHECK(onvif_svc_init());
+    static const onvif_svc_config_t svc_cfg = {
+        .marker = "LAB03",
+    .auth = true,
+    .users = true,
+    .profiles = false,
+    .stream_uri = false,
+    .profile_s = false,
+    /* httpd 回调无条件必填（SOAP 端点挂基座 80 端口）；媒体边界本站未用置空 */
+    .io =
+        {
+            .httpd = factory_stream_httpd,
+            .copy_latest = NULL,
+            .copy_latest_id = NULL,
+        },
+    };
+    ESP_ERROR_CHECK(onvif_svc_init(&svc_cfg));
 
     /* 鉴权与 SNTP：读 NVS 的 sntp 开关并按需启动（lab03 交付）。 */
-    ESP_ERROR_CHECK(onvif_auth_init());
+    ESP_ERROR_CHECK(onvif_auth_init(ONVIF_AUTH_USER, ONVIF_AUTH_PASS));
 
     ESP_LOGI(TAG, "lab03 base ready (camera+stream+disc+svc+auth)");
 }

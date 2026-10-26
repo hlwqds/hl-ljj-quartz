@@ -1,0 +1,42 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/*</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * onvif_auth.h — WS-Security UsernameToken 摘要认证 + SNTP 时钟纪律（lab03）。</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 判据链（顺序即排错大纲，ch14 §14.2）：查用户 → nonce 解码 → SHA1 重算比对（常量</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 时间） → Created ±300s 窗口 → nonce 环重放拒绝。对外统一 ter:NotAuthorized，</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 分因落板端 $$$ 标记行（AUTH ok/deny reason=...）。</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 凭据由宿主应用注入（onvif_secrets.h 留在 app 侧，gitignore 纪律不进组件）。</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#pragma</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> once</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#include</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> &#x3C;stdbool.h></span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#include</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> &#x3C;stdint.h></span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">#include</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "esp_err.h"</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">typedef</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> enum</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> {</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    AUTH_OK </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">,</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    AUTH_NO_TOKEN,</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">        /* 没带 Security 头 */</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    AUTH_BAD_TOKEN,</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">       /* nonce 非 base64 / 超上限；Created 解析不了或不支持形态 */</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    AUTH_USER_UNKNOWN,</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    /* 用户名不存在（与错口令同拒，防枚举） */</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    AUTH_DIGEST_MISMATCH,</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* 口令错 / 字节观错（nonce 拼了 base64 文本等） */</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    AUTH_CLOCK_SKEW,</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">      /* Created 出 ±300s 窗口（ch09 坑 1） */</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    AUTH_NONCE_REPLAY,</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    /* 窗口内重放同一报文 */</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">} </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">auth_rc_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">;</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/* 注入凭据、读 NVS 的 sntp 开关并按需启动 SNTP；打 AUTH READY 标记行。</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 须在 NVS 初始化后调用；user/pass 须指向静态生存期字符串。 */</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">esp_err_t</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> onvif_auth_init</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">const</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> char</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> *</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">user</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">, </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">const</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> char</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> *</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">pass</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">);</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/* 对整份 SOAP 请求原文跑五环判据链；ok/deny 标记行在本函数内落日志。 */</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">auth_rc_t</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> onvif_auth_verify</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">const</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> char</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> *</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">rx</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">);</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/* 失败码 → run.log reason 字符串（user_unknown/bad_token/digest_mismatch/...） */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">const</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> char</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> *</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">onvif_auth_reason</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">auth_rc_t</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70"> rc</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">);</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/* 教学开关：sntp on|off，落 NVS 重启保持；开时立即发起一轮同步（回调打 SNTP synced）。 */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">void</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> onvif_auth_sntp_set</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">bool</span><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70"> enable</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">);</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">bool</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> onvif_auth_sntp_enabled</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">void</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">);</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/* 花名册唯一用户（init 注入；GetUsers 应答与 AUTH 标记行共用） */</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">const</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> char</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> *</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">onvif_auth_username</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">void</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">);</span></span>
+<span class="line"></span></code></pre>

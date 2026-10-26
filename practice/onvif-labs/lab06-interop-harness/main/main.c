@@ -11,8 +11,9 @@
 #include "factory_demo_stream.h"
 #include "onvif_disc.h"
 #include "onvif_auth.h"
+#include "onvif_rtsp.h"
+#include "onvif_secrets.h"
 #include "onvif_svc.h"
-#include "rtsp_server.h"
 
 #include "esp_err.h"
 #include "esp_heap_caps.h"
@@ -47,14 +48,29 @@ void app_main(void)
     /* 发现面：注册 GOT_IP 监听，拿到地址后起 UDP 3702 应答任务。 */
     ESP_ERROR_CHECK(onvif_disc_init());
 
-    /* 控制面：等基座 httpd 就绪后挂 /onvif/device_service（lab02 交付）。 */
-    ESP_ERROR_CHECK(onvif_svc_init());
+    /* 鉴权与 SNTP：凭据留在 app 侧（onvif_secrets.h），组件只收指针（lab03 交付）。 */
+    ESP_ERROR_CHECK(onvif_auth_init(ONVIF_AUTH_USER, ONVIF_AUTH_PASS));
 
-    /* 鉴权与 SNTP：读 NVS 的 sntp 开关并按需启动（lab03 交付）。 */
-    ESP_ERROR_CHECK(onvif_auth_init());
+    /* 控制面 + 媒体面：总装站全能力开（lab02–05 + Profile S 补齐）；
+     * 媒体边界绑基座 factory_stream 三函数（组件不 include 采集头）。 */
+    static const onvif_svc_config_t svc_cfg = {
+        .marker = "LAB05", /* 标记前缀归位功能来源站（ch17 站点标记纪律） */
+        .auth = true,
+        .users = true,
+        .profiles = true,
+        .stream_uri = true,
+        .profile_s = true,
+        .io =
+            {
+                .httpd = factory_stream_httpd,
+                .copy_latest = factory_stream_copy_latest,
+                .copy_latest_id = factory_stream_copy_latest_id,
+            },
+    };
+    ESP_ERROR_CHECK(onvif_svc_init(&svc_cfg));
 
-    /* RTSP/RTP 取流服务：8554 端口（lab05 交付）。 */
-    rtsp_server_init();
+    /* RTSP/RTP 取流服务：8554 端口（lab05 交付），帧源同一边界注入。 */
+    rtsp_server_init(&svc_cfg.io);
 
     ESP_LOGI(TAG, "lab06 base ready (total assembly for interop witness)");
 }

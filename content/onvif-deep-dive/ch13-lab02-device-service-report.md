@@ -47,7 +47,7 @@ lab04 的 Media 三件套都会长在这同一个模块的路由表上。所以�
 本章各节的方案描述均以 SPEC 为基线；模块拆分、行数与上板行为如与计划有出入，逐节回填。
 
 **落地对账（2026-10-26 实跑）**：`onvif_svc` 模块单文件 393 行
-（[main/onvif_svc.c](/static/code/#/onvif-labs/lab02-device-service/main/onvif_svc.c)），挂在
+（[main/onvif_svc.c](/static/code/#/onvif-labs/components/onvif/src/onvif_svc.c)），挂在
 lab01 基座的同一个 httpd 实例上；路由表、双壳模板、PSRAM 缓冲（收/拼/发三块，4KB/2KB/4KB）均按
 计划落位。与计划的第一处出入是**编译关**：成文期的代码从未上过编译器，首编即修出三处——注释里
 写 `/onvif/*` 触发 `-Werror=comment`、`httpd_req_get_hdr_value_str` 第四参两处误传指针（应为

@@ -7,10 +7,14 @@
 
 ## 1. 定位与目录约定
 
-- 目录：`practice/onvif-labs/labNN-slug/`（NN 两位：lab01–lab06）。
-- 每工程必备：`main/`（源码）、根 `CMakeLists.txt`、`sdkconfig.defaults`、`README.md`
-  （中文，含拓扑与复现命令）、`run.log`（真实上板运行留存）；需要宿主配合的附 `tools/`
-  （python 脚本为主：wsdiscovery 探测、onvif 冒烟、rtsp 验流）。
+- 目录:`practice/onvif-labs/labNN-slug/`(NN 两位:lab01-lab06)。
+- **共享组件**:`practice/onvif-labs/components/onvif/`——disc/auth/svc/rtsp/stats
+  五模块单一来源(ch17 §17.5.2 生产化重构),各站 `EXTRA_COMPONENT_DIRS` 挂接,
+  `main/` 不再持副本;能力裁剪走 `onvif_svc_config_t` 旗标,媒体边界
+  `onvif_media_io_t` 由宿主注入,凭据留 app 侧 secrets 头。
+- 每工程必备:`main/`(源码)、根 `CMakeLists.txt`、`sdkconfig.defaults`、`README.md`
+  (中文,含拓扑与复现命令)、`run.log`(真实上板运行留存);需要宿主配合的附 `tools/`
+  (python 脚本为主:wsdiscovery 探测、onvif 冒烟、rtsp 验流)。
 - 基座裁剪自 esp32-video-tran 工作区 `~/code/esp32-video-tran/demo/factory_demo`
   （本机工作区，不在本仓；复跑手册 `~/code/esp32-video-tran/RUNBOOK.md`）。裁剪产物
   （本仓入库形态）只保留：采集→PPA→硬件 JPEG→双缓冲 管线 + WiFi STA + 串口控制台；

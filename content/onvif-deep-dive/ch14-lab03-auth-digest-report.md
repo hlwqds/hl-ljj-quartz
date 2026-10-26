@@ -80,7 +80,7 @@ httpd POST /onvif/device_service（:80，SPEC §5）
             └─ 五种失败码 → 同一个 ter:NotAuthorized，run.log 分因落因
 ```
 
-校验路径实态（[main/onvif_auth.c](/static/code/#/onvif-labs/lab03-auth-digest/main/onvif_auth.c)
+校验路径实态（[main/onvif_auth.c](/static/code/#/onvif-labs/components/onvif/src/onvif_auth.c)
 原文节选；Security 头定向解析沿用 lab01 `disc_extract` 同款小函数，不引 XML 栈）：
 
 ```c

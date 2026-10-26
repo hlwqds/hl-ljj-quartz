@@ -19,7 +19,7 @@ lab01 只回答一个问题：**这块板能不能被一个标准 WS-Discovery �
 
 > [!tip] 配套工程：practice/onvif-labs/lab01-discovery（2026-10-25 上板验收通过）
 > [README](/static/code/#/onvif-labs/lab01-discovery/README.md)（拓扑/复现命令/实测摘录）
-> · 应答器实现：[onvif_disc.c](/static/code/#/onvif-labs/lab01-discovery/main/onvif_disc.c)
+> · 应答器实现：[onvif_disc.c](/static/code/#/onvif-labs/components/onvif/src/onvif_disc.c)
 > · 工程契约：[SPEC](/static/code/#/onvif-labs/SPEC.md)。板端证据 `run.log` 与宿主侧
 > `runs/probe-*.log` 随工程入库——本章引用的每一行，仓里都有原文可对。
 
@@ -58,7 +58,7 @@ I (1701) factory_stream: heap after wifi start: free DMA=274815, SPIRAM=14039396
 
 UUID 是 efuse MAC 派生的确定性值。实测对照：`wifi:mode : sta (1c:29:04:d0:72:e8)` → `DISC READY uuid=urn:uuid:1c29047d-26d0-72e8-8a3e-4ba59cd1e2f3`——MAC 前三字节 1c:29:04 落在第一段，后三字节 d0:72:e8 跨在第二、三段（中间是固定填充 7d-26），第 9 字节 0x8a 把高两位置成 10xx，形似 RFC 4122 变体位。为什么不用每次随机的 UUID：发现层的语义是「同一台设备」，EndpointReference 漂移会把客户端的去重与缓存全部打乱——[[ch02-ws-discovery|第二章]]的「记表-探活」骨架依赖稳定身份。
 
-入组与缓冲（源自 practice/onvif-labs/lab01-discovery/main/onvif_disc.c）：
+入组与缓冲（源自 practice/onvif-labs/components/onvif/src/onvif_disc.c）：
 
 ```c
     struct sockaddr_in local = {
@@ -91,7 +91,7 @@ UUID 是 efuse MAC 派生的确定性值。实测对照：`wifi:mode : sta (1c:2
 
 三个要点（`DISC_GROUP` 为 239.255.255.250、`DISC_PORT` 为 3702、缓冲 2048/1400 字节）：`SO_REUSEADDR` 是 3702 端口多 socket 共存的常规姿势；`IP_ADD_MEMBERSHIP` 的 `imr_interface` 填的是 STA 实际地址而非 `INADDR_ANY`，组播成员落在正确接口上；收发缓冲用 `heap_caps_malloc` 显式要 PSRAM——SPEC §4「ONVIF 新增缓冲一律 PSRAM，内部 RAM 只留栈与 socket 系统缓冲」在 243 行里最直接的落点（任务栈 4096 B 走 `xTaskCreate` 的常规内部分配）。tx 上限 1400 字节给 IP/UDP 头留足余量，实测 1,074 字节的 ProbeMatch 一个 UDP 数据报装下、不分片。
 
-定向提取——「任意前缀」的诀窍（源自 practice/onvif-labs/lab01-discovery/main/onvif_disc.c）：
+定向提取——「任意前缀」的诀窍（源自 practice/onvif-labs/components/onvif/src/onvif_disc.c）：
 
 ```c
 /* 定向提取：找 "<任意前缀:tag>" 的文本值（跳过开标签，读到下一个 '<'）。
@@ -122,7 +122,7 @@ static bool disc_extract(const char *xml, const char *tag, char *out, size_t out
 
 needle 用 `"tag>"` 而不是 `"<w:tag>"`，于是 `<w:MessageID>` 与 `<MessageID>` 两种前缀形态通吃——**入站宽松**。与之配对的是**出站严格**：应答模板的命名空间与 SOAP 1.2 信封逐字手写、对齐 WSDL——[[ch09-interop-ecosystem|第九章]]坑 5 的教训反过来约束自己：严格客户端挑报文，我们发的报文一行不多。一进一出，两条纪律。Probe 判定同样宽松：Action 头含 `discovery/Probe<`、或正文出现 `:Probe>` / `<Probe>` 开标签即认；Resolve/Hello/Bye 一律沉默——lab01 只承诺 Probe（SPEC §6 明示的边界）。
 
-应答主循环（源自 practice/onvif-labs/lab01-discovery/main/onvif_disc.c）：
+应答主循环（源自 practice/onvif-labs/components/onvif/src/onvif_disc.c）：
 
 ```c
         /* 定向提取 MessageID（回 RelatesTo）与 Types（宽松过滤）。 */

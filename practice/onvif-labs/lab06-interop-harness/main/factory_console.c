@@ -17,6 +17,7 @@
 #include <sys/time.h>
 
 #include "onvif_auth.h"
+#include "onvif_stats.h"
 #include "sdkconfig.h"
 #include <inttypes.h>
 
@@ -118,6 +119,14 @@ static int factory_console_cmd_witness(int argc, char **argv)
     return 1;
 }
 
+/* 生产化重构（ch17 §17.5.2）：内存账四层明细——组件 onvif_stats_dump 输出
+ * $$$ ONVIF STATS 系列（静态缓冲/动态账本/堆面/栈水位），内存与存储评估的数据源。 */
+static int factory_console_cmd_mem(int argc, char **argv)
+{
+    onvif_stats_dump();
+    return 0;
+}
+
 void factory_console_init(void)
 {
     esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
@@ -186,6 +195,12 @@ void factory_console_init(void)
         .hint = "<reset>",
         .func = factory_console_cmd_clock,
     };
+    const esp_console_cmd_t cmd_mem = {
+        .command = "mem",
+        .help = "onvif memory ledger: per-module static/heap/peak + heap snapshot (ch17 17.5.2)",
+        .hint = NULL,
+        .func = factory_console_cmd_mem,
+    };
     ESP_ERROR_CHECK(esp_console_cmd_register(&cmd_status));
     ESP_ERROR_CHECK(esp_console_cmd_register(&cmd_ip));
     ESP_ERROR_CHECK(esp_console_cmd_register(&cmd_heap));
@@ -193,6 +208,7 @@ void factory_console_init(void)
     ESP_ERROR_CHECK(esp_console_cmd_register(&cmd_sntp));
     ESP_ERROR_CHECK(esp_console_cmd_register(&cmd_witness));
     ESP_ERROR_CHECK(esp_console_cmd_register(&cmd_clock));
+    ESP_ERROR_CHECK(esp_console_cmd_register(&cmd_mem));
 
     ESP_ERROR_CHECK(esp_console_start_repl(repl));
     ESP_LOGI(TAG, "serial console ready (status/ip/heap/restart/sntp/clock/witness, help lists all)");

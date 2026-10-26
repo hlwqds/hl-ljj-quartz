@@ -21,6 +21,11 @@
 | T14     | 流媒体    | 信令四步 200 + 12s 完整帧 + 板端 TEARDOWN 对账                                                                                     | lab05/ch16   |
 | T15–T23 | Profile S | GetProfile 单数/负路径、VideoSource/Encoder Configuration(s)、Options（zeep 严格校验）、NetworkInterfaces 真实 MAC/IP、Scopes 对账 | ch17 §17.5.1 |
 | T24     | 鉴权门    | 新操作免凭据 → NotAuthorized                                                                                                       | ch17 §17.5.1 |
+| T25     | 内存统计  | console mem → `$$$ ONVIF STATS` 账目行 + free_dma ≥170KB 红线                                                                      | ch17 §17.5.2 |
+
+固件侧被测对象为套件级组件 `components/onvif/`（disc/auth/svc/rtsp/stats，
+六站共源；能力旗标 + 媒体边界注入，见 ch17 §17.5.2）。存储账配套工具
+`lab06/tools` 同级：`practice/onvif-labs/tools/size_report.sh`。
 
 ## 设计决定
 

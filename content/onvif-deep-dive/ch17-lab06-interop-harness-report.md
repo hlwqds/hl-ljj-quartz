@@ -251,6 +251,52 @@ RTSP 项现已前置清场（杀孤儿消费者再连），对账照常三本账
 压测下 httpd 的稳定性（间歇性挂死需串口复位，见 ch16 第 4 笔，未根治）与
 Set 系操作（SetVideoEncoderConfiguration 等 OPTIONAL 项未实现）。
 
+### 17.5.2 生产化重构：单一组件与内存统计（同夜追加）
+
+五站各持一份 onvif 模块副本的「漂移税」在 Profile S 轮结清过一次账（一个字符的
+修复同步五处），本轮付清本金：四模块收拢为套件级组件
+`practice/onvif-labs/components/onvif/`（disc/auth/svc/rtsp/stats 五源文件 +
+include/ 六头），六站经 `EXTRA_COMPONENT_DIRS` 挂接，`main/` 里的副本全部删除。
+
+**边界三刀**：
+
+1. **媒体依赖倒置**：组件不再 include 任何采集基座头——`onvif_media_io_t`
+   三个函数指针（httpd/copy*latest/copy_latest_id）由宿主注入，站内直接绑
+   `factory_stream*\*`。lab04 基座尚无 `\_id` 变体，按需校验（组件不强迫全量注入）。
+2. **凭据留在 app 侧**：`onvif_auth_init(user, pass)` 改注入式，
+   `onvif_secrets.h`（gitignore 纪律）不进组件。
+3. **站点标记参数化**：svc 的 `$$$ ONVIF <marker> OP` 前缀改 cfg.marker
+   （lab02..05 各用本站号，lab06 归位 LAB05，沿本章站点标记纪律）；
+   disc/auth/rtsp 固定 LAB01/LAB03/LAB05（功能来源站身份）。
+
+**能力旗标化**：`onvif_svc_config_t`（auth/users/profiles/stream_uri/profile_s）
+在 init 时运行期装配操作表——未装配的操作走 ActionNotSupported 合规拒绝，
+未引用的模板函数被 gc-sections 裁出固件，**存储占用随站点能力缩放**。
+一处真雷：httpd 回调必须无条件必填（SOAP 端点每站都挂基座 80 端口），
+旗标裁剪时漏配 io 块的站编译期零告警、上电即空指针——已在校验里钉死。
+
+**内存统计入库（onvif_stats）**：评估内存占用的数据源，四层账目——
+
+| 层           | 内容                                      | 本板实测（lab06 全能力档）               |
+| ------------ | ----------------------------------------- | ---------------------------------------- |
+| 静态缓冲登记 | uuid/ip/nonce_ring/sess 等编译期定长缓冲  | 1,424B                                   |
+| 动态分配账本 | 带标签 heap_caps 包装（live/peak/allocs） | svc 317,440B + rtsp 308,763B（全 PSRAM） |
+| 任务栈水位   | uxTaskGetStackHighWaterMark               | rtsp 任务 7,324B 余量（配额 8,192B）     |
+| 堆面快照     | free_dma/free_spiram/min_free             | 242,719B / 11,397,436B / 225,368B        |
+
+console `mem` 命令与 `$$$ ONVIF STATS` 标记行系列输出，测试集 T25 消费
+（含 free_dma ≥170KB 红线断言）。svc 的 300KB 快照缓冲随 `profiles` 旗标
+按需分配——lab02/03 档不占这 300KB，内存账随能力缩放与存储一致。
+
+**存储占用评估**：`tools/size_report.sh`（idf_size.py 解析 .map，四层：
+app 总量 vs factory 分区 / libonvif.a 归档明细 / main 归档 / 全组件 Top）。
+lab06 全能力档实测：app 1,260,016B = factory 分区 32.0%；onvif 组件最大符号
+rtsp_handle_connection 3,098B text、应答模板 rodata 单个 300–940B——控制面
+在固件里的存储代价不足 app 的 2%。
+
+**回归**：22 项测试集（原 21 + T25）全绿；六站全部编译通过，lab06 烧验。
+「五站一致」自此是结构保证（单源组件）而非人工纪律（同步五份副本）。
+
 ## 17.6 小结
 
 - lab06 = 总装 + 换裁判：五站固件合成一台完整设备（发现→鉴权→Profile→RTSP 全链

@@ -46,7 +46,22 @@ void app_main(void)
     ESP_ERROR_CHECK(onvif_disc_init());
 
     /* 控制面：等基座 httpd 就绪后挂 /onvif/device_service（lab02 交付）。 */
-    ESP_ERROR_CHECK(onvif_svc_init());
+    static const onvif_svc_config_t svc_cfg = {
+        .marker = "LAB02",
+    .auth = false,
+    .users = false,
+    .profiles = false,
+    .stream_uri = false,
+    .profile_s = false,
+    /* httpd 回调无条件必填（SOAP 端点挂基座 80 端口）；媒体边界本站未用置空 */
+    .io =
+        {
+            .httpd = factory_stream_httpd,
+            .copy_latest = NULL,
+            .copy_latest_id = NULL,
+        },
+    };
+    ESP_ERROR_CHECK(onvif_svc_init(&svc_cfg));
 
     ESP_LOGI(TAG, "lab02 base ready (camera+stream+disc+svc)");
 }

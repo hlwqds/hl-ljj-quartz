@@ -82,7 +82,7 @@ WS-Security（[[ch04-ws-security-auth|第四章]]）的设备侧实现与客户�
 
 > [!tip] lab01 已落地（2026-10-25 上板验收通过）
 > 工程：[practice/onvif-labs/lab01-discovery](/static/code/#/onvif-labs/lab01-discovery/README.md)
-> （README 含拓扑/复现命令/实测摘录）· 应答器实现：[main/onvif_disc.c](/static/code/#/onvif-labs/lab01-discovery/main/onvif_disc.c)
+> （README 含拓扑/复现命令/实测摘录）· 应答器实现：[main/onvif_disc.c](/static/code/#/onvif-labs/components/onvif/src/onvif_disc.c)
 > · 工程契约：[SPEC](/static/code/#/onvif-labs/SPEC.md)。
 > 实测要点：单播直探 4/4 ProbeMatch（UUID/XAddrs/Types 全对）；组播 Probe 板端 4/4 收到并回包
 > （`$$$ ONVIF LAB01 PROBEMATCH` 标记行入 run.log），家庭 AP 组播回包路径不对称已记录为工程边界。
