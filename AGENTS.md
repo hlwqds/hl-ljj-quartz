@@ -133,7 +133,7 @@ tags: [tag1, tag2, tag3]
 ## CI 与提交规范（提交前必读）
 
 CI（`.github/workflows/ci.yaml`）对 v4 分支的每次 push/PR 执行：
-`npm ci` → `npm run check`（`tsc --noEmit` + **prettier 全仓检查**）→ `npm test` → `npx quartz build --bundleInfo -d docs`。
+`npm ci` → `npm run check`（`tsc --noEmit` + **prettier 全仓检查**）→ `npm test` → `practice/onvif-labs/components/onvif/test/run.sh`（onvif 组件宿主单元测试，gcc）→ `npx quartz build --bundleInfo -d docs`。
 
 ### Prettier 全仓检查
 

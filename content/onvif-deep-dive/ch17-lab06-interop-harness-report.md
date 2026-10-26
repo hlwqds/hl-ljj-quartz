@@ -322,14 +322,23 @@ OPTIONS 保持无防（RFC 允许），DESCRIBE/SETUP 过 401 质询门，PLAY �
   6629fae4… 是 qop=auth 变体的值，无 qop 档（本实现）的期望应为
   670fd8c2…（python hashlib 独立复核）——照抄文档会写出永远失败的 selftest。
 - 功能测试（套件 22→26 项）：T26 无凭据 DESCRIBE/裸 PLAY → 401+质询、
-  T27 带凭据全流程 200×4 + 6s 成帧、T28 错口令 401、T29 首用 200 → 重放
-  401 → 新 nonce 恢复 200 → 已鉴权无 SETUP 直 PLAY 454。ledger 升级为
-  质询应答客户端（401→Authorization 自动重试），顺带修掉响应残体投毒
-  （SDP leftover 拼进下一响应 head 的老毛病）。26/26 全绿，板端分因行
-  （digest ok / digest mismatch / nonce unknown or spent）落 runs/digest.log。
+  T27 带凭据全流程 200×4 + 6s 成帧、T28 错口令 401、T29 首用 200 → 直
+  PLAY 454 → 新连接同头重放 401 → 新 nonce 恢复 200。ledger 升级为质询
+  应答客户端（401→Authorization 自动重试），并按 Content-Length 读干应答体
+  （SDP 残体拼进下一响应 head 的间歇性 flake 根因，分段不确定性一并消除）。
+  26/26 全绿，板端分因行落 runs/digest.log。
 
-边界重申：快照 HTTP 端点仍匿名（HTTP Digest 列为后续增强）；nonce 环 8 槽
-按单客户端语义设计。
+**边界与语义（如实写准）**：本轮闭的是 **RTSP 面**——GET /onvif-http/snapshot
+仍免鉴权（ch15 的内网实验边界保留；快照面若闭环需给 GET 算 HA2 并同步所有
+取图工具，另开一轮）。nonce 语义：一次性消费 + 连接级 authed 门闩配合——门闩
+让标准客户端「质询一次、同连接复用」不用反复验签（lab05 历史形态直连不验），
+一次性则把重放拦截在**新连接**的环上（T29 实测：同头重放 401、已鉴权连接内
+直 PLAY 由 454 前置挡下）。无 qop 档的 legacy 弱点（凭据可离线穷举 HA1）由
+强口令与内网边界覆盖；根治走 RFC 7850 qop=auth + nc 计数，另列。分因行升级
+为可 grep 标记行：`$$$ ONVIF LAB05 DIGEST OK|DENY reason=…`（板端四类行为
+落 runs/digest.log）。取流工具同步：dashboard/onvif_app 的 ffmpeg URL 改带
+URL userinfo 凭据（实测 130 帧/8.6s 解码恢复），否则 Digest 上线即直播黑屏——
+**改鉴权契约必须同批改仓内消费方**，这条记为流程纪律。
 
 ## 17.6 小结
 

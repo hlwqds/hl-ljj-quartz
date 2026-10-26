@@ -31,7 +31,18 @@ def _rtsp(s, method, cseq, extra="", uri_path=None, host=None):
         if not chunk:
             break
         data += chunk
-    return data.decode("utf-8", "replace")
+    head, _, rest = data.partition(b"\r\n\r\n")
+    # 按 Content-Length 把 body 读满丢弃（SDP）——分段确定性，残体不毒化下一响应
+    m = re.search(rb"Content-Length: (\d+)", head)
+    if m:
+        need = int(m.group(1)) - len(rest)
+        while need > 0:
+            c = s.recv(min(need, 4096))
+            if not c:
+                break
+            need -= len(c)
+            rest += c
+    return head.decode("utf-8", "replace")
 
 
 def _digest_header(user, password, method, uri, www_auth):

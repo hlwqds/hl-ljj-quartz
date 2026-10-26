@@ -12,16 +12,17 @@
 
 ## 覆盖矩阵
 
-| ID      | 面        | 验什么                                                                                                                             | 对齐         |
-| ------- | --------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------ |
-| T01     | 发现      | Probe→ProbeMatch（随机 uuid + 组播 2 次 + 单播兜底 2 次）                                                                          | lab01/ch12   |
-| T02–T04 | 控制面    | 免鉴权 DevInfo/DateTime、GET→405                                                                                                   | lab02/ch13   |
-| T05–T08 | 鉴权      | 摘要门正路径、无凭据、错口令、nonce 重放                                                                                           | lab03/ch14   |
-| T09–T13 | 媒体      | zeep 冒烟逐行证据 + 快照 JPEG magic                                                                                                | lab04/ch15   |
-| T14     | 流媒体    | 信令四步 200 + 12s 完整帧 + 板端 TEARDOWN 对账                                                                                     | lab05/ch16   |
-| T15–T23 | Profile S | GetProfile 单数/负路径、VideoSource/Encoder Configuration(s)、Options（zeep 严格校验）、NetworkInterfaces 真实 MAC/IP、Scopes 对账 | ch17 §17.5.1 |
-| T24     | 鉴权门    | 新操作免凭据 → NotAuthorized                                                                                                       | ch17 §17.5.1 |
-| T25     | 内存统计  | console mem → `$$$ ONVIF STATS` 账目行 + free_dma ≥170KB 红线                                                                      | ch17 §17.5.2 |
+| ID      | 面         | 验什么                                                                                                                             | 对齐         |
+| ------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------ |
+| T01     | 发现       | Probe→ProbeMatch（随机 uuid + 组播 2 次 + 单播兜底 2 次）                                                                          | lab01/ch12   |
+| T02–T04 | 控制面     | 免鉴权 DevInfo/DateTime、GET→405                                                                                                   | lab02/ch13   |
+| T05–T08 | 鉴权       | 摘要门正路径、无凭据、错口令、nonce 重放                                                                                           | lab03/ch14   |
+| T09–T13 | 媒体       | zeep 冒烟逐行证据 + 快照 JPEG magic                                                                                                | lab04/ch15   |
+| T14     | 流媒体     | 信令四步 200 + 12s 完整帧 + 板端 TEARDOWN 对账                                                                                     | lab05/ch16   |
+| T15–T23 | Profile S  | GetProfile 单数/负路径、VideoSource/Encoder Configuration(s)、Options（zeep 严格校验）、NetworkInterfaces 真实 MAC/IP、Scopes 对账 | ch17 §17.5.1 |
+| T24     | 鉴权门     | 新操作免凭据 → NotAuthorized                                                                                                       | ch17 §17.5.1 |
+| T25     | 内存统计   | console mem → `$$$ ONVIF STATS` 账目行 + free_dma ≥170KB 红线                                                                      | ch17 §17.5.2 |
+| T26–T29 | 媒体面鉴权 | 401 质询、带凭据全流程、错口令、nonce 一次性 + 454 状态前置                                                                        | ch17 §17.5.3 |
 
 固件侧被测对象为套件级组件 `components/onvif/`（disc/auth/svc/rtsp/stats，
 六站共源；能力旗标 + 媒体边界注入，见 ch17 §17.5.2）。存储账配套工具

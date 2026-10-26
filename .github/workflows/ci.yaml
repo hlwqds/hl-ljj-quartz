@@ -42,6 +42,9 @@ jobs:
       - name: Test
         run: npm test
 
+      - name: ONVIF component host unit tests
+        run: bash practice/onvif-labs/components/onvif/test/run.sh
+
       - name: Ensure Quartz builds, check bundle info
         run: npx quartz build --bundleInfo -d docs
 

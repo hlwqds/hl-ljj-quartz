@@ -9,6 +9,7 @@ import faulthandler
 faulthandler.enable()
 
 import argparse
+from urllib.parse import quote
 import fcntl
 import io
 import json
@@ -116,7 +117,9 @@ _ff_event = threading.Event()
 
 def ffmpeg_loop():
     global _ff_proc, _ff_frame
-    url = f"rtsp://{ARGS.host}:8554/mjpeg"
+    user_enc = quote(ARGS.user, safe="")
+    pass_enc = quote(ARGS.password, safe="")
+    url = f"rtsp://{user_enc}:{pass_enc}@{ARGS.host}:8554/mjpeg"  # URL userinfo → ffmpeg 走 RTSP Digest
     cmd = [FFMPEG, "-rtsp_transport", "tcp", "-i", url,
            "-f", "mpjpeg", "-q:v", "4", "-"]
     while True:

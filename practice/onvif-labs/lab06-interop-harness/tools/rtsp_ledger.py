@@ -10,6 +10,7 @@ $ 交织 RTP 流，按「offset 0 起包 + M 位止包、同时间戳」计完�
 """
 
 import argparse
+import re
 import socket
 import time
 
@@ -47,18 +48,27 @@ def main() -> int:
             f"{method} {base} RTSP/1.0\r\nCSeq: {cseq}\r\n{extra}\r\n".encode()
         )
         resp, rest = recv_response(sock, buf)
-        buf.clear()  # 残体（SDP/交错帧）不进下一响应解析——否则 head 会拼上前体行
-        _ = rest
+        # 按 Content-Length 把 body 读满丢弃（SDP 等）——否则分段到达时残体
+        # 留在内核队列，下一响应 head 会被拼上前体行（间歇性 flake 根因）
+        m = re.search(r"Content-Length: (\d+)", resp)
+        if m:
+            need = int(m.group(1)) - len(rest)
+            while need > 0:
+                c = sock.recv(min(need, 4096))
+                if not c:
+                    break
+                need -= len(c)
+                rest += c
+        buf.clear()  # 残体（交错帧）不进下一响应解析
         return resp
 
     print(rtsp("OPTIONS").splitlines()[0])
-    import re as _re
 
     def digest_resp(method: str, www_auth: str) -> str:
         """RFC 2617 无 qop 档：response=MD5(MD5(u:r:p):nonce:MD5(m:uri))"""
         import hashlib
-        realm = _re.search(r'realm="([^"]+)"', www_auth).group(1)
-        nonce = _re.search(r'nonce="([^"]+)"', www_auth).group(1)
+        realm = re.search(r'realm="([^"]+)"', www_auth).group(1)
+        nonce = re.search(r'nonce="([^"]+)"', www_auth).group(1)
         uri = base
         ha1 = hashlib.md5(f"{args.user}:{realm}:{args.password}".encode()).hexdigest()
         ha2 = hashlib.md5(f"{method}:{uri}".encode()).hexdigest()

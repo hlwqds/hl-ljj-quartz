@@ -247,13 +247,13 @@ void test_md5_hex(const char *in, size_t len, char out[33])
 /* esp_fill_random 桩（默认 nonce 生成路径在注入后不可达） */
 void esp_fill_random(void *buf, size_t len) { memset(buf, 0x5a, len); }
 
-/* mbedtls_md5 / psa_hash_compute 符号桩（注入后均不可达） */
-int mbedtls_md5(const unsigned char *in, size_t len, unsigned char out[16])
+/* onvif_stats 符号桩（宿主单测不验账本面；板端由 onvif_stats.c 实现） */
+void onvif_stats_register_static(const char *tag, const char *name, size_t bytes)
 {
-    (void)in; (void)len; (void)out;
-    return -1;
+    (void)tag; (void)name; (void)bytes;
 }
 
+/* psa_hash_compute 符号桩（注入后不可达） */
 psa_status_t psa_hash_compute(psa_algorithm_t alg, const uint8_t *input, size_t input_len,
                               uint8_t *hash, size_t hash_size, size_t *hash_length)
 {

@@ -10,6 +10,7 @@
 """
 
 import argparse
+from urllib.parse import quote
 import asyncio
 import json
 import os
@@ -141,7 +142,9 @@ async def onvif_ws_handler(request):
     await ws.prepare(request)
     proc = None
     try:
-        url = f"rtsp://{ARGS.host}:8554/mjpeg"
+        user_enc = quote(ARGS.user, safe="")
+    pass_enc = quote(ARGS.password, safe="")
+    url = f"rtsp://{user_enc}:{pass_enc}@{ARGS.host}:8554/mjpeg"  # URL userinfo → ffmpeg 走 RTSP Digest
         cmd = [FFMPEG, "-rtsp_transport", "tcp", "-i", url,
                "-f", "mjpeg", "-q:v", 4, "-"]
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,

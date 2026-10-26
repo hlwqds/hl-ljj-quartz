@@ -14,6 +14,8 @@
 
 #include "esp_log.h"
 #include "esp_random.h"
+
+#include "onvif_stats.h"
 #include "psa/crypto.h"
 
 #include <stdio.h>
@@ -65,6 +67,12 @@ static struct {
     char nonce[DIGEST_NONCE_HEX + 1];
 } s_ring[DIGEST_RING_SLOTS];
 static int s_ring_head;
+
+void onvif_digest_register_stats(void)
+{
+    /* nonce 环入 $$$ ONVIF STATS 账——内存评估账本不许漏新模块 */
+    onvif_stats_register_static("digest", "nonce_ring", sizeof(s_ring));
+}
 
 static void hex16_to_str(const uint8_t h[16], char out[DIGEST_HEX_MAX])
 {
@@ -187,14 +195,23 @@ int onvif_digest_verify(const char *auth_header, const char *method, const char 
         }
     }
     if (slot < 0) {
-        ESP_LOGW(TAG, "nonce unknown or spent");
+        ESP_LOGW(TAG, "$$$ ONVIF LAB05 DIGEST DENY reason=nonce-unknown");
         return -2;
     }
     s_ring[slot].nonce[0] = '\0'; /* 一次性：先消费，凭据错时再退还 */
 
     /* ② realm/username 比对（realm 参与哈希，明文比对只作快速拒绝） */
-    if (strcmp(a.username, user) != 0 || !strstr(auth_header, realm)) {
+    if (strcmp(a.username, user) != 0) {
         memcpy(s_ring[slot].nonce, a.nonce, DIGEST_NONCE_HEX); /* 退还 */
+        ESP_LOGW(TAG, "$$$ ONVIF LAB05 DIGEST DENY reason=user-unknown");
+        return 1;
+    }
+    /* realm 明文比对仅在有字段时做（RFC 要求回显，最小客户端常省）；
+     * realm 本就绑进 HA1 哈希——缺省放行交给哈希判，安全面不变、误拒面收窄 */
+    const char *rpos = strstr(auth_header, "realm=");
+    if (rpos != NULL && strstr(rpos, realm) == NULL) {
+        memcpy(s_ring[slot].nonce, a.nonce, DIGEST_NONCE_HEX); /* 退还 */
+        ESP_LOGW(TAG, "$$$ ONVIF LAB05 DIGEST DENY reason=realm-mismatch");
         return 1;
     }
 
@@ -209,14 +226,15 @@ int onvif_digest_verify(const char *auth_header, const char *method, const char 
 
     if (!ct_hex_eq(resp, a.response, 32)) {
         memcpy(s_ring[slot].nonce, a.nonce, DIGEST_NONCE_HEX); /* 退还 */
-        ESP_LOGW(TAG, "digest mismatch user=%s", a.username);
+        ESP_LOGW(TAG, "$$$ ONVIF LAB05 DIGEST DENY reason=digest-mismatch user=%s",
+                 a.username);
         return 1;
     }
 
     if (parsed_out) {
         *parsed_out = a;
     }
-    ESP_LOGI(TAG, "digest ok user=%s uri=%s", a.username, a.uri);
+    ESP_LOGI(TAG, "$$$ ONVIF LAB05 DIGEST OK user=%s uri=%s", a.username, a.uri);
     return 0;
 }
 
@@ -241,6 +259,6 @@ bool onvif_digest_selftest(void)
     md5_hex(cat, strlen(cat), resp);
 
     bool ok = strcmp(resp, expect) == 0;
-    ESP_LOGI(TAG, "$$$ ONVIF DIGEST SELFTEST %s", ok ? "ok" : "FAIL");
+    ESP_LOGI(TAG, "$$$ ONVIF LAB05 DIGEST SELFTEST %s", ok ? "ok" : "FAIL");
     return ok;
 }

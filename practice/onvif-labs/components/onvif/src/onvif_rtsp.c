@@ -571,6 +571,7 @@ void rtsp_server_init(const onvif_media_io_t *io, const onvif_rtsp_auth_t *auth)
             s_auth_digest = false;
         } else {
             snprintf(s_realm, sizeof(s_realm), "%s", auth->realm);
+            onvif_digest_register_stats();
             ESP_LOGI(TAG, "$$$ ONVIF LAB05 DIGEST READY realm=%s", s_realm);
         }
     }

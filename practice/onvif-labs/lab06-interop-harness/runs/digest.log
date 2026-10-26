@@ -1,4 +1,4 @@
-W (112372) onvif_digest: digest mismatch user=admin
-I (112386) onvif_digest: digest ok user=admin uri=rtsp://192.168.1.4:8554/mjpeg
-W (112456) onvif_digest: nonce unknown or spent
-I (112466) onvif_digest: digest ok user=admin uri=rtsp://192.168.1.4:8554/mjpeg
+W (90467) onvif_digest: $$$ ONVIF LAB05 DIGEST DENY reason=digest-mismatch user=admin
+I (90492) onvif_digest: $$$ ONVIF LAB05 DIGEST OK user=admin uri=rtsp://192.168.1.4:8554/mjpeg
+W (90547) onvif_digest: $$$ ONVIF LAB05 DIGEST DENY reason=nonce-unknown
+I (90560) onvif_digest: $$$ ONVIF LAB05 DIGEST OK user=admin uri=rtsp://192.168.1.4:8554/mjpeg

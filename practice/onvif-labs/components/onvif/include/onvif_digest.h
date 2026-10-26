@@ -41,7 +41,10 @@ typedef struct {
 typedef void (*onvif_digest_md5_fn)(const char *in, size_t len, uint8_t out16[16]);
 typedef void (*onvif_digest_nonce_fn)(char out[DIGEST_NONCE_HEX + 1]);
 
-/* 绑定后端（NULL = 目标侧默认 mbedTLS + esp_random）。纯软件无副作用，可反复调。 */
+/* 静态面入内存账（nonce 环）；rtsp_server_init 的 digest 分支调用 */
+void onvif_digest_register_stats(void);
+
+/* 绑定后端（NULL = 目标侧默认 PSA MD5 + esp_random）。纯软件无副作用，可反复调。 */
 void onvif_digest_bind(onvif_digest_md5_fn md5, onvif_digest_nonce_fn nonce_gen);
 
 /* 生成质询：发新 nonce 入环，拼 WWW-Authenticate 的 value（不含头名）。
