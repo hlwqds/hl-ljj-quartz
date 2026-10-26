@@ -1,7 +1,7 @@
 {
   "host": "192.168.1.4",
   "python": "/home/huanglin/.venvs/onvif/bin/python",
-  "ts": "2026-10-27 01:29:27",
+  "ts": "2026-10-27 01:33:26",
   "pass": 27,
   "total": 27,
   "results": [
@@ -17,7 +17,7 @@
       "name": "免鉴权 GetDeviceInformation",
       "pass": true,
       "detail": "http=200",
-      "seconds": 0.1
+      "seconds": 0.0
     },
     {
       "id": "T03",
@@ -37,7 +37,7 @@
       "id": "T30",
       "name": "WS-Addressing MessageID 回显",
       "pass": true,
-      "detail": "http=200 echo=✓ gen-uuid=✓ action=✓",
+      "detail": "http=200 echo=✓ gen-uuid=✓ action-suffix=✓ fault-clean=✓",
       "seconds": 0.0
     },
     {
@@ -66,27 +66,27 @@
       "name": "同 nonce 重放 → NotAuthorized",
       "pass": true,
       "detail": "first=200 replay=500",
-      "seconds": 0.0
+      "seconds": 0.1
     },
     {
       "id": "T09",
       "name": "zeep 冒烟: 设备信息/Profiles/StreamUri/未知Token",
       "pass": true,
       "detail": "4/4 证据行齐",
-      "seconds": 0.6
+      "seconds": 0.9
     },
     {
       "id": "T13",
       "name": "快照直取 200 + JPEG magic",
       "pass": true,
-      "detail": "16377B JPEG",
+      "detail": "18095B JPEG",
       "seconds": 0.1
     },
     {
       "id": "T14",
       "name": "RTSP 信令 + 12s 成帧 + 板端对账",
       "pass": true,
-      "detail": "客户端 186 帧（板端 TEARDOWN 未读到——串口被占?）",
+      "detail": "客户端 180 帧（板端 TEARDOWN 未读到——串口被占?）",
       "seconds": 23.2
     },
     {
@@ -94,7 +94,7 @@
       "name": "GetProfile(profile_1) → JPEG",
       "pass": true,
       "detail": "token=profile_1 enc=JPEG",
-      "seconds": 0.9
+      "seconds": 0.8
     },
     {
       "id": "T16",
@@ -108,14 +108,14 @@
       "name": "GetVideoSourceConfigurations → 640x480",
       "pass": true,
       "detail": "n=1 token=vsc_1 bounds=640x480",
-      "seconds": 0.9
+      "seconds": 1.0
     },
     {
       "id": "T18",
       "name": "GetVideoSourceConfiguration 正/负路径",
       "pass": true,
       "detail": "srctoken=vs_1; fault subcode=ter:InvalidArgVal",
-      "seconds": 0.9
+      "seconds": 1.0
     },
     {
       "id": "T19",
@@ -136,7 +136,7 @@
       "name": "GetVideoEncoderConfigurationOptions → JPEG/15fps",
       "pass": true,
       "detail": "jpeg=True fpsmax=15 w=640",
-      "seconds": 1.0
+      "seconds": 0.9
     },
     {
       "id": "T22",
@@ -163,7 +163,7 @@
       "id": "T25",
       "name": "内存统计: mem 命令 STATS 账目 + free_dma 红线",
       "pass": true,
-      "detail": "static_total=1688 free_dma=242295 free_spiram=11393040 min_free=224944",
+      "detail": "static_total=1688 free_dma=242295 free_spiram=11393064 min_free=224944",
       "seconds": 0.1
     },
     {
@@ -177,15 +177,15 @@
       "id": "T27",
       "name": "带凭据全流程 200 + 6s 成帧",
       "pass": true,
-      "detail": "200×4 frames=94",
-      "seconds": 6.1
+      "detail": "200×4 frames=92",
+      "seconds": 6.2
     },
     {
       "id": "T28",
       "name": "错口令 → 401",
       "pass": true,
       "detail": "re-DESCRIBE=RTSP/1.0 401 Unauthorized",
-      "seconds": 0.1
+      "seconds": 0.0
     },
     {
       "id": "T29",

@@ -40,10 +40,17 @@ def t04b_wsa(c):
     gen = re.search(r"<wsa:MessageID>urn:uuid:"
                     r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
                     r"</wsa:MessageID>", body)
-    act = "<wsa:Action>http://www.onvif.org/ver10/device/wsdl/" in body
-    ok = st == 200 and echo and bool(gen) and act
+    # Action 必须以【本次操作】的 Response 结尾（抓跨请求残留）
+    act = re.search(r"<wsa:Action>[^<]*/GetDeviceInformationResponse</wsa:Action>",
+                    body) is not None
+    # 负例：未列白名单操作的 Fault 不得带 Action（陈旧残留探测）
+    st2, fault = soap_post(c["host"], 80, "/onvif/device_service",
+                           _S12.format(body="<tds:GetSystemLog/>"))
+    no_stale = st2 == 500 and "<wsa:Action>" not in fault
+    ok = st == 200 and echo and bool(gen) and act and no_stale
     return ok, (f"http={st} echo={'✓' if echo else '✗'} "
-                f"gen-uuid={'✓' if gen else '✗'} action={'✓' if act else '✗'}")
+                f"gen-uuid={'✓' if gen else '✗'} action-suffix={'✓' if act else '✗'} "
+                f"fault-clean={'✓' if no_stale else f'✗(Action残留?)'}")
 
 
 def t04_405(c):

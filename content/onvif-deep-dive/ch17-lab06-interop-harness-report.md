@@ -383,6 +383,39 @@ URL userinfo 凭据（实测 130 帧/8.6s 解码恢复），否则 Digest 上线
 纪律：可以读它的结构与做法，**不搬它的代码**（LGPL 义务随代码走）；headless
 宿主走其 upstream CLI（cmake + libxml2），nixpkgs 未打包则源码构建。
 
+**对标二：roleoroleo/onvif_simple_server（GPL-3.0）——一手事实与许可纪律**。
+同为模板策略的设备侧轻量实现，一手事实：C；Profile S + 可选 Profile T（Media2）；
+XML 用 ezxml 包装 + 模板（不用 gsoap/libxml）；加密后端三选一（libtomcrypt 默认/
+mbedtls/wolfssl）；架构 = onvif server 以 CGI 挂 busybox httpd/lighttpd 之下，
+WS-Discovery/Notify 为独立守护进程；**媒体面不归它管**（StreamUri 指向外部
+rtsp 服务、snapurl 指向外部脚本——它没有媒体面鉴权议题）；conf 文件声明式
+配置（≤2 个 profile/scope/user/password）；PTZ 走 system() 外部命令；事件 ≤8
+个文件驱动；自陈 "does not fully comply with the Onvif Conformance Test. But
+usually is enough to work with an onvif client"；有 `make test` 原生单测
+（不需 crypto 库）。
+
+对照三条：
+
+1. **测试栏修正**：它有宿主单测——我们与它的差异不在「有无单测」，在
+   **板级验收套件 + CI 门禁 + `$$$` 机器可读标记行 + 三本账取证**
+   （zeep/ffmpeg/账本互证）；它自己承认不满足 CTT，而 CTT 合规正是本仓
+   「合格库」路线的硬指标。
+2. **结构性差异（本轮最值钱的一条）**：它走 CGI——**每个请求独立进程，
+   无共享可变状态**，本节刚修的陈旧 Action/静态残留这一类 bug 在其进程模型下
+   天然不存在；我们 in-process 换来零进程开销与自持媒体面，代价是状态纪律
+   自己扛。据此 P2 增补一条（比「操作注册 API」便宜、能根除一整类 bug）：
+   **每请求状态显式化**——per-request context 结构体取代
+   s_rx/s_body/s_tx/s_cur_action 文件级 static，缓冲与 Action 全部参数传入，
+   不再依赖「记得清零」。
+3. **广度它赢**（Profile T/PTZ/Events≤8/配置热配），**嵌入深度与媒体面安全
+   我们赢**（自持 RTSP/Digest，其媒体面不在职责内无从谈起）。
+
+**许可纪律（企业私有代码演进，硬约束）**：onvif_simple_server 为 GPL-3.0、
+libonvif 为 LGPL-2.1——本仓**不引用、不搬移、不派生**两者代码与配置样例；
+设计借鉴只依据 ONVIF 官方规范与对方公开 README 的行为描述；组件代码全部
+第一方（本系列逐提交可溯），后续随企业私有许可演进。给贡献者的红线：
+接触过上述 GPL/LGPL 源码的人不参与本组件的对应模块。
+
 ## 17.6 小结
 
 - lab06 = 总装 + 换裁判：五站固件合成一台完整设备（发现→鉴权→Profile→RTSP 全链

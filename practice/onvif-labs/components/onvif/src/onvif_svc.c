@@ -696,6 +696,7 @@ static void svc_log_op(const char *local, bool ok)
 
 static esp_err_t onvif_svc_handler(httpd_req_t *req)
 {
+    s_cur_action[0] = '\0'; /* 每请求清零：未列操作/Fault 不得带上一请求的 Action */
     int64_t content_len = (int64_t)req->content_len;
     if (content_len <= 0 || content_len >= SVC_RECV_BUF) {
         httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR,
