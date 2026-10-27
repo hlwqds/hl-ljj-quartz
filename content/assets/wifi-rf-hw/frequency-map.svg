@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="500" viewBox="0 0 960 500" font-family="system-ui,sans-serif" style="max-width:100%">
+<text x="70" y="26" font-size="15" font-weight="600" fill="currentColor">2.4 GHz ISM 频段地图（2395–2500 MHz）——信道 20 MHz 一片、编号 5 MHz 一格，1/6/11 才互不重叠</text>
+<rect x="128.0" y="56" width="165.7" height="64" fill="#1f6feb44" stroke="#1f6feb" stroke-width="1.5"/>
+<text x="210.9" y="84" font-size="13" font-weight="600" text-anchor="middle" fill="currentColor">1</text><text x="210.9" y="100" font-size="9" text-anchor="middle" fill="currentColor" opacity="0.75">2412 MHz</text>
+<rect x="169.4" y="56" width="165.7" height="64" fill="#58a6ff22" stroke="#58a6ff55" stroke-width="1"/>
+<text x="252.3" y="84" font-size="10" font-weight="400" text-anchor="middle" fill="currentColor">2</text>
+<rect x="210.9" y="56" width="165.7" height="64" fill="#58a6ff22" stroke="#58a6ff55" stroke-width="1"/>
+<text x="293.7" y="84" font-size="10" font-weight="400" text-anchor="middle" fill="currentColor">3</text>
+<rect x="252.3" y="56" width="165.7" height="64" fill="#58a6ff22" stroke="#58a6ff55" stroke-width="1"/>
+<text x="335.1" y="84" font-size="10" font-weight="400" text-anchor="middle" fill="currentColor">4</text>
+<rect x="293.7" y="56" width="165.7" height="64" fill="#58a6ff22" stroke="#58a6ff55" stroke-width="1"/>
+<text x="376.6" y="84" font-size="10" font-weight="400" text-anchor="middle" fill="currentColor">5</text>
+<rect x="335.1" y="56" width="165.7" height="64" fill="#1f6feb44" stroke="#1f6feb" stroke-width="1.5"/>
+<text x="418.0" y="84" font-size="13" font-weight="600" text-anchor="middle" fill="currentColor">6</text><text x="418.0" y="100" font-size="9" text-anchor="middle" fill="currentColor" opacity="0.75">2437 MHz</text>
+<rect x="376.6" y="56" width="165.7" height="64" fill="#58a6ff22" stroke="#58a6ff55" stroke-width="1"/>
+<text x="459.4" y="84" font-size="10" font-weight="400" text-anchor="middle" fill="currentColor">7</text>
+<rect x="418.0" y="56" width="165.7" height="64" fill="#58a6ff22" stroke="#58a6ff55" stroke-width="1"/>
+<text x="500.9" y="84" font-size="10" font-weight="400" text-anchor="middle" fill="currentColor">8</text>
+<rect x="459.4" y="56" width="165.7" height="64" fill="#58a6ff22" stroke="#58a6ff55" stroke-width="1"/>
+<text x="542.3" y="84" font-size="10" font-weight="400" text-anchor="middle" fill="currentColor">9</text>
+<rect x="500.9" y="56" width="165.7" height="64" fill="#58a6ff22" stroke="#58a6ff55" stroke-width="1"/>
+<text x="583.7" y="84" font-size="10" font-weight="400" text-anchor="middle" fill="currentColor">10</text>
+<rect x="542.3" y="56" width="165.7" height="64" fill="#1f6feb44" stroke="#1f6feb" stroke-width="1.5"/>
+<text x="625.1" y="84" font-size="13" font-weight="600" text-anchor="middle" fill="currentColor">11</text><text x="625.1" y="100" font-size="9" text-anchor="middle" fill="currentColor" opacity="0.75">2462 MHz</text>
+<rect x="583.7" y="56" width="165.7" height="64" fill="#58a6ff22" stroke="#58a6ff55" stroke-width="1"/>
+<text x="666.6" y="84" font-size="10" font-weight="400" text-anchor="middle" fill="currentColor">12</text>
+<rect x="625.1" y="56" width="165.7" height="64" fill="#58a6ff22" stroke="#58a6ff55" stroke-width="1"/>
+<text x="708.0" y="84" font-size="10" font-weight="400" text-anchor="middle" fill="currentColor">13</text>
+<rect x="716.3" y="56" width="182.3" height="64" fill="#58a6ff22" stroke="#58a6ff55" stroke-width="1"/>
+<text x="807.4" y="84" font-size="10" font-weight="400" text-anchor="middle" fill="currentColor">14</text>
+<text x="807.4" y="84" font-size="8" text-anchor="middle" fill="currentColor" opacity="0.7">14</text>
+<text x="807.4" y="94" font-size="7" text-anchor="middle" fill="currentColor" opacity="0.6">仅日本</text>
+<line x1="70.0" y1="130" x2="940.0" y2="130" stroke="currentColor" stroke-width="1"/>
+<line x1="111.4" y1="130" x2="111.4" y2="135" stroke="currentColor"/>
+<text x="111.4" y="148" font-size="9" text-anchor="middle" fill="currentColor" opacity="0.7">2400</text>
+<line x1="277.1" y1="130" x2="277.1" y2="135" stroke="currentColor"/>
+<text x="277.1" y="148" font-size="9" text-anchor="middle" fill="currentColor" opacity="0.7">2420</text>
+<line x1="442.9" y1="130" x2="442.9" y2="135" stroke="currentColor"/>
+<text x="442.9" y="148" font-size="9" text-anchor="middle" fill="currentColor" opacity="0.7">2440</text>
+<line x1="608.6" y1="130" x2="608.6" y2="135" stroke="currentColor"/>
+<text x="608.6" y="148" font-size="9" text-anchor="middle" fill="currentColor" opacity="0.7">2460</text>
+<line x1="774.3" y1="130" x2="774.3" y2="135" stroke="currentColor"/>
+<text x="774.3" y="148" font-size="9" text-anchor="middle" fill="currentColor" opacity="0.7">2480</text>
+<line x1="940.0" y1="130" x2="940.0" y2="135" stroke="currentColor"/>
+<text x="940.0" y="148" font-size="9" text-anchor="middle" fill="currentColor" opacity="0.7">2500</text>
+<text x="940.0" y="148" font-size="9" fill="currentColor" opacity="0.7">MHz</text>
+<line x1="318.6" y1="56" x2="318.6" y2="200" stroke="#f0883e" stroke-width="1" stroke-dasharray="4 3" opacity="0.55"/>
+<line x1="525.7" y1="56" x2="525.7" y2="200" stroke="#f0883e" stroke-width="1" stroke-dasharray="4 3" opacity="0.55"/>
+<line x1="732.9" y1="56" x2="732.9" y2="200" stroke="#f0883e" stroke-width="1" stroke-dasharray="4 3" opacity="0.55"/>
+<text x="8" y="168" font-size="10" fill="currentColor" opacity="0.8">Zigbee</text>
+<text x="8" y="180" font-size="9" fill="currentColor" opacity="0.6">802.15.4</text>
+<rect x="144.6" y="172" width="16.6" height="26" fill="#8b949e26" stroke="#8b949e55"/>
+<rect x="186.0" y="172" width="16.6" height="26" fill="#8b949e26" stroke="#8b949e55"/>
+<rect x="227.4" y="172" width="16.6" height="26" fill="#8b949e26" stroke="#8b949e55"/>
+<rect x="268.9" y="172" width="16.6" height="26" fill="#8b949e26" stroke="#8b949e55"/>
+<rect x="310.3" y="172" width="16.6" height="26" fill="#f0883e66" stroke="#f0883e"/>
+<text x="318.6" y="212" font-size="9" text-anchor="middle" fill="currentColor" opacity="0.85">15</text>
+<rect x="351.7" y="172" width="16.6" height="26" fill="#8b949e26" stroke="#8b949e55"/>
+<rect x="393.1" y="172" width="16.6" height="26" fill="#8b949e26" stroke="#8b949e55"/>
+<rect x="434.6" y="172" width="16.6" height="26" fill="#8b949e26" stroke="#8b949e55"/>
+<rect x="476.0" y="172" width="16.6" height="26" fill="#8b949e26" stroke="#8b949e55"/>
+<rect x="517.4" y="172" width="16.6" height="26" fill="#f0883e66" stroke="#f0883e"/>
+<text x="525.7" y="212" font-size="9" text-anchor="middle" fill="currentColor" opacity="0.85">20</text>
+<rect x="558.9" y="172" width="16.6" height="26" fill="#8b949e26" stroke="#8b949e55"/>
+<rect x="600.3" y="172" width="16.6" height="26" fill="#8b949e26" stroke="#8b949e55"/>
+<rect x="641.7" y="172" width="16.6" height="26" fill="#8b949e26" stroke="#8b949e55"/>
+<rect x="683.1" y="172" width="16.6" height="26" fill="#8b949e26" stroke="#8b949e55"/>
+<rect x="724.6" y="172" width="16.6" height="26" fill="#f0883e66" stroke="#f0883e"/>
+<text x="732.9" y="212" font-size="9" text-anchor="middle" fill="currentColor" opacity="0.85">25</text>
+<rect x="766.0" y="172" width="16.6" height="26" fill="#8b949e26" stroke="#8b949e55"/>
+<text x="9" y="190" font-size="9" fill="currentColor" opacity="0.6">2 MHz × 16</text>
+<rect x="128.0" y="228" width="646.3" height="22" fill="#a371f730" stroke="#a371f766" stroke-dasharray="3 2"/>
+<text x="451.1" y="243" font-size="10" text-anchor="middle" fill="currentColor">蓝牙：79 个 1 MHz 信道跳频（AFH 自适应避堵）</text>
+<text x="9" y="242" font-size="9" fill="currentColor" opacity="0.6">蓝牙</text>
+<rect x="194.3" y="262" width="704.3" height="22" fill="#f8514926" stroke="#f8514966" stroke-dasharray="3 2"/>
+<text x="542.3" y="277" font-size="10" text-anchor="middle" fill="currentColor">微波炉：≈2.45 GHz 中心、频谱很宽的非 WiFi 噪声（第十四章）</text>
+<text x="9" y="276" font-size="9" fill="currentColor" opacity="0.6">微波炉</text>
+<line x1="20" y1="300" x2="940" y2="300" stroke="currentColor" opacity="0.2"/>
+<text x="70" y="322" font-size="13" font-weight="600" fill="currentColor">5 GHz 概览（5150–5875 MHz）——ESP32 无 5G，看得懂即可；DFS 频段遇雷达须让路</text>
+<rect x="70.0" y="336" width="120.0" height="44" fill="#58a6ff22" stroke="#58a6ff55"/>
+<text x="130.0" y="354" font-size="10" text-anchor="middle" fill="currentColor">UNII-1</text>
+<text x="130.0" y="368" font-size="10" text-anchor="middle" fill="currentColor">36–48</text>
+<rect x="190.0" y="336" width="120.0" height="44" fill="#d2992233" stroke="#58a6ff55"/>
+<text x="250.0" y="354" font-size="10" text-anchor="middle" fill="currentColor">UNII-2A</text>
+<text x="250.0" y="368" font-size="10" text-anchor="middle" fill="currentColor">52–64 DFS</text>
+<rect x="454.0" y="336" width="306.0" height="44" fill="#d2992233" stroke="#58a6ff55"/>
+<text x="607.0" y="354" font-size="10" text-anchor="middle" fill="currentColor">UNII-2C</text>
+<text x="607.0" y="368" font-size="10" text-anchor="middle" fill="currentColor">100–144 DFS</text>
+<rect x="760.0" y="336" width="180.0" height="44" fill="#58a6ff22" stroke="#58a6ff55"/>
+<text x="850.0" y="354" font-size="10" text-anchor="middle" fill="currentColor">UNII-3</text>
+<text x="850.0" y="368" font-size="10" text-anchor="middle" fill="currentColor">149–165</text>
+<text x="382.0" y="362" font-size="9" text-anchor="middle" fill="currentColor" opacity="0.6">无的放矢带</text>
+<line x1="70" y1="390" x2="940" y2="390" stroke="currentColor" stroke-width="1"/>
+<line x1="70.0" y1="390" x2="70.0" y2="395" stroke="currentColor"/>
+<text x="70.0" y="408" font-size="9" text-anchor="middle" fill="currentColor" opacity="0.7">5150</text>
+<line x1="190.0" y1="390" x2="190.0" y2="395" stroke="currentColor"/>
+<text x="190.0" y="408" font-size="9" text-anchor="middle" fill="currentColor" opacity="0.7">5250</text>
+<line x1="310.0" y1="390" x2="310.0" y2="395" stroke="currentColor"/>
+<text x="310.0" y="408" font-size="9" text-anchor="middle" fill="currentColor" opacity="0.7">5350</text>
+<line x1="454.0" y1="390" x2="454.0" y2="395" stroke="currentColor"/>
+<text x="454.0" y="408" font-size="9" text-anchor="middle" fill="currentColor" opacity="0.7">5470</text>
+<line x1="760.0" y1="390" x2="760.0" y2="395" stroke="currentColor"/>
+<text x="760.0" y="408" font-size="9" text-anchor="middle" fill="currentColor" opacity="0.7">5725</text>
+<line x1="940.0" y1="390" x2="940.0" y2="395" stroke="currentColor"/>
+<text x="940.0" y="408" font-size="9" text-anchor="middle" fill="currentColor" opacity="0.7">5875</text>
+<text x="940.0" y="408" font-size="9" fill="currentColor" opacity="0.7">MHz</text>
+<text x="70" y="446" font-size="10" fill="currentColor" opacity="0.85">图例：蓝色片=WiFi 20 MHz 信道（重叠排布）；深蓝=1/6/11 无重叠；橙=Zigbee 15/20/25 卡缝；紫虚=蓝牙跳频；红=微波炉噪声</text>
+<text x="70" y="464" font-size="9" fill="currentColor" opacity="0.6">数值口径：信道中心 2407+5n、20 MHz 名义占用（11b 22 MHz）、Zigbee 2 MHz；来源 IEEE 802.11/802.15.4 规范通识，对齐本系列第二/十四章正文</text>
+</svg>
