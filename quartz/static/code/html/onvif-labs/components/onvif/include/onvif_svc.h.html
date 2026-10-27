@@ -20,6 +20,7 @@
 <span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *   profiles   — GetProfiles + GetSnapshotUri + /onvif-http/snapshot（lab04+）</span></span>
 <span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *   stream_uri — GetStreamUri（lab05+，rtsp 由独立模块提供取流面）</span></span>
 <span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *   profile_s  — Profile S 八操作（lab06，ch17 §17.5.1）</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *   profile_g  — Profile G 骨架（ch17 §17.5.5；须同时编译期 ONVIF_PROFILE_G）</span></span>
 <span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * marker      — $$$ ONVIF &#x3C;marker> OP 标记前缀（lab02..lab05 各用本站号；</span></span>
 <span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *               lab06 归位功能来源站传 LAB05，见 ch17 站点标记纪律）</span></span>
 <span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
@@ -37,6 +38,7 @@
 <span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    bool</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> profiles;</span></span>
 <span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    bool</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> stream_uri;</span></span>
 <span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    bool</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> profile_s;</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    bool</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> profile_g;</span></span>
 <span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">    onvif_media_io_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> io;</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> /* profiles/stream_uri/profile_s 任一为真时必填 */</span></span>
 <span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">} </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">onvif_svc_config_t</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">;</span></span>
 <span class="line"></span>
