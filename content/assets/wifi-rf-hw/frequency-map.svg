@@ -27,7 +27,6 @@
 <rect x="625.1" y="56" width="165.7" height="64" fill="#58a6ff22" stroke="#58a6ff55" stroke-width="1"/>
 <text x="708.0" y="84" font-size="10" font-weight="400" text-anchor="middle" fill="currentColor">13</text>
 <rect x="716.3" y="56" width="182.3" height="64" fill="#58a6ff22" stroke="#58a6ff55" stroke-width="1"/>
-<text x="807.4" y="84" font-size="10" font-weight="400" text-anchor="middle" fill="currentColor">14</text>
 <text x="807.4" y="84" font-size="8" text-anchor="middle" fill="currentColor" opacity="0.7">14</text>
 <text x="807.4" y="94" font-size="7" text-anchor="middle" fill="currentColor" opacity="0.6">仅日本</text>
 <line x1="70.0" y1="130" x2="940.0" y2="130" stroke="currentColor" stroke-width="1"/>
