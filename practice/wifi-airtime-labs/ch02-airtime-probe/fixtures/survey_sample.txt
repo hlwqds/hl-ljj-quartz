@@ -1,0 +1,17 @@
+Survey results for wlan0:
+	frequency:			2412 MHz
+	in use:				yes
+	noise:				-92 dBm
+	channel active time:		1000000 ms
+	channel busy time:		764000 ms
+	channel receive time:		321000 ms
+	channel transmit time:		298000 ms
+	extended channel busy time:	45000 ms
+Survey results for wlan0:
+	frequency:			2437 MHz
+	noise:				-95 dBm
+	channel active time:		960000 ms
+	channel busy time:		336000 ms
+	channel receive time:		288000 ms
+	channel transmit time:		48000 ms
+	extended channel busy time:	12000 ms

@@ -1,0 +1,61 @@
+airtime_probe 自检：解析 fixtures/ 构造样例并与源码期望值比对
+（fixtures 按 iw 输出布局构造，真机数据由 collect.sh 采集）
+
+== iw survey dump 解析（fixtures/survey_sample.txt，接口 wlan0）==
+[survey 1] freq=2412 MHz  in-use=YES  noise=-92 dBm
+    active=1000000000 us  busy=764000000 us  rx=321000000 us  tx=298000000 us  extbusy=45000000 us
+    信道占用 busy=76.40%  rx 份额=32.10%  tx 份额=29.80%  其余 busy=14.50%
+    >>> 饱和预警: busy 76.40% > 70%，信道时间已被占满（排查邻道/干扰或换信道）
+[survey 2] freq=2437 MHz  in-use=n/a  noise=-95 dBm
+    active=960000000 us  busy=336000000 us  rx=288000000 us  tx=48000000 us  extbusy=12000000 us
+    信道占用 busy=35.00%  rx 份额=30.00%  tx 份额=5.00%  其余 busy=0.00%
+    busy=35.00% <= 70%，未触发饱和预警
+
+== iw station dump 解析（fixtures/station_sample.txt，接口 wlan0）==
+[station 1] 3c:71:bf:9a:1c:44  signal=-52 dBm  tx_bitrate=144.4 MBit/s
+    tx: packets=50000 bytes=9412877 retries=18500 failed=2100
+    重传率 = 18500/50000 = 37.00%
+    >>> 重传偏高: 37.00% > 30%（链路质量差/信号弱，降速率或改善覆盖）
+[station 2] ac:37:43:9f:22:10  signal=-67 dBm  tx_bitrate=72.2 MBit/s
+    tx: packets=120000 bytes=63418900 retries=9000 failed=640
+    重传率 = 9000/120000 = 7.50%
+    重传率 7.50% <= 30%，正常
+
+== 期望值逐项比对（fixtures 设计值 → 解析实得）==
+[PASS] survey.记录数 = 2
+[PASS] survey[1].frequency_mhz = 2412.00
+[PASS] survey[1].in_use = 真
+[PASS] survey[1].noise_dbm = -92
+[PASS] survey[1].active_us(1000000 ms 归一) = 1000000000
+[PASS] survey[1].busy_us(764000 ms 归一) = 764000000
+[PASS] survey[1].rx_us(321000 ms 归一) = 321000000
+[PASS] survey[1].tx_us(298000 ms 归一) = 298000000
+[PASS] survey[1].extbusy_us(45000 ms 归一) = 45000000
+[PASS] survey[1].busy_pct = 76.40
+[PASS] survey[1].rx_pct = 32.10
+[PASS] survey[1].tx_pct = 29.80
+[PASS] survey[1].other_pct(busy-rx-tx) = 14.50
+[PASS] survey[1].饱和预警(>70%) = 真
+[PASS] survey[2].frequency_mhz = 2437.00
+[PASS] survey[2].in_use(未打印该行) = 假
+[PASS] survey[2].noise_dbm = -95
+[PASS] survey[2].busy_pct = 35.00
+[PASS] survey[2].饱和预警(>70%) = 假
+[PASS] station.站点数 = 2
+[PASS] station[1].mac = 3c:71:bf:9a:1c:44
+[PASS] station[1].signal_dbm = -52
+[PASS] station[1].tx_packets = 50000
+[PASS] station[1].tx_bytes = 9412877
+[PASS] station[1].tx_retries = 18500
+[PASS] station[1].tx_failed = 2100
+[PASS] station[1].tx_bitrate_mbps = 144.40
+[PASS] station[1].retry_pct = 37.00
+[PASS] station[1].重传偏高(>30%) = 真
+[PASS] station[2].mac = ac:37:43:9f:22:10
+[PASS] station[2].signal_dbm = -67
+[PASS] station[2].tx_bitrate_mbps = 72.20
+[PASS] station[2].retry_pct = 7.50
+[PASS] station[2].重传偏高(>30%) = 假
+
+自检汇总: 34/34 PASS
+ALL TESTS PASSED

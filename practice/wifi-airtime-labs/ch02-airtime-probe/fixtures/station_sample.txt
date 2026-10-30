@@ -1,0 +1,29 @@
+Station 3c:71:bf:9a:1c:44 (on wlan0)
+	inactive time:	12 ms
+	rx bytes:	48213007
+	rx packets:	51023
+	tx bytes:	9412877
+	tx packets:	50000
+	tx retries:	18500
+	tx failed:	2100
+	signal:		-52 dBm
+	signal avg:	-54 dBm
+	tx bitrate:	144.4 MBit/s
+	authorized:	yes
+	authenticated:	yes
+	WMM/wme:	yes
+	TID 00:	tx packets		50000	tx bytes		9412877	tx retries		18500	tx failed		2100
+Station ac:37:43:9f:22:10 (on wlan0)
+	inactive time:	140 ms
+	rx bytes:	1204311
+	rx packets:	24311
+	tx bytes:	63418900
+	tx packets:	120000
+	tx retries:	9000
+	tx failed:	640
+	signal:		-67 dBm
+	signal avg:	-69 dBm
+	tx bitrate:	72.2 MBit/s
+	authorized:	yes
+	authenticated:	yes
+	TID 00:	tx packets		120000	tx bytes		63418900	tx retries		9000	tx failed		640

@@ -1,0 +1,91 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold"># ch07-pacing-harness —— 发送节奏整形 × 到达间隔统计</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">把 [[</span><span style="--shiki-light:#032F62;--shiki-light-text-decoration:underline;--shiki-dark:#DBEDFF;--shiki-dark-text-decoration:underline">ch07-pacing-and-structure|第七章：釜底抽薪</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">]] 的核心论断做成可运行的测量工具：**同一个</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">UDP 发送端，burst（连续尽快发）与 paced（令牌桶限速）两种模式各跑一遍，接收端对每个到达包打</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">单调时钟时间戳，统计包间隔 gap 的 min/avg/p99/max、标准差、RFC3550 抖动 J 与直方图，最后打印</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">对比表**。burst 与 paced 的到达节奏差异（µs 级聚簇 vs 钉在 1/pps 附近）一目了然。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">单文件 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`pacing.c`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（C11 零依赖，跨平台垫层 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`net_compat.h`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 原样拷贝自</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`p2p-labs/ch02-lan-direct`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">），收发线程在同一进程内经回环对接。完整源码见</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[</span><span style="--shiki-light:#032F62;--shiki-light-text-decoration:underline;--shiki-dark:#DBEDFF;--shiki-dark-text-decoration:underline">代码浏览器</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">](</span><span style="--shiki-light:#24292E;--shiki-light-text-decoration:underline;--shiki-dark:#E1E4E8;--shiki-dark-text-decoration:underline">/static/code/#/wifi-airtime-labs/ch07-pacing-harness/pacing.c</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 拓扑</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">单进程（默认，回环自发自收）：</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  发送线程 ──burst: 2000×1316B 连发──▶ 接收线程 (0.0.0.0:13201)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">          └─paced: 令牌桶 500pps─────▶   recvfrom 返回即打 QPC 单调时间戳</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                                          → gap min/avg/p99/max + σ + RFC3550J + 直方图</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">双进程（--rx-only，真机形态的预演）：</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  设备侧: ./pacing --ip &#x3C;PC> --pps 500 ──WiFi/回环──▶ PC 侧: ./pacing --rx-only 15</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 编译</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```bash</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">~</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">/zig/zig cc -O2 -o pacing pacing.c -lws2_32   </span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># Windows（任何 cc 皆可）</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">zig</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> cc</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -O2</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> -o</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> pacing</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> pacing.c</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">                  # Linux/macOS 去掉 -lws2_32</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 复现</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```bash</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">./pacing</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">                            # 默认：2000 包 × 1316B → 127.0.0.1:13201，paced 500pps</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">./pacing</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> --count</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 600</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> --pps</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 250</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">      # 令牌桶随 argv 收紧/放宽（--depth 桶深亦可调）</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">./pacing</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> --rx-only</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 15</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> --count</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 600</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> &#x26; </span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 双进程：接收器只收不发（PC 侧角色）</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">./pacing</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> --count</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 600</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> --pps</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 500</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> --port</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 13202</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> --dport</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> 13201</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">   # 发往上面那个接收器</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">完整真实输出（含逐桶直方图与三组运行）见 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`run.log`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 两种模式</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **burst**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`sendto`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 循环里不做任何等待。回环上 2000 包约 26ms 发完（≈7.6 万 pps），到达 gap</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  几乎全部落在 1–20µs——</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**这就是突发形态本身**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：包挤成一坨，中间没有呼吸。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **paced**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：令牌桶，速率 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`--pps`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（默认 500）、桶深 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`--depth`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（默认 1，即最严格的"攒够一个令牌</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  才准发"，不蓄突发信用）。等待实现是 Win10 1803+ 高精度可等待定时器粗睡 + 末段 600µs 自旋</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  收尾（POSIX 用 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`clock_nanosleep`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">；无高精度定时器的旧系统退回实测过粒度的 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`Sleep(1)`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">，再不行</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  纯自旋）。末段不用 yield 的原因见源码注释——</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`SwitchToThread`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 会让出整个调度节拍，实测产生</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  5–8ms 的尾部毛刺。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 输出怎么读</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">对比表各列（接收端到达 gap，单位 µs）：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 列              | 含义                                                            |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| --------------- | --------------------------------------------------------------- |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| rx/loss         | 收到包数/丢包率（burst 需大 SO_RCVBUF，启动时会回显实得值）     |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| rx_pps          | (n-1)/首尾到达跨度，接收侧实际节奏                              |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| min/avg/p99/max | gap 的四分位画像（p99 为最近邻法）                              |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| sigma           | gap 标准差，节奏稳定度                                          |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| J3550           | RFC3550 到达间抖动（到达差-发送差的指数平滑，需包内发送时间戳） |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| &#x3C;100us          | gap&#x3C;100µs 占比——burst 的"聚簇度"指标                            |</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 真实数字（摘自 run.log §1，默认参数）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">mode        rx/loss     rx_pps      min      avg      p99        max    sigma    J3550  &#x3C;100us</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">burst     2000/0.0%      76598     1.10     13.1     73.6      349.9     17.9     4.10   99.5%</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">paced     2000/0.0%      437.5     23.9     2286     6286      64736     2630     24.0    0.1%</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> burst：99.5% 的到达 gap &#x3C; 100µs，直方图聚在 5–20µs 两桶——突发聚簇的直接证据；</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> paced（目标 2000µs）：79.2% 的 gap 落在 1900–2100µs，均值 +14.29%——令牌桶把节奏钉在目标</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  附近，但尾部有 10–65ms 的毛刺（宿主负载把自旋线程整个饿了一拍），这是**用户态整流的常态</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  限制**：均值可控、尾延迟靠 OS 调度赏饭。真要微秒级尾延迟得下沉到内核/硬件（ETF/FQTSS）。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 调参与双进程（§2/§3）：250pps 时均值偏差 +6.62%；双进程下发送端 TX avg 2070µs 与接收端</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  RX avg 2070µs 完全一致——回环不引入节奏失真，工具链自证清白。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 诚实边界：回环验证什么、不验证什么</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **回环验证的是整流工具链与 gap 统计本身**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：令牌桶→定时器→时间戳→统计整条链路的正确性，</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  以及统计口径（p99/σ/J3550/直方图）能否分辨两种节奏形态。回环上 burst 的 gap 聚簇即突发</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  形态证据；回环无丢包、无排队竞争，paced 的毛刺全部来自本机调度。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **回环不验证空口行为**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：WiFi 的 MAC 排队、CSMA/CA 退避、重传、信标打断等介质竞争效应在</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  回环上一概不存在，这里的数字不能当作空口画像引用。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **真机 WiFi 上同一命令即得空口节奏画像（待真机）**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：设备侧</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">  `./pacing --ip &#x3C;PC地址> --pps 500 --count 5000`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">，PC 侧 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`./pacing --rx-only 30 --count 5000`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">，</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  对比表就是空口对整流的"还原度"成绩单。届时注意：J3550 依赖对端时钟，跨机晶振频偏（ppm</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  级）会带来少量偏差；接收端打点在用户态 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`recvfrom`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 返回处，含唤醒延迟。</span></span>
+<span class="line"></span></code></pre>
