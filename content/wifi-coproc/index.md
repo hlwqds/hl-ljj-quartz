@@ -14,6 +14,8 @@ tags: [wifi, esp32-s3, stm32, spi, coprocessor, series]
 > 硬件事实先行：**ESP32-S3 没有 SDIO slave 外设**（经典款才有），所以高速链路走 SPI 全双工；这是本系列一切设计的出发点。板卡：挑战者 F429-V2（宿主，延续 [[f429-lab|F429 裸机实验室]]的裸机路线）+ ESP32-S3-Korvo-1（协处理器）。
 >
 > 实验配套 `practice/wifi-coproc-labs/`：协议层四件（帧/控制/代理/spidev）在本机（zig cc）真实测试留档；板级骨架（SPI 两侧）以编译验证入库，待真机回填——本仓「先成文后实跑」惯例。
+>
+> 前传（小白入门）：[[wifi-basics|WiFi 小白系列]]——先补齐 WiFi 与网络基础概念，再动手做协处理器。
 
 ## Part I：链路——先把两块板变成一条线
 
