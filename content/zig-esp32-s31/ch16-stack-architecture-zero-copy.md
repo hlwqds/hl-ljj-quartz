@@ -37,7 +37,8 @@ tags: [zig, esp32-s31, networking, pbuf, zero-copy, checksum, timer-wheel, serie
 >
 > - `zig build test` → **`All 55 tests passed`**（54 个具名用例 + 根文件容器 test，2026-11-13，x86_64 / Zig 0.17.1）——**已跑通**。
 > - 板侧镜像：`zig build -Dtarget=riscv32-freestanding-eabihf ... -Doptimize=ReleaseSmall` 退出 0；`esptool elf2image` 打印 `Merged 2 ELF sections.`；`image-info` 的 Segments 表正好两个 flash 段 `0x40000020` / `0x40020020`——**已跑通**。
-> - 板侧串口输出**尚未上板**，文中所有 `check:` 行、校验和数值都是**目标形态**，标「待真机验证」。
+> - 板侧自检**已上板（2026-11-13）**：`checks: passed=6 failed=0 total=6`，原始输出 `../logs/ch16-boot.log`；
+>   本文 `check:` 行即该日志原文。
 > - 协议语义来自公开 RFC（1071/1624/768/791/9293/6298）；实现参照来自本地 IDF v6.1 内的 lwIP 源码，具体行号见 `## 事实来源`。
 
 ---
@@ -1114,12 +1115,12 @@ C4 提醒一件事：`Loopback` 会复制整帧，所以**不能**用它测吞�
 - [x] `elf2image` 打印 `Merged 2 ELF sections.`，`image-info` 正好两个 `DROM, IROM` 段
 - [x] `bash -n tools/flash.sh` 退出 0
 - [x] 每个结论都写明证据层级：主机测试 / 镜像检查 / 待真机验证
-- [x] 未把任何未上板的串口输出写成「实测」
+- [x] 板侧自检 6 条已实测（`../logs/ch16-boot.log`），未上板的项仍标「待真机验证」
 - [x] pbuf/校验和/首部/时间轮的每条不变式都有对应测试用例
 - [x] 校验和向量（`0x220d`、`0x9b2a`、`0x9c5e`、`0xeca5`、增量 `0x9c2a`）与测试一致
 - [x] 零拷贝路径图与拷贝点清单（C1–C4）与代码一一对应
 - [x] 未引入外部依赖，工程无 `build.zig.zon`
-- [x] README 有反向 wikilink、未上板声明、`zig build test` 命令
+- [x] README 有反向 wikilink、实测状态说明、`zig build test` 命令
 
 一句话总结：协议栈的第一性问题不是「报文格式」，而是「这段字节归谁」——把 pbuf 的所有权、`eat` 的零拷贝、`linearize_copies` 的计数、时间轮的到期判定都变成可断言的不变式之后，网络代码才第一次变得可测；本章的 55 个主机侧用例与两条拷贝点断言，就是后面 MAC、IPv4、TCP 各章的地基。
 

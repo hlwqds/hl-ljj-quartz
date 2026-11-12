@@ -3,11 +3,9 @@
 > 所属章节：[[ch14-dual-core-smp-ipi|第十四章：双核 SMP 与 IPI]] · 系列：[[zig-esp32-s31|Zig × ESP32-S31 全栈开发]]
 
 > [!warning] 验证状态
-> 本工程**未上板，待真机验证**。构建、`esptool elf2image` 与 `image-info`
-> 在本机跑通（Zig 0.17.1 + esptool 5.6，两个 flash 段 `0x40000020` /
-> `0x40020020` 都在），但**没有任何一行输出来自真机**。
-> README 与正文里出现的所有日志、tick 数、IPI 计数、延迟数字都是
-> **验收目标**，不是实测值。本工程不提供 `run.log`。
+> 本工程**已上板（2026-11-13）**：`core1: up hart=1`、IPI ping-pong、`jobs … migrated=2`、
+> `lat[rtt] avg≈1573 ticks（≈98.3 µs）`，原始输出见 `../logs/ch14-boot.log`。
+> README 与正文里未标“实测”的日志、tick 数仍是验收目标。
 
 ## 目的
 
@@ -18,25 +16,25 @@
 
 在不变的骨架上，本章把单核内核扩成两颗核：
 
-| 主题             | 落点                         | 本章用它证明什么                                      |
-| ---------------- | ---------------------------- | ----------------------------------------------------- |
-| core1 启动       | `src/smp.zig`                | 时钟、复位、PMU stall、ROM 引导地址四个动作缺一不可    |
-| 每核数据         | `PerCpu` + `mscratch`        | 同一份代码、同一份 .bss，靠 mscratch 找“我是谁”        |
-| 每核 CLIC        | `src/clic.zig`               | 0x10800000 是本核、+0x10000 是对核的别名关系           |
+| 主题              | 落点                           | 本章用它证明什么                                      |
+| ----------------- | ------------------------------ | ----------------------------------------------------- |
+| core1 启动        | `src/smp.zig`                  | 时钟、复位、PMU stall、ROM 引导地址四个动作缺一不可   |
+| 每核数据          | `PerCpu` + `mscratch`          | 同一份代码、同一份 .bss，靠 mscratch 找“我是谁”       |
+| 每核 CLIC         | `src/clic.zig`                 | 0x10800000 是本核、+0x10000 是对核的别名关系          |
 | CLIC 软件中断 IPI | `src/clic.zig` + `src/smp.zig` | 源 65/66 → 目标核矩阵 → 输入 19/20，可清可屏蔽        |
-| 跨核唤醒         | `src/sched.zig`              | 远端入队（目标核锁）+ `fence` + IPI，零轮询            |
-| 负载均衡         | `src/demo.zig` 阶段 B        | push 迁移：把一半 job 挂到另一个核的队列               |
-| 内存屏障         | `src/hw.zig`                 | `fence rw,rw` 是 release 的最低要求；`fence.i` 的边界  |
+| 跨核唤醒          | `src/sched.zig`                | 远端入队（目标核锁）+ `fence` + IPI，零轮询           |
+| 负载均衡          | `src/demo.zig` 阶段 B          | push 迁移：把一半 job 挂到另一个核的队列              |
+| 内存屏障          | `src/hw.zig`                   | `fence rw,rw` 是 release 的最低要求；`fence.i` 的边界 |
 
 ### 三个可判读的阶段
 
 `src/demo.zig` 由 prio 5 的 `supervisor`（core0）串起三个阶段：
 
-| 阶段 | 谁在跑                          | 打印                                                        |
-| ---- | ------------------------------- | ----------------------------------------------------------- |
+| 阶段 | 谁在跑                                | 打印                                                          |
+| ---- | ------------------------------------- | ------------------------------------------------------------- |
 | A    | `supervisor`(core0) / `worker`(core1) | `sup: phase A ...`、`lat[rtt]: ...`、`lat[isr->task]: cpu0/1` |
-| B    | 4 个 `job`（2+2 分布在两核）    | `bal: push jobs ...`、`jobs: total=4 core0=2 core1=2 ...`    |
-| C    | `supervisor`                    | `cpu0: ticks=... ipis_in=...`、`cpu1: ...`、`barrier: ...`   |
+| B    | 4 个 `job`（2+2 分布在两核）          | `bal: push jobs ...`、`jobs: total=4 core0=2 core1=2 ...`     |
+| C    | `supervisor`                          | `cpu0: ticks=... ipis_in=...`、`cpu1: ...`、`barrier: ...`    |
 
 验收的核心是两条：
 
@@ -60,59 +58,59 @@
 
 ## 硬件与接线
 
-| 项       | 事实                                                            |
-| -------- | --------------------------------------------------------------- |
-| 目标板   | ESP32-S31-Function-CoreBoard-1                                  |
-| 模组     | ESP32-S31-WROOM-3（N16R16V），16 MB Flash + 16 MB PSRAM         |
-| 核数     | 2（`soc_caps.h:175` `SOC_CPU_CORES_NUM (2U)`）                  |
-| 控制台   | UART0，GPIO58（TX）/ GPIO59（RX），115200 8N1，板载 USB-UART 桥 |
-| 下载模式 | BOOT 按键 = GPIO61；自动复位失败时按住 BOOT 再复位              |
+| 项       | 事实                                                             |
+| -------- | ---------------------------------------------------------------- |
+| 目标板   | ESP32-S31-Function-CoreBoard-1                                   |
+| 模组     | ESP32-S31-WROOM-3（N16R16V），16 MB Flash + 16 MB PSRAM          |
+| 核数     | 2（`soc_caps.h:175` `SOC_CPU_CORES_NUM (2U)`）                   |
+| 控制台   | UART0，GPIO58（TX）/ GPIO59（RX），115200 8N1，板载 USB-UART 桥  |
+| 下载模式 | BOOT 按键 = GPIO61；自动复位失败时按住 BOOT 再复位               |
 | 观测     | 只需串口。本章不新增外部接线，不需要示波器（延迟以 SYSTIMER 计） |
 
 ## 寄存器 / 指令速查
 
-| 项                          | 值 / 位置                                        | 说明                                                     |
-| --------------------------- | ------------------------------------------------ | -------------------------------------------------------- |
-| `mhartid`                   | CSR 0xF14                                        | 本核编号；IDF 的 `rv_utils_get_core_id()` 就是读它        |
-| `mscratch`                  | CSR 0x340                                        | 每 hart 一个 XLEN 寄存器，本章存 `&PerCpu[hart]`          |
-| `mintthresh`                | CSR 0x347                                        | S31 `INTTHRESH_STANDARD=1`，阈值只能写这个 CSR           |
-| CLIC 门限（内存映射）       | `0x10800008`                                     | **S31 上不生效**；仅 `INTTHRESH_STANDARD=0` 的芯片用     |
-| CLIC 控制字                 | `0x10801000 + 4*i`（对核 +0x10000）              | byte0 IP、byte1 IE、byte2 ATTR、byte3 CTL                |
-| `HP_SYSTEM_CPU_INT_FROM_CPU_n` | `0x20586010` / `0x20586014`                   | 写 1 触发源 65/66，写 0 清源                             |
-| 中断矩阵 core0 / core1      | `0x20585000` / `0x20585800`                      | `+4*源`，MAP[5:0] = CLIC 输入号                          |
-| core1 时钟/复位             | `HP_SYS_CLKRST+0x20`：bit0/bit1 置 1、bit2 清 0  | CORE1_CLIC_CLK_EN / CPU_CLK_EN / GLOBAL_RST_EN           |
-| core1 stall                 | `PMU+0x1EC` 的 [23:16]，0xFF = 运行              | `PMU_HPCORE1_SW_STALL_CODE`                              |
-| core1 引导地址              | ROM `ets_set_appcpu_boot_addr` = `0x2f8000a8`    | 写 `core1Entry` 的地址                                   |
-| 停核状态                    | `HP_SYSTEM+0x64` 的 bit1                         | CORESTALLED_ST，解 stall 后应清零                        |
-| SYSTIMER                    | `0x20399000`；CONF+0x00 bit31、VAL HI/LO=0x40/0x44 | 全局 52 位计数，跨核唯一可比的时间轴                     |
-| SYSTIMER 时钟门             | `HP_SYS_CLKRST+0x120` bit0 + bit4                | 两个都要置 1（真机约束 6）                               |
-| `fence rw, rw`              | 基座 I                                           | 发布共享状态后再发 IPI 的最低要求                        |
-| `fence.i`                   | Zifencei                                         | 只影响**本核**取指；别的核要各自 fence.i                 |
-| trap 帧 / switch 帧         | 80 字节 / 64 字节                                | 与 ch10–ch13 完全一致；两个核共用同一个 trapEntry        |
+| 项                             | 值 / 位置                                          | 说明                                                 |
+| ------------------------------ | -------------------------------------------------- | ---------------------------------------------------- |
+| `mhartid`                      | CSR 0xF14                                          | 本核编号；IDF 的 `rv_utils_get_core_id()` 就是读它   |
+| `mscratch`                     | CSR 0x340                                          | 每 hart 一个 XLEN 寄存器，本章存 `&PerCpu[hart]`     |
+| `mintthresh`                   | CSR 0x347                                          | S31 `INTTHRESH_STANDARD=1`，阈值只能写这个 CSR       |
+| CLIC 门限（内存映射）          | `0x10800008`                                       | **S31 上不生效**；仅 `INTTHRESH_STANDARD=0` 的芯片用 |
+| CLIC 控制字                    | `0x10801000 + 4*i`（对核 +0x10000）                | byte0 IP、byte1 IE、byte2 ATTR、byte3 CTL            |
+| `HP_SYSTEM_CPU_INT_FROM_CPU_n` | `0x20586010` / `0x20586014`                        | 写 1 触发源 65/66，写 0 清源                         |
+| 中断矩阵 core0 / core1         | `0x20585000` / `0x20585800`                        | `+4*源`，MAP[5:0] = CLIC 输入号                      |
+| core1 时钟/复位                | `HP_SYS_CLKRST+0x20`：bit0/bit1 置 1、bit2 清 0    | CORE1_CLIC_CLK_EN / CPU_CLK_EN / GLOBAL_RST_EN       |
+| core1 stall                    | `PMU+0x1EC` 的 [23:16]，0xFF = 运行                | `PMU_HPCORE1_SW_STALL_CODE`                          |
+| core1 引导地址                 | ROM `ets_set_appcpu_boot_addr` = `0x2f8000a8`      | 写 `core1Entry` 的地址                               |
+| 停核状态                       | `HP_SYSTEM+0x64` 的 bit1                           | CORESTALLED_ST，解 stall 后应清零                    |
+| SYSTIMER                       | `0x20399000`；CONF+0x00 bit31、VAL HI/LO=0x40/0x44 | 全局 52 位计数，跨核唯一可比的时间轴                 |
+| SYSTIMER 时钟门                | `HP_SYS_CLKRST+0x120` bit0 + bit4                  | 两个都要置 1（真机约束 6）                           |
+| `fence rw, rw`                 | 基座 I                                             | 发布共享状态后再发 IPI 的最低要求                    |
+| `fence.i`                      | Zifencei                                           | 只影响**本核**取指；别的核要各自 fence.i             |
+| trap 帧 / switch 帧            | 80 字节 / 64 字节                                  | 与 ch10–ch13 完全一致；两个核共用同一个 trapEntry    |
 
 ## 文件表
 
-| 路径                               | 角色                                                                                          | 代码浏览                                                                                        |
-| ---------------------------------- | --------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `build.zig`                        | 目标串 + 链接脚本 + 可执行产物 `zig-out/bin/app.elf`                                          | [查看](/static/code/#/zig-esp32-s31/ch14-dual-core-smp-ipi/build.zig)                           |
-| `linker/s31.ld`                    | `.app_desc` 最前、`.text.trap`、`.trap_ram` 进 SRAM、两个 flash 段                            | [查看](/static/code/#/zig-esp32-s31/ch14-dual-core-smp-ipi/linker/s31.ld)                       |
-| `src/start.zig`                    | `esp_app_desc_t`（256 字节）+ naked `_start`：关中断 → sp/gp → 关 RWDT → 清 `.bss` → `mtvec`   | [查看](/static/code/#/zig-esp32-s31/ch14-dual-core-smp-ipi/src/start.zig)                       |
-| `src/core1.zig`                    | core1 的入口（naked）：sp/gp/mtvec → `core1Main`；IPI/tick/ready → 调度器                     | [查看](/static/code/#/zig-esp32-s31/ch14-dual-core-smp-ipi/src/core1.zig)                       |
-| `src/smp.zig`                      | **本章核心**：`PerCpu`、`mscratch`、core1 启动、IPI 收发、延迟统计                            | [查看](/static/code/#/zig-esp32-s31/ch14-dual-core-smp-ipi/src/smp.zig)                         |
-| `src/clic.zig`                     | 每核 CLIC：本核/对核别名、优先级、pending、`mintthresh` CSR、矩阵路由                         | [查看](/static/code/#/zig-esp32-s31/ch14-dual-core-smp-ipi/src/clic.zig)                        |
-| `src/sched.zig`                    | 每核就绪队列、`switchCore`、`blockIf`（谓词复查）、`wakeRemote`、trap 分发                     | [查看](/static/code/#/zig-esp32-s31/ch14-dual-core-smp-ipi/src/sched.zig)                       |
-| `src/context.zig`                  | 帧布局、`trapEntry`（`.trap_ram`）、`switchRaw`（mscratch）、`taskStart`                       | [查看](/static/code/#/zig-esp32-s31/ch14-dual-core-smp-ipi/src/context.zig)                     |
-| `src/tick.zig`                     | TIMG0 T0/T1 两个 1 ms 通道；共享时钟门只写一次                                                | [查看](/static/code/#/zig-esp32-s31/ch14-dual-core-smp-ipi/src/tick.zig)                        |
-| `src/systimer.zig`                 | 52 位全局时间轴；HI→LO→HI 复读检测跨核快照撕裂                                                | [查看](/static/code/#/zig-esp32-s31/ch14-dual-core-smp-ipi/src/systimer.zig)                    |
-| `src/hw.zig`                       | 寄存器/CSR 薄封装与 `fence` 三连                                                              | [查看](/static/code/#/zig-esp32-s31/ch14-dual-core-smp-ipi/src/hw.zig)                          |
-| `src/console.zig`                  | 双核共用的 `esp_rom_printf` + 自旋锁串行化                                                    | [查看](/static/code/#/zig-esp32-s31/ch14-dual-core-smp-ipi/src/console.zig)                     |
-| `src/demo.zig`                     | 阶段 A/B/C：ping-pong、push 迁移、汇总打印                                                    | [查看](/static/code/#/zig-esp32-s31/ch14-dual-core-smp-ipi/src/demo.zig)                        |
-| `src/main.zig`                     | banner、core0 中断拓扑、建任务、启动 core1、交出控制权                                        | [查看](/static/code/#/zig-esp32-s31/ch14-dual-core-smp-ipi/src/main.zig)                        |
-| `idf-bootstrap/CMakeLists.txt`     | 最小 IDF 工程根：只为产出 bootloader 与分区表                                                 | [查看](/static/code/#/zig-esp32-s31/ch14-dual-core-smp-ipi/idf-bootstrap/CMakeLists.txt)        |
-| `idf-bootstrap/main/*`             | 空 `app_main`，让 IDF 构建走完                                                                | [查看](/static/code/#/zig-esp32-s31/ch14-dual-core-smp-ipi/idf-bootstrap/main/app_main.c)       |
-| `idf-bootstrap/sdkconfig.defaults` | 16 MB Flash + single-app-large（factory 在 `0x10000`），不启用 PSRAM                          | [查看](/static/code/#/zig-esp32-s31/ch14-dual-core-smp-ipi/idf-bootstrap/sdkconfig.defaults)    |
-| `tools/flash.sh`                   | 读 `flash_args`、替换应用行、一次烧 bootloader + 分区表 + 应用                                | [查看](/static/code/#/zig-esp32-s31/ch14-dual-core-smp-ipi/tools/flash.sh)                      |
-| `README.md`                        | 本文件                                                                                        | [查看](/static/code/#/zig-esp32-s31/ch14-dual-core-smp-ipi/README.md)                           |
+| 路径                               | 角色                                                                                         | 代码浏览                                                                                     |
+| ---------------------------------- | -------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `build.zig`                        | 目标串 + 链接脚本 + 可执行产物 `zig-out/bin/app.elf`                                         | [查看](/static/code/#/zig-esp32-s31/ch14-dual-core-smp-ipi/build.zig)                        |
+| `linker/s31.ld`                    | `.app_desc` 最前、`.text.trap`、`.trap_ram` 进 SRAM、两个 flash 段                           | [查看](/static/code/#/zig-esp32-s31/ch14-dual-core-smp-ipi/linker/s31.ld)                    |
+| `src/start.zig`                    | `esp_app_desc_t`（256 字节）+ naked `_start`：关中断 → sp/gp → 关 RWDT → 清 `.bss` → `mtvec` | [查看](/static/code/#/zig-esp32-s31/ch14-dual-core-smp-ipi/src/start.zig)                    |
+| `src/core1.zig`                    | core1 的入口（naked）：sp/gp/mtvec → `core1Main`；IPI/tick/ready → 调度器                    | [查看](/static/code/#/zig-esp32-s31/ch14-dual-core-smp-ipi/src/core1.zig)                    |
+| `src/smp.zig`                      | **本章核心**：`PerCpu`、`mscratch`、core1 启动、IPI 收发、延迟统计                           | [查看](/static/code/#/zig-esp32-s31/ch14-dual-core-smp-ipi/src/smp.zig)                      |
+| `src/clic.zig`                     | 每核 CLIC：本核/对核别名、优先级、pending、`mintthresh` CSR、矩阵路由                        | [查看](/static/code/#/zig-esp32-s31/ch14-dual-core-smp-ipi/src/clic.zig)                     |
+| `src/sched.zig`                    | 每核就绪队列、`switchCore`、`blockIf`（谓词复查）、`wakeRemote`、trap 分发                   | [查看](/static/code/#/zig-esp32-s31/ch14-dual-core-smp-ipi/src/sched.zig)                    |
+| `src/context.zig`                  | 帧布局、`trapEntry`（`.trap_ram`）、`switchRaw`（mscratch）、`taskStart`                     | [查看](/static/code/#/zig-esp32-s31/ch14-dual-core-smp-ipi/src/context.zig)                  |
+| `src/tick.zig`                     | TIMG0 T0/T1 两个 1 ms 通道；共享时钟门只写一次                                               | [查看](/static/code/#/zig-esp32-s31/ch14-dual-core-smp-ipi/src/tick.zig)                     |
+| `src/systimer.zig`                 | 52 位全局时间轴；HI→LO→HI 复读检测跨核快照撕裂                                               | [查看](/static/code/#/zig-esp32-s31/ch14-dual-core-smp-ipi/src/systimer.zig)                 |
+| `src/hw.zig`                       | 寄存器/CSR 薄封装与 `fence` 三连                                                             | [查看](/static/code/#/zig-esp32-s31/ch14-dual-core-smp-ipi/src/hw.zig)                       |
+| `src/console.zig`                  | 双核共用的 `esp_rom_printf` + 自旋锁串行化                                                   | [查看](/static/code/#/zig-esp32-s31/ch14-dual-core-smp-ipi/src/console.zig)                  |
+| `src/demo.zig`                     | 阶段 A/B/C：ping-pong、push 迁移、汇总打印                                                   | [查看](/static/code/#/zig-esp32-s31/ch14-dual-core-smp-ipi/src/demo.zig)                     |
+| `src/main.zig`                     | banner、core0 中断拓扑、建任务、启动 core1、交出控制权                                       | [查看](/static/code/#/zig-esp32-s31/ch14-dual-core-smp-ipi/src/main.zig)                     |
+| `idf-bootstrap/CMakeLists.txt`     | 最小 IDF 工程根：只为产出 bootloader 与分区表                                                | [查看](/static/code/#/zig-esp32-s31/ch14-dual-core-smp-ipi/idf-bootstrap/CMakeLists.txt)     |
+| `idf-bootstrap/main/*`             | 空 `app_main`，让 IDF 构建走完                                                               | [查看](/static/code/#/zig-esp32-s31/ch14-dual-core-smp-ipi/idf-bootstrap/main/app_main.c)    |
+| `idf-bootstrap/sdkconfig.defaults` | 16 MB Flash + single-app-large（factory 在 `0x10000`），不启用 PSRAM                         | [查看](/static/code/#/zig-esp32-s31/ch14-dual-core-smp-ipi/idf-bootstrap/sdkconfig.defaults) |
+| `tools/flash.sh`                   | 读 `flash_args`、替换应用行、一次烧 bootloader + 分区表 + 应用                               | [查看](/static/code/#/zig-esp32-s31/ch14-dual-core-smp-ipi/tools/flash.sh)                   |
+| `README.md`                        | 本文件                                                                                       | [查看](/static/code/#/zig-esp32-s31/ch14-dual-core-smp-ipi/README.md)                        |
 
 工程没有 `build.zig.zon`（零 Zig 依赖）、没有 `partitions.csv`（用 IDF 内置
 single-app-large）、没有 `components/`、没有 `run.log`（真机未跑）。

@@ -15,8 +15,8 @@ tags: [zig, esp32-s31, riscv, rtos, tcpip, series]
 >
 > 读者画像是"写过 C 裸机、用过 FreeRTOS/lwIP、想真正掌握 Zig 与全栈构造"的工程师。系列不假设你读过 Zig 源码，但假设你愿意读汇编、手册与抓包。
 
-> [!warning] 当前状态：第 1–17 章已落地
-> 本页是系列的**路线图 / 总索引**；第 1–17 章已发布，其余 11 章仍为规划状态。已发布章节的标题已替换为 wikilink，未发布章节保持纯文本，避免死链。
+> [!warning] 当前状态：第 1–19 章已落地
+> 本页是系列的**路线图 / 总索引**；第 1–19 章已发布，其余 9 章仍为规划状态。已发布章节的标题已替换为 wikilink，未发布章节保持纯文本，避免死链。
 
 ## 0. 先把坐标钉死：S31 是 RISC-V，不是 Xtensa
 
@@ -228,8 +228,8 @@ flowchart TB
 | --- | --------------------------------------------------------------- | --------------------------------------------------------------- | ---------------------------------- |
 | 16  | [[ch16-stack-architecture-zero-copy\|协议栈架构、缓冲与零拷贝]] | netif、pbuf/ownership、checksum、timer wheel、主机 TAP 测试骨架 | 主机侧收发包测试；零拷贝路径图     |
 | 17  | [[ch17-ethernet-mac-phy-driver\|以太网 MAC/PHY 驱动]]           | RGMII、MDIO、DMA 描述符环、cache 维护、中断/轮询、PHY 自协商    | PHY ID 读通；ARP/ping 通；抓包对照 |
-| 18  | IPv4、ICMP、ARP 与路由                                          | 首部/校验和、分片、ARP 缓存、路由表、MTU/PMTU                   | 跨网段 ping；分片重组测试          |
-| 19  | UDP、DHCP 与 DNS                                                | 端口/校验和、重传、DHCP 状态机、DNS 解析器                      | 从路由器拿到 IP；域名解析成功      |
+| 18  | [[ch18-ipv4-icmp-arp-routing\|IPv4、ICMP、ARP 与路由]]          | 首部/校验和、分片、ARP 缓存、路由表、MTU/PMTU                   | 跨网段 ping；分片重组测试          |
+| 19  | [[ch19-udp-dhcp-dns\|UDP、DHCP 与 DNS]]                         | 端口/校验和、重传、DHCP 状态机、DNS 解析器                      | 从路由器拿到 IP；域名解析成功      |
 
 ### Part V：TCP/IP 与应用（ch20–ch24）
 
@@ -387,4 +387,4 @@ flowchart TB
 
 ---
 
-第 1–17 章已完成。下一章（规划）是第十八章：IPv4、ICMP、ARP 与路由。
+第 1–19 章已完成。下一章（规划）是第二十章：TCP——状态机、重传与拥塞控制。

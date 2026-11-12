@@ -1,0 +1,60 @@
+Executing action: monitor
+Running idf_monitor in directory /home/huanglin/code/hl-ljj-quartz/practice/zig-esp32-s31/ch02-hello
+Executing "/home/huanglin/.espressif/python_env/idf6.1_py3.13_env/bin/python /home/huanglin/esp/esp-idf/tools/idf_monitor.py -p /dev/ttyUSB1 -b 115200 --toolchain-prefix riscv32-esp-elf- --target esp32s31 --revision 0 --decode-panic backtrace /home/huanglin/code/hl-ljj-quartz/practice/zig-esp32-s31/ch02-hello/build/zig_s31_hello.elf /home/huanglin/code/hl-ljj-quartz/practice/zig-esp32-s31/ch02-hello/build/bootloader/bootloader.elf -m '/home/huanglin/.espressif/python_env/idf6.1_py3.13_env/bin/python' '/home/huanglin/esp/esp-idf/tools/idf.py' '-p' '/dev/ttyUSB1'"...
+--- esp-idf-monitor 1.10.0 on /dev/ttyUSB1 115200
+--- Standard input is not a TTY, running in non-interactive mode. Reading commands from stdin: reset, flash, flash-all, app-flash, output, log, timestamps, bootloader, send <text>, sleep <seconds>, expect [--timeout <seconds>] <regex>, exit | Quit: 'exit' command, EOF or Ctrl+C
+--- No commands on standard input, watching serial output only...
+ESP-ROM:esp32s31-20251218
+Build:Dec 18 2025
+rst:0x1 (POWERON),boot:0x58 (SPI_FAST_FLASH_BOOT)
+SPI mode:DIO, clock div:1
+load:0x2f0740c0,len:0x168c
+load:0x2f06a2b0,len:0xc7c
+--- 0x2f06a2b0: esp_bootloader_get_description at /home/huanglin/esp/esp-idf/components/esp_bootloader_format/esp_bootloader_desc.c:40
+load:0x2f06cfb0,len:0x3368
+--- 0x2f06cfb0: is_xmc_chip_strict at /home/huanglin/esp/esp-idf/components/bootloader_support/bootloader_flash/src/bootloader_flash.c:911
+entry 0x2f06a2ba
+--- 0x2f06a2ba: call_start_cpu0 at /home/huanglin/esp/esp-idf/components/bootloader/subproject/main/bootloader_start.c:27
+[0;32mI (26) boot: ESP-IDF v6.1 2nd stage bootloader[0m
+[0;32mI (26) boot: compile time Nov 13 2026 02:56:04[0m
+[0;32mI (26) boot: Multicore bootloader[0m
+[0;32mI (28) boot: chip revision: v0.0[0m
+[0;32mI (29) boot: efuse block revision: v0.2[0m
+[0;32mI (32) boot.esp32s31: SPI Speed      : 80MHz[0m
+[0;32mI (36) boot.esp32s31: SPI Mode       : DIO[0m
+[0;32mI (40) boot.esp32s31: SPI Flash Size : 16MB[0m
+[0;32mI (44) boot: Enabling RNG early entropy source...[0m
+[0;32mI (49) boot: Partition Table:[0m
+[0;32mI (51) boot: ## Label            Usage          Type ST Offset   Length[0m
+[0;32mI (58) boot:  0 nvs              WiFi data        01 02 00009000 00006000[0m
+[0;32mI (64) boot:  1 phy_init         RF data          01 01 0000f000 00001000[0m
+[0;32mI (71) boot:  2 factory          factory app      00 00 00010000 00177000[0m
+[0;32mI (78) boot: End of partition table[0m
+[0;32mI (81) esp_image: segment 0: paddr=00010020 vaddr=40000020 size=04990h ( 18832) map[0m
+[0;32mI (93) esp_image: segment 1: paddr=000149b8 vaddr=2f000000 size=0006ch (   108) load[0m
+[0;32mI (97) esp_image: segment 2: paddr=00014a2c vaddr=2f000070 size=00290h (   656) load[0m
+[0;32mI (104) esp_image: segment 3: paddr=00014cc4 vaddr=00000000 size=0b354h ( 45908) [0m
+[0;32mI (119) esp_image: segment 4: paddr=00020020 vaddr=40020020 size=01dc8h (  7624) map[0m
+[0;32mI (122) boot: Loaded app from partition at offset 0x10000[0m
+[0;32mI (123) boot: Disabling RNG early entropy source...[0m
+ch19-udp-dhcp-dns | form B (Zig ELF + IDF 2nd-stage bootloader)
+console: UART0 TX=GPIO58 RX=GPIO59 115200 8N1 (ROM default)
+scope: udp + dhcp client + dns resolver, no MAC/IPv4/IRQ (host tests are authoritative)
+host: 49 unit tests via 'zig build test' (48 named + root container)
+check: dhcp discover len=252 last=END(255) ok=1
+check: dhcp cookie=0x63825363 ok=1
+check: dhcp option53=discover(1) ok=1
+check: udp sport=68 dport=67 len=260 verified=ok ok=1
+check: udp demux dport=67 delivered=dhcp_server ports=2 ok=1
+check: dhcp state=selecting xid=0xa33779b9 ok=1
+check: dhcp offer yiaddr=192.168.1.42 -> send_request ok=1
+check: dhcp bound ip=192.168.1.42 lease=3600 t1=1800 t2=3150 ok=1
+check: dhcp options gw=192.168.1.1 dns=223.5.5.5 ok=1
+check: dhcp t1=1802 renew state=renewing ok=1
+check: dns query len=29 qd=1 rd=1 labels=2 ok=1
+check: dns a=93.184.216.34 ttl=300 cname_hops=0 ok=1
+check: dns cache hit=1 ttl_left=1 entries=1 ok=1
+check: dns cache expired=1 entries=0 ok=1
+checks: passed=14 failed=0 total=14
+main: verdict=pass, skeleton idle (board run 待真机验证)
+main: halting (wfi)

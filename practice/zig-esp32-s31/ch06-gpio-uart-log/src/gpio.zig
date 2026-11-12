@@ -17,7 +17,8 @@
 //!     `OUT_SEL` 是 bitpos [8:0]，复位值 256 = `SIG_GPIO_OUT_IDX`
 //!     （`include/soc/gpio_sig_map.h`），即“由 GPIO_OUT/GPIO_ENABLE 的第 n 位驱动”。
 //!
-//! 所有硬件动作都标了「待真机验证」：本章工程尚未上板。
+//! 硬件动作已于 2026-11-13 上板验证（日志见 ../logs/ch06-trap.log）；
+//! 引脚波形未测，仍按「待真机验证」对待。
 
 const gpio_base: usize = 0x2058_3000;
 const io_mux_base: usize = 0x2058_2000;

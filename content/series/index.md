@@ -18,7 +18,7 @@ title: 📚 系列总览
 | [[lwip-deep-dive\|lwIP 深度解析]]                  | 24    | RTOS 上的网络协议栈：pbuf、TCP 状态机、邮箱模型，全部 QEMU 实测     |
 | [[embedded-basics\|嵌入式硬件基础]]                | 12    | STM32+GD32 双架构：裸机启动、外设、总线协议（无板先行版）           |
 | [[esp32-s3-box-3\|ESP32-S3-BOX-3 工程实战]]        | 20    | 真机全栈：从点灯到语音识别的完整项目线                              |
-| [[zig-esp32-s31\|Zig × ESP32-S31 全栈开发]]        | 17/28 | 用 Zig 重写应用、TCP/IP 与 RTOS：RISC-V 双核、CLIC、EMAC、WiFi 边界 |
+| [[zig-esp32-s31\|Zig × ESP32-S31 全栈开发]]        | 19/28 | 用 Zig 重写应用、TCP/IP 与 RTOS：RISC-V 双核、CLIC、EMAC、WiFi 边界 |
 | [[f429-lab\|F429 裸机实验室]]                      | 28    | 从寄存器到 RTOS 的对照之路（含硬件支线）                            |
 | [[wifi-coproc\|F429 × Korvo-1 WiFi 协处理器]]      | 10    | SPI 供网实战：帧协议→socket 代理→对照 ESP-Hosted                    |
 | [[wifi-rf-hw\|WiFi 射频硬件入门]]                  | 18    | 写给软件工程师的射频课                                              |

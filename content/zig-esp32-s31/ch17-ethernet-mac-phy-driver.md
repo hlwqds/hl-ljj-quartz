@@ -24,7 +24,7 @@ tags: [zig, esp32-s31, riscv, ethernet, emac, rgmii, mdio, dma, series]
 > 15. [[ch15-observability-testing-stability|第十五章：可观测性、测试与稳定性]]
 > 16. [[ch16-stack-architecture-zero-copy|第十六章：协议栈架构、缓冲与零拷贝]]
 > 17. **第十七章：以太网 MAC/PHY 驱动**
-> 18. 第十八章：IPv4、ICMP、ARP 与路由（待发布）
+> 18. [[ch18-ipv4-icmp-arp-routing|第十八章：IPv4、ICMP、ARP 与路由]]
 
 # Zig × ESP32-S31 全栈开发（十七）：以太网 MAC/PHY 驱动
 

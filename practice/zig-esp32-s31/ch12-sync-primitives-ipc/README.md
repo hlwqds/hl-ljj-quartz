@@ -3,10 +3,9 @@
 > 所属章节：[[ch12-sync-primitives-ipc|第十二章：同步原语与 IPC]] · 系列：[[zig-esp32-s31|Zig × ESP32-S31 全栈开发]]
 
 > [!warning] 验证状态
-> 本工程**未上板，待真机验证**。构建与镜像生成在本机跑通（Zig 0.17.1 + esptool 5.6，
-> 两个 flash 段 `0x40000020` / `0x40020020` 都在），但**没有任何一行输出来自真机**。
-> 文中与 README 里出现的所有日志、tick 数、`wait_ticks` 都是**验收目标**，
-> 不是实测值。本工程不提供 `run.log`。
+> 本工程**部分实测（2026-11-13）**：spin（`locked=1000/atomic=1000`）与 no-pi 阶段
+> （`phase no-pi: high_wait=90 ticks boosts=0 span=99 ticks`）通过，原始输出见 `../logs/ch12-boot.log`；
+> **pi 阶段仍挂起**。其余日志、tick 数、`wait_ticks` 仍是验收目标。
 
 ## 目的
 
