@@ -26,7 +26,9 @@ tags: [zig, esp32-s31, riscv, udp, dhcp, dns, series]
 > 17. [[ch17-ethernet-mac-phy-driver|第十七章：以太网 MAC/PHY 驱动]]
 > 18. [[ch18-ipv4-icmp-arp-routing|第十八章：IPv4、ICMP、ARP 与路由]]
 > 19. **第十九章：UDP、DHCP 与 DNS**
-> 20. 第二十章：TCP 状态机与可靠传输（待发布）
+> 20. [[ch20-tcp-state-machine-reliable-delivery|第二十章：TCP 状态机与可靠传输]]
+> 21. [[ch21-tcp-congestion-throughput|第二十一章：TCP 拥塞控制与吞吐]]
+> 22. Socket API 与事件循环（规划中）
 
 # Zig × ESP32-S31 全栈开发（十九）：UDP、DHCP 与 DNS
 

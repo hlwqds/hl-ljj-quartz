@@ -1,0 +1,52 @@
+ESP-ROM:esp32s31-20251218
+Build:Dec 18 2025
+rst:0x1 (POWERON),boot:0x58 (SPI_FAST_FLASH_BOOT)
+SPI mode:DIO, clock div:1
+load:0x2f0740c0,len:0x168c
+load:0x2f06a2b0,len:0xc7c
+load:0x2f06cfb0,len:0x3368
+entry 0x2f06a2ba
+I (26) boot: ESP-IDF v6.1 2nd stage bootloader
+I (26) boot: compile time Nov 13 2026 02:56:04
+I (26) boot: Multicore bootloader
+I (28) boot: chip revision: v0.0
+I (29) boot: efuse block revision: v0.2
+I (32) boot.esp32s31: SPI Speed      : 80MHz
+I (36) boot.esp32s31: SPI Mode       : DIO
+I (40) boot.esp32s31: SPI Flash Size : 16MB
+I (44) boot: Enabling RNG early entropy source...
+I (49) boot: Partition Table:
+I (51) boot: ## Label            Usage          Type ST Offset   Length
+I (58) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (64) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (71) boot:  2 factory          factory app      00 00 00010000 00177000
+I (78) boot: End of partition table
+I (81) esp_image: segment 0: paddr=00010020 vaddr=40000020 size=02a20h ( 10784) map
+I (91) esp_image: segment 1: paddr=00012a48 vaddr=2f000000 size=0006ch (   108) load
+I (97) esp_image: segment 2: paddr=00012abc vaddr=00000000 size=0d55ch ( 54620) 
+I (113) esp_image: segment 3: paddr=00020020 vaddr=40020020 size=00d38h (  3384) map
+I (115) boot: Loaded app from partition at offset 0x10000
+I (116) boot: Disabling RNG early entropy source...
+ch21-tcp-congestion | form B (Zig ELF + IDF 2nd-stage bootloader)
+console: UART0 TX=GPIO58 RX=GPIO59 115200 8N1 (ROM default)
+scope: cwnd/ssthresh/rto/bdp/pacing/nagle + deterministic loss sim
+note: throughput numbers are host-side simulation, NOT a real link
+host: 21 unit tests via 'zig build test' (20 named + root container)
+check: cwnd slowstart rtt 1,2,4,8 ok=1
+check: cwnd ca per-rtt 8,9,10,11 ok=1
+check: fast retx ssthresh=7300 cwnd=11680 state=fast_recovery ok=1
+check: timeout cwnd=1460 ssthresh=11680 ok=1
+check: window min(cwnd=14600,rwnd=5840)=5840 ok=1
+check: wscale shift=14 encode(1MiB)=64 decode=1048576 max=1073725440 ok=1
+check: nagle unacked=1 small=blocked full=allowed idle=allowed ok=1
+sim: cwnd none@1rtt n=14 [1,1,2,4,8,16,23,24,25,26,26,27,28,29]
+sim: cwnd loss1/100 n=15 [1,1,2,4,8,16,23,24,25,26,29,13,14,15,16]
+sim: k100 ramp sent=180 retx=1 to=0 fr=1 dup=23 ticks=346
+check: sim tp none=1211876 k100=596290 k25=245395 k10=136453 ok=1
+sim: k100 steady sent=2874 retx=29 to=1 fr=28 dup=386 ticks=7034
+sim: seed=0x21c0ffee hash=0xfd1ab529b33a5ef rerun=0xfd1ab529b33a5ef equal=1
+check: bdp 10mbit/24ms = 30000B 21seg rwnd_needed=30660 ok=1
+check: mathis p=1% theory=745025 sim=596290 ratio_x1000=800 ok=1
+checks: passed=10 failed=0 total=10
+main: verdict=pass, congestion control law verified off-link (wfi)
+main: halting (wfi)

@@ -1,0 +1,48 @@
+ESP-ROM:esp32s31-20251218
+Build:Dec 18 2025
+rst:0x1 (POWERON),boot:0x58 (SPI_FAST_FLASH_BOOT)
+SPI mode:DIO, clock div:1
+load:0x2f0740c0,len:0x168c
+load:0x2f06a2b0,len:0xc7c
+load:0x2f06cfb0,len:0x3368
+entry 0x2f06a2ba
+I (26) boot: ESP-IDF v6.1 2nd stage bootloader
+I (26) boot: compile time Nov 13 2026 02:56:04
+I (26) boot: Multicore bootloader
+I (28) boot: chip revision: v0.0
+I (29) boot: efuse block revision: v0.2
+I (32) boot.esp32s31: SPI Speed      : 80MHz
+I (36) boot.esp32s31: SPI Mode       : DIO
+I (40) boot.esp32s31: SPI Flash Size : 16MB
+I (44) boot: Enabling RNG early entropy source...
+I (49) boot: Partition Table:
+I (51) boot: ## Label            Usage          Type ST Offset   Length
+I (58) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (64) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (71) boot:  2 factory          factory app      00 00 00010000 00177000
+I (78) boot: End of partition table
+I (81) esp_image: segment 0: paddr=00010020 vaddr=40000020 size=04c00h ( 19456) map
+I (93) esp_image: segment 1: paddr=00014c28 vaddr=2f000000 size=0006ch (   108) load
+I (97) esp_image: segment 2: paddr=00014c9c vaddr=00000000 size=0b37ch ( 45948) 
+I (111) esp_image: segment 3: paddr=00020020 vaddr=40020020 size=01928h (  6440) map
+I (114) boot: Loaded app from partition at offset 0x10000
+I (115) boot: Disabling RNG early entropy source...
+ch20-tcp-state-machine | form B (Zig ELF + IDF 2nd-stage bootloader)
+console: UART0 TX=GPIO58 RX=GPIO59 115200 8N1 (ROM default)
+scope: tcp segment codec + seq math + state machine + rto + reasm; no MAC/IPv4/IRQ
+host: 27 unit tests via 'zig build test' (26 named + root container)
+evidence: injected in-memory segments only; real-link handshake 待 ch17 闭环
+check: checksum syn_seg=0xeca5 verify=1 known=0xeca5 ok=1
+check: seq wrap 0xfffffff0<0x10=1 diff=0x20 ok=1
+check: options mss=1460 ws=7 sack=1 hdr=32B roundtrip=1 ok=1
+check: handshake state=ESTABLISHED snd_una=0x1001 rcv_nxt=0x9001 third=ACK ok=1
+check: mss segs=3 lens=1460/1460/80 last_seq=0x2b68 ok=1
+check: rto srtt=2000000us rttvar=1000000us first_rto=6000000us backoff=12000000us retrans=1 ok=1
+check: reasm out_of_order late=0 delivered=200 identical=1 ok=1
+check: dupack n=3 fast_retransmit=1 seq=0x1001 ok=1
+check: close active FIN_WAIT_1->2->TIME_WAIT 2msl=60000000us closed=1 ok=1
+check: close passive CLOSE_WAIT->LAST_ACK->CLOSED rcv_nxt=0x1002 ok=1
+check: rst state=CLOSED replied=0 timer=off ok=1
+checks: passed=11 failed=0 total=11
+main: verdict=pass, skeleton idle (real link 待真机验证)
+main: halting (wfi)
