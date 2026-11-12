@@ -375,8 +375,15 @@ pub const cnnt_bits = struct {
     /// GMAC_CTRL0 bit2-4：`PHY_INTF_SEL`（0 = MII，1 = RGMII，4 = RMII）。
     pub const phy_intf_sel_shift: u5 = 2;
     pub const phy_intf_sel_mask: u32 = 0x7 << 2;
-    /// GMAC_CTRL0 bit5：`GMAC_MEM_CLK_FORCE_ON`。
+    /// GMAC_CTRL0 bit5：`GMAC_MEM_CLK_FORCE_ON`（R/W）。GMAC 内部存储/AXI 时钟
+    /// 默认门关；不给这一位，DMA 的 AXI 域可能没有时钟，SWR 就永远不自清。
     pub const mem_clk_force_on: u32 = 1 << 5;
+    /// GMAC_CTRL0 bit6/7：`GMAC_RST_CLK_TX_N` / `GMAC_RST_CLK_RX_N`（RO）。
+    /// 0 = 该时钟仍被复位拉住。
+    pub const rst_clk_tx_n: u32 = 1 << 6;
+    pub const rst_clk_rx_n: u32 = 1 << 7;
+    /// GMAC_CTRL0 bit8：`GMAC_CACTIVE`（RO）。1 = GMAC-AXI 正在请求时钟。
+    pub const gmac_cactive: u32 = 1 << 8;
 };
 
 /// `PHY_INTF_SEL` 的取值（emac_ll.h 的 `emac_ll_get_phy_intf` 反推）。

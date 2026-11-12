@@ -2,10 +2,16 @@
 
 > 所属章节：[[ch17-ethernet-mac-phy-driver|第十七章：以太网 MAC/PHY 驱动]] · 系列：[[zig-esp32-s31|Zig × ESP32-S31 全栈开发]]
 
-> [!warning] 验证状态：**已上板一次（2026-11-13）**：EMAC 时钟门控与 `mac_version=0x00001037`（`snps=0x37`）
-> 读通；**DMA 软复位超时**（`busmode=0x00020101`），MDIO/PHY ID、RGMII、描述符环与 ping 均未进入，
-> 详见 `../BRINGUP-2026-11-12.md` 第四轮与 `../logs/ch17-boot.log`。
-> 本工程**尚未在真机上运行过**。已经完成的是可静态验证的部分：
+> [!warning] 验证状态：**已上板两轮（2026-11-13）**：EMAC 时钟门控与 `mac_version=0x00001037`（`snps=0x37`）
+> 读通；**DMA 软复位仍超时**（`busmode=0x00020101`），MDIO/PHY ID、RGMII、描述符环与 ping 均未进入。
+> 第二轮按 IDF 顺序把数据接口时钟放到 SWR 之前、补写 `GMAC_MEM_CLK_FORCE_ON`（bit5）并打印
+> 三个只读诊断位：`gmac_ctrl0=0x00000124`（`mem_clk_force_on=1`、`cactive=1`、
+> `rst_clk_tx_n=0`、`rst_clk_rx_n=0`）——时钟域在要时钟，但 TX/RX 复位时钟没放行。
+> 第三轮把 RGMII pad 路由提到时钟阶段之前，读数一字未变（`../logs/ch17c-boot.log`），
+> 排除了 pad 顺序；剩下的最可疑环节是 ref clock 的源（MPLL 未按 500 MHz 运行）。
+> 详见 `../BRINGUP-2026-11-12.md` 第四轮、`../logs/ch17-boot.log`、`../logs/ch17b-boot.log` 与
+> `../logs/ch17c-boot.log`。
+> 已经完成的是可静态验证的部分：
 >
 > - `zig build -Dtarget=riscv32-freestanding-eabihf … -Doptimize=ReleaseSmall` 退出 0；
 > - `elf2image` 打印 `Merged 2 ELF sections.`，`image-info` 的段表正好两行 `DROM, IROM`
@@ -13,9 +19,9 @@
 > - `zig build test` 的 20 个主机侧用例全绿（描述符布局、位域编码、PHY ID 解码、环回绕）；
 > - `bash -n tools/flash.sh` 退出 0。
 >
-> **下面没有一行是实测输出。** 串口上的任何 `mdio:` / `tx:` / `rx:` 结果都必须由本工程
-> 在板子上跑出来后才有资格写进章节。所有尚未验证的硬件行为在代码里都带
-> `TODO 待真机验证` 或 `待真机验证` 注释。
+> **除 `clk:` / `rst:` 这几行外没有实测输出。** MDIO 的 `mdio:`、收发的 `tx:` / `rx:`
+> 结果必须由本工程在板子上跑出来后才有资格写进章节；这些阶段目前还没被走到。
+> 所有尚未验证的硬件行为在代码里都带 `TODO 待真机验证` 或 `待真机验证` 注释。
 
 ## 待真机验证清单
 

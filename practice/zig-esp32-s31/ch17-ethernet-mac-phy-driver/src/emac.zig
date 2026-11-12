@@ -148,6 +148,11 @@ pub fn enableRgmiiClocks() void {
     // GMAC_CTRL0.PHY_INTF_SEL = 1（RGMII）
     hw.writeMasked(ctrl0, regs.cnnt_bits.phy_intf_sel_mask, regs.phy_intf_rgmii << regs.cnnt_bits.phy_intf_sel_shift);
 
+    // GMAC_MEM_CLK_FORCE_ON = 1：GMAC 内部存储/AXI 时钟默认门关。IDF 的
+    // emac_ll_clock_force_en() 就是这一位；不给它，DMA 软复位可能在等一个
+    // 根本没跑的时钟域（第二轮的实测症状：SWR 置 1 后永不自清）。
+    hw.setBits(ctrl0, regs.cnnt_bits.mem_clk_force_on);
+
     // RMII 的 pad 时钟关掉（RGMII 下 50M 输入不存在）
     hw.clearBits(rmii_pad, regs.cnnt_bits.rmii_pad_clk_en | regs.cnnt_bits.rmii_pad_clk_inv_en);
     hw.clearBits(rmii, regs.cnnt_bits.rmii_clk_sel | regs.cnnt_bits.rmii_clk_en);
@@ -169,6 +174,37 @@ pub fn enableRgmiiClocks() void {
     hw.writeMasked(ref, 0x3 << regs.cnnt_bits.ref_clk_sel_shift, rgmii_ref_src_mpll << regs.cnnt_bits.ref_clk_sel_shift);
     hw.writeMasked(ref, 0xFF << regs.cnnt_bits.ref_clk_div_shift, rgmii_ref_div << regs.cnnt_bits.ref_clk_div_shift);
     hw.setBits(ref, regs.cnnt_bits.ref_clk_en);
+
+    // 时钟域起来到“能响应 DMA 软复位”之间有一段模拟稳定时间，
+    // 立刻写 SWR 有机会落在时钟还没稳的窗口里。
+    hw.delayUs(clock_settle_us);
+}
+
+/// 时钟使能后到写 SWR 之间的等待（µs）。
+pub const clock_settle_us: u32 = 100;
+
+/// GMAC_CTRL0 里的只读诊断位快照：用来把“DMA 复位超时”从现象变成证据。
+pub const ClockState = struct {
+    /// bit5 `GMAC_MEM_CLK_FORCE_ON`（R/W，这里当“我们写了没”的证据）
+    mem_clk_forced: bool,
+    /// bit6 `GMAC_RST_CLK_TX_N`（RO，0 = TX 时钟被复位拉住）
+    tx_clk_released: bool,
+    /// bit7 `GMAC_RST_CLK_RX_N`（RO，0 = RX 时钟被复位拉住）
+    rx_clk_released: bool,
+    /// bit8 `GMAC_CACTIVE`（RO，1 = GMAC-AXI 正在请求时钟）
+    axi_active: bool,
+    raw: u32,
+};
+
+pub fn readClockState() ClockState {
+    const v = hw.readReg(cnntReg(regs.cnnt.gmac_ctrl0));
+    return .{
+        .mem_clk_forced = (v & regs.cnnt_bits.mem_clk_force_on) != 0,
+        .tx_clk_released = (v & regs.cnnt_bits.rst_clk_tx_n) != 0,
+        .rx_clk_released = (v & regs.cnnt_bits.rst_clk_rx_n) != 0,
+        .axi_active = (v & regs.cnnt_bits.gmac_cactive) != 0,
+        .raw = v,
+    };
 }
 
 /// ref clock 源：0 = MPLL，1 = CPLL，2 = APLL（emac_ll_ref_clock_select 的注释）。

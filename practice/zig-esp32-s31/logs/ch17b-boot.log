@@ -1,0 +1,43 @@
+ESP-ROM:esp32s31-20251218
+Build:Dec 18 2025
+rst:0x1 (POWERON),boot:0x58 (SPI_FAST_FLASH_BOOT)
+SPI mode:DIO, clock div:1
+load:0x2f0740c0,len:0x168c
+load:0x2f06a2b0,len:0xc7c
+load:0x2f06cfb0,len:0x3368
+entry 0x2f06a2ba
+I (26) boot: ESP-IDF v6.1 2nd stage bootloader
+I (26) boot: compile time Nov 13 2026 02:16:25
+I (26) boot: Multicore bootloader
+I (28) boot: chip revision: v0.0
+I (29) boot: efuse block revision: v0.2
+I (32) boot.esp32s31: SPI Speed      : 80MHz
+I (36) boot.esp32s31: SPI Mode       : DIO
+I (40) boot.esp32s31: SPI Flash Size : 16MB
+I (44) boot: Enabling RNG early entropy source...
+I (49) boot: Partition Table:
+I (51) boot: ## Label            Usage          Type ST Offset   Length
+I (58) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (64) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (71) boot:  2 factory          factory app      00 00 00010000 00177000
+I (78) boot: End of partition table
+I (81) esp_image: segment 0: paddr=00010020 vaddr=40000020 size=04500h ( 17664) map
+I (92) esp_image: segment 1: paddr=00014528 vaddr=2f000000 size=0006ch (   108) load
+I (97) esp_image: segment 2: paddr=0001459c vaddr=00000000 size=0ba7ch ( 47740) 
+I (111) esp_image: segment 3: paddr=00020020 vaddr=40020020 size=018b0h (  6320) map
+I (115) boot: Loaded app from partition at offset 0x10000
+I (115) boot: Disabling RNG early entropy source...
+ch17-ethernet-mac-phy-driver | form B (Zig ELF + IDF 2nd-stage bootloader)
+console: UART0 TX=GPIO58 RX=GPIO59 115200 8N1 (ROM default)
+build: skip_mdio=0 pbl=16 mdio_timeout=2000us
+clock: TIMG0 T0 1MHz (XTAL 40MHz / 40), MIE=0, polling only
+wdt: rtc before=0xc0000000 after=0x0 tries=1
+-- 1) clocks: HP_SYS_CLKRST.EMAC_CTRL0 + CNNT reset + DMA soft reset + RGMII mux
+clk: emac_sys_clk_en=1 (hp_sys_clkrst+0xc8 bit0)
+rst: mac_version=0x00001037 snps=0x37 user=0x10 (expect snps=0x37)
+rst: hw_feature=0x0b056727 (dma+0x1058)
+clk: rgmii mux + ref_clk sel=0 div=3 en=1 (125MHz = src/(div+1))
+clk: gmac_ctrl0=0x00000124 mem_clk_force_on=1 rst_clk_tx_n=0 rst_clk_rx_n=0 cactive=1
+rst: dma soft reset failed: Timeout (busmode=0x00020101)
+clk: after swr gmac_ctrl0=0x00000124 rst_clk_tx_n=0 rst_clk_rx_n=0 cactive=1
+main: clocks/reset unusable, halting (do not debug DMA on a dead clock)

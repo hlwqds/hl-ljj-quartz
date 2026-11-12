@@ -56,22 +56,42 @@ fn stageClocks() bool {
     });
     log.line("rst: hw_feature=0x{x:0>8} (dma+0x{x})", .{ emac.hwFeature(), regs.dma.hw_feature });
 
-    // DMA 软复位必须在**所有** MAC/DMA 寄存器编程之前：SWR 会把 MAC 的
-    // 配置寄存器一起清回默认值（gmac_reg.h 的 SWR 说明）。
-    if (emac.resetDma(dma_reset_timeout_us)) |_| {
-        log.line("rst: dma swr cleared (busmode=0x{x:0>8})", .{hw.readReg(regs.gmac + regs.dma.bus_mode)});
-    } else |e| {
-        log.line("rst: dma soft reset failed: {s} (busmode=0x{x:0>8})", .{
-            @errorName(e), hw.readReg(regs.gmac + regs.dma.bus_mode),
-        });
-        return false;
-    }
+    // 第三轮：先把 RGMII 的 pad 切到 EMAC 功能（`pins.initRgmii()`），再开时钟。
+    // 理由：TX/RX 复位时钟（`rst_clk_tx_n`/`rst_clk_rx_n`）两轮都读回 0，
+    // 而第二轮的时钟阶段跑在 `stagePins()` 之前——125 MHz 可能根本没有出口。
+    pins.initRgmii();
 
+    // 顺序很重要：IDF 的 esp_eth_mac_new_esp32() 在写 DMA 软复位**之前**
+    // 就把数据接口时钟（RGMII mux + ref clock）打开了（emac_esp_config_data_interface
+    // → emac_hal_clock_enable_rgmii），emac_esp32_init() 才做 SWR。SWR 的文档原话是
+    // 「在所有 ETH_MAC 时钟域里都完成后才自清零」——先开时钟，再复位。
     emac.enableRgmiiClocks();
     const ref = emac.readRefClock();
     log.line("clk: rgmii mux + ref_clk sel={d} div={d} en={d} (125MHz = src/(div+1))", .{
         ref.sel, ref.div, @intFromBool(ref.enabled),
     });
+
+    const before = emac.readClockState();
+    log.line("clk: gmac_ctrl0=0x{x:0>8} mem_clk_force_on={d} rst_clk_tx_n={d} rst_clk_rx_n={d} cactive={d}", .{
+        before.raw,                           @intFromBool(before.mem_clk_forced), @intFromBool(before.tx_clk_released),
+        @intFromBool(before.rx_clk_released), @intFromBool(before.axi_active),
+    });
+
+    // DMA 软复位必须在**所有** MAC/DMA 寄存器编程之前：SWR 会把 MAC 的
+    // 配置寄存器一起清回默认值（gmac_reg.h 的 SWR 说明）。
+    if (emac.resetDma(dma_reset_timeout_us)) |_| {
+        log.line("rst: dma swr cleared (busmode=0x{x:0>8})", .{hw.readReg(regs.gmac + regs.dma.bus_mode)});
+    } else |e| {
+        const after = emac.readClockState();
+        log.line("rst: dma soft reset failed: {s} (busmode=0x{x:0>8})", .{
+            @errorName(e), hw.readReg(regs.gmac + regs.dma.bus_mode),
+        });
+        log.line("clk: after swr gmac_ctrl0=0x{x:0>8} rst_clk_tx_n={d} rst_clk_rx_n={d} cactive={d}", .{
+            after.raw,                      @intFromBool(after.tx_clk_released), @intFromBool(after.rx_clk_released),
+            @intFromBool(after.axi_active),
+        });
+        return false;
+    }
     return true;
 }
 
@@ -295,8 +315,8 @@ fn stageRx() void {
                 got, f.desc_index, f.len, f.des0, descs.rxErrorMask(f.des0),
             });
             log.line("rx:   dst={x:0>2}:{x:0>2}:{x:0>2}:{x:0>2}:{x:0>2}:{x:0>2} src={x:0>2}:{x:0>2}:{x:0>2}:{x:0>2}:{x:0>2}:{x:0>2} type=0x{x:0>4}", .{
-                f.head[0], f.head[1], f.head[2], f.head[3], f.head[4], f.head[5],
-                f.head[6], f.head[7], f.head[8], f.head[9], f.head[10], f.head[11],
+                f.head[0],                                f.head[1], f.head[2], f.head[3], f.head[4],  f.head[5],
+                f.head[6],                                f.head[7], f.head[8], f.head[9], f.head[10], f.head[11],
                 (@as(u16, f.head[12]) << 8) | f.head[13],
             });
             if (got >= 4) break;

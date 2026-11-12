@@ -50,9 +50,33 @@ MDIO 读回的值是唯一能证明 PHY 活着的证据；`OWN` 位是唯一能�
 > - **未通过**：DMA 软复位超时——`dma soft reset failed: Timeout (busmode=0x00020101)`。
 >   MDIO / PHY ID、RGMII、描述符环与 ping 因此全部没有进入。
 >
-> 所以本章其余“硬件到底怎么表现”的结论仍标「待真机验证」；`busmode` 的实测值与
-> 排查方向写在 `../BRINGUP-2026-11-12.md` 第四轮。凡是没有证据的地方，本章的
-> 写法是**写出判据**而不是写出结论。
+> **第二轮上板（2026-11-13，同一天）**：按 IDF 的真实顺序把“数据接口时钟”挪到
+> SWR 之前，并补上 `GMAC_MEM_CLK_FORCE_ON`（bit5），再加三个只读诊断位。
+> 结果——**仍超时，但把范围收窄了**：
+>
+> ```text
+> clk: rgmii mux + ref_clk sel=0 div=3 en=1 (125MHz = src/(div+1))
+> clk: gmac_ctrl0=0x00000124 mem_clk_force_on=1 rst_clk_tx_n=0 rst_clk_rx_n=0 cactive=1
+> rst: dma soft reset failed: Timeout (busmode=0x00020101)
+> clk: after swr gmac_ctrl0=0x00000124 rst_clk_tx_n=0 rst_clk_rx_n=0 cactive=1
+> ```
+>
+> 三条可判定的读数：**AXI 时钟域确实在要时钟**（`cactive=1`）、**内部存储时钟已强制打开**
+> （`mem_clk_force_on=1`）、而 **TX/RX 复位时钟仍被拉在 0**（`rst_clk_tx_n=0`、
+> `rst_clk_rx_n=0`）。SWR 的语义是“在所有 ETH_MAC 时钟域完成后才自清”，所以
+> 下一步不是再试写序，而是查**那两路时钟为什么不放行**（REF/TXC 是否真的到了 GMAC、
+> GPIO13 的 `rmii_pad_out_clk_en` 是否真的把 125 MHz 送出）。原始输出见
+> `../logs/ch17b-boot.log`，完整排查链见 `../BRINGUP-2026-11-12.md` 第四轮。
+>
+> **第三轮上板（同日）**：把 RGMII 的 pad 路由（`pins.initRgmii()`）提到时钟阶段之前，
+> 排除“125 MHz 没有出口”这一可能。读数**一字未变**（`gmac_ctrl0=0x00000124`、
+> `rst_clk_tx_n=0`、`rst_clk_rx_n=0`，`logs/ch17c-boot.log`）——pad 顺序不是原因。
+> 剩下的最可疑环节是 **ref clock 的源根本没在跑**：IDF 在这条路径上是先用
+> `esp_clk_tree_src_set_freq_hz(MPLL, 500 MHz)` 把源配出来再使能输出时钟，而本章
+> 直接假设“MPLL = 500 MHz”就写了 `div=3`。下一轮要验的正是这一步。
+>
+> 所以本章其余“硬件到底怎么表现”的结论仍标「待真机验证」。凡是没有证据的地方，
+> 本章的写法是**写出判据**而不是写出结论。
 
 ---
 
