@@ -57,7 +57,7 @@ fn printLabel(label: []const u8) void {
     const n = @min(label.len, 16);
     @memcpy(buf[0..n], label[0..n]);
     buf[n] = 0;
-    _ = esp_rom_printf("%s", buf.ptr);
+    _ = esp_rom_printf("%s", &buf);
 }
 
 fn printEntry(index: usize, e: partition.Entry) void {

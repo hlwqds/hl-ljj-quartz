@@ -159,9 +159,9 @@ pub fn init(period: u32) void {
     crv |= 1 << 5; // T0_CLK_EN
     cr.* = crv;
 
-    // 2) 计数器：递增、分频 40、先不开闹钟。AUTORELOAD 保持 0：
-    //    重装由 ISR 用绝对目标完成（rearm），硬件在闹钟时自动回 0
-    //    反而会毁掉绝对时间轴。
+    // 2) 计数器：递增、分频 40、先不开闹钟。T0CONFIG 的 AUTORELOAD(bit29)
+    //    复位默认是 1，这里显式写 0：命中闹钟时从 LOAD(0) 自动回卷会毁掉
+    //    绝对时间轴（next_target 是在累加的），重装由 ISR 的 rearm 完成。
     reg(t0config).* = bit_t0_en | bit_t0_increase | (divider << 13);
 
     // 3) 从 0 装载：LOADLO/HI 只是暂存，写 LOAD 才真正装入。

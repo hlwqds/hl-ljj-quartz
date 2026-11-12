@@ -39,7 +39,7 @@ pub fn install() void {
 ///
 /// 汇编只做“搬移 + 跳转”，不保存现场：这里不可能返回，所以不需要
 /// 保存/恢复任何寄存器。这正是 panic 路径与中断路径的区别所在。
-export fn trapVector() linksection(".text.entry") callconv(.naked) noreturn {
+pub export fn trapVector() linksection(".trap_ram") callconv(.naked) noreturn {
     asm volatile (
         \\        csrr    a0, mcause          # 异常原因（bit31=1 表示中断）
         \\        csrr    a1, mepc            # 触发异常的指令地址
@@ -53,10 +53,12 @@ export fn trapVector() linksection(".text.entry") callconv(.naked) noreturn {
     );
 }
 
-fn causeName(cause: u32) [*:0]const u8 {
+fn causeName(raw: u32) [*:0]const u8 {
     // mcause 的低位是异常/中断编号，最高位区分“中断”与“异常”。
-    // 编号表来自 RISC-V 特权级规范（非注入中断部分）。
-    if ((cause & 0x8000_0000) != 0) return "interrupt (本章未开中断，不该出现)";
+    // 真机发现（2026-11-12）：S31 的 mcause 高位带 CLIC 附加字段
+    // （实测 0x30000002），异常码只在低 5 位；必须先掩码再查表。
+    const cause = raw & 0x1F;
+    if ((raw & 0x8000_0000) != 0) return "interrupt (本章未开中断，不该出现)";
     return switch (cause) {
         0 => "instruction address misaligned",
         1 => "instruction access fault",
@@ -72,7 +74,7 @@ fn causeName(cause: u32) [*:0]const u8 {
 }
 
 /// 异常报告。签名顺序与 `trapVector` 里 a0..a4 的填充顺序一一对应。
-export fn trapReport(cause: u32, mepc: u32, ra: u32, mtval: u32, sp: u32) noreturn {
+pub export fn trapReport(cause: u32, mepc: u32, ra: u32, mtval: u32, sp: u32) noreturn {
     log.msg(.err, "---- trap ----");
     uart.puts("cause : ");
     uart.puts(causeName(cause));

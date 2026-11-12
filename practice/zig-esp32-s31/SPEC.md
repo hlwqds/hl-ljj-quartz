@@ -486,7 +486,8 @@ tick
 - tick：TIMG0 T0（`0x20580000`），时钟源选 XTAL 40 MHz（`HP_SYS_CLKRST + 0x114` 的
   `T0_SRC_SEL[4:3] = 0`、`T0_CLK_EN[5]`），分频 40 → 1 MHz，闹钟 1000 → 1 ms；
   命中清 `INT_CLR_TIMERS(+0x7c)` bit0 后用「上次目标 + 周期」绝对重装（不是 now + 周期）；
-  **必须置 `INT_ENA_TIMERS(+0x70)` bit0**（复位 0，ch08 轮询时不用），否则 `INT_RAW` 出不了 TIMG。
+  **必须置 `INT_ENA_TIMERS(+0x70)` bit0**（复位 0，ch08 轮询时不用），否则 `INT_RAW` 出不了 TIMG；
+  并显式清 `T0CONFIG.AUTORELOAD`（bit29，复位 1），否则命中后计数器回卷、绝对时间轴失效。
 - 路由：源 25（`ETS_TIMERGRP0_T0_INTR_SOURCE`）→ 矩阵 `0x20585000 + 4×25`，`MAP[5:0]` 写
   **CLIC 输入号 16**（不是外部通道 0；写 0 会投递到内部输入，现象是「中断完全没发生」）→
   CLIC 输入 16（`0x10801000 + 4i`）优先级 3、`IE` bit8、阈值 0（`0x10800008` 的 [31:24]）。

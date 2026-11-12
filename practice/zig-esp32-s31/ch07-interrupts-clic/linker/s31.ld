@@ -33,14 +33,19 @@ ENTRY(_start)
 
 MEMORY
 {
-    /* RISC-V 的 SRAM 是统一编址：取指与读写共用同一地址空间。 */
+    /* 真机发现（2026-11-12）：S31 bootloader（unpack_load_app）在
+     * SOC_MMU_DI_VADDR_SHARED=1 下断言 rom_index == 2，要求镜像里正好有
+     * 两个落在 0x40000000..0x44000000 的段（IROM + DROM）；只有 SRAM 段的
+     * 镜像会 Assert failed。0x20 偏移与 IDF 一致（paddr%64K == vaddr%64K）。 */
+    irom (rx)  : ORIGIN = 0x40000020, LENGTH = 0x3F000
+    drom (r)   : ORIGIN = 0x40020020, LENGTH = 0x3F000
     sram (rwx) : ORIGIN = 0x2F000000, LENGTH = 0x7AFC0
 }
 
 SECTIONS
 {
     /* 代码与只读数据放在一起：将来整体迁到 flash 映射窗口时只改这一段。 */
-    .text : ALIGN(16)
+    .flash.text : ALIGN(16)
     {
         /*
          * 第一个装载段必须以 esp_app_desc_t 开头：256 字节、魔数 0xABCD5432。
@@ -63,10 +68,27 @@ SECTIONS
         KEEP(*(.text.entry))
 
         *(.text .text.*)
+        . = ALIGN(16);
+        _text_end = .;
+    } > irom
+
+    /* 第二个 flash 装载段 = DROM：没有它 bootloader 的 rom_index == 2 断言会挂。 */
+    .flash.rodata : ALIGN(16)
+    {
+        _rodata_start = .;
         *(.rodata .rodata.*)
         *(.srodata .srodata.*)
         . = ALIGN(16);
-        _text_end = .;
+        _rodata_end = .;
+    } > drom
+
+    /* trap 向量/中断入口必须放 SRAM：真机发现（2026-11-12）向量放 flash 时，
+     * 异常/中断投递直接 CPU_LOCKUP_RESET（rst:0x1a），连 mtvec 里的死循环
+     * 都执行不到（ch06 复现）。IDF 同样把异常入口放 IRAM。 */
+    .trap_ram : ALIGN(4)
+    {
+        KEEP(*(.trap_ram))
+        . = ALIGN(4);
     } > sram
 
     /* 有初值的可写数据。本布局 LMA == VMA：_data_load_start == _data_start。 */

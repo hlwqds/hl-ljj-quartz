@@ -58,7 +58,13 @@ inline fn reg(offset: usize) *volatile u32 {
 ///
 /// bootloader 很可能已经打开（它自己也要计时），这里的写是幂等的：
 /// 只置位、不清位，不会把计数器复位，因此不会打乱 bootloader 留下的时间轴。
+/// HP_SYS_CLKRST 的 SYSTIMER_CTRL0（+0x120）：bit0 APB 时钟、bit4 计数器时钟。
+/// 真机发现（2026-11-12）：两位复位值都是 0，不开则计数器恒为 0、VALID 不置位。
+const clkrst_systimer_ctrl0: usize = 0x2058_7000 + 0x120;
+
 pub fn init() void {
+    const gate: *volatile u32 = @ptrFromInt(clkrst_systimer_ctrl0);
+    gate.* = gate.* | (1 << 0) | (1 << 4);
     const conf = reg(reg_conf);
     conf.* = conf.* | conf_clk_en | conf_unit0_work_en;
 }
@@ -69,7 +75,10 @@ pub fn init() void {
 /// 等 valid 置位、读 LO/HI/LO 并确认两次 LO 相同（防跨 32 位进位撕裂）。
 pub fn ticks() u64 {
     reg(reg_unit0_op).* = op_update;
-    while ((reg(reg_unit0_op).* & op_valid) == 0) {}
+    var spins: u32 = 0;
+    while ((reg(reg_unit0_op).* & op_valid) == 0) : (spins += 1) {
+        if (spins > 10_000) break; // 防御：SYSTIMER 未就绪时不死循环
+    }
 
     var lo = reg(reg_unit0_value_lo).*;
     while (true) {

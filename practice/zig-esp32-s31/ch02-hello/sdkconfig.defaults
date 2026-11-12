@@ -12,3 +12,11 @@ CONFIG_ESPTOOLPY_FLASHSIZE_16MB=y
 CONFIG_ESPTOOLPY_FLASHSIZE="16MB"
 
 CONFIG_PARTITION_TABLE_SINGLE_APP_LARGE=y
+
+# 真机发现（2026-11-12）：app_main 用 esp_rom_delay_us 忙等 1 s，CPU0 的
+# IDLE 任务永远拿不到时间片，10 s 后 task_wdt 打印
+#   E task_wdt: Task watchdog got triggered ... - IDLE0 (CPU 0)
+# 本章的契约是"Zig 侧只调 ROM 符号"（SPEC §4.2），不能用 vTaskDelay 让出，
+# 因此在 IDF 侧关掉任务看门狗。ch06 起自写调度器时再谈 watchdog。
+CONFIG_ESP_TASK_WDT_EN=n
+CONFIG_ESP_TASK_WDT_INIT=n

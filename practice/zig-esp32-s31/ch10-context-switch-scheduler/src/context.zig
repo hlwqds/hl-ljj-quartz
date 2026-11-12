@@ -95,7 +95,7 @@ comptime {
 // （trapDispatch 及其下游函数会自己保存 s0–s11），而真正的切换发生在
 // switchRaw 里，那里再补上 64 字节的 callee-saved 帧。
 // ---------------------------------------------------------------------------
-export fn trapEntry() linksection(".text.trap") callconv(.naked) noreturn {
+pub export fn trapEntry() linksection(".trap_ram") callconv(.naked) noreturn {
     asm volatile (
         \\        addi    sp, sp, -80
         \\        sw      ra, 0(sp)
@@ -162,13 +162,15 @@ export fn trapEntry() linksection(".text.trap") callconv(.naked) noreturn {
 // 送回它自己的 switchRaw 调用点；如果把 sp 存在单一全局里，后一次切换
 // 会覆盖前一次的值，恢复出来的 sp 就属于别的任务。
 // ---------------------------------------------------------------------------
-var switch_save_slot: *usize = undefined;
-var switch_target_sp: usize = 0;
+export var switch_save_slot: *usize = undefined;
+export var switch_target_sp: usize = 0;
 
 pub fn switchTo(save_slot: *usize, new_sp: usize) void {
+    // Zig 0.17 禁止直接调用 naked 函数；经函数指针调用是官方认可的出口。
+    const raw: *const fn () callconv(.c) void = @ptrCast(&switchRaw);
     switch_save_slot = save_slot;
     switch_target_sp = new_sp;
-    switchRaw();
+    raw();
 }
 
 /// 保存 callee-saved、换 sp、恢复 callee-saved。返回时已经在新任务的栈上。
@@ -218,7 +220,7 @@ fn switchRaw() callconv(.naked) void {
 ///
 /// s0 = 任务入口地址，s1 = 唯一参数（TCB 指针）。入口声明为 noreturn；
 /// 如果它真的返回，`ebreak` 会让调试器停在这里，而不是静默跑飞。
-export fn taskStart() callconv(.naked) noreturn {
+pub export fn taskStart() callconv(.naked) noreturn {
     asm volatile (
         \\        mv      a0, s1
         \\        jalr    s0

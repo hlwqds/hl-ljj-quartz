@@ -40,6 +40,14 @@ const op_valid: u32 = 1 << 29;
 /// SYSTIMER 计数节拍：40 MHz XTAL / 2.5 = 16 MHz，即 1 µs = 16 ticks。
 pub const ticks_per_us: u32 = 16;
 
+/// HP_SYS_CLKRST 的 SYSTIMER_CTRL0（+0x120）：两个门控位都要开。
+/// 真机发现（2026-11-12）：APB_CLK_EN（bit0）只管寄存器访问，CLK_EN（bit4）
+/// 才是计数器时钟；两者复位值均为 0。只开 bit0 时寄存器读得通但恒为 0，
+/// 表象是"量出来 0 MHz、measure 的忙等永不结束"。IDF 在
+/// `esp_timer_impl_early_init()` 里先 enable_bus_clock 再 enable_sys_clock，
+/// 顺序与本函数一致。
+const clkrst_systimer_ctrl0: usize = 0x2058_7000 + 0x120;
+
 fn reg(offset: usize) *volatile u32 {
     return @ptrFromInt(systimer_base + offset);
 }
@@ -49,24 +57,44 @@ fn reg(offset: usize) *volatile u32 {
 /// bootloader 很可能已经打开（它要用 SYSTIMER 计时），这里的写是幂等的：
 /// 只置位、不清位，不会把计数器复位，所以不会影响 bootloader 留下的时间轴。
 pub fn init() void {
+    // 先开总线时钟与计数器时钟（bit0 APB_CLK_EN、bit4 CLK_EN），否则计数值恒为 0。
+    const gate: *volatile u32 = @ptrFromInt(clkrst_systimer_ctrl0);
+    gate.* = gate.* | (1 << 0) | (1 << 4);
+
     const conf = reg(reg_conf);
     conf.* = conf.* | conf_clk_en | conf_unit0_en;
 }
 
 /// 读 SYSTIMER 的 64 位计数（16 MHz，约 36600 年回绕一次）。
+///
+/// 真机发现（2026-11-12）：先写 `UNIT0_OP.UPDATE` 再等 `VALID` 的写法在本板
+/// 会永久挂住（VALID 一直是 0）——IDF 的 `systimer_ll_get_counter_value_*`
+/// 根本不走这条快照路径，而是直接读 LO/HI。这里改成 LO→HI→LO 的两读一致
+/// 检查（防 32 位进位撕裂），与 IDF 的取值口径一致。
 pub fn ticks() u64 {
-    reg(reg_unit0_op).* = op_update;
-    while ((reg(reg_unit0_op).* & op_valid) == 0) {}
+    const hi_mask: u64 = 0x000F_FFFF; // UNIT0_VALUE_HI 只有 20 位
 
-    var lo = reg(reg_unit0_value_lo).*;
-    while (true) {
-        const hi = reg(reg_unit0_value_hi).*;
-        const lo_again = reg(reg_unit0_value_lo).*;
-        if (lo_again == lo) {
-            return (@as(u64, hi) << 32) | @as(u64, lo);
-        }
-        lo = lo_again;
+    // 先走 IDF 的快照路径：写 UPDATE → 等 VALID → 读 HI/LO。
+    // 真机观察：门控没开时 VALID 永远不为 1，所以必须有上限。
+    reg(reg_unit0_op).* = op_update;
+    var spins: u32 = 0;
+    while ((reg(reg_unit0_op).* & op_valid) == 0) : (spins += 1) {
+        if (spins > 10_000) break;
     }
+    const hi = reg(reg_unit0_value_hi).*;
+    const lo = reg(reg_unit0_value_lo).*;
+    if (lo != 0 or hi != 0) return ((@as(u64, hi) & hi_mask) << 32) | @as(u64, lo);
+
+    // 退路：直接读（两读一致防进位撕裂）。
+    var lo2 = reg(reg_unit0_value_lo).*;
+    var guard: u32 = 0;
+    while (guard < 1024) : (guard += 1) {
+        const hi2 = reg(reg_unit0_value_hi).*;
+        const lo3 = reg(reg_unit0_value_lo).*;
+        if (lo3 == lo2) return ((@as(u64, hi2) & hi_mask) << 32) | @as(u64, lo2);
+        lo2 = lo3;
+    }
+    return ((@as(u64, reg(reg_unit0_value_hi).*) & hi_mask) << 32) | @as(u64, reg(reg_unit0_value_lo).*);
 }
 
 /// 自 boot 起的微秒数（低 32 位，约 71 分钟回绕）。
@@ -109,7 +137,11 @@ pub fn measure(window_us: u32) Measurement {
     const start_ticks = ticks();
     const start_cycles = cycleCounter();
 
-    while (ticks() - start_ticks < window_ticks) {}
+    // 防御性上限：SYSTIMER 若没有走动，绝不在这里死循环（真机排障最怕静默挂死）。
+    var spins: u64 = 0;
+    while (ticks() - start_ticks < window_ticks) : (spins += 1) {
+        if (spins > 50_000_000) break;
+    }
 
     const end_cycles = cycleCounter();
     const end_ticks = ticks();

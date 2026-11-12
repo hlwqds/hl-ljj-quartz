@@ -109,3 +109,6 @@ qemu.pid
 # 环境噪音：本机视频代理工作目录（含指向 ~/.zcode 插件缓存的符号链接）
 .video_agent/
 practice/onvif-labs/tests/runs/smoke-xml/
+
+# ch01 出厂全片备份（16 MB，含校准数据，不入库）
+practice/zig-esp32-s31/ch01-board-id/s31-factory-16mb.bin

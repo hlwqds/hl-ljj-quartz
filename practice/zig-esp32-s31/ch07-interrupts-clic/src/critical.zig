@@ -102,9 +102,9 @@ fn writeThresholdRaw(byte: u8) void {
 ///
 /// 语义是“屏蔽优先级 ≤ level 的中断”。所以 `enterLevel(0)` 等于什么都不屏蔽，
 /// `enterLevel(7)` 等于屏蔽全部（但 `MIE` 仍为 1，硬件上仍会采样）。
-pub fn enterLevel(level: u3) u8 {
+pub fn enterLevel(lvl: u3) u8 {
     const old = thresholdRaw();
-    writeThresholdRaw(clic.encodeThreshold(level));
+    writeThresholdRaw(clic.encodeThreshold(lvl));
     return old;
 }
 

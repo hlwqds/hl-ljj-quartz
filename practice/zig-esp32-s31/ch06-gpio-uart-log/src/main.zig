@@ -48,7 +48,7 @@ pub export fn main() void {
 
     // 2) 装 trap 向量。必须在任何可能触发异常的代码之前。
     panic.install();
-    log.hex(.debug, "mtvec", @intCast(@intFromPtr(&panic.trapVector)));
+    log.hex(.info, "mtvec", @intCast(@intFromPtr(&panic.trapVector)));
 
     // 3) 演示引脚：先配成输出（低电平），并在启动时读回一次。
     gpio.configureOutput(demo_pin);

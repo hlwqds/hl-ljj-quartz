@@ -23,6 +23,12 @@ const clic = @import("clic.zig");
 // UART0 接收侧寄存器（RX 侧只在这里出现一次；TX 侧在 main.zig 走 ROM printf）
 // ---------------------------------------------------------------------------
 
+/// Zig 0.17 移除了 `@fence`：环形缓冲的前后顺序屏障直接用 RISC-V 的 `fence`。
+/// 单核 + 中断上下文，这条屏障只为把 head/tail 的发布顺序写清楚。
+inline fn fenceSeqCst() void {
+    asm volatile ("fence rw, rw" ::: .{});
+}
+
 /// UART0 基址：IDF v6.1 `esp32s31.peripherals.ld` 的 `UART0 = 0x2038A000`。
 const uart0_base: usize = 0x2038_A000;
 /// `UART_FIFO_REG(i)` = 基址 + 0x00：读出的低 8 位就是接收字节。
@@ -69,7 +75,7 @@ pub const Handler = *const fn () void;
 
 /// 48 项 = CLIC 的 48 个输入（0..15 内部，16..47 来自中断矩阵）。
 const table_size: usize = 48;
-var table: [table_size]?Handler = [_]?Handler{null} ** table_size;
+var table: [table_size]?Handler = @splat(null);
 
 /// 观测计数：中断总次数、未登记输入次数、最后一次未登记的输入号。
 pub var irq_total: u32 = 0;
@@ -126,7 +132,7 @@ pub fn dispatch(id: clic.Input) void {
 /// 不保存浮点寄存器：本工程全整数（见 README 的“F 寄存器边界”），
 /// 一旦 ISR 里出现 `f` 指令或主循环依赖 `f0`..`f31` 跨中断存活，
 /// 就必须把 32 个 F 寄存器一起存（128 字节）——那是 ch10 上下文切换的主题。
-export fn trapVector() linksection(".text.entry") callconv(.naked) noreturn {
+pub export fn trapVector() linksection(".trap_ram") callconv(.naked) noreturn {
     asm volatile (
         \\        addi    sp, sp, -80
         \\        sw      ra, 0(sp)
@@ -179,7 +185,7 @@ export fn trapVector() linksection(".text.entry") callconv(.naked) noreturn {
 /// `export` 不是装饰：上面的汇编里 `call trapDispatch` 只是一个字符串，
 /// 编译器看不到引用关系，不 export 就会被当成死代码丢掉，链接期报
 /// `undefined symbol: trapDispatch`。
-export fn trapDispatch(cause: u32, mepc: u32, sp: u32) void {
+pub export fn trapDispatch(cause: u32, mepc: u32, sp: u32) void {
     if ((cause & 0x8000_0000) != 0) {
         // CLIC 的中断异常码就是输入号；S31 的 mcause 低位宽度是 6 位。
         const id: clic.Input = @truncate(cause & 0x3F);
@@ -299,18 +305,18 @@ pub const RxRing = struct {
             return false;
         }
         self.buf[@as(usize, head & (capacity - 1))] = b;
-        @fence(.seq_cst);
+        fenceSeqCst();
         vstore(&self.head, head +% 1);
         return true;
     }
 
     /// 消费者：取一个字节；空时返回 null。
     pub fn pop(self: *RxRing) ?u8 {
-        @fence(.seq_cst);
+        fenceSeqCst();
         const tail = vload(&self.tail);
         const head = vload(&self.head);
         if (head == tail) return null;
-        @fence(.seq_cst);
+        fenceSeqCst();
         const b = self.buf[@as(usize, tail & (capacity - 1))];
         vstore(&self.tail, tail +% 1);
         return b;

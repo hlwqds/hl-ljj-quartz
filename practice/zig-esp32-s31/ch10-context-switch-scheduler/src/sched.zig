@@ -116,18 +116,18 @@ pub fn finish(t: *Task) noreturn {
 fn pickNext(prev: *Task) *Task {
     if (pool_len == 0) return &idle_task;
 
-    var start: usize = 0;
+    var first: usize = 0;
     if (!prev.idle) {
         var i: usize = 0;
         while (i < pool_len and &pool[i] != prev) : (i += 1) {}
-        start = if (i < pool_len) (i + 1) % pool_len else 0;
+        first = if (i < pool_len) (i + 1) % pool_len else 0;
     }
 
     var scanned: usize = 0;
     while (scanned < pool_len) : (scanned += 1) {
-        const cand = &pool[start];
+        const cand = &pool[first];
         if (cand.state != .done) return cand;
-        start = (start + 1) % pool_len;
+        first = (first + 1) % pool_len;
     }
     return &idle_task;
 }
@@ -156,7 +156,7 @@ fn schedule(frame: *context.TrapFrame) void {
 }
 
 /// trap 入口调用的分发函数（context.zig 的 `call trapDispatch`）。
-export fn trapDispatch(frame: *context.TrapFrame) void {
+pub export fn trapDispatch(frame: *context.TrapFrame) void {
     const cause = asm volatile ("csrr %[d], mcause"
         : [d] "=r" (-> usize),
     );

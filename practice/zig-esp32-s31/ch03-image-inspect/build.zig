@@ -16,10 +16,12 @@ pub fn build(b: *std.Build) void {
 
     b.installArtifact(exe);
 
-    // zig build run -- <file>
+    // zig build run -Dfile=<path>
+    // Zig 0.17 移除了 Build.args：运行参数改用 -Dfile 选项注入。
+    const file = b.option([]const u8, "file", "image or partition-table file to inspect");
     const run_cmd = b.addRunArtifact(exe);
     run_cmd.step.dependOn(b.getInstallStep());
-    if (b.args) |args| run_cmd.addArgs(args);
+    if (file) |f| run_cmd.addArg(f);
 
     const run_step = b.step("run", "Run the image/partition inspector on a local file");
     run_step.dependOn(&run_cmd.step);

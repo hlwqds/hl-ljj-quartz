@@ -17,13 +17,18 @@ ENTRY(_start)
 
 MEMORY
 {
-    /* RISC-V 的 SRAM 是统一编址：取指与读写共用同一地址空间。 */
+    /* 真机发现（2026-11-12）：S31 bootloader（unpack_load_app）在
+     * SOC_MMU_DI_VADDR_SHARED=1 下断言 rom_index == 2，要求镜像里正好有
+     * 两个落在 0x40000000..0x44000000 的段（IROM + DROM）；只有 SRAM 段的
+     * 镜像会 Assert failed。0x20 偏移与 IDF 一致（paddr%64K == vaddr%64K）。 */
+    irom (rx)  : ORIGIN = 0x40000020, LENGTH = 0x3F000
+    drom (r)   : ORIGIN = 0x40020020, LENGTH = 0x3F000
     sram (rwx) : ORIGIN = 0x2F000000, LENGTH = 0x7AFC0
 }
 
 SECTIONS
 {
-    .text : ALIGN(16)
+    .flash.text : ALIGN(16)
     {
         /* 第一个装载段必须以 esp_app_desc_t 开头（256 字节，魔数 0xABCD5432），
          * 大小与关键偏移由 src/start.zig 的 comptime 断言守住。 */
@@ -34,11 +39,19 @@ SECTIONS
         _text_start = .;
         KEEP(*(.text.entry))
         *(.text .text.*)
+        . = ALIGN(16);
+        _text_end = .;
+    } > irom
+
+    /* 第二个 flash 装载段 = DROM：没有它 bootloader 的 rom_index == 2 断言会挂。 */
+    .flash.rodata : ALIGN(16)
+    {
+        _rodata_start = .;
         *(.rodata .rodata.*)
         *(.srodata .srodata.*)
         . = ALIGN(16);
-        _text_end = .;
-    } > sram
+        _rodata_end = .;
+    } > drom
 
     /* 有初值的可写数据；本布局 LMA == VMA，_start 不需要搬运。 */
     .data : ALIGN(16)

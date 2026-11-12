@@ -103,7 +103,7 @@ comptime {
 //   - ecall：trapDispatch 里 mepc += 4；
 //   - tick ：mepc 不动（回到被打断的指令）。
 // ---------------------------------------------------------------------------
-export fn trapEntry() linksection(".text.trap") callconv(.naked) noreturn {
+pub export fn trapEntry() linksection(".trap_ram") callconv(.naked) noreturn {
     asm volatile (
         \\        addi    sp, sp, -80
         \\        sw      ra, 0(sp)
@@ -169,13 +169,15 @@ export fn trapEntry() linksection(".text.trap") callconv(.naked) noreturn {
 // 写进 `*old_sp` 而不是一个临时全局：任务恢复时控制流会回到它自己的
 // switchRaw 调用点；单一全局会被后一次切换覆盖，恢复出来的 sp 就属于别的任务。
 // ---------------------------------------------------------------------------
-var switch_save_slot: *usize = undefined;
-var switch_target_sp: usize = 0;
+export var switch_save_slot: *usize = undefined;
+export var switch_target_sp: usize = 0;
 
 pub fn switchTo(save_slot: *usize, new_sp: usize) void {
+    // Zig 0.17 禁止直接调用 naked 函数；经函数指针调用是官方认可的出口。
+    const raw: *const fn () callconv(.c) void = @ptrCast(&switchRaw);
     switch_save_slot = save_slot;
     switch_target_sp = new_sp;
-    switchRaw();
+    raw();
 }
 
 /// 保存 callee-saved、换 sp、恢复 callee-saved。返回时已经在新任务的栈上。
@@ -231,7 +233,7 @@ fn switchRaw() callconv(.naked) void {
 /// MIE 清 0），如果这里不 `csrsi`，新任务会带着 MIE=0 一直跑下去，永远
 /// 收不到 tick。被抢占过的任务不走这里：它恢复后逐层返回自己的 trapEntry，
 /// 由 `mret` 把 MPIE 写回 MIE。
-export fn taskStart() callconv(.naked) noreturn {
+pub export fn taskStart() callconv(.naked) noreturn {
     asm volatile (
         \\        csrsi   mstatus, 0x8
         \\        mv      a0, s1

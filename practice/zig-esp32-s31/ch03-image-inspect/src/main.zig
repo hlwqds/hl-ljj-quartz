@@ -82,12 +82,12 @@ const Kind = enum { app_image, partition_table };
 
 /// 往 stdout 打印一行的薄封装：不需要 writer 抽象，也不做缓冲。
 const Out = struct {
-    file: std.fs.File,
+    // Zig 0.17 的 I/O 走 `std.Io.Writer`：输出缓冲由调用方提供，
+    // 句柄（std.Io.File）不再自带 writeAll。
+    w: *std.Io.Writer,
 
     fn print(self: Out, comptime fmt: []const u8, args: anytype) !void {
-        var buf: [512]u8 = undefined;
-        const text = try std.fmt.bufPrint(&buf, fmt, args);
-        try self.file.writeAll(text);
+        try self.w.print(fmt, args);
     }
 
     fn hex(self: Out, bytes: []const u8) !void {
@@ -284,8 +284,10 @@ fn parseAppImage(data: []const u8) !AppImage {
         pos += size;
     }
 
-    // 校验和字节之前可能有 0..15 个 0x00 填充，使该字节落在 16 字节边界上。
-    const checksum_off = (pos + checksum_align - 1) & ~(checksum_align - 1);
+    // IDF 的规则（esp_image_format.c: process_checksum）：把「镜像长度 + 1 个校验和字节」
+    // 补齐到 16 字节块，校验和是这个块的**最后一个字节**。因此校验和偏移是
+    // align16(pos + 1) - 1 —— 16 字节对齐的是紧随其后的 SHA256 起始地址，不是校验和本身。
+    const checksum_off = ((pos + 1 + checksum_align - 1) & ~(checksum_align - 1)) - 1;
     if (checksum_off >= data.len) {
         return fail("no checksum byte after the last segment (need offset 0x{x})", .{checksum_off});
     }
@@ -371,7 +373,7 @@ fn reportAppImage(out: Out, data: []const u8) !bool {
     try out.print("  payload total    : {d} bytes\n", .{payload_total});
 
     try out.print("\n[checksum]\n", .{});
-    try out.print("  offset           : 0x{x} (16-byte aligned)\n", .{img.checksum_off});
+    try out.print("  offset           : 0x{x} (末尾字节；其后的 SHA256 起始 16 字节对齐)\n", .{img.checksum_off});
     try out.print("  stored           : 0x{x:0>2}\n", .{img.stored_checksum});
     try out.print("  computed (XOR)   : 0x{x:0>2}\n", .{img.computed_checksum});
     if (img.stored_checksum == img.computed_checksum) {
@@ -468,11 +470,12 @@ fn reportPartitionTable(out: Out, data: []const u8) !bool {
     i = 0;
     while (i < count) : (i += 1) {
         const entry = entries[i];
-        const align: u32 = if (entry.ptype == 0x00) 0x10000 else 0x1000;
-        if (entry.offset % align != 0) {
+        // `align` 在 Zig 0.17 起是关键字，局部变量改名为 align_bytes。
+        const align_bytes: u32 = if (entry.ptype == 0x00) 0x10000 else 0x1000;
+        if (entry.offset % align_bytes != 0) {
             try out.print(
                 "  note: '{s}' at 0x{x} is not {d} KB aligned\n",
-                .{ entry.label[0..entry.label_len], entry.offset, align / 1024 },
+                .{ entry.label[0..entry.label_len], entry.offset, align_bytes / 1024 },
             );
         }
         if (@as(u64, entry.offset) + @as(u64, entry.size) > 0x1000000) {
@@ -550,11 +553,8 @@ fn printUsage() void {
     , .{});
 }
 
-fn run() !void {
-    const allocator = std.heap.page_allocator;
-
-    const args = try std.process.argsAlloc(allocator);
-    defer std.process.argsFree(allocator, args);
+fn run(init: std.process.Init, args: []const [:0]const u8) !void {
+    const allocator = init.gpa;
 
     if (args.len != 2) {
         printUsage();
@@ -562,13 +562,15 @@ fn run() !void {
     }
     const path = args[1];
 
-    const data = std.fs.cwd().readFileAlloc(allocator, path, max_file_bytes) catch |err| {
+    const data = std.Io.Dir.cwd().readFileAlloc(init.io, path, allocator, .limited(max_file_bytes)) catch |err| {
         std.debug.print("error: cannot read '{s}': {s}\n", .{ path, @errorName(err) });
         std.process.exit(1);
     };
     defer allocator.free(data);
 
-    const out = Out{ .file = std.fs.File.stdout() };
+    var stdout_buf: [4096]u8 = undefined;
+    var stdout_writer = std.Io.File.stdout().writer(init.io, &stdout_buf);
+    const out = Out{ .w = &stdout_writer.interface };
     try out.print("file        : {s}\n", .{path});
 
     const kind = blk: {
@@ -585,11 +587,16 @@ fn run() !void {
     };
 
     try out.print("\nverdict: {s}\n", .{if (ok) "OK" else "FAILED"});
+    try stdout_writer.interface.flush();
     if (!ok) std.process.exit(1);
 }
 
-pub fn main() void {
-    run() catch |err| {
+pub fn main(init: std.process.Init) void {
+    const args = init.minimal.args.toSlice(init.arena.allocator()) catch {
+        std.debug.print("error: cannot read command line\n", .{});
+        std.process.exit(1);
+    };
+    run(init, args) catch |err| {
         // fail() 已经打印过具体原因，这里不再重复。
         if (err != error.Malformed) {
             std.debug.print("error: {s}\n", .{@errorName(err)});

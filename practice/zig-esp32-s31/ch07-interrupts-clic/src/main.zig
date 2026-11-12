@@ -130,23 +130,28 @@ inline fn reg(addr: usize) *volatile u32 {
     return @ptrFromInt(addr);
 }
 
+/// HP_SYS_CLKRST 的 SYSTIMER_CTRL0（+0x120）：bit0 APB 时钟、bit4 计数器时钟。
+/// 真机发现（2026-11-12）：两位复位值都是 0；不先开，计数值恒为 0 / VALID 永不置位。
+const clkrst_systimer_ctrl0: usize = 0x2058_7000 + 0x120;
+
 fn systimerInit() void {
+    const gate: *volatile u32 = @ptrFromInt(clkrst_systimer_ctrl0);
+    gate.* = gate.* | (1 << 0) | (1 << 4);
     const p = reg(st_conf);
     p.* = p.* | st_conf_clk_en | st_conf_unit0_en;
 }
 
 /// 读 64 位计数：请求快照 → 等 valid → 读 LO/HI/LO 防撕裂（ch05 的做法）。
 fn systimerTicks() u64 {
+    // 快照路径要等 VALID；给上限，避免 SYSTIMER 未就绪时死循环。
     reg(st_unit0_op).* = st_op_update;
-    while ((reg(st_unit0_op).* & st_op_valid) == 0) {}
-
-    var lo = reg(st_unit0_value_lo).*;
-    while (true) {
-        const hi = reg(st_unit0_value_hi).*;
-        const lo_again = reg(st_unit0_value_lo).*;
-        if (lo_again == lo) return (@as(u64, hi) << 32) | @as(u64, lo);
-        lo = lo_again;
+    var spins: u32 = 0;
+    while ((reg(st_unit0_op).* & st_op_valid) == 0) : (spins += 1) {
+        if (spins > 10_000) break;
     }
+    const hi = reg(st_unit0_value_hi).* & 0x000F_FFFF;
+    const lo = reg(st_unit0_value_lo).*;
+    return (@as(u64, hi) << 32) | @as(u64, lo);
 }
 
 fn systimerUs() u32 {

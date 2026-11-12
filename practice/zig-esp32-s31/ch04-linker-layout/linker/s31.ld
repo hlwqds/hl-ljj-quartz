@@ -1,14 +1,16 @@
 /*
- * ch04-linker-layout —— 形态 B 的最小链接脚本（SRAM-only 布局）
+ * ch04-linker-layout —— 形态 B 的最小链接脚本（代码在 flash 窗口，数据在 SRAM）
  *
- * 这一版做两件事：
- *   1) 在第一个装载段的最前面放 256 字节的 esp_app_desc_t（IDF bootloader 认
- *      镜像的前提，见 src/start.zig 的 app_desc）；
- *   2) 把 .text/.rodata/.data/.bss 全部放进 SRAM，让 ENTRY(_start) +
- *      esptool elf2image + IDF 二级 bootloader 这条链在最小假设下成立。
+ * 真机发现（2026-11-12）：S31 的 bootloader（bootloader_utility.c:
+ * unpack_load_app）在 SOC_MMU_DI_VADDR_SHARED=1 下断言 rom_index == 2——
+ * 镜像里**必须正好有两个**落在 0x40000000..0x44000000 的段（IROM + DROM），
+ * 只有 SRAM 段的镜像会直接
+ *   Assert failed in unpack_load_app ... (rom_index == 2)
+ * 因此本版把 .text 放进 irom_seg（0x40000020）、.rodata 放进 drom_seg
+ * （0x40020020），.data/.bss/栈留在 SRAM（0x2F000000）。
  *
- * 所有段的 LMA == VMA，所以 _start 不需要搬运 .data；flash 映射
- * （IROM/DROM 窗口 0x40000020）留到下一版布局。
+ * 这两段由二级 bootloader 配好 MMU 后再跳进 _start，所以取指经过 cache；
+ * .data 作为独立装载段由 bootloader 搬进 SRAM，_start 不搬。
  *
  * 地址来源：ESP-IDF v6.1 的 esp32s31 内存定义
  *   IDF_PATH/components/esp_system/ld/esp32s31/memory.ld.in
@@ -21,14 +23,16 @@ ENTRY(_start)
 
 MEMORY
 {
-    /* RISC-V 的 SRAM 是统一编址：取指与读写共用同一地址空间。 */
+    /* 0x20 偏移与 IDF 一致：让 paddr % 64KB == vaddr % 64KB。 */
+    irom (rx)  : ORIGIN = 0x40000020, LENGTH = 0x3F000
+    drom (r)   : ORIGIN = 0x40020020, LENGTH = 0x3F000
     sram (rwx) : ORIGIN = 0x2F000000, LENGTH = 0x7AFC0
 }
 
 SECTIONS
 {
-    /* 代码与只读数据放在一起：将来整体迁到 flash 映射窗口时只改这一段。 */
-    .text : ALIGN(16)
+    /* 第一个装载段 = IROM：app_desc 在最前，其后是代码。 */
+    .flash.text : ALIGN(16)
     {
         /*
          * 第一个装载段必须以 esp_app_desc_t 开头：256 字节、魔数 0xABCD5432。
@@ -43,11 +47,19 @@ SECTIONS
         _text_start = .;
         KEEP(*(.text.entry))
         *(.text .text.*)
+        . = ALIGN(16);
+        _text_end = .;
+    } > irom
+
+    /* 第二个 flash 装载段 = DROM：常量不加 .rodata 前缀就落进 SRAM，会少一段。 */
+    .flash.rodata : ALIGN(16)
+    {
+        _rodata_start = .;
         *(.rodata .rodata.*)
         *(.srodata .srodata.*)
         . = ALIGN(16);
-        _text_end = .;
-    } > sram
+        _rodata_end = .;
+    } > drom
 
     /* 有初值的可写数据。本布局 LMA == VMA：_data_load_start == _data_start。 */
     .data : ALIGN(16)

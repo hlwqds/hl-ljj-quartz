@@ -1,0 +1,73 @@
+Executing action: monitor
+Running idf_monitor in directory /home/huanglin/code/hl-ljj-quartz/practice/zig-esp32-s31/ch02-hello
+Executing "/home/huanglin/.espressif/python_env/idf6.1_py3.13_env/bin/python /home/huanglin/esp/esp-idf/tools/idf_monitor.py -p /dev/ttyUSB1 -b 115200 --toolchain-prefix riscv32-esp-elf- --target esp32s31 --revision 0 --decode-panic backtrace /home/huanglin/code/hl-ljj-quartz/practice/zig-esp32-s31/ch02-hello/build/zig_s31_hello.elf /home/huanglin/code/hl-ljj-quartz/practice/zig-esp32-s31/ch02-hello/build/bootloader/bootloader.elf -m '/home/huanglin/.espressif/python_env/idf6.1_py3.13_env/bin/python' '/home/huanglin/esp/esp-idf/tools/idf.py' '-p' '/dev/ttyUSB1'"...
+--- esp-idf-monitor 1.10.0 on /dev/ttyUSB1 115200
+--- Standard input is not a TTY, running in non-interactive mode. Reading commands from stdin: reset, flash, flash-all, app-flash, output, log, timestamps, bootloader, send <text>, sleep <seconds>, expect [--timeout <seconds>] <regex>, exit | Quit: 'exit' command, EOF or Ctrl+C
+--- No commands on standard input, watching serial output only...
+ESP-ROM:esp32s31-20251218
+Build:Dec 18 2025
+rst:0x1 (POWERON),boot:0x58 (SPI_FAST_FLASH_BOOT)
+SPI mode:DIO, clock div:1
+load:0x2f0740c0,len:0x168c
+load:0x2f06a2b0,len:0xc7c
+--- 0x2f06a2b0: esp_bootloader_get_description at /home/huanglin/esp/esp-idf/components/esp_bootloader_format/esp_bootloader_desc.c:40
+load:0x2f06cfb0,len:0x3368
+--- 0x2f06cfb0: is_xmc_chip_strict at /home/huanglin/esp/esp-idf/components/bootloader_support/bootloader_flash/src/bootloader_flash.c:911
+entry 0x2f06a2ba
+--- 0x2f06a2ba: call_start_cpu0 at /home/huanglin/esp/esp-idf/components/bootloader/subproject/main/bootloader_start.c:27
+[0;32mI (26) boot: ESP-IDF v6.1 2nd stage bootloader[0m
+[0;32mI (26) boot: compile time Nov 12 2026 23:22:10[0m
+[0;32mI (26) boot: Multicore bootloader[0m
+[0;32mI (28) boot: chip revision: v0.0[0m
+[0;32mI (29) boot: efuse block revision: v0.2[0m
+[0;32mI (32) boot.esp32s31: SPI Speed      : 80MHz[0m
+[0;32mI (36) boot.esp32s31: SPI Mode       : DIO[0m
+[0;32mI (40) boot.esp32s31: SPI Flash Size : 16MB[0m
+[0;32mI (44) boot: Enabling RNG early entropy source...[0m
+[0;32mI (49) boot: Partition Table:[0m
+[0;32mI (51) boot: ## Label            Usage          Type ST Offset   Length[0m
+[0;32mI (58) boot:  0 nvs              WiFi data        01 02 00009000 00006000[0m
+[0;32mI (64) boot:  1 phy_init         RF data          01 01 0000f000 00001000[0m
+[0;32mI (71) boot:  2 factory          factory app      00 00 00010000 00177000[0m
+[0;32mI (78) boot: End of partition table[0m
+[0;32mI (81) esp_image: segment 0: paddr=00010020 vaddr=40000020 size=004f0h (  1264) map[0m
+[0;32mI (90) esp_image: segment 1: paddr=00010518 vaddr=00000000 size=0fb00h ( 64256) [0m
+[0;32mI (107) esp_image: segment 2: paddr=00020020 vaddr=40020020 size=007cch (  1996) map[0m
+[0;32mI (109) boot: Loaded app from partition at offset 0x10000[0m
+[0;32mI (110) boot: Disabling RNG early entropy source...[0m
+
+=== ch05-clock-reset-wdt ===
+reset reason: code=1 (CHIP_POWER_ON, ESP_RST_POWERON)
+  meaning: 上电或复位键，属于冷启动
+clock: cycles=16000012 ticks=3200030 (window 200001 us) -> CPU 80 MHz
+  expect 320 (CPLL) on this board; 40 means XTAL-only boot
+rwdt: en=1 flashboot=0 stg0=0 stg1=0 stg2=0 stg3=0 hold=612000
+tick 1 at 706683 us
+tick 2 at 1206845 us
+tick 3 at 1707013 us
+tick 4 at 2207182 us
+tick 5 at 2707351 us
+tick 6 at 3207520 us
+tick 7 at 3707688 us
+tick 8 at 4207857 us
+tick 9 at 4708026 us
+tick 10 at 5208203 us
+tick 11 at 5708380 us
+tick 12 at 6208557 us
+tick 13 at 6708734 us
+tick 14 at 7208910 us
+tick 15 at 7709087 us
+tick 16 at 8209264 us
+tick 17 at 8709441 us
+tick 18 at 9209618 us
+tick 19 at 9709795 us
+tick 20 at 10209972 us
+tick 21 at 10710157 us
+tick 22 at 11210342 us
+tick 23 at 11710527 us
+tick 24 at 12210712 us
+tick 25 at 12710897 us
+tick 26 at 13211082 us
+tick 27 at 13711266 us
+tick 28 at 14211451 us
+tick 29 at 14711636 us

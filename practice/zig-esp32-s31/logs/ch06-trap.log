@@ -1,0 +1,11 @@
+[I] toggles=4 rx drops=0
+
+[W] trap demo: 即将执行 0x00000000（非法指令），板子会停机，需复位
+[E] ---- trap ----
+cause : illegal instruction
+mcause=0x30000002
+mepc  =0x400005be
+ra    =0x400005be
+mtval =0x00000000
+sp    =0x2f07af70
+[E] halted: 需要复位（EN）或重新烧录

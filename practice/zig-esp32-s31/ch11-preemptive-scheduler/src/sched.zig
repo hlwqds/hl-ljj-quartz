@@ -50,8 +50,8 @@ var pool: [max_tasks]Task = undefined;
 var pool_len: usize = 0;
 
 /// 每条优先级链的头/尾。空链时两者都是 null。
-var ready_head: [prio_levels]?*Task = [_]?*Task{null} ** prio_levels;
-var ready_tail: [prio_levels]?*Task = [_]?*Task{null} ** prio_levels;
+var ready_head: [prio_levels]?*Task = @splat(null);
+var ready_tail: [prio_levels]?*Task = @splat(null);
 
 var current: ?*Task = null;
 var switches: u64 = 0;
@@ -300,7 +300,7 @@ pub fn requestYield() void {
 }
 
 /// trap 入口调用的分发函数（context.zig 的 `call trapDispatch`）。
-export fn trapDispatch(frame: *context.TrapFrame) void {
+pub export fn trapDispatch(frame: *context.TrapFrame) void {
     const cause = asm volatile ("csrr %[d], mcause"
         : [d] "=r" (-> usize),
     );

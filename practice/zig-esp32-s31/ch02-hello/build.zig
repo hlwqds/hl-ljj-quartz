@@ -13,7 +13,8 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    const lib = b.addStaticLibrary(.{
+    const lib = b.addLibrary(.{
+        .linkage = .static,
         .name = "main_zig",
         .root_module = b.createModule(.{
             .root_source_file = b.path("main/main.zig"),

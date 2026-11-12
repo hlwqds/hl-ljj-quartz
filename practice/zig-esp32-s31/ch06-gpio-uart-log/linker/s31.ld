@@ -9,7 +9,7 @@
  *
  * 与 ch04 的差别只有一处语义变化：.text.entry 现在承载 trap 向量
  * （src/panic.zig 的 trapVector）。它必须 4 字节对齐（mtvec 的 MODE=0 要求
- * 基址 4 字节对齐），而 `.text : ALIGN(16)` 之后紧跟 `KEEP(*(.text.entry))`，
+ * 基址 4 字节对齐），而 `.flash.text : ALIGN(16)` 之后紧跟 `KEEP(*(.text.entry))`，
  * 因此它的地址天然是 16 的倍数，满足要求。
  *
  * 所有段的 LMA == VMA，所以 _start 不需要搬运 .data；flash 映射
@@ -26,7 +26,12 @@ ENTRY(_start)
 
 MEMORY
 {
-    /* RISC-V 的 SRAM 是统一编址：取指与读写共用同一地址空间。 */
+    /* 真机发现（2026-11-12）：S31 bootloader（unpack_load_app）在
+     * SOC_MMU_DI_VADDR_SHARED=1 下断言 rom_index == 2，要求镜像里正好有
+     * 两个落在 0x40000000..0x44000000 的段（IROM + DROM）；只有 SRAM 段的
+     * 镜像会 Assert failed。0x20 偏移与 IDF 一致（paddr%64K == vaddr%64K）。 */
+    irom (rx)  : ORIGIN = 0x40000020, LENGTH = 0x3F000
+    drom (r)   : ORIGIN = 0x40020020, LENGTH = 0x3F000
     sram (rwx) : ORIGIN = 0x2F000000, LENGTH = 0x7AFC0
 }
 
@@ -56,10 +61,26 @@ SECTIONS
         KEEP(*(.text.entry))
 
         *(.text .text.*)
+        . = ALIGN(16);
+        _text_end = .;
+    } > irom
+
+    /* 第二个 flash 装载段 = DROM：没有它 bootloader 的 rom_index == 2 断言会挂。 */
+    .flash.rodata : ALIGN(16)
+    {
+        _rodata_start = .;
         *(.rodata .rodata.*)
         *(.srodata .srodata.*)
         . = ALIGN(16);
-        _text_end = .;
+        _rodata_end = .;
+    } > drom
+
+    /* trap 向量放 SRAM：真机发现异常向量放 flash 时，异常投递会直接
+     * CPU_LOCKUP_RESET（rst:0x1a），连 mtvec 里的死循环都执行不到。 */
+    .trap_ram : ALIGN(4)
+    {
+        KEEP(*(.trap_ram))
+        . = ALIGN(4);
     } > sram
 
     /* 有初值的可写数据。本布局 LMA == VMA：_data_load_start == _data_start。 */

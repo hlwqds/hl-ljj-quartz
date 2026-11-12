@@ -66,7 +66,7 @@ const AppDesc = extern struct {
 
 /// 把字符串放进定长、零填充的字段。
 fn fixed(comptime text: []const u8, comptime size: usize) [size]u8 {
-    var out = [_]u8{0} ** size;
+    var out: [size]u8 = @splat(0);
     @memcpy(out[0..text.len], text);
     return out;
 }
@@ -94,13 +94,13 @@ export const app_desc: AppDesc linksection(".app_desc") = .{
     .time = fixed("00:00:00", 16),
     .date = fixed("2026-11-14", 16),
     .idf_ver = fixed("v6.1", 32),
-    .app_elf_sha256 = [_]u8{0} ** 32,
+    .app_elf_sha256 = @splat(0),
     .min_efuse_blk_rev_full = 0,
     .max_efuse_blk_rev_full = 0,
     .mmu_page_size = 16, // log2(64 KiB)
     .spi_flash_mode = 2, // DIO
     .reserv3 = 0,
-    .reserv2 = [_]u8{0} ** 72,
+    .reserv2 = @splat(0),
 };
 
 comptime {
@@ -120,7 +120,7 @@ comptime {
 /// 应用入口。符号名由链接脚本的 ENTRY(_start) 指定，也是 elf2image 写进
 /// 镜像头 entry 字段的地址。它不在 SRAM 基址上——基址是 app_desc，
 /// trap 向量与 `_start` 紧跟在 256 字节描述之后。
-export fn _start() callconv(.naked) noreturn {
+pub export fn _start() callconv(.naked) noreturn {
     asm volatile (
         \\        # ---- 1) 关全局中断 ----
         \\        csrci   mstatus, 0x8          # mstatus.MIE = 0
@@ -129,6 +129,27 @@ export fn _start() callconv(.naked) noreturn {
         \\        # ---- 2) 设置栈指针与 gp ----
         \\        la      sp, _stack_top        # 向下增长；_stack_top 16 字节对齐
         \\        la      gp, __global_pointer$ # 链接器 relaxation 的 small-data 锚点
+        \\
+        \\        # ---- 2.5) 关掉 RTC/LP 看门狗 ----
+        \\        # 真机发现（2026-11-12）：二级 bootloader 交接时 RTC WDT 仍在跑，
+        \\        # 裸机应用不喂狗，约 9 s 后复位成 CHIP_LP_WDT_RESET：
+        \\        #   rst:0x10 (CHIP_LP_WDT_RESET),boot:0x58 (SPI_FAST_FLASH_BOOT)
+        \\        # IDF 应用在 cpu_start 里关它，这里自己关；后续章节用到 WDT 再打开。
+        \\        # RTC_WDT 基址 0x20801000：WPROTECT(+0x18, 键 0x50D83AA1)、
+        \\        # FEED(+0x14, bit31)、CONFIG0(+0x0, EN bit31 / STG0[30:28])。
+        \\        li      t0, 0x20801018
+        \\        li      t1, 0x50D83AA1
+        \\        sw      t1, 0(t0)
+        \\        li      t0, 0x20801014
+        \\        li      t1, 0x80000000
+        \\        sw      t1, 0(t0)
+        \\        li      t0, 0x20801000
+        \\        lw      t1, 0(t0)
+        \\        li      t2, 0x8FFFFFFF       # 清 EN(31) 与 STG0(30:28)
+        \\        and     t1, t1, t2
+        \\        sw      t1, 0(t0)
+        \\        li      t0, 0x20801018
+        \\        sw      zero, 0(t0)          # 恢复写保护
         \\
         \\        # ---- 3) 清零 .bss ----
         \\        la      t0, _bss_start

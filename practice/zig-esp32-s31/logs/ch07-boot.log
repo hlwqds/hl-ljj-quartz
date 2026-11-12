@@ -1,0 +1,64 @@
+Executing action: monitor
+Running idf_monitor in directory /home/huanglin/code/hl-ljj-quartz/practice/zig-esp32-s31/ch02-hello
+Executing "/home/huanglin/.espressif/python_env/idf6.1_py3.13_env/bin/python /home/huanglin/esp/esp-idf/tools/idf_monitor.py -p /dev/ttyUSB1 -b 115200 --toolchain-prefix riscv32-esp-elf- --target esp32s31 --revision 0 --decode-panic backtrace /home/huanglin/code/hl-ljj-quartz/practice/zig-esp32-s31/ch02-hello/build/zig_s31_hello.elf /home/huanglin/code/hl-ljj-quartz/practice/zig-esp32-s31/ch02-hello/build/bootloader/bootloader.elf -m '/home/huanglin/.espressif/python_env/idf6.1_py3.13_env/bin/python' '/home/huanglin/esp/esp-idf/tools/idf.py' '-p' '/dev/ttyUSB1'"...
+--- esp-idf-monitor 1.10.0 on /dev/ttyUSB1 115200
+--- Standard input is not a TTY, running in non-interactive mode. Reading commands from stdin: reset, flash, flash-all, app-flash, output, log, timestamps, bootloader, send <text>, sleep <seconds>, expect [--timeout <seconds>] <regex>, exit | Quit: 'exit' command, EOF or Ctrl+C
+--- No commands on standard input, watching serial output only...
+ESP-ROM:esp32s31-20251218
+Build:Dec 18 2025
+rst:0x1 (POWERON),boot:0x58 (SPI_FAST_FLASH_BOOT)
+SPI mode:DIO, clock div:1
+load:0x2f0740c0,len:0x168c
+load:0x2f06a2b0,len:0xc7c
+--- 0x2f06a2b0: esp_bootloader_get_description at /home/huanglin/esp/esp-idf/components/esp_bootloader_format/esp_bootloader_desc.c:40
+load:0x2f06cfb0,len:0x3368
+--- 0x2f06cfb0: is_xmc_chip_strict at /home/huanglin/esp/esp-idf/components/bootloader_support/bootloader_flash/src/bootloader_flash.c:911
+entry 0x2f06a2ba
+--- 0x2f06a2ba: call_start_cpu0 at /home/huanglin/esp/esp-idf/components/bootloader/subproject/main/bootloader_start.c:27
+[0;32mI (26) boot: ESP-IDF v6.1 2nd stage bootloader[0m
+[0;32mI (26) boot: compile time Nov 12 2026 23:23:11[0m
+[0;32mI (26) boot: Multicore bootloader[0m
+[0;32mI (28) boot: chip revision: v0.0[0m
+[0;32mI (29) boot: efuse block revision: v0.2[0m
+[0;32mI (32) boot.esp32s31: SPI Speed      : 80MHz[0m
+[0;32mI (36) boot.esp32s31: SPI Mode       : DIO[0m
+[0;32mI (40) boot.esp32s31: SPI Flash Size : 16MB[0m
+[0;32mI (44) boot: Enabling RNG early entropy source...[0m
+[0;32mI (49) boot: Partition Table:[0m
+[0;32mI (51) boot: ## Label            Usage          Type ST Offset   Length[0m
+[0;32mI (58) boot:  0 nvs              WiFi data        01 02 00009000 00006000[0m
+[0;32mI (64) boot:  1 phy_init         RF data          01 01 0000f000 00001000[0m
+[0;32mI (71) boot:  2 factory          factory app      00 00 00010000 00177000[0m
+[0;32mI (78) boot: End of partition table[0m
+[0;32mI (81) esp_image: segment 0: paddr=00010020 vaddr=40000020 size=00e60h (  3680) map[0m
+[0;32mI (90) esp_image: segment 1: paddr=00010e88 vaddr=2f000000 size=00070h (   112) load[0m
+[0;32mI (97) esp_image: segment 2: paddr=00010f00 vaddr=00000000 size=0f118h ( 61720) [0m
+[0;32mI (113) esp_image: segment 3: paddr=00020020 vaddr=40020020 size=008bch (  2236) map[0m
+[0;32mI (116) boot: Loaded app from partition at offset 0x10000[0m
+[0;32mI (117) boot: Disabling RNG early entropy source...[0m
+
+[I] ch07-interrupts-clic | form B (Zig ELF + IDF 2nd-stage bootloader)
+[I] console: UART0 TX=GPIO58 RX=GPIO59 115200 8N1 (ROM default)
+[I] demo gpio=5
+[I] clic inputs=48
+[I] clic priority bits (raw)=1
+[I] clic version (raw)=0x00000000
+[I] clic hw vector=1
+[I] mtvec=0x2f000003
+--- 0x2f000003: _vector_table at ??:?
+[I] uart input id=17
+[I] tick input id=16
+[I] soft input id=19
+[I] interrupts on: 1 kHz systimer tick + UART0 rx (polling removed)
+[I] ?  help / p  counters / c  critical test / s  software irq / t  trap demo
+[I] ticks/s=0
+[I] ticks/s=0
+[I] ticks/s=0
+[I] ticks/s=0
+[I] ticks/s=0
+[I] ticks/s=0
+[I] ticks/s=0
+[I] ticks/s=0
+[I] ticks/s=0
+[I] ticks/s=0
+[I] ticks/s=0

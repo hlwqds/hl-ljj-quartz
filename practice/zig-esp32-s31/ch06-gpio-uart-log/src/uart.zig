@@ -80,6 +80,7 @@ pub fn putHex32(label: [*:0]const u8, v: u32) void {
         if (shift == 0) break;
         shift -= 4;
     }
+    putc('\n');
 }
 
 /// 输出 `label=<十进制>`。自己算十进制而不是用 `%d`：ROM 的 printf 是 C 变参，
