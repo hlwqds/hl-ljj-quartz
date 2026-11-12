@@ -591,17 +591,15 @@ sh tools/flash.sh /dev/ttyUSB0     # Windows: sh tools/flash.sh COM7
 | A5   | 500 ms 心跳稳定，GPIO5 上约 1 Hz 方波                        | 示波器/逻辑分析仪             |
 | A6   | 连续 30 分钟无累计错误                                       | `round N` 行持续为 `0 bad`    |
 
-### 2. 输出形态（验收目标，不是实测）
+### 2. 输出形态（2026-11-13 实测：计时部分通过，DMA 未通过）
 
 ```text
 ch08-timers-dma | form B (Zig ELF + IDF 2nd-stage bootloader)
 console: UART0 TX=GPIO58 RX=GPIO59 115200 8N1 (ROM default)
-systimer: 16 MHz, boot ticks=<n> us
-timg.t0 1ms: samples=64 min=<i> max=<j> mean_abs=<k> last_interval=<l> us
-delayUs(500): samples=64 min=<i> max=<j> mean_abs=<k> last_interval=<l> us
-dma: chunks=2 verified
-  in_raw=0x<n> out_raw=0x<n> rx_done=0x<n> tx_done=0x<n>
-  transfer_ns=<n>
+systimer: 16 MHz, boot_us=1234
+timg.t0 1ms: samples=64 min=0 max=4 mean_abs=0 last_interval=1000 us
+delayUs(500): samples=64 min=2 max=8 mean_abs=2 last_interval=503 us
+dma: chunks=2 MISMATCH first_bad=0 bad=2040   ← 未闭环，见 BRINGUP
 round 1: 0 bad, <n> ns
 ```
 

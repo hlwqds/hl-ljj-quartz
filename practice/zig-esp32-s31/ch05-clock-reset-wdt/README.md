@@ -208,13 +208,13 @@ python -m serial.tools.miniterm /dev/ttyUSB0 115200
 reset reason: code=1 (CHIP_POWER_ON, ESP_RST_POWERON)
   meaning: 上电或复位键，属于冷启动
 clock: cycles=16000012 ticks=3200030 (window 200001 us) -> CPU 80 MHz
-  expect 320 (CPLL) on this board; 40 means XTAL-only boot
+  expect 80 on this board (IDF bootloader default); 40 means XTAL-only boot
 rwdt: en=<0 或 1> flashboot=<0 或 1> stg0=<n> stg1=<n> stg2=<n> stg3=<n> hold=<n>
 tick 1 at <n> us
 tick 2 at <n+500000 左右> us
 ```
 
-`<...>` 都是待真机回填的占位。`cycles` 与 `ticks` 是原始读数，`-> CPU 320 MHz`
+`<...>` 是形态说明里的占位；实测值见 `../logs/ch05-boot.log`。`cycles` 与 `ticks` 是原始读数，`-> CPU 80 MHz`
 是换算结果；两者的比例必须自洽（`cycles / (ticks/16)` 约等于打印出的 MHz）。
 
 ## 证据与超时实验

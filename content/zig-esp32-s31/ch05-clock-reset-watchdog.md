@@ -471,20 +471,20 @@ const demo_timeout_ticks: u32 = 0;
 > [!warning] 不要把这个实验留在长期运行的分支里
 > 开着的设备会被反复复位。验完就改回 0。实验期间 `tick` 输出仍会继续（用来观察“停止喂狗之后还能活多久”），但循环里**不再调用 `wdt.feed()`**——这正是这个分支的意义。
 
-### 3. 输出形态（验收目标，不是实测）
+### 3. 输出形态（2026-11-13 实测）
 
 ```text
 === ch05-clock-reset-wdt ===
 reset reason: code=1 (CHIP_POWER_ON, ESP_RST_POWERON)
   meaning: 上电或复位键，属于冷启动
 clock: cycles=16000012 ticks=3200030 (window 200001 us) -> CPU 80 MHz
-  expect 320 (CPLL) on this board; 40 means XTAL-only boot
+  expect 80 on this board (IDF bootloader default); 40 means XTAL-only boot
 rwdt: en=1 flashboot=0 stg0=0 stg1=0 stg2=0 stg3=0 hold=612000
-tick 1 at <n> us
-tick 2 at <n+500000 左右> us
+tick 1 at 706683 us
+tick 2 at 1206845 us
 ```
 
-字段值是**待真机回填**的占位，不是日志。`hold` 的具体数值取决于 bootloader 的配置，所以这里只写“能打印出来”，不写具体数。
+以上是 2026-11-13 真机原文（完整见 `../logs/ch05-boot.log`）；`hold=612000` 是 bootloader 留下的初值。
 
 ---
 

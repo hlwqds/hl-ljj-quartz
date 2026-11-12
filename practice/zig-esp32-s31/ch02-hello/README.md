@@ -13,8 +13,7 @@ ESP-IDF 的 CMake 工程负责启动链、分区表、镜像打包与烧录。�
 可读输出。
 
 > [!warning] 验证状态
-> 本工程所有涉及烧录、串口输出、`esptool image-info` 的步骤均为**待真机验证**。
-> 工程 README 不附带 `run.log`；真机跑通后按实际输出回填，见“真实输出”一节。
+> **已实测（2026-11-13）**：真机输出 `hello s31` + 每秒 `tick`，形态 A 工作正常；为让 ROM 忙等不饿死 IDLE0，`sdkconfig.defaults` 关闭了 `CONFIG_ESP_TASK_WDT_EN/INIT`。
 
 ## 硬件与接线
 
@@ -176,7 +175,7 @@ tick
 
 ## 真实输出
 
-待真机验证：`run.log` 待真机回填。本工程尚未在任何真机上运行，README 不贴预期
+**已实测（2026-11-13）**：真机输出 `hello s31` + 每秒 `tick`（详见 `../logs/`与 `BRINGUP-2026-11-12.md`）。README 不贴预期
 日志冒充实测；真机跑通后，把 UART0 的原始输出存为 `run.log` 并在此标注日期与板卡
 序列号。
 

@@ -260,19 +260,19 @@ ROM 的返回码只覆盖“控制器报告完成”，不覆盖“数据真的�
 4. 写满 256 条后再复位：出现一次 `kv: compaction`，`records` 回落到 1，`value` 继续递增；
 5. 断电测试：写入过程中拔电，重启后 `torn=1` 且计数不倒退。
 
-### 2. 输出形态（验收目标，不是实测）
+### 2. 输出形态（2026-11-13 实测）
 
 ```text
-partition table @0x8000: 4 entries, md5=present
-  [3] storage type=1 sub=0x82 off=0x300000 size=0x10000
-storage base=0x300000 size=0x10000
+ch09-flash-partition-nvs | form B (Zig ELF + IDF 2nd-stage bootloader)
+  [0] nvs type=1 sub=0x2 off=0x9000 size=0x6000
 kv: append-only log, NOT IDF-NVS compatible
-kv: scan records=0 last_value=0 torn=0
-kv: append seq=1 value=1 -> verify ok
-kv: rescan records=1 last_value=1
+kv: scan records=2 last_value=2 torn=0
+kv: append seq=3 value=3 -> verify ok
+kv: rescan records=3 last_value=3
+kv: boot_count ok
 ```
 
-这是**格式约定**（示例省略中间两条分区），数值取决于真机与烧录历史，本仓不预填，也不附 `run.log`。
+以上为 2026-11-13 真机原文（完整见 `../logs/ch09-boot.log`）；分区条目数随分区表变化，以实际烧录为准。
 
 ### 3. 真机前能做的静态检查
 

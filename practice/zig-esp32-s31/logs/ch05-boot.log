@@ -32,7 +32,7 @@ entry 0x2f06a2ba
 [0;32mI (78) boot: End of partition table[0m
 [0;32mI (81) esp_image: segment 0: paddr=00010020 vaddr=40000020 size=004f0h (  1264) map[0m
 [0;32mI (90) esp_image: segment 1: paddr=00010518 vaddr=00000000 size=0fb00h ( 64256) [0m
-[0;32mI (107) esp_image: segment 2: paddr=00020020 vaddr=40020020 size=007cch (  1996) map[0m
+[0;32mI (107) esp_image: segment 2: paddr=00020020 vaddr=40020020 size=007dch (  2012) map[0m
 [0;32mI (109) boot: Loaded app from partition at offset 0x10000[0m
 [0;32mI (110) boot: Disabling RNG early entropy source...[0m
 
@@ -40,34 +40,26 @@ entry 0x2f06a2ba
 reset reason: code=1 (CHIP_POWER_ON, ESP_RST_POWERON)
   meaning: 上电或复位键，属于冷启动
 clock: cycles=16000012 ticks=3200030 (window 200001 us) -> CPU 80 MHz
-  expect 320 (CPLL) on this board; 40 means XTAL-only boot
+  expect 80 on this board (IDF bootloader default); 40 means XTAL-only boot
 rwdt: en=1 flashboot=0 stg0=0 stg1=0 stg2=0 stg3=0 hold=612000
-tick 1 at 706683 us
-tick 2 at 1206845 us
-tick 3 at 1707013 us
-tick 4 at 2207182 us
-tick 5 at 2707351 us
-tick 6 at 3207520 us
-tick 7 at 3707688 us
-tick 8 at 4207857 us
-tick 9 at 4708026 us
-tick 10 at 5208203 us
-tick 11 at 5708380 us
-tick 12 at 6208557 us
-tick 13 at 6708734 us
-tick 14 at 7208910 us
-tick 15 at 7709087 us
-tick 16 at 8209264 us
-tick 17 at 8709441 us
-tick 18 at 9209618 us
-tick 19 at 9709795 us
-tick 20 at 10209972 us
-tick 21 at 10710157 us
-tick 22 at 11210342 us
-tick 23 at 11710527 us
-tick 24 at 12210712 us
-tick 25 at 12710897 us
-tick 26 at 13211082 us
-tick 27 at 13711266 us
-tick 28 at 14211451 us
-tick 29 at 14711636 us
+tick 1 at 708160 us
+tick 2 at 1208322 us
+tick 3 at 1708491 us
+tick 4 at 2208660 us
+tick 5 at 2708828 us
+tick 6 at 3208997 us
+tick 7 at 3709166 us
+tick 8 at 4209334 us
+tick 9 at 4709503 us
+tick 10 at 5209680 us
+tick 11 at 5709857 us
+tick 12 at 6210034 us
+tick 13 at 6710211 us
+tick 14 at 7210388 us
+tick 15 at 7710565 us
+tick 16 at 8210741 us
+tick 17 at 8710918 us
+tick 18 at 9211095 us
+tick 19 at 9711272 us
+tick 20 at 10211449 us
+tick 21 at 10711634 us

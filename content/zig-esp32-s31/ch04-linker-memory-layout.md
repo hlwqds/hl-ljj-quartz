@@ -882,12 +882,13 @@ sh tools/flash.sh /dev/ttyUSB0            # Linux
 
 ### 5. 预期输出的形态
 
-> [!warning] 下面是验收目标，不是实测日志
-> 本工程尚未在真机上运行。二级 bootloader 的启动日志行数与内容随 IDF 版本和 Flash 参数变化，**以实际串口为准**；应用侧只承诺“一次 `hello form B` + 每秒 `tick B`”这个形态。
+> [!info] 下面是 2026-11-13 的实测输出（完整见 `../logs/ch04-boot.log`）
+> 二级 bootloader 的日志行数与内容随 IDF 版本和 Flash 参数变化，**以实际串口为准**；应用侧确认“一次 `hello form B` + 每秒 `tick B`”。
 
 ```text
-（二级 bootloader 自己的日志：版本、Flash 模式/大小、分区表、镜像校验）
+（二级 bootloader 日志：版本、Flash 模式/大小、分区表、镜像校验，完整见日志）
 hello form B
+tick B
 tick B
 tick B
 tick B

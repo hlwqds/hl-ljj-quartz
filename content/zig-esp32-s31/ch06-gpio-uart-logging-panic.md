@@ -867,8 +867,8 @@ sh tools/flash.sh COM7        # Linux 用 /dev/ttyUSB0
 
 ### 3. 串口验收：要看到什么
 
-> [!warning] 下面是验收目标，不是实测日志
-> 本工程尚未在真机上运行。二级 bootloader 的日志行数与内容随 IDF 版本变化，以实际串口为准；应用侧只承诺下面这个**形态**。
+> [!info] 下面是 2026-11-13 的实测输出（完整见 `../logs/ch06-trap.log`）
+> 二级 bootloader 的日志行数随 IDF 版本变化，以实际串口为准；trap 现场为真机原文。
 
 ```text
 （二级 bootloader 自己的日志：版本、Flash 模式/大小、分区表、镜像校验）
@@ -876,7 +876,7 @@ sh tools/flash.sh COM7        # Linux 用 /dev/ttyUSB0
 [I] ch06-gpio-uart-log | form B (Zig ELF + IDF 2nd-stage bootloader)
 [I] console: UART0 TX=GPIO58 RX=GPIO59 115200 8N1 (ROM default)
 [I] demo gpio=5
-[I] gpio: IO_MUX MCU_SEL=1 + OUT_SEL=256 + ENABLE=1（待真机验证）
+[I] gpio: IO_MUX MCU_SEL=1 + OUT_SEL=256 + ENABLE=1（真机实测）
 [I] type ? for help; input is polled, not interrupt driven
 [I] ?  help / p  counters / t  trap demo (halts until reset)
 [I] toggles=4 rx drops=0

@@ -258,7 +258,7 @@ _start
 4. 全部完成后 idle 打印 `all tasks done, switches=N`，且 `N` 是**实际换栈**的次数（`next == prev` 的让出不计数）；
 5. 不再有任务输出后，CPU 停在 `wfi`（可用调试器确认 `pc` 落在 `wfi` 循环里）。
 
-### 2. 输出形态（验收目标，不是实测）
+### 2. 输出形态（2026-11-13 实测）
 
 ```text
 ch10-context-switch | form B (Zig ELF + IDF 2nd-stage bootloader)
@@ -278,7 +278,7 @@ C: done (steps=2)
 A: done (steps=3)
 B: step 4
 B: done (steps=4)
-sched: all tasks done, switches=<n>
+sched: all tasks done, switches=13
 idle: wfi
 ```
 

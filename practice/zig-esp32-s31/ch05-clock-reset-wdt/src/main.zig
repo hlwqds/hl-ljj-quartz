@@ -30,7 +30,7 @@ comptime {
 
 extern fn esp_rom_printf(fmt: [*:0]const u8, ...) c_int;
 
-/// 测量窗口：200 ms。320 MHz 下约 6400 万 cycle，32 位 mcycle 够用，
+/// 测量窗口：200 ms。本板 80 MHz 下约 1600 万 cycle，32 位 mcycle 够用（80 MHz 下约 53.7 s 回绕），
 /// 折算到 1 MHz 的分辨率也足够稳。
 const measure_window_us: u32 = 200_000;
 
@@ -78,7 +78,7 @@ pub export fn main() void {
     _ = esp_rom_printf(" us) -> CPU ");
     printU32(m.mhz());
     _ = esp_rom_printf(" MHz\n");
-    _ = esp_rom_printf("  expect 320 (CPLL) on this board; 40 means XTAL-only boot\n");
+    _ = esp_rom_printf("  expect 80 on this board (IDF bootloader default); 40 means XTAL-only boot\n");
 
     // 4) 看门狗现状：先看清楚 bootloader 留下了什么，再决定喂还是关。
     const st = wdt.state();

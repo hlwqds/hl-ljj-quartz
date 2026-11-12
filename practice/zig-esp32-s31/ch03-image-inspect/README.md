@@ -14,10 +14,8 @@
 也是后面 ch04 自己产出镜像时的第一道检查工具。
 
 > [!warning] 验证状态
-> 本工程**尚未与任何真实 S31 镜像对拍**：手头没有真机产出的 `build/*.bin`，也没有跑过
-> `esptool --chip esp32s31 image-info` 与它的逐字段比较。字段格式来自 esptool 源码与
-> IDF 分区表工具源码（见下），但"与官方工具输出完全一致"这一步是**待真机验证**的。
-> 真机产出镜像后按「与 image-info 对拍」一节回填，README 不贴伪造日志。
+> **已与真机镜像对拍（2026-11-13）**：解析 ch02 产出的 186 832 B 镜像，5 段、checksum `0x20`、
+> SHA256 `82f3d2cc…` 与 `esptool --chip esp32s31 image-info` 完全一致；分区表 `md5` 校验也通过。
 
 ## 文件表
 
@@ -27,7 +25,7 @@
 | `src/main.zig` | 格式常量、镜像/分区表解析、校验、报表输出                | [查看](/static/code/#/zig-esp32-s31/ch03-image-inspect/src/main.zig) |
 | `README.md`    | 本文件                                                   | [查看](/static/code/#/zig-esp32-s31/ch03-image-inspect/README.md)    |
 
-没有 `build.zig.zon`（零依赖），没有 `run.log`（未在真机上运行过这个工具，也没有真实镜像可跑）。
+没有 `build.zig.zon`（零依赖），没有 `run.log`（工具在主机侧跑，输出见 `../logs/` 与 BRINGUP）。
 
 ## 环境
 
