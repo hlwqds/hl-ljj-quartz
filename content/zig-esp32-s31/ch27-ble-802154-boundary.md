@@ -1,7 +1,7 @@
 ---
 title: "Zig × ESP32-S31 全栈开发（二十七）：BLE 与 802.15.4 的边界——HCI、ATT/GATT、6LoWPAN"
 date: 2026-11-13 22:00:00
-description: "把 BLE 与 802.15.4 放在同一章，是因为它们在 S31 上是同一条缝的两种形态：前者是 5 份预编译归档（libble_app/libbtdm_common/libbredr_app/libbtbb/libbttestmode）对外只留 10 个未定义符号与一条 HCI 通道，后者在 IDF 里根本没有归档、只有 3571 行 C 源码与寄存器头。本章用 nm 把这层差量量出来，再把 host 侧的字节路径逐段写成可断言的 KAT：HCI 分帧、ATT 的 MTU/读/写/通知/错误、GATT 的句柄与 CCCD 订阅、802.15.4 的 FCF 与 6LoWPAN 无状态解压，12 条板侧判据全部来自实际运行。"
+description: "把 BLE 与 802.15.4 放在同一章，是因为它们在 S31 上是同一条缝的两种形态：前者是 5 份预编译归档（libble_app/libbtdm_common/libbredr_app/libbtbb/libbttestmode）对外只留 10 个未定义符号与一条 HCI 通道，后者的 MAC/驱动层没有归档（3571 行 IDF C 源码 + 寄存器头），但射频层仍是闭源（`libphy.a` + `libbtbb.a`）。本章用 nm 把这层差量量出来，再把 host 侧的字节路径逐段写成可断言的 KAT：HCI 分帧、ATT 的 MTU/读/写/通知/错误、GATT 的句柄与 CCCD 订阅、802.15.4 的 FCF 与 6LoWPAN 无状态解压，12 条板侧判据全部来自实际运行。"
 tags: [zig, esp32-s31, riscv, ble, hci, att, gatt, ieee802154, 6lowpan, thread, blob, series]
 ---
 
@@ -26,9 +26,14 @@ BLE 和 802.15.4 是同一个问题的另外两张脸，而且**脸不一样**�
   192 KB），对外只要求 **10 个未定义符号**，其中 5 个还是链接器自己定义的
   段边界符号。也就是说：谁想「用 BLE」，不需要移植一个协议栈，只需要把
   这 10 个符号和一条 HCI 通道准备好。
-- **802.15.4 在 S31 上根本没有归档**。IDF 的 `components/ieee802154/` 是
-  10 个 C 文件、3571 行源码，直接操作 `ieee802154_reg.h` 里的寄存器；
-  能称为「黑盒」的部分只剩 PHY（`libphy.a`）与 ROM 里的 `phy_*`。
+- **802.15.4 的 MAC/驱动层在 S31 上没有归档**。IDF 的 `components/ieee802154/` 是
+  10 个 C 文件、3571 行源码，直接操作 `ieee802154_reg.h` 里的寄存器；但**射频层仍是闭源**：
+  `libphy.a` 与 **`libbtbb.a`**（`bt_bb_v2.o`/`bt_cte.o`）。这条链路是硬的——
+  `esp_ieee802154_enable()` 在 `components/ieee802154/esp_ieee802154.c:40` 调
+  `esp_btbb_enable()`，后者在 `esp_phy/src/btbb_init.c:98` 调
+  `bt_bb_v2_init_cmplx()`，而该符号没有 IDF 源码实现，实体就在 `libbtbb.a`；
+  `esp_phy_init.h:180` 的注释原文是「BTBB module should be enabled in order to
+  use IEEE802154 or BT.」。
 
 于是本章的写法也分两半：
 
@@ -100,7 +105,7 @@ BLE 的分层是干净的：
 
 ```text
    Thread / 6LoWPAN / 应用
-        ↕  esp_ieee802154_*（67 个公开函数）
+        ↕  esp_ieee802154_*（62 个带返回类型的公开函数；`grep -cE '^(esp_err_t|uint[0-9]+_t|int|bool|void) esp_ieee802154_'`）
    MAC（IDF C 源码，3571 行）—— 直接读写 ieee802154 寄存器
         ↕
    PHY（libphy.a + ROM phy_*）
@@ -150,9 +155,12 @@ components/esp_phy/lib/esp32s31/libbtbb.a
 components/esp_phy/lib/esp32s31/libbttestmode.a
 ```
 
-一个容易误解的点：`libbtbb.a` 在 `esp_phy` 目录下，但它装的是 **BLE 基带**
+一个容易误解的点：`libbtbb.a` 在 `esp_phy` 目录下，但它装的是**基带**
 （成员里 186 个定义符号，绝大多数以 `ble_bb_` 开头，例如
-`ble_bb_cte_get_agc_target_value`）。`libbttestmode.a` 是 DTM（Direct Test
+`ble_bb_cte_get_agc_target_value`）。**BLE 与 802.15.4 共用这一份基带**：
+`esp_ieee802154_enable()` → `esp_btbb_enable()` → `bt_bb_v2_init_cmplx()`
+（`components/ieee802154/esp_ieee802154.c:40`、`esp_phy/src/btbb_init.c:98`），
+所以 27.11.3 的真实收发需要它。`libbttestmode.a` 是 DTM（Direct Test
 Mode）用的，配合产测。
 
 还有 16 + 15 + 3 = 34 个成员**没有符号表**（`nm` 报 `no symbols`）。它们不是
@@ -291,13 +299,15 @@ glue: e_btdm_lp_modem_clock_set
 `libble_app.a + libbtdm_common.a + libbtbb.a`，需要自己实现的只有 1 个
 平台函数 + 4 个 libc 函数 + `esp_restart`。**
 
-### 27.2.5 802.15.4：没有归档
+### 27.2.5 802.15.4：MAC 层没有归档，射频层仍是闭源
 
 ```text
 ## 8. 802.15.4 侧：没有归档，只有源码
 archives_named_802154_in_idf=0
 driver_files=10
 driver_lines=3571
+# 注意：这只说明「没有名字里带 802154 的归档」；射频/基带仍在
+# esp_phy/lib/esp32s31/{libphy.a,libbtbb.a} 里（见 25.2 与本章 27.2.2）
 driver_frame_lines=468
 ll_static_inline=2
 public_api_functions=67
@@ -1138,8 +1148,8 @@ ch23–ch25 的镜像都有，`elf2image` 自己插的。
 
 ### 27.11.3 802.15.4 真实收发
 
-**需要什么**：`libphy.a` + `esp_ieee802154_*`（67 个公开函数）+ 一个
-已知的发送方（第二块板 / 一个 802.15.4 嗅探器）。
+**需要什么**：`libphy.a` + **`libbtbb.a`**（基带，与 BLE 共用）+ `esp_ieee802154_*`
+（62 个带返回类型的公开函数）+ 一个已知的发送方（第二块板 / 一个 802.15.4 嗅探器）。
 
 **判据**：
 
@@ -1177,31 +1187,31 @@ ch23–ch25 的镜像都有，`elf2image` 自己插的。
 
 本机 IDF（`~/esp/esp-idf`）与工程内文件，行号为 `grep -n` / `sed -n` 实测：
 
-| #   | 事实                                                                           | 出处（行号实测）                                                                                      |
-| --- | ------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
-| 1   | ATT 操作码 `0x01/0x02/0x03/0x0a/0x0b/0x12/0x13/0x1b`                           | `components/bt/host/nimble/nimble/nimble/host/include/host/ble_att.h:124,127,130,151,154,175,178,199` |
-| 2   | ATT 错误码 `0x01/0x02/0x03/0x04/0x11`                                          | 同文件 `:62,65,68,71,111`                                                                             |
-| 3   | `BLE_ATT_MTU_DFLT 23`、`BLE_ATT_MTU_MAX 527`                                   | 同文件 `:269,275`                                                                                     |
-| 4   | GATT 权限位 READ/WRITE/NOTIFY = `0x02/0x08/0x10`                               | `components/bt/host/nimble/nimble/nimble/host/include/host/ble_gatt.h:133,139,142`                    |
-| 5   | CCCD UUID `0x2902`                                                             | 同文件 `:69`（`BLE_GATT_DSC_CLT_CFG_UUID16`）                                                         |
-| 6   | HCI 传输模式枚举含 `HCI_TRANSPORT_VHCI`，`hci_transport_init` 原型             | `components/bt/porting_btdm/transport/include/esp_hci_transport.h:32,47`                              |
-| 7   | S31 controller 初始化顺序 `r_btdm_task_init` → `hci_transport_init`            | `components/bt/controller/esp32s31/bt.c:60,230,266`                                                   |
-| 7a  | PB 标志的四个位值（0=FIRST_NON_FLUSH、1=MIDDLE、2=FIRST_FLUSH、3=FULL）        | `components/bt/host/nimble/nimble/nimble/include/nimble/hci_common.h:2891,2892,2893,2894`             |
-| 7b  | MTU<23 时 NimBLE 是“夹到 23”而不是拒绝                                         | `components/bt/host/nimble/nimble/nimble/host/src/ble_att.c:492,494,495`                              |
-| 7c  | 527 的理由是让 Signed Write 装下 512 字节属性值                                | `components/bt/host/nimble/nimble/nimble/host/include/host/ble_att.h:270,273,275`                     |
-| 8   | controller 数据/ BSS 段被 `SURROUND`，`archive: libbtdm_common.a`              | `components/bt/controller/linker_esp_btdm_controller.lf:32,34,83,86,88,94,96,99`                      |
-| 9   | 802.15.4 帧解析的地址模式/PAN 压缩判定                                         | `components/ieee802154/driver/esp_ieee802154_frame.c:31,36,41,60,71,72`                               |
-| 10  | 802.15.4 帧信息结构与回调原型                                                  | `components/ieee802154/include/esp_ieee802154_types.h:24,86,101,113`                                  |
-| 11  | 802.15.4 公开 API（set_channel / transmit / set_panid / set_extended_address） | `components/ieee802154/include/esp_ieee802154.h:59,198,236,279`                                       |
-| 12  | coex 的 802.15.4 接口 8 个                                                     | `components/esp_coex/include/esp_coex_i154.h`（`grep -c esp_coex_ieee802154` = 8）                    |
-| 13  | 五份归档的元数据与符号直方图                                                   | `tools/symbols.sh` 第 1/2 节 → `inventory.txt`（`nm` 实测）                                           |
-| 14  | `libble_app.a` 未定义 1407 的归属 1381+16+10                                   | `tools/symbols.sh` 第 3/4 节                                                                          |
-| 15  | ROM 里 `r_ble*`/`r_btdm*` 计数为 0，`phy_bt*`=11、`coex_bt*`=2                 | `tools/symbols.sh` 第 7 节                                                                            |
-| 16  | 802.15.4 无归档；10 文件 3571 行；frame.c 468 行                               | `tools/symbols.sh` 第 8 节                                                                            |
-| 17  | OpenThread 归档 557 550 B / 21 成员 / 249 定义 / 230 未定义                    | `tools/symbols.sh` 第 10 节                                                                           |
-| 18  | 段布局 `.text 0x3880`、`.rodata 0xb70`、`.bss 0x50`                            | `readelf -SW zig-out/bin/app.elf`（27.9.2 的五行）                                                    |
-| 19  | 12 条判据的每一行输出                                                          | `practice/zig-esp32-s31/logs/ch27-boot.log`（27.10 全文）                                             |
-| 20  | 地址内存布局 `SRAM_START = 0x2F000000`                                         | `components/esp_system/ld/esp32s31/memory.ld.in:19`；`linker/s31.ld` 头注释                           |
+| #   | 事实                                                                           | 出处（行号实测）                                                                                                                                    |
+| --- | ------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | ATT 操作码 `0x01/0x02/0x03/0x0a/0x0b/0x12/0x13/0x1b`                           | `components/bt/host/nimble/nimble/nimble/host/include/host/ble_att.h:124,127,130,151,154,175,178,199`                                               |
+| 2   | ATT 错误码 `0x01/0x02/0x03/0x04/0x11`                                          | 同文件 `:62,65,68,71,111`                                                                                                                           |
+| 3   | `BLE_ATT_MTU_DFLT 23`、`BLE_ATT_MTU_MAX 527`                                   | 同文件 `:269,275`                                                                                                                                   |
+| 4   | GATT 权限位 READ/WRITE/NOTIFY = `0x02/0x08/0x10`                               | `components/bt/host/nimble/nimble/nimble/host/include/host/ble_gatt.h:133,139,142`                                                                  |
+| 5   | CCCD UUID `0x2902`                                                             | 同文件 `:69`（`BLE_GATT_DSC_CLT_CFG_UUID16`）                                                                                                       |
+| 6   | HCI 传输模式枚举含 `HCI_TRANSPORT_VHCI`，`hci_transport_init` 原型             | `components/bt/porting_btdm/transport/include/esp_hci_transport.h:32,47`                                                                            |
+| 7   | S31 controller 初始化顺序 `r_btdm_task_init` → `hci_transport_init`            | `components/bt/controller/esp32s31/bt.c:60,230,266`                                                                                                 |
+| 7a  | PB 标志的四个位值（0=FIRST_NON_FLUSH、1=MIDDLE、2=FIRST_FLUSH、3=FULL）        | `components/bt/host/nimble/nimble/nimble/include/nimble/hci_common.h:2891,2892,2893,2894`                                                           |
+| 7b  | MTU<23 时 NimBLE 是“夹到 23”而不是拒绝                                         | `components/bt/host/nimble/nimble/nimble/host/src/ble_att.c:492,494,495`                                                                            |
+| 7c  | 527 的理由是让 Signed Write 装下 512 字节属性值                                | `components/bt/host/nimble/nimble/nimble/host/include/host/ble_att.h:270,273,275`                                                                   |
+| 8   | controller 数据/ BSS 段被 `SURROUND`，`archive: libbtdm_common.a`              | `components/bt/controller/linker_esp_btdm_controller.lf:32,34,83,86,88,94,96,99`                                                                    |
+| 9   | 802.15.4 帧解析的地址模式/PAN 压缩判定                                         | `components/ieee802154/driver/esp_ieee802154_frame.c:31,36,41,60,71,72`                                                                             |
+| 10  | 802.15.4 帧信息结构与回调原型                                                  | `components/ieee802154/include/esp_ieee802154_types.h:78`（帧信息结构起始）、`:86`（结构结束）、`:101`、`:113`（回调原型）；无线状态枚举在 `:22-26` |
+| 11  | 802.15.4 公开 API（set_channel / transmit / set_panid / set_extended_address） | `components/ieee802154/include/esp_ieee802154.h:59,198,236,279`                                                                                     |
+| 12  | coex 的 802.15.4 接口 8 个                                                     | `components/esp_coex/include/esp_coex_i154.h`（`grep -c esp_coex_ieee802154` = 8）                                                                  |
+| 13  | 五份归档的元数据与符号直方图                                                   | `tools/symbols.sh` 第 1/2 节 → `inventory.txt`（`nm` 实测）                                                                                         |
+| 14  | `libble_app.a` 未定义 1407 的归属 1381+16+10                                   | `tools/symbols.sh` 第 3/4 节                                                                                                                        |
+| 15  | ROM 里 `r_ble*`/`r_btdm*` 计数为 0，`phy_bt*`=11、`coex_bt*`=2                 | `tools/symbols.sh` 第 7 节                                                                                                                          |
+| 16  | 802.15.4 无归档；10 文件 3571 行；frame.c 468 行                               | `tools/symbols.sh` 第 8 节                                                                                                                          |
+| 17  | OpenThread 归档 557 550 B / 21 成员 / 249 定义 / 230 未定义                    | `tools/symbols.sh` 第 10 节                                                                                                                         |
+| 18  | 段布局 `.text 0x3880`、`.rodata 0xb70`、`.bss 0x50`                            | `readelf -SW zig-out/bin/app.elf`（27.9.2 的五行）                                                                                                  |
+| 19  | 12 条判据的每一行输出                                                          | `practice/zig-esp32-s31/logs/ch27-boot.log`（27.10 全文）                                                                                           |
+| 20  | 地址内存布局 `SRAM_START = 0x2F000000`                                         | `components/esp_system/ld/esp32s31/memory.ld.in:19`；`linker/s31.ld` 头注释                                                                         |
 
 规范/标准条文（不是本机文件）：
 

@@ -107,5 +107,5 @@ sh tools/symbols.sh > inventory.txt   # 重新生成（输出确定，可 diff�
 | -------------------- | --------------------------------------------------------------------------------------------------- | ------- |
 | 真实广播/扫描        | 链接 `libble_app.a` + `libbtdm_common.a` + `libbtbb.a`，配 `hci_transport_init(HCI_TRANSPORT_VHCI)` | 27.11.1 |
 | 真实连接与 GATT 读写 | 上面 + ATT MTU 协商走真实 controller                                                                | 27.11.2 |
-| 802.15.4 真实收发    | 链接 `esp_phy` 的 PHY + `libphy.a`，`esp_ieee802154_transmit()`                                     | 27.11.3 |
+| 802.15.4 真实收发    | 链接 `libphy.a` + `libbtbb.a`（BTBB 基带，BLE 共用），`esp_ieee802154_transmit()`                   | 27.11.3 |
 | Thread 入网          | 上面 + `libopenthread_br.a` 与 MLE/边界路由器                                                       | 27.11.4 |

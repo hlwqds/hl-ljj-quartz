@@ -1,7 +1,8 @@
 <pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//! ch27-ble-802154-boundary：802.15.4 MAC 帧头 + 6LoWPAN 最小解压。</span></span>
 <span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//!</span></span>
-<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//! 这一半和 BLE 那半**不是同一种东西**：S31 上的 802.15.4 没有闭源归档，</span></span>
-<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//! 驱动是 IDF 里的 C 源码（详见全部 27.2 与 `tools/symbols.sh` 的第 6 节：</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//! 这一半和 BLE 那半**不是同一种东西**：S31 上的 802.15.4 MAC/驱动层没有归档，</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//! 驱动是 IDF 里的 C 源码；射频层仍是闭源（`libphy.a` + `libbtbb.a`）。</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//! 详见全部 27.2 与 `tools/symbols.sh` 的第 6 节：</span></span>
 <span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//! `components/ieee802154/` 10 个文件 3571 行、`esp_hal_ieee802154/esp32s31`</span></span>
 <span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//! 的 `ieee802154_ll.h`）。本章因此把 802.15.4 侧写成“纯字节变换”：</span></span>
 <span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">//!</span></span>
