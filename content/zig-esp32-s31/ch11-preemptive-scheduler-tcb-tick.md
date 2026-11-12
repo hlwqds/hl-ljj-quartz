@@ -98,10 +98,10 @@ idle 不放进 `ready_head[0]`：否则“新建的 prio 0 任务排在 idle 前
 
 ## 11.4 tick 从哪来：TIMG0 T0 与中断链路的六道门
 
-| 候选                    | 源编号 | 优点                         | 代价                                  |
-| ----------------------- | ------ | ---------------------------- | ------------------------------------- |
-| TIMG0 T0 闹钟（本章）   | 25     | 分频自由，1 tick = 1 µs 可读 | 要配时钟源、分频、闹钟、重装          |
-| SYSTIMER TARGET0 比较器 | 33     | 16 MHz 全局时基，天然单调    | 52 位比较值要维护高低位，周期模式待核 |
+| 候选                    | 源编号 | 优点                         | 代价                                   |
+| ----------------------- | ------ | ---------------------------- | -------------------------------------- |
+| TIMG0 T0 闹钟（本章）   | 25     | 分频自由，1 tick = 1 µs 可读 | 要配时钟源、分频、闹钟、INT_ENA 与重装 |
+| SYSTIMER TARGET0 比较器 | 33     | 16 MHz 全局时基，天然单调    | 52 位比较值要维护高低位，周期模式待核  |
 
 选 TIMG0 T0 不是因为它更好，而是每个参数都能读回核对：分频 40 就是 1 MHz，闹钟装 1000 就是 1 ms。$$f_{\text{tick}} = \frac{40\,\text{MHz}}{40} = 1\,\text{MHz},\qquad T_{\text{tick}} = \frac{1000}{1\,\text{MHz}} = 1\,\text{ms}.$$
 
@@ -127,6 +127,8 @@ mstatus.MIE = 1 → trapEntry → trapDispatch（mcause = 0x80000010）
 **TIMG 自己的门闩容易被漏掉：`INT_ENA_TIMERS(+0x70)` 的 bit0 复位为 0。** 它是 TIMG 内部“原始状态位 → 中断输出线”的开关，ch08 用轮询时不需要它所以没开。只配矩阵与 CLIC、却漏掉这一位，现象是 `INT_RAW` 在寄存器里照常置位、芯片外部（矩阵与 CLIC）却完全看不到——查矩阵和 CLIC 是白费时间。本章的 `tick.init` 在写矩阵之前先清一次 `INT_CLR`、再置 `INT_ENA` 的 bit0，`tick.disable` 关掉 tick 时把这一位一起清掉。三层开关（TIMG `INT_ENA`、CLIC `IE`、`mstatus.MIE`）任何一层为 0，最终现象都一样：没有 tick。
 
 **闹钟必须绝对重装。** `ALARM_EN` 命中后自动清零（ch08 已记录），每次 ISR 都要重新使能；重装用 `last_target += period`，而不是 `now + period`——后者把 ISR 的迟到量积分成漂移。代价是迟到超过一个周期时目标落在过去，硬件立刻再进一次，形成短时补 tick 风暴；本章 ISR 很短，不预期出现，出现了就是要记录的证据。
+
+配套的一条位：`T0CONFIG.AUTORELOAD`（bit29）**复位默认是 1**，本章的 `tick.init` 显式写 0。开着它，命中闹钟后计数器会从 `T0LOAD`（本工程装的是 0）自动回卷，绝对时间轴（`next_target` 在累加）立刻失去意义；关掉它，计数器只朝一个方向跑，“第 n 次闹钟”才恒等于“`n × period` 微秒”。这一位与 `INT_ENA` 一样属于“复位值不是你想要的默认”的坑。
 
 ---
 
@@ -275,7 +277,7 @@ ch07 已经配好了 CLIC 输入 19 这条软件中断线：`IP` 就是挂起状
 | ----------------- | ------------------------------------------------------------------------- |
 | `src/context.zig` | 80B trap 帧、64B switch 帧、`trapEntry`、`switchRaw`、初始帧（沿用 ch10） |
 | `src/sched.zig`   | TCB、8 条优先级队列、`onTick`、`schedule`、`yield`、临界区、`start`       |
-| `src/tick.zig`    | TIMG0 T0 时钟/分频/闹钟、CLIC 输入 16 的路由与优先级、ISR 清源与重装      |
+| `src/tick.zig`    | T0 时钟/分频/闹钟/INT_ENA、矩阵[25]=16、CLIC 输入 16、ISR 清源与绝对重装  |
 | `src/tasks.zig`   | 三个**不主动让出**的任务：不同优先级/时间片，靠 tick 被换下               |
 | `src/main.zig`    | 打印配置、建任务、初始化 tick、把 `main` 变成 idle                        |
 | `src/start.zig`   | `esp_app_desc_t` + `_start`（关中断 → sp/gp → 清 .bss → 装 mtvec）        |
@@ -391,6 +393,7 @@ grep -n "INT_ENA" src/tick.zig                  # 确认 tick.init 置了 INT_EN
 | `mstatus.FS` 位于 bit[14:13]，复位 0                      | RISC-V 特权规范                                 | 用 FP 前必须置非零                          |
 | TIMG0 `0x20580000`；`T0CONFIG`/`T0ALARMLO`/`INT_CLR` 偏移 | IDF v6.1 `reg_base.h` + `timer_group_reg.h`     | `INT_CLR_TIMERS = 0x7c`，T0 = bit0          |
 | `INT_ENA_TIMERS = 0x70`，T0 使能 = bit0，复位 0           | IDF v6.1 `timer_group_reg.h`                    | 不开则 `INT_RAW` 出不了 TIMG；ch08 同一结论 |
+| `T0CONFIG.AUTORELOAD` = bit29，复位 1                     | IDF v6.1 `timer_group_reg.h`                    | 本章显式清 0，否则命中即回卷毁掉绝对时间轴  |
 | TIMG0 T0 时钟源/门控在 `HP_SYS_CLKRST + 0x114`            | IDF v6.1 `hp_sys_clkrst_reg.h`                  | `T0_SRC_SEL`[4:3]、`T0_CLK_EN`[5]           |
 | 源 25 = `ETS_TIMERGRP0_T0_INTR_SOURCE`；源 33 = SYSTIMER  | IDF v6.1 `soc/interrupts.h`                     | 与 ch07 源表一致                            |
 | 矩阵基址 `0x20585000`，每源 4 字节，`MAP`[5:0]            | IDF v6.1 `reg_base.h` + `interrupt_core0_reg.h` | 写 CLIC 输入号 = 通道 + 16                  |
