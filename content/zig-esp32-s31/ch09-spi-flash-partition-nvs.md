@@ -207,6 +207,24 @@ IDF 的 NVS 是一套完整实现：页（4 KiB）、页头、32 字节条目、
 
 ## 9.6 工程走读
 
+> 完整工程:[ch09-flash-partition-nvs](/static/code/#/zig-esp32-s31/ch09-flash-partition-nvs/)
+
+| 文件                                | 查看                                                                                            |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `build.zig`                         | [查看](/static/code/#/zig-esp32-s31/ch09-flash-partition-nvs/build.zig)                         |
+| `linker/s31.ld`                     | [查看](/static/code/#/zig-esp32-s31/ch09-flash-partition-nvs/linker/s31.ld)                     |
+| `src/flash.zig`                     | [查看](/static/code/#/zig-esp32-s31/ch09-flash-partition-nvs/src/flash.zig)                     |
+| `src/kv.zig`                        | [查看](/static/code/#/zig-esp32-s31/ch09-flash-partition-nvs/src/kv.zig)                        |
+| `src/main.zig`                      | [查看](/static/code/#/zig-esp32-s31/ch09-flash-partition-nvs/src/main.zig)                      |
+| `src/partition.zig`                 | [查看](/static/code/#/zig-esp32-s31/ch09-flash-partition-nvs/src/partition.zig)                 |
+| `src/start.zig`                     | [查看](/static/code/#/zig-esp32-s31/ch09-flash-partition-nvs/src/start.zig)                     |
+| `idf-bootstrap/CMakeLists.txt`      | [查看](/static/code/#/zig-esp32-s31/ch09-flash-partition-nvs/idf-bootstrap/CMakeLists.txt)      |
+| `idf-bootstrap/main/CMakeLists.txt` | [查看](/static/code/#/zig-esp32-s31/ch09-flash-partition-nvs/idf-bootstrap/main/CMakeLists.txt) |
+| `idf-bootstrap/main/app_main.c`     | [查看](/static/code/#/zig-esp32-s31/ch09-flash-partition-nvs/idf-bootstrap/main/app_main.c)     |
+| `idf-bootstrap/sdkconfig.defaults`  | [查看](/static/code/#/zig-esp32-s31/ch09-flash-partition-nvs/idf-bootstrap/sdkconfig.defaults)  |
+| `tools/flash.sh`                    | [查看](/static/code/#/zig-esp32-s31/ch09-flash-partition-nvs/tools/flash.sh)                    |
+| `README.md`                         | [查看](/static/code/#/zig-esp32-s31/ch09-flash-partition-nvs/README.md)                         |
+
 ### 1. 文件与职责
 
 | 文件                           | 职责                                                            |

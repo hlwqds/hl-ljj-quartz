@@ -530,6 +530,31 @@ S31 真机上校准过**。所以日志同时打印 tick 数与按 16 MHz 折算
 
 ## 14.11 构建、镜像与烧录
 
+> 完整工程:[ch14-dual-core-smp-ipi](/static/code/#/zig-esp32-s31/ch14-dual-core-smp-ipi/)
+
+| 文件                                | 查看                                                                                          |
+| ----------------------------------- | --------------------------------------------------------------------------------------------- |
+| `build.zig`                         | [查看](/static/code/#/zig-esp32-s31/ch14-dual-core-smp-ipi/build.zig)                         |
+| `linker/s31.ld`                     | [查看](/static/code/#/zig-esp32-s31/ch14-dual-core-smp-ipi/linker/s31.ld)                     |
+| `src/clic.zig`                      | [查看](/static/code/#/zig-esp32-s31/ch14-dual-core-smp-ipi/src/clic.zig)                      |
+| `src/console.zig`                   | [查看](/static/code/#/zig-esp32-s31/ch14-dual-core-smp-ipi/src/console.zig)                   |
+| `src/context.zig`                   | [查看](/static/code/#/zig-esp32-s31/ch14-dual-core-smp-ipi/src/context.zig)                   |
+| `src/core1.zig`                     | [查看](/static/code/#/zig-esp32-s31/ch14-dual-core-smp-ipi/src/core1.zig)                     |
+| `src/demo.zig`                      | [查看](/static/code/#/zig-esp32-s31/ch14-dual-core-smp-ipi/src/demo.zig)                      |
+| `src/hw.zig`                        | [查看](/static/code/#/zig-esp32-s31/ch14-dual-core-smp-ipi/src/hw.zig)                        |
+| `src/main.zig`                      | [查看](/static/code/#/zig-esp32-s31/ch14-dual-core-smp-ipi/src/main.zig)                      |
+| `src/sched.zig`                     | [查看](/static/code/#/zig-esp32-s31/ch14-dual-core-smp-ipi/src/sched.zig)                     |
+| `src/smp.zig`                       | [查看](/static/code/#/zig-esp32-s31/ch14-dual-core-smp-ipi/src/smp.zig)                       |
+| `src/start.zig`                     | [查看](/static/code/#/zig-esp32-s31/ch14-dual-core-smp-ipi/src/start.zig)                     |
+| `src/systimer.zig`                  | [查看](/static/code/#/zig-esp32-s31/ch14-dual-core-smp-ipi/src/systimer.zig)                  |
+| `src/tick.zig`                      | [查看](/static/code/#/zig-esp32-s31/ch14-dual-core-smp-ipi/src/tick.zig)                      |
+| `idf-bootstrap/CMakeLists.txt`      | [查看](/static/code/#/zig-esp32-s31/ch14-dual-core-smp-ipi/idf-bootstrap/CMakeLists.txt)      |
+| `idf-bootstrap/main/CMakeLists.txt` | [查看](/static/code/#/zig-esp32-s31/ch14-dual-core-smp-ipi/idf-bootstrap/main/CMakeLists.txt) |
+| `idf-bootstrap/main/app_main.c`     | [查看](/static/code/#/zig-esp32-s31/ch14-dual-core-smp-ipi/idf-bootstrap/main/app_main.c)     |
+| `idf-bootstrap/sdkconfig.defaults`  | [查看](/static/code/#/zig-esp32-s31/ch14-dual-core-smp-ipi/idf-bootstrap/sdkconfig.defaults)  |
+| `tools/flash.sh`                    | [查看](/static/code/#/zig-esp32-s31/ch14-dual-core-smp-ipi/tools/flash.sh)                    |
+| `README.md`                         | [查看](/static/code/#/zig-esp32-s31/ch14-dual-core-smp-ipi/README.md)                         |
+
 工程在 `practice/zig-esp32-s31/ch14-dual-core-smp-ipi/`，骨架与 ch13 相同。
 
 ```bash

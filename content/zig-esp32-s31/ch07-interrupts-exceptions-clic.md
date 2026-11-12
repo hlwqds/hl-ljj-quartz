@@ -556,6 +556,24 @@ pub fn pop(self: *RxRing) ?u8 {                 // 消费者：主循环
 
 ## 7.8 工程走读
 
+> 完整工程:[ch07-interrupts-clic](/static/code/#/zig-esp32-s31/ch07-interrupts-clic/)
+
+| 文件                                | 查看                                                                                        |
+| ----------------------------------- | ------------------------------------------------------------------------------------------- |
+| `build.zig`                         | [查看](/static/code/#/zig-esp32-s31/ch07-interrupts-clic/build.zig)                         |
+| `linker/s31.ld`                     | [查看](/static/code/#/zig-esp32-s31/ch07-interrupts-clic/linker/s31.ld)                     |
+| `src/clic.zig`                      | [查看](/static/code/#/zig-esp32-s31/ch07-interrupts-clic/src/clic.zig)                      |
+| `src/critical.zig`                  | [查看](/static/code/#/zig-esp32-s31/ch07-interrupts-clic/src/critical.zig)                  |
+| `src/isr.zig`                       | [查看](/static/code/#/zig-esp32-s31/ch07-interrupts-clic/src/isr.zig)                       |
+| `src/main.zig`                      | [查看](/static/code/#/zig-esp32-s31/ch07-interrupts-clic/src/main.zig)                      |
+| `src/start.zig`                     | [查看](/static/code/#/zig-esp32-s31/ch07-interrupts-clic/src/start.zig)                     |
+| `idf-bootstrap/CMakeLists.txt`      | [查看](/static/code/#/zig-esp32-s31/ch07-interrupts-clic/idf-bootstrap/CMakeLists.txt)      |
+| `idf-bootstrap/main/CMakeLists.txt` | [查看](/static/code/#/zig-esp32-s31/ch07-interrupts-clic/idf-bootstrap/main/CMakeLists.txt) |
+| `idf-bootstrap/main/app_main.c`     | [查看](/static/code/#/zig-esp32-s31/ch07-interrupts-clic/idf-bootstrap/main/app_main.c)     |
+| `idf-bootstrap/sdkconfig.defaults`  | [查看](/static/code/#/zig-esp32-s31/ch07-interrupts-clic/idf-bootstrap/sdkconfig.defaults)  |
+| `tools/flash.sh`                    | [查看](/static/code/#/zig-esp32-s31/ch07-interrupts-clic/tools/flash.sh)                    |
+| `README.md`                         | [查看](/static/code/#/zig-esp32-s31/ch07-interrupts-clic/README.md)                         |
+
 ### 1. 文件与职责
 
 | 文件               | 职责                                                                | 关键点                                         |

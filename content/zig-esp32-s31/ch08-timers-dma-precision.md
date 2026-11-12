@@ -477,6 +477,24 @@ AHB-DMA 的硬约束（来自 `gdma_ll.h` 与 `async_memcpy` 的检查）：
 
 ## 8.7 工程走读
 
+> 完整工程:[ch08-timers-dma](/static/code/#/zig-esp32-s31/ch08-timers-dma/)
+
+| 文件                                | 查看                                                                                   |
+| ----------------------------------- | -------------------------------------------------------------------------------------- |
+| `build.zig`                         | [查看](/static/code/#/zig-esp32-s31/ch08-timers-dma/build.zig)                         |
+| `linker/s31.ld`                     | [查看](/static/code/#/zig-esp32-s31/ch08-timers-dma/linker/s31.ld)                     |
+| `src/dma.zig`                       | [查看](/static/code/#/zig-esp32-s31/ch08-timers-dma/src/dma.zig)                       |
+| `src/main.zig`                      | [查看](/static/code/#/zig-esp32-s31/ch08-timers-dma/src/main.zig)                      |
+| `src/start.zig`                     | [查看](/static/code/#/zig-esp32-s31/ch08-timers-dma/src/start.zig)                     |
+| `src/systimer.zig`                  | [查看](/static/code/#/zig-esp32-s31/ch08-timers-dma/src/systimer.zig)                  |
+| `src/timg.zig`                      | [查看](/static/code/#/zig-esp32-s31/ch08-timers-dma/src/timg.zig)                      |
+| `idf-bootstrap/CMakeLists.txt`      | [查看](/static/code/#/zig-esp32-s31/ch08-timers-dma/idf-bootstrap/CMakeLists.txt)      |
+| `idf-bootstrap/main/CMakeLists.txt` | [查看](/static/code/#/zig-esp32-s31/ch08-timers-dma/idf-bootstrap/main/CMakeLists.txt) |
+| `idf-bootstrap/main/app_main.c`     | [查看](/static/code/#/zig-esp32-s31/ch08-timers-dma/idf-bootstrap/main/app_main.c)     |
+| `idf-bootstrap/sdkconfig.defaults`  | [查看](/static/code/#/zig-esp32-s31/ch08-timers-dma/idf-bootstrap/sdkconfig.defaults)  |
+| `tools/flash.sh`                    | [查看](/static/code/#/zig-esp32-s31/ch08-timers-dma/tools/flash.sh)                    |
+| `README.md`                         | [查看](/static/code/#/zig-esp32-s31/ch08-timers-dma/README.md)                         |
+
 ### 1. 文件与职责
 
 | 文件               | 职责                                                                     |

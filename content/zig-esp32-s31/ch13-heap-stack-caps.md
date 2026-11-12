@@ -441,6 +441,29 @@ psram: no mapping programmed by bootloader -> skip rw (initialise PSRAM first)
 
 ## 13.11 工程走读
 
+> 完整工程:[ch13-heap-stack-caps](/static/code/#/zig-esp32-s31/ch13-heap-stack-caps/)
+
+| 文件                                | 查看                                                                                        |
+| ----------------------------------- | ------------------------------------------------------------------------------------------- |
+| `build.zig`                         | [查看](/static/code/#/zig-esp32-s31/ch13-heap-stack-caps/build.zig)                         |
+| `linker/s31.ld`                     | [查看](/static/code/#/zig-esp32-s31/ch13-heap-stack-caps/linker/s31.ld)                     |
+| `src/alloc/slab.zig`                | [查看](/static/code/#/zig-esp32-s31/ch13-heap-stack-caps/src/alloc/slab.zig)                |
+| `src/alloc/tlsf.zig`                | [查看](/static/code/#/zig-esp32-s31/ch13-heap-stack-caps/src/alloc/tlsf.zig)                |
+| `src/caps.zig`                      | [查看](/static/code/#/zig-esp32-s31/ch13-heap-stack-caps/src/caps.zig)                      |
+| `src/heap.zig`                      | [查看](/static/code/#/zig-esp32-s31/ch13-heap-stack-caps/src/heap.zig)                      |
+| `src/log.zig`                       | [查看](/static/code/#/zig-esp32-s31/ch13-heap-stack-caps/src/log.zig)                       |
+| `src/main.zig`                      | [查看](/static/code/#/zig-esp32-s31/ch13-heap-stack-caps/src/main.zig)                      |
+| `src/psram.zig`                     | [查看](/static/code/#/zig-esp32-s31/ch13-heap-stack-caps/src/psram.zig)                     |
+| `src/stack_guard.zig`               | [查看](/static/code/#/zig-esp32-s31/ch13-heap-stack-caps/src/stack_guard.zig)               |
+| `src/start.zig`                     | [查看](/static/code/#/zig-esp32-s31/ch13-heap-stack-caps/src/start.zig)                     |
+| `src/trap.zig`                      | [查看](/static/code/#/zig-esp32-s31/ch13-heap-stack-caps/src/trap.zig)                      |
+| `idf-bootstrap/CMakeLists.txt`      | [查看](/static/code/#/zig-esp32-s31/ch13-heap-stack-caps/idf-bootstrap/CMakeLists.txt)      |
+| `idf-bootstrap/main/CMakeLists.txt` | [查看](/static/code/#/zig-esp32-s31/ch13-heap-stack-caps/idf-bootstrap/main/CMakeLists.txt) |
+| `idf-bootstrap/main/app_main.c`     | [查看](/static/code/#/zig-esp32-s31/ch13-heap-stack-caps/idf-bootstrap/main/app_main.c)     |
+| `idf-bootstrap/sdkconfig.defaults`  | [查看](/static/code/#/zig-esp32-s31/ch13-heap-stack-caps/idf-bootstrap/sdkconfig.defaults)  |
+| `tools/flash.sh`                    | [查看](/static/code/#/zig-esp32-s31/ch13-heap-stack-caps/tools/flash.sh)                    |
+| `README.md`                         | [查看](/static/code/#/zig-esp32-s31/ch13-heap-stack-caps/README.md)                         |
+
 | 文件                  | 职责                                                                      |
 | --------------------- | ------------------------------------------------------------------------- |
 | `linker/s31.ld`       | 两个 flash 装载段、`.trap_ram`、`_heap_start/_heap_end`、16 KiB 主栈      |

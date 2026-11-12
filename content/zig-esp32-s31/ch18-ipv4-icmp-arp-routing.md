@@ -784,7 +784,7 @@ DHCP 的状态机（INIT → SELECTING → REQUESTING → BOUND → RENEWING →
 | 19  | lwIP 重组默认 `IP_REASS_MAXAGE=15`、`IP_REASS_MAX_PBUFS=10`               | `~/esp/esp-idf/components/lwip/lwip/src/include/lwip/opt.h:797,809`                                |
 | 20  | lwIP 重组：重叠/重复片丢弃、缓冲不足踢最旧数据报                          | `~/esp/esp-idf/components/lwip/lwip/src/core/ipv4/ip4_frag.c:65-80,259,421,434,447`                |
 | 21  | ESP-IDF 把 `IP_REASS_MAXAGE` 设为 3                                       | `~/esp/esp-idf/components/lwip/port/include/lwipopts.h:241`                                        |
-| 22  | ESP-IDF 打开 `ARP_QUEUEING`，上游默认关闭                                 | `~/esp/esp-idf/components/lwip/port/include/lwipopts.h:163`；`lwip/opt.h:629,637,648`              |
+| 22  | ESP-IDF 打开 `ARP_QUEUEING`，上游默认关闭                                 | `~/esp/esp-idf/components/lwip/port/include/lwipopts.h:163`；`lwip/opt.h:648`                      |
 | 23  | lwIP ARP 表默认 10 项、`ARP_MAXAGE=300`                                   | `~/esp/esp-idf/components/lwip/lwip/src/include/lwip/opt.h:629,637`                                |
 | 24  | S31 链接布局与两个 flash 段约束                                           | 本系列 ch04/ch16 实测（`practice/zig-esp32-s31/ch16-…/linker/s31.ld` 注释）                        |
 

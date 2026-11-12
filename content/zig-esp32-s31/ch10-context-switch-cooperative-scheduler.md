@@ -204,6 +204,24 @@ ch07 已经把 CLIC 配通了，软件中断当然也能做让出：给某个 CL
 
 ## 10.7 工程走读
 
+> 完整工程:[ch10-context-switch-scheduler](/static/code/#/zig-esp32-s31/ch10-context-switch-scheduler/)
+
+| 文件                                | 查看                                                                                                 |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `build.zig`                         | [查看](/static/code/#/zig-esp32-s31/ch10-context-switch-scheduler/build.zig)                         |
+| `linker/s31.ld`                     | [查看](/static/code/#/zig-esp32-s31/ch10-context-switch-scheduler/linker/s31.ld)                     |
+| `src/context.zig`                   | [查看](/static/code/#/zig-esp32-s31/ch10-context-switch-scheduler/src/context.zig)                   |
+| `src/main.zig`                      | [查看](/static/code/#/zig-esp32-s31/ch10-context-switch-scheduler/src/main.zig)                      |
+| `src/sched.zig`                     | [查看](/static/code/#/zig-esp32-s31/ch10-context-switch-scheduler/src/sched.zig)                     |
+| `src/start.zig`                     | [查看](/static/code/#/zig-esp32-s31/ch10-context-switch-scheduler/src/start.zig)                     |
+| `src/tasks.zig`                     | [查看](/static/code/#/zig-esp32-s31/ch10-context-switch-scheduler/src/tasks.zig)                     |
+| `idf-bootstrap/CMakeLists.txt`      | [查看](/static/code/#/zig-esp32-s31/ch10-context-switch-scheduler/idf-bootstrap/CMakeLists.txt)      |
+| `idf-bootstrap/main/CMakeLists.txt` | [查看](/static/code/#/zig-esp32-s31/ch10-context-switch-scheduler/idf-bootstrap/main/CMakeLists.txt) |
+| `idf-bootstrap/main/app_main.c`     | [查看](/static/code/#/zig-esp32-s31/ch10-context-switch-scheduler/idf-bootstrap/main/app_main.c)     |
+| `idf-bootstrap/sdkconfig.defaults`  | [查看](/static/code/#/zig-esp32-s31/ch10-context-switch-scheduler/idf-bootstrap/sdkconfig.defaults)  |
+| `tools/flash.sh`                    | [查看](/static/code/#/zig-esp32-s31/ch10-context-switch-scheduler/tools/flash.sh)                    |
+| `README.md`                         | [查看](/static/code/#/zig-esp32-s31/ch10-context-switch-scheduler/README.md)                         |
+
 ### 1. 文件与职责
 
 | 文件              | 职责                                                                 |

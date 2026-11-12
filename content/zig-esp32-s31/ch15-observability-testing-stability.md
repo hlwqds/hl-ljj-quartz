@@ -609,6 +609,29 @@ checksum *%= 2654435761;
 
 ## 15.9 构建、镜像与烧录
 
+> 完整工程:[ch15-observability-testing-stability](/static/code/#/zig-esp32-s31/ch15-observability-testing-stability/)
+
+| 文件                                | 查看                                                                                                        |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `build.zig`                         | [查看](/static/code/#/zig-esp32-s31/ch15-observability-testing-stability/build.zig)                         |
+| `linker/s31.ld`                     | [查看](/static/code/#/zig-esp32-s31/ch15-observability-testing-stability/linker/s31.ld)                     |
+| `src/check.zig`                     | [查看](/static/code/#/zig-esp32-s31/ch15-observability-testing-stability/src/check.zig)                     |
+| `src/host_tests.zig`                | [查看](/static/code/#/zig-esp32-s31/ch15-observability-testing-stability/src/host_tests.zig)                |
+| `src/hw.zig`                        | [查看](/static/code/#/zig-esp32-s31/ch15-observability-testing-stability/src/hw.zig)                        |
+| `src/log.zig`                       | [查看](/static/code/#/zig-esp32-s31/ch15-observability-testing-stability/src/log.zig)                       |
+| `src/main.zig`                      | [查看](/static/code/#/zig-esp32-s31/ch15-observability-testing-stability/src/main.zig)                      |
+| `src/start.zig`                     | [查看](/static/code/#/zig-esp32-s31/ch15-observability-testing-stability/src/start.zig)                     |
+| `src/stress.zig`                    | [查看](/static/code/#/zig-esp32-s31/ch15-observability-testing-stability/src/stress.zig)                    |
+| `src/trace.zig`                     | [查看](/static/code/#/zig-esp32-s31/ch15-observability-testing-stability/src/trace.zig)                     |
+| `src/trap.zig`                      | [查看](/static/code/#/zig-esp32-s31/ch15-observability-testing-stability/src/trap.zig)                      |
+| `src/watchdog.zig`                  | [查看](/static/code/#/zig-esp32-s31/ch15-observability-testing-stability/src/watchdog.zig)                  |
+| `idf-bootstrap/CMakeLists.txt`      | [查看](/static/code/#/zig-esp32-s31/ch15-observability-testing-stability/idf-bootstrap/CMakeLists.txt)      |
+| `idf-bootstrap/main/CMakeLists.txt` | [查看](/static/code/#/zig-esp32-s31/ch15-observability-testing-stability/idf-bootstrap/main/CMakeLists.txt) |
+| `idf-bootstrap/main/app_main.c`     | [查看](/static/code/#/zig-esp32-s31/ch15-observability-testing-stability/idf-bootstrap/main/app_main.c)     |
+| `idf-bootstrap/sdkconfig.defaults`  | [查看](/static/code/#/zig-esp32-s31/ch15-observability-testing-stability/idf-bootstrap/sdkconfig.defaults)  |
+| `tools/flash.sh`                    | [查看](/static/code/#/zig-esp32-s31/ch15-observability-testing-stability/tools/flash.sh)                    |
+| `README.md`                         | [查看](/static/code/#/zig-esp32-s31/ch15-observability-testing-stability/README.md)                         |
+
 ### 15.9.1 应用 ELF
 
 ```bash
