@@ -1,0 +1,102 @@
+Executing action: monitor
+Running idf_monitor in directory /home/huanglin/code/hl-ljj-quartz/practice/zig-esp32-s31/ch02-hello
+Executing "/home/huanglin/.espressif/python_env/idf6.1_py3.13_env/bin/python /home/huanglin/esp/esp-idf/tools/idf_monitor.py -p /dev/ttyUSB1 -b 115200 --toolchain-prefix riscv32-esp-elf- --target esp32s31 --revision 0 --decode-panic backtrace /home/huanglin/code/hl-ljj-quartz/practice/zig-esp32-s31/ch02-hello/build/zig_s31_hello.elf /home/huanglin/code/hl-ljj-quartz/practice/zig-esp32-s31/ch02-hello/build/bootloader/bootloader.elf -m '/home/huanglin/.espressif/python_env/idf6.1_py3.13_env/bin/python' '/home/huanglin/esp/esp-idf/tools/idf.py' '-p' '/dev/ttyUSB1'"...
+--- esp-idf-monitor 1.10.0 on /dev/ttyUSB1 115200
+--- Standard input is not a TTY, running in non-interactive mode. Reading commands from stdin: reset, flash, flash-all, app-flash, output, log, timestamps, bootloader, send <text>, sleep <seconds>, expect [--timeout <seconds>] <regex>, exit | Quit: 'exit' command, EOF or Ctrl+C
+--- No commands on standard input, watching serial output only...
+ESP-ROM:esp32s31-20251218
+Build:Dec 18 2025
+rst:0x1 (POWERON),boot:0x58 (SPI_FAST_FLASH_BOOT)
+SPI mode:DIO, clock div:1
+load:0x2f0740c0,len:0x168c
+load:0x2f06a2b0,len:0xc7c
+--- 0x2f06a2b0: esp_bootloader_get_description at /home/huanglin/esp/esp-idf/components/esp_bootloader_format/esp_bootloader_desc.c:40
+load:0x2f06cfb0,len:0x3368
+--- 0x2f06cfb0: is_xmc_chip_strict at /home/huanglin/esp/esp-idf/components/bootloader_support/bootloader_flash/src/bootloader_flash.c:911
+entry 0x2f06a2ba
+--- 0x2f06a2ba: call_start_cpu0 at /home/huanglin/esp/esp-idf/components/bootloader/subproject/main/bootloader_start.c:27
+[0;32mI (26) boot: ESP-IDF v6.1 2nd stage bootloader[0m
+[0;32mI (26) boot: compile time Nov 13 2026 00:47:01[0m
+[0;32mI (26) boot: Multicore bootloader[0m
+[0;32mI (28) boot: chip revision: v0.0[0m
+[0;32mI (29) boot: efuse block revision: v0.2[0m
+[0;32mI (32) boot.esp32s31: SPI Speed      : 80MHz[0m
+[0;32mI (36) boot.esp32s31: SPI Mode       : DIO[0m
+[0;32mI (40) boot.esp32s31: SPI Flash Size : 16MB[0m
+[0;32mI (44) boot: Enabling RNG early entropy source...[0m
+[0;32mI (49) boot: Partition Table:[0m
+[0;32mI (51) boot: ## Label            Usage          Type ST Offset   Length[0m
+[0;32mI (58) boot:  0 nvs              WiFi data        01 02 00009000 00006000[0m
+[0;32mI (64) boot:  1 phy_init         RF data          01 01 0000f000 00001000[0m
+[0;32mI (71) boot:  2 factory          factory app      00 00 00010000 00177000[0m
+[0;32mI (78) boot: End of partition table[0m
+[0;32mI (81) esp_image: segment 0: paddr=00010020 vaddr=40000020 size=02df0h ( 11760) map[0m
+[0;32mI (92) esp_image: segment 1: paddr=00012e18 vaddr=2f000000 size=0006ch (   108) load[0m
+[0;32mI (97) esp_image: segment 2: paddr=00012e8c vaddr=00000000 size=0d18ch ( 53644) [0m
+[0;32mI (112) esp_image: segment 3: paddr=00020020 vaddr=40020020 size=00e94h (  3732) map[0m
+[0;32mI (115) boot: Loaded app from partition at offset 0x10000[0m
+[0;32mI (116) boot: Disabling RNG early entropy source...[0m
+ch15-observability-testing-stability | form B (Zig ELF + IDF 2nd-stage bootloader)
+console: UART0 TX=GPIO58 RX=GPIO59 115200 8N1 (ROM default)
+build: stress=0 panic_demo=1 trace_cap=32
+clock: TIMG0 T0 1MHz (XTAL 40MHz / 40), MIE=0, no scheduler
+wdt: rtc before=0xc0000000 after=0x0 tries=1
+check: begin - symbols, regions, clock, interrupt, watchdog, trace
+check: flash image=0x40000020 text=0x40000120..0x40002e10
+--- 0x40000020: console_fstat at /home/huanglin/esp/esp-idf/components/esp_stdio/stdio_vfs.c:195
+--- 0x40000120: console_open at /home/huanglin/esp/esp-idf/components/esp_stdio/stdio_vfs.c:116
+--- 0x40002e10: heap_bubble_down at /home/huanglin/esp/esp-idf/components/log/src/log_level/tag_log_level/cache/log_binary_heap.c:181
+check: flash drom=0x40020020..0x4005f020 rodata=0x40020020..0x400208a0 ok=1
+check: sram trap=0x2f000000..0x2f00006c data=0x2f000070..0x2f000070
+--- 0x2f000000: _vector_table at ??:?
+--- 0x2f00006c: _mtvt_table at ??:?
+--- 0x2f000070: _mtvt_table at ??:?
+--- 0x2f000070: _mtvt_table at ??:?
+check: sram bss=0x2f000070..0x2f000390 heap=0x2f000390..0x2f076fc0
+--- 0x2f000070: _mtvt_table at ??:?
+--- 0x2f000390: spi1_end at /home/huanglin/esp/esp-idf/components/spi_flash/spi_flash_os_func_app.c:319
+--- 0x2f000390: spi1_end at /home/huanglin/esp/esp-idf/components/spi_flash/spi_flash_os_func_app.c:319
+check: sram stack=0x2f076fc0..0x2f07afc0 expect_top=0x2f07afc0 size=0x4000
+check: sram trap_ok=1 data_ok=1 bounds_bits=0x3f ok=1
+check: clock ctrl=0x921 apb_en=1 t0_clk_en=1 src=0 ok=1
+check: clock delay=1000us measured=1002us ratio=100% advisory=ok
+check: irq mtvec=0x2f000003 base=0x2f000000 trapEntry=0x2f000000 mode=3 (info)
+--- 0x2f000003: _vector_table at ??:?
+--- 0x2f000000: _vector_table at ??:?
+--- 0x2f000000: _vector_table at ??:?
+check: irq MIE=0 mie=0x0 thresh=0 clic[16]=0x1fc00000 ok=1
+check: wdt cfg=0x0 en=0 stages=0x0 flashboot=0 wprotect=0x0 ok=1
+check: trace cap=32 count=32 dropped=3 oldest=0x3 newest=0x22 ok=1
+checks: passed=8 failed=0 total=8 advisory=1 (clock calibration)
+hb: seq=0 t=345ms ring=3/32 span=345635us
+hb: seq=1 t=595ms ring=4/32 span=595956us
+hb: seq=2 t=846ms ring=5/32 span=846254us
+hb: seq=3 t=1096ms ring=6/32 span=1096551us
+hb: seq=4 t=1346ms ring=7/32 span=1346862us
+hb: seq=5 t=1597ms ring=8/32 span=1597173us
+hb: seq=6 t=1847ms ring=9/32 span=1847483us
+hb: seq=7 t=2097ms ring=10/32 span=2097793us
+assert: ok tag=trace capacity is 32
+assert: caught tag=demo: injected invariant failure action=recover
+assert: demo caught=0 (recoverable path exercised)
+wdt: deadline=100ms early_expired=0 recovered=1 trips=1
+wdt: demo only - production should escalate to trap.panic
+assert: ok tag=watchdog deadlines
+stress: skipped (build with -Dstress=true for the 30 s soak)
+main: panic demo - next instruction is illegal (0x00000000)
+panic: injecting illegal instruction 0x00000000
+panic: exception code=2 (illegal instruction) cause=0x30000002
+panic: mepc=0x40001554 mtval=0x0 mstatus=0x1801
+--- 0x40001554: esp_ipc_call_nonblocking at /home/huanglin/esp/esp-idf/components/esp_system/esp_ipc.c:189
+panic: ra=0x40001554 a0=0x0 a1=0x2f07ab18 a2=0x0
+--- 0x40001554: esp_ipc_call_nonblocking at /home/huanglin/esp/esp-idf/components/esp_system/esp_ipc.c:189
+trace: t=1096551us tag=hb a=0x3 b=1096
+trace: t=1346862us tag=hb a=0x4 b=1346
+trace: t=1597173us tag=hb a=0x5 b=1597
+trace: t=1847483us tag=hb a=0x6 b=1847
+trace: t=2097793us tag=hb a=0x7 b=2097
+trace: t=2099707us tag=assert a=0x0 b=0
+trace: t=2224982us tag=wdt a=0x1 b=1
+trace: t=2241059us tag=panic a=0x2 b=0
+dump: trace shown=8/13 pushed=13 dropped=0
+panic: halted (wfi)

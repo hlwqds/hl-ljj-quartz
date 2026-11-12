@@ -54,6 +54,7 @@ const SKIP_DIRS = [
   ".mimosa",
   ".zig-cache",
   "zig-out",
+  "logs", // 串口原始日志（bring-up 证据），不进浏览页
 ]
 
 /** 侧栏显示名覆盖：缺省用目录基名（pd），中文套件名在这里给 */

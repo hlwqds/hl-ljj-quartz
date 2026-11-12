@@ -19,6 +19,8 @@ const tick = @import("tick.zig");
 const stack_bytes = 2048;
 
 var stack_hi: [stack_bytes]u8 align(16) = undefined;
+/// idle 的独立栈：不复用 main 的栈（见 sched.start 的注释）。
+var stack_idle: [stack_bytes]u8 align(16) = undefined;
 var stack_lo_a: [stack_bytes]u8 align(16) = undefined;
 var stack_lo_b: [stack_bytes]u8 align(16) = undefined;
 
@@ -60,5 +62,5 @@ pub export fn main() noreturn {
     });
 
     tick.init(tick.period_us);
-    sched.start();
+    sched.start(&stack_idle);
 }

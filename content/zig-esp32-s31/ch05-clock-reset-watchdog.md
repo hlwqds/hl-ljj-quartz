@@ -18,7 +18,7 @@ tags: [zig, esp32-s31, riscv, clock, reset, watchdog, series]
 
 ch04 的 `_start` 只有二十条指令：关中断、设 `sp`/`gp`、清 `.bss`、跳 `main`。它能跑起来，靠的是三条**从没写进代码、却必须成立**的假设：
 
-1. CPU 已经跑在某个确定的频率上（board 上是 320 MHz）；
+1. CPU 已经跑在某个确定的频率上（**本板实测 80 MHz**；S31 最高 320 MHz，但需要应用自己配 CPLL）；
 2. 复位原因已经被 ROM 判定好，只是我们没去读；
 3. 看门狗不会在应用跑到一半时咬人。
 
@@ -45,9 +45,9 @@ ch04 的 `_start` 只有二十条指令：关中断、设 `sp`/`gp`、清 `.bss`
 很多教程在这一步会直接给你一串 PLL 寄存器写入，把 CPU “设成” 320 MHz。本章**故意不这么干**，理由有两个：
 
 - **PLL 不是写几个数就完事**。S31 的 CPLL（CPU*PLL）从 40 MHz XTAL 倍频到 320 MHz，切换 CPU 时钟源时要经过“切到 XTAL → 配 PLL → 等锁定 → 切回 PLL”的序列，锁频失败还得回退。IDF 把这些封装在 `clk_ll_cpll*\*`/`rtc_clk_cpu_set_to_default_config()` 里，并且切频期间不能有代码在 cache 里跑（否则取指会踩到正在被改的时钟）。
-- **bootloader 已经做完了**。二级 bootloader 启动时就把 CPU 切到 CPLL 320 MHz、Flash 切到 BBPLL，应用继承这个结果。所以对形态 B 的应用来说，“配时钟”不是必需动作，“**证明时钟是什么**”才是。
+- **bootloader 只保证“能跑”**。二级 bootloader 按 `CONFIG_BOOTLOADER_CPU_CLK_FREQ_MHZ`（默认 80）把 CPU 留在 **80 MHz**，320 MHz 的 CPLL 切换由 IDF 应用启动时自己做；形态 B 的裸机应用没有那一步，所以**量到的是 80 MHz**。对形态 B 来说，“配时钟”不是必需动作，“**证明时钟是什么**”才是。
 
-于是本章的做法是：**不写任何一个时钟寄存器，只装一把尺子**。尺子的读数是可信的（它只依赖 XTAL 40 MHz 这个板级事实），量出来的结果如果和 320 MHz 对不上，问题就定位在“bootloader 配置”或“XTAL 不是 40 MHz”，而不是“我的 PLL 写错了”。
+于是本章的做法是：**不写任何一个时钟寄存器，只装一把尺子**。尺子的读数是可信的（它只依赖 XTAL 40 MHz 这个板级事实），量出来的结果如果和预期对不上（本板预期 80 MHz），问题就定位在“bootloader 配置”或“XTAL 不是 40 MHz”，而不是“我的 PLL 写错了”。
 
 这条原则在本系列后面反复出现：**先建立可测量的基准，再动被测量的对象。**
 
@@ -85,13 +85,13 @@ S31 的时钟树由 `soc/clk_tree_defs.h` 描述，根时钟分四类：两个�
 
 CPU 的时钟源选择是一个枚举：
 
-| `soc_cpu_clk_src_t`         | 值  | 含义                                         |
-| --------------------------- | --- | -------------------------------------------- |
-| `SOC_CPU_CLK_SRC_XTAL`      | 0   | 直接用 40 MHz XTAL                           |
-| `SOC_CPU_CLK_SRC_CPLL`      | 1   | CPLL（可到 320 MHz），**board 上的默认选择** |
-| `SOC_CPU_CLK_SRC_PLL_F240M` | 3   | 用 BBPLL 分频出来的 240 MHz                  |
+| `soc_cpu_clk_src_t`         | 值  | 含义                                                              |
+| --------------------------- | --- | ----------------------------------------------------------------- |
+| `SOC_CPU_CLK_SRC_XTAL`      | 0   | 直接用 40 MHz XTAL                                                |
+| `SOC_CPU_CLK_SRC_CPLL`      | 1   | CPLL（可到 320 MHz）；**本板 bootloader 未选它**，实测停在 80 MHz |
+| `SOC_CPU_CLK_SRC_PLL_F240M` | 3   | 用 BBPLL 分频出来的 240 MHz                                       |
 
-所以“CPU 320 MHz”这句话的完整版本是：**XTAL 40 MHz → CPLL 倍频到 320 MHz → CPU 时钟源选 CPLL**。本节后面量频率时，读数是这三步的合成结果。
+所以“CPU 320 MHz”这句话的完整版本是：**XTAL 40 MHz → CPLL 倍频到 320 MHz → CPU 时钟源选 CPLL**。本章实测到的是 **PLL_F80M 的 80 MHz**（`SOC_CPU_CLK_SRC_PLL` 的 80 MHz 档），说明 bootloader 之后没有人再切 CPLL；IDF 应用会在 `cpu_start` 里切到 320。
 
 ### 3. APB 与外设时钟
 
@@ -103,14 +103,14 @@ CPU 的时钟源选择是一个枚举：
 
 APB 是绝大多数外设（UART、TIMG、GPIO、I2C…）的总线时钟。它的实际频率由 CPU 时钟源分频得到，运行时可用 `clk_hal_apb_get_freq_hz()` 读到。对本章有意义的是下面这张分发表——每一行都决定了“1 个 tick 是多少纳秒”，也就决定了后面所有超时参数：
 
-| 外设/用途           | 时钟源（默认）               | 每 tick 的时间        | 依据                                       |
-| ------------------- | ---------------------------- | --------------------- | ------------------------------------------ |
-| CPU                 | CPLL 320 MHz                 | 3.125 ns              | `soc_cpu_clk_src_t`                        |
-| SYSTIMER            | XTAL 40 MHz，固定 2.5 分频   | 62.5 ns（16 MHz）     | `port/esp32s31/systimer.c`                 |
-| MWDT（TIMG 看门狗） | 只允许 XTAL 40 MHz           | 25 ns                 | `mwdt_ll_set_clock_source()` 断言只有 XTAL |
-| RWDT（RTC 看门狗）  | RTC_SLOW_CLK（默认 RC_SLOW） | 约 7.35 µs（136 kHz） | `SOC_CLK_RC_SLOW_FREQ_APPROX`              |
-| UART 波特率源       | PLL_F80M（默认）             | —                     | `SOC_UART_CLKS` / `UART_SCLK_DEFAULT`      |
-| RMT（WS2812 用）    | PLL_F80M（默认）             | —                     | `SOC_RMT_CLKS` / `RMT_CLK_SRC_DEFAULT`     |
+| 外设/用途           | 时钟源（默认）               | 每 tick 的时间        | 依据                                             |
+| ------------------- | ---------------------------- | --------------------- | ------------------------------------------------ |
+| CPU                 | CPLL 320 MHz                 | 3.125 ns              | `soc_cpu_clk_src_t`（本板实测 80 MHz → 12.5 ns） |
+| SYSTIMER            | XTAL 40 MHz，固定 2.5 分频   | 62.5 ns（16 MHz）     | `port/esp32s31/systimer.c`                       |
+| MWDT（TIMG 看门狗） | 只允许 XTAL 40 MHz           | 25 ns                 | `mwdt_ll_set_clock_source()` 断言只有 XTAL       |
+| RWDT（RTC 看门狗）  | RTC_SLOW_CLK（默认 RC_SLOW） | 约 7.35 µs（136 kHz） | `SOC_CLK_RC_SLOW_FREQ_APPROX`                    |
+| UART 波特率源       | PLL_F80M（默认）             | —                     | `SOC_UART_CLKS` / `UART_SCLK_DEFAULT`            |
+| RMT（WS2812 用）    | PLL_F80M（默认）             | —                     | `SOC_RMT_CLKS` / `RMT_CLK_SRC_DEFAULT`           |
 
 “UART 用 PLL_F80M”这一行值得记住：ch06 里自己算波特率分频时，被除数不是 40 MHz 也不是 320 MHz，而是 80 MHz。而 ROM 的 `ets_printf` 用的是 bootloader 早先配好的 UART 参数，**它不受我们的 CPU 频率影响**——这也是本章在量频率时还能看到正常输出的原因。
 
@@ -150,7 +150,7 @@ CPU 频率 = Δmcycle / Δt
 CPU 频率 = Δmcycle / (ΔSYSTIMER_ticks / 16)
 ```
 
-两个计数器同一次读、同一个窗口，除法的结果就是频率。窗口取 200 ms 时，320 MHz 的 CPU 大约走 6400 万个 cycle——32 位 `mcycle` 在 320 MHz 下 13.4 秒才回绕一次，所以**只读低 32 位**是安全的，用不着处理 64 位拼接与进位。
+两个计数器同一次读、同一个窗口，除法的结果就是频率。窗口取 200 ms 时，80 MHz 的 CPU 大约走 1600 万个 cycle——32 位 `mcycle` 在 80 MHz 下约 53.7 秒才回绕一次，所以**只读低 32 位**是安全的，用不着处理 64 位拼接与进位。
 
 ### 2. SYSTIMER 的读法：为什么不是直接读两个寄存器
 
@@ -222,15 +222,16 @@ pub fn mhz(self: Measurement) u32 {
 }
 ```
 
-窗口 200 ms 时，`window_us = 200000`，读数精度是 ±1 MHz（整数除法）。对“是不是 320 MHz”这个问题足够了；要更高精度就把窗口拉长到 1 秒（注意 32 位 `mcycle` 在 320 MHz 下 13.4 秒回绕，1 秒窗口仍安全），或者改成 `mcycleh`/`mcycle` 拼接的 64 位读法。
+窗口 200 ms 时，`window_us = 200000`，读数精度是 ±1 MHz（整数除法）。对“到底是 80 还是 320 MHz”这个问题足够了；要更高精度就把窗口拉长到 1 秒（32 位 `mcycle` 在 80 MHz 下 53.7 秒回绕，1 秒窗口安全）。
 
-真机上应当看到的量级（**待真机验证**，不是实测）：
+真机实测（2026-11-13，coreboard）：`cycles=16000012`、`ticks=3200030`、窗口 `200001 us` → **80 MHz**。不同 CPU 源对应的量级：
 
-| CPU 源            | `cycles`（200 ms 窗口） | `mhz()` |
-| ----------------- | ----------------------- | ------- |
-| CPLL 320 MHz      | 约 64,000,000           | 320     |
-| PLL_F240M 240 MHz | 约 48,000,000           | 240     |
-| XTAL 40 MHz       | 约 8,000,000            | 40      |
+| CPU 源                  | `cycles`（200 ms 窗口） | `mhz()` |
+| ----------------------- | ----------------------- | ------- |
+| PLL_F80M 80 MHz（本板） | 约 16,000,000           | 80      |
+| CPLL 320 MHz            | 约 64,000,000           | 320     |
+| PLL_F240M 240 MHz       | 约 48,000,000           | 240     |
+| XTAL 40 MHz             | 约 8,000,000            | 40      |
 
 如果读到 40 MHz，说明 CPU 停在 XTAL 上（bootloader 切 PLL 失败后会回退到 XTAL），此时“代码能跑但慢 8 倍”，而串口仍然正常——这正是“测出来”比“假设它”有价值的地方。
 
@@ -476,9 +477,9 @@ const demo_timeout_ticks: u32 = 0;
 === ch05-clock-reset-wdt ===
 reset reason: code=1 (CHIP_POWER_ON, ESP_RST_POWERON)
   meaning: 上电或复位键，属于冷启动
-clock: cycles=<约 6400 万> ticks=<约 320 万> (window 200000 us) -> CPU 320 MHz
+clock: cycles=16000012 ticks=3200030 (window 200001 us) -> CPU 80 MHz
   expect 320 (CPLL) on this board; 40 means XTAL-only boot
-rwdt: en=<0 或 1> flashboot=<0 或 1> stg0=<n> stg1=<n> stg2=<n> stg3=<n> hold=<n>
+rwdt: en=1 flashboot=0 stg0=0 stg1=0 stg2=0 stg3=0 hold=612000
 tick 1 at <n> us
 tick 2 at <n+500000 左右> us
 ```

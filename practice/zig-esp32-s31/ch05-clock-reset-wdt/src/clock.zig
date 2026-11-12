@@ -1,6 +1,6 @@
 //! ch05-clock-reset-wdt：把“CPU 到底跑多快”量出来。
 //!
-//! 本章不写任何 PLL/时钟树寄存器。40 MHz XTAL → CPLL(320 MHz) 的选择是二级
+//! 本章不写任何 PLL/时钟树寄存器。bootloader 把 CPU 留在 80 MHz（实测），
 //! bootloader 做的，应用只是继承结果。要证明这个结果，得有一个**独立的**
 //! 时间基准，方案是用 SYSTIMER 当尺子、用 `mcycle` 当被测对象：
 //!
@@ -102,7 +102,7 @@ pub fn us() u32 {
     return @truncate(ticks() / ticks_per_us);
 }
 
-/// 读 `mcycle` 的低 32 位。320 MHz 下约 13.4 秒回绕，本章的测量窗口是 200 ms。
+/// 读 `mcycle` 的低 32 位。80 MHz 下约 53.7 秒回绕，本章的测量窗口是 200 ms。
 inline fn cycleCounter() u32 {
     return asm volatile ("csrr %[dst], mcycle"
         : [dst] "=r" (-> u32),
@@ -129,7 +129,7 @@ pub const Measurement = struct {
 
 /// 在 `window_us` 微秒的窗口里同时量 SYSTIMER 增量与 mcycle 增量。
 ///
-/// 窗口 200 ms 时，320 MHz 的 CPU 大约走 6400 万个 cycle，32 位够用；
+/// 窗口 200 ms 时，80 MHz 的 CPU 大约走 1600 万个 cycle，32 位够用；
 /// 窗口也不能太小，否则整除了 1 MHz 的分辨率会让结果抖。
 pub fn measure(window_us: u32) Measurement {
     const window_ticks: u64 = @as(u64, window_us) * ticks_per_us;

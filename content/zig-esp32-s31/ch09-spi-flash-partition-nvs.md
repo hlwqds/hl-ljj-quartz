@@ -31,7 +31,7 @@ ESP32-S31 模组上有 16 MB SPI NOR Flash。它不是“慢一点的内存”�
 本章不引入新的构建形态，仍然是 ch04 定下的形态 B（Zig 产出 ELF、自己的链接脚本、IDF 只提供二级 bootloader 与分区表）。新增的只是三个模块：`flash.zig`（ROM 三个函数）、`partition.zig`（解析分区表）、`kv.zig`（追加式键值日志）。
 
 > [!warning] 本章的证据边界
-> ROM 函数的地址取自 IDF v6.1 的 `esp32s31.rom.ld`，函数签名取自同一版本的 `esp_rom_spiflash.h`；分区表结构与 `0x8000`/`0xC00` 取自 `esp_flash_partitions.h` 与 IDF 的分区表生成逻辑。S31 的 TRM 仍是 Pre-release v0.7。**本工程没有在任何真机上运行过**，构建与烧录也没有在本仓执行：文中所有“应该看到什么”都是验收目标，不是实测；也不提供 `run.log`。
+> ROM 函数的地址取自 IDF v6.1 的 `esp32s31.rom.ld`，函数签名取自同一版本的 `esp_rom_spiflash.h`；分区表结构与 `0x8000`/`0xC00` 取自 `esp_flash_partitions.h` 与 IDF 的分区表生成逻辑。S31 的 TRM 仍是 Pre-release v0.7。本工程已于 2026-11-13 **真机运行**：分区解析（nvs `0x9000/0x6000`）、KV append/rescan 与 `boot_count` 均通过，原始输出见 `../logs/ch09-boot.log`。
 
 ---
 

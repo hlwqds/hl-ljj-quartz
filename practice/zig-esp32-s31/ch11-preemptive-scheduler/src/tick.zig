@@ -195,6 +195,10 @@ pub fn init(period: u32) void {
 /// 打开全局中断。必须在 init 之后调用。
 pub fn enable() void {
     clearPending(input);
+    // _start 里 `csrw mie, zero` 把整张 mie 表清空了；CLIC 的输入 16..47 属
+    // “外部中断”类，必须把 mie.MEIE（bit11）重新打开，否则 CLICINTIE 置 1
+    // 也不会投递（真机现象：tick 配置打印后一片安静，ticks 不涨）。
+    asm volatile ("li t0, 0x800\n\tcsrs mie, t0");
     asm volatile ("csrsi mstatus, 0x8");
 }
 

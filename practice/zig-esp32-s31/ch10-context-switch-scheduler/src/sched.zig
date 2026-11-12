@@ -165,7 +165,9 @@ pub export fn trapDispatch(frame: *context.TrapFrame) void {
     if ((cause & 0x8000_0000) != 0) halt(cause, frame.mepc);
 
     // 11 = environment call from M-mode。
-    if (cause == 11) {
+    // 真机发现（2026-11-12）：S31 的 mcause 高位带 CLIC 附加字段
+    // （实测 ecall 为 0x3800000b），异常码只在低 5 位；直接比较 11 会漏掉。
+    if ((cause & 0x1F) == 11) {
         schedule(frame);
         return;
     }

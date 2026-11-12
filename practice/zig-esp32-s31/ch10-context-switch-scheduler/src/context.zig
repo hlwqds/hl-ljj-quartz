@@ -166,15 +166,18 @@ export var switch_save_slot: *usize = undefined;
 export var switch_target_sp: usize = 0;
 
 pub fn switchTo(save_slot: *usize, new_sp: usize) void {
-    // Zig 0.17 禁止直接调用 naked 函数；经函数指针调用是官方认可的出口。
-    const raw: *const fn () callconv(.c) void = @ptrCast(&switchRaw);
     switch_save_slot = save_slot;
     switch_target_sp = new_sp;
-    raw();
+    // 直接发 `call switchRaw`：绕过 0.17 对 naked 函数的直接调用限制，
+    // 同时让 LLVM 把这里当成普通调用（与经函数指针相比 codegen 更可控）。
+    asm volatile ("call switchRaw"
+        :
+        : 
+        : .{});
 }
 
 /// 保存 callee-saved、换 sp、恢复 callee-saved。返回时已经在新任务的栈上。
-fn switchRaw() callconv(.naked) void {
+pub export fn switchRaw() callconv(.naked) void {
     asm volatile (
         \\        addi    sp, sp, -64
         \\        sw      ra, 0(sp)

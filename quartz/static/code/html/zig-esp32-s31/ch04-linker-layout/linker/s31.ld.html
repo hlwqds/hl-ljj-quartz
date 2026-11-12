@@ -1,14 +1,16 @@
 <pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">/*</span></span>
-<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * ch04-linker-layout —— 形态 B 的最小链接脚本（SRAM-only 布局）</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * ch04-linker-layout —— 形态 B 的最小链接脚本（代码在 flash 窗口，数据在 SRAM）</span></span>
 <span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
-<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 这一版做两件事：</span></span>
-<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *   1) 在第一个装载段的最前面放 256 字节的 esp_app_desc_t（IDF bootloader 认</span></span>
-<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *      镜像的前提，见 src/start.zig 的 app_desc）；</span></span>
-<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *   2) 把 .text/.rodata/.data/.bss 全部放进 SRAM，让 ENTRY(_start) +</span></span>
-<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *      esptool elf2image + IDF 二级 bootloader 这条链在最小假设下成立。</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 真机发现（2026-11-12）：S31 的 bootloader（bootloader_utility.c:</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * unpack_load_app）在 SOC_MMU_DI_VADDR_SHARED=1 下断言 rom_index == 2——</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 镜像里**必须正好有两个**落在 0x40000000..0x44000000 的段（IROM + DROM），</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 只有 SRAM 段的镜像会直接</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *   Assert failed in unpack_load_app ... (rom_index == 2)</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 因此本版把 .text 放进 irom_seg（0x40000020）、.rodata 放进 drom_seg</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * （0x40020020），.data/.bss/栈留在 SRAM（0x2F000000）。</span></span>
 <span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
-<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 所有段的 LMA == VMA，所以 _start 不需要搬运 .data；flash 映射</span></span>
-<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * （IROM/DROM 窗口 0x40000020）留到下一版布局。</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 这两段由二级 bootloader 配好 MMU 后再跳进 _start，所以取指经过 cache；</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * .data 作为独立装载段由 bootloader 搬进 SRAM，_start 不搬。</span></span>
 <span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *</span></span>
 <span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> * 地址来源：ESP-IDF v6.1 的 esp32s31 内存定义</span></span>
 <span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"> *   IDF_PATH/components/esp_system/ld/esp32s31/memory.ld.in</span></span>
@@ -21,14 +23,16 @@
 <span class="line"></span>
 <span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">MEMORY</span></span>
 <span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">{</span></span>
-<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    /* RISC-V 的 SRAM 是统一编址：取指与读写共用同一地址空间。 */</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    /* 0x20 偏移与 IDF 一致：让 paddr % 64KB == vaddr % 64KB。 */</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">    irom</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> (rx)  : ORIGIN </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> 0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">40000020</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">, LENGTH </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> 0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">3F000</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">    drom</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> (r)   : ORIGIN </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> 0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">40020020</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">, LENGTH </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> 0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">3F000</span></span>
 <span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">    sram</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> (rwx) : ORIGIN </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> 0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">2F000000</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">, LENGTH </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> 0x</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">7AFC0</span></span>
 <span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">}</span></span>
 <span class="line"></span>
 <span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">SECTIONS</span></span>
 <span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">{</span></span>
-<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    /* 代码与只读数据放在一起：将来整体迁到 flash 映射窗口时只改这一段。 */</span></span>
-<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    .text : </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">ALIGN</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">16</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    /* 第一个装载段 = IROM：app_desc 在最前，其后是代码。 */</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    .flash.text : </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">ALIGN</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">16</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)</span></span>
 <span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    {</span></span>
 <span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">        /*</span></span>
 <span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">         * 第一个装载段必须以 esp_app_desc_t 开头：256 字节、魔数 0xABCD5432。</span></span>
@@ -43,11 +47,19 @@
 <span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">        _text_start </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> .;</span></span>
 <span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">        KEEP</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(.text.entry))</span></span>
 <span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">        *</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(.text .text.</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">        . </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> ALIGN</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">16</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">);</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">        _text_end </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> .;</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    } </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">></span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> irom</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    /* 第二个 flash 装载段 = DROM：常量不加 .rodata 前缀就落进 SRAM，会少一段。 */</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    .flash.rodata : </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">ALIGN</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">16</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    {</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">        _rodata_start </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> .;</span></span>
 <span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">        *</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(.rodata .rodata.</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)</span></span>
 <span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">        *</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(.srodata .srodata.</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">*</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)</span></span>
 <span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">        . </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> ALIGN</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">16</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">);</span></span>
-<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">        _text_end </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> .;</span></span>
-<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    } </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">></span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> sram</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">        _rodata_end </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> .;</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    } </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">></span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> drom</span></span>
 <span class="line"></span>
 <span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">    /* 有初值的可写数据。本布局 LMA == VMA：_data_load_start == _data_start。 */</span></span>
 <span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    .data : </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">ALIGN</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">16</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)</span></span>

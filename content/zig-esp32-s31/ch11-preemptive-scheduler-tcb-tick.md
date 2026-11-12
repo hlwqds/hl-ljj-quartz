@@ -18,7 +18,7 @@ tags: [zig, esp32-s31, riscv, rtos, scheduler, series]
 > 9. [[ch09-spi-flash-partition-nvs|第九章：SPI Flash、分区与 NVS 存储]]
 > 10. [[ch10-context-switch-cooperative-scheduler|第十章：上下文切换与协作调度]]
 > 11. **第十一章：抢占调度、TCB 与 tick**
-> 12. 第十二章：同步原语与 IPC（待发布）
+> 12. [[ch12-sync-primitives-ipc|第十二章：同步原语与 IPC]]
 
 # Zig × ESP32-S31 全栈开发（十一）：抢占调度、TCB 与 tick
 
@@ -27,7 +27,7 @@ tags: [zig, esp32-s31, riscv, rtos, scheduler, series]
 这一章补三块：周期性的时间源（tick）、不等任务配合的切换点（中断）、决定次序的规则（优先级 + 时间片）。三块都复用已有结论——tick 走 ch07 的 CLIC 与中断矩阵，定时器走 ch08 的 TIMG0，帧布局与 `switchRaw` 直接沿用 ch10。真正新增的只有 TCB 的调度字段，以及“在 ISR 里调用 `switchTo`”这条边界。
 
 > [!warning] 本章的证据边界
-> 形态 B 不变（Zig 产 ELF、自有链接脚本、IDF 只提供二级 bootloader 与分区表）。寄存器地址取自 ESP-IDF v6.1 的 `esp32s31` 头文件，S31 的 TRM 仍是 Pre-release v0.7。**本工程没有在任何真机上运行过**，构建与烧录也未在本仓执行：文中输出全是验收目标，不是实测；不提供 `run.log`。ISR 换栈、tick 周期、漂移/抖动都按待真机验证对待。
+> 形态 B 不变（Zig 产 ELF、自有链接脚本、IDF 只提供二级 bootloader 与分区表）。寄存器地址取自 ESP-IDF v6.1 的 `esp32s31` 头文件，S31 的 TRM 仍是 Pre-release v0.7。本工程已于 2026-11-13 **真机运行**：`hi` 6 beat → `loB` 4 → `loA` 4 → `sched: all tasks done ticks=183 switches=5` → `idle: wfi`，原始输出见 `../logs/ch11-boot.log`；tick 漂移/抖动未测。
 
 ---
 

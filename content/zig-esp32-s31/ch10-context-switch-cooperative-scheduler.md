@@ -26,7 +26,7 @@ tags: [zig, esp32-s31, riscv, rtos, context-switch, scheduler, series]
 难点不在“两个函数轮流跑”，而在**到底要保存什么**。少存一个寄存器，故障表现为“某个任务偶尔算出错误的数”；多存整个栈，又会把切换开销推高一个数量级。所以本章不从调度算法开始，而从 RV32 的调用约定开始：它能给出一个**可证明的下界**。
 
 > [!warning] 本章的证据边界
-> 本章沿用 ch04 定下的形态 B（Zig 产出 ELF、自己的链接脚本、IDF 只提供二级 bootloader 与分区表），并直接建立在 ch07 的 trap 入口与 CLIC 结论之上。寄存器与 CSR 行为取自 RISC-V 特权规范与 ESP-IDF v6.1 的 `esp32s31` 头文件；S31 的 TRM 仍是 Pre-release v0.7。**本工程没有在任何真机上运行过**，构建与烧录也没有在本仓执行：文中所有“应该看到什么”都是验收目标，不是实测；不提供 `run.log`。
+> 本章沿用 ch04 定下的形态 B（Zig 产出 ELF、自己的链接脚本、IDF 只提供二级 bootloader 与分区表），并直接建立在 ch07 的 trap 入口与 CLIC 结论之上。寄存器与 CSR 行为取自 RISC-V 特权规范与 ESP-IDF v6.1 的 `esp32s31` 头文件；S31 的 TRM 仍是 Pre-release v0.7。本工程已于 2026-11-13 **真机运行**：`A/B/C step…` → `sched: all tasks done, switches=13`，原始输出见 `../logs/ch10-boot.log`。
 
 ---
 

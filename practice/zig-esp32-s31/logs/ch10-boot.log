@@ -30,11 +30,11 @@ entry 0x2f06a2ba
 [0;32mI (64) boot:  1 phy_init         RF data          01 01 0000f000 00001000[0m
 [0;32mI (71) boot:  2 factory          factory app      00 00 00010000 00177000[0m
 [0;32mI (78) boot: End of partition table[0m
-[0;32mI (81) esp_image: segment 0: paddr=00010020 vaddr=40000020 size=01080h (  4224) map[0m
-[0;32mI (90) esp_image: segment 1: paddr=000110a8 vaddr=2f000000 size=0006ch (   108) load[0m
-[0;32mI (97) esp_image: segment 2: paddr=0001111c vaddr=2f000070 size=00020h (    32) load[0m
-[0;32mI (104) esp_image: segment 3: paddr=00011144 vaddr=00000000 size=0eed4h ( 61140) [0m
-[0;32mI (121) esp_image: segment 4: paddr=00020020 vaddr=40020020 size=0067ch (  1660) map[0m
+[0;32mI (81) esp_image: segment 0: paddr=00010020 vaddr=40000020 size=01090h (  4240) map[0m
+[0;32mI (90) esp_image: segment 1: paddr=000110b8 vaddr=2f000000 size=0006ch (   108) load[0m
+[0;32mI (97) esp_image: segment 2: paddr=0001112c vaddr=2f000070 size=00020h (    32) load[0m
+[0;32mI (104) esp_image: segment 3: paddr=00011154 vaddr=00000000 size=0eec4h ( 61124) [0m
+[0;32mI (121) esp_image: segment 4: paddr=00020020 vaddr=40020020 size=00698h (  1688) map[0m
 [0;32mI (124) boot: Loaded app from partition at offset 0x10000[0m
 [0;32mI (124) boot: Disabling RNG early entropy source...[0m
 ch10-context-switch | form B (Zig ELF + IDF 2nd-stage bootloader)
@@ -43,5 +43,17 @@ mtvec: base=0x2f000000 mode=3 (0 = direct; only synchronous traps)
 --- 0x2f000000: _vector_table at ??:?
 frames: trap=80 switch=64 bytes (integer only; FP variant would be 208)
 sched: 3 tasks + idle, cooperative yield via ecall
-trap: unexpected cause=0x3000000b mepc=0x400006b0
---- 0x400006b0: __esp_sys_init_fn_init_show_app_info at /home/huanglin/esp/esp-idf/components/esp_app_format/esp_app_desc.c:143
+A: step 1
+B: step 1
+C: step 1
+A: step 2
+.: step 3
+.: done (steps=3)
+B: step 2
+B: step 3
+B: step 4
+B: done (steps=4)
+C: step 2
+C: done (steps=2)
+sched: all tasks done, switches=13
+idle: wfi

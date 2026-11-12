@@ -285,7 +285,7 @@ esptool --chip esp32s31 elf2image \
   -o zig-out/bin/app.bin zig-out/bin/app.elf
 ```
 
-## 4. `ch02-hello` 工程契约（模板 A；ch03–ch11 见 §4.5–§4.13）
+## 4. `ch02-hello` 工程契约（模板 A；ch03–ch15 见 §4.5–§4.17）
 
 ### 4.1 文件与职责
 
@@ -496,8 +496,51 @@ tick
 - 换栈边界：tick ISR 复用 ch10 的 80B trap 帧 + 64B switch 帧与 `switchTo`；`mepc += 4` **只**
   属 `ecall` 分支；临界区覆盖「入队 + 选任务 + 改 `current` + `switchRaw` 保存 sp」；新任务由
   `taskStart` 开 MIE，被抢占任务由自己的 `mret`（MPIE）恢复。
+- **禁止用 C 约定函数指针调用 naked 的 `switchRaw`**（Zig 0.17 下 LLVM 会按 C ABI 给该调用
+  加序言/尾声，破坏 64 字节 switch 帧，恢复时跑飞）。写法：`pub export fn switchRaw() callconv(.naked)` +
+  `asm volatile ("call switchRaw" ::: .{})`；`switch_save_slot`/`switch_target_sp` 必须 `export var`。
+  2026-11-13 真机实测：改前 ch10 每任务首行后 `instruction access fault`，改后 A/B/C 全部跑完
+  （`all tasks done, switches=13`），ch11 打出 hi/loA/loB 全部 beat 与 `idle: wfi`。
 - 证据口径：ISR 内换栈、tick 周期/漂移/抖动、CLIC `IP` 清除行为全部 待真机验证；
   正文与 README 不得预填这些数字。
+
+### 4.14 `ch12-sync-primitives-ipc` 契约（模板 B，阻塞式调度）
+
+- 文件：`build.zig`、`linker/s31.ld`、`src/{start,context,tick,sched,spin,mutex,sem,queue,events,tasks,main}.zig`、
+  `tools/flash.sh`、`idf-bootstrap/*`、`README.md`；无 `run.log`。
+- 调度：TCB 增加 `blocked` 状态与侵入式等待链；`mutex` 带持有者与优先级继承；`semaphore`/`queue`/`event` 的等待与唤醒都
+  经过 `blockOn`/`wake`；唤醒时按优先级决定是否立刻抢占。`idle` 使用独立栈，`pickNext` 跳过 `done`。
+- 临界区：`spin` 用 A 扩展 `lr.w/sc.w`（或 `amoswap.w`）并带 `fence rw,rw`；关中断临界区成对 `irqSave/irqRestore`。
+- 证据口径：`high_wait`、`ticks`、`switches`、`blocks` 等数字全部 待真机验证（真机首轮在 supervisor 早期
+  `CPU_LOCKUP_RESET`，未闭环）。
+
+### 4.15 `ch13-heap-stack-caps` 契约（模板 B，内存）
+
+- 文件：`build.zig`、`linker/s31.ld`、`src/{start,trap,log,alloc/tlsf,alloc/slab,heap,stack,caps,psram,main}.zig`
+  （以工程实际文件为准）、`tools/flash.sh`、`idf-bootstrap/*`、`README.md`；无 `run.log`。
+- 堆：TLSF 分配器（`fl_shift=5`、`sl_log2=4`、16B 头、32B 最小块），`_heap_start`/`_heap_end` 由链接符号给出；
+  压测 2000 次分配/释放无重叠、无损坏、无 OOM。
+- 栈：任务栈加哨兵，越界可检测；`caps` 按链接符号与区间常量把地址归类为 sram/psram_cache/mmio。
+- 真机实测（2026-11-12，coreboard）：分区/预算打印、heap init/verify、alloc 7 档、frag 2000 次、slab 三类均正常。
+
+### 4.16 `ch14-dual-core-smp-ipi` 契约（模板 B，双核）
+
+- 文件：`build.zig`、`linker/s31.ld`、`src/{start,main,hw,console,systimer,smp,core1,demo}.zig`（以工程实际为准）、
+  `tools/flash.sh`、`idf-bootstrap/*`、`README.md`；无 `run.log`。
+- core1 启动：时钟解复位 → 写引导地址 → 清复位 → 解 stall → 等 `CORESTALLED_ST`；`core1Entry` 放 `.trap_ram`（SRAM 首取指）。
+- IPI：CLIC 软件中断输入 19（core0）/20（core1），矩阵源 65/66；每核 `mscratch` 保存 per-cpu 状态。
+- 真机实测（2026-11-13，coreboard）：`core1: up hart=1`、IPI ping-pong、`jobs: total=4 core0=2 core1=2 migrated=2`、
+  `lat[rtt] avg≈1573 systimer ticks（≈98.3 µs）`、两核 ticks/ipis/wakeups/switches 计数正常。
+- 未验证边界：core1 的 cache/MMU 设置与 core0 的继承关系，以及 67/68 与 65/66 两套源编号的口径差异。
+
+### 4.17 `ch15-observability-testing-stability` 契约（模板 B，可观测性）
+
+- 文件：`build.zig`（`-Dstress`/`-Dpanic-demo`、host `test`）、`linker/s31.ld`、
+  `src/{start,main,check,trap,hw,trace,watchdog,stress,log,host_tests}.zig`、`tools/flash.sh`、`idf-bootstrap/*`、`README.md`。
+- 自检：8 条硬判据（flash/sram 区间、时钟、中断、watchdog、trace 容量）+ 1 条 clock calibration advisory；
+  失败即拒绝继续；可恢复断言与 panic dump（`mcause & 0x3F`、trace 环 32×24 B）。
+- 真机首轮（2026-11-13）：5 passed / 3 failed（stack 判据、irq 检查时机、RTC WDT 未关），已回炉修正；
+  主机侧 `zig build test` 10/10 通过。
 
 ## 5. 构建与运行命令
 
@@ -717,7 +760,7 @@ README 的「已知边界」里列出，不把第三方代码混进"原创"叙�
 
 ## 10. 状态与变更政策
 
-- 规格版本：**v1.1**，日期 **2026-11-26**。v1 锁定 ch02 的完整契约（模板 A）与模板 B
+- 规格版本：**v1.3**，日期 **2026-11-28**。v1 锁定 ch02 的完整契约（模板 A）与模板 B
   的骨架；ch03 起按本规格推进，实现细节在各章工程内展开。v1.1 增补 ch11 抢占调度契约（§4.13）。
 - 变更记录：
 
@@ -725,6 +768,7 @@ README 的「已知边界」里列出，不把第三方代码混进"原创"叙�
   | ---- | ---------- | ----------------------------------------------------------------------------------------------- |
   | v1   | 2026-11-12 | 首版：目录/命名、环境钉扎、模板 A/B、ch02 契约、CI 与收录规则                                   |
   | v1.1 | 2026-11-26 | 增补 §4.13 `ch11-preemptive-scheduler`（tick/INT_ENA/路由/TCB/换栈边界）；§4 标题范围 ch03–ch11 |
+  | v1.2 | 2026-11-28 | 增补 §4.14 `ch12-sync-primitives-ipc`、§4.15 `ch13-heap-stack-caps`；§4 标题范围 ch03–ch15      |
 
 - **必须同步更新本文件的触发条件**：模板 A 或 B 的文件清单、构建命令、目标串、镜像
   参数发生变化；CI 关卡增减；`PROJECT_GLOBS`/`langOf` 的收录规则变化。只改章节工程

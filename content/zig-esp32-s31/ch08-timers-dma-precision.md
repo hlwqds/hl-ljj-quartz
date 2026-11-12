@@ -33,7 +33,7 @@ tags: [zig, esp32-s31, riscv, timers, dma, series]
 2. 用 AHB-GDMA 把 2 KiB 从一块 SRAM 搬到另一块，再由 CPU 独立校验，证明“搬运”与“校验”是两条路径。
 
 > [!warning] 本章的证据边界
-> TIMG/SYSTIMER/AHB-DMA 的基址、偏移与位域全部来自 ESP-IDF v6.1 的 `esp32s31` 头文件（下文逐条给出路径）；S31 的 TRM 仍是 Pre-release v0.7，手册转正后需逐项复核。**本工程尚未在任何真机上运行，构建与烧录也没有在本仓执行过**：文中的抖动数值、DMA 耗时、串口输出都只是“应该看到什么”，不是实测日志；也不提供 `run.log`。
+> TIMG/SYSTIMER/AHB-DMA 的基址、偏移与位域全部来自 ESP-IDF v6.1 的 `esp32s31` 头文件（下文逐条给出路径）；S31 的 TRM 仍是 Pre-release v0.7，手册转正后需逐项复核。本工程**已于 2026-11-13 真机启动**（`../logs/ch08-boot.log`）：TIMG 1 ms 与 `delayUs(500)` 统计正常（`min=0 max=4 mean_abs=0`、`min=2 max=8`）；**DMA M2M 内容不匹配**（`chunks=2 MISMATCH first_bad=0 bad=2040`），详见 `BRINGUP-2026-11-12.md`。
 
 ---
 

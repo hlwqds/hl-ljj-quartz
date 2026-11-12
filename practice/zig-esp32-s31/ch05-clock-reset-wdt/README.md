@@ -53,7 +53,7 @@ ch04 证明了“Zig 自己产出的 ELF 能被 IDF 二级 bootloader 加载并�
 | 写入的硬件寄存器 | 无                                     | SYSTIMER `CONF`（置位）、RWDT `FEED`/`WPROTECT`     |
 | IDF 侧           | bootloader + 分区表                    | 同左，`idf-bootstrap/sdkconfig.defaults` 多一行说明 |
 
-**不写 PLL**是刻意的：二级 bootloader 已经把 CPU 切到 CPLL 320 MHz，应用继承结果。
+**不写 PLL**是刻意的：bootloader 把 CPU 留在 80 MHz（实测就是 80 MHz），320 MHz 的 CPLL 切换由 IDF 应用自己做；形态 B 不做，所以只负责量。
 本章先用一把只依赖 XTAL 的尺子证明这个结果，再谈“要不要自己配时钟”。
 
 ## 文件表
@@ -207,7 +207,7 @@ python -m serial.tools.miniterm /dev/ttyUSB0 115200
 === ch05-clock-reset-wdt ===
 reset reason: code=1 (CHIP_POWER_ON, ESP_RST_POWERON)
   meaning: 上电或复位键，属于冷启动
-clock: cycles=<约 6400 万> ticks=<约 320 万> (window 200000 us) -> CPU 320 MHz
+clock: cycles=16000012 ticks=3200030 (window 200001 us) -> CPU 80 MHz
   expect 320 (CPLL) on this board; 40 means XTAL-only boot
 rwdt: en=<0 或 1> flashboot=<0 或 1> stg0=<n> stg1=<n> stg2=<n> stg3=<n> hold=<n>
 tick 1 at <n> us
@@ -221,11 +221,11 @@ tick 2 at <n+500000 左右> us
 
 ### 1. 三行必看的读数
 
-| 读数                    | 说明                                                                       |
-| ----------------------- | -------------------------------------------------------------------------- |
-| `reset reason: code=1`  | 冷启动（RST 键/上电）。若这里是 `0x09`/`0x0D`/`0x10`，说明上一轮被狗咬了   |
-| `-> CPU 320 MHz`        | 与 CPLL 一致。若是 `40 MHz`，说明 CPU 停在 XTAL（bootloader 切频失败回退） |
-| `rwdt: en=... hold=...` | bootloader 留下的现场；`en=1` 时应用必须自己喂狗                           |
+| 读数                    | 说明                                                                     |
+| ----------------------- | ------------------------------------------------------------------------ |
+| `reset reason: code=1`  | 冷启动（RST 键/上电）。若这里是 `0x09`/`0x0D`/`0x10`，说明上一轮被狗咬了 |
+| `-> CPU 80 MHz`         | 本板实测值（PLL_F80M）；320 说明有人切了 CPLL，40 说明停在 XTAL          |
+| `rwdt: en=... hold=...` | bootloader 留下的现场；`en=1` 时应用必须自己喂狗                         |
 
 ### 2. 超时实验（可选，待真机验证）
 
@@ -268,7 +268,7 @@ od -A x -t x1z -j 32 -N 4 zig-out/bin/app.bin                        # 32 54 cd 
 3. **复位原因没有 hint。** `ESP_RST_PANIC`/`ESP_RST_TASK_WDT` 这类值是软件在复位前
    写进 RTC 域的 hint 后叠加上去的；本章没有 panic handler，读到的是硬件原始编码。
    ch06 把 panic handler 写出来之后 hint 才有意义。
-4. **`mcycle` 只读低 32 位。** 320 MHz 下 13.4 秒回绕，200 ms 窗口有 67 倍余量。
+4. **`mcycle` 只读低 32 位。** 80 MHz 下 53.7 秒回绕，200 ms 窗口余量充足。
    要长时间积分必须读 `mcycleh`。
 5. **SYSTIMER 的 `us()` 会回绕。** 返回 `u32`，16 MHz 下约 71 分钟回绕；`tick N at
 <us> us` 里看到的数在长时间运行后会变小，这是预期行为，不是 bug。
@@ -302,7 +302,7 @@ od -A x -t x1z -j 32 -N 4 zig-out/bin/app.bin                        # 32 54 cd 
 - [ ] `idf-bootstrap` 在 `--preview` 下产出 bootloader、分区表与 `flash_args`
 - [ ] `tools/flash.sh` 替换应用行后一次烧录成功
 - [ ] 冷启动打印 `code=1 (CHIP_POWER_ON, ESP_RST_POWERON)`
-- [ ] `-> CPU 320 MHz`，且 `cycles/(ticks/16)` 与打印的 MHz 自洽
+- [ ] `-> CPU 80 MHz`，且 `cycles/(ticks/16)` 与打印的 MHz 自洽
 - [ ] `rwdt:` 行六个字段可读，连续 `tick N` 十秒不中断
 - [ ] 超时实验（`demo_timeout_ticks != 0`）能复位，且下次启动的复位原因落在 `0x09`/`0x0D`/`0x10`
 - [ ] 实验改回 `0` 后恢复长期稳定运行

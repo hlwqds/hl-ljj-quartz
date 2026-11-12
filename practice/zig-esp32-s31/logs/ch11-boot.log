@@ -30,11 +30,11 @@ entry 0x2f06a2ba
 [0;32mI (64) boot:  1 phy_init         RF data          01 01 0000f000 00001000[0m
 [0;32mI (71) boot:  2 factory          factory app      00 00 00010000 00177000[0m
 [0;32mI (78) boot: End of partition table[0m
-[0;32mI (81) esp_image: segment 0: paddr=00010020 vaddr=40000020 size=01510h (  5392) map[0m
-[0;32mI (90) esp_image: segment 1: paddr=00011538 vaddr=2f000000 size=0006ch (   108) load[0m
-[0;32mI (97) esp_image: segment 2: paddr=000115ac vaddr=2f000070 size=00030h (    48) load[0m
-[0;32mI (104) esp_image: segment 3: paddr=000115e4 vaddr=00000000 size=0ea34h ( 59956) [0m
-[0;32mI (121) esp_image: segment 4: paddr=00020020 vaddr=40020020 size=007ech (  2028) map[0m
+[0;32mI (81) esp_image: segment 0: paddr=00010020 vaddr=40000020 size=01560h (  5472) map[0m
+[0;32mI (90) esp_image: segment 1: paddr=00011588 vaddr=2f000000 size=0006ch (   108) load[0m
+[0;32mI (97) esp_image: segment 2: paddr=000115fc vaddr=2f000070 size=00030h (    48) load[0m
+[0;32mI (104) esp_image: segment 3: paddr=00011634 vaddr=00000000 size=0e9e4h ( 59876) [0m
+[0;32mI (121) esp_image: segment 4: paddr=00020020 vaddr=40020020 size=00828h (  2088) map[0m
 [0;32mI (124) boot: Loaded app from partition at offset 0x10000[0m
 [0;32mI (124) boot: Disabling RNG early entropy source...[0m
 ch11-preemptive-scheduler | form B (Zig ELF + IDF 2nd-stage bootloader)
@@ -44,5 +44,22 @@ mtvec: base=0x2f000000 mode=3 (0 = direct)
 frames: trap=80 switch=64 bytes (integer only; FP variant would be 208)
 tick: 1000 us via TIMG0 T0 (source 25) -> clic input 16 prio 3
 sched: 3 tasks + idle, preemptive (slice in ticks); soft-yield input 19 not wired
-trap: unexpected cause=0x3800000b mepc=0x400005d2
---- 0x400005d2: __esp_sys_init_fn_init_show_app_info at /home/huanglin/esp/esp-idf/components/esp_app_format/esp_app_desc.c:126
+hi: beat 1 (prio=5 slice=3)
+hi: beat 2 (prio=5 slice=3)
+hi: beat 3 (prio=5 slice=3)
+hi: beat 4 (prio=5 slice=3)
+hi: beat 5 (prio=5 slice=3)
+hi: beat 6 (prio=5 slice=3)
+hi: done (steps=6)
+loB: beat 1 (prio=1 slice=2)
+loB: beat 2 (prio=1 slice=2)
+loB: beat 3 (prio=1 slice=2)
+loB: beat 4 (prio=1 slice=2)
+loB: done (steps=4)
+loA: beat 1 (prio=1 slice=2)
+loA: beat 2 (prio=1 slice=2)
+loA: beat 3 (prio=1 slice=2)
+loA: beat 4 (prio=1 slice=2)
+loA: done (steps=4)
+sched: all tasks done ticks=183 switches=5
+idle: wfi

@@ -1,0 +1,102 @@
+Executing action: monitor
+Running idf_monitor in directory /home/huanglin/code/hl-ljj-quartz/practice/zig-esp32-s31/ch02-hello
+Executing "/home/huanglin/.espressif/python_env/idf6.1_py3.13_env/bin/python /home/huanglin/esp/esp-idf/tools/idf_monitor.py -p /dev/ttyUSB1 -b 115200 --toolchain-prefix riscv32-esp-elf- --target esp32s31 --revision 0 --decode-panic backtrace /home/huanglin/code/hl-ljj-quartz/practice/zig-esp32-s31/ch02-hello/build/zig_s31_hello.elf /home/huanglin/code/hl-ljj-quartz/practice/zig-esp32-s31/ch02-hello/build/bootloader/bootloader.elf -m '/home/huanglin/.espressif/python_env/idf6.1_py3.13_env/bin/python' '/home/huanglin/esp/esp-idf/tools/idf.py' '-p' '/dev/ttyUSB1'"...
+--- esp-idf-monitor 1.10.0 on /dev/ttyUSB1 115200
+--- Standard input is not a TTY, running in non-interactive mode. Reading commands from stdin: reset, flash, flash-all, app-flash, output, log, timestamps, bootloader, send <text>, sleep <seconds>, expect [--timeout <seconds>] <regex>, exit | Quit: 'exit' command, EOF or Ctrl+C
+--- No commands on standard input, watching serial output only...
+ESP-ROM:esp32s31-20251218
+Build:Dec 18 2025
+rst:0x1 (POWERON),boot:0x58 (SPI_FAST_FLASH_BOOT)
+SPI mode:DIO, clock div:1
+load:0x2f0740c0,len:0x168c
+load:0x2f06a2b0,len:0xc7c
+--- 0x2f06a2b0: esp_bootloader_get_description at /home/huanglin/esp/esp-idf/components/esp_bootloader_format/esp_bootloader_desc.c:40
+load:0x2f06cfb0,len:0x3368
+--- 0x2f06cfb0: is_xmc_chip_strict at /home/huanglin/esp/esp-idf/components/bootloader_support/bootloader_flash/src/bootloader_flash.c:911
+entry 0x2f06a2ba
+--- 0x2f06a2ba: call_start_cpu0 at /home/huanglin/esp/esp-idf/components/bootloader/subproject/main/bootloader_start.c:27
+[0;32mI (26) boot: ESP-IDF v6.1 2nd stage bootloader[0m
+[0;32mI (26) boot: compile time Nov 13 2026 00:22:51[0m
+[0;32mI (26) boot: Multicore bootloader[0m
+[0;32mI (28) boot: chip revision: v0.0[0m
+[0;32mI (29) boot: efuse block revision: v0.2[0m
+[0;32mI (32) boot.esp32s31: SPI Speed      : 80MHz[0m
+[0;32mI (36) boot.esp32s31: SPI Mode       : DIO[0m
+[0;32mI (40) boot.esp32s31: SPI Flash Size : 16MB[0m
+[0;32mI (44) boot: Enabling RNG early entropy source...[0m
+[0;32mI (49) boot: Partition Table:[0m
+[0;32mI (51) boot: ## Label            Usage          Type ST Offset   Length[0m
+[0;32mI (58) boot:  0 nvs              WiFi data        01 02 00009000 00006000[0m
+[0;32mI (64) boot:  1 phy_init         RF data          01 01 0000f000 00001000[0m
+[0;32mI (71) boot:  2 factory          factory app      00 00 00010000 00177000[0m
+[0;32mI (78) boot: End of partition table[0m
+[0;32mI (81) esp_image: segment 0: paddr=00010020 vaddr=40000020 size=039f0h ( 14832) map[0m
+[0;32mI (92) esp_image: segment 1: paddr=00013a18 vaddr=2f000000 size=0006ch (   108) load[0m
+[0;32mI (97) esp_image: segment 2: paddr=00013a8c vaddr=00000000 size=0c58ch ( 50572) [0m
+[0;32mI (112) esp_image: segment 3: paddr=00020020 vaddr=40020020 size=011ech (  4588) map[0m
+[0;32mI (115) boot: Loaded app from partition at offset 0x10000[0m
+[0;32mI (115) boot: Disabling RNG early entropy source...[0m
+ch13-heap-stack-caps | form B (Zig ELF + IDF 2nd-stage bootloader)
+console: UART0 TX=GPIO58 RX=GPIO59 115200 8N1 (ROM default)
+allocator: TLSF fl_shift=5 sl_log2=4 header=16B min_block=32B
+budget: image=0x40000020 irom.text=14576B drom.rodata=2960B
+--- 0x40000020: console_fstat at /home/huanglin/esp/esp-idf/components/esp_stdio/stdio_vfs.c:195
+budget: sram trap=108B data=0B bss=2480B heap=484768B stack=16384B
+budget: sram_total=524288B app_usable=503744B static=2588B heap=962permille stack=32permille
+space: image          = 0x40000020 -> flash_cache
+--- 0x40000020: console_fstat at /home/huanglin/esp/esp-idf/components/esp_stdio/stdio_vfs.c:195
+space: text           = 0x40000120 -> flash_cache
+--- 0x40000120: console_open at /home/huanglin/esp/esp-idf/components/esp_stdio/stdio_vfs.c:116
+space: rodata         = 0x40020020 -> flash_cache
+space: trap_vector    = 0x2f000000 -> sram
+--- 0x2f000000: _vector_table at ??:?
+space: data           = 0x2f000070 -> sram
+--- 0x2f000070: _mtvt_table at ??:?
+space: heap_start     = 0x2f000a20 -> sram
+--- 0x2f000a20: do_multicore_settings at /home/huanglin/esp/esp-idf/components/esp_system/port/cpu_start.c:393
+space: heap_end       = 0x2f076fc0 -> sram
+space: stack_top      = 0x2f07afc0 -> sram
+space: rom.ets_printf = 0x2f800024 -> rom
+space: psram.window   = 0x50000000 -> psram_cache
+space: mmu.psram_reg  = 0x20502000 -> mmio
+heap: total=484768 used=0 free=484752 largest=484752 frag=0permille blocks=1 tag=init
+heap: verify=ok
+alloc: sizes=7 aligned64_ok=7 first=0x2f000a80 last=0x2f0010c0
+--- 0x2f000a80: cache_ll_l1_enable_bus at /home/huanglin/esp/esp-idf/components/hal/esp32s31/include/hal/cache_ll.h:959(inlined by) do_multicore_settings at /home/huanglin/esp/esp-idf/components/esp_system/port/cpu_start.c:387
+--- 0x2f0010c0: heap_caps_realloc_base at /home/huanglin/esp/esp-idf/components/heap/heap_caps_base.c:313
+frag: ops=2000 peak_used=6536 free=484752 largest=484752 blocks=1
+frag: overlap_hits=0 corrupt=0 ooms=0 frag=0permille
+heap: total=484768 used=0 free=484752 largest=484752 frag=0permille blocks=1 tag=after-frag
+slab: class= 16B pages=2 slots=128 used=70 waste=928B
+slab: class= 32B pages=2 slots=64 used=40 waste=768B
+slab: class= 64B pages=2 slots=32 used=20 waste=768B
+slab: class=128B pages=1 slots=8 used=8 waste=0B
+slab: class=256B pages=2 slots=8 used=6 waste=512B
+slab: borrowed=9216B waste=2976B allocs=216 frees=72 ooms=0
+slab: after_release used_slots_total=0 borrowed=9216B (pages are kept)
+heap: total=484768 used=9360 free=475392 largest=475392 frag=0permille blocks=1 tag=after-slab
+caps: alloc(internal+8bit, 128)=0x2f002ec0 region=sram
+--- 0x2f002ec0: bootloader_read_flash_id at /home/huanglin/esp/esp-idf/components/bootloader_support/bootloader_flash/src/bootloader_flash.c:885
+caps: alloc(size=1024) region=psram_cache has no arena in this chapter
+caps: alloc(size=64) region=lp_sram has no arena in this chapter
+caps: alloc(exec+dma+internal, 64)=0x2f002ec0
+--- 0x2f002ec0: bootloader_read_flash_id at /home/huanglin/esp/esp-idf/components/bootloader_support/bootloader_flash/src/bootloader_flash.c:885
+stack: main armed span=16384B fill=0xa5 canary=0xdeadbeef
+stack: main span=16384B used=14128B free=2256B sentinel=ok canary=0xdeadbeef
+stack: sim armed base=0x2f000820 len=512B
+--- 0x2f000820: ipc_task at /home/huanglin/esp/esp-idf/components/esp_system/esp_ipc.c:56
+stack: sim sentinel=ok at=0x2f000820 expect=0xdeadbeef got=0xdeadbeef
+--- 0x2f000820: ipc_task at /home/huanglin/esp/esp-idf/components/esp_system/esp_ipc.c:56
+stack: sim simulate overrun -> write 0x78563412 at 0x2f000820
+--- 0x2f000820: ipc_task at /home/huanglin/esp/esp-idf/components/esp_system/esp_ipc.c:56
+stack: sim sentinel=overrun at=0x2f000820 expect=0xdeadbeef got=0x78563412
+--- 0x2f000820: ipc_task at /home/huanglin/esp/esp-idf/components/esp_system/esp_ipc.c:56
+stack: sim overrun DETECTED (checker works)
+stack: sim sentinel=ok at=0x2f000820 expect=0xdeadbeef got=0xdeadbeef
+--- 0x2f000820: ipc_task at /home/huanglin/esp/esp-idf/components/esp_system/esp_ipc.c:56
+psram: window=0x50000000..0x54000000 entry=1024 page=65536B chip=16777216B
+psram: mmu_valid_entries=0/1024 mapped=no
+psram: no mapping programmed by bootloader -> skip rw (initialise PSRAM first)
+heap: total=484768 used=9360 free=475392 largest=475392 frag=0permille blocks=1 tag=final
+heap: verify=ok allocs=1026 frees=1017 ooms=0
+lab: done (halt)

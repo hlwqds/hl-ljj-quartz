@@ -154,7 +154,15 @@ fn pickNext() ?*Task {
     var p: usize = prio_levels;
     while (p > 0) {
         p -= 1;
-        if (ready_head[p] != null) return dequeue(p);
+        // 真机发现（2026-11-12）：任务在时间片到期时被重新入队，随后
+        // finish() 才把它标成 done —— 队列里会残留“已结束”的 TCB。
+        // 直接返回它会让 done 任务复活（next == prev 分支把状态写回
+        // running），最终以指令访问错误挂在栈地址上。这里把 done 项
+        // 逐个丢弃，直到找到活任务。
+        while (ready_head[p]) |_| {
+            const t = dequeue(p).?;
+            if (t.state != .done) return t;
+        }
     }
     return null;
 }
@@ -321,7 +329,9 @@ pub export fn trapDispatch(frame: *context.TrapFrame) void {
 
     // 11 = environment call from M-mode。同步异常要跳过这条指令；
     // tick 中断绝不能加 4（那会随机跳过被打断的指令）。
-    if (cause == 11) {
+    // 真机发现（2026-11-12）：S31 的 mcause 高位带 CLIC 附加字段
+    // （实测 ecall 为 0x3800000b），异常码只在低 5 位；直接比较 11 会漏掉。
+    if ((cause & 0x1F) == 11) {
         frame.mepc += 4;
         schedule(true);
         return;
@@ -338,14 +348,29 @@ fn allDone() bool {
     return true;
 }
 
-/// 把 `main` 变成 idle 任务，打开 MIE，开始轮转。不返回。
-pub fn start() noreturn {
+/// 把调用者变成 idle 任务，打开 MIE，开始轮转。不返回。
+///
+/// 真机发现（2026-11-12）：idle 复用 main 的栈时，任务全部结束后切回 idle
+/// 会从被普通函数调用缓冲覆盖过的帧里恢复 `ra`，跳到栈地址上
+/// （`cause=0x7f0001 mepc=0x2f07af18`）。修法：idle 用自己的栈，启动时
+/// 直接把 `sp` 切过去；`main` 的栈从此不再被调度器使用。
+pub fn start(idle_stack: []const u8) noreturn {
     current = &idle_task;
     idle_task.state = .running;
     idle_task.slice = idle_task.slice_init;
+    idle_task.stack = idle_stack;
 
     tick.enable();
 
+    const top = (@intFromPtr(idle_stack.ptr) + idle_stack.len) & ~@as(usize, 15);
+    asm volatile ("mv sp, %[t]"
+        :
+        : [t] "r" (top),
+    );
+    idleLoop();
+}
+
+fn idleLoop() noreturn {
     while (true) {
         yield();
         if (allDone()) {

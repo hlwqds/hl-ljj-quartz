@@ -173,15 +173,22 @@ export var switch_save_slot: *usize = undefined;
 export var switch_target_sp: usize = 0;
 
 pub fn switchTo(save_slot: *usize, new_sp: usize) void {
-    // Zig 0.17 禁止直接调用 naked 函数；经函数指针调用是官方认可的出口。
-    const raw: *const fn () callconv(.c) void = @ptrCast(&switchRaw);
     switch_save_slot = save_slot;
     switch_target_sp = new_sp;
-    raw();
+    // 真机发现（2026-11-13）：把 naked 函数经 `*const fn () callconv(.c) void`
+    // 指针调用时，LLVM 会为这次调用生成 C ABI 的包装（进出各调一次 sp），
+    // 保存下来的 sp 因此不是切换点真实的栈顶，任务换回后立刻跑飞
+    // （ch10 现象：A/B/C 各打一行后 instruction access fault）。
+    // 直接发 `call switchRaw` 且把 switchRaw 标成 `pub export`（符号不被改名）
+    // 后，ch10 三个任务全部跑完并打印 "all tasks done switches=13"。
+    asm volatile ("call switchRaw"
+        :
+        :
+        : .{});
 }
 
 /// 保存 callee-saved、换 sp、恢复 callee-saved。返回时已经在新任务的栈上。
-fn switchRaw() callconv(.naked) void {
+pub export fn switchRaw() callconv(.naked) void {
     asm volatile (
         \\        addi    sp, sp, -64
         \\        sw      ra, 0(sp)
