@@ -3,7 +3,7 @@
 对应系列：[[zig-esp32-s31|Zig × ESP32-S31 全栈开发]]
 构建契约：[SPEC.md](SPEC.md)
 
-本目录是系列章节的可构建工程集合。当前第 1–10 章已落地；其余章节目录随系列推进逐个新增。
+本目录是系列章节的可构建工程集合。当前第 1–11 章已落地；其余章节目录随系列推进逐个新增。
 
 ## 工程清单
 
@@ -19,6 +19,7 @@
 | `ch08-timers-dma`               | [[ch08-timers-dma-precision\|第八章：定时器、DMA 与精确时序]]               | B（纯 Zig ELF + IDF bootloader） | 待真机验证 | [README](ch08-timers-dma/README.md)               |
 | `ch09-flash-partition-nvs`      | [[ch09-spi-flash-partition-nvs\|第九章：SPI Flash、分区与 NVS 存储]]        | B（纯 Zig ELF + IDF bootloader） | 待真机验证 | [README](ch09-flash-partition-nvs/README.md)      |
 | `ch10-context-switch-scheduler` | [[ch10-context-switch-cooperative-scheduler\|第十章：上下文切换与协作调度]] | B（纯 Zig ELF + IDF bootloader） | 待真机验证 | [README](ch10-context-switch-scheduler/README.md) |
+| `ch11-preemptive-scheduler`     | [[ch11-preemptive-scheduler-tcb-tick\|第十一章：抢占调度、TCB 与 tick]]     | B（纯 Zig ELF + IDF bootloader） | 待真机验证 | [README](ch11-preemptive-scheduler/README.md)     |
 
 ## 快速入口
 
@@ -58,10 +59,11 @@
 
 ## 状态
 
-| 项            | 状态                                     |
-| ------------- | ---------------------------------------- |
-| 第 1–2 章正文 | 已落地（硬件步骤待真机验证）             |
-| ch01-board-id | 命令清单与记录模板已落地；实机输出待回填 |
-| ch02-hello    | 7 个工程文件已落地；构建/烧录待真机验证  |
-| ch03+         | 规划中，按系列索引推进                   |
-| `run.log`     | 均未生成（不伪造；真机回填）             |
+| 项                 | 状态                                                        |
+| ------------------ | ----------------------------------------------------------- |
+| 第 1–11 章正文     | 已落地（硬件章节均待真机验证）                              |
+| ch01-board-id      | 命令清单与记录模板已落地；实机输出待回填                    |
+| ch02-hello         | 模板 A 工程已落地；构建/烧录待真机验证                      |
+| ch03-image-inspect | 主机侧解析器已落地；与 `esptool image-info` 对拍待补        |
+| ch04–ch11          | 模板 B 工程已落地（ch11 起含抢占调度）；构建/烧录待真机验证 |
+| `run.log`          | 均未生成（不伪造；真机回填）                                |

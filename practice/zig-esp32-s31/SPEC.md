@@ -1,4 +1,4 @@
-# Zig × ESP32-S31 实验套件 · 构建规格 v1
+# Zig × ESP32-S31 实验套件 · 构建规格 v1.1
 
 本文件是 `practice/zig-esp32-s31/` 全部实验工程的实现契约，配套系列为 [[zig-esp32-s31]]。
 工程作者动手前必读；章节正文引用的构建产物、镜像字段与串口输出，出处一律是本套件对应
@@ -285,7 +285,7 @@ esptool --chip esp32s31 elf2image \
   -o zig-out/bin/app.bin zig-out/bin/app.elf
 ```
 
-## 4. `ch02-hello` 工程契约（模板 A；ch03–ch10 见 §4.5–§4.12）
+## 4. `ch02-hello` 工程契约（模板 A；ch03–ch11 见 §4.5–§4.13）
 
 ### 4.1 文件与职责
 
@@ -479,6 +479,25 @@ tick
   `mepc/mstatus`；所有硬件行为 待真机验证。
 - 若示例为纯整数，必须在 README/章节明确 F 保存路径未启用。
 
+### 4.13 `ch11-preemptive-scheduler` 契约（模板 B，抢占式）
+
+- 文件：`build.zig`、`linker/s31.ld`、`src/{start,context,sched,tasks,tick,main}.zig`、
+  `tools/flash.sh`、`idf-bootstrap/*`、`README.md`；无 `run.log`。
+- tick：TIMG0 T0（`0x20580000`），时钟源选 XTAL 40 MHz（`HP_SYS_CLKRST + 0x114` 的
+  `T0_SRC_SEL[4:3] = 0`、`T0_CLK_EN[5]`），分频 40 → 1 MHz，闹钟 1000 → 1 ms；
+  命中清 `INT_CLR_TIMERS(+0x7c)` bit0 后用「上次目标 + 周期」绝对重装（不是 now + 周期）；
+  **必须置 `INT_ENA_TIMERS(+0x70)` bit0**（复位 0，ch08 轮询时不用），否则 `INT_RAW` 出不了 TIMG。
+- 路由：源 25（`ETS_TIMERGRP0_T0_INTR_SOURCE`）→ 矩阵 `0x20585000 + 4×25`，`MAP[5:0]` 写
+  **CLIC 输入号 16**（不是外部通道 0；写 0 会投递到内部输入，现象是「中断完全没发生」）→
+  CLIC 输入 16（`0x10801000 + 4i`）优先级 3、`IE` bit8、阈值 0（`0x10800008` 的 [31:24]）。
+- 调度：TCB 在 ch10 基础上加 `prio(u3)`/`slice`/`slice_init`/`next`；8 条优先级单向环形链，
+  尾插头取，严格优先级 + 同级时间片（单位 = tick）。无 `blocked`、无老化、无优先级继承。
+- 换栈边界：tick ISR 复用 ch10 的 80B trap 帧 + 64B switch 帧与 `switchTo`；`mepc += 4` **只**
+  属 `ecall` 分支；临界区覆盖「入队 + 选任务 + 改 `current` + `switchRaw` 保存 sp」；新任务由
+  `taskStart` 开 MIE，被抢占任务由自己的 `mret`（MPIE）恢复。
+- 证据口径：ISR 内换栈、tick 周期/漂移/抖动、CLIC `IP` 清除行为全部 待真机验证；
+  正文与 README 不得预填这些数字。
+
 ## 5. 构建与运行命令
 
 ### 5.1 通用前置
@@ -627,7 +646,7 @@ Get-CimInstance Win32_SerialPort | Select-Object DeviceID, Description
 `SHIKI_LANGS` 已加 `"zig"`（Shiki 自带 `@shikijs/langs/dist/zig.mjs`；已确认存量 md
 无 ```zig 围栏，加载集变化不影响既有片段）。
 
-本批已执行 `npm run code-site` 重新生成（4158 文件 / 77 个项目，覆盖 ch01–ch10；约 9 分钟；脚本先
+本批已执行 `npm run code-site` 重新生成（4172 文件 / 78 个项目，覆盖 ch01–ch11；约 3 分钟；脚本先
 `rmSync` 整个 `html/`，中途被杀会留下 git 可见的 deleted 状态）。后续修改工程后重跑，
 正文深链格式为：
 
@@ -697,13 +716,14 @@ README 的「已知边界」里列出，不把第三方代码混进"原创"叙�
 
 ## 10. 状态与变更政策
 
-- 规格版本：**v1**，日期 **2026-11-12**。本版锁定 ch02 的完整契约（模板 A）与模板 B
-  的骨架；ch03 起按本规格推进，实现细节在各章工程内展开。
+- 规格版本：**v1.1**，日期 **2026-11-26**。v1 锁定 ch02 的完整契约（模板 A）与模板 B
+  的骨架；ch03 起按本规格推进，实现细节在各章工程内展开。v1.1 增补 ch11 抢占调度契约（§4.13）。
 - 变更记录：
 
-  | 版本 | 日期       | 变更                                                          |
-  | ---- | ---------- | ------------------------------------------------------------- |
-  | v1   | 2026-11-12 | 首版：目录/命名、环境钉扎、模板 A/B、ch02 契约、CI 与收录规则 |
+  | 版本 | 日期       | 变更                                                                                            |
+  | ---- | ---------- | ----------------------------------------------------------------------------------------------- |
+  | v1   | 2026-11-12 | 首版：目录/命名、环境钉扎、模板 A/B、ch02 契约、CI 与收录规则                                   |
+  | v1.1 | 2026-11-26 | 增补 §4.13 `ch11-preemptive-scheduler`（tick/INT_ENA/路由/TCB/换栈边界）；§4 标题范围 ch03–ch11 |
 
 - **必须同步更新本文件的触发条件**：模板 A 或 B 的文件清单、构建命令、目标串、镜像
   参数发生变化；CI 关卡增减；`PROJECT_GLOBS`/`langOf` 的收录规则变化。只改章节工程

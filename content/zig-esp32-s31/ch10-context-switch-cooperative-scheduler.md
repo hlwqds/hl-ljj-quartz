@@ -17,7 +17,7 @@ tags: [zig, esp32-s31, riscv, rtos, context-switch, scheduler, series]
 > 8. [[ch08-timers-dma-precision|第八章：定时器、DMA 与精确时序]]
 > 9. [[ch09-spi-flash-partition-nvs|第九章：SPI Flash、分区与 NVS 存储]]
 > 10. **第十章：上下文切换与协作调度**
-> 11. 第十一章：抢占调度、TCB 与 tick（待发布）
+> 11. [[ch11-preemptive-scheduler-tcb-tick|第十一章：抢占调度、TCB 与 tick]]
 
 # Zig × ESP32-S31 全栈开发（十）：上下文切换与协作调度
 
@@ -352,6 +352,6 @@ zig build -Dtarget=riscv32-freestanding-eabihf \
 
 ---
 
-本章的产出不是“能跑两个函数”，而是**三个可独立验证的量**：64 字节的 callee-saved 帧、80 字节的 trap 帧、以及每次切换后仍然正确的 `sp`。下一章给这个自愿让出的系统加上时间：tick、抢占与时间片。
+本章的产出不是“能跑两个函数”，而是**三个可独立验证的量**：64 字节的 callee-saved 帧、80 字节的 trap 帧、以及每次切换后仍然正确的 `sp`。下一章（[[ch11-preemptive-scheduler-tcb-tick|第十一章]]）给这个自愿让出的系统加上时间：tick、抢占与时间片。
 
 系列导航：[[ch09-spi-flash-partition-nvs|上一章]] · [[zig-esp32-s31|系列索引]]
