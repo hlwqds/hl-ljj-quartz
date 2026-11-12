@@ -1,0 +1,26 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># ch24-mqtt-ota-application-protocols / idf-bootstrap 的工程默认配置。</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 这个工程只产 bootloader 与分区表，但这两样必须和模组、应用一致：</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#   1. 模组 ESP32-S31-WROOM-3（N16R16V）是 16 MB Flash；</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#   2. single-app-large 把 factory 应用槽放在 0x10000，tools/flash.sh 按这个</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#      偏移替换应用行。</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 目标芯片不写在这里：idf.py --preview set-target esp32s31 会写进生成的</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># sdkconfig（生成物，不入库）。sdkconfig.defaults 只在生成 sdkconfig 时生效，</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 已有 sdkconfig 时要先删除或走 menuconfig 重新确认。</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 本章不启用 PSRAM：MQTT 报文缓冲、会话表、OTA 镜像与清单全在内部 SRAM</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># （链接脚本也只映射 SRAM）。PSRAM 与 cache 一致性不在本章范围内。</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 分区表刻意保持 single-app-large：本章**不写 flash**，A/B 槽位是内存模型</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># （见 src/ota.zig）。真做 OTA 时要换成带 otadata + ota_0/ota_1 的自定义</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 分区表，那是 ch09（flash/分区表）的题目，本章不代填。</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 控制台保持默认：应用侧 TX 走 ROM 的 esp_rom_printf，恒定输出到 UART0</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># （GPIO58/59）、115200 8N1。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_ESPTOOLPY_FLASHSIZE_16MB</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=y</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_ESPTOOLPY_FLASHSIZE</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">"16MB"</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_PARTITION_TABLE_SINGLE_APP_LARGE</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=y</span></span>
+<span class="line"></span></code></pre>

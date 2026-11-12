@@ -28,7 +28,7 @@ tags: [zig, esp32-s31, riscv, udp, dhcp, dns, series]
 > 19. **第十九章：UDP、DHCP 与 DNS**
 > 20. [[ch20-tcp-state-machine-reliable-delivery|第二十章：TCP 状态机与可靠传输]]
 > 21. [[ch21-tcp-congestion-throughput|第二十一章：TCP 拥塞控制与吞吐]]
-> 22. Socket API 与事件循环（规划中）
+> 22. [[ch22-socket-api-event-loop|第二十二章：Socket API 与事件循环]]
 
 # Zig × ESP32-S31 全栈开发（十九）：UDP、DHCP 与 DNS
 

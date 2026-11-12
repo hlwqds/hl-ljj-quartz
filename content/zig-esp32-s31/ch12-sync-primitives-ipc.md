@@ -19,7 +19,7 @@ tags: [zig, esp32-s31, riscv, rtos, ipc, sync, series]
 > 10. [[ch10-context-switch-cooperative-scheduler|第十章：上下文切换与协作调度]]
 > 11. [[ch11-preemptive-scheduler-tcb-tick|第十一章：抢占调度、TCB 与 tick]]
 > 12. **第十二章：同步原语与 IPC**
-> 13. 第十三章：堆、栈保护与内存 caps（待发布）
+> 13. [[ch13-heap-stack-caps|第十三章：堆、栈保护与内存 caps]]
 
 # Zig × ESP32-S31 全栈开发（十二）：同步原语与 IPC
 

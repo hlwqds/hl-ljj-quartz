@@ -1,0 +1,52 @@
+ESP-ROM:esp32s31-20251218
+Build:Dec 18 2025
+rst:0x1 (POWERON),boot:0x58 (SPI_FAST_FLASH_BOOT)
+SPI mode:DIO, clock div:1
+load:0x2f0740c0,len:0x168c
+load:0x2f06a2b0,len:0xc7c
+load:0x2f06cfb0,len:0x3368
+entry 0x2f06a2ba
+I (26) boot: ESP-IDF v6.1 2nd stage bootloader
+I (26) boot: compile time Nov 13 2026 02:56:04
+I (26) boot: Multicore bootloader
+I (28) boot: chip revision: v0.0
+I (29) boot: efuse block revision: v0.2
+I (32) boot.esp32s31: SPI Speed      : 80MHz
+I (36) boot.esp32s31: SPI Mode       : DIO
+I (40) boot.esp32s31: SPI Flash Size : 16MB
+I (44) boot: Enabling RNG early entropy source...
+I (49) boot: Partition Table:
+I (51) boot: ## Label            Usage          Type ST Offset   Length
+I (58) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (64) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (71) boot:  2 factory          factory app      00 00 00010000 00177000
+I (78) boot: End of partition table
+I (81) esp_image: segment 0: paddr=00010020 vaddr=40000020 size=17980h ( 96640) map
+I (105) esp_image: segment 1: paddr=000279a8 vaddr=2f000000 size=0006ch (   108) load
+I (107) esp_image: segment 2: paddr=00027a1c vaddr=00000000 size=085fch ( 34300) 
+I (116) esp_image: segment 3: paddr=00030020 vaddr=40020020 size=02df8h ( 11768) map
+I (120) boot: Loaded app from partition at offset 0x10000
+I (121) boot: Disabling RNG early entropy source...
+ch24-mqtt-ota-application-protocols | form B (Zig ELF + IDF 2nd-stage bootloader)
+console: UART0 TX=GPIO58 RX=GPIO59 115200 8N1 (ROM default)
+scope: mqtt 3.1.1 codec + session tick + ota manifest (sha256/ed25519) + a/b rollback
+note: no broker, no link, no flash write - ch17 ethernet and ch09 flash pending
+host: 27 unit tests via 'zig build test'
+check: mqtt connect kat len=18 ka=60 bytes=101000044d5154540402 ok=1
+read: mqtt connect kat_full=101000044d5154540402003c000463683234
+check: mqtt rem-len widths=112234 max=1 over=rej five=rej ok=1
+check: mqtt connack sp=1 rc=0 refuse=not_authorized reserved=rej ok=1
+check: mqtt publish qos1 id=258 payload=on puback=40020102 ok=1
+check: mqtt qos2 pubrel=62020001 delivered=1 dup=1 pubcomp=1 ok=1
+check: mqtt subscribe filters=2 id=10 granted=1,rej ok=1
+check: mqtt topic a/+/c=1 a/b/d=0 a/#(a)=1 sport/#=1 $SYS=0 invalid=2 ok=1
+check: session keepalive early=0 ping@30000=1 dead@90000=1 ok=1
+check: ota manifest v=7 len=512 sha256=110009dc tamper=rej downgrade=rej ok=1
+check: ota ed25519 key=d75a9801 sig=c95179b0 badsig=rej ok=1
+check: ota ab start=a fail3=rollback b=invalid rollbacks=1 ok=1
+check: session inflight accepted=4 full=1 fifth=rej qos0=1 freed=1 ok=1
+check: mqtt stream pushes=4 total=138 id=772 stalled=3 reassembled=1 ok=1
+read: ota manifest sha256_prefix=110009dc sig_prefix=c95179b0
+checks: passed=13 failed=0 total=13
+main: verdict=pass, mqtt/ota primitives verified off-link (wfi)
+main: halting (wfi)
