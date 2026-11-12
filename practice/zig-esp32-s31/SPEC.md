@@ -501,8 +501,8 @@ tick
   `asm volatile ("call switchRaw" ::: .{})`；`switch_save_slot`/`switch_target_sp` 必须 `export var`。
   2026-11-13 真机实测：改前 ch10 每任务首行后 `instruction access fault`，改后 A/B/C 全部跑完
   （`all tasks done, switches=13`），ch11 打出 hi/loA/loB 全部 beat 与 `idle: wfi`。
-- 证据口径：ISR 内换栈、tick 周期/漂移/抖动、CLIC `IP` 清除行为全部 待真机验证；
-  正文与 README 不得预填这些数字。
+- 证据口径：2026-11-13 真机通过——`hi` 6 beat / `loB` 4 / `loA` 4 / `sched: all tasks done ticks=183 switches=5` / `idle: wfi`；
+  ISR 内换栈的实现前提见 §4.13 的 naked 调用约束。tick 漂移/抖动与示波器波形未测。
 
 ### 4.14 `ch12-sync-primitives-ipc` 契约（模板 B，阻塞式调度）
 
@@ -511,8 +511,8 @@ tick
 - 调度：TCB 增加 `blocked` 状态与侵入式等待链；`mutex` 带持有者与优先级继承；`semaphore`/`queue`/`event` 的等待与唤醒都
   经过 `blockOn`/`wake`；唤醒时按优先级决定是否立刻抢占。`idle` 使用独立栈，`pickNext` 跳过 `done`。
 - 临界区：`spin` 用 A 扩展 `lr.w/sc.w`（或 `amoswap.w`）并带 `fence rw,rw`；关中断临界区成对 `irqSave/irqRestore`。
-- 证据口径：`high_wait`、`ticks`、`switches`、`blocks` 等数字全部 待真机验证（真机首轮在 supervisor 早期
-  `CPU_LOCKUP_RESET`，未闭环）。
+- 证据口径：2026-11-13 部分实测——spin 1000 次与 `phase no-pi: high_wait=90 ticks boosts=0 span=99 ticks` 通过；
+  `phase pi` 创建任务后心跳消失，仍未闭环；章节 12.13 已标注。
 
 ### 4.15 `ch13-heap-stack-caps` 契约（模板 B，内存）
 
@@ -530,7 +530,7 @@ tick
 - core1 启动：时钟解复位 → 写引导地址 → 清复位 → 解 stall → 等 `CORESTALLED_ST`；`core1Entry` 放 `.trap_ram`（SRAM 首取指）。
 - IPI：CLIC 软件中断输入 19（core0）/20（core1），矩阵源 65/66；每核 `mscratch` 保存 per-cpu 状态。
 - 真机实测（2026-11-13，coreboard）：`core1: up hart=1`、IPI ping-pong、`jobs: total=4 core0=2 core1=2 migrated=2`、
-  `lat[rtt] avg≈1573 systimer ticks（≈98.3 µs）`、两核 ticks/ipis/wakeups/switches 计数正常。
+  `lat[rtt] avg≈1573 systimer ticks（≈98.3 µs）`、两核 ticks/ipis/wakeups/switches 计数正常（core0 的 `pings` 字段未计数）。
 - 未验证边界：core1 的 cache/MMU 设置与 core0 的继承关系，以及 67/68 与 65/66 两套源编号的口径差异。
 
 ### 4.17 `ch15-observability-testing-stability` 契约（模板 B，可观测性）
@@ -539,8 +539,8 @@ tick
   `src/{start,main,check,trap,hw,trace,watchdog,stress,log,host_tests}.zig`、`tools/flash.sh`、`idf-bootstrap/*`、`README.md`。
 - 自检：8 条硬判据（flash/sram 区间、时钟、中断、watchdog、trace 容量）+ 1 条 clock calibration advisory；
   失败即拒绝继续；可恢复断言与 panic dump（`mcause & 0x3F`、trace 环 32×24 B）。
-- 真机首轮（2026-11-13）：5 passed / 3 failed（stack 判据、irq 检查时机、RTC WDT 未关），已回炉修正；
-  主机侧 `zig build test` 10/10 通过。
+- 真机两轮（2026-11-13）：首轮 5/8，定位到「相等判据被 LLVM 折叠」「irq 检查早于开中断」「SWD_WPROTECT 未解锁」；
+  次轮 `checks: passed=8 failed=0`、`wdt: rtc before=0xc0000000 after=0x0`、panic dump 后 `halted`；主机侧 `zig build test` 10/10。
 
 ## 5. 构建与运行命令
 
