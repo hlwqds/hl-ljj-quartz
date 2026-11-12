@@ -183,6 +183,44 @@ pub fn enableRgmiiClocks() void {
 /// 时钟使能后到写 SWR 之间的等待（µs）。
 pub const clock_settle_us: u32 = 100;
 
+/// 把 GMAC 存储的低功耗路径关掉：`lp_mode=3`（disable low power stage）、
+/// `lp_en=0`（不 power down memory）、`lp_force_ctrl=1`（软件接管，禁用硬件控制）。
+///
+/// 这一条**不是 IDF 的步骤**（IDF 在 S31 的 EMAC 路径里从没碰过这个寄存器），
+/// 是从寄存器复位值推出来的：`lp_mode=2 / lp_en=1` 意味着上电默认“关掉 GMAC
+/// 存储”。本工程把它当作 bring-up 发现来验证，写回读数原样打印。
+pub fn powerUpGmacMemory() u32 {
+    const addr = cnntReg(regs.cnnt.gmac_mem_lp_ctrl);
+    const before = hw.readReg(addr);
+    var v = before;
+    v &= ~regs.cnnt_bits.mem_lp_mode_mask;
+    v |= regs.cnnt_bits.mem_lp_mode_disable_stage << regs.cnnt_bits.mem_lp_mode_shift;
+    v &= ~regs.cnnt_bits.mem_lp_en;
+    v |= regs.cnnt_bits.mem_lp_force_ctrl;
+    hw.writeReg(addr, v);
+    hw.fence();
+    return before;
+}
+
+/// 读回 `GMAC_MEM_LP_CTRL`（写后核对用）。
+pub fn readGmacMemLpCtrl() u32 {
+    return hw.readReg(cnntReg(regs.cnnt.gmac_mem_lp_ctrl));
+}
+
+/// 读只读位 `GMAC_MEM_PRDYN`（bit12）：1 = GMAC 存储已经在电。
+pub fn gmacMemPowered() bool {
+    return (hw.readReg(cnntReg(regs.cnnt.gmac_ctrl0)) & regs.cnnt_bits.gmac_mem_prdyn) != 0;
+}
+
+/// 有界等待 `PRDYN` 变 1；超时返回最后一次读数。
+pub fn waitGmacMemPowered(timeout_us: u32) bool {
+    const start = hw.nowUs();
+    while (!gmacMemPowered()) {
+        if (hw.elapsedUs(start) > timeout_us) return false;
+    }
+    return true;
+}
+
 /// GMAC_CTRL0 里的只读诊断位快照：用来把“DMA 复位超时”从现象变成证据。
 pub const ClockState = struct {
     /// bit5 `GMAC_MEM_CLK_FORCE_ON`（R/W，这里当“我们写了没”的证据）

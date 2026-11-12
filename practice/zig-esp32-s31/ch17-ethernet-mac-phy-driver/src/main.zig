@@ -77,6 +77,15 @@ fn stageClocks() bool {
         @intFromBool(before.rx_clk_released), @intFromBool(before.axi_active),
     });
 
+    // GMAC 存储的低功耗路径：复位值 lp_mode=2 / lp_en=1 就是“上电关存储”。
+    // 先把它关掉、再看只读的 `GMAC_MEM_PRDYN`(bit12) 是否变 1。
+    const lp_before = emac.powerUpGmacMemory();
+    const lp_after = emac.readGmacMemLpCtrl();
+    const mem_on = emac.waitGmacMemPowered(1_000);
+    log.line("clk: mem_lp_ctrl before=0x{x:0>8} after=0x{x:0>8} prdyn={d}", .{
+        lp_before, lp_after, @intFromBool(mem_on),
+    });
+
     // DMA 软复位必须在**所有** MAC/DMA 寄存器编程之前：SWR 会把 MAC 的
     // 配置寄存器一起清回默认值（gmac_reg.h 的 SWR 说明）。
     if (emac.resetDma(dma_reset_timeout_us)) |_| {
@@ -90,7 +99,9 @@ fn stageClocks() bool {
             after.raw,                      @intFromBool(after.tx_clk_released), @intFromBool(after.rx_clk_released),
             @intFromBool(after.axi_active),
         });
-        return false;
+        // 不再直接停机：MDIO 走 CSR/总线时钟域（`mac_version` 已证明它活着），
+        // 继续跑下去能一次 flash 分辨“PHY 有电/没电”和“MDC/MDIO 脚号对不对”。
+        log.raw("clk: dma soft reset did not complete; continuing to pins/MDIO (bus domain is alive)\n");
     }
     return true;
 }

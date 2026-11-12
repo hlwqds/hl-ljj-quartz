@@ -246,8 +246,8 @@ main: halting (wfi)
 - [x] `image-info` 正好两个 `DROM, IROM` 段：`0x40000020`、`0x40020020`
 - [x] `bash -n tools/flash.sh` 退出码 0
 - [x] `.data` 只剩 0x180 字节（重组缓冲已移出结构体默认值）
-- [ ] 串口出现 banner 与 `checks: passed=13 failed=0 total=13`
-- [ ] `ipv4 reasm … identical=1`
-- [ ] `arp expire +31s state=stale`
-- [ ] `main: verdict=pass` 之后停在 `wfi`，复位可重复
+- [x] 串口出现 banner 与 `checks: passed=13 failed=0 total=13`（`../logs/ch18-boot.log`）
+- [x] `ipv4 reasm … identical=1`（同上日志）
+- [x] `arp expire +31s state=stale`（同上日志）
+- [x] `main: verdict=pass` 之后停在 `wfi`，复位可重复（同上日志）
 - [ ] 接上 ch17 的收发路径后，PC `ping` 通（跨工程，见 18.11）

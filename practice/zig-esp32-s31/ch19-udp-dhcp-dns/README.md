@@ -235,11 +235,11 @@ IPv4 首部长什么样；`dhcp.Client` 只产出 `Action`，不碰任何缓冲�
 - [x] `esptool elf2image` 打印 `Merged 2 ELF sections.`
 - [x] `image-info` 正好两个 `DROM, IROM` 段：`0x40000020`、`0x40020020`
 - [x] `bash -n tools/flash.sh` 退出码 0
-- [ ] 串口出现 banner 与 `checks: passed=14 failed=0 total=14`
-- [ ] `check: udp demux dport=67 delivered=dhcp_server ports=2 ok=1`
-- [ ] `check: dhcp bound ip=… lease=… t1=… t2=…`（数值取自真机）
-- [ ] `check: dns a=… ttl=… cname_hops=0 ok=1`
-- [ ] `check: dns cache expired=1 entries=0 ok=1`
-- [ ] `main: verdict=pass` 之后停在 `wfi`，复位可重复
+- [x] 串口出现 banner 与 `checks: passed=14 failed=0 total=14`（`../logs/ch19-boot.log`）
+- [x] `check: udp demux dport=67 delivered=dhcp_server ports=2 ok=1`（同上日志）
+- [x] `check: dhcp bound ip=… lease=… t1=… t2=…`（实测 `192.168.1.42 / 3600 / 1800 / 3150`）
+- [x] `check: dns a=… ttl=… cname_hops=0 ok=1`（同上日志）
+- [x] `check: dns cache expired=1 entries=0 ok=1`（同上日志）
+- [x] `main: verdict=pass` 之后停在 `wfi`，复位可重复（同上日志）
 - [ ] 联调（ch17+ch18 就绪后）：路由器分配地址 → `ping 网关` → `ping 223.5.5.5`
 - [ ] 联调：`dns.findAnswer` 解析真实响应，缓存命中第二次查询

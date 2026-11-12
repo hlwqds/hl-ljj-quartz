@@ -42,7 +42,7 @@ MDIO 读回的值是唯一能证明 PHY 活着的证据；`OWN` 位是唯一能�
 > 静态部分全部验证过：交叉编译退出 0、`elf2image` 两个 flash 段、`zig build test`
 > 的 20 个主机侧用例全绿、`bash -n tools/flash.sh` 退出 0。
 >
-> **已上板一次（2026-11-13，CoreBoard-1）**，结果分两截：
+> **已上板四轮（2026-11-13，CoreBoard-1）**，第一轮结果分两截：
 >
 > - **通过**：EMAC 侧时钟门控生效（`hp_sys_clkrst+0xc8 bit0` 读回 1）；
 >   `mac_version=0x00001037`（`snps=0x37`，Synopsys GMAC 签名对上）；
@@ -71,9 +71,31 @@ MDIO 读回的值是唯一能证明 PHY 活着的证据；`OWN` 位是唯一能�
 > **第三轮上板（同日）**：把 RGMII 的 pad 路由（`pins.initRgmii()`）提到时钟阶段之前，
 > 排除“125 MHz 没有出口”这一可能。读数**一字未变**（`gmac_ctrl0=0x00000124`、
 > `rst_clk_tx_n=0`、`rst_clk_rx_n=0`，`logs/ch17c-boot.log`）——pad 顺序不是原因。
-> 剩下的最可疑环节是 **ref clock 的源根本没在跑**：IDF 在这条路径上是先用
+> 剩下的最可疑环节是 ref clock 的源到底跑没跑：IDF 在这条路径上是先用
 > `esp_clk_tree_src_set_freq_hz(MPLL, 500 MHz)` 把源配出来再使能输出时钟，而本章
-> 直接假设“MPLL = 500 MHz”就写了 `div=3`。下一轮要验的正是这一步。
+> 直接假设“MPLL = 500 MHz”就写了 `div=3`。
+>
+> **第四轮上板（同日）**：验证 GMAC 存储低功耗那条分支，并且**不再在 SWR 超时后停机**
+> （MDIO 走 CSR/总线时钟域，`mac_version` 已证明它活着）。两个结论：
+>
+> ```text
+> clk: mem_lp_ctrl before=0x00000006 after=0x0000000b prdyn=0
+> rst: dma soft reset failed: Timeout (busmode=0x00020101)
+> mdio: no PHY responded (all ids are 0x0000 or 0xffff)
+> ring: dma rx_base=0x00000000 tx_base=0x00000000
+> tx: failed Timeout after 10006us (des0=0xf0100000 status=0x00000000)
+> ```
+>
+> 1. `GMAC_MEM_LP_CTRL` 的复位值确实是 `0x6`（`lp_mode=2` shutdown + `lp_en=1`），
+>    强写 `lp_mode=3 / lp_en=0 / force_ctrl=1` 后读回 `0xb`，但只读的
+>    `GMAC_MEM_PRDYN`(bit12) **仍是 0** —— 软件把低功耗关掉了，存储却没“上电”，
+>    所以这一位不是 SWR 的钥匙。
+> 2. 继续跑完整九阶段拿到了新证据：`TXDESC_LIST`/`RXDESC_LIST` 写进去读回是 **0**，
+>    而 `BUSMODE` 的写是生效的（`0x06001080`）——说明 DMA 寄存器块的写通路只部分工作，
+>    和“某个时钟域没放行”是同一件事的两个侧面。MDIO 扫不到任何 PHY
+>    （全 `0x0000`/`0xffff`），收发自然都超时。
+>
+> 原始输出见 `../logs/ch17d-boot.log`。
 >
 > 所以本章其余“硬件到底怎么表现”的结论仍标「待真机验证」。凡是没有证据的地方，
 > 本章的写法是**写出判据**而不是写出结论。

@@ -375,6 +375,20 @@ pub const cnnt_bits = struct {
     /// GMAC_CTRL0 bit2-4：`PHY_INTF_SEL`（0 = MII，1 = RGMII，4 = RMII）。
     pub const phy_intf_sel_shift: u5 = 2;
     pub const phy_intf_sel_mask: u32 = 0x7 << 2;
+    /// GMAC_MEM_LP_CTRL（CNNT + 0x1c）：GMAC 存储低功耗控制。
+    /// 复位值 = `lp_mode=2`（shutdown）+ `lp_en=1`（power down gmac memory），
+    /// 即**上电默认就把 GMAC 存储关掉**；`lp_force_ctrl`(bit3) 才是软件接管。
+    /// 来源：`components/soc/esp32s31/register/soc/cnnt_sys_struct.h`
+    /// （sys_gmac_mem_lp_ctrl，default 2 / 1 / 0）。
+    pub const mem_lp_mode_shift: u5 = 0;
+    pub const mem_lp_mode_mask: u32 = 0x3;
+    pub const mem_lp_mode_disable_stage: u32 = 3;
+    pub const mem_lp_en: u32 = 1 << 2;
+    pub const mem_lp_force_ctrl: u32 = 1 << 3;
+
+    /// GMAC_CTRL0 bit12：`GMAC_MEM_PRDYN`（RO），record memory power status。
+    pub const gmac_mem_prdyn: u32 = 1 << 12;
+
     /// GMAC_CTRL0 bit5：`GMAC_MEM_CLK_FORCE_ON`（R/W）。GMAC 内部存储/AXI 时钟
     /// 默认门关；不给这一位，DMA 的 AXI 域可能没有时钟，SWR 就永远不自清。
     pub const mem_clk_force_on: u32 = 1 << 5;

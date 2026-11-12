@@ -2,15 +2,17 @@
 
 > 所属章节：[[ch17-ethernet-mac-phy-driver|第十七章：以太网 MAC/PHY 驱动]] · 系列：[[zig-esp32-s31|Zig × ESP32-S31 全栈开发]]
 
-> [!warning] 验证状态：**已上板两轮（2026-11-13）**：EMAC 时钟门控与 `mac_version=0x00001037`（`snps=0x37`）
+> [!warning] 验证状态：**已上板四轮（2026-11-13）**：EMAC 时钟门控与 `mac_version=0x00001037`（`snps=0x37`）
 > 读通；**DMA 软复位仍超时**（`busmode=0x00020101`），MDIO/PHY ID、RGMII、描述符环与 ping 均未进入。
 > 第二轮按 IDF 顺序把数据接口时钟放到 SWR 之前、补写 `GMAC_MEM_CLK_FORCE_ON`（bit5）并打印
 > 三个只读诊断位：`gmac_ctrl0=0x00000124`（`mem_clk_force_on=1`、`cactive=1`、
 > `rst_clk_tx_n=0`、`rst_clk_rx_n=0`）——时钟域在要时钟，但 TX/RX 复位时钟没放行。
 > 第三轮把 RGMII pad 路由提到时钟阶段之前，读数一字未变（`../logs/ch17c-boot.log`），
 > 排除了 pad 顺序；剩下的最可疑环节是 ref clock 的源（MPLL 未按 500 MHz 运行）。
-> 详见 `../BRINGUP-2026-11-12.md` 第四轮、`../logs/ch17-boot.log`、`../logs/ch17b-boot.log` 与
-> `../logs/ch17c-boot.log`。
+> 第四轮验证 GMAC 存储低功耗分支并继续跑完整阶段：`mem_lp_ctrl` 由 `0x6` 写成 `0xb` 后
+> `prdyn` 仍为 0（不是 SWR 的钥匙）；`TXDESC_LIST`/`RXDESC_LIST` 写后读回 0，
+> MDIO 扫不到 PHY，收发全部超时（`../logs/ch17d-boot.log`）。
+> 详见 `../BRINGUP-2026-11-12.md` 第四轮与 `../logs/ch17{,b,c,d}-boot.log`。
 > 已经完成的是可静态验证的部分：
 >
 > - `zig build -Dtarget=riscv32-freestanding-eabihf … -Doptimize=ReleaseSmall` 退出 0；
