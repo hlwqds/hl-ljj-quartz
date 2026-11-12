@@ -1,0 +1,52 @@
+ESP-ROM:esp32s31-20251218
+Build:Dec 18 2025
+rst:0x1 (POWERON),boot:0x58 (SPI_FAST_FLASH_BOOT)
+SPI mode:DIO, clock div:1
+load:0x2f0740c0,len:0x168c
+load:0x2f06a2b0,len:0xc7c
+load:0x2f06cfb0,len:0x3368
+entry 0x2f06a2ba
+I (26) boot: ESP-IDF v6.1 2nd stage bootloader
+I (26) boot: compile time Nov 13 2026 02:56:04
+I (26) boot: Multicore bootloader
+I (28) boot: chip revision: v0.0
+I (29) boot: efuse block revision: v0.2
+I (32) boot.esp32s31: SPI Speed      : 80MHz
+I (36) boot.esp32s31: SPI Mode       : DIO
+I (40) boot.esp32s31: SPI Flash Size : 16MB
+I (44) boot: Enabling RNG early entropy source...
+I (49) boot: Partition Table:
+I (51) boot: ## Label            Usage          Type ST Offset   Length
+I (58) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (64) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (71) boot:  2 factory          factory app      00 00 00010000 00177000
+I (78) boot: End of partition table
+I (81) esp_image: segment 0: paddr=00010020 vaddr=40000020 size=198b0h (104624) map
+I (107) esp_image: segment 1: paddr=000298d8 vaddr=2f000000 size=0006ch (   108) load
+I (109) esp_image: segment 2: paddr=0002994c vaddr=00000000 size=066ech ( 26348) 
+I (116) esp_image: segment 3: paddr=00030040 vaddr=40020040 size=04160h ( 16736) map
+I (122) boot: Loaded app from partition at offset 0x10000
+I (123) boot: Disabling RNG early entropy source...
+ch23-tls-http | form B (Zig ELF + IDF 2nd-stage bootloader)
+console: UART0 TX=GPIO58 RX=GPIO59 115200 8N1 (ROM default)
+scope: tls1.3 record/keyschedule + x25519 + aes-128-gcm + x509 der + http1.1
+note: no network, no real handshake - ch17 link and ch22 event loop pending
+host: 32 unit tests via 'zig build test'
+check: record frag records=3 lens=1024,1024,956 reasm=1 ok=1
+check: record limit max=16640 exact=1 over=0 raw=0 ok=1
+check: hkdf-extract rfc5869 prk=07770936 ok=1
+check: hkdf-expand-label label_len=9 info_len=15 out=8a5be387 manual=1 ok=1
+check: x25519 rfc7748 v1=c3da5537 v2=95cbde94 loworder=rejected ok=1
+check: aes-gcm nist tag=ab6e47d4 ct=0388dace tamper=2/2 ok=1
+check: x509 der cn=ch23-stub.local issuer=ch23-stub.local san=3 first=ch23.local nb=2026-01-01 ok=1
+check: x509 verify ok=1 tampered=rejected fp=00f3df22 ok=1
+check: http request GET /index.html q=x=1 hdrs=3 keep=1 ok=1
+check: http chunked decoded=9 body=Wikipedia bad=rejected ok=1
+check: http keepalive 1.1=1 1.1+close=0 1.0=0 1.0+keep=1 ok=1
+check: http response status=200 cl=9 total=97 conn=keep-alive close=1 ok=1
+check: rfc8448 chain early=33ad0a1c hs=1dc826e9 c_hs=b3eddb12 ok_all=1 ok=1
+read: traffic c_ap=ef97e3ec s_ap=b7c74e70 master=11c9962e
+read: x25519 pub(len=32)=9a4503a9
+checks: passed=13 failed=0 total=13
+main: verdict=pass, tls/http primitives verified off-link (wfi)
+main: halting (wfi)

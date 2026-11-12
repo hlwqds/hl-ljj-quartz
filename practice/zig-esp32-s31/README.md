@@ -3,7 +3,7 @@
 对应系列：[[zig-esp32-s31|Zig × ESP32-S31 全栈开发]]
 构建契约：[SPEC.md](SPEC.md)
 
-本目录是系列章节的可构建工程集合。当前第 1–21 章的工程已落地；ch01–ch06、ch09–ch21 已在 ESP32-S31 CoreBoard 上实测（ch07/ch08/ch12/ch17 为部分通过，详见 `BRINGUP-2026-11-12.md`）。
+本目录是系列章节的可构建工程集合。当前第 1–23 章的工程已落地；ch01–ch06、ch09–ch23 已在 ESP32-S31 CoreBoard 上实测（ch07/ch08/ch12/ch17 为部分通过，详见 `BRINGUP-2026-11-12.md`）。
 
 ## 工程清单
 
@@ -30,6 +30,8 @@
 | `ch19-udp-dhcp-dns`                    | [[ch19-udp-dhcp-dns\|第十九章：UDP、DHCP 与 DNS]]                            | B（纯 Zig ELF + IDF bootloader） | 真机通过（宿主 49 测试 + 板侧 14 项自检）               | [README](ch19-udp-dhcp-dns/README.md)                    |
 | `ch20-tcp-state-machine`               | [[ch20-tcp-state-machine-reliable-delivery\|第二十章：TCP 状态机与可靠传输]] | B（纯 Zig ELF + IDF bootloader） | 板侧自检通过（宿主 27 测试 + 板侧 11 项，链路待 ch17）  | [README](ch20-tcp-state-machine/README.md)               |
 | `ch21-tcp-congestion`                  | [[ch21-tcp-congestion-throughput\|第二十一章：TCP 拥塞控制与吞吐]]           | B（纯 Zig ELF + IDF bootloader） | 板侧自检通过（宿主 21 测试 + 板侧 10 项，仿真非真链路） | [README](ch21-tcp-congestion/README.md)                  |
+| `ch22-socket-api-event-loop`           | [[ch22-socket-api-event-loop\|第二十二章：Socket API 与事件循环]]            | B（纯 Zig ELF + IDF bootloader） | 板侧自检通过（宿主 28 测试 + 板侧 12 项，注入路径）     | [README](ch22-socket-api-event-loop/README.md)           |
+| `ch23-tls-http`                        | [[ch23-tls-http\|第二十三章：TLS 记录层与 HTTP/1.1]]                         | B（纯 Zig ELF + IDF bootloader） | 板侧自检通过（宿主 32 测试 + 板侧 13 项，KAT 离线）     | [README](ch23-tls-http/README.md)                        |
 
 ## 快速入口
 

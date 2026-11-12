@@ -11,7 +11,7 @@ tags: [zig, esp32-s31, riscv, tcp, congestion-control, aimd, bdp, series]
 >
 > **本章：第二十一章：TCP 拥塞控制与吞吐**
 >
-> 下一章：Socket API 与事件循环（规划中，占位链接 [[ch22-socket-api-event-loop]]）
+> 下一章：[[ch22-socket-api-event-loop|第二十二章：Socket API 与事件循环]]
 
 # Zig × ESP32-S31 全栈开发（二十一）：TCP 拥塞控制与吞吐
 
