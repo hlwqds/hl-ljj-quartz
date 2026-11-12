@@ -1,0 +1,9 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># ch09-flash-partition-nvs / idf-bootstrap：main 组件只有空 app_main.c。</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 这里不调用 zig、不链接任何 Zig 产物。构建的目的是让 IDF 顺带生成：</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#   build/bootloader/bootloader.bin</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#   build/partition_table/partition-table.bin</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#   build/flash_args</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 应用镜像由 ../zig-out/bin/app.bin 顶替，偏移由 flash_args 决定。</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">idf_component_register(SRCS </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">"app_main.c"</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> INCLUDE_DIRS </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">"."</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)</span></span>
+<span class="line"></span></code></pre>

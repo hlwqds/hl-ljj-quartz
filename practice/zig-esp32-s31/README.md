@@ -1,0 +1,67 @@
+# Zig × ESP32-S31 实验套件
+
+对应系列：[[zig-esp32-s31|Zig × ESP32-S31 全栈开发]]
+构建契约：[SPEC.md](SPEC.md)
+
+本目录是系列章节的可构建工程集合。当前第 1–10 章已落地；其余章节目录随系列推进逐个新增。
+
+## 工程清单
+
+| 工程                            | 所属章节                                                                    | 模板                             | 状态       | 入口                                              |
+| ------------------------------- | --------------------------------------------------------------------------- | -------------------------------- | ---------- | ------------------------------------------------- |
+| `ch01-board-id`                 | [[ch01-goal-boundary-hardware\|第一章：目标、边界与硬件鉴定]]               | 无（主机侧清单）                 | 待真机验证 | [README](ch01-board-id/README.md)                 |
+| `ch02-hello`                    | [[ch02-toolchain-first-image\|第二章：工具链与第一个可烧录镜像]]            | A（IDF 托管 Zig 静态库）         | 待真机验证 | [README](ch02-hello/README.md)                    |
+| `ch03-image-inspect`            | [[ch03-boot-image-partition\|第三章：启动链、镜像格式与分区]]               | 主机（Zig 解析器）               | 待真机对拍 | [README](ch03-image-inspect/README.md)            |
+| `ch04-linker-layout`            | [[ch04-linker-memory-layout\|第四章：链接脚本与内存布局]]                   | B（纯 Zig ELF + IDF bootloader） | 待真机验证 | [README](ch04-linker-layout/README.md)            |
+| `ch05-clock-reset-wdt`          | [[ch05-clock-reset-watchdog\|第五章：时钟、复位与看门狗]]                   | B（纯 Zig ELF + IDF bootloader） | 待真机验证 | [README](ch05-clock-reset-wdt/README.md)          |
+| `ch06-gpio-uart-log`            | [[ch06-gpio-uart-logging-panic\|第六章：GPIO、UART、日志与 panic]]          | B（纯 Zig ELF + IDF bootloader） | 待真机验证 | [README](ch06-gpio-uart-log/README.md)            |
+| `ch07-interrupts-clic`          | [[ch07-interrupts-exceptions-clic\|第七章：中断、异常与 CLIC]]              | B（纯 Zig ELF + IDF bootloader） | 待真机验证 | [README](ch07-interrupts-clic/README.md)          |
+| `ch08-timers-dma`               | [[ch08-timers-dma-precision\|第八章：定时器、DMA 与精确时序]]               | B（纯 Zig ELF + IDF bootloader） | 待真机验证 | [README](ch08-timers-dma/README.md)               |
+| `ch09-flash-partition-nvs`      | [[ch09-spi-flash-partition-nvs\|第九章：SPI Flash、分区与 NVS 存储]]        | B（纯 Zig ELF + IDF bootloader） | 待真机验证 | [README](ch09-flash-partition-nvs/README.md)      |
+| `ch10-context-switch-scheduler` | [[ch10-context-switch-cooperative-scheduler\|第十章：上下文切换与协作调度]] | B（纯 Zig ELF + IDF bootloader） | 待真机验证 | [README](ch10-context-switch-scheduler/README.md) |
+
+## 快速入口
+
+1. **板卡鉴定与 16 MB 全片备份**：按 [`ch01-board-id/README.md`](ch01-board-id/README.md) 执行
+   `chip-id` / `flash-id` / `read-mac` / `read-flash`，把原始输出与 SHA-256 记进
+   `board-id.md`。只读阶段，不做任何写操作。
+2. **第一个可烧录镜像**：按 [`ch02-hello/README.md`](ch02-hello/README.md) 构建、烧录、
+   监视。IDF v6.1 的 `esp32s31` 是 **preview target**，统一用：
+
+   ```bash
+   idf.py --preview set-target esp32s31
+   idf.py build
+   idf.py -p <PORT> flash monitor
+   ```
+
+   `--preview` 是 `idf.py` 的全局选项，必须放在子命令之前；v6.1 正式版转正后可省略。
+   本仓已有 S31 实机基线：[[onvif-deep-dive|ONVIF 深度解析系列]]的
+   [[ch11-esp32s31-lab-plan|第十一章]]与 `practice/onvif-labs/SPEC.md`。
+
+3. **镜像/分区解析（主机侧）**：进入 `ch03-image-inspect/`，用
+   `zig build run -- <app.bin|partition-table.bin>` 读取字段；与 `esptool image-info`
+   的对拍待真机镜像。
+4. **形态 B（纯 Zig ELF + IDF bootloader）**：进入 `ch04-linker-layout/`，按 README
+   先 `zig build`，再 `esptool elf2image`，最后 `sh tools/flash.sh <PORT>`；`app_desc`
+   必须位于段 #0 开头，烧录前确认 `flash_args` 已生成。
+
+## 约定
+
+- **只提交源码**：`.zig`、`.c`、`.h`、`CMakeLists.txt`、`sdkconfig.defaults`、链接脚本、
+  `README.md`、真实 `run.log`。生成物（`.zig-cache/`、`zig-out/`、`build*/`、
+  `managed_components/`、`sdkconfig`）由仓库 `.gitignore` 统一忽略。
+- **不伪造日志**：尚未上机的工程没有 `run.log`，README 写“run.log 待真机回填”；真机跑通
+  后回填原始串口输出，超 1 MB 按 SPEC §6 截断。
+- **不引入 managed component**：依赖只允许 IDF 树内组件或本仓相对路径。
+- **代码浏览**：收录规则已在 `scripts/gen-code-site.mjs` 登记；本批已重新生成，
+  正文/README 里的 `/static/code/#/zig-esp32-s31/<工程>/<文件>` 深链可用。
+
+## 状态
+
+| 项            | 状态                                     |
+| ------------- | ---------------------------------------- |
+| 第 1–2 章正文 | 已落地（硬件步骤待真机验证）             |
+| ch01-board-id | 命令清单与记录模板已落地；实机输出待回填 |
+| ch02-hello    | 7 个工程文件已落地；构建/烧录待真机验证  |
+| ch03+         | 规划中，按系列索引推进                   |
+| `run.log`     | 均未生成（不伪造；真机回填）             |

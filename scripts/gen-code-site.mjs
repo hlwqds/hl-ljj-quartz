@@ -40,6 +40,7 @@ const PROJECT_GLOBS = [
   "practice/wifi-airtime-labs/*", // WiFi 空口调度实验室（C：DCF 仿真/空口探针/pacing）
   "practice/onvif-labs", // ONVIF 设备端实验室（单项目多子目录：SPEC + lab01–lab06）
   "practice/lwip-labs", // 公约与调研
+  "practice/zig-esp32-s31/*", // Zig × ESP32-S31 章节工程（形态 A/B）
 ]
 
 /** 目录名跳过：精确或前缀通配（build* 命中 build/build_d/build-dbg…） */
@@ -51,6 +52,8 @@ const SKIP_DIRS = [
   "__pycache__",
   ".quartz-cache",
   ".mimosa",
+  ".zig-cache",
+  "zig-out",
 ]
 
 /** 侧栏显示名覆盖：缺省用目录基名（pd），中文套件名在这里给 */
@@ -103,6 +106,7 @@ function langOf(rel) {
       ".sv": "systemverilog",
       ".v": "verilog",
       ".dts": "devicetree",
+      ".zig": "zig",
       ".ld": "c",
       ".cfg": "ini",
       ".conf": "ini",
@@ -116,6 +120,7 @@ function langOf(rel) {
  *  多加载会让老文章的 md 片段字节级变化。新语言要上色就在这里加。 */
 const SHIKI_LANGS = [
   "c",
+  "zig",
   "cmake",
   "ini",
   "bash",

@@ -1,0 +1,25 @@
+# ch09-flash-partition-nvs / idf-bootstrap
+#
+# 自定义分区表。IDF 的 gen_esp32part.py 按这里的 Offset/Size 生成
+# 0x8000 处的 0xC00 字节表；bootloader 读表后才知道 factory 与 storage 在哪。
+#
+# 布局（每行都必须与下一行的 Offset 衔接，重叠会在构建期报错）：
+#   nvs      0x009000 + 0x006000 = 0x00f000
+#   phy_init 0x00f000 + 0x001000 = 0x010000
+#   factory  0x010000 + 0x2f0000 = 0x300000   <- tools/flash.sh 的应用行
+#   storage  0x300000 + 0x010000 = 0x310000   <- 本工程的 KV 日志
+#
+# storage 用 spiffs 子类型只是借一个“通用数据槽”的编号：
+#   - 本工程不实现 SPIFFS，也不让 IDF 的 nvs_flash 去初始化它；
+#   - 本工程的 KV 是自定义的追加式日志（0x4B56 + seq + CRC32），
+#     与 IDF-NVS 格式不兼容，所以绝不能用 nvs 子类型或指向 nvs 分区。
+#
+# 关于 Name 的长度：label 字段 16 字节含结尾 NUL，所以名字最长 15 字符。
+# 关于 0x10000：factory 的偏移必须与 tools/flash.sh 替换的偏移一致；
+# 脚本从 flash_args 读取，不手抄，但分区表这边也不能随意挪。
+
+# Name,     Type, SubType, Offset,   Size,     Flags
+nvs,        data, nvs,     0x9000,   0x6000,
+phy_init,   data, phy,     0xf000,   0x1000,
+factory,    app,  factory, 0x10000,  0x2f0000,
+storage,    data, spiffs,  0x300000, 0x10000,

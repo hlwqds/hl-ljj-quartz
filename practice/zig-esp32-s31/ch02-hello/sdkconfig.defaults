@@ -1,0 +1,14 @@
+# ch02-hello 的工程默认配置。
+#
+# 这里只钉住两件与“镜像能否装下、能否被正确烧录”直接相关的事：
+#   1. 模组是 ESP32-S31-WROOM-3 N16R16V，Flash 为 16 MB；
+#   2. 使用 single-app-large 分区表，给应用留出更大的连续空间。
+#
+# 其余选项保持 IDF 默认。修改后如果 sdkconfig 已存在，需要删除或用
+# `idf.py menuconfig` 重新确认；`sdkconfig.defaults` 只在生成 sdkconfig 时生效。
+# 分区表与 Flash 参数最终以 `idf.py menuconfig` / 生成后的 sdkconfig 为准。
+
+CONFIG_ESPTOOLPY_FLASHSIZE_16MB=y
+CONFIG_ESPTOOLPY_FLASHSIZE="16MB"
+
+CONFIG_PARTITION_TABLE_SINGLE_APP_LARGE=y

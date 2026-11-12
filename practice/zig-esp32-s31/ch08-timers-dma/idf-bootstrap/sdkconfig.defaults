@@ -1,0 +1,21 @@
+# ch08-timers-dma / idf-bootstrap 的工程默认配置。
+#
+# 这个工程只产 bootloader 与分区表，但这两样必须和模组、应用一致：
+#   1. 模组 ESP32-S31-WROOM-3（N16R16V）是 16 MB Flash；
+#   2. single-app-large 把 factory 应用槽放在 0x10000，tools/flash.sh 按这个
+#      偏移替换应用行。
+#
+# 目标芯片不写在这里：idf.py --preview set-target esp32s31 会写进生成的
+# sdkconfig（生成物，不入库）。sdkconfig.defaults 只在生成 sdkconfig 时生效，
+# 已有 sdkconfig 时要先删除或走 menuconfig 重新确认。
+#
+# 本章不启用 PSRAM：工程只在内部 SRAM 里做 DMA 搬运（链接脚本也只映射
+# SRAM）。PSRAM 与 cache 一致性是正文 8.7 节的“边界”，不是本工程的验收项。
+#
+# 控制台保持默认：应用侧 TX 走 ROM 的 esp_rom_printf，恒定输出到 UART0
+# （GPIO58/59）、115200 8N1。
+
+CONFIG_ESPTOOLPY_FLASHSIZE_16MB=y
+CONFIG_ESPTOOLPY_FLASHSIZE="16MB"
+
+CONFIG_PARTITION_TABLE_SINGLE_APP_LARGE=y

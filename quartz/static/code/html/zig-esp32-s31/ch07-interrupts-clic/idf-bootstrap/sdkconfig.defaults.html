@@ -1,0 +1,20 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># ch07-interrupts-clic / idf-bootstrap 的工程默认配置。</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 这个工程只产 bootloader 与分区表，但这两样必须和模组、应用一致：</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#   1. 模组 ESP32-S31-WROOM-3（N16R16V）是 16 MB Flash；</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#   2. single-app-large 把 factory 应用槽放在 0x10000，tools/flash.sh 按这个</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#      偏移替换应用行。</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 目标芯片不写在这里：preview 模式的 set-target 会写进生成的 sdkconfig</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># （生成物，不入库）。sdkconfig.defaults 只在生成 sdkconfig 时生效，</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 已有 sdkconfig 时要先删除或走 menuconfig 重新确认。</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 本章不改控制台端口与波特率：应用侧的 TX 走 ROM 的 esp_rom_printf，</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 恒定输出到 UART0（GPIO58/59）、115200 8N1。中断打开前后都不变——</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 中断只改变“谁读 RX FIFO”，不改变帧格式与波特率。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_ESPTOOLPY_FLASHSIZE_16MB</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=y</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_ESPTOOLPY_FLASHSIZE</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">"16MB"</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_PARTITION_TABLE_SINGLE_APP_LARGE</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=y</span></span>
+<span class="line"></span></code></pre>

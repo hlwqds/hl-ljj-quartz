@@ -1,0 +1,40 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># ch02：Zig 静态库 + IDF 组件的集成点。</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 数据流：</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#   main/main.zig --(zig build)--> &#x3C;build>/main/zig-out/lib/libmain_zig.a</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#                                     |</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#   main/idf_anchor.c --(IDF)--> libmain.a --(最终链接)--> zig_s31_hello.elf</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 关键约束：</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#   - zig build 必须在工程根目录执行（build.zig 在那里）；</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#   - 静态库先产出，组件再链接，所以用 custom target 建立顺序依赖；</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#   - .a 通过 INTERFACE 挂到 main 组件上，最终链接才能看到 app_main。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">find_program</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(ZIG_EXECUTABLE zig REQUIRED)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">set</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(ZIG_OUT_DIR </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">"${CMAKE_CURRENT_BINARY_DIR}/zig-out"</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">set</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(ZIG_LIB </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">"${ZIG_OUT_DIR}/lib/libmain_zig.a"</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">idf_component_register(SRCS </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">"idf_anchor.c"</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> INCLUDE_DIRS </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">"."</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">add_custom_command</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    OUTPUT </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">"${ZIG_LIB}"</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    COMMAND</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "${ZIG_EXECUTABLE}"</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> build</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">            -Dtarget=riscv32-freestanding-eabihf</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">            -Dcpu=generic_rv32+m+a+c+f+zicsr+zifencei</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">            -Doptimize=ReleaseSmall</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">            --</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">prefix</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "${ZIG_OUT_DIR}"</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">    WORKING_DIRECTORY</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "${CMAKE_CURRENT_SOURCE_DIR}/.."</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">    DEPENDS</span></span>
+<span class="line"><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">        "${CMAKE_CURRENT_SOURCE_DIR}/../build.zig"</span></span>
+<span class="line"><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">        "${CMAKE_CURRENT_SOURCE_DIR}/main.zig"</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">    COMMENT</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "zig build: libmain_zig.a (riscv32-freestanding-eabihf)"</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    VERBATIM</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">add_custom_target</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(zig_main ALL </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">DEPENDS</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "${ZIG_LIB}"</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">add_dependencies</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">${COMPONENT_LIB}</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> zig_main)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">target_link_libraries</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">(</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">${COMPONENT_LIB}</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0"> INTERFACE</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> "${ZIG_LIB}"</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)</span></span>
+<span class="line"></span></code></pre>

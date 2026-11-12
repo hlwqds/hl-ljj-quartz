@@ -39,6 +39,7 @@ docs/黄琳*
 docs/assets/huanglin-resume-photo.jpg
 scripts/*
 !scripts/gen-code-site.mjs
+!scripts/minimax-image.mjs
 !scripts/*.sh
 
 # lab 生成物（内核/busybox/dropbear 编译产物、initramfs 镜像、诊断产物）
@@ -90,6 +91,13 @@ practice/onvif-labs/*/sdkconfig
 practice/onvif-labs/*/sdkconfig.old
 practice/onvif-labs/*/main/wifi_secrets.h
 practice/onvif-labs/*/main/onvif_secrets.h
+# Zig × ESP32-S31 实验套件（suite/project 两层深）
+practice/zig-esp32-s31/**/.zig-cache/
+practice/zig-esp32-s31/**/zig-out/
+practice/zig-esp32-s31/**/build*/
+practice/zig-esp32-s31/**/managed_components/
+practice/zig-esp32-s31/**/sdkconfig
+practice/zig-esp32-s31/**/sdkconfig.old
 .mimosa/
 qemu.pid
 

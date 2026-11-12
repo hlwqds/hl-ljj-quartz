@@ -1,0 +1,15 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># ch02-hello 的工程默认配置。</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 这里只钉住两件与“镜像能否装下、能否被正确烧录”直接相关的事：</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#   1. 模组是 ESP32-S31-WROOM-3 N16R16V，Flash 为 16 MB；</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#   2. 使用 single-app-large 分区表，给应用留出更大的连续空间。</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">#</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 其余选项保持 IDF 默认。修改后如果 sdkconfig 已存在，需要删除或用</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># `idf.py menuconfig` 重新确认；`sdkconfig.defaults` 只在生成 sdkconfig 时生效。</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 分区表与 Flash 参数最终以 `idf.py menuconfig` / 生成后的 sdkconfig 为准。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_ESPTOOLPY_FLASHSIZE_16MB</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=y</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_ESPTOOLPY_FLASHSIZE</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">"16MB"</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">CONFIG_PARTITION_TABLE_SINGLE_APP_LARGE</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">=y</span></span>
+<span class="line"></span></code></pre>

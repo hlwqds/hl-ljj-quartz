@@ -1,0 +1,204 @@
+<pre class="shiki shiki-themes github-light github-dark" style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;--shiki-light-bg:#fff;--shiki-dark-bg:#24292e" tabindex="0"><code><span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold"># ch03 image-inspect：主机侧的镜像与分区表解析器</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">> 所属章节：[[</span><span style="--shiki-light:#032F62;--shiki-light-text-decoration:underline;--shiki-dark:#DBEDFF;--shiki-dark-text-decoration:underline">ch03-boot-image-partition|第三章：启动链、镜像格式与分区</span><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">]] · 系列：[[zig-esp32-s31|Zig × ESP32-S31 全栈开发]]</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 目的</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">这是一个</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**主机侧**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">的只读解析器：输入一个本地文件，把它当作 ESP 应用镜像或二进制分区表解析，</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">把每个字段的含义打印出来，并校验镜像自带的 XOR 校验和、可选 SHA256，以及分区表的 MD5。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">它解决的问题是"读得懂 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`esptool`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 的输出"：</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`esptool image-info`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 会给你一个字段列表，但那些数字</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">为什么是这些值、校验和覆盖了哪些字节、入口地址落在哪个地址空间，只有自己按格式算一遍才真正清楚。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">工程</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**不接触硬件**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：不开串口、不烧录、不读芯片，只读文件。因此它可以在没有板子的机器上反复运行，</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">也是后面 ch04 自己产出镜像时的第一道检查工具。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">> [</span><span style="--shiki-light:#032F62;--shiki-light-text-decoration:underline;--shiki-dark:#DBEDFF;--shiki-dark-text-decoration:underline">!warning</span><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">] 验证状态</span></span>
+<span class="line"><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">> 本工程</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**尚未与任何真实 S31 镜像对拍**</span><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">：手头没有真机产出的 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`build/*.bin`</span><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">，也没有跑过</span></span>
+<span class="line"><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">> </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`esptool --chip esp32s31 image-info`</span><span style="--shiki-light:#22863A;--shiki-dark:#85E89D"> 与它的逐字段比较。字段格式来自 esptool 源码与</span></span>
+<span class="line"><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">> IDF 分区表工具源码（见下），但"与官方工具输出完全一致"这一步是</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**待真机验证**</span><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">的。</span></span>
+<span class="line"><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">> 真机产出镜像后按「与 image-info 对拍」一节回填，README 不贴伪造日志。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 文件表</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 路径           | 角色                                                     | 代码浏览                                                             |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| -------------- | -------------------------------------------------------- | -------------------------------------------------------------------- |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`build.zig`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    | 主机目标、</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`addExecutable`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">、</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`installArtifact`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">、</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`run`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 步骤 | [</span><span style="--shiki-light:#032F62;--shiki-light-text-decoration:underline;--shiki-dark:#DBEDFF;--shiki-dark-text-decoration:underline">查看</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">](</span><span style="--shiki-light:#24292E;--shiki-light-text-decoration:underline;--shiki-dark:#E1E4E8;--shiki-dark-text-decoration:underline">/static/code/#/zig-esp32-s31/ch03-image-inspect/build.zig</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)    |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`src/main.zig`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> | 格式常量、镜像/分区表解析、校验、报表输出                | [</span><span style="--shiki-light:#032F62;--shiki-light-text-decoration:underline;--shiki-dark:#DBEDFF;--shiki-dark-text-decoration:underline">查看</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">](</span><span style="--shiki-light:#24292E;--shiki-light-text-decoration:underline;--shiki-dark:#E1E4E8;--shiki-dark-text-decoration:underline">/static/code/#/zig-esp32-s31/ch03-image-inspect/src/main.zig</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">) |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`README.md`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    | 本文件                                                   | [</span><span style="--shiki-light:#032F62;--shiki-light-text-decoration:underline;--shiki-dark:#DBEDFF;--shiki-dark-text-decoration:underline">查看</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">](</span><span style="--shiki-light:#24292E;--shiki-light-text-decoration:underline;--shiki-dark:#E1E4E8;--shiki-dark-text-decoration:underline">/static/code/#/zig-esp32-s31/ch03-image-inspect/README.md</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">)    |</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">没有 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`build.zig.zon`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（零依赖），没有 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`run.log`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（未在真机上运行过这个工具，也没有真实镜像可跑）。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 环境</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 工具 | 版本要求 | 说明                                               |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| ---- | -------- | -------------------------------------------------- |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| Zig  | 0.17.1   | 只用到 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`std.fs`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> / </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`std.mem`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> / </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`std.crypto`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">；无依赖 |</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```bash</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">zig</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> version</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">   # 期望 0.17.1</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 构建与运行</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```bash</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">cd</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> practice/zig-esp32-s31/ch03-image-inspect</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">zig</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> build</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">                       # 产物：zig-out/bin/s31-image-inspect</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">zig</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> build</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> run</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> --</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> &#x3C;</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">fil</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">e</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">></span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D">         # 直接把参数传给工具</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">./zig-out/bin/s31-image-inspect</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583"> &#x3C;</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">fil</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">e</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">></span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`zig build run -- &#x3C;file>`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 里的 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`--`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 是 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`zig build`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 自己的分隔符：它之后的参数才会进 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`b.args`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">，</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">再被 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`run`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 步骤追加到可执行文件后面。参数个数不等于 1 时打印用法并以 </span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**2**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 退出。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 输入与判定</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 首字节      | 判定         | 解析内容                                                            |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| ----------- | ------------ | ------------------------------------------------------------------- |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`0xE9`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">      | ESP 应用镜像 | 8 字节 common header、16 字节扩展头、各段头与段数据、校验和、SHA256 |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`0xAA 0x50`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> | 二进制分区表 | 32 字节条目序列、类型/子类型、flags、MD5 尾块                       |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 其它        | 不认识       | 打印原因，退出码 1                                                  |</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">典型输入来源（都需要先用 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`esptool`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 从 Flash 或构建产物里取出来）：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 输入                    | 取法                                                                   |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| ----------------------- | ---------------------------------------------------------------------- |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 应用镜像 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`app.bin`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">      | </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`idf.py build`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 的 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`build/&#x3C;project>.bin`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">，或 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`esptool elf2image`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 的产物 |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 分区表 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`partitions.bin`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> | </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`build/partition_table/partition-table.bin`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">                            |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 从整片 dump 里切出的表  | </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`esptool --chip esp32s31 read-flash 0x8000 0xC00 partitions.bin`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">       |</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">工具只认"文件开头就是这段结构"的输入。整片 Flash dump（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`0x0`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 起、开头是 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`0xFF`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">）不在支持范围，</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">先切出需要的区间再喂给它。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 输出模式（字段示意图，不是实测日志）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">下面是</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**字段清单与排版**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">，用 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`&#x3C;...>`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 标出由输入决定的值。它不是任何一次真实运行的输出。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">应用镜像：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">file        : &#x3C;path></span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">format      : ESP application image (magic 0xE9)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">file size   : &#x3C;n> bytes (0x&#x3C;n>)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[common header]</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  magic            : 0xE9</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  segment_count    : &#x3C;1..16></span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  flash_mode       : 0x&#x3C;00..03> (&#x3C;QIO|QOUT|DIO|DOUT>)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  flash_size_freq  : 0x&#x3C;4F 之类的组合> (size &#x3C;16MB>, freq &#x3C;80MHz>)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  entry_addr       : 0x&#x3C;xxxxxxxx> (&#x3C;flash-mapped|SRAM|ROM|LP SRAM|other>)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[extended header]</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  wp_pin           : 0x&#x3C;xx> (disabled)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  pin drive        : clk=&#x3C;d> q=&#x3C;d> d=&#x3C;d> cs=&#x3C;d> hd=&#x3C;d> wp=&#x3C;d></span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  chip_id          : &#x3C;32> (&#x3C;ESP32-S31>)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  min_rev          : 0x&#x3C;xx> / v&#x3C;d>.&#x3C;d></span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  max_rev          : v&#x3C;d>.&#x3C;d></span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  hash_appended    : &#x3C;0|1></span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[segments]</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  #   load addr     size      file off    region</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  &#x3C;i> 0x&#x3C;xxxxxxxx>  0x&#x3C;nnnnnn>  0x&#x3C;nnnnnn>    &#x3C;region></span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  payload total    : &#x3C;n> bytes</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[checksum]</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  offset           : 0x&#x3C;n> (16-byte aligned)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  stored           : 0x&#x3C;xx></span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  computed (XOR)   : 0x&#x3C;xx></span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  result           : &#x3C;OK|MISMATCH></span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[sha256]</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  offset           : 0x&#x3C;n> (covers 0x&#x3C;n> bytes)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  stored           : &#x3C;64 hex chars></span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  computed         : &#x3C;64 hex chars></span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  result           : &#x3C;OK|MISMATCH></span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">verdict: &#x3C;OK|FAILED></span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">没有追加摘要时，</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`[sha256]`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 一节只打印 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`appended : no`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">分区表：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```text</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">file        : &#x3C;path></span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">format      : ESP partition table (magic 0xAA50)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">file size   : &#x3C;n> bytes (0x&#x3C;n>)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[entries]</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  #   label             type            subtype          offset      size        flags</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  &#x3C;i> &#x3C;name, &#x3C;=16>       &#x3C;app|data|...>  &#x3C;factory|nvs|...>  0x&#x3C;nnnnnn>  0x&#x3C;nnnnnn>  0x&#x3C;xxxxxxxx></span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  entries          : &#x3C;n> (max 95)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[md5]</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  offset           : 0x&#x3C;n> (covers the &#x3C;n> entry bytes)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  stored           : &#x3C;32 hex chars></span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  computed         : &#x3C;32 hex chars></span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  result           : &#x3C;OK|MISMATCH></span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">[padding]</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  bytes after table: &#x3C;n> (0xFF padding: &#x3C;yes|no>)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">verdict: &#x3C;OK|FAILED></span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 退出码与校验项</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| 退出码 | 含义                                                          |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| ------ | ------------------------------------------------------------- |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`0`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    | 结构完整且所有校验通过                                        |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`1`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    | 结构非法，或校验和不匹配，或文件读不出来；原因已打印到 stderr |</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">| </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`2`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">    | 命令行参数不对（少给/多给文件路径）                           |</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">镜像模式的硬校验（任一不过 → 退出码 1）：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">1.</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 首字节必须是 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`0xE9`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">，段数在 1..16；</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">2.</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 第 9 字节是 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`wp_pin`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`0xEE`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 表示禁用，其他值是 GPIO 编号；扩展头没有独立 magic；</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">3.</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 扩展头保留的 4 字节非零只提示（不拒绝），</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`hash_appended`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 只能是 0 或 1；</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">4.</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 每个段的长度必须是 4 的倍数，且段数据不能越过文件尾；</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">5.</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 段数据的 XOR（初值 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`0xEF`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">）必须等于校验和字节；</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">6.</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 声明了追加摘要时，SHA256（覆盖到校验和字节为止）必须与末尾 32 字节一致。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">分区表模式的硬校验：每条条目 32 字节且以 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`0xAA 0x50`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 开头；条目数不超过 95；</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">表内 MD5（尾块 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`EB EB`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> + 14 个 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`FF`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> + 16 字节摘要）必须与条目字节的 MD5 一致。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">对齐与 16 MB 边界只是</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold">**提示**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">（</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`note:`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 行），不改退出码：不同 IDF 版本对非 app 分区的</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">对齐要求不完全一样，把提示降级能让工具对历史分区表也保持可用。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 与 </span><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">`image-info`</span><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold"> 对拍（待真机验证）</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">拿到真机产出的镜像后，按下面的顺序把两边字段逐项抄到一张表里：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```bash</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 1) 官方工具</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">esptool</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> --chip</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> esp32s31</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> image-info</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> build/</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">&#x3C;</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">projec</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">t</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">></span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">.bin</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D"># 2) 本工具</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">zig</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> build</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> run</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> --</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF"> build/</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">&#x3C;</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">projec</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">t</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583">></span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">.bin</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">需要逐项一致的字段：段数、入口地址、Flash 模式/容量/频率、扩展头的 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`wp_pin`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">、</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`chip_id`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">、</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">最小/最大芯片修订、</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`hash_appended`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">，以及每个段的加载地址与长度。</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`image-info`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 不打印 XOR 校验和，</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">所以那一行只能靠"两边都不报错 + 段数据逐字节相同"间接核对。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">分区表则用 IDF 自带的解析器对拍（它会打印同样的条目与 MD5 结论）：</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```bash</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0">python</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> $IDF_PATH</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF">/components/partition_table/gen_esp32part.py</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> --verify</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF"> \</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  build/partition_table/partition-table.bin</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">```</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">> [</span><span style="--shiki-light:#032F62;--shiki-light-text-decoration:underline;--shiki-dark:#DBEDFF;--shiki-dark-text-decoration:underline">!note</span><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">] 对拍结果留档</span></span>
+<span class="line"><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">> 真机跑通后，把两份输出的差异（如果有）记到本章的"排错"一节，而不是只在这里补一句"通过"。</span></span>
+<span class="line"><span style="--shiki-light:#22863A;--shiki-dark:#85E89D">> 差异本身就是最有价值的教学材料：它说明某个字段的语义在文档与实现之间被理解错了。</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-light-font-weight:bold;--shiki-dark:#79B8FF;--shiki-dark-font-weight:bold">## 已知边界</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **只读、主机侧**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：不烧录、不读芯片、不碰串口；没有真机也能跑。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **不做 Flash 分区遍历**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：不读整片 dump，不做 OTAdata/</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`otadata`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 选择逻辑，那是 ch09 与 ch28 的事。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **不做安全启动/加密镜像**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：加密镜像的段数据经过硬件加密，静态解析只能看到密文；签名块也不解析。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **不校验代码语义**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：段能装进地址空间、能让 ROM 跳过去，不代表代码正确。</span></span>
+<span class="line"><span style="--shiki-light:#E36209;--shiki-dark:#FFAB70">-</span><span style="--shiki-light:#24292E;--shiki-light-font-weight:bold;--shiki-dark:#E1E4E8;--shiki-dark-font-weight:bold"> **镜像长度以自身描述为准**</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">：文件尾多出来的字节按 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`[padding]`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 报告，不当错误——从 Flash 里</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8">  按扇区读出来的镜像天然带 </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF">`0xFF`</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8"> 尾巴。</span></span>
+<span class="line"></span></code></pre>

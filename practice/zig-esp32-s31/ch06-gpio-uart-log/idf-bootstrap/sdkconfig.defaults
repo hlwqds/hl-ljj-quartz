@@ -1,0 +1,20 @@
+# ch06-gpio-uart-log / idf-bootstrap 的工程默认配置。
+#
+# 这个工程只产 bootloader 与分区表，但这两样必须和模组、应用一致：
+#   1. 模组 ESP32-S31-WROOM-3（N16R16V）是 16 MB Flash；
+#   2. single-app-large 把 factory 应用槽放在 0x10000，tools/flash.sh 按这个
+#      偏移替换应用行。
+#
+# 目标芯片不写在这里：idf.py --preview set-target esp32s31 会写进生成的
+# sdkconfig（生成物，不入库）。sdkconfig.defaults 只在生成 sdkconfig 时生效，
+# 已有 sdkconfig 时要先删除或走 menuconfig 重新确认。
+#
+# 本章不改控制台端口与波特率：应用侧的 TX 走 ROM 的 esp_rom_printf，
+# 恒定输出到 UART0（GPIO58/59）、115200 8N1。若在这里把控制台改到
+# USB Serial/JTAG，只会影响 IDF 自己的 bootloader 日志，不影响应用输出——
+# 那反而会让“两段日志不同端口”更难对齐。所以这里保持默认。
+
+CONFIG_ESPTOOLPY_FLASHSIZE_16MB=y
+CONFIG_ESPTOOLPY_FLASHSIZE="16MB"
+
+CONFIG_PARTITION_TABLE_SINGLE_APP_LARGE=y
