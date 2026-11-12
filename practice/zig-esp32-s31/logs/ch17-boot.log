@@ -1,0 +1,49 @@
+Executing action: monitor
+Running idf_monitor in directory /home/huanglin/code/hl-ljj-quartz/practice/zig-esp32-s31/ch02-hello
+Executing "/home/huanglin/.espressif/python_env/idf6.1_py3.13_env/bin/python /home/huanglin/esp/esp-idf/tools/idf_monitor.py -p /dev/ttyUSB1 -b 115200 --toolchain-prefix riscv32-esp-elf- --target esp32s31 --revision 0 --decode-panic backtrace /home/huanglin/code/hl-ljj-quartz/practice/zig-esp32-s31/ch02-hello/build/zig_s31_hello.elf /home/huanglin/code/hl-ljj-quartz/practice/zig-esp32-s31/ch02-hello/build/bootloader/bootloader.elf -m '/home/huanglin/.espressif/python_env/idf6.1_py3.13_env/bin/python' '/home/huanglin/esp/esp-idf/tools/idf.py' '-p' '/dev/ttyUSB1'"...
+--- esp-idf-monitor 1.10.0 on /dev/ttyUSB1 115200
+--- Standard input is not a TTY, running in non-interactive mode. Reading commands from stdin: reset, flash, flash-all, app-flash, output, log, timestamps, bootloader, send <text>, sleep <seconds>, expect [--timeout <seconds>] <regex>, exit | Quit: 'exit' command, EOF or Ctrl+C
+--- No commands on standard input, watching serial output only...
+ESP-ROM:esp32s31-20251218
+Build:Dec 18 2025
+rst:0x1 (POWERON),boot:0x58 (SPI_FAST_FLASH_BOOT)
+SPI mode:DIO, clock div:1
+load:0x2f0740c0,len:0x168c
+load:0x2f06a2b0,len:0xc7c
+--- 0x2f06a2b0: esp_bootloader_get_description at /home/huanglin/esp/esp-idf/components/esp_bootloader_format/esp_bootloader_desc.c:40
+load:0x2f06cfb0,len:0x3368
+--- 0x2f06cfb0: is_xmc_chip_strict at /home/huanglin/esp/esp-idf/components/bootloader_support/bootloader_flash/src/bootloader_flash.c:911
+entry 0x2f06a2ba
+--- 0x2f06a2ba: call_start_cpu0 at /home/huanglin/esp/esp-idf/components/bootloader/subproject/main/bootloader_start.c:27
+[0;32mI (26) boot: ESP-IDF v6.1 2nd stage bootloader[0m
+[0;32mI (26) boot: compile time Nov 13 2026 02:16:25[0m
+[0;32mI (26) boot: Multicore bootloader[0m
+[0;32mI (28) boot: chip revision: v0.0[0m
+[0;32mI (29) boot: efuse block revision: v0.2[0m
+[0;32mI (32) boot.esp32s31: SPI Speed      : 80MHz[0m
+[0;32mI (36) boot.esp32s31: SPI Mode       : DIO[0m
+[0;32mI (40) boot.esp32s31: SPI Flash Size : 16MB[0m
+[0;32mI (44) boot: Enabling RNG early entropy source...[0m
+[0;32mI (49) boot: Partition Table:[0m
+[0;32mI (51) boot: ## Label            Usage          Type ST Offset   Length[0m
+[0;32mI (58) boot:  0 nvs              WiFi data        01 02 00009000 00006000[0m
+[0;32mI (64) boot:  1 phy_init         RF data          01 01 0000f000 00001000[0m
+[0;32mI (71) boot:  2 factory          factory app      00 00 00010000 00177000[0m
+[0;32mI (78) boot: End of partition table[0m
+[0;32mI (81) esp_image: segment 0: paddr=00010020 vaddr=40000020 size=04280h ( 17024) map[0m
+[0;32mI (92) esp_image: segment 1: paddr=000142a8 vaddr=2f000000 size=0006ch (   108) load[0m
+[0;32mI (97) esp_image: segment 2: paddr=0001431c vaddr=00000000 size=0bcfch ( 48380) [0m
+[0;32mI (111) esp_image: segment 3: paddr=00020020 vaddr=40020020 size=01834h (  6196) map[0m
+[0;32mI (115) boot: Loaded app from partition at offset 0x10000[0m
+[0;32mI (115) boot: Disabling RNG early entropy source...[0m
+ch17-ethernet-mac-phy-driver | form B (Zig ELF + IDF 2nd-stage bootloader)
+console: UART0 TX=GPIO58 RX=GPIO59 115200 8N1 (ROM default)
+build: skip_mdio=0 pbl=16 mdio_timeout=2000us
+clock: TIMG0 T0 1MHz (XTAL 40MHz / 40), MIE=0, polling only
+wdt: rtc before=0xc0000000 after=0x0 tries=1
+-- 1) clocks: HP_SYS_CLKRST.EMAC_CTRL0 + CNNT reset + DMA soft reset + RGMII mux
+clk: emac_sys_clk_en=1 (hp_sys_clkrst+0xc8 bit0)
+rst: mac_version=0x00001037 snps=0x37 user=0x10 (expect snps=0x37)
+rst: hw_feature=0x0b056727 (dma+0x1058)
+rst: dma soft reset failed: Timeout (busmode=0x00020101)
+main: clocks/reset unusable, halting (do not debug DMA on a dead clock)

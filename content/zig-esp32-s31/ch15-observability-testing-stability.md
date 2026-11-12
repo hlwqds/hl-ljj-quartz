@@ -22,7 +22,7 @@ tags: [zig, esp32-s31, riscv, observability, testing, panics, watchdog, series]
 > 13. [[ch13-heap-stack-caps|第十三章：堆、栈保护与内存 caps]]
 > 14. [[ch14-dual-core-smp-ipi|第十四章：双核 SMP 与 IPI]]
 > 15. **第十五章：可观测性、测试与稳定性**
-> 16. 第十六章：协议栈架构、缓冲与零拷贝（待发布）
+> 16. [[ch16-stack-architecture-zero-copy|第十六章：协议栈架构、缓冲与零拷贝]]
 
 # Zig × ESP32-S31 全栈开发（十五）：可观测性、测试与稳定性
 
