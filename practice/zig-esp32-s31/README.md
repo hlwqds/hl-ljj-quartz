@@ -3,7 +3,7 @@
 对应系列：[[zig-esp32-s31|Zig × ESP32-S31 全栈开发]]
 构建契约：[SPEC.md](SPEC.md)
 
-本目录是系列章节的可构建工程集合。当前第 1–25 章的工程已落地；ch01–ch06、ch09–ch25 已在 ESP32-S31 CoreBoard 上实测（ch07/ch08/ch12/ch17 为部分通过，详见 `BRINGUP-2026-11-12.md`）。
+本目录是系列章节的可构建工程集合。当前第 1–27 章的工程已落地；ch01–ch06、ch09–ch27 已在 ESP32-S31 CoreBoard 上实测（ch07/ch08/ch12/ch17 为部分通过，详见 `BRINGUP-2026-11-12.md`）。
 
 ## 工程清单
 
@@ -34,6 +34,8 @@
 | `ch23-tls-http`                        | [[ch23-tls-http\|第二十三章：TLS 记录层与 HTTP/1.1]]                            | B（纯 Zig ELF + IDF bootloader） | 板侧自检通过（宿主 32 测试 + 板侧 13 项，KAT 离线）     | [README](ch23-tls-http/README.md)                        |
 | `ch24-mqtt-ota-application-protocols`  | [[ch24-mqtt-ota-application-protocols\|第二十四章：MQTT 3.1.1 与 OTA 应用协议]] | B（纯 Zig ELF + IDF bootloader） | 板侧自检通过（宿主 27 测试 + 板侧 13 项，KAT 离线）     | [README](ch24-mqtt-ota-application-protocols/README.md)  |
 | `ch25-wifi-blob-boundary`              | [[ch25-wifi-blob-boundary\|第二十五章：Wi-Fi blob 边界与 ABI 垫片]]             | B（纯 Zig ELF + IDF bootloader） | 板侧自检通过（宿主 15 测试 + 板侧 13 项，stub 垫片）    | [README](ch25-wifi-blob-boundary/README.md)              |
+| `ch26-wifi-connection-wpa2-wpa3`       | [[ch26-wifi-connection-wpa2-wpa3\|第二十六章：Wi-Fi 连接管理（WPA2/WPA3）]]     | B（纯 Zig ELF + IDF bootloader） | 板侧自检通过（宿主 20 测试 + 板侧 13 项，握手向量离线） | [README](ch26-wifi-connection-wpa2-wpa3/README.md)       |
+| `ch27-ble-802154-boundary`             | [[ch27-ble-802154-boundary\|第二十七章：BLE / 802.15.4 边界]]                   | B（纯 Zig ELF + IDF bootloader） | 板侧自检通过（宿主 20 测试 + 板侧 12 项，字节路径）     | [README](ch27-ble-802154-boundary/README.md)             |
 
 ## 快速入口
 
@@ -75,9 +77,9 @@
 
 | 项                 | 状态                                                                                                                       |
 | ------------------ | -------------------------------------------------------------------------------------------------------------------------- |
-| 第 1–25 章正文     | 已落地；ch01–ch06/ch09–ch11/ch13–ch16/ch18/ch19 真机通过，ch07/ch08/ch12/ch17 部分通过，ch20–ch25 板侧自检通过（非真链路） |
+| 第 1–27 章正文     | 已落地；ch01–ch06/ch09–ch11/ch13–ch16/ch18/ch19 真机通过，ch07/ch08/ch12/ch17 部分通过，ch20–ch27 板侧自检通过（非真链路） |
 | ch01-board-id      | 命令清单与记录模板已落地；实机输出待回填                                                                                   |
 | ch02-hello         | 模板 A 工程已落地；真机 `hello s31` + 每秒 `tick` 通过                                                                     |
 | ch03-image-inspect | 与 `esptool image-info` 逐字段对拍通过（186 832 B 镜像）                                                                   |
-| ch04–ch25          | 模板 B 工程已落地；状态见上表（部分通过项：ch07 中断、ch08 DMA、ch12 pi 阶段、ch17 DMA/MDIO）                              |
+| ch04–ch27          | 模板 B 工程已落地；状态见上表（部分通过项：ch07 中断、ch08 DMA、ch12 pi 阶段、ch17 DMA/MDIO）                              |
 | `run.log`          | 均未生成（不伪造；真机回填）                                                                                               |

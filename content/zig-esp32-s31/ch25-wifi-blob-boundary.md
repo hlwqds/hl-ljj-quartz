@@ -11,7 +11,7 @@ tags: [zig, esp32-s31, riscv, wifi, blob, abi, osi-funcs, freertos, series]
 >
 > **本章：第二十五章：Wi-Fi blob 边界与 ABI 垫片**
 >
-> 下一章：Wi-Fi 连接管理（规划中，尚无链接）
+> 下一章：[[ch26-wifi-connection-wpa2-wpa3|第二十六章：Wi-Fi 连接管理（WPA2/WPA3）]]
 
 # Zig × ESP32-S31 全栈开发（二十五）：Wi-Fi blob 边界与 ABI 垫片
 
@@ -1099,7 +1099,7 @@ test success
 
 ## 下一章预告
 
-ch26 规划为 **Wi-Fi 连接管理**：把本章的 `Event`/`Errno`/注册表接到真实的
+[[ch26-wifi-connection-wpa2-wpa3|第二十六章：Wi-Fi 连接管理（WPA2/WPA3）]]把本章的 `Event`/`Errno`/注册表接到真实的
 `esp_wifi` 状态机上——扫描结果、认证/关联、DHCP、断线重连与事件状态机。
 
 它必须等两件事：
@@ -1116,6 +1116,6 @@ ch26 的板侧纪律与本章一致：**能离线判定的做深（状态机迁�
 >
 > **本章：第二十五章：Wi-Fi blob 边界与 ABI 垫片**
 >
-> 下一章：Wi-Fi 连接管理（规划中）
+> 下一章：[[ch26-wifi-connection-wpa2-wpa3|第二十六章：Wi-Fi 连接管理（WPA2/WPA3）]]
 >
 > 系列索引：[[zig-esp32-s31|Zig × ESP32-S31 全栈开发]]
