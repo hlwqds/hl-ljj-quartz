@@ -11,12 +11,14 @@
  * 声明了 align(64)（std/crypto/aes/soft.zig:746-750），把整个 .rodata 的
  * 对齐抬到 64。bootloader 的真实约束是「页内偏移同余」
  * （esp_image_format.c:904），镜像里 paddr 与 vaddr 的 0x40 偏移一致，
- * 实测启动并跑完 12 条判据。
+ * 实测启动并跑完 13 条判据。
  *
  * 段布局（三段，两段在 flash）：
  *
  *     irom 0x40000020  .flash.text     esp_app_desc_t(256B) + .text.trap + .text
- *     drom 0x40020020  .flash.rodata   .rodata/.srodata
+ *     drom 0x40020040  .flash.rodata   .rodata/.srodata
+ *                     （ORIGIN 仍是 0x40020020，AES 软件表的 align(64)
+ *                      把输出节顶到 0x…40；见文件头 9–13 行）
  *     sram 0x2F000000  .trap_ram       trap 入口（放 flash 会 CPU_LOCKUP_RESET）
  *                      .data           有初值可写数据（LMA == VMA）
  *                      .bss            NOBITS，_start 清零
@@ -82,7 +84,7 @@ SECTIONS
      *     esp_image_format.c:904
      *     segment_data_offs % mmu_page_size == load_addr % mmu_page_size
      * elf2image 会插入填充段把 paddr 对齐到同样的 0x40，这条检查因此通过；
-     * 板侧实测 12/12 全过，且 .rodata 里的字符串/已知答案都读得对。
+     * 板侧实测 13/13 全过，且 .rodata 里的字符串/已知答案都读得对。
      * 若强行把段压回 0x40020020（ALIGN(32)/SUBALIGN），等于削弱 LLVM 的
      * 对齐声明，本章不做这种“为了让地址好看”的降级。
      */

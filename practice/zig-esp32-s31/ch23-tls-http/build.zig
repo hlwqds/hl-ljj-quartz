@@ -10,7 +10,7 @@ const std = @import("std");
 // （tls_keyschedule.zig）、X25519/AES-GCM 的已知答案（x25519.zig / aead.zig）、
 // DER 证书解析（cert.zig）、HTTP/1.1 解析（http.zig）都不碰硬件，
 // `zig build test` 在 x86_64 上就能跑完。板侧只保留一只自检：用同一份模块
-// 把十二条判据各走一遍，打印判读行。
+// 把十三条判据各走一遍，打印判读行。
 //
 // 目标与优化级别必须显式给出：
 //   zig build -Dtarget=riscv32-freestanding-eabihf \

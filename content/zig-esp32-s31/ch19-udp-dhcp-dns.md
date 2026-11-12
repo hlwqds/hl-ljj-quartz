@@ -715,9 +715,8 @@ DNS 缓存的价值与**剩余 TTL** 成正比：一条还剩 1 秒的记录，�
 | `src/log.zig`        | [查看](/static/code/#/zig-esp32-s31/ch19-udp-dhcp-dns/src/log.zig)        |
 | `tools/flash.sh`     | [查看](/static/code/#/zig-esp32-s31/ch19-udp-dhcp-dns/tools/flash.sh)     |
 
-表里的 `/static/code/#/…` 深链要重跑一次 `npm run code-site` 才会生成（`PROJECT_GLOBS`
-已覆盖 `practice/zig-esp32-s31/*`）；本次按“只动本章两个路径”的约束没有改 code-site，
-所以在发布流水线跑完之前，这些链接在站内是打不开的。
+深链由 `npm run code-site` 生成（`scripts/gen-code-site.mjs` 的
+`PROJECT_GLOBS` 已覆盖 `practice/zig-esp32-s31/*`），浏览页收录本章工程的全部源文件。
 
 **第一，主机测试是权威。** 48 个具名用例的分布是 13（UDP）+ 17（DHCP）+ 18（DNS），
 再加根文件容器 test 共 49：

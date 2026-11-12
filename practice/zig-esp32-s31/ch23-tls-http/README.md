@@ -15,7 +15,7 @@
 >   （`checks: passed=13 failed=0 total=13`、`main: verdict=pass`），
 >   原始输出见 [`../logs/ch23-boot.log`](../logs/ch23-boot.log)。
 > - **本章没有真链路结论**：ch17 的以太网驱动仍未闭环，ch22 的 socket/事件
->   循环尚在实施。因此**没有**「HTTPS GET 成功」「完整 TLS 握手通过」
+>   循环虽已交付但只是注入路径。因此**没有**「HTTPS GET 成功」「完整 TLS 握手通过」
 >   「浏览器访问板端页面」这类结论——本章只证明记录层/密钥派生/AEAD/DER/
 >   HTTP 解析这些**不依赖网络**的部分在 rv32 上给出了与规范一致的结果。
 
@@ -56,7 +56,7 @@
   `supported_versions`/`key_share` 扩展解析、没有 Finished 的 verify_data、
   没有 session ticket。本章只到 “从共享秘密 + 两个转录哈希派生 traffic secret”。
 - **不发任何真实报文**：没有 MAC/DMA（ch17 未闭环）、没有 TCP（ch20 是纯状态机）、
-  没有 socket（ch22 未落地）。板侧自检的数据全部是自造字节。
+  没有 socket（ch22 只有注入路径、无真实链路）。板侧自检的数据全部是自造字节。
 - **不做证书链验证**：没有信任锚、没有 CA store、不做有效期与当前时间的比较
   （板上没有可信时钟）。
 - **不支持 RSA / Ed25519 / 压缩点 / 多 RDN**：只认 P-256 + uncompressed SEC1。
@@ -76,27 +76,27 @@
 
 ## 文件表
 
-| 路径                           | 角色                                                                    | 代码浏览                                                                        |
-| ------------------------------ | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| `build.zig`                    | 目标串 + 链接脚本 + `zig build test` + `gen-fixture`                    | [查看](/static/code/#/zig-esp32-s31/ch23-tls-http/build.zig)                    |
-| `linker/s31.ld`                | 两个 flash 段、`.trap_ram`、堆/栈边界、5 条 ASSERT                      | [查看](/static/code/#/zig-esp32-s31/ch23-tls-http/linker/s31.ld)                |
-| `src/start.zig`                | `esp_app_desc_t` + naked `_start`：关中断 → sp/gp → 关 RTC WDT → 清 bss | [查看](/static/code/#/zig-esp32-s31/ch23-tls-http/src/start.zig)                |
-| `src/main.zig`                 | 板侧编排：banner → 自检 → verdict → `wfi`                               | [查看](/static/code/#/zig-esp32-s31/ch23-tls-http/src/main.zig)                 |
-| `src/selftest.zig`             | 板侧 13 条判据与两行 `read:` 读数                                       | [查看](/static/code/#/zig-esp32-s31/ch23-tls-http/src/selftest.zig)             |
-| `src/tls_record.zig`           | 记录层头、长度上限、分片、跨记录重组                                    | [查看](/static/code/#/zig-esp32-s31/ch23-tls-http/src/tls_record.zig)           |
-| `src/tls_keyschedule.zig`      | HKDF-Extract/Expand、HkdfLabel、Expand-Label、Derive-Secret、密钥链     | [查看](/static/code/#/zig-esp32-s31/ch23-tls-http/src/tls_keyschedule.zig)      |
-| `src/x25519.zig`               | X25519 已知答案与调用面                                                 | [查看](/static/code/#/zig-esp32-s31/ch23-tls-http/src/x25519.zig)               |
-| `src/aead.zig`                 | AES-128-GCM、TLS nonce/AD、key/iv 派生                                  | [查看](/static/code/#/zig-esp32-s31/ch23-tls-http/src/aead.zig)                 |
-| `src/cert.zig`                 | DER 构造/解析、SAN、ECDSA 验签                                          | [查看](/static/code/#/zig-esp32-s31/ch23-tls-http/src/cert.zig)                 |
-| `src/http.zig`                 | HTTP/1.1 请求解析、chunked、keep-alive、响应构造                        | [查看](/static/code/#/zig-esp32-s31/ch23-tls-http/src/http.zig)                 |
-| `src/host_tests.zig`           | `zig build test` 的根：六个纯逻辑模块 + 端到端用例                      | [查看](/static/code/#/zig-esp32-s31/ch23-tls-http/src/host_tests.zig)           |
-| `src/gen_cert_fixture.zig`     | `zig build gen-fixture`：把自签证书写成 DER                             | [查看](/static/code/#/zig-esp32-s31/ch23-tls-http/src/gen_cert_fixture.zig)     |
-| `src/testdata/sample-cert.der` | 419 字节的自签证书 fixture（`@embedFile` 进固件）                       | [查看](/static/code/#/zig-esp32-s31/ch23-tls-http/src/testdata/sample-cert.der) |
-| `src/hw.zig`                   | 最小寄存器集合：ROM 忙等、CSR 读、`halt()`                              | [查看](/static/code/#/zig-esp32-s31/ch23-tls-http/src/hw.zig)                   |
-| `src/trap.zig`                 | `.trap_ram` 入口 + panic dump（80 字节帧）                              | [查看](/static/code/#/zig-esp32-s31/ch23-tls-http/src/trap.zig)                 |
-| `src/log.zig`                  | 栈上格式化 + ROM `esp_rom_printf`（`%s`）                               | [查看](/static/code/#/zig-esp32-s31/ch23-tls-http/src/log.zig)                  |
-| `idf-bootstrap/`               | 最小 IDF 工程：只为产出 bootloader、分区表、`flash_args`                | —                                                                               |
-| `tools/flash.sh`               | 读 `flash_args`、替换应用行、一次烧 bootloader + 分区表 + 应用          | [查看](/static/code/#/zig-esp32-s31/ch23-tls-http/tools/flash.sh)               |
+| 路径                           | 角色                                                                                     | 代码浏览                                                                    |
+| ------------------------------ | ---------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `build.zig`                    | 目标串 + 链接脚本 + `zig build test` + `gen-fixture`                                     | [查看](/static/code/#/zig-esp32-s31/ch23-tls-http/build.zig)                |
+| `linker/s31.ld`                | 两个 flash 段、`.trap_ram`、堆/栈边界、5 条 ASSERT                                       | [查看](/static/code/#/zig-esp32-s31/ch23-tls-http/linker/s31.ld)            |
+| `src/start.zig`                | `esp_app_desc_t` + naked `_start`：关中断 → sp/gp → 关 RTC WDT → 清 bss                  | [查看](/static/code/#/zig-esp32-s31/ch23-tls-http/src/start.zig)            |
+| `src/main.zig`                 | 板侧编排：banner → 自检 → verdict → `wfi`                                                | [查看](/static/code/#/zig-esp32-s31/ch23-tls-http/src/main.zig)             |
+| `src/selftest.zig`             | 板侧 13 条判据与两行 `read:` 读数                                                        | [查看](/static/code/#/zig-esp32-s31/ch23-tls-http/src/selftest.zig)         |
+| `src/tls_record.zig`           | 记录层头、长度上限、分片、跨记录重组                                                     | [查看](/static/code/#/zig-esp32-s31/ch23-tls-http/src/tls_record.zig)       |
+| `src/tls_keyschedule.zig`      | HKDF-Extract/Expand、HkdfLabel、Expand-Label、Derive-Secret、密钥链                      | [查看](/static/code/#/zig-esp32-s31/ch23-tls-http/src/tls_keyschedule.zig)  |
+| `src/x25519.zig`               | X25519 已知答案与调用面                                                                  | [查看](/static/code/#/zig-esp32-s31/ch23-tls-http/src/x25519.zig)           |
+| `src/aead.zig`                 | AES-128-GCM、TLS nonce/AD、key/iv 派生                                                   | [查看](/static/code/#/zig-esp32-s31/ch23-tls-http/src/aead.zig)             |
+| `src/cert.zig`                 | DER 构造/解析、SAN、ECDSA 验签                                                           | [查看](/static/code/#/zig-esp32-s31/ch23-tls-http/src/cert.zig)             |
+| `src/http.zig`                 | HTTP/1.1 请求解析、chunked、keep-alive、响应构造                                         | [查看](/static/code/#/zig-esp32-s31/ch23-tls-http/src/http.zig)             |
+| `src/host_tests.zig`           | `zig build test` 的根：六个纯逻辑模块 + 端到端用例                                       | [查看](/static/code/#/zig-esp32-s31/ch23-tls-http/src/host_tests.zig)       |
+| `src/gen_cert_fixture.zig`     | `zig build gen-fixture`：把自签证书写成 DER                                              | [查看](/static/code/#/zig-esp32-s31/ch23-tls-http/src/gen_cert_fixture.zig) |
+| `src/testdata/sample-cert.der` | 419 字节的自签证书 fixture（`@embedFile` 进固件；`.der` 不在浏览页收录白名单，故无深链） | —                                                                           |
+| `src/hw.zig`                   | 最小寄存器集合：ROM 忙等、CSR 读、`halt()`                                               | [查看](/static/code/#/zig-esp32-s31/ch23-tls-http/src/hw.zig)               |
+| `src/trap.zig`                 | `.trap_ram` 入口 + panic dump（80 字节帧）                                               | [查看](/static/code/#/zig-esp32-s31/ch23-tls-http/src/trap.zig)             |
+| `src/log.zig`                  | 栈上格式化 + ROM `esp_rom_printf`（`%s`）                                                | [查看](/static/code/#/zig-esp32-s31/ch23-tls-http/src/log.zig)              |
+| `idf-bootstrap/`               | 最小 IDF 工程：只为产出 bootloader、分区表、`flash_args`                                 | —                                                                           |
+| `tools/flash.sh`               | 读 `flash_args`、替换应用行、一次烧 bootloader + 分区表 + 应用                           | [查看](/static/code/#/zig-esp32-s31/ch23-tls-http/tools/flash.sh)           |
 
 ## 主机侧测试
 
@@ -173,9 +173,9 @@ python -m esptool --chip esp32s31 image-info zig-out/bin/app.bin | grep 'DROM, I
 
 ### 4. bootloader 与分区表（供应商步骤）
 
-`idf-bootstrap/` 里已经带着一次 IDF 构建的产物
-（`build/bootloader/bootloader.bin`、`build/partition_table/partition-table.bin`、
-`build/flash_args`），与 ch19–ch22 共用同一套。要重新生成：
+`idf-bootstrap/` 与 ch19–ch22 共用同一套配置，但 `build/` 目录被
+`.gitignore` 的 `build*/` 规则排除，**新克隆的仓库里没有** bootloader、分区表与
+`flash_args`，必须先跑一次（本机已有产物才可直接烧录）：
 
 ```bash
 cd idf-bootstrap && idf.py --preview set-target esp32s31 && idf.py build && cd ..
@@ -203,7 +203,7 @@ s.close()
 open('../logs/ch23-boot.log', 'wb').write(buf)
 ```
 
-## 运行（2026-11-13 板侧实测 12/12）
+## 运行（2026-11-13 板侧实测 13/13）
 
 ```text
 ch23-tls-http | form B (Zig ELF + IDF 2nd-stage bootloader)

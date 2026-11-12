@@ -810,10 +810,8 @@ k ≤ 100 的四组。
 
 完整工程（入口为工程 README，可再进目录树）：[ch21-tcp-congestion](/static/code/#/zig-esp32-s31/ch21-tcp-congestion/README.md)
 
-表里的 `/static/code/#/…` 深链要重跑一次 `npm run code-site` 才会生成
-（`scripts/gen-code-site.mjs` 的 `PROJECT_GLOBS` 已覆盖
-`practice/zig-esp32-s31/*`）；本批按“只动本章两个路径”的约束没有改
-code-site，所以在发布流水线跑完之前，这些链接在站内是打不开的。
+深链由 `npm run code-site` 生成（`scripts/gen-code-site.mjs` 的
+`PROJECT_GLOBS` 已覆盖 `practice/zig-esp32-s31/*`），浏览页收录本章工程的全部源文件。
 
 ### 21.8.1 三个模块的职责边界
 
@@ -1155,6 +1153,6 @@ lwIP（路径相对 `~/esp/esp-idf/`），行号逐条 grep 过。
 - `sim.zig` 的确定性驱动循环——它是“没有网络也能回归测试协议逻辑”的模板，
   socket 层的事件循环测试同样可以照这个形状写。
 
-> 下一章：Socket API 与事件循环（规划中） · [[ch22-socket-api-event-loop|占位链接]]
+> 下一章：[[ch22-socket-api-event-loop|第二十二章：Socket API 与事件循环]]
 
 系列导航：[[ch20-tcp-state-machine-reliable-delivery|上一章：TCP 状态机与可靠传输]] · [[zig-esp32-s31|系列索引]]

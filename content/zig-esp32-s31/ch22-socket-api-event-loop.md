@@ -847,7 +847,7 @@ _ = sock.send(data);
 放得下的部分，剩下的留在应用手里）；接收方向没有背压，只能在缓冲满时
 丢数据并计数。真实 TCP 不允许丢（会破坏字节流），它靠三选一解决：给
 发送方回更小的接收窗口、丢弃并让对端重传、或把段挂到接收队列上
-（ch20 的 `sim.zig` 用的是第三种）。本章选"截断 + 计数 + 保持
+（ch20 的 `tcp.zig` 里 `Reasm` 用的是第三种：固定槽 + `insert`，`pendingBytes` 报缺口）。本章选"截断 + 计数 + 保持
 `rx_len <= rx_cap`"，因为这三种替代都需要 ch20 的窗口与重传机制，
 而本章的判据只能覆盖到 socket 层自己的契约。
 
@@ -999,10 +999,8 @@ check: peer-rst recv=conn_reset state=closed slot_open=0 ok=1
 
 完整工程（入口为工程 README，可再进目录树）：[ch22-socket-api-event-loop](/static/code/#/zig-esp32-s31/ch22-socket-api-event-loop/README.md)
 
-表里的 `/static/code/#/…` 深链要重跑一次 `npm run code-site` 才会生成
-（`scripts/gen-code-site.mjs` 的 `PROJECT_GLOBS` 已覆盖
-`practice/zig-esp32-s31/*`）；本批按"只动本章两个路径"的约束没有改
-code-site，所以在发布流水线跑完之前，这些链接在站内是打不开的。
+深链由 `npm run code-site` 生成（`scripts/gen-code-site.mjs` 的
+`PROJECT_GLOBS` 已覆盖 `practice/zig-esp32-s31/*`），浏览页收录本章工程的全部源文件。
 
 ### 22.9.1 四个模块的职责边界
 
@@ -1281,7 +1279,7 @@ fn handshake(listen_fd: u8, seq: u32) u8 // 握手完成 + takeReady 出队
 
 1. **传输层**：把 `Socket.send` 搬进 tx 缓冲的字节真正交给 ch20 的
    状态机，并把 `drainTx(n)` 的调用点放在"收到 ACK"处（ch20 的
-   `onAck`）。
+   `Conn.onSegment()` 内部会调私有 `processAck()`）。
 2. **接收路径**：ch17/ch18 收到的段解析后投给 `Table.deliver`，替代
    `netstub` 的注入。段格式要扩成真实 TCP 首部（20 字节起，带窗口、
    校验和）。

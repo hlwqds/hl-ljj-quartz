@@ -240,7 +240,7 @@ flowchart TB
 | 20  | [[ch20-tcp-state-machine-reliable-delivery\|TCP 状态机与可靠传输]] | 三次握手、seq/ack、RTO、重传、乱序、FIN/RST、TIME_WAIT                  | 状态机自检；抓包对照判据（待 ch17） |
 | 21  | [[ch21-tcp-congestion-throughput\|TCP 拥塞控制与吞吐]]             | 慢启动、拥塞避免、快重传/快恢复、窗口缩放、Nagle/延迟 ACK               | 仿真吞吐曲线；与 lwIP 源码对照      |
 | 22  | [[ch22-socket-api-event-loop\|Socket API、事件循环与测试]]         | 阻塞/非阻塞、poll、超时、连接池、主机侧回归测试                         | socket 层（注入路径）；主机测试全绿 |
-| 23  | [[ch23-tls-http\|TLS 记录层与 HTTP/1.1]]                           | `std.crypto` 原语、TLS 记录层、HKDF/X25519/AES-GCM、证书 DER、HTTP 解析 | KAT 自检；真实握手待 ch17+ch22      |
+| 23  | [[ch23-tls-http\|TLS 记录层与 HTTP/1.1]]                           | `std.crypto` 原语、TLS 记录层、HKDF/X25519/AES-GCM、证书 DER、HTTP 解析 | KAT 自检；真实握手待 ch17 闭环      |
 | 24  | MQTT、OTA 与应用协议                                               | MQTT 3.1.1、QoS、主题、OTA 镜像校验/回滚、应用分层                      | MQTT pub/sub；OTA 升级成功并可回滚  |
 
 ### Part VI：Wi-Fi、多协议与产品化（ch25–ch28）

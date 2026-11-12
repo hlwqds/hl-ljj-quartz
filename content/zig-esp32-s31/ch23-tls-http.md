@@ -45,7 +45,7 @@ OTA 服务器说话，边界就不是我们定的：对面期望的是 TLS 1.3 �
 >
 > ch17 的以太网驱动**仍未闭环**（DMA 软复位超时、MDIO 扫不到 PHY、TX 超时，
 > 见 `practice/zig-esp32-s31/logs/ch17d-boot.log`）；ch22 的 socket 与事件循环
-> 也还没有落地。因此本章**不可能、也不允许**给出下面任何一条结论：
+> 虽已交付，但只有注入路径、没有真实链路。因此本章**不可能、也不允许**给出下面任何一条结论：
 >
 > - ✗「板子完成了一次 TLS 1.3 握手」
 > - ✗「HTTPS GET 成功」
@@ -1274,7 +1274,7 @@ check: http response status=200 cl=9 total=97 conn=keep-alive close=1 ok=1
 | `linker/s31.ld`            | 两段 flash、`.trap_ram`、5 条 ASSERT              | [/static/code/#/zig-esp32-s31/ch23-tls-http/linker/s31.ld](/static/code/#/zig-esp32-s31/ch23-tls-http/linker/s31.ld)                       |
 | `src/start.zig`            | `esp_app_desc_t` + naked `_start`                 | [/static/code/#/zig-esp32-s31/ch23-tls-http/src/start.zig](/static/code/#/zig-esp32-s31/ch23-tls-http/src/start.zig)                       |
 | `src/main.zig`             | banner → 自检 → verdict → `wfi`                   | [/static/code/#/zig-esp32-s31/ch23-tls-http/src/main.zig](/static/code/#/zig-esp32-s31/ch23-tls-http/src/main.zig)                         |
-| `src/selftest.zig`         | 12 条板侧判据                                     | [/static/code/#/zig-esp32-s31/ch23-tls-http/src/selftest.zig](/static/code/#/zig-esp32-s31/ch23-tls-http/src/selftest.zig)                 |
+| `src/selftest.zig`         | 13 条板侧判据                                     | [/static/code/#/zig-esp32-s31/ch23-tls-http/src/selftest.zig](/static/code/#/zig-esp32-s31/ch23-tls-http/src/selftest.zig)                 |
 | `src/tls_record.zig`       | 记录层 + 握手分帧                                 | [/static/code/#/zig-esp32-s31/ch23-tls-http/src/tls_record.zig](/static/code/#/zig-esp32-s31/ch23-tls-http/src/tls_record.zig)             |
 | `src/tls_keyschedule.zig`  | HKDF + HkdfLabel + 密钥链                         | [/static/code/#/zig-esp32-s31/ch23-tls-http/src/tls_keyschedule.zig](/static/code/#/zig-esp32-s31/ch23-tls-http/src/tls_keyschedule.zig)   |
 | `src/x25519.zig`           | RFC 7748 向量与调用面                             | [/static/code/#/zig-esp32-s31/ch23-tls-http/src/x25519.zig](/static/code/#/zig-esp32-s31/ch23-tls-http/src/x25519.zig)                     |
