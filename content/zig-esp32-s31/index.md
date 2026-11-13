@@ -2,7 +2,7 @@
 title: "Zig × ESP32-S31 全栈开发系列索引"
 date: 2026-11-12 12:00:00
 pin: true
-description: "以 ESP32-S31（双核 RISC-V）为靶心的全栈 Zig 教学路线：28 章，从裸机启动、Zig RTOS、Zig TCP/IP 到 WiFi 边界与产品化，关键节点全部真机验收。"
+description: "以 ESP32-S31（双核 RISC-V）为靶心的全栈 Zig 教学路线：28 章，从裸机启动、Zig RTOS、Zig TCP/IP 到 WiFi 边界与产品化，关键节点给出真机判据。"
 tags: [zig, esp32-s31, riscv, rtos, tcpip, series]
 ---
 
@@ -15,8 +15,8 @@ tags: [zig, esp32-s31, riscv, rtos, tcpip, series]
 >
 > 读者画像是"写过 C 裸机、用过 FreeRTOS/lwIP、想真正掌握 Zig 与全栈构造"的工程师。系列不假设你读过 Zig 源码，但假设你愿意读汇编、手册与抓包。
 
-> [!warning] 当前状态：第 1–27 章已落地
-> 本页是系列的**路线图 / 总索引**；第 1–27 章已发布，其余 1 章仍为规划状态。已发布章节的标题已替换为 wikilink，未发布章节保持纯文本，避免死链。
+> [!warning] 当前状态：第 1–28 章已落地
+> 本页是系列的**路线图 / 总索引**；第 1–28 章均已发布。ch28 是 28A：选槽/回滚/功耗/性能的可离线模型 + 真机验收清单，form C 的 Zig 二级 bootloader 作为 28B 可选支线明确未实现。
 
 ## 0. 先把坐标钉死：S31 是 RISC-V，不是 Xtensa
 
@@ -73,16 +73,16 @@ S31 还支持 B 位操作扩展（Linux 移植的 `-march` 里带 `b`），但�
 
 先把边界说清楚，后面 28 章才不会变成"许愿池"。
 
-| 层                         | 能否用 Zig 重写 | 说明                                                                |
-| -------------------------- | --------------- | ------------------------------------------------------------------- |
-| 芯片掩膜 ROM / 一级引导    | ❌ 不能         | 出厂固化，负责下载模式、二级引导加载、基础 ROM 函数                 |
-| 二级 bootloader            | ✅ 能           | 先借 IDF 的；ch28 再用 Zig 写自己的，做 A/B、校验与回滚             |
-| RTOS 内核 / 驱动 / HAL     | ✅ 能           | 调度、IPC、堆、CLIC、UART、SPI、Flash、EMAC 全部 Zig                |
-| TCP/IP 协议栈              | ✅ 能           | ARP/IPv4/ICMP/UDP/TCP/DHCP/DNS/HTTP/MQTT，全部自写                  |
-| Wi-Fi PHY / MAC            | ❌ 不能         | `libnet80211`/`libpp`/`libphy` 等厂商二进制，必须保留               |
-| Wi-Fi 主机侧（supplicant） | ✅ 能，但很难   | WPA2/WPA3、EAPOL、SAE 可以 Zig 写；第一版先接 IDF 的开源 supplicant |
-| BT controller              | ❌ 不能         | 控制器固件是 blob；主机栈（GATT 等）可以 Zig 写                     |
-| TLS / HTTP / MQTT / OTA    | ✅ 能           | 用 `std.crypto` 原语自建记录层，或先接 mbedTLS 做对照               |
+| 层                         | 能否用 Zig 重写 | 说明                                                                  |
+| -------------------------- | --------------- | --------------------------------------------------------------------- |
+| 芯片掩膜 ROM / 一级引导    | ❌ 不能         | 出厂固化，负责下载模式、二级引导加载、基础 ROM 函数                   |
+| 二级 bootloader            | ✅ 能           | 先借 IDF 的；ch28 的 28A 给选槽/回滚模型，28B 可选再写 Zig bootloader |
+| RTOS 内核 / 驱动 / HAL     | ✅ 能           | 调度、IPC、堆、CLIC、UART、SPI、Flash、EMAC 全部 Zig                  |
+| TCP/IP 协议栈              | ✅ 能           | ARP/IPv4/ICMP/UDP/TCP/DHCP/DNS/HTTP/MQTT，全部自写                    |
+| Wi-Fi PHY / MAC            | ❌ 不能         | `libnet80211`/`libpp`/`libphy` 等厂商二进制，必须保留                 |
+| Wi-Fi 主机侧（supplicant） | ✅ 能，但很难   | WPA2/WPA3、EAPOL、SAE 可以 Zig 写；第一版先接 IDF 的开源 supplicant   |
+| BT controller              | ❌ 不能         | 控制器固件是 blob；主机栈（GATT 等）可以 Zig 写                       |
+| TLS / HTTP / MQTT / OTA    | ✅ 能           | 用 `std.crypto` 原语自建记录层，或先接 mbedTLS 做对照                 |
 
 于是本系列给"完全 Zig"一个可验收的定义：
 
@@ -146,11 +146,11 @@ flowchart TB
 
 ### 3.2 三种构建形态，按章节逐步切换
 
-| 形态 | 做法                                                                                      | 用在哪            | 代价 / 收益                                    |
-| ---- | ----------------------------------------------------------------------------------------- | ----------------- | ---------------------------------------------- |
-| A    | Zig 编译静态库，IDF CMake 工程链接；`app_main` 由 Zig 导出                                | ch1–ch6 快速点名  | 最快跑通；但构建链仍有 IDF/CMake               |
-| B    | Zig 直接产出 ELF + 自定义链接脚本；`esptool elf2image` 生成镜像；IDF 二级 bootloader 加载 | ch7 之后的主线    | 构建链纯 Zig；需要自己处理启动、段布局、镜像头 |
-| C    | Zig 写二级 bootloader + 应用；自带分区/校验/回滚                                          | ch28 收官（可选） | 最彻底；风险最高，放在最后                     |
+| 形态 | 做法                                                                                      | 用在哪                      | 代价 / 收益                                    |
+| ---- | ----------------------------------------------------------------------------------------- | --------------------------- | ---------------------------------------------- |
+| A    | Zig 编译静态库，IDF CMake 工程链接；`app_main` 由 Zig 导出                                | ch1–ch6 快速点名            | 最快跑通；但构建链仍有 IDF/CMake               |
+| B    | Zig 直接产出 ELF + 自定义链接脚本；`esptool elf2image` 生成镜像；IDF 二级 bootloader 加载 | ch7 之后的主线              | 构建链纯 Zig；需要自己处理启动、段布局、镜像头 |
+| C    | Zig 写二级 bootloader + 应用；自带分区/校验/回滚                                          | ch28 的 28B（可选，未实现） | 最彻底；风险最高，放在最后                     |
 
 主线走 **B**：它既证明"Zig 能独立产出一个可启动镜像"，又暂时借用 IDF 的二级 bootloader，避免一上来就掉进 ROM 加载细节。形态 A 只作为 bring-up 的脚手架，跑通后即删除，不进入长期架构。
 
@@ -247,12 +247,12 @@ flowchart TB
 
 这一部分直面"全 Zig"的硬边界：厂商 blob 怎么接、OS 怎么兼容、最后怎么把整栈跑成一个可交付的系统。
 
-| #   | 章节                                                            | 核心内容                                                                                            | 验收产物                                                 |
-| --- | --------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
-| 25  | [[ch25-wifi-blob-boundary\|Wi-Fi blob 边界与 ABI 垫片]]         | `libnet80211/libpp/libcore`（S31 Wi-Fi 7 份里的 3 份）、`esp_phy/libphy`、OSI 函数表、混合/垫片方案 | 符号依赖清单（可复现）；ABI 垫片 demo；ADR               |
-| 26  | [[ch26-wifi-connection-wpa2-wpa3\|Wi-Fi 连接管理（WPA2/WPA3）]] | scan/connect 状态机、重连退避、WPA2-PSK（PBKDF2/PTK/MIC）、SAE 可测子集、事件队列                   | 握手向量与状态机自检；真实连接待 ch17+ch25               |
-| 27  | [[ch27-ble-802154-boundary\|BLE / 802.15.4 边界]]               | controller blob 符号面、HCI/ATT/GATT、802.15.4 FCF、6LoWPAN 无状态解压                              | HCI/ATT/GATT 字节级 KAT；真实扫描/连接待 controller 链接 |
-| 28  | 自举、功耗、性能与综合项目                                      | Zig 二级 bootloader、A/B/回滚、功耗模式、性能剖析、端到端演示                                       | 一条命令构建/烧录；综合 demo；性能/功耗报告              |
+| #   | 章节                                                             | 核心内容                                                                                                            | 验收产物                                                 |
+| --- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| 25  | [[ch25-wifi-blob-boundary\|Wi-Fi blob 边界与 ABI 垫片]]          | `libnet80211/libpp/libcore`（S31 Wi-Fi 7 份里的 3 份）、`esp_phy/libphy`、OSI 函数表、混合/垫片方案                 | 符号依赖清单（可复现）；ABI 垫片 demo；ADR               |
+| 26  | [[ch26-wifi-connection-wpa2-wpa3\|Wi-Fi 连接管理（WPA2/WPA3）]]  | scan/connect 状态机、重连退避、WPA2-PSK（PBKDF2/PTK/MIC）、SAE 可测子集、事件队列                                   | 握手向量与状态机自检；真实连接待 ch17+ch25               |
+| 27  | [[ch27-ble-802154-boundary\|BLE / 802.15.4 边界]]                | controller blob 符号面、HCI/ATT/GATT、802.15.4 FCF、6LoWPAN 无状态解压                                              | HCI/ATT/GATT 字节级 KAT；真实扫描/连接待 controller 链接 |
+| 28  | [[ch28-bootstrap-power-performance\|自举、功耗、性能与综合项目]] | 28A：otadata 选槽、A/B 回滚、light/deep sleep 预算、p50/p95 与频率折算；28B：Zig 二级 bootloader 迁移清单（未实现） | 离线 12 条判据；真机电流/频率/吞吐/回滚清单              |
 
 ### 阶段门（Gate）
 
@@ -264,7 +264,7 @@ flowchart TB
 | G3   | 16–19 | 千兆口 ping/DHCP/DNS 通；抓包能逐字段对上                       |
 | G4   | 20–24 | TCP echo/吞吐达标；HTTP 可访问；TLS 握手成功；MQTT 通           |
 | G5   | 25–26 | Wi-Fi 连 AP、DHCP、MQTT 通；blob 依赖与 ABI 边界有文档          |
-| G6   | 27–28 | 综合项目可演示；OTA 可回滚；性能/功耗有数据                     |
+| G6   | 27–28 | 28A 模型离线可判定；OTA 回滚（模型）；性能/功耗数据待真机       |
 
 > [!note] 关于"达标"
 > 本系列不预设虚构的吞吐/时延数字。每个 Gate 的量化目标在该章实验里先定义测量方法（抓包、GPIO 翻转、逻辑分析仪、`esp_timer`），再记录实测值，并与 IDF/lwIP 的对照实现比较。**先有测量，后有指标**。
@@ -387,4 +387,4 @@ flowchart TB
 
 ---
 
-第 1–27 章已完成。最后一章（规划）是第二十八章：自举、功耗、性能与综合项目。真实的链路验收（TCP 握手、实测吞吐、HTTPS GET、MQTT broker、OTA 写 flash、Wi-Fi 连 AP、BLE 扫描与连接、802.15.4 收发）仍要等 ch17（以太网 DMA/MDIO）与 ch25/ch27（blob 边界）之后的实做；ch20–ch27 目前给的是可运行的控制律、事件循环、密码学原语、应用协议、ABI 垫片、WPA 握手/连接状态机与 BLE/802.15.4 字节路径，全部有板侧自检与主机测试，其中三章还带可复现的符号依赖清单。
+第 1–28 章已完成。ch28 是 28A（选槽/回滚/功耗/性能的可离线模型与真机清单），form C 的 Zig 二级 bootloader 作为 28B 可选项明确未实现。真实的链路验收（TCP 握手、实测吞吐、HTTPS GET、MQTT broker、OTA 写 flash、Wi-Fi 连 AP、BLE 扫描与连接、802.15.4 收发）仍要等 ch17（以太网 DMA/MDIO）与 ch25/ch27（blob 边界）之后的实做；ch20–ch27 目前给的是可运行的控制律、事件循环、密码学原语、应用协议、ABI 垫片、WPA 握手/连接状态机与 BLE/802.15.4 字节路径，全部有板侧自检与主机测试，其中三章还带可复现的符号依赖清单。

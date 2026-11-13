@@ -1,0 +1,90 @@
+{
+  "allow_hardware": false,
+  "port": "/dev/ttyUSB0",
+  "baud": 115200,
+  "firmware": "practice/zig-esp32-s31/ch28-bootstrap-power-performance/zig-out/bin/app.bin",
+  "artifacts_dir": "tools/s31-production/hil/artifacts",
+  "build": {
+    "enabled": false,
+    "command": ["zig", "build"],
+    "cwd": "practice/zig-esp32-s31/ch28-bootstrap-power-performance",
+    "timeout_s": 600
+  },
+  "flash": {
+    "esptool": "esptool.py",
+    "chip": "esp32s31",
+    "baud": 460800,
+    "offset": "0x10000",
+    "extra_args": []
+  },
+  "relay": {
+    "command": ["relayctl", "--port", "/dev/ttyACM0", "set", "{channel}", "{state}"],
+    "power_channel": 1,
+    "reset_channel": 2,
+    "on_value": "on",
+    "off_value": "off",
+    "settle_ms": 500,
+    "reset_pulse_ms": 200,
+    "timeout_s": 5
+  },
+  "capture": {
+    "duration_s": 20,
+    "stop_pattern": null,
+    "encoding": "utf-8"
+  },
+  "assertions": [
+    {
+      "name": "boot banner",
+      "pattern": "ch28-bootstrap-power-performance",
+      "timeout_s": 10,
+      "required": true
+    },
+    {
+      "name": "self-test pass",
+      "pattern": "checks: passed=12 failed=0 total=12",
+      "timeout_s": 20,
+      "required": true
+    }
+  ],
+  "link": {
+    "assertions": [
+      {
+        "name": "link up",
+        "pattern": "net: link_up",
+        "timeout_s": 15,
+        "required": true
+      },
+      {
+        "name": "dhcp address",
+        "pattern": "dhcp: lease [0-9.]+",
+        "timeout_s": 25,
+        "required": true
+      }
+    ]
+  },
+  "fault": {
+    "cycles": 5,
+    "power_off_ms": 800,
+    "assertions": [
+      {
+        "name": "watchdog recovery",
+        "pattern": "boot: recovery #1",
+        "timeout_s": 30,
+        "required": true
+      }
+    ]
+  },
+  "soak": {
+    "cycles": 50,
+    "cycle_interval_s": 2,
+    "duration_s": 8,
+    "assertions": [
+      {
+        "name": "boot each cycle",
+        "pattern": "S31 boot",
+        "timeout_s": 8,
+        "required": true
+      }
+    ]
+  }
+}

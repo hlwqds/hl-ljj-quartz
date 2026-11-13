@@ -285,7 +285,7 @@ esptool --chip esp32s31 elf2image \
   -o zig-out/bin/app.bin zig-out/bin/app.elf
 ```
 
-## 4. `ch02-hello` 工程契约（模板 A；ch03–ch15 见 §4.5–§4.17）
+## 4. `ch02-hello` 工程契约（模板 A；ch03–ch15 见 §4.5–§4.17，ch28 见 §4.18）
 
 ### 4.1 文件与职责
 
@@ -542,6 +542,24 @@ tick
 - 真机两轮（2026-11-13）：首轮 5/8，定位到「相等判据被 LLVM 折叠」「irq 检查早于开中断」「SWD_WPROTECT 未解锁」；
   次轮 `checks: passed=8 failed=0`、`wdt: rtc before=0xc0000000 after=0x0`、panic dump 后 `halted`；主机侧 `zig build test` 10/10。
 
+### 4.18 `ch28-bootstrap-power-performance` 契约（模板 B，收官 28A）
+
+- 文件：`build.zig`、`linker/s31.ld`、`src/{start,main,selftest,host_tests,bootslot,power,perf,ota,hw,log,trap}.zig`、
+  `tools/flash.sh`、`idf-bootstrap/*`、`README.md`；无 `run.log`。
+- 边界：28A 仍由 IDF 二级 bootloader 装载应用；**不实现** form C 的 Zig bootloader，
+  不写 flash、不真正进睡、不改 CPU 频率。28B 迁移清单只写在章节 28.8。
+- 选槽：16 B otadata 条目（magic `S31B`、seq、slot、state、reserved、CRC32），CRC 先过、
+  再取 seq 最大、平手取下标小者；胜出槽 `ABORTED`/`INVALID`/`UNDEFINED` 时回 factory。线上格式**不冒充**
+  IDF `esp_ota_select_entry_t`。
+- 回滚：复用 ch24 `ota.Rollback`；`pending_verify` 启动预算 2 次，运行期连续失败预算 3 次；
+  `markValid()` 必须在自检之后，`noteHealthy()` 清零连续失败。
+- 功耗：`power.zig` 只给模型（run 25 mA / light 1.2 mA / deep 0.01 mA；唤醒 80 µs / 12 ms），
+  RTC 32 位 @136 kHz 单次上限约 31 580 s；所有数值标注“模型值”，真机电流/唤醒时间 待测。
+- 性能：`perf.zig` 最近秩 p50/p95、MiB/s、周期/字节、80→320 MHz 周期与时间折算；
+  真机三档频率吞吐 待测。
+- 自检：12 条判据（选槽往返/CRC、seq、坏扇区、factory、启动预算、回滚、app_desc、
+  RTC 上限、平均电流、分位、吞吐、频率折算）；本轮**未编译、未烧录、未运行**。
+
 ## 5. 构建与运行命令
 
 ### 5.1 通用前置
@@ -690,9 +708,7 @@ Get-CimInstance Win32_SerialPort | Select-Object DeviceID, Description
 `SHIKI_LANGS` 已加 `"zig"`（Shiki 自带 `@shikijs/langs/dist/zig.mjs`；已确认存量 md
 无 ```zig 围栏，加载集变化不影响既有片段）。
 
-本批已执行 `npm run code-site` 重新生成（4172 文件 / 78 个项目，覆盖 ch01–ch11；约 3 分钟；脚本先
-`rmSync` 整个 `html/`，中途被杀会留下 git 可见的 deleted 状态）。后续修改工程后重跑，
-正文深链格式为：
+当前 `quartz/static/code/files.json` 为 4477 文件 / 94 个项目；其中 Zig 套件 27 个工程，覆盖 ch01–ch27。ch28 按用户要求不做 highlighted/code-site，章节与 README 改用 GitHub 源链。`npm run code-site` 脚本会先 `rmSync` 整个 `html/`，中途被杀会留下 git 可见的 deleted 状态；后续修改工程后重跑，正文深链格式为：
 
 ```text
 /static/code/#/zig-esp32-s31/<工程>/<文件>

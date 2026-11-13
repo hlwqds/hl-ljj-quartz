@@ -3,7 +3,7 @@
 对应系列：[[zig-esp32-s31|Zig × ESP32-S31 全栈开发]]
 构建契约：[SPEC.md](SPEC.md)
 
-本目录是系列章节的可构建工程集合。当前第 1–27 章的工程已落地；ch01–ch06、ch09–ch27 已在 ESP32-S31 CoreBoard 上实测（ch07/ch08/ch12/ch17 为部分通过，详见 `BRINGUP-2026-11-12.md`）。
+本目录是系列章节的可构建工程集合。当前第 1–28 章的工程已落地；ch01–ch06、ch09–ch27 已在 ESP32-S31 CoreBoard 上实测（ch07/ch08/ch12/ch17 为部分通过，详见 `BRINGUP-2026-11-12.md`）。ch28 是 28A 收官工程，本轮未编译、未烧录、未测量。
 
 ## 工程清单
 
@@ -36,6 +36,7 @@
 | `ch25-wifi-blob-boundary`              | [[ch25-wifi-blob-boundary\|第二十五章：Wi-Fi blob 边界与 ABI 垫片]]             | B（纯 Zig ELF + IDF bootloader） | 板侧自检通过（宿主 15 测试 + 板侧 13 项，stub 垫片）    | [README](ch25-wifi-blob-boundary/README.md)              |
 | `ch26-wifi-connection-wpa2-wpa3`       | [[ch26-wifi-connection-wpa2-wpa3\|第二十六章：Wi-Fi 连接管理（WPA2/WPA3）]]     | B（纯 Zig ELF + IDF bootloader） | 板侧自检通过（宿主 20 测试 + 板侧 13 项，握手向量离线） | [README](ch26-wifi-connection-wpa2-wpa3/README.md)       |
 | `ch27-ble-802154-boundary`             | [[ch27-ble-802154-boundary\|第二十七章：BLE / 802.15.4 边界]]                   | B（纯 Zig ELF + IDF bootloader） | 板侧自检通过（宿主 20 测试 + 板侧 12 项，字节路径）     | [README](ch27-ble-802154-boundary/README.md)             |
+| `ch28-bootstrap-power-performance`     | [[ch28-bootstrap-power-performance\|第二十八章：自举、功耗、性能与综合项目]]    | B（纯 Zig ELF + IDF bootloader） | 未验证（本轮未编译/未烧录；28A 模型）                   | [README](ch28-bootstrap-power-performance/README.md)     |
 
 ## 快速入口
 
@@ -70,16 +71,17 @@
 - **不伪造日志**：尚未上机的工程没有 `run.log`，README 写“run.log 待真机回填”；真机跑通
   后回填原始串口输出，超 1 MB 按 SPEC §6 截断。
 - **不引入 managed component**：依赖只允许 IDF 树内组件或本仓相对路径。
-- **代码浏览**：收录规则已在 `scripts/gen-code-site.mjs` 登记；本批已重新生成，
-  正文/README 里的 `/static/code/#/zig-esp32-s31/<工程>/<文件>` 深链可用。
+- **代码浏览**：收录规则已在 `scripts/gen-code-site.mjs` 登记；code-site 当前覆盖 ch01–ch27，
+  正文里对应 `/static/code/#/zig-esp32-s31/<工程>/<文件>` 深链可用。ch28 按用户要求不做
+  highlighted/code-site，其章节与 README 改用 GitHub 源链。
 
 ## 状态
 
-| 项                 | 状态                                                                                                                       |
-| ------------------ | -------------------------------------------------------------------------------------------------------------------------- |
-| 第 1–27 章正文     | 已落地；ch01–ch06/ch09–ch11/ch13–ch16/ch18/ch19 真机通过，ch07/ch08/ch12/ch17 部分通过，ch20–ch27 板侧自检通过（非真链路） |
-| ch01-board-id      | 命令清单与记录模板已落地；实机输出待回填                                                                                   |
-| ch02-hello         | 模板 A 工程已落地；真机 `hello s31` + 每秒 `tick` 通过                                                                     |
-| ch03-image-inspect | 与 `esptool image-info` 逐字段对拍通过（186 832 B 镜像）                                                                   |
-| ch04–ch27          | 模板 B 工程已落地；状态见上表（部分通过项：ch07 中断、ch08 DMA、ch12 pi 阶段、ch17 DMA/MDIO）                              |
-| `run.log`          | 均未生成（不伪造；真机回填）                                                                                               |
+| 项                 | 状态                                                                                                                                                |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 第 1–28 章正文     | 已落地；ch01–ch06/ch09–ch11/ch13–ch16/ch18/ch19 真机通过，ch07/ch08/ch12/ch17 部分通过，ch20–ch27 板侧自检通过（非真链路），ch28 未验证（28A 模型） |
+| ch01-board-id      | 命令清单与记录模板已落地；实机输出待回填                                                                                                            |
+| ch02-hello         | 模板 A 工程已落地；真机 `hello s31` + 每秒 `tick` 通过                                                                                              |
+| ch03-image-inspect | 与 `esptool image-info` 逐字段对拍通过（186 832 B 镜像）                                                                                            |
+| ch04–ch28          | 模板 B 工程已落地；状态见上表（部分通过项：ch07 中断、ch08 DMA、ch12 pi 阶段、ch17 DMA/MDIO；ch28 未编译）                                          |
+| `run.log`          | 均未生成（不伪造；真机回填）                                                                                                                        |
