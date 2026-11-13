@@ -127,11 +127,11 @@ while (pollEventTimeout(&retry)) |ev| {   // 超时在调用方换算成 dhcp_fa
 
 | 项                                                         | 状态                                          |
 | ---------------------------------------------------------- | --------------------------------------------- |
-| 接口名与 SPEC §3.3 一致（`State`/`Event`/`Action`/`step`） | 已实现，未编译                                |
-| `Event` 用 `fatal` 而非 `error`                            | 已实现，未编译                                |
-| 主链路 `offline→link_up→dhcp→online`                       | 单测已写，未运行                              |
-| 非法事件保持原状态 + `none`                                | 单测已写，未运行                              |
-| 退化/恢复与回到 `offline`                                  | 单测已写，未运行                              |
+| 接口名与 SPEC §3.3 一致（`State`/`Event`/`Action`/`step`） | 已实现，已编译（2026-11-13）                  |
+| `Event` 用 `fatal` 而非 `error`                            | 已实现，已编译（2026-11-13）                  |
+| 主链路 `offline→link_up→dhcp→online`                       | 单测已跑（15/15）                             |
+| 非法事件保持原状态 + `none`                                | 单测已跑（15/15）                             |
+| 退化/恢复与回到 `offline`                                  | 单测已跑（15/15）                             |
 | 无硬件 / 无 IDF / 无时钟 / 无 socket 依赖                  | 源码级可核对（`src/netmgr.zig` 无 `@import`） |
 | `zig build test` 可跑                                      | **15/15 通过**（2026-11-13）                  |
 | 上板联调                                                   | **未做**                                      |

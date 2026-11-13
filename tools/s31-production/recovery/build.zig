@@ -8,7 +8,7 @@ const std = @import("std");
 //   - `zig build test` 只跑主机侧单测（`b.graph.host`），没有 riscv32 工具链
 //     也能跑。
 //
-// 本次交付**未执行** `zig build test`。
+// 主线已于 2026-11-13 执行 `zig build test`：9/9 通过。
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});

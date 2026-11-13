@@ -12,7 +12,7 @@ const std = @import("std");
 //   src/host_tests.zig      # otadata / 选槽 / 状态机
 //   src/manifest_tests.zig  # 生产清单校验（结构 → 版本 → 注入式 Verifier）
 //
-// 不碰 flash、串口或网络。本次交付**未执行**该命令（见 README 的
+// 不碰 flash、串口或网络。主线已于 2026-11-13 执行：8/8 通过（见 README 的
 // “未验证边界”）。
 pub fn build(b: *std.Build) void {
     const tests = b.addTest(.{

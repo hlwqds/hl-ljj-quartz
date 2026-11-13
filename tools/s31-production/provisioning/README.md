@@ -175,19 +175,19 @@ while (pollEventTimeout(&retry)) |ev| {    // 超时在调用方换算成 Event.
 
 ## 8. 验收
 
-| 项                                                               | 状态                                                |
-| ---------------------------------------------------------------- | --------------------------------------------------- |
-| 接口名与 SPEC §3.6 一致（`State`/`Event`/`Action`/`step`）       | 已实现，未编译                                      |
-| 主链路 `idle→ap→awaiting_proof→credentials→connecting→connected` | 单测已写，未运行                                    |
-| 非法事件保持原状态 + `none`                                      | 单测已写，未运行                                    |
-| `proof_fail`/`timeout` 不保存凭据、不进入 `credentials`          | 单测已写，未运行                                    |
-| `connected` 唯一入口是 `connecting + connect_ok`                 | 单测已写，未运行                                    |
-| 失败可回 `idle`（仅 `cancel`）                                   | 单测已写，未运行                                    |
-| 连接失败/超时留在 `connecting` 并 `backoff`，不回 AP             | 单测已写，未运行                                    |
-| `Action` 无死 tag（8 个全部可达）                                | 单测已写，未运行                                    |
-| 无硬件 / 无 IDF / 无时钟 / 无 socket 依赖                        | 源码级可核对（`src/provisioning.zig` 无 `@import`） |
-| `zig build test` 可跑                                            | **18/18 通过**（2026-11-13）                        |
-| 上板联调（真 SoftAP/STA/PoP）                                    | **未做**                                            |
+| 项                                                               | 状态                                                      |
+| ---------------------------------------------------------------- | --------------------------------------------------------- |
+| 接口名与 SPEC §3.6 一致（`State`/`Event`/`Action`/`step`）       | 已实现，已编译（2026-11-13）                              |
+| 主链路 `idle→ap→awaiting_proof→credentials→connecting→connected` | 单测已跑（18/18）                                         |
+| 非法事件保持原状态 + `none`                                      | 单测已跑（18/18）                                         |
+| `proof_fail`/`timeout` 不保存凭据、不进入 `credentials`          | 单测已跑（18/18；credentials 态迟到 proof_fail 保持原地） |
+| `connected` 唯一入口是 `connecting + connect_ok`                 | 单测已跑（18/18）                                         |
+| 失败可回 `idle`（仅 `cancel`）                                   | 单测已跑（18/18）                                         |
+| 连接失败/超时留在 `connecting` 并 `backoff`，不回 AP             | 单测已跑（18/18）                                         |
+| `Action` 无死 tag（8 个全部可达）                                | 单测已跑（18/18）                                         |
+| 无硬件 / 无 IDF / 无时钟 / 无 socket 依赖                        | 源码级可核对（`src/provisioning.zig` 无 `@import`）       |
+| `zig build test` 可跑                                            | **18/18 通过**（2026-11-13）                              |
+| 上板联调（真 SoftAP/STA/PoP）                                    | **未做**                                                  |
 
 `src/host_tests.zig` 的内容：
 

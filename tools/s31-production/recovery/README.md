@@ -105,8 +105,8 @@ pub fn classify(reason: ResetReason, consecutive_failures: u8, threshold: u8, ph
   **策略层**：失败计数与相位由调用方注入，输出 `rollback` / `factory_reset`
   建议。两者的 factory 含义不同，不可互换：
   `bootslot.zig` 的 factory 回退是「结构上无槽可启动」，本切片的
-  `factory_reset` 是「策略上不许再回滚」。ch28 本身未编译、未上板，
-  上述真机验收均未执行（宿主测试 9/9 已通过）。
+  `factory_reset` 是「策略上不许再回滚」。ch28 已编译、已上板并通过 12 条
+  板侧判据；本切片的宿主测试 9/9 通过；上面的真机验收（切槽/掉电）仍未执行。
 
 - **`ota/` 切片**：本切片的 `rollback` 只表达意图，真正的槽位写入、
   状态迁移与预算判定在 `ota/`（其 README 已标注为生产侧候选规范）。
