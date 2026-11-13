@@ -1,5 +1,5 @@
 <svg viewBox="0 0 900 560" xmlns="http://www.w3.org/2000/svg" font-family="system-ui,sans-serif" font-size="14">
-  <text x="450" y="26" text-anchor="middle" font-size="18" fill="currentColor">转接板俯视：S31 J2（2×20）↔ C6 J3（1×16）</text>
+  <text x="450" y="26" text-anchor="middle" font-size="18" fill="currentColor">转接板俯视：S31 J2（2×20）↔ C6 J3（1×16，仅用 5–12）</text>
 
   <!-- 3.3V rail -->
   <line x1="110" y1="120" x2="110" y2="440" stroke="#e74c3c" stroke-width="4"/>
