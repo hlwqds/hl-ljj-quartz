@@ -1,0 +1,76 @@
+<svg viewBox="0 0 900 560" xmlns="http://www.w3.org/2000/svg" font-family="system-ui,sans-serif" font-size="14">
+  <text x="450" y="26" text-anchor="middle" font-size="18" fill="currentColor">转接板俯视：S31 J2（2×20）↔ C6 J3（1×16）</text>
+
+  <!-- 3.3V rail -->
+  <line x1="110" y1="120" x2="110" y2="440" stroke="#e74c3c" stroke-width="4"/>
+  <text x="118" y="112" fill="#e74c3c">3.3 V 母排</text>
+
+  <!-- S31 side: two columns -->
+  <text x="250" y="70" text-anchor="middle" fill="currentColor" fill-opacity="0.7">S31 J2 2×20 排母（只用 26–36）</text>
+  <text x="215" y="92" text-anchor="middle" fill="currentColor" fill-opacity="0.5">奇 数 排</text>
+  <text x="285" y="92" text-anchor="middle" fill="currentColor" fill-opacity="0.5">偶 数 排</text>
+
+  <g fill="currentColor" text-anchor="end">
+    <text x="200" y="144">29 D3</text>
+    <text x="200" y="204">27 D1</text>
+    <text x="200" y="294">31 CMD</text>
+    <text x="200" y="354">33 GND</text>
+    <text x="200" y="414">35 3V3</text>
+  </g>
+  <g fill="currentColor" text-anchor="start">
+    <text x="300" y="174">28 D2</text>
+    <text x="300" y="234">26 D0</text>
+    <text x="300" y="264">30 CLK</text>
+    <text x="300" y="324">32（空）</text>
+    <text x="300" y="354">34 GND</text>
+    <text x="300" y="414">36 3V3</text>
+  </g>
+  <g fill="none" stroke="currentColor" stroke-opacity="0.45">
+    <circle cx="215" cy="140" r="7"/><circle cx="215" cy="200" r="7"/><circle cx="215" cy="290" r="7"/>
+    <circle cx="215" cy="350" r="7"/><circle cx="215" cy="410" r="7"/>
+    <circle cx="285" cy="170" r="7"/><circle cx="285" cy="230" r="7"/><circle cx="285" cy="260" r="7"/>
+    <circle cx="285" cy="320" r="7"/><circle cx="285" cy="350" r="7"/><circle cx="285" cy="410" r="7"/>
+  </g>
+
+  <!-- C6 side -->
+  <text x="700" y="70" text-anchor="middle" fill="currentColor" fill-opacity="0.7">C6 J3 1×8 排母（5–12）</text>
+  <g fill="currentColor" text-anchor="start">
+    <text x="700" y="144">5 DAT3</text>
+    <text x="700" y="174">6 DAT2</text>
+    <text x="700" y="204">7 DAT1</text>
+    <text x="700" y="234">8 DAT0</text>
+    <text x="700" y="264">9 CLK</text>
+    <text x="700" y="294">10 CMD</text>
+    <text x="700" y="324" fill="#c0392b">11 GPIO9 不接</text>
+    <text x="700" y="354">12 GND</text>
+  </g>
+  <g fill="none" stroke="currentColor" stroke-opacity="0.45">
+    <circle cx="685" cy="140" r="7"/><circle cx="685" cy="170" r="7"/><circle cx="685" cy="200" r="7"/>
+    <circle cx="685" cy="230" r="7"/><circle cx="685" cy="260" r="7"/><circle cx="685" cy="290" r="7"/>
+    <circle cx="685" cy="320" r="7"/><circle cx="685" cy="350" r="7"/>
+  </g>
+
+  <!-- signal wires -->
+  <g stroke-width="3" fill="none">
+    <line x1="222" y1="140" x2="678" y2="140" stroke="#8e44ad"/>
+    <line x1="292" y1="170" x2="678" y2="170" stroke="#f39c12"/>
+    <line x1="222" y1="200" x2="678" y2="200" stroke="#27ae60"/>
+    <line x1="292" y1="230" x2="678" y2="230" stroke="#2980b9"/>
+    <line x1="292" y1="260" x2="678" y2="260" stroke="#c0392b"/>
+    <line x1="222" y1="290" x2="678" y2="290" stroke="currentColor"/>
+    <line x1="222" y1="350" x2="678" y2="350" stroke="#7f8c8d"/>
+    <line x1="292" y1="350" x2="678" y2="350" stroke="#7f8c8d"/>
+  </g>
+
+  <!-- pull-ups -->
+  <g stroke="#d35400" stroke-width="2" fill="none">
+    <line x1="110" y1="140" x2="215" y2="140"/>
+    <line x1="110" y1="200" x2="215" y2="200"/>
+    <line x1="110" y1="230" x2="285" y2="230"/>
+    <line x1="110" y1="170" x2="285" y2="170"/>
+    <line x1="110" y1="290" x2="215" y2="290"/>
+  </g>
+  <text x="120" y="480" fill="#d35400">5 × 10 kΩ：D0/D1/D2/D3/CMD → 3.3 V</text>
+  <text x="450" y="500" text-anchor="middle" fill="currentColor" fill-opacity="0.7">3V3 母排只接上拉；不要接到 C6 的 3V3</text>
+  <text x="450" y="524" text-anchor="middle" fill="#c0392b">C6 的 11 脚（GPIO9=BOOT）必须悬空</text>
+</svg>

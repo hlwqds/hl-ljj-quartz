@@ -1,0 +1,30 @@
+<svg viewBox="0 0 900 380" xmlns="http://www.w3.org/2000/svg" font-family="system-ui,sans-serif" font-size="14">
+  <text x="450" y="26" text-anchor="middle" font-size="17" fill="currentColor">面包板验证（零焊接）</text>
+  <rect x="50" y="50" width="800" height="140" rx="6" fill="none" stroke="currentColor" stroke-opacity="0.25"/>
+  <line x1="50" y1="120" x2="850" y2="120" stroke="currentColor" stroke-opacity="0.2" stroke-dasharray="6 6"/>
+  <text x="60" y="76" fill="currentColor" fill-opacity="0.6">面包板（中缝上下分开，同列 5 孔相连）</text>
+
+  <rect x="620" y="90" width="160" height="70" rx="4" fill="none" stroke="currentColor" stroke-opacity="0.5"/>
+  <text x="700" y="112" text-anchor="middle" fill="currentColor">C6 DevKitC</text>
+  <text x="700" y="132" text-anchor="middle" fill="currentColor" fill-opacity="0.6">跨中缝插在面包板上</text>
+
+  <g stroke="#d35400" stroke-width="2">
+    <line x1="560" y1="180" x2="560" y2="210"/>
+    <line x1="585" y1="180" x2="585" y2="210"/>
+    <line x1="610" y1="180" x2="610" y2="210"/>
+    <line x1="635" y1="180" x2="635" y2="210"/>
+    <line x1="660" y1="180" x2="660" y2="210"/>
+  </g>
+  <text x="610" y="232" text-anchor="middle" fill="#d35400">5 × 10 kΩ → 3.3 V 排</text>
+  <line x1="520" y1="250" x2="720" y2="250" stroke="#e74c3c" stroke-width="3"/>
+  <text x="730" y="254" fill="#e74c3c">3.3 V</text>
+
+  <rect x="70" y="90" width="150" height="70" rx="4" fill="none" stroke="currentColor" stroke-opacity="0.5"/>
+  <text x="145" y="112" text-anchor="middle" fill="currentColor">S31 CoreBoard</text>
+  <text x="145" y="132" text-anchor="middle" fill="currentColor" fill-opacity="0.6">J2 用杜邦线引出</text>
+  <g stroke="#2980b9" stroke-width="2" stroke-dasharray="5 4">
+    <line x1="230" y1="150" x2="520" y2="150"/>
+    <line x1="230" y1="165" x2="520" y2="165"/>
+  </g>
+  <text x="375" y="142" text-anchor="middle" fill="#2980b9">杜邦线（信号 + 地）</text>
+</svg>
