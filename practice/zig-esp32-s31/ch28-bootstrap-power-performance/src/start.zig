@@ -107,6 +107,14 @@ pub export fn _start() callconv(.naked) noreturn {
         \\        csrci   mstatus, 0x8          # mstatus.MIE = 0
         \\        csrw    mie, zero             # 关掉所有中断源
         \\
+        \\        # ---- 1b) 打开 FPU 状态（FS=Initial）----
+        \\        # 本章的 power/perf 模块有 f32/f64 运算；eabihf 编译出的是
+        \\        # 硬浮点指令，而复位后 mstatus.FS=0 会把它们当非法指令
+        \\        # （本轮实测：check 8 之后 panic illegal instruction，mtval=0xf0050553）。
+        \\        # FS[14:13]=01 表示 Initial；只有 FS≠0 才允许执行 FP 指令。
+        \\        li      t0, 0x2000
+        \\        csrs    mstatus, t0
+        \\
         \\        # ---- 2) 设置栈指针与 gp ----
         \\        la      sp, _stack_top        # 主栈顶（SRAM 末尾，16 字节对齐）
         \\        la      gp, __global_pointer$ # small-data 锚点

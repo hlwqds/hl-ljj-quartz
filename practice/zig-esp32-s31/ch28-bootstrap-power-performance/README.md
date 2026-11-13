@@ -4,10 +4,13 @@
 
 > [!warning] 验证状态
 >
-> - **未做真机验证**：本文与工程按 2026-11-13 的计划落盘，尚未编译、烧录或测量。
-> - **未运行 `zig build test`**：按用户要求本轮不做构建验证；工程中的主机测试只作为交付物。
+> - **已编译、已上板（2026-11-13）**：`zig build test` 14/14；交叉编译与 `elf2image` 通过；
+>   板侧 12 条判据全过（`checks: passed=12 failed=0 total=12`），原始输出见
+>   [`../logs/ch28-boot.log`](../logs/ch28-boot.log)。
+> - **首次上板暴露过一个真缺陷**：`mstatus.FS=0` 时第一条浮点指令直接 panic
+>   （`illegal instruction, mtval=0xf0050553`）；`_start` 已置 `FS=Initial`，重烧后通过。
 > - **28A 边界**：仍由 IDF 二级 bootloader 装载本应用，**没有**实现 form C 的 Zig 二级 bootloader，**没有**写 flash、没有真正进睡、没有改 CPU 频率。
-> - 文中的 mA、唤醒 µs、频率都是**模型值**，不是实测值；真机判据见 28.9。
+> - 文中的 mA、唤醒 µs、频率都是**模型值**，不是实测值；真实测量判据见 28.9。
 
 ## 目的
 

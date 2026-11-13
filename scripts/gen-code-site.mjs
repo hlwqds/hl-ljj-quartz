@@ -10,7 +10,8 @@
  * 收录范围与过滤规则（AGENTS.md「浏览页收录与更新义务」同款）：
  *   - PROJECT_GLOBS：逐套件显式收录，新套件开工必须在这里加一条；
  *   - 跳过 build*、managed_components 等生成物目录与日志/二进制（按扩展名白名单）；
- *   - 只收文本源码，单文件 ≤256KB；sdkconfig 生成文件跳过（源是 sdkconfig.defaults）。
+ *   - 只收文本源码，单文件 ≤256KB；sdkconfig 生成文件跳过（源是 sdkconfig.defaults）；
+ *   - SKIP_PROJECTS：项目级排除（ch28 按用户要求不做浏览页，改用 GitHub 源链）。
  *
  * 用法：npm run code-site  （等价 node scripts/gen-code-site.mjs）
  *   环境变量 CODE_SITE_OUT=<dir> 可改输出目录（自检对拍用）。
@@ -42,6 +43,14 @@ const PROJECT_GLOBS = [
   "practice/lwip-labs", // 公约与调研
   "practice/zig-esp32-s31/*", // Zig × ESP32-S31 章节工程（形态 A/B）
 ]
+
+/** 项目级排除：整目录不进浏览页（相对仓库根，posix 分隔）。
+ *
+ * `practice/zig-esp32-s31/*` 是通配 glob，会把新章节自动收进来；ch28 的约定是
+ * 「不做 code-site，章节与 README 改用 GitHub 源链」，所以必须在这里显式排除，
+ * 否则下一次 regen 会悄悄发布它，并让套件 README 的「覆盖 ch01–ch27」失真。
+ */
+const SKIP_PROJECTS = new Set(["practice/zig-esp32-s31/ch28-bootstrap-power-performance"])
 
 /** 目录名跳过：精确或前缀通配（build* 命中 build/build_d/build-dbg…） */
 const SKIP_DIRS = [
@@ -365,6 +374,8 @@ const main = async () => {
         ? [g]
         : []
     for (const d of dirs) {
+      const posix = d.split(path.sep).join("/")
+      if (SKIP_PROJECTS.has(posix)) continue
       if (!seen.has(d)) {
         seen.add(d)
         projects.push(d)

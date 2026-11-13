@@ -1,6 +1,6 @@
 # netmgr —— S31 网络管理器纯状态机（切片 C）
 
-> 状态：**未编译、未测试、未上板**。本目录只有离线源码与文档，`zig build test` 一次都没有跑过。
+> 状态：**宿主测试已通过（15/15，2026-11-13）；未上板**。`zig build test` 已在 Zig 0.17.1 下实际执行，真实 PHY/DHCP 集成仍没有做。
 > 契约来自 [`../SPEC.md`](../SPEC.md) §3.3，本切片不改动 `content/`、`practice/`、`scripts/`、`quartz/` 与仓库根文件。
 
 ## 1. 目的
@@ -133,7 +133,7 @@ while (pollEventTimeout(&retry)) |ev| {   // 超时在调用方换算成 dhcp_fa
 | 非法事件保持原状态 + `none`                                | 单测已写，未运行                              |
 | 退化/恢复与回到 `offline`                                  | 单测已写，未运行                              |
 | 无硬件 / 无 IDF / 无时钟 / 无 socket 依赖                  | 源码级可核对（`src/netmgr.zig` 无 `@import`） |
-| `zig build test` 可跑                                      | **未执行**（本切片禁止构建）                  |
+| `zig build test` 可跑                                      | **15/15 通过**（2026-11-13）                  |
 | 上板联调                                                   | **未做**                                      |
 
 `src/host_tests.zig` 的内容：
@@ -147,7 +147,7 @@ while (pollEventTimeout(&retry)) |ev| {   // 超时在调用方换算成 dhcp_fa
 
 ## 9. 未验证边界（必须明说）
 
-1. **未编译**：`build.zig` 用的是 0.17.1 的 `b.createModule` / `b.addTest` / `b.graph.host`
+1. **已编译**（宿主测试 15/15）：`build.zig` 用的是 0.17.1 的 `b.createModule` / `b.addTest` / `b.graph.host`
    写法，与 `practice/zig-esp32-s31/ch20-tcp-state-machine/build.zig` 同风格；没有跑过 `zig build`。
 2. **未测试**：`src/host_tests.zig` 没有执行过，测试数量、断言结果都未确认。
 3. **未上板**：没有任何 PHY/DHCP/SNTP 的真实集成，迁移表只表达设计意图。

@@ -93,7 +93,7 @@ test "header decode exposes version, image_len and raw digest" {
     try std.testing.expectEqual(manifest.min_signature_len, parts.signature.len);
 
     // `decodeHeader` 只看头，签名缺失也能读元数据。
-    try manifest.decodeHeader(buf[0..manifest.header_len]);
+    _ = try manifest.decodeHeader(buf[0..manifest.header_len]);
 }
 
 test "short header is rejected before the verifier" {

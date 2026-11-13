@@ -233,8 +233,9 @@ test "超时不保存凭据：save_creds 只出现在 credentials + creds_ok" {
                     try std.testing.expect(got.next != .connecting);
                 }
             }
-            // 证明失败绝不能把状态推进到 credentials。
-            if (sameTag(e, .proof_fail)) {
+            // 证明失败绝不能把状态**推进**到 credentials；已经在 credentials
+            // 里时，迟到的 proof_fail 按设计保持原地（不会降级、也不会重复保存）。
+            if (sameTag(e, .proof_fail) and s != .credentials) {
                 try std.testing.expect(got.next != .credentials);
             }
         }
@@ -369,8 +370,10 @@ test "全局不变量：start_ap 只在 idle + start 产生，stop_ap 只关掉�
             }
             if (got.action == .stop_ap) {
                 // 只有已起 AP 的状态才需要停 AP；idle/failed/connected 不该出现。
-                try std.testing.expect(s != .idle);
-                try std.testing.expectEqual(State.idle, got.next);
+                // 停 AP 后要么回 idle（cancel/AP 超时），要么进 failed（证明/凭据
+                // 窗口超时或证明失败）——两者都表示会话已停、等待显式 cancel。
+                try std.testing.expect(s == .ap or s == .awaiting_proof or s == .credentials);
+                try std.testing.expect(got.next == .idle or got.next == .failed);
             }
             if (got.action == .reset) {
                 try std.testing.expectEqual(State.idle, got.next);
@@ -391,7 +394,7 @@ test "全局不变量：start_ap 只在 idle + start 产生，stop_ap 只关掉�
 
 test "Action 使用情况：8 个动作在迁移表里全部可达" {
     const action_count = 8;
-    var seen = [_]bool{false} ** action_count;
+    var seen: [action_count]bool = @splat(false);
     for (table) |c| seen[actionIndex(c.action)] = true;
 
     for (seen) |hit| try std.testing.expect(hit);

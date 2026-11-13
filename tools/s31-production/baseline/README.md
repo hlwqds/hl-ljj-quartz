@@ -8,10 +8,11 @@
    是否存在，以及每个工程是否带 `build.zig`、`README.md`、`src/`。
 
 > [!warning] 未验证边界
-> 本切片**没有运行** `inventory.py`，**没有编译**任何 Zig/IDF 工程，**没有执行**
-> `zig build test`、`elf2image`、`image-info`、`flash.sh`，**没有上板**，也**没有复核**
-> `matrix.md` 引用的历史日志。`matrix.md` 中的“仓库记录”只是对已提交文档/日志的转述，
-> 不构成本轮通过证据。`inventory.py` 只证明目录元数据，不证明任何工程可构建、可烧录、可运行。
+> 本切片**没有运行** `inventory.py`，也**没有上板**。`matrix.md` 里的 ch28 行已于
+> 2026-11-13 由主线补测（宿主 14/14、交叉编译退出 0、`image-info` 恰两行 `DROM, IROM`、
+> 板侧 12/12，日志 `practice/zig-esp32-s31/logs/ch28-boot.log`）；四个
+> `tools/s31-production/*` 切片的宿主测试也已跑通（15/15、8/8、18/18、9/9）。
+> 其余章节的“仓库记录”仍只是对已提交文档/日志的转述，不构成本切片自己的通过证据。
 
 ## 文件
 

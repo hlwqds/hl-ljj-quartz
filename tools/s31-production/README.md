@@ -1,6 +1,6 @@
 # S31 生产化增量
 
-> 状态：**骨架阶段：Zig 未编译/未上板/未跑测试；HIL 仅做过 Python 语法编译，CLI 未执行。**
+> 状态：**骨架阶段 + 宿主测试已跑通（2026-11-13）：netmgr 15/15、ota 8/8、provisioning 18/18、recovery 9/9；全部未上板；HIL CLI 未执行、inventory.py 未运行。**
 
 四个切片并行落地，契约见 [SPEC.md](SPEC.md)；OS/TCP-IP 组件拆分见 [ARCHITECTURE.md](ARCHITECTURE.md)。
 

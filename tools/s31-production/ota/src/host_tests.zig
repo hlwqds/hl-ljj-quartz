@@ -45,7 +45,7 @@ test "entry rejects content corruption via CRC" {
 }
 
 test "entry rejects short, blank, reserved, bad slot and bad state" {
-    const blank = [_]u8{0xFF} ** ota.entry_len;
+    const blank: [ota.entry_len]u8 = @splat(0xFF);
     try std.testing.expectError(error.BadMagic, ota.decodeEntry(blank[0..]));
     try std.testing.expectError(error.Short, ota.decodeEntry(blank[0 .. ota.entry_len - 1]));
 
@@ -112,7 +112,7 @@ test "one bad sector falls back to the other, two bad sectors fall back to facto
 }
 
 test "blank flash never boots anything" {
-    const blank = [_]u8{0xFF} ** ota.entry_len;
+    const blank: [ota.entry_len]u8 = @splat(0xFF);
     const decision = ota.selectSlot(blank[0..], blank[0..]);
     try std.testing.expect(decision.slot == null);
     try std.testing.expectEqual(ota.Reason.no_valid_sector, decision.reason);
@@ -132,7 +132,7 @@ test "canBoot only admits pending and valid" {
 
 test "selectSlot refuses new, invalid and aborted entries" {
     var sector: [ota.entry_len]u8 = undefined;
-    const blank = [_]u8{0xFF} ** ota.entry_len;
+    const blank: [ota.entry_len]u8 = @splat(0xFF);
 
     for ([_]ota.SlotState{ .new, .invalid, .aborted }) |state| {
         _ = try ota.encodeEntry(&sector, .{ .seq = 1, .slot = .b, .state = state });

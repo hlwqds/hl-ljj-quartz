@@ -283,7 +283,7 @@ fn actionIndex(a: Action) usize {
 }
 
 test "所有 Action 都可达" {
-    var seen = [_]bool{false} ** action_count;
+    var seen: [action_count]bool = @splat(false);
     for (table) |c| seen[actionIndex(c.action)] = true;
     for (seen) |hit| try std.testing.expect(hit);
 }

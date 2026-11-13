@@ -1,0 +1,48 @@
+# ch28 首轮上板日志（修复前）：mstatus.FS=0，第一条 OP-FP 指令触发 illegal instruction。
+# 该份输出由本轮会话的串口抓取记录原样回放写入（当时尚未修正 FS，随后被 ch28-boot.log 覆盖）。
+ESP-ROM:esp32s31-20251218
+Build:Dec 18 2025
+rst:0x1 (POWERON),boot:0x58 (SPI_FAST_FLASH_BOOT)
+SPI mode:DIO, clock div:1
+load:0x2f0740c0,len:0x168c
+load:0x2f06a2b0,len:0xc7c
+load:0x2f06cfb0,len:0x3368
+entry 0x2f06a2ba
+I (26) boot: ESP-IDF v6.1 2nd stage bootloader
+I (26) boot: compile time Nov 13 2026 20:14:21
+I (26) boot: Multicore bootloader
+I (28) boot: chip revision: v0.0
+I (29) boot: efuse block revision: v0.2
+I (32) boot.esp32s31: SPI Speed      : 80MHz
+I (36) boot.esp32s31: SPI Mode       : DIO
+I (40) boot.esp32s31: SPI Flash Size : 16MB
+I (44) boot: Enabling RNG early entropy source...
+I (49) boot: Partition Table:
+I (51) boot: ## Label            Usage          Type ST Offset   Length
+I (58) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (64) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (71) boot:  2 factory          factory app      00 00 00010000 00177000
+I (78) boot: End of partition table
+I (81) esp_image: segment 0: paddr=00010020 vaddr=40000020 size=032f0h ( 13040) map
+I (92) esp_image: segment 1: paddr=00013318 vaddr=2f000000 size=0006ch (   108) load
+I (97) esp_image: segment 2: paddr=0001338c vaddr=00000000 size=0cc8ch ( 52364)
+I (112) esp_image: segment 3: paddr=00020020 vaddr=40020020 size=011ach (  4524) map
+I (115) boot: Loaded app from partition at offset 0x10000
+I (115) boot: Disabling RNG early entropy source...
+ch28-bootstrap-power-performance | form B (Zig ELF + IDF 2nd-stage bootloader)
+console: UART0 TX=GPIO58 RX=GPIO59 115200 8N1 (ROM default)
+scope: otadata pick + a/b rollback + sleep budget + perf stats
+scope note: 28A only; no custom 2nd-stage bootloader, no flash write, no real sleep
+host: zig build test (pure logic; no board)
+check: otadata entry roundtrip + crc32 ok=1
+check: pick highest seq (B/4 over A/3) ok=1
+check: bad crc sector ignored, A remains ok=1
+check: aborted/invalid winner falls back to factory ok=1
+check: pending_verify boot budget (2 ok, 3 exceeds) ok=1
+check: three runtime failures roll back B -> A ok=1
+check: esp_app_desc_t size/offset (256, idf_ver@112) ok=1
+check: rtc 32-bit max sleep ~31580641875 us ok=1
+panic: exception code=2 (illegal instruction) cause=0x30000002
+panic: mepc=0x400006ee mtval=0xf0050553 mstatus=0x1801
+panic: ra=0x400006de a0=0x3d23a4c5 a1=0x2f07ad58 a2=0x0
+panic: halted (wfi)

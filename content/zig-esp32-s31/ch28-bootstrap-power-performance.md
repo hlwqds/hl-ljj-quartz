@@ -11,10 +11,14 @@ tags: [Zig, ESP32-S31, Bootloader, OTA, Power, Performance]
 > 系列索引：[[zig-esp32-s31|Zig × ESP32-S31 全栈开发]] · 上一章：[[ch27-ble-802154-boundary|第二十七章：BLE 与 802.15.4 边界]] · 本章：自举、功耗、性能与综合项目
 
 > [!warning] 验证状态
-> 本章是 **28A**：没有实现 form C 的 Zig 二级 bootloader，也没有真机测量。
-> 工程已落盘，但按本轮要求**未运行 `zig build test`、未烧录、未测电流**。
-> 文中电流、唤醒时间、频率都是模型值；能离线判定的只有选槽、回滚、
-> 预算与统计这些纯逻辑，判据见 28.9。
+> 本章是 **28A**：没有实现 form C 的 Zig 二级 bootloader，也没有真机测量（电流/唤醒时间）。
+> **已实测（2026-11-13，CoreBoard-1）**：`zig build test` 14/14；交叉编译与
+> `elf2image` 通过（`Merged 2 ELF sections.`，`image-info` 恰好两行 `DROM, IROM`）；
+> 已烧录并跑完板侧 12 条判据（`checks: passed=12 failed=0 total=12`、
+> `main: verdict=pass`，原始输出见 `practice/zig-esp32-s31/logs/ch28-boot.log`）。
+> 首次上板曾因 `mstatus.FS=0` 在第一条浮点指令处 panic（`mtval=0xf0050553`，原始输出 `practice/zig-esp32-s31/logs/ch28a-boot.log`），
+> 在 `_start` 里置 `FS=Initial` 后通过——这条已写进 28.10。
+> 文中电流、唤醒时间、频率仍是模型值；真实测量与 28B 自举判据见 28.9。
 
 ## 28.1 收官章要解决的不是“再写一个驱动”
 
@@ -191,14 +195,19 @@ zig build -Dtarget=riscv32-freestanding-eabihf \
 ./tools/flash.sh /dev/ttyUSB1        # 需要 IDF v6.1 环境
 ```
 
-串口期望（**未实测，仅作为判据**）：
+串口实测（2026-11-13，`logs/ch28-boot.log`，节选）：
 
 ```text
 ch28-bootstrap-power-performance | form B (Zig ELF + IDF 2nd-stage bootloader)
 scope: otadata pick + a/b rollback + sleep budget + perf stats
 scope note: 28A only; no custom 2nd-stage bootloader, no flash write, no real sleep
 check: otadata entry roundtrip + crc32 ok=1
+check: pick highest seq (B/4 over A/3) ok=1
+check: bad crc sector ignored, A remains ok=1
+check: aborted/invalid winner falls back to factory ok=1
 ...
+check: avg current deep=0.04mA < light=1.20mA < run ok=1
+check: 1 MiB / 1 s = 1.0000 MiB/s ok=1
 read: checks: passed=12 failed=0 total=12
 main: verdict=pass, boot/power/perf models verified off-link (wfi)
 ```
@@ -220,7 +229,7 @@ main: verdict=pass, boot/power/perf models verified off-link (wfi)
 
 风险排序：**镜像头/链接地址** > **flash 读校验** > **otadata 写回** > **回滚**。前两项错会直接变砖，后两项错只是升级行为不对。
 
-## 28.9 真机验收清单（本轮未做）
+## 28.9 真机验收清单（第 1–2 项已做，其余待硬件）
 
 | #   | 项目        | 判据                                                         | 工具                                    |
 | --- | ----------- | ------------------------------------------------------------ | --------------------------------------- |
@@ -241,8 +250,24 @@ main: verdict=pass, boot/power/perf models verified off-link (wfi)
 - **功耗**：先算唤醒开销，再谈睡眠电流；32 位 RTC 计数器有 8.77 小时的单次上限。
 - **性能**：时间源、样本、分位数三件套缺一不可；频率折算只是上界，必须用实测修正。
 - **产品化**：A/B 回滚的关键不是“能升级”，而是“升级失败还能回来”；`markValid()` 必须在自检之后调用。
+- **浮点**：首次上板暴露 `mstatus.FS=0` 时第一条 OP-FP 指令（opcode `0x53`）就触发 `illegal instruction`（`mtval=0xf0050553`）；`_start` 里置 `FS=Initial` 后才可用（依据 ch10 §10.6 与 `SPEC.md:477`），208 字节 FP 上下文帧仍未实现。
 
 到这里，28 章的路线走完：从 ROM 到应用、从裸机到 RTOS、从以太网到 Wi-Fi 边界、从协议到 OTA。**能离线判定的部分已经给出判据；不能离线判定的部分，统一留在真机清单里，不用文字冒充数据。**
 
-> [!tip] 工程入口
-> 完整工程：[ch28-bootstrap-power-performance](https://github.com/hlwqds/hl-ljj-quartz/blob/v4/practice/zig-esp32-s31/ch28-bootstrap-power-performance/README.md) · 选槽实现：[bootslot.zig](https://github.com/hlwqds/hl-ljj-quartz/blob/v4/practice/zig-esp32-s31/ch28-bootstrap-power-performance/src/bootslot.zig) · 功耗模型：[power.zig](https://github.com/hlwqds/hl-ljj-quartz/blob/v4/practice/zig-esp32-s31/ch28-bootstrap-power-performance/src/power.zig) · 性能统计：[perf.zig](https://github.com/hlwqds/hl-ljj-quartz/blob/v4/practice/zig-esp32-s31/ch28-bootstrap-power-performance/src/perf.zig)
+> [!tip] 工程入口（GitHub 源链）
+>
+> 本套件约定 ch28 不进 code-site 浏览页，因此下面用 GitHub 源链（AGENTS.md 的第二优先级）。
+>
+> | 文件                  | 作用                                                   | 源码                                                                                                                               |
+> | --------------------- | ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+> | `README.md`（工程根） | 验证状态、快速开始、文件表                             | [查看](https://github.com/hlwqds/hl-ljj-quartz/blob/v4/practice/zig-esp32-s31/ch28-bootstrap-power-performance/README.md)          |
+> | `src/bootslot.zig`    | 16 B otadata 条目、CRC32、双扇区选槽、factory 回退     | [查看](https://github.com/hlwqds/hl-ljj-quartz/blob/v4/practice/zig-esp32-s31/ch28-bootstrap-power-performance/src/bootslot.zig)   |
+> | `src/ota.zig`         | A/B 状态机、启动预算、回滚计数                         | [查看](https://github.com/hlwqds/hl-ljj-quartz/blob/v4/practice/zig-esp32-s31/ch28-bootstrap-power-performance/src/ota.zig)        |
+> | `src/power.zig`       | light/deep sleep 预算、RTC 32 位上限、电池寿命         | [查看](https://github.com/hlwqds/hl-ljj-quartz/blob/v4/practice/zig-esp32-s31/ch28-bootstrap-power-performance/src/power.zig)      |
+> | `src/perf.zig`        | p50/p95、MiB/s、每字节周期、频率折算                   | [查看](https://github.com/hlwqds/hl-ljj-quartz/blob/v4/practice/zig-esp32-s31/ch28-bootstrap-power-performance/src/perf.zig)       |
+> | `src/selftest.zig`    | 板侧 12 条判据（28.7 的每一行都来自这里）              | [查看](https://github.com/hlwqds/hl-ljj-quartz/blob/v4/practice/zig-esp32-s31/ch28-bootstrap-power-performance/src/selftest.zig)   |
+> | `src/host_tests.zig`  | 主机侧 14 个用例                                       | [查看](https://github.com/hlwqds/hl-ljj-quartz/blob/v4/practice/zig-esp32-s31/ch28-bootstrap-power-performance/src/host_tests.zig) |
+> | `src/start.zig`       | `_start`：关中断、`mstatus.FS=Initial`、RTC WDT、mtvec | [查看](https://github.com/hlwqds/hl-ljj-quartz/blob/v4/practice/zig-esp32-s31/ch28-bootstrap-power-performance/src/start.zig)      |
+> | `linker/s31.ld`       | 两个 flash 装载段、`.trap_ram`、栈/堆边界              | [查看](https://github.com/hlwqds/hl-ljj-quartz/blob/v4/practice/zig-esp32-s31/ch28-bootstrap-power-performance/linker/s31.ld)      |
+> | `build.zig`           | 形态 B 构建入口与 `zig build test`                     | [查看](https://github.com/hlwqds/hl-ljj-quartz/blob/v4/practice/zig-esp32-s31/ch28-bootstrap-power-performance/build.zig)          |
+> | `tools/flash.sh`      | 按 `flash_args` 烧录                                   | [查看](https://github.com/hlwqds/hl-ljj-quartz/blob/v4/practice/zig-esp32-s31/ch28-bootstrap-power-performance/tools/flash.sh)     |

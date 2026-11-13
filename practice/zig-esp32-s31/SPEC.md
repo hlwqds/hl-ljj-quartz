@@ -474,7 +474,7 @@ tick
   `tools/flash.sh`、`idf-bootstrap/*`、`README.md`；无 `run.log`。
 - 上下文帧：整数版 64 字节（`ra`+`s0`–`s11`，16 对齐）；FPU 版 208 字节（`fcsr`+`f0`–`f31`）。
   S31 是单精度 F、`SOC_CPU_HAS_FPU_EXT_ILL_BUG=1`（EXT_ILL 不支持 FLW/FSW，不能做惰性保存）、
-  `SOC_PM_FPU_RETENTION_BY_SW=1`；启用 FP 前 `mstatus.FS` 必须非 0。
+  `SOC_PM_FPU_RETENTION_BY_SW=1`；启用 FP 前 `mstatus.FS` 必须非 0（已由 ch28 实测：FS=0 时浮点指令非法，`logs/ch28a-boot.log`）。
 - 协作调度：每任务独立栈 + TCB + 就绪表；yield 走软件中断/`ecall`，trap 帧携带每任务
   `mepc/mstatus`；所有硬件行为 待真机验证。
 - 若示例为纯整数，必须在 README/章节明确 F 保存路径未启用。

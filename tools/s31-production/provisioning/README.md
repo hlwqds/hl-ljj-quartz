@@ -1,6 +1,6 @@
 # provisioning —— S31 配网纯状态机（生产化第二增量）
 
-> 状态：**未编译、未测试、未上板**。本目录只有离线源码与文档，`zig build test` 一次都没有跑过，
+> 状态：**宿主测试已通过（18/18，2026-11-13）；未上板**。`zig build test` 已实际执行，
 > 也没有在 ESP32-S31 台架上起过 SoftAP、收过凭据或连过 STA。
 > 契约来自 [`../SPEC.md`](../SPEC.md) §3.6；本切片不改动 `content/`、`practice/`、`scripts/`、
 > `quartz/` 与仓库根文件，也不碰 `ota/`、`netmgr/`、`recovery/` 等其它切片目录。
@@ -186,7 +186,7 @@ while (pollEventTimeout(&retry)) |ev| {    // 超时在调用方换算成 Event.
 | 连接失败/超时留在 `connecting` 并 `backoff`，不回 AP             | 单测已写，未运行                                    |
 | `Action` 无死 tag（8 个全部可达）                                | 单测已写，未运行                                    |
 | 无硬件 / 无 IDF / 无时钟 / 无 socket 依赖                        | 源码级可核对（`src/provisioning.zig` 无 `@import`） |
-| `zig build test` 可跑                                            | **未执行**（本切片禁止构建/测试）                   |
+| `zig build test` 可跑                                            | **18/18 通过**（2026-11-13）                        |
 | 上板联调（真 SoftAP/STA/PoP）                                    | **未做**                                            |
 
 `src/host_tests.zig` 的内容：
@@ -204,7 +204,7 @@ while (pollEventTimeout(&retry)) |ev| {    // 超时在调用方换算成 Event.
 
 ## 9. 未验证边界（必须明说）
 
-1. **未编译**：`build.zig` 用的是 0.17.1 的 `b.addModule` / `b.createModule` / `b.addTest` /
+1. **已编译**（宿主测试 18/18）：`build.zig` 用的是 0.17.1 的 `b.addModule` / `b.createModule` / `b.addTest` /
    `b.graph.host` 写法，与同目录其它切片同风格；没有跑过 `zig build`。
 2. **未测试**：`src/host_tests.zig` 没有执行过，测试数量、断言结果都未确认。
 3. **未上板**：没有真实 SoftAP、没有真实 STA、没有 PoP 校验、没有 NVS 写入；

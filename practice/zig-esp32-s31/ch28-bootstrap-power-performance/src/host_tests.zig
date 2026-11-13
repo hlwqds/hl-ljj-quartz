@@ -32,7 +32,7 @@ test "decide prefers a valid otadata winner" {
 }
 
 test "decide falls back to factory when both sectors are erased" {
-    const erased = [_]u8{0xFF} ** bootslot.entry_len;
+    const erased: [bootslot.entry_len]u8 = @splat(0xFF);
     const d = bootslot.decide(&erased, &erased);
     try testing.expectEqual(@as(?ota.Slot, null), d.slot);
     try testing.expect(d.reason == .factory_fallback);
