@@ -1,0 +1,4 @@
+advisors:
+  - name: default
+  - name: Advisor 2
+    model: zhipu-coding-plan/glm-5.3-flash:max
